@@ -309,17 +309,33 @@ def init_execsummary_functional_plots_wf(
 ):
     """Generate the functional figures for an executive summary.
 
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
+
+            wf = init_execsummary_functional_plots_wf(
+                preproc_nifti=None,
+                t1w_available=True,
+                t2w_available=True,
+                output_dir=".",
+                layout=None,
+                name="execsummary_functional_plots_wf",
+            )
+
     Parameters
     ----------
-    preproc_nifti
+    preproc_nifti : :obj:`str` or None
         BOLD data before post-processing.
         A NIFTI file, not a CIFTI.
-    t1w_available : bool
+    t1w_available : :obj:`bool`
         Generally True.
-    t2w_available : bool
+    t2w_available : :obj:`bool`
         Generally False.
     %(output_dir)s
-    layout
+    %(layout)s
     %(name)s
 
     Inputs
@@ -578,6 +594,20 @@ def init_execsummary_anatomical_plots_wf(
 ):
     """Generate the anatomical figures for an executive summary.
 
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
+
+            wf = init_execsummary_anatomical_plots_wf(
+                t1w_available=True,
+                t2w_available=True,
+                output_dir=".",
+                name="execsummary_anatomical_plots_wf",
+            )
+
     Parameters
     ----------
     t1w_available : bool
@@ -726,6 +756,19 @@ def init_plot_custom_slices_wf(
     name="plot_custom_slices_wf",
 ):
     """Plot a custom selection of slices with Slicer.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.execsummary import init_plot_custom_slices_wf
+
+            wf = init_plot_custom_slices_wf(
+                output_dir=".",
+                desc="AtlasOnSubcorticals",
+                name="plot_custom_slices_wf",
+            )
 
     Parameters
     ----------
