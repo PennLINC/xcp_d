@@ -11,7 +11,7 @@ from xcp_d.utils.doc import fill_doc
 
 
 @fill_doc
-def init_writederivatives_wf(
+def init_postproc_derivatives_wf(
     bold_file,
     bandpass_filter,
     low_pass,
@@ -23,7 +23,7 @@ def init_writederivatives_wf(
     dcan_qc,
     output_dir,
     TR,
-    name="write_derivatives_wf",
+    name="postproc_derivatives_wf",
 ):
     """Write out the xcp_d derivatives in BIDS format.
 
@@ -32,8 +32,9 @@ def init_writederivatives_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.outputs import init_writederivatives_wf
-            wf = init_writederivatives_wf(
+            from xcp_d.workflows.outputs import init_postproc_derivatives_wf
+
+            wf = init_postproc_derivatives_wf(
                 bold_file="/path/to/file.nii.gz",
                 bandpass_filter=True,
                 low_pass=0.1,
@@ -45,7 +46,7 @@ def init_writederivatives_wf(
                 dcan_qc=True,
                 output_dir=".",
                 TR=2.,
-                name="write_derivatives_wf",
+                name="postproc_derivatives_wf",
             )
 
     Parameters

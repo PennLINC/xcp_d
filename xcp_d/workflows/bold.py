@@ -32,7 +32,7 @@ from xcp_d.utils.plotting import plot_design_matrix
 from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.workflows.connectivity import init_nifti_functional_connectivity_wf
 from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
-from xcp_d.workflows.outputs import init_writederivatives_wf
+from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 from xcp_d.workflows.plotting import init_qc_report_wf
 from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
 from xcp_d.workflows.restingstate import init_compute_alff_wf, init_nifti_reho_wf
@@ -416,7 +416,7 @@ produced by the regression.
         omp_nthreads=omp_nthreads,
     )
 
-    write_derivative_wf = init_writederivatives_wf(
+    postproc_derivatives_wf = init_postproc_derivatives_wf(
         smoothing=smoothing,
         bold_file=bold_file,
         bandpass_filter=bandpass_filter,
@@ -428,7 +428,7 @@ produced by the regression.
         high_pass=high_pass,
         motion_filter_type=motion_filter_type,
         TR=TR,
-        name="write_derivative_wf",
+        name="postproc_derivatives_wf",
     )
 
     flag_motion_outliers = pe.Node(
@@ -727,28 +727,28 @@ produced by the regression.
     # write derivatives
     # fmt:off
     workflow.connect([
-        (consolidate_confounds_node, write_derivative_wf, [
+        (consolidate_confounds_node, postproc_derivatives_wf, [
             ("out_file", "inputnode.confounds_file"),
         ]),
-        (denoise_bold, write_derivative_wf, [
+        (denoise_bold, postproc_derivatives_wf, [
             ("interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
         ]),
-        (censor_interpolated_data, write_derivative_wf, [
+        (censor_interpolated_data, postproc_derivatives_wf, [
             ("censored_denoised_bold", "inputnode.censored_denoised_bold"),
         ]),
-        (qc_report_wf, write_derivative_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
+        (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (resd_smoothing_wf, outputnode, [("outputnode.smoothed_bold", "smoothed_denoised_bold")]),
-        (resd_smoothing_wf, write_derivative_wf, [
+        (resd_smoothing_wf, postproc_derivatives_wf, [
             ("outputnode.smoothed_bold", "inputnode.smoothed_bold"),
         ]),
-        (flag_motion_outliers, write_derivative_wf, [
+        (flag_motion_outliers, postproc_derivatives_wf, [
             ("filtered_motion", "inputnode.filtered_motion"),
             ("filtered_motion_metadata", "inputnode.filtered_motion_metadata"),
             ("temporal_mask", "inputnode.temporal_mask"),
             ("tmask_metadata", "inputnode.tmask_metadata"),
         ]),
-        (reho_compute_wf, write_derivative_wf, [("outputnode.reho", "inputnode.reho")]),
-        (fcon_ts_wf, write_derivative_wf, [
+        (reho_compute_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
+        (fcon_ts_wf, postproc_derivatives_wf, [
             ("outputnode.atlas_names", "inputnode.atlas_names"),
             ("outputnode.correlations", "inputnode.correlations"),
             ("outputnode.timeseries", "inputnode.timeseries"),
@@ -760,7 +760,7 @@ produced by the regression.
     if bandpass_filter:
         # fmt:off
         workflow.connect([
-            (alff_compute_wf, write_derivative_wf, [
+            (alff_compute_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
@@ -791,14 +791,14 @@ produced by the regression.
         run_without_submitting=False,
     )
 
-    ds_report_rehoplot = pe.Node(
+    ds_reho_plot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=bold_file,
             desc="rehoVolumetricPlot",
             datatype="figures",
         ),
-        name="ds_report_rehoplot",
+        name="ds_reho_plot",
         run_without_submitting=False,
     )
 
@@ -806,25 +806,25 @@ produced by the regression.
     workflow.connect([
         (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
         (fcon_ts_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")]),
-        (reho_compute_wf, ds_report_rehoplot, [("outputnode.rehoplot", "in_file")]),
+        (reho_compute_wf, ds_reho_plot, [("outputnode.rehoplot", "in_file")]),
     ])
     # fmt:on
 
     if bandpass_filter:
-        ds_report_alffplot = pe.Node(
+        ds_alff_plot = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=bold_file,
                 desc="alffVolumetricPlot",
                 datatype="figures",
             ),
-            name="ds_report_alffplot",
+            name="ds_alff_plot",
             run_without_submitting=False,
         )
 
         # fmt:off
         workflow.connect([
-            (alff_compute_wf, ds_report_alffplot, [("outputnode.alffplot", "in_file")]),
+            (alff_compute_wf, ds_alff_plot, [("outputnode.alffplot", "in_file")]),
         ])
         # fmt:on
 
