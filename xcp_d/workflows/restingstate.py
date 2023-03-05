@@ -8,6 +8,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.resting_state import ComputeALFF, ReHoNamePatch, SurfaceReHo
 from xcp_d.interfaces.workbench import (
@@ -23,15 +24,16 @@ from xcp_d.utils.utils import fwhm2sigma
 
 @fill_doc
 def init_compute_alff_wf(
-    mem_gb,
     bold_file,
+    output_dir,
     TR,
     low_pass,
     high_pass,
     smoothing,
     cifti,
+    mem_gb,
     omp_nthreads,
-    name="compute_alff_wf",
+    name="alff_wf",
 ):
     """Compute alff for both nifti and cifti.
 
@@ -42,25 +44,28 @@ def init_compute_alff_wf(
 
             from xcp_d.workflows.restingstate import init_compute_alff_wf
             wf = init_compute_alff_wf(
-                mem_gb=0.1,
-                TR=2.,
                 bold_file="/path/to/file.nii.gz",
+                TR=2.,
+                output_dir=".",
                 low_pass=0.1,
                 high_pass=0.01,
                 smoothing=6,
                 cifti=False,
+                mem_gb=0.1,
                 omp_nthreads=1,
-                name="compute_alff_wf",
+                name="alff_wf",
             )
 
     Parameters
     ----------
-    %(mem_gb)s
+    bold_file
+    %(output_dir)s
     %(TR)s
     %(low_pass)s
     %(high_pass)s
     %(smoothing)s
     %(cifti)s
+    %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
         Default is "compute_alff_wf".
@@ -80,8 +85,6 @@ def init_compute_alff_wf(
         alff output
     smoothed_alff
         smoothed alff  output
-    alffplot
-        alff svg
     """
     workflow = Workflow(name=name)
 
@@ -127,7 +130,6 @@ calculated at each voxel to yield voxel-wise ALFF measures.
             ("bold_mask", "mask"),
         ]),
         (alff_compt, alff_plot, [("alff", "filename")]),
-        (alff_plot, outputnode, [("output_path", "alffplot")]),
         (alff_compt, outputnode, [("alff", "alff")])
     ])
     # fmt:on
@@ -135,7 +137,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti
             workflow.__desc__ = workflow.__desc__ + (
-                " The ALFF maps were smoothed with Nilearn using a gaussian kernel size of "
+                " The ALFF maps were smoothed with Nilearn using a Gaussian kernel size of "
                 f"{str(smoothing)} mm (FWHM)."
             )
             # Smooth via Nilearn
@@ -153,7 +155,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
         else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
-                " The ALFF maps were smoothed with the Connectome Workbench using a gaussian "
+                " The ALFF maps were smoothed with the Connectome Workbench using a Gaussian "
                 f"kernel size of {str(smoothing)} mm (FWHM)."
             )
 
@@ -195,14 +197,30 @@ calculated at each voxel to yield voxel-wise ALFF measures.
             ])
             # fmt:on
 
+    ds_alff_plot = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc="alffSurfacePlot" if cifti else "alffVolumetricPlot",
+            datatype="figures",
+        ),
+        name="ds_alff_plot",
+        run_without_submitting=False,
+    )
+
+    # fmt:off
+    workflow.connect([(alff_plot, ds_alff_plot, [("output_path", "in_file")])])
+    # fmt:on
+
     return workflow
 
 
 @fill_doc
 def init_cifti_reho_wf(
+    bold_file,
+    output_dir,
     mem_gb,
     omp_nthreads,
-    bold_file,
     name="cifti_reho_wf",
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
@@ -213,18 +231,21 @@ def init_cifti_reho_wf(
             :simple_form: yes
 
             from xcp_d.workflows.restingstate import init_cifti_reho_wf
+
             wf = init_cifti_reho_wf(
-                mem_gb=0.1,
                 bold_file="/path/to/bold.dtseries.nii",
+                output_dir=".",
+                mem_gb=0.1,
                 omp_nthreads=1,
                 name="cifti_reho_wf",
             )
 
     Parameters
     ----------
+    bold_file
+    %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
-    bold_file
     %(name)s
         Default is "cifti_reho_wf".
 
@@ -239,8 +260,6 @@ def init_cifti_reho_wf(
     -------
     reho
         ReHo in a CIFTI file.
-    rehoplot
-        ReHo svg
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -257,7 +276,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["reho", "rehoplot"]),
+        niu.IdentityInterface(fields=["reho"]),
         name="outputnode",
     )
 
@@ -319,6 +338,17 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
 
+    ds_reho_plot = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc="rehoSurfacePlot",
+            datatype="figures",
+        ),
+        name="ds_reho_plot",
+        run_without_submitting=False,
+    )
+
     # Write out results
     # fmt:off
     workflow.connect([
@@ -334,7 +364,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (subcortical_reho, merge_cifti, [("out_file", "volume_data")]),
         (merge_cifti, outputnode, [("out_file", "reho")]),
         (merge_cifti, reho_plot, [("out_file", "filename")]),
-        (reho_plot, outputnode, [("output_path", "rehoplot")])
+        (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
     ])
     # fmt:on
 
@@ -343,9 +373,10 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 @fill_doc
 def init_nifti_reho_wf(
+    bold_file,
+    output_dir,
     mem_gb,
     omp_nthreads,
-    bold_file,
     name="nifti_reho_wf",
 ):
     """Compute ReHo on volumetric (NIFTI) data.
@@ -357,17 +388,19 @@ def init_nifti_reho_wf(
 
             from xcp_d.workflows.restingstate import init_nifti_reho_wf
             wf = init_nifti_reho_wf(
-                mem_gb=0.1,
                 bold_file="/path/to/bold.nii.gz",
+                output_dir=".",
+                mem_gb=0.1,
                 omp_nthreads=1,
                 name="nifti_reho_wf",
             )
 
     Parameters
     ----------
+    bold_file
+    %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
-    bold_file
     %(name)s
         Default is "nifti_reho_wf".
 
@@ -384,8 +417,6 @@ def init_nifti_reho_wf(
     -------
     reho
         reho output
-    rehoplot
-        ReHo svg
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -396,7 +427,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
         niu.IdentityInterface(fields=["denoised_bold", "bold_mask"]),
         name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["reho", "rehoplot"]), name="outputnode")
+    outputnode = pe.Node(niu.IdentityInterface(fields=["reho"]), name="outputnode")
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(
@@ -417,6 +448,17 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.bold_file = bold_file
 
+    ds_reho_plot = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=bold_file,
+            desc="rehoVolumetricPlot",
+            datatype="figures",
+        ),
+        name="ds_reho_plot",
+        run_without_submitting=False,
+    )
+
     # Write the results out
     # fmt:off
     workflow.connect([
@@ -426,7 +468,7 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
         ]),
         (compute_reho, outputnode, [("out_file", "reho")]),
         (compute_reho, reho_plot, [("out_file", "filename")]),
-        (reho_plot, outputnode, [("output_path", "rehoplot")]),
+        (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
     ])
     # fmt:on
 

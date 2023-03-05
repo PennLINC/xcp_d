@@ -37,7 +37,7 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
 
     # Let's move to a temporary directory before running
-    tempdir = tmp_path_factory.mktemp("test_ALFF_nifti")
+    tempdir = tmp_path_factory.mktemp("test_nifti_alff_01")
     compute_alff_wf.base_dir = tempdir
     compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
     compute_alff_wf.inputs.inputnode.denoised_bold = bold_file
@@ -71,7 +71,7 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Now let's compute ALFF for the new file and see how it compares
     # to the original ALFF - it should increase since we increased
     # the amplitude in low frequencies for a voxel
-    tempdir = tmp_path_factory.mktemp("test_ALFF_nifti_dir2")
+    tempdir = tmp_path_factory.mktemp("test_nifti_alff_02")
     compute_alff_wf.base_dir = tempdir
     compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
     compute_alff_wf.inputs.inputnode.denoised_bold = filename
@@ -99,19 +99,19 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
+    tempdir = tmp_path_factory.mktemp("test_cifti_alff_01")
     compute_alff_wf = restingstate.init_compute_alff_wf(
-        omp_nthreads=2,
         bold_file=bold_file,
-        mem_gb=4,
+        output_dir=tempdir,
         TR=TR,
         low_pass=0.08,
         high_pass=0.01,
         cifti=True,
         smoothing=6,
+        omp_nthreads=2,
+        mem_gb=4,
     )
 
-    # Let's move to a temporary directory before running
-    tempdir = tmp_path_factory.mktemp("test_ALFF_cifti")
     compute_alff_wf.base_dir = tempdir
     compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
     compute_alff_wf.inputs.inputnode.denoised_bold = bold_file
@@ -141,7 +141,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     write_ndata(original_bold_data, template=bold_file, mask=bold_mask, filename=filename)
 
     # Now let's compute ALFF for the new file and see how it compares
-    tempdir = tmp_path_factory.mktemp("test_ALFF_cifti_dir2")
+    tempdir = tmp_path_factory.mktemp("test_cifti_alff_02")
     compute_alff_wf.base_dir = tempdir
     compute_alff_wf.inputs.inputnode.bold_mask = bold_mask
     compute_alff_wf.inputs.inputnode.denoised_bold = filename
@@ -181,14 +181,19 @@ def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     Confirm that ReHo decreases after adding noise to a
     Nifti image.
     """
-    tempdir = tmp_path_factory.mktemp("test_REHO_nifti")
+    tempdir = tmp_path_factory.mktemp("test_nifti_reho")
 
     # Get the names of the files
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Set up and run the ReHo wf in a tempdir
-    reho_wf = restingstate.init_nifti_reho_wf(omp_nthreads=2, mem_gb=4, bold_file=bold_file)
+    reho_wf = restingstate.init_nifti_reho_wf(
+        bold_file=bold_file,
+        output_dir=tempdir,
+        omp_nthreads=2,
+        mem_gb=4,
+    )
     reho_wf.inputs.inputnode.bold_mask = bold_mask
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.denoised_bold = bold_file
@@ -229,7 +234,7 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     Cifti image.
     """
     # Get the names of the files
-    tempdir = tmp_path_factory.mktemp("test_REHO_cifti")
+    tempdir = tmp_path_factory.mktemp("test_cifti_reho")
     source_file = fmriprep_with_freesurfer_data["cifti_file"]
 
     # Create a copy of the BOLD file to control the filename
@@ -238,7 +243,11 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Set up and run the ReHo wf in a tempdir
     reho_wf = restingstate.init_cifti_reho_wf(
-        omp_nthreads=2, mem_gb=4, name="orig_reho_wf", bold_file=source_file
+        bold_file=source_file,
+        output_dir=tempdir,
+        omp_nthreads=2,
+        mem_gb=4,
+        name="orig_reho_wf",
     )
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.denoised_bold = orig_bold_file
@@ -260,7 +269,11 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Create a new workflow
     reho_wf = restingstate.init_cifti_reho_wf(
-        omp_nthreads=2, mem_gb=4, name="noisy_reho_wf", bold_file=source_file
+        bold_file=source_file,
+        output_dir=tempdir,
+        omp_nthreads=2,
+        mem_gb=4,
+        name="noisy_reho_wf",
     )
     reho_wf.base_dir = tempdir
     reho_wf.inputs.inputnode.denoised_bold = noisy_bold_file

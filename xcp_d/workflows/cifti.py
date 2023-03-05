@@ -354,17 +354,17 @@ produced by the regression.
     workflow.connect([(downcast_data, determine_head_radius, [("t1w_mask", "mask_file")])])
     # fmt:on
 
-    fcon_ts_wf = init_cifti_functional_connectivity_wf(
+    connectivity_wf = init_cifti_functional_connectivity_wf(
         min_coverage=min_coverage,
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
-        name="cifti_ts_con_wf",
+        name="connectivity_wf",
         omp_nthreads=omp_nthreads,
     )
 
     # fmt:off
     workflow.connect([
-        (fcon_ts_wf, outputnode, [
+        (connectivity_wf, outputnode, [
             ("outputnode.atlas_names", "atlas_names"),
             ("outputnode.timeseries", "timeseries"),
             ("outputnode.timeseries_ciftis", "timeseries_ciftis"),
@@ -373,7 +373,7 @@ produced by the regression.
     # fmt:on
 
     if bandpass_filter:
-        alff_compute_wf = init_compute_alff_wf(
+        alff_wf = init_compute_alff_wf(
             mem_gb=mem_gbx["timeseries"],
             TR=TR,
             bold_file=bold_file,
@@ -381,14 +381,14 @@ produced by the regression.
             high_pass=high_pass,
             smoothing=smoothing,
             cifti=True,
-            name="compute_alff_wf",
+            name="alff_wf",
             omp_nthreads=omp_nthreads,
         )
 
-    reho_compute_wf = init_cifti_reho_wf(
+    reho_wf = init_cifti_reho_wf(
         mem_gb=mem_gbx["timeseries"],
         bold_file=bold_file,
-        name="cifti_reho_wf",
+        name="reho_wf",
         omp_nthreads=omp_nthreads,
     )
 
@@ -469,7 +469,7 @@ produced by the regression.
             output_names=["out_file"],
             function=consolidate_confounds,
         ),
-        name="consolidate_confounds_node",
+        name="consolidate_confounds",
     )
     consolidate_confounds_node.inputs.params = params
 
@@ -658,22 +658,22 @@ produced by the regression.
 
     # functional connectivity workflow
     workflow.connect([
-        (inputnode, fcon_ts_wf, [("bold_file", "inputnode.bold_file")]),
-        (censor_interpolated_data, fcon_ts_wf, [
+        (inputnode, connectivity_wf, [("bold_file", "inputnode.bold_file")]),
+        (censor_interpolated_data, connectivity_wf, [
             ("censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
     ])
 
     # reho and alff
     workflow.connect([
-        (censor_interpolated_data, reho_compute_wf, [
+        (censor_interpolated_data, reho_wf, [
             ("censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
     ])
 
     if bandpass_filter:
         workflow.connect([
-            (censor_interpolated_data, alff_compute_wf, [
+            (censor_interpolated_data, alff_wf, [
                 ("censored_denoised_bold", "inputnode.denoised_bold"),
             ]),
         ])
@@ -714,8 +714,8 @@ produced by the regression.
             ("temporal_mask", "inputnode.temporal_mask"),
             ("tmask_metadata", "inputnode.tmask_metadata"),
         ]),
-        (reho_compute_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
-        (fcon_ts_wf, postproc_derivatives_wf, [
+        (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
+        (connectivity_wf, postproc_derivatives_wf, [
             ("outputnode.atlas_names", "inputnode.atlas_names"),
             ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
             ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
@@ -728,7 +728,7 @@ produced by the regression.
 
     if bandpass_filter:
         workflow.connect([
-            (alff_compute_wf, postproc_derivatives_wf, [
+            (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
@@ -759,43 +759,12 @@ produced by the regression.
         run_without_submitting=True,
     )
 
-    if bandpass_filter:
-        ds_alff_plot = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=bold_file,
-                desc="alffSurfacePlot",
-                datatype="figures",
-            ),
-            name="ds_alff_plot",
-            run_without_submitting=False,
-        )
-
-    ds_reho_plot = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=bold_file,
-            desc="rehoSurfacePlot",
-            datatype="figures",
-        ),
-        name="ds_reho_plot",
-        run_without_submitting=False,
-    )
-
     # fmt:off
     workflow.connect([
         (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
-        (reho_compute_wf, ds_reho_plot, [("outputnode.rehoplot", "in_file")]),
-        (fcon_ts_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")])
+        (connectivity_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")])
     ])
     # fmt:on
-
-    if bandpass_filter:
-        # fmt:off
-        workflow.connect([
-            (alff_compute_wf, ds_alff_plot, [("outputnode.alffplot", "in_file")])
-        ])
-        # fmt:on
 
     # executive summary workflow
     if dcan_qc:
