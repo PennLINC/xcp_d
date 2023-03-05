@@ -389,9 +389,8 @@ The QC metrics include the following:
 
    a. Motion parameters summary: mean FD, mean and maximum RMS
    b. Mean DVARs before and after regression and its relationship to FD
-   c. BOLD-T1w coregistration quality - Dice, Jaccard, Coverage and Cross-correlation indices
-   d. BOLD-Template normalization quality - Dice, Jaccard, Coverage and Cross-correlation
-      indices
+   c. BOLD-T1w coregistration quality - Dice similarity index, Coverage and Pearson correlation
+   d. BOLD-Template normalization quality - Dice similarity index, Coverage and Pearson correlation
 
 
 *******
