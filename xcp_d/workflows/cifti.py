@@ -77,7 +77,7 @@ def init_ciftipostprocess_wf(
 
             import os
 
-            from xcp_d.utils.bids import collect_data
+            from xcp_d.utils.bids import collect_data, collect_run_data
             from xcp_d.workflows.cifti import init_ciftipostprocess_wf
             from xcp_d.utils.doc import download_example_data
 
@@ -94,13 +94,12 @@ def init_ciftipostprocess_wf(
 
             bold_file = subj_data["bold"][0]
             custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
-            run_data = {
-                "boldref": "",
-                "confounds": "",
-                "t1w_to_native_xfm": "",
-                "boldmask": "",
-                "bold_metadata": {"RepetitionTime": 2},
-            }
+            run_data = collect_run_data(
+                layout=layout,
+                input_type="fmriprep",
+                bold_file=bold_file,
+                cifti=True,
+            )
 
             wf = init_ciftipostprocess_wf(
                 bold_file=bold_file,
