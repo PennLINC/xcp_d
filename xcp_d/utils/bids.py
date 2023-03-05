@@ -5,7 +5,6 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import os
 import warnings
 
 import nibabel as nb
@@ -540,7 +539,7 @@ def collect_surface_data(layout, participant_label):
     return surface_files_found, standard_spaces, surface_files
 
 
-def collect_run_data(layout, input_type, bold_file, cifti=False):
+def collect_run_data(layout, input_type, bold_file, cifti):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -549,9 +548,8 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
         The BIDSLayout object used to grab files from the dataset.
     bold_file : :obj:`str`
         Path to the BOLD file.
-    cifti : :obj:`bool`, optional
+    cifti : :obj:`bool`
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
-        Default is False.
     input_type: :obj:`str`
         Input type.
 
@@ -604,8 +602,16 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             space=allowed_nifti_spaces,
             suffix="boldref",
         )
+        run_data["nifti_file"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            space=allowed_nifti_spaces,
+            desc="preproc",
+            suffix="bold",
+            extension=[".nii", ".nii.gz"],
+        )
 
-    LOGGER.debug(
+    LOGGER.info(
         f"Collected run data for {bold_file}:\n"
         f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
     )
@@ -853,6 +859,7 @@ def get_entity(filename, entity):
     entity_value : str or None
         The BOLD file's entity value associated with the requested entity.
     """
+    import os
     import re
 
     folder, file_base = os.path.split(filename)
@@ -875,3 +882,50 @@ def get_entity(filename, entity):
             raise ValueError(f"Unknown space for {filename}")
 
     return entity_value
+
+
+def group_across_runs(in_files):
+    """Group preprocessed BOLD files by unique sets of entities, ignoring run.
+
+    Parameters
+    ----------
+    in_files : :obj:`list` of :obj:`str`
+        A list of preprocessed BOLD files to group.
+
+    Returns
+    -------
+    out_files : :obj:`list` of :obj:`list` of :obj:`str`
+        The grouped BOLD files. Each sublist corresponds to a single set of runs.
+    """
+    import os
+    import re
+
+    # First, extract run information and sort the input files by the runs,
+    # so that any cases where files are not already in ascending run order get fixed.
+    run_numbers = []
+    for in_file in in_files:
+        run = get_entity(in_file, "run")
+        if run is None:
+            run = 0
+
+        run_numbers.append(int(run))
+
+    # Sort the files by the run numbers.
+    zipped_pairs = zip(run_numbers, in_files)
+    sorted_in_files = [x for _, x in sorted(zipped_pairs)]
+
+    # Extract the unique sets of entities (i.e., the filename, minus the run entity).
+    unique_filenames = [re.sub("_run-[0-9]+_", "_", os.path.basename(f)) for f in sorted_in_files]
+
+    # Assign each in_file to a group of files with the same entities, except run.
+    out_files, grouped_unique_filenames = [], []
+    for i_file, in_file in enumerate(sorted_in_files):
+        unique_filename = unique_filenames[i_file]
+        if unique_filename not in grouped_unique_filenames:
+            grouped_unique_filenames.append(unique_filename)
+            out_files.append([])
+
+        group_idx = grouped_unique_filenames.index(unique_filename)
+        out_files[group_idx].append(in_file)
+
+    return out_files

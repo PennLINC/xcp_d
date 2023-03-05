@@ -11,7 +11,7 @@ from pathlib import Path
 
 from niworkflows.reports.core import Report as _Report
 
-from xcp_d.interfaces.executive_summary import ExecutiveSummary
+from xcp_d.interfaces.execsummary import ExecutiveSummary
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 

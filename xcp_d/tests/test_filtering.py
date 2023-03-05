@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 from scipy import signal
 
-from xcp_d.interfaces.filtering import butter_bandpass
 from xcp_d.utils.confounds import motion_regression_filter
 
 
@@ -128,39 +127,3 @@ def test_motion_filtering_notch():
             band_stop_max=band_stop_max,
             motion_filter_order=2,
         )
-
-
-def test_bandpass_filtering():
-    """Run Butterworth on toy data, compare to results that have been verified."""
-    raw_data = np.random.random(500)
-
-    highpass, lowpass = 0.009, 0.08
-    TR = 0.8
-    fs = 1 / TR
-
-    b, a = signal.butter(
-        1,
-        [highpass, lowpass],
-        btype="bandpass",
-        output="ba",
-        fs=fs,
-    )
-    butterworth_data_true = signal.filtfilt(
-        b,
-        a,
-        raw_data,
-        padtype="constant",
-        padlen=raw_data.size - 1,
-    )
-
-    # Confirm the butterworth filter runs with reasonable parameters
-    raw_data = raw_data[:, None]  # add singleton row dimension
-    butterworth_data_test = butter_bandpass(
-        raw_data,
-        fs=fs,
-        highpass=highpass,
-        lowpass=lowpass,
-        order=2,
-    )
-    butterworth_data_test = np.squeeze(butterworth_data_test)
-    assert np.allclose(butterworth_data_test, butterworth_data_true)

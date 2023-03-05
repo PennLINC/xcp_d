@@ -19,9 +19,6 @@ def init_qc_report_wf(
     output_dir,
     TR,
     motion_filter_type,
-    band_stop_max,
-    band_stop_min,
-    motion_filter_order,
     fd_thresh,
     mem_gb,
     omp_nthreads,
@@ -41,9 +38,6 @@ def init_qc_report_wf(
                 output_dir=".",
                 TR=0.5,
                 motion_filter_type=None,
-                band_stop_max=0,
-                band_stop_min=0,
-                motion_filter_order=1,
                 fd_thresh=0.2,
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -57,27 +51,24 @@ def init_qc_report_wf(
     %(output_dir)s
     TR
     %(motion_filter_type)s
-    %(band_stop_max)s
-    %(band_stop_min)s
-    %(motion_filter_order)s
     %(fd_thresh)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(cifti)s
-    dcan_qc : bool
-        Whether to generate figures for the executive summary or not.
+    %(dcan_qc)s
     %(name)s
         Default is "qc_report_wf".
 
     Inputs
     ------
-    preprocessed_bold_file
-        Used for naming outputs and finding related files.
-        Also used for carpet plots.
-    cleaned_unfiltered_file
+    %(name_source)s
+    preprocessed_bold
+        The preprocessed BOLD files. Typically the same as ``name_source``.
+        Used for carpet plots.
+    %(uncensored_denoised_bold)s
         Used for carpet plots.
         Only used if dcan_qc is True.
-    cleaned_file
+    %(filtered_denoised_bold)s
         Used for carpet plots.
     boldref
         Only used with non-CIFTI data.
@@ -90,9 +81,10 @@ def init_qc_report_wf(
     t1w_to_native
         Only used with non-CIFTI data.
     %(dummy_scans)s
+    fmriprep_confounds_file
     %(head_radius)s
     tmask
-    filtered_motion
+    %(filtered_motion)s
 
     Outputs
     -------
@@ -103,10 +95,12 @@ def init_qc_report_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "preprocessed_bold_file",
-                "cleaned_file",
-                "cleaned_unfiltered_file",
+                "name_source",
+                "preprocessed_bold",
+                "filtered_denoised_bold",
+                "uncensored_denoised_bold",
                 "dummy_scans",
+                "fmriprep_confounds_file",
                 "filtered_motion",
                 "tmask",
                 "head_radius",
@@ -134,9 +128,6 @@ def init_qc_report_wf(
         CensoringPlot(
             TR=TR,
             motion_filter_type=motion_filter_type,
-            band_stop_max=band_stop_max,
-            band_stop_min=band_stop_min,
-            motion_filter_order=motion_filter_order,
             fd_thresh=fd_thresh,
         ),
         name="censor_report",
@@ -150,7 +141,8 @@ def init_qc_report_wf(
             ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
-            ("preprocessed_bold_file", "bold_file"),
+            ("filtered_motion", "filtered_motion"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
         ]),
     ])
     # fmt:on
@@ -185,7 +177,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, get_native2space_transforms, [
-                ("preprocessed_bold_file", "bold_file"),
+                ("name_source", "bold_file"),
                 ("template_to_t1w", "template_to_t1w"),
                 ("t1w_to_native", "t1w_to_native"),
             ]),
@@ -253,7 +245,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, get_mni_to_bold_xforms, [
-                ("preprocessed_bold_file", "bold_file"),
+                ("name_source", "bold_file"),
                 ("template_to_t1w", "template_to_t1w"),
                 ("t1w_to_native", "t1w_to_native"),
             ]),
@@ -328,8 +320,10 @@ def init_qc_report_wf(
     # fmt:off
     workflow.connect([
         (inputnode, qcreport, [
-            ("preprocessed_bold_file", "bold_file"),
-            ("cleaned_file", "cleaned_file"),
+            ("name_source", "name_source"),
+            ("preprocessed_bold", "bold_file"),
+            ("filtered_denoised_bold", "cleaned_file"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("head_radius", "head_radius"),
             ("tmask", "tmask"),
             ("dummy_scans", "dummy_scans"),
@@ -371,7 +365,7 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_dcan_qc, [("preprocessed_bold_file", "source_file")]),
+            (inputnode, ds_dcan_qc, [("name_source", "source_file")]),
             (make_dcan_qc_file, ds_dcan_qc, [("dcan_df_file", "in_file")]),
         ])
         # fmt:on
@@ -387,9 +381,9 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_executive_summary_carpets, [
-                ("preprocessed_bold_file", "rawdata"),
-                ("cleaned_unfiltered_file", "regressed_data"),
-                ("cleaned_file", "residual_data"),
+                ("preprocessed_bold", "preprocessed_bold"),
+                ("uncensored_denoised_bold", "uncensored_denoised_bold"),
+                ("filtered_denoised_bold", "filtered_denoised_bold"),
                 ("filtered_motion", "filtered_motion"),
                 ("dummy_scans", "dummy_scans"),
             ]),
@@ -433,10 +427,10 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_preproc_executive_summary_carpet, [
-                ("preprocessed_bold_file", "source_file"),
+                ("name_source", "source_file"),
             ]),
             (inputnode, ds_postproc_executive_summary_carpet, [
-                ("preprocessed_bold_file", "source_file"),
+                ("name_source", "source_file"),
             ]),
             (plot_executive_summary_carpets, ds_preproc_executive_summary_carpet, [
                 ("before_process", "in_file"),
@@ -477,22 +471,10 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, functional_qc, [("preprocessed_bold_file", "bold_file")]),
+        (inputnode, functional_qc, [("name_source", "bold_file")]),
         (qcreport, functional_qc, [("qc_file", "qc_file")]),
     ])
     # fmt:on
-
-    ds_report_censoring = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            datatype="figures",
-            desc="censoring",
-            suffix="motion",
-            extension=".svg",
-        ),
-        name="ds_report_censoring",
-        run_without_submitting=False,
-    )
 
     ds_report_qualitycontrol = pe.Node(
         DerivativesDataSink(
@@ -526,14 +508,31 @@ def init_qc_report_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_report_censoring, [("preprocessed_bold_file", "source_file")]),
-        (inputnode, ds_report_qualitycontrol, [("preprocessed_bold_file", "source_file")]),
-        (inputnode, ds_report_preprocessing, [("preprocessed_bold_file", "source_file")]),
-        (inputnode, ds_report_postprocessing, [("preprocessed_bold_file", "source_file")]),
-        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
+        (inputnode, ds_report_qualitycontrol, [("name_source", "source_file")]),
+        (inputnode, ds_report_preprocessing, [("name_source", "source_file")]),
+        (inputnode, ds_report_postprocessing, [("name_source", "source_file")]),
         (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
         (qcreport, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
         (qcreport, ds_report_postprocessing, [("clean_qcplot", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_report_censoring = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            datatype="figures",
+            desc="censoring",
+            suffix="motion",
+            extension=".svg",
+        ),
+        name="ds_report_censoring",
+        run_without_submitting=False,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_report_censoring, [("name_source", "source_file")]),
+        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
     ])
     # fmt:on
 

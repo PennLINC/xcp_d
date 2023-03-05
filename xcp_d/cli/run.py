@@ -574,22 +574,6 @@ def main(args=None):
                 "HTML and LaTeX versions of it will not be available"
             )
 
-        # concatenate postprocessing derivatives across runs
-        if opts.combineruns:
-            from xcp_d.utils.concatenation import concatenate_derivatives
-
-            print("Concatenating bold files ...")
-            concatenate_derivatives(
-                subjects=subject_list,
-                fmri_dir=str(fmri_dir),
-                output_dir=str(Path(str(output_dir)) / "xcp_d/"),
-                cifti=opts.cifti,
-                dcan_qc=opts.dcan_qc,
-                dummy_scans=opts.dummy_scans,
-                dummytime=opts.dummytime,
-            )
-            print("Concatenation complete!")
-
         # Generate reports phase
         failed_reports = generate_reports(
             subject_list=subject_list,
@@ -646,14 +630,6 @@ def build_workflow(opts, retval):
             "The selected output folder is the same as the input fmri input. "
             "Please modify the output path "
             f"(suggestion: {rec_path})."
-        )
-        retval["return_code"] = 1
-
-    if not (fmri_dir / "dataset_description.json").is_file():
-        build_log.error(
-            "No dataset_description.json file found in input directory. "
-            "Make sure to point to the specific pipeline's derivatives folder. "
-            "For example, use '/dset/derivatives/fmriprep', not /dset/derivatives'."
         )
         retval["return_code"] = 1
 
@@ -778,6 +754,14 @@ def build_workflow(opts, retval):
             convert_to_fmriprep(fmri_dir, outdir=converted_fmri_dir)
 
         fmri_dir = converted_fmri_dir
+
+    if not (fmri_dir / "dataset_description.json").is_file():
+        build_log.error(
+            "No dataset_description.json file found in input directory. "
+            "Make sure to point to the specific pipeline's derivatives folder. "
+            "For example, use '/dset/derivatives/fmriprep', not /dset/derivatives'."
+        )
+        retval["return_code"] = 1
 
     # Set up some instrumental utilities
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
@@ -910,6 +894,7 @@ Running xcp_d version {__version__}:
         dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
         min_coverage=opts.min_coverage,
+        combineruns=opts.combineruns,
         name="xcpd_wf",
     )
 

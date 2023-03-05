@@ -29,6 +29,7 @@ xcp_d-combineqc
    xcp_d.workflows.bold
    xcp_d.workflows.cifti
    xcp_d.workflows.anatomical
+   xcp_d.workflows.concatenation
    xcp_d.workflows.connectivity
    xcp_d.workflows.execsummary
    xcp_d.workflows.outputs
@@ -52,13 +53,12 @@ xcp_d-combineqc
    xcp_d.interfaces.ants
    xcp_d.interfaces.bids
    xcp_d.interfaces.c3
+   xcp_d.interfaces.concatenation
    xcp_d.interfaces.connectivity
-   xcp_d.interfaces.executive_summary
-   xcp_d.interfaces.filtering
+   xcp_d.interfaces.execsummary
    xcp_d.interfaces.nilearn
    xcp_d.interfaces.prepostcleaning
    xcp_d.interfaces.qc_plot
-   xcp_d.interfaces.regression
    xcp_d.interfaces.report_core
    xcp_d.interfaces.report
    xcp_d.interfaces.resting_state

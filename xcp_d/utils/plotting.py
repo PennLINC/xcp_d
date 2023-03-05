@@ -435,76 +435,94 @@ def plot_confounds_es(
 
 @fill_doc
 def plot_fmri_es(
-    preprocessed_file,
-    residuals_file,
-    denoised_file,
+    preprocessed_bold,
+    uncensored_denoised_bold,
+    filtered_denoised_bold,
+    TR,
     dummy_scans,
     filtered_motion,
-    unprocessed_filename,
-    processed_filename,
+    preprocessed_bold_figure,
+    denoised_bold_figure,
     mask=None,
     seg_data=None,
-    TR=1,
-    raw_dvars=None,
-    residuals_dvars=None,
-    denoised_dvars=None,
+    preprocessed_bold_dvars=None,
+    uncensored_denoised_bold_dvars=None,
+    filtered_denoised_bold_dvars=None,
 ):
     """Generate carpet plot with DVARS, FD, and WB for the executive summary.
 
     Parameters
     ----------
-    preprocessed_file :
-        nifti or cifti before processing
-    residuals_file :
-        nifti or cifti after nuisance regression
-    denoised_file :
-        nifti or cifti after regression, filtering, and interpolation
-    mask :
-        mask for nifti if available
+    preprocessed_bold : str
+        Preprocessed BOLD file, after mean-centering and detrending
+        *using only the low-motion volumes*.
+    uncensored_denoised_bold : str
+        BOLD file after regression and interpolation, but not filtering.
+        The preprocessed BOLD data are censored and denoised to get the betas,
+        and then the full, uncensored preprocessed BOLD data are denoised using those betas.
+    filtered_denoised_bold : str
+        BOLD file after regression, interpolation, and filtering.
+    TR : float
+        Repetition time, in seconds.
     %(dummy_scans)s
-    seg_data :
-        3 tissues seg_data files
-    TR : float, optional
-        repetition times
-    filtered_motion :
+    filtered_motion : str
        Filtered motion parameters, including framewise displacement, in a TSV file.
-    unprocessed_filename :
+    preprocessed_bold_figure : str
         output file svg before processing
-    processed_filename :
+    denoised_bold_figure : str
         output file svg after processing
+    mask : str, optional
+        Brain mask file. Used only when the pre- and post-processed BOLD data are NIFTIs.
+    seg_data : str, optional
+        Three-tissue segmentation file. This is only used for NIFTI inputs.
+        With CIFTI inputs, the tissue types are inferred directly from the CIFTI file.
+    preprocessed_bold_dvars : :obj:`numpy.ndarray` or None, optional
+        Pre-calculated DVARS for preprocessed BOLD data.
+    uncensored_denoised_bold_dvars : :obj:`numpy.ndarray` or None, optional
+        Pre-calculated DVARS for uncensored, denoised BOLD data.
+    filtered_denoised_bold_dvars : :obj:`numpy.ndarray` or None, optional
+        Pre-calculated DVARS for filtered, denoised BOLD data.
     """
     # Compute dvars correctly if not already done
-    raw_data_arr = read_ndata(datafile=preprocessed_file, maskfile=mask)
-    residuals_data_arr = read_ndata(datafile=residuals_file, maskfile=mask)
-    denoised_data_arr = read_ndata(datafile=denoised_file, maskfile=mask)
+    preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
+    uncensored_denoised_bold_arr = read_ndata(datafile=uncensored_denoised_bold, maskfile=mask)
+    filtered_denoised_bold_arr = read_ndata(datafile=filtered_denoised_bold, maskfile=mask)
 
-    # Remove dummy time from the raw_data_arr if needed
+    # Remove dummy time from the preprocessed_bold_arr if needed
     if dummy_scans > 0:
-        raw_data_arr = raw_data_arr[:, dummy_scans:]
+        preprocessed_bold_arr = preprocessed_bold_arr[:, dummy_scans:]
 
-    if not isinstance(raw_dvars, np.ndarray):
-        raw_dvars = compute_dvars(raw_data_arr)
+    if not isinstance(preprocessed_bold_dvars, np.ndarray):
+        preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
 
-    if not isinstance(residuals_dvars, np.ndarray):
-        residuals_dvars = compute_dvars(residuals_data_arr)
+    if not isinstance(uncensored_denoised_bold_dvars, np.ndarray):
+        uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
 
-    if not isinstance(denoised_dvars, np.ndarray):
-        denoised_dvars = compute_dvars(denoised_data_arr)
+    if not isinstance(filtered_denoised_bold_dvars, np.ndarray):
+        filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
 
-    if not (raw_dvars.shape == residuals_dvars.shape == denoised_dvars.shape):
+    if not (
+        preprocessed_bold_dvars.shape
+        == uncensored_denoised_bold_dvars.shape
+        == filtered_denoised_bold_dvars.shape
+    ):
         raise ValueError(
             "Shapes do not match:\n"
-            f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
-            f"\t{residuals_file}: {residuals_data_arr.shape}\n"
-            f"\t{denoised_file}: {denoised_data_arr.shape}\n\n"
+            f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
+            f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
+            f"\t{filtered_denoised_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
-    if not (raw_data_arr.shape == residuals_data_arr.shape == denoised_data_arr.shape):
+    if not (
+        preprocessed_bold_arr.shape
+        == uncensored_denoised_bold_arr.shape
+        == filtered_denoised_bold_arr.shape
+    ):
         raise ValueError(
             "Shapes do not match:\n"
-            f"\t{preprocessed_file}: {raw_data_arr.shape}\n"
-            f"\t{residuals_file}: {residuals_data_arr.shape}\n"
-            f"\t{denoised_file}: {denoised_data_arr.shape}\n\n"
+            f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
+            f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
+            f"\t{filtered_denoised_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
     # Formatting & setting of files
@@ -513,9 +531,9 @@ def plot_fmri_es(
     # Create dataframes for the bold_data DVARS, FD
     dvars_regressors = pd.DataFrame(
         {
-            "Pre regression": raw_dvars,
-            "Post regression": residuals_dvars,
-            "Post all": denoised_dvars,
+            "Pre regression": preprocessed_bold_dvars,
+            "Post regression": uncensored_denoised_bold_dvars,
+            "Post all": filtered_denoised_bold_dvars,
         }
     )
 
@@ -525,19 +543,20 @@ def plot_fmri_es(
         }
     )
 
-    # The mean and standard deviation of raw data
-    unprocessed_data_timeseries = pd.DataFrame(
+    # The mean and standard deviation of the preprocessed data,
+    # after mean-centering and detrending.
+    preprocessed_bold_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(raw_data_arr, axis=0),
-            "Std": np.nanstd(raw_data_arr, axis=0),
+            "Mean": np.nanmean(preprocessed_bold_arr, axis=0),
+            "Std": np.nanstd(preprocessed_bold_arr, axis=0),
         }
     )
 
-    # The mean and standard deviation of filtered data
-    processed_data_timeseries = pd.DataFrame(
+    # The mean and standard deviation of the denoised data, with bad volumes included.
+    uncensored_denoised_bold_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(denoised_data_arr, axis=0),
-            "Std": np.nanstd(denoised_data_arr, axis=0),
+            "Mean": np.nanmean(uncensored_denoised_bold_arr, axis=0),
+            "Std": np.nanstd(uncensored_denoised_bold_arr, axis=0),
         }
     )
 
@@ -547,36 +566,39 @@ def plot_fmri_es(
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    scaled_raw_data = scale_to_min_max(raw_data_arr, -600, 600)
-    scaled_denoised_data = scale_to_min_max(denoised_data_arr, -600, 600)
+    scaled_preprocessed_data = scale_to_min_max(preprocessed_bold_arr, -600, 600)
+    scaled_uncensored_denoised_data = scale_to_min_max(uncensored_denoised_bold_arr, -600, 600)
 
     # Make a temporary file for niftis and ciftis
-    if preprocessed_file.endswith(".nii.gz"):
-        scaled_raw_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
-        scaled_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
+    if preprocessed_bold.endswith(".nii.gz"):
+        scaled_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
+        scaled_uncensored_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
     else:
-        scaled_raw_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
-        scaled_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.dtseries.nii")
+        scaled_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
+        scaled_uncensored_denoised_file = os.path.join(
+            tempfile.mkdtemp(),
+            "filex_red.dtseries.nii",
+        )
 
     # Write out the scaled data
-    scaled_raw_file = write_ndata(
-        data_matrix=scaled_raw_data,
-        template=residuals_file,  # residuals file is censored, so length matches
-        filename=scaled_raw_file,
+    scaled_preprocessed_file = write_ndata(
+        data_matrix=scaled_preprocessed_data,
+        template=uncensored_denoised_bold,  # residuals file is censored, so length matches
+        filename=scaled_preprocessed_file,
         mask=mask,
         TR=TR,
     )
-    scaled_denoised_file = write_ndata(
-        data_matrix=scaled_denoised_data,
-        template=residuals_file,  # residuals file is censored, so length matches
-        filename=scaled_denoised_file,
+    scaled_uncensored_denoised_file = write_ndata(
+        data_matrix=scaled_uncensored_denoised_data,
+        template=uncensored_denoised_bold,  # residuals file is censored, so length matches
+        filename=scaled_uncensored_denoised_file,
         mask=mask,
         TR=TR,
     )
 
-    files_for_carpet = [scaled_raw_file, scaled_denoised_file]
-    figure_names = [unprocessed_filename, processed_filename]
-    data_arrays = [unprocessed_data_timeseries, processed_data_timeseries]
+    files_for_carpet = [scaled_preprocessed_file, scaled_uncensored_denoised_file]
+    figure_names = [preprocessed_bold_figure, denoised_bold_figure]
+    data_arrays = [preprocessed_bold_timeseries, uncensored_denoised_bold_timeseries]
     for i_fig, figure_name in enumerate(figure_names):
         file_for_carpet = files_for_carpet[i_fig]
         data_arr = data_arrays[i_fig]
@@ -624,11 +646,25 @@ def plot_fmri_es(
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
 
     # Save out the after processing file
-    return unprocessed_filename, processed_filename
+    return preprocessed_bold_figure, denoised_bold_figure
 
 
 class FMRIPlot:
-    """Generates the fMRI Summary Plot."""
+    """Generates the fMRI Summary Plot.
+
+    Parameters
+    ----------
+    func_file
+    mask_file
+    data
+    confound_file
+    seg_file
+    TR
+    usecols
+    units
+    vlines
+    spikes_files
+    """
 
     __slots__ = ("func_file", "mask_data", "TR", "seg_data", "confounds", "spikes")
 
@@ -1158,13 +1194,15 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     return output_path
 
 
-def plot_design_matrix(design_matrix):
+def plot_design_matrix(design_matrix, censoring_file=None):
     """Plot design matrix TSV with Nilearn.
 
     Parameters
     ----------
     design_matrix : str
         Path to TSV file containing the design matrix.
+    censoring_file : str, optional
+        Path to TSV file containing a list of volumes to censor.
 
     Returns
     -------
@@ -1173,10 +1211,25 @@ def plot_design_matrix(design_matrix):
     """
     import os
 
+    import numpy as np
     import pandas as pd
     from nilearn import plotting
 
     design_matrix_df = pd.read_table(design_matrix)
+    if censoring_file:
+        censoring_df = pd.read_table(censoring_file)
+        n_outliers = censoring_df["framewise_displacement"].sum()
+        new_df = pd.DataFrame(
+            data=np.zeros((censoring_df.shape[0], n_outliers), dtype=np.int16),
+            columns=[f"outlier{i}" for i in range(1, n_outliers + 1)],
+        )
+        outlier_idx = np.where(censoring_df["framewise_displacement"])[0]
+        for i_outlier, outlier_col in enumerate(new_df.columns):
+            outlier_row = outlier_idx[i_outlier]
+            new_df.loc[outlier_row, outlier_col] = 1
+
+        design_matrix_df = pd.concat((design_matrix_df, new_df), axis=1)
+
     design_matrix_figure = os.path.abspath("design_matrix.svg")
     plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
 

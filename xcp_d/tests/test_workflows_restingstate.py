@@ -5,10 +5,10 @@ import shutil
 import nibabel as nb
 import numpy as np
 
+from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows import restingstate
-from xcp_d.tests.utils import get_nodes
 
 
 def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
