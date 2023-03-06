@@ -10,8 +10,9 @@ Processing Pipeline Details
 Input data
 **********
 
-The default inputs to XCP-D are the outputs of ``fMRIPrep`` and ``Nibabies``.
-XCP-D can also postprocess ``HCP`` data, which requires the ``--input-type hcp`` flag.
+The default inputs to XCP-D are the outputs of ``fMRIPrep`` (``--input-type fmriprep``) and
+``Nibabies`` (``--input-type nibabies``).
+XCP-D can also postprocess ``HCP`` data (``--input-type hcp``).
 
 
 ****************
@@ -26,6 +27,9 @@ Anatomical processing
 :func:`~xcp_d.workflows.anatomical.init_warp_anats_to_template_wf`
 
 XCP-D performs minimal postprocessing on anatomical derivatives from the preprocessing pipeline.
+This includes applying existing transforms to preprocessed T1w and T2w volumes,
+in order to warp them from native T1w space to the target standard space,
+while retaining the original resolution.
 
 
 Surface normalization
@@ -45,9 +49,9 @@ Confound regressor selection
 :func:`~xcp_d.utils.confounds.consolidate_confounds`
 
 The confound regressor configurations in the table below are implemented in XCP-D,
-with 36P as the default.
+with ``36P`` as the default.
 In addition to the standard confound regressors selected from fMRIPrep outputs,
-custom confounds can be added as described below in :ref:`usage_custom_confounds`.
+custom confounds can be added as described in :ref:`usage_custom_confounds`.
 If you want to use custom confounds, without any of the nuisance regressors described here,
 use ``--nuisance-regressors custom``.
 
@@ -126,8 +130,7 @@ use ``--nuisance-regressors custom``.
       - X
       - X
 
-For more information about confound regressor selection, please refer to
-:footcite:t:`benchmarkp`.
+For more information about confound regressor selection, please refer to :footcite:t:`benchmarkp`.
 
 .. warning::
 
@@ -140,19 +143,40 @@ Dummy scan removal [OPTIONAL]
 =============================
 :class:`~xcp_d.interfaces.prepostcleaning.RemoveDummyVolumes`
 
-XCP-D allows the first N number of volumes to be skipped or deleted before processing.
+XCP-D allows the first *N* volumes to be removed before processing.
 These volumes are usually refered to as dummy volumes.
 Most default scanning sequences include dummy volumes that are not reconstructed.
 However, some users still prefer to remove the first few reconstructed volumes.
+
+Users may provide the number of volumes directly with the ``--dummy-scans <INT>`` parameter,
+or they may rely on the preprocessing pipeline's estimated non-steady-state volume indices with
+``--dummy-scans auto``.
 
 
 Identification of high-motion outlier volumes
 =============================================
 :class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`
 
+XCP-D uses framewise displacement to identify high-motion outlier volumes.
+These outlier volumes are removed from the BOLD data prior to denoising.
+
+The threshold used to identify outlier volumes can be set with the ``--fd-thresh`` parameter.
+
 .. important::
    If a BOLD run does not have enough low-motion data, then the post-processing workflow
    will automatically stop early, and no derivatives for that run will be written out.
+
+
+Despiking [OPTIONAL]
+====================
+:func:`~xcp_d.workflows.postprocessing.init_despike_wf`
+
+Despiking is a process in which large spikes in the BOLD times series are truncated.
+Despiking reduces/limits the amplitude or magnitude of the large spikes but preserves those
+data points with an imputed reduced amplitude.
+This is done before regression and filtering, in order to minimize the impact of large amplitude
+changes in the data.
+It can be added to the command line arguments with ``--despike``.
 
 
 Motion parameter filtering [OPTIONAL]
@@ -160,7 +184,7 @@ Motion parameter filtering [OPTIONAL]
 :class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`,
 :func:`~xcp_d.utils.confounds.load_motion`
 
-Motion parameters may be contaminated with respiratory effects.
+Motion parameters may be contaminated with respiratory effects :footcite:p:`power2019distinctions`.
 In order to address this issue, XCP-D optionally allows users to specify a band-stop or low-pass
 filter to remove respiration-related signals from the motion parameters, prior to framewise
 displacement calculation.
@@ -203,7 +227,7 @@ Below are some recommendations for cutoff values when using the notch filter.
    *  - > 80 years
       - 10 - 30
 
-If using the low-pass filter, a recommended cutoff is 6 BPM (i.e., 0.1 Hertz),
+If using the low-pass filter for single-band data, a recommended cutoff is 6 BPM (i.e., 0.1 Hertz),
 per :footcite:t:`gratton2020removal`.
 
 
@@ -227,18 +251,6 @@ be flagged as "high motion outliers".
 These volumes will later be removed from the denoised data.
 
 
-Despiking [OPTIONAL]
-====================
-:class:`~xcp_d.interfaces.restingstate.DespikePatch`
-
-Despiking is a process in which large spikes in the BOLD times series are truncated.
-Despiking reduces/limits the amplitude or magnitude of the large spikes but preserves those
-data points with an imputed reduced amplitude.
-This is done before regression and filtering to minimize the impact of large amplitude changes
-in the data.
-It can be added to the command line arguments with ``--despike``.
-
-
 Denoising
 =========
 :class:`~xcp_d.interfaces.nilearn.DenoiseNifti`, :class:`~xcp_d.interfaces.nilearn.DenoiseCifti`
@@ -254,10 +266,10 @@ Please refer to :footcite:t:`power2012spurious` for more information.
 Confound regression
 -------------------
 
-Prior to confound regression, all nuisance regressors (except the intercept regressor) will be
+Prior to confound regression, all nuisance regressors, except the intercept regressor, will be
 mean-centered.
 
-.. topic:: Handling of signal regressors
+.. admonition:: Handling of signal regressors
 
    In some cases, nuisance regressors share variance with signal regressors, in which case
    additional processing must be done before regression.
@@ -282,7 +294,7 @@ mean-centered.
    their custom confounds files, if they choose to use them.
 
 After censoring, mean-centering, and potential orthogonalization,
-confound regression will be performed with  a linear least-squares approach.
+confound regression will be performed with a linear least-squares approach.
 The parameter estimates for each of the confounds will be retained, along with the residuals from
 the regression.
 The residuals from regressing the censored BOLD data on the censored confounds will be referred to
@@ -299,7 +311,7 @@ Interpolation
 -------------
 
 An interpolated version of the ``denoised BOLD`` is then created by filling in the high-motion
-outlier volumes with cubic spline interpolated data.
+outlier volumes with cubic spline interpolated data, as implemented in ``Nilearn``.
 The resulting ``interpolated, denoised BOLD`` is primarily used for bandpass filtering.
 
 
@@ -308,7 +320,8 @@ Bandpass filtering [OPTIONAL]
 
 The ``interpolated, denoised BOLD`` is then bandpass filtered using a Butterworth filter.
 The resulting ``filtered, interpolated, denoised BOLD`` will only be written out to the output
-directory if the ``--dcan-qc`` flag is used, as users **should not** use interpolated data.
+directory if the ``--dcan-qc`` flag is used, as users **should not** use interpolated data
+directly.
 
 Bandpass filtering can be disabled with the ``--disable-bandpass-filter`` flag.
 
@@ -331,6 +344,9 @@ These include regional homogeneity (ReHo) and amplitude of low-frequency fluctua
 ALFF
 ----
 :func:`~xcp_d.workflows.restingstate.init_alff_wf`
+
+ALFF will only be calculated if the bandpass filter is enabled
+(i.e., if the ``--disable-bandpass-filter`` flag is not used).
 
 Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is used.
 
@@ -365,12 +381,21 @@ Smoothing [OPTIONAL]
 ====================
 :func:`~xcp_d.workflows.postprocessing.init_resd_smoothing_wf`
 
-The ``filtered, interpolated, denoised BOLD`` may optionally be smoothed with a Gaussian kernel.
+The ``filtered, denoised BOLD`` may optionally be smoothed with a Gaussian kernel.
+This smoothing kernel is set with the ``--smoothing`` parameter.
 
 
 Concatenation of functional derivatives [OPTIONAL]
 ==================================================
 :func:`~xcp_d.workflows.concatenation.init_concatenate_data_wf`
+
+If the ``--combineruns`` flag is included, then BOLD runs will be grouped by task and concatenated.
+Several concatenated derivatives will be generated, including the ``filtered, denoised BOLD``,
+the ``smoothed, filtered, denoised BOLD``, the temporal mask, and the filtered motion parameters.
+
+.. important::
+   If a run does not have enough low-motion data and is skipped, then the concatenation workflow
+   will not include that run.
 
 .. important::
    If a set of related runs do not have enough low-motion data, then the concatenation workflow
