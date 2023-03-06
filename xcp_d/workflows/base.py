@@ -34,8 +34,8 @@ from xcp_d.workflows.anatomical import (
     init_warp_anats_to_template_wf,
     init_warp_surfaces_to_template_wf,
 )
-from xcp_d.workflows.bold import init_boldpostprocess_wf
-from xcp_d.workflows.cifti import init_ciftipostprocess_wf
+from xcp_d.workflows.bold import init_postprocess_nifti_wf
+from xcp_d.workflows.cifti import init_postprocess_cifti_wf
 from xcp_d.workflows.concatenation import init_concatenate_data_wf
 from xcp_d.workflows.execsummary import (
     init_brainsprite_figures_wf,
@@ -364,7 +364,7 @@ def init_subject_wf(
     )
 
     # determine the appropriate post-processing workflow
-    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    postproc_wf_function = init_postprocess_cifti_wf if cifti else init_postprocess_nifti_wf
     preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(

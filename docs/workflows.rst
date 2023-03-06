@@ -337,14 +337,14 @@ Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is 
 
 ReHo
 ----
-:func:`~xcp_d.workflows.restingstate.init_nifti_reho_wf`,
-:func:`~xcp_d.workflows.restingstate.init_cifti_reho_wf`
+:func:`~xcp_d.workflows.restingstate.init_reho_nifti_wf`,
+:func:`~xcp_d.workflows.restingstate.init_reho_cifti_wf`
 
 
 Parcellation and functional connectivity estimation
 ===================================================
-:func:`~xcp_d.workflows.connectivity.init_nifti_functional_connectivity_wf`,
-:func:`~xcp_d.workflows.connectivity.init_cifti_functional_connectivity_wf`
+:func:`~xcp_d.workflows.connectivity.init_functional_connectivity_nifti_wf`,
+:func:`~xcp_d.workflows.connectivity.init_functional_connectivity_cifti_wf`
 
 The ``filtered, denoised BOLD`` is fed into a functional connectivity workflow,
 which extracts parcel-wise time series from the BOLD using several atlases:

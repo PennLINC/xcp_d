@@ -216,7 +216,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
 
 @fill_doc
-def init_cifti_reho_wf(
+def init_reho_cifti_wf(
     bold_file,
     output_dir,
     mem_gb,
@@ -230,9 +230,9 @@ def init_cifti_reho_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.restingstate import init_cifti_reho_wf
+            from xcp_d.workflows.restingstate import init_reho_cifti_wf
 
-            wf = init_cifti_reho_wf(
+            wf = init_reho_cifti_wf(
                 bold_file="/path/to/bold.dtseries.nii",
                 output_dir=".",
                 mem_gb=0.1,
@@ -372,7 +372,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 
 @fill_doc
-def init_nifti_reho_wf(
+def init_reho_nifti_wf(
     bold_file,
     output_dir,
     mem_gb,
@@ -386,8 +386,8 @@ def init_nifti_reho_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.restingstate import init_nifti_reho_wf
-            wf = init_nifti_reho_wf(
+            from xcp_d.workflows.restingstate import init_reho_nifti_wf
+            wf = init_reho_nifti_wf(
                 bold_file="/path/to/bold.nii.gz",
                 output_dir=".",
                 mem_gb=0.1,

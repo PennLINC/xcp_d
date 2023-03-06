@@ -30,18 +30,18 @@ from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.utils.plotting import plot_design_matrix
 from xcp_d.utils.utils import estimate_brain_radius
-from xcp_d.workflows.connectivity import init_nifti_functional_connectivity_wf
+from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 from xcp_d.workflows.plotting import init_qc_report_wf
 from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
-from xcp_d.workflows.restingstate import init_alff_wf, init_nifti_reho_wf
+from xcp_d.workflows.restingstate import init_alff_wf, init_reho_nifti_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_boldpostprocess_wf(
+def init_postprocess_nifti_wf(
     bold_file,
     bandpass_filter,
     high_pass,
@@ -78,7 +78,7 @@ def init_boldpostprocess_wf(
             import os
 
             from xcp_d.utils.bids import collect_data, collect_run_data
-            from xcp_d.workflows.bold import init_boldpostprocess_wf
+            from xcp_d.workflows.bold import init_postprocess_nifti_wf
             from xcp_d.utils.doc import download_example_data
 
             fmri_dir = download_example_data()
@@ -103,7 +103,7 @@ def init_boldpostprocess_wf(
 
             custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
 
-            wf = init_boldpostprocess_wf(
+            wf = init_postprocess_nifti_wf(
                 bold_file=bold_file,
                 bandpass_filter=True,
                 high_pass=0.01,
@@ -377,7 +377,7 @@ First, {dummy_scans_str}outlier detection was performed.
     workflow.connect([(downcast_data, determine_head_radius, [("t1w_mask", "mask_file")])])
     # fmt:on
 
-    connectivity_wf = init_nifti_functional_connectivity_wf(
+    connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=output_dir,
         min_coverage=min_coverage,
         mem_gb=mem_gbx["timeseries"],
@@ -408,7 +408,7 @@ First, {dummy_scans_str}outlier detection was performed.
             name="alff_wf",
         )
 
-    reho_wf = init_nifti_reho_wf(
+    reho_wf = init_reho_nifti_wf(
         bold_file=bold_file,
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],

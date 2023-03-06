@@ -40,7 +40,7 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xf
 
     Notes
     -----
-    Only used for QCReport in init_boldpostprocess_wf.
+    Only used for QCReport in init_postprocess_nifti_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
     from pkg_resources import resource_filename as pkgrf
@@ -165,8 +165,8 @@ def get_std2bold_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):
     Used by:
 
     - get_segfile (to be removed)
-    - to resample dseg in init_boldpostprocess_wf for QCReport
-    - to warp atlases to the same space as the BOLD data in init_nifti_functional_connectivity_wf
+    - to resample dseg in init_postprocess_nifti_wf for QCReport
+    - to warp atlases to the same space as the BOLD data in init_functional_connectivity_nifti_wf
     - to resample dseg to BOLD space for the executive summary plots
 
     Does not include inversion flag output because there is no need (yet).

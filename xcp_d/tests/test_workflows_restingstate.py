@@ -188,7 +188,7 @@ def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Set up and run the ReHo wf in a tempdir
-    reho_wf = restingstate.init_nifti_reho_wf(
+    reho_wf = restingstate.init_reho_nifti_wf(
         bold_file=bold_file,
         output_dir=tempdir,
         omp_nthreads=2,
@@ -242,7 +242,7 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     shutil.copyfile(source_file, orig_bold_file)
 
     # Set up and run the ReHo wf in a tempdir
-    reho_wf = restingstate.init_cifti_reho_wf(
+    reho_wf = restingstate.init_reho_cifti_wf(
         bold_file=source_file,
         output_dir=tempdir,
         omp_nthreads=2,
@@ -268,7 +268,7 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(noisy_bold_file)
 
     # Create a new workflow
-    reho_wf = restingstate.init_cifti_reho_wf(
+    reho_wf = restingstate.init_reho_cifti_wf(
         bold_file=source_file,
         output_dir=tempdir,
         omp_nthreads=2,

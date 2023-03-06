@@ -11,8 +11,8 @@ from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows.connectivity import (
-    init_cifti_functional_connectivity_wf,
-    init_nifti_functional_connectivity_wf,
+    init_functional_connectivity_cifti_wf,
+    init_functional_connectivity_nifti_wf,
 )
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -42,7 +42,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(fake_bold_file)
 
     # Let's define the inputs and create the workflow
-    connectivity_wf = init_nifti_functional_connectivity_wf(
+    connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=tmpdir,
         min_coverage=0.5,
         mem_gb=4,
@@ -143,7 +143,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(fake_bold_file)
 
     # Create the node and a tmpdir to write its results out to
-    connectivity_wf = init_cifti_functional_connectivity_wf(
+    connectivity_wf = init_functional_connectivity_cifti_wf(
         output_dir=tmpdir,
         min_coverage=0.5,
         mem_gb=4,

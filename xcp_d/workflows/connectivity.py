@@ -18,7 +18,7 @@ from xcp_d.utils.utils import get_std2bold_xforms
 
 
 @fill_doc
-def init_nifti_functional_connectivity_wf(
+def init_functional_connectivity_nifti_wf(
     output_dir,
     min_coverage,
     mem_gb,
@@ -32,8 +32,8 @@ def init_nifti_functional_connectivity_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.connectivity import init_nifti_functional_connectivity_wf
-            wf = init_nifti_functional_connectivity_wf(
+            from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
+            wf = init_functional_connectivity_nifti_wf(
                 output_dir=".",
                 min_coverage=0.5,
                 mem_gb=0.1,
@@ -254,7 +254,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 
 
 @fill_doc
-def init_cifti_functional_connectivity_wf(
+def init_functional_connectivity_cifti_wf(
     output_dir,
     min_coverage,
     mem_gb,
@@ -268,8 +268,8 @@ def init_cifti_functional_connectivity_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.connectivity import init_cifti_functional_connectivity_wf
-            wf = init_cifti_functional_connectivity_wf(
+            from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
+            wf = init_functional_connectivity_cifti_wf(
                 output_dir=".",
                 min_coverage=0.5,
                 mem_gb=0.1,
