@@ -23,7 +23,7 @@ def init_functional_connectivity_nifti_wf(
     min_coverage,
     mem_gb,
     omp_nthreads,
-    name="nifti_fcon_wf",
+    name="connectivity_wf",
 ):
     """Extract BOLD time series and compute functional connectivity.
 
@@ -38,7 +38,7 @@ def init_functional_connectivity_nifti_wf(
                 min_coverage=0.5,
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="nifti_fcon_wf",
+                name="connectivity_wf",
             )
 
     Parameters
@@ -48,7 +48,7 @@ def init_functional_connectivity_nifti_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "nifti_fcon_wf".
+        Default is "connectivity_wf".
 
     Inputs
     ------
@@ -259,7 +259,7 @@ def init_functional_connectivity_cifti_wf(
     min_coverage,
     mem_gb,
     omp_nthreads,
-    name="cifti_fcon_wf",
+    name="connectivity_wf",
 ):
     """Extract CIFTI time series.
 
@@ -274,7 +274,7 @@ def init_functional_connectivity_cifti_wf(
                 min_coverage=0.5,
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="cifti_fcon_wf",
+                name="connectivity_wf",
             )
 
     Parameters
@@ -284,7 +284,7 @@ def init_functional_connectivity_cifti_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "cifti_fcon_wf".
+        Default is "connectivity_wf".
 
     Inputs
     ------
