@@ -447,6 +447,8 @@ def init_postprocess_cifti_wf(
     workflow.connect([
         (inputnode, qc_report_wf, [("bold_file", "inputnode.name_source")]),
         (prepare_confounds_wf, qc_report_wf, [
+            ("outputnode.dummy_scans", "inputnode.dummy_scans"),
+            ("outputnode.fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("outputnode.head_radius", "inputnode.head_radius"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),

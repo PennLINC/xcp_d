@@ -499,16 +499,16 @@ def init_postprocess_nifti_wf(
             ("t1w_to_native_xfm", "inputnode.t1w_to_native_xfm"),
         ]),
         (prepare_confounds_wf, qc_report_wf, [
+            ("outputnode.dummy_scans", "inputnode.dummy_scans"),
+            ("outputnode.fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("outputnode.head_radius", "inputnode.head_radius"),
+            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+            ("outputnode.filtered_motion", "inputnode.filtered_motion"),
         ]),
         (denoise_bold_wf, qc_report_wf, [
             ("outputnode.uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
             ("outputnode.interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
             ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
-        ]),
-        (prepare_confounds_wf, qc_report_wf, [
-            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-            ("outputnode.filtered_motion", "inputnode.filtered_motion"),
         ]),
     ])
     # fmt:on
