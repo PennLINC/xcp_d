@@ -526,6 +526,7 @@ the following post-processing was performed.
         (censor_interpolated_data, resd_smoothing_wf, [
             ("censored_denoised_bold", "inputnode.bold_file"),
         ]),
+        (resd_smoothing_wf, outputnode, [("outputnode.smoothed_bold", "smoothed_denoised_bold")]),
     ])
     # fmt:on
 
@@ -594,7 +595,6 @@ the following post-processing was performed.
             ("censored_denoised_bold", "inputnode.censored_denoised_bold"),
         ]),
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
-        (resd_smoothing_wf, outputnode, [("outputnode.smoothed_bold", "smoothed_denoised_bold")]),
         (resd_smoothing_wf, postproc_derivatives_wf, [
             ("outputnode.smoothed_bold", "inputnode.smoothed_bold"),
         ]),
