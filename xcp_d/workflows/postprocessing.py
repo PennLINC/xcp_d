@@ -36,6 +36,9 @@ def init_prepare_confounds_wf(
 ):
     """Prepare confounds.
 
+    This workflow loads and consolidates confounds, removes dummy volumes,
+    filters motion parameters, calculates framewise displacement, and flags outlier volumes.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -58,21 +61,63 @@ def init_prepare_confounds_wf(
                 omp_nthreads=1,
                 name="prepare_confounds_wf",
             )
+
+    Parameters
+    ----------
+    %(output_dir)s
+    %(TR)s
+    %(params)s
+    %(dummy_scans)s
+    %(motion_filter_type)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(motion_filter_order)s
+    %(head_radius)s
+    %(fd_thresh)s
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "prepare_confounds_wf".
+
+    Inputs
+    ------
+    %(name_source)s
+    preprocessed_bold : :obj:`str`
+    %(fmriprep_confounds_file)s
+    %(custom_confounds_file)s
+    %(t1w_mask)s
+    %(dummy_scans)s
+        Set from the parameter.
+
+    Outputs
+    -------
+    preprocessed_bold : :obj:`str`
+    %(fmriprep_confounds_file)s
+    %(confounds_file)s
+        The selected confounds, potentially including custom confounds, after dummy scan removal.
+    %(dummy_scans)s
+        If originally set to "auto", this output will have the actual number of dummy volumes.
+    %(head_radius)s
+        If originally set to "auto", this output will have the estimated head radius.
+    %(filtered_motion)s
+    filtered_motion_metadata : :obj:`dict`
+    %(temporal_mask)s
+    temporal_mask_metadata : :obj:`dict`
     """
     workflow = Workflow(name=name)
 
     dummy_scans_str = ""
     if dummy_scans == "auto":
         dummy_scans_str = (
-            "non-steady-state volumes were extracted from the preprocessed confounds "
-            "and were discarded from both the BOLD data and nuisance regressors, then"
+            "Non-steady-state volumes were extracted from the preprocessed confounds "
+            "and were discarded from both the BOLD data and nuisance regressors. "
         )
     elif dummy_scans > 0:
         dummy_scans_str = (
-            f"the first {num2words(dummy_scans)} of both the BOLD data and nuisance "
-            "regressors were discarded, then "
+            f"The first {num2words(dummy_scans)} of both the BOLD data and nuisance "
+            "regressors were discarded. "
         )
-    workflow.__desc__ = f"First, {dummy_scans_str}outlier detection was performed."
+    workflow.__desc__ = f"{dummy_scans_str}. Then, outlier detection was performed."
 
     inputnode = pe.Node(
         niu.IdentityInterface(
