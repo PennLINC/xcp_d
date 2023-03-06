@@ -365,7 +365,7 @@ def init_postprocess_nifti_wf(
         ]),
         (denoise_bold_wf, outputnode, [
             ("outputnode.uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("outputnode.nterpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("outputnode.interpolated_filtered_bold", "interpolated_filtered_bold"),
             ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
         ]),
     ])
