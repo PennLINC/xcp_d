@@ -47,8 +47,10 @@ The executive summary is based on the DCAN lab's
 ******************
 Anatomical Outputs
 ******************
-Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation images in MNI
-spaces::
+
+Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation images in MNI space.
+
+.. code-block::
 
    xcp_d/
       sub-<label>/[ses-<label>/]
@@ -58,7 +60,9 @@ spaces::
             <source_entities>_space-MNI152NLin6Asym_dseg.nii.gz
 
 If the ``--warp-surfaces-native2std`` option is selected, and reconstructed surfaces are available
-in the preprocessed dataset, then these surfaces will be warped to fsLR space at 32k density::
+in the preprocessed dataset, then these surfaces will be warped to fsLR space at 32k density.
+
+.. code-block::
 
    xcp_d/
       sub-<label>/[ses-<label>/]
@@ -88,148 +92,179 @@ functional connectivity matrices, and resting-state derivatives.
    with high-motion volumes completely removed.
    This extends to the parcellated time series and correlation matrices as well.
 
-a. Denoised or residual BOLD data::
 
-      xcp_d/
-         sub-<label>/[ses-<label>/]
-            func/
-               # Nifti
-               <source_entities>_space-<label>_desc-denoised_bold.nii.gz
-               <source_entities>_space-<label>_desc-denoised_bold.json
-               <source_entities>_space-<label>_desc-denoisedSmoothed_bold.nii.gz
-               <source_entities>_space-<label>_desc-denoisedSmoothed_bold.json
-               <source_entities>_space-<label>_desc-interpolated_bold.nii.gz
-               <source_entities>_space-<label>_desc-interpolated_bold.json
+Denoised or residual BOLD data
+==============================
 
-               # Cifti
-               <source_entities>_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
-               <source_entities>_space-fsLR_den-91k_desc-denoised_bold.json
-               <source_entities>_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
-               <source_entities>_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
-               <source_entities>_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
-               <source_entities>_space-fsLR_den-91k_desc-interpolated_bold.json
+.. code-block::
 
-   .. important::
+   xcp_d/
+      sub-<label>/[ses-<label>/]
+         func/
+            # Nifti
+            <source_entities>_space-<label>_desc-denoised_bold.nii.gz
+            <source_entities>_space-<label>_desc-denoised_bold.json
+            <source_entities>_space-<label>_desc-denoisedSmoothed_bold.nii.gz
+            <source_entities>_space-<label>_desc-denoisedSmoothed_bold.json
+            <source_entities>_space-<label>_desc-interpolated_bold.nii.gz
+            <source_entities>_space-<label>_desc-interpolated_bold.json
 
-      The smoothed denoised BOLD files will only be generated if smoothing is enabled
+            # Cifti
+            <source_entities>_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
+            <source_entities>_space-fsLR_den-91k_desc-denoised_bold.json
+            <source_entities>_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
+            <source_entities>_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
+            <source_entities>_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
+            <source_entities>_space-fsLR_den-91k_desc-interpolated_bold.json
+
+.. important::
+
+   The smoothed denoised BOLD files will only be generated if smoothing is enabled with the
+   ``--smoothing parameter``.
+
+.. important::
+
+   The interpolated denoised BOLD files (``desc-interpolated``) should NOT be used for analyses.
+   These files are only generated if ``--dcan-qc`` is used, and primarily exist for
+   compatibility with DCAN-specific analysis tools.
+
+The json/sidecar contains parameters of the data and processing steps.
+
+   .. code-block:: json-object
+
+      {
+         "Freq Band": [0.01, 0.08],
+         "RepetitionTime": 2.0,
+         "compression": true,
+         "dummy vols": 0,
+         "nuisance parameters": "27P",
+      }
+
+
+Functional timeseries and connectivity matrices
+===============================================
+
+This includes the atlases used to extract the timeseries.
+
+.. code-block::
+
+   xcp_d/
+      # Nifti
+      space-<label>_atlas-<label>_dseg.nii.gz
+
+      # Cifti
+      space-<label>_atlas-<label>_dseg.dlabel.nii
+
+      sub-<label>/[ses-<label>/]
+         func/
+            # Nifti
+            <source_entities>_space-<label>_atlas-<label>_coverage.tsv
+            <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
+            <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
+
+            # Cifti
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.pscalar.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
+
+
+Resting-state metric derivatives (Regional Homogeneity and ALFF)
+================================================================
+
+.. code-block::
+   xcp_d/
+      sub-<label>/[ses-<label>/]
+         func/
+            # Nifti
+            <source_entities>_space-<label>_reho.nii.gz
+            <source_entities>_space-<label>_alff.nii.gz
+            <source_entities>_space-<label>_desc-smooth_alff.nii.gz
+
+            # Cifti
+            <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
+            <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
+            <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
+
+.. important::
+      The smoothed ALFF image will only be generated if smoothing is enabled
       (i.e., with the ``--smoothing parameter``).
 
-   .. important::
+.. important::
+      ALFF images will not be generated if bandpass filtering is disabled
+      (i.e., with the ``--disable-bandpass-filtering`` parameter).
 
-      The interpolated denoised BOLD files (``desc-interpolated``) should NOT be used for analyses.
-      These files are only generated if ``--dcan-qc`` is used, and primarily exist for
-      compatibility with DCAN-specific analysis tools.
 
-   The json/sidecar contains parameters of the data and processing steps.
+Other outputs include quality control, framewise displacement, and confounds files
+==================================================================================
 
-      .. code-block:: json-object
+.. code-block::
+   xcp_d/
+      sub-<label>/[ses-<label>/]
+         func/
+            # Nifti
+            <source_entities>_space-<label>_desc-linc_qc.csv
+            <source_entities>[_desc-filtered]_motion.tsv
+            <source_entities>[_desc-filtered]_motion.json
+            <source_entities>_outliers.tsv
+            <source_entities>_outliers.json
+            <source_entities>_design.tsv
 
-         {
-            "Freq Band": [ 0.01, 0.08],
-            "RepetitionTime": 2.0,
-            "compression": true,
-            "dummy vols": 0,
-            "nuisance parameters": "27P",
-         }
+            # Cifti
+            <source_entities>_space-fsLR_desc-linc_qc.csv
+            <source_entities>[_desc-filtered]_motion.tsv
+            <source_entities>[_desc-filtered]_motion.json
+            <source_entities>_outliers.tsv
+            <source_entities>_outliers.json
+            <source_entities>_design.tsv
 
-b. Functional timeseries and connectivity matrices.
-   This includes the atlases used to extract the timeseries.::
+``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns:
+one for each of the six filtered motion parameters, as well as "framewise_displacement".
+If no motion filtering was applied, this file will not have the ``desc-filtered`` entity.
+This file includes the high-motion volumes that are removed in most other derivatives.
 
-      xcp_d/
-         # Nifti
-         space-<label>_atlas-<label>_dseg.nii.gz
+``outliers.tsv`` is a tab-delimited file with one column: "framewise_displacement".
+The "framewise_displacement" column contains zeros for low-motion volumes, and ones for
+high-motion outliers.
+This file includes the high-motion volumes that are removed in most other derivatives.
 
-         # Cifti
-         space-<label>_atlas-<label>_dseg.dlabel.nii
+``design.tsv`` is a tab-delimited file with one column for each nuisance regressor,
+including an intercept column, a linear trend column, and one-hot encoded regressors indicating
+each of the high-motion outlier volumes.
+This file includes the high-motion volumes that are removed in most other derivatives.
 
-         sub-<label>/[ses-<label>/]
-            func/
-               # Nifti
-               <source_entities>_space-<label>_atlas-<label>_coverage.tsv
-               <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
-               <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
 
-               # Cifti
-               <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.tsv
-               <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.pscalar.nii
-               <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.tsv
-               <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
-               <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.tsv
-               <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
+DCAN style scrubbing file (if ``--dcan-qc`` is used)
+====================================================
 
-c. Resting-state metric derivatives (Regional Homogeneity and ALFF)::
+This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0
+to 1mm FD in 0.01 steps.
 
-      xcp_d/
-         sub-<label>/[ses-<label>/]
-            func/
-               # Nifti
-               <source_entities>_space-<label>_reho.nii.gz
-               <source_entities>_space-<label>_alff.nii.gz
-               <source_entities>_space-<label>_desc-smooth_alff.nii.gz
+.. code-block::
 
-               # Cifti
-               <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
-               <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
-               <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
+   xcp_d/
+      sub-<label>/[ses-<label>/]
+         func/
+            # Nifti
+            <source_entities>_desc-dcan_qc.hdf5
 
-   .. important::
-         The smoothed ALFF image will only be generated if smoothing is enabled
-         (i.e., with the ``--smoothing parameter``).
+            # Cifti
+            <source_entities>_desc-dcan_qc.hdf5
 
-   .. important::
-         ALFF images will not be generated if bandpass filtering is disabled
-         (i.e., with the ``--disable-bandpass-filtering`` parameter).
+These files have the following keys:
 
-d. Other outputs include quality control, framewise displacement, and confounds files::
-
-      xcp_d/
-         sub-<label>/[ses-<label>/]
-            func/
-               # Nifti
-               <source_entities>_space-<label>_desc-linc_qc.csv
-               <source_entities>[_desc-filtered]_motion.tsv
-               <source_entities>[_desc-filtered]_motion.json
-               <source_entities>_outliers.tsv
-               <source_entities>_outliers.json
-               <source_entities>_design.tsv
-
-               # Cifti
-               <source_entities>_space-fsLR_desc-linc_qc.csv
-               <source_entities>[_desc-filtered]_motion.tsv
-               <source_entities>[_desc-filtered]_motion.json
-               <source_entities>_outliers.tsv
-               <source_entities>_outliers.json
-               <source_entities>_design.tsv
-
-   The ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns;
-   one for each of the six filtered motion parameters, as well as "framewise_displacement".
-   If no motion filtering was applied, this file will not have the ``desc-filtered`` entity.
-
-e. DCAN style scrubbing file (if ``--dcan-qc`` is used).
-   This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0
-   to 1mm FD in 0.01 steps::
-
-      xcp_d/
-         sub-<label>/[ses-<label>/]
-            func/
-               # Nifti
-               <source_entities>_desc-dcan_qc.hdf5
-
-               # Cifti
-               <source_entities>_desc-dcan_qc.hdf5
-
-   These files have the following keys:
-
-   1. ``FD_threshold``: a number >= 0 that represents the FD threshold used to calculate the
-      metrics in this list
-   2. ``frame_removal``: a binary vector/array the same length as the number of frames in the
-      concatenated time series, indicates whether a frame is removed (1) or not (0)
-   3. ``format_string`` (legacy): a string that denotes how the frames were excluded -- uses a
-      notation devised by Avi Snyder
-   4. ``total_frame_count``: a whole number that represents the total number of frames in the
-      concatenated series
-   5. ``remaining_frame_count``: a whole number that represents the number of remaining frames in
-      the concatenated series
-   6. ``remaining_seconds``: a whole number that represents the amount of time remaining after
-      thresholding
-   7. ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the remaining frames
+1. ``FD_threshold``: a number >= 0 that represents the FD threshold used to calculate the
+   metrics in this list
+2. ``frame_removal``: a binary vector/array the same length as the number of frames in the
+   concatenated time series, indicates whether a frame is removed (1) or not (0)
+3. ``format_string`` (legacy): a string that denotes how the frames were excluded -- uses a
+   notation devised by Avi Snyder
+4. ``total_frame_count``: a whole number that represents the total number of frames in the
+   concatenated series
+5. ``remaining_frame_count``: a whole number that represents the number of remaining frames in
+   the concatenated series
+6. ``remaining_seconds``: a whole number that represents the amount of time remaining after
+   thresholding
+7. ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the remaining frames
