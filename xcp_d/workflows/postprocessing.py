@@ -319,7 +319,7 @@ def init_prepare_confounds_wf(
                 ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ]),
             (inputnode, outputnode, [
-                ("bold_file", "preprocessed_bold"),
+                ("preprocessed_bold", "preprocessed_bold"),
                 ("fmriprep_confounds_file", "fmriprep_confounds_file"),
                 ("dummy_scans", "dummy_scans"),
             ]),
