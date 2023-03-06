@@ -773,7 +773,7 @@ def init_plot_custom_slices_wf(
     Parameters
     ----------
     %(output_dir)s
-    desc : str
+    desc : :obj:`str`
         String to be used as ``desc`` entity in output filename.
     %(name)s
         Default is "plot_custom_slices_wf".

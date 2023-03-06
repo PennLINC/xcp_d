@@ -24,7 +24,7 @@ from xcp_d.utils.utils import fwhm2sigma
 
 @fill_doc
 def init_alff_wf(
-    bold_file,
+    name_source,
     output_dir,
     TR,
     low_pass,
@@ -44,7 +44,7 @@ def init_alff_wf(
 
             from xcp_d.workflows.restingstate import init_alff_wf
             wf = init_alff_wf(
-                bold_file="/path/to/file.nii.gz",
+                name_source="/path/to/file.nii.gz",
                 output_dir=".",
                 TR=2.,
                 low_pass=0.1,
@@ -58,7 +58,7 @@ def init_alff_wf(
 
     Parameters
     ----------
-    bold_file
+    name_source
     %(output_dir)s
     %(TR)s
     %(low_pass)s
@@ -76,8 +76,7 @@ def init_alff_wf(
        residual and filtered
     bold_mask
        bold mask if bold is nifti
-    bold_file
-       original bold_file
+    name_source
 
     Outputs
     -------
@@ -114,14 +113,14 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
     alff_plot = pe.Node(
         Function(
-            input_names=["output_path", "filename", "bold_file"],
+            input_names=["output_path", "filename", "name_source"],
             output_names=["output_path"],
             function=plot_alff_reho_surface if cifti else plot_alff_reho_volumetric,
         ),
         name="alff_plot",
     )
     alff_plot.inputs.output_path = "alff.svg"
-    alff_plot.inputs.bold_file = bold_file
+    alff_plot.inputs.name_source = name_source
 
     # fmt:off
     workflow.connect([
@@ -200,7 +199,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     ds_alff_plot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
+            source_file=name_source,
             desc="alffSurfacePlot" if cifti else "alffVolumetricPlot",
             datatype="figures",
         ),
@@ -217,7 +216,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 
 @fill_doc
 def init_reho_cifti_wf(
-    bold_file,
+    name_source,
     output_dir,
     mem_gb,
     omp_nthreads,
@@ -233,7 +232,7 @@ def init_reho_cifti_wf(
             from xcp_d.workflows.restingstate import init_reho_cifti_wf
 
             wf = init_reho_cifti_wf(
-                bold_file="/path/to/bold.dtseries.nii",
+                name_source="/path/to/bold.dtseries.nii",
                 output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -242,7 +241,7 @@ def init_reho_cifti_wf(
 
     Parameters
     ----------
-    bold_file
+    name_source
     %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
@@ -253,8 +252,7 @@ def init_reho_cifti_wf(
     ------
     denoised_bold
        residual and filtered, cifti
-    bold_file
-       original bold_file
+    name_source
 
     Outputs
     -------
@@ -329,19 +327,19 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     )
     reho_plot = pe.Node(
         Function(
-            input_names=["output_path", "filename", "bold_file"],
+            input_names=["output_path", "filename", "name_source"],
             output_names=["output_path"],
             function=plot_alff_reho_surface,
         ),
         name="reho_cifti_plot",
     )
     reho_plot.inputs.output_path = "reho.svg"
-    reho_plot.inputs.bold_file = bold_file
+    reho_plot.inputs.name_source = name_source
 
     ds_reho_plot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
+            source_file=name_source,
             desc="rehoSurfacePlot",
             datatype="figures",
         ),
@@ -373,7 +371,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 @fill_doc
 def init_reho_nifti_wf(
-    bold_file,
+    name_source,
     output_dir,
     mem_gb,
     omp_nthreads,
@@ -388,7 +386,7 @@ def init_reho_nifti_wf(
 
             from xcp_d.workflows.restingstate import init_reho_nifti_wf
             wf = init_reho_nifti_wf(
-                bold_file="/path/to/bold.nii.gz",
+                name_source="/path/to/bold.nii.gz",
                 output_dir=".",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -397,7 +395,7 @@ def init_reho_nifti_wf(
 
     Parameters
     ----------
-    bold_file
+    name_source
     %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
@@ -410,8 +408,7 @@ def init_reho_nifti_wf(
        residual and filtered, nifti
     bold_mask
        bold mask
-    bold_file
-       original bold_file
+    name_source
 
     Outputs
     -------
@@ -439,19 +436,19 @@ Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo*
     # Get the svg
     reho_plot = pe.Node(
         Function(
-            input_names=["output_path", "filename", "bold_file"],
+            input_names=["output_path", "filename", "name_source"],
             output_names=["output_path"],
             function=plot_alff_reho_volumetric,
         ),
         name="reho_nifti_plot",
     )
     reho_plot.inputs.output_path = "reho.svg"
-    reho_plot.inputs.bold_file = bold_file
+    reho_plot.inputs.name_source = name_source
 
     ds_reho_plot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
+            source_file=name_source,
             desc="rehoVolumetricPlot",
             datatype="figures",
         ),

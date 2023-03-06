@@ -351,12 +351,12 @@ def init_despike_wf(
 
     Inputs
     ------
-    bold_file : str
+    bold_file : :obj:`str`
         A NIFTI or CIFTI BOLD file to despike.
 
     Outputs
     -------
-    bold_file : str
+    bold_file : :obj:`str`
         The despiked NIFTI or CIFTI BOLD file.
     """
     workflow = Workflow(name=name)

@@ -121,15 +121,15 @@ def consolidate_confounds(
 
     Parameters
     ----------
-    img_file : str
+    img_file : :obj:`str`
         bold file
     params
-    custom_confounds_file : str or None
+    custom_confounds_file : :obj:`str` or None
         Path to custom confounds tsv. May be None.
 
     Returns
     -------
-    out_file : str
+    out_file : :obj:`str`
         Path to combined tsv.
     """
     import os
@@ -163,7 +163,7 @@ def describe_regression(params, custom_confounds_file):
 
     Returns
     -------
-    desc : str
+    desc : :obj:`str`
         A text description of the regression.
     """
     import nilearn
@@ -297,7 +297,7 @@ def describe_censoring(
 
     Returns
     -------
-    desc : str
+    desc : :obj:`str`
         A text description of the censoring procedure.
     """
     from num2words import num2words
@@ -349,9 +349,9 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
     Parameters
     ----------
     %(params)s
-    img_file : str
+    img_file : :obj:`str`
         The path to the bold file.
-    custom_confounds : str or None, optional
+    custom_confounds : :obj:`str` or None, optional
         Custom confounds TSV if there is one. Default is None.
 
     Returns

@@ -12,7 +12,7 @@ from xcp_d.utils.doc import fill_doc
 
 @fill_doc
 def init_postproc_derivatives_wf(
-    bold_file,
+    name_source,
     bandpass_filter,
     low_pass,
     high_pass,
@@ -35,7 +35,7 @@ def init_postproc_derivatives_wf(
             from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 
             wf = init_postproc_derivatives_wf(
-                bold_file="/path/to/file.nii.gz",
+                name_source="/path/to/file.nii.gz",
                 bandpass_filter=True,
                 low_pass=0.1,
                 high_pass=0.008,
@@ -51,7 +51,7 @@ def init_postproc_derivatives_wf(
 
     Parameters
     ----------
-    bold_file : str
+    name_source : :obj:`str`
         bold or cifti files
     low_pass : float
         low pass filter
@@ -62,7 +62,7 @@ def init_postproc_derivatives_wf(
     %(params)s
     %(cifti)s
     %(dcan_qc)s
-    output_dir : str
+    output_dir : :obj:`str`
         output directory
     %(TR)s
     %(name)s
@@ -142,7 +142,7 @@ def init_postproc_derivatives_wf(
     smoothed_data_dictionary = {"FWHM": smoothing}  # Separate dictionary for smoothing
 
     # Determine cohort (if there is one) in the original data
-    cohort = get_entity(bold_file, "cohort")
+    cohort = get_entity(name_source, "cohort")
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
@@ -150,7 +150,7 @@ def init_postproc_derivatives_wf(
             dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
             suffix="outliers",
             extension=".tsv",
-            source_file=bold_file,
+            source_file=name_source,
         ),
         name="ds_temporal_mask",
         run_without_submitting=True,
@@ -164,7 +164,7 @@ def init_postproc_derivatives_wf(
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
+            source_file=name_source,
             dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
             desc="filtered" if motion_filter_type else None,
             suffix="motion",
@@ -184,7 +184,7 @@ def init_postproc_derivatives_wf(
     ds_confounds = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
+            source_file=name_source,
             dismiss_entities=["space", "cohort", "den", "res"],
             datatype="func",
             suffix="design",
@@ -205,7 +205,7 @@ def init_postproc_derivatives_wf(
     ds_coverage_files = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
+            source_file=name_source,
             dismiss_entities=["desc"],
             cohort=cohort,
             suffix="coverage",
@@ -219,7 +219,7 @@ def init_postproc_derivatives_wf(
     ds_timeseries = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
+            source_file=name_source,
             dismiss_entities=["desc"],
             cohort=cohort,
             suffix="timeseries",
@@ -233,7 +233,7 @@ def init_postproc_derivatives_wf(
     ds_correlations = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
-            source_file=bold_file,
+            source_file=name_source,
             dismiss_entities=["desc"],
             cohort=cohort,
             measure="pearsoncorrelation",
@@ -269,7 +269,7 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 meta_dict=cleaned_data_dictionary,
-                source_file=bold_file,
+                source_file=name_source,
                 cohort=cohort,
                 desc="denoised",
                 extension=".nii.gz",
@@ -285,7 +285,7 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=cleaned_data_dictionary,
-                    source_file=bold_file,
+                    source_file=name_source,
                     desc="interpolated",
                     extension=".nii.gz",
                     compression=True,
@@ -298,7 +298,7 @@ def init_postproc_derivatives_wf(
         ds_qc_file = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=bold_file,
+                source_file=name_source,
                 dismiss_entities=["desc"],
                 cohort=cohort,
                 desc="linc",
@@ -313,7 +313,7 @@ def init_postproc_derivatives_wf(
         ds_reho = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=bold_file,
+                source_file=name_source,
                 dismiss_entities=["desc"],
                 cohort=cohort,
                 suffix="reho",
@@ -329,7 +329,7 @@ def init_postproc_derivatives_wf(
             ds_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    source_file=bold_file,
+                    source_file=name_source,
                     dismiss_entities=["desc"],
                     cohort=cohort,
                     suffix="alff",
@@ -347,7 +347,7 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
-                    source_file=bold_file,
+                    source_file=name_source,
                     cohort=cohort,
                     desc="denoisedSmoothed",
                     extension=".nii.gz",
@@ -363,7 +363,7 @@ def init_postproc_derivatives_wf(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         meta_dict=smoothed_data_dictionary,
-                        source_file=bold_file,
+                        source_file=name_source,
                         cohort=cohort,
                         desc="smooth",
                         suffix="alff",
@@ -381,7 +381,7 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 meta_dict=cleaned_data_dictionary,
-                source_file=bold_file,
+                source_file=name_source,
                 dismiss_entities=["den"],
                 cohort=cohort,
                 desc="denoised",
@@ -398,7 +398,7 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=cleaned_data_dictionary,
-                    source_file=bold_file,
+                    source_file=name_source,
                     dismiss_entities=["den"],
                     desc="interpolated",
                     den="91k",
@@ -412,7 +412,7 @@ def init_postproc_derivatives_wf(
         ds_qc_file = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=bold_file,
+                source_file=name_source,
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
                 den="91k",
@@ -428,7 +428,7 @@ def init_postproc_derivatives_wf(
         ds_coverage_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=bold_file,
+                source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=["desc"],
                 cohort=cohort,
@@ -443,7 +443,7 @@ def init_postproc_derivatives_wf(
         ds_timeseries_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=bold_file,
+                source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
@@ -459,7 +459,7 @@ def init_postproc_derivatives_wf(
         ds_correlation_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=bold_file,
+                source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
@@ -494,7 +494,7 @@ def init_postproc_derivatives_wf(
         ds_reho = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=bold_file,
+                source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
@@ -511,7 +511,7 @@ def init_postproc_derivatives_wf(
             ds_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    source_file=bold_file,
+                    source_file=name_source,
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
                     cohort=cohort,
@@ -530,7 +530,7 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     meta_dict=smoothed_data_dictionary,
-                    source_file=bold_file,
+                    source_file=name_source,
                     dismiss_entities=["den"],
                     cohort=cohort,
                     den="91k",
@@ -548,7 +548,7 @@ def init_postproc_derivatives_wf(
                     DerivativesDataSink(
                         base_directory=output_dir,
                         meta_dict=smoothed_data_dictionary,
-                        source_file=bold_file,
+                        source_file=name_source,
                         dismiss_entities=["den"],
                         cohort=cohort,
                         desc="smooth",

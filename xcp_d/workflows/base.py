@@ -158,7 +158,7 @@ def init_xcpd_wf(
     bids_filters : dict or None
     %(output_dir)s
     %(fd_thresh)s
-    run_uuid : str
+    run_uuid : :obj:`str`
         Unique identifier for execution instance
     subject_list : list
         List of subject labels

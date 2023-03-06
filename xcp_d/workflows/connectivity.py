@@ -52,8 +52,7 @@ def init_functional_connectivity_nifti_wf(
 
     Inputs
     ------
-    bold_file
-        Used for names.
+    %(name_source)s
     %(boldref)s
     denoised_bold
         clean bold after filtered out nuisscance and filtering
@@ -67,7 +66,7 @@ def init_functional_connectivity_nifti_wf(
     %(timeseries)s
     %(correlations)s
     %(coverage)s
-    connectplot : str
+    connectplot : :obj:`str`
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
     """
@@ -90,7 +89,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold_file",
+                "name_source",
                 "bold_mask",
                 "boldref",
                 "denoised_bold",
@@ -153,7 +152,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     # fmt:off
     workflow.connect([
         (inputnode, get_transforms_to_bold_space, [
-            ("bold_file", "bold_file"),
+            ("name_source", "bold_file"),
             ("template_to_t1w_xfm", "template_to_t1w_xfm"),
             ("t1w_to_native_xfm", "t1w_to_native_xfm"),
         ]),
@@ -244,7 +243,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_atlas, [("bold_file", "source_file")]),
+        (inputnode, ds_atlas, [("name_source", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (warp_atlases_to_bold_space, ds_atlas, [("output_image", "in_file")]),
     ])
@@ -288,12 +287,11 @@ def init_functional_connectivity_cifti_wf(
 
     Inputs
     ------
+    %(name_source)s
     denoised_bold
         Clean CIFTI after filtering and nuisance regression.
         The CIFTI file is in the same standard space as the atlases,
         so no transformations will be applied to the data before parcellation.
-    %(atlas_names)s
-        Defined in the function.
 
     Outputs
     -------
@@ -305,7 +303,7 @@ def init_functional_connectivity_cifti_wf(
     %(correlation_ciftis)s
     %(coverage)s
     %(coverage_ciftis)s
-    connectplot : str
+    connectplot : :obj:`str`
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
     """
@@ -325,7 +323,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold", "bold_file"]),
+        niu.IdentityInterface(fields=["name_sourc", "denoised_bold"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -446,9 +444,6 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
     ])
     # fmt:on
 
-    # Coerce the bold_file to int16 before feeding it in as source_file,
-    # as niworkflows 1.7.1's DerivativesDataSink tries to change the datatype of dseg files,
-    # but treats them as niftis, which fails.
     cast_atlas_to_int16 = pe.MapNode(
         Function(
             function=cast_cifti_to_int16,
@@ -481,7 +476,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_atlas, [("bold_file", "source_file")]),
+        (inputnode, ds_atlas, [("name_source", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (cast_atlas_to_int16, ds_atlas, [("out_file", "in_file")]),
     ])

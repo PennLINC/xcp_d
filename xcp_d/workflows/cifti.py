@@ -176,7 +176,7 @@ def init_postprocess_cifti_wf(
     Outputs
     -------
     %(name_source)s
-    preprocessed_bold : str
+    preprocessed_bold : :obj:`str`
         The preprocessed BOLD file, after dummy scan removal.
     %(fmriprep_confounds_file)s
         After dummy scan removal.
@@ -377,15 +377,19 @@ the following post-processing was performed.
 
         # fmt:off
         workflow.connect([
+            (prepare_confounds_wf, despike_wf, [
+                ("outputnode.preprocessed_bold", "inputnode.bold_file"),
+            ]),
             (despike_wf, denoise_bold, [("outputnode.bold_file", "preprocessed_bold")]),
-            (downcast_data, despike_wf, [("bold_file", "inputnode.bold_file")]),
         ])
         # fmt:on
 
     else:
         # fmt:off
         workflow.connect([
-            (downcast_data, denoise_bold, [("bold_file", "preprocessed_bold")]),
+            (prepare_confounds_wf, denoise_bold, [
+                ("outputnode.preprocessed_bold", "preprocessed_bold"),
+            ]),
         ])
         # fmt:on
 
@@ -418,7 +422,7 @@ the following post-processing was performed.
 
     # fmt:off
     workflow.connect([
-        (inputnode, connectivity_wf, [("bold_file", "inputnode.bold_file")]),
+        (inputnode, connectivity_wf, [("bold_file", "inputnode.name_source")]),
         (censor_interpolated_data, connectivity_wf, [
             ("censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
@@ -432,7 +436,7 @@ the following post-processing was performed.
 
     if bandpass_filter:
         alff_wf = init_alff_wf(
-            bold_file=bold_file,
+            name_source=bold_file,
             output_dir=output_dir,
             TR=TR,
             low_pass=low_pass,
@@ -453,7 +457,7 @@ the following post-processing was performed.
         # fmt:on
 
     reho_wf = init_reho_cifti_wf(
-        bold_file=bold_file,
+        name_source=bold_file,
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
@@ -517,7 +521,7 @@ the following post-processing was performed.
 
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         smoothing=smoothing,
-        bold_file=bold_file,
+        name_source=bold_file,
         bandpass_filter=bandpass_filter,
         params=params,
         cifti=True,
