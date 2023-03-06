@@ -489,7 +489,7 @@ produced by the regression.
             output_names=["design_matrix_figure"],
             function=plot_design_matrix,
         ),
-        name="plot_design_matrix_node",
+        name="plot_design_matrix",
     )
 
     qc_report_wf = init_qc_report_wf(
