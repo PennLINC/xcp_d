@@ -170,11 +170,11 @@ def collect_data(
     bids_validate
     bids_filters
     %(cifti)s
-    layout
+    %(layout)s
 
     Returns
     -------
-    layout : pybids.layout.BIDSLayout
+    %(layout)s
     subj_data : dict
     """
     if not isinstance(layout, BIDSLayout):
@@ -214,7 +214,7 @@ def collect_data(
         },
         # transform from standard space to T1w space
         # from entity will be set later
-        "template_to_t1w_xform": {
+        "template_to_t1w_xfm": {
             "datatype": "anat",
             "to": ["T1w", "T2w"],
             "suffix": "xfm",
@@ -229,7 +229,7 @@ def collect_data(
         },
         # transform from T1w space to standard space
         # to entity will be set later
-        "t1w_to_template_xform": {
+        "t1w_to_template_xfm": {
             "datatype": "anat",
             "from": ["T1w", "T2w"],
             "suffix": "xfm",
@@ -275,12 +275,12 @@ def collect_data(
 
     if not cifti:
         # use the BOLD file's space if the BOLD file is a nifti.
-        queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
-        queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
+        queries["t1w_to_template_xfm"]["to"] = queries["bold"]["space"]
+        queries["template_to_t1w_xfm"]["from"] = queries["bold"]["space"]
     else:
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        temp_query = queries["t1w_to_template_xform"].copy()
+        temp_query = queries["t1w_to_template_xfm"].copy()
         volumetric_space = ASSOCIATED_TEMPLATES[space]
 
         temp_query["to"] = volumetric_space
@@ -290,8 +290,8 @@ def collect_data(
                 f"No nifti transforms found to allowed space ({volumetric_space})"
             )
 
-        queries["t1w_to_template_xform"]["to"] = volumetric_space
-        queries["template_to_t1w_xform"]["from"] = volumetric_space
+        queries["t1w_to_template_xfm"]["to"] = volumetric_space
+        queries["template_to_t1w_xfm"]["from"] = volumetric_space
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -335,6 +335,7 @@ def collect_data(
     return layout, subj_data
 
 
+@fill_doc
 def collect_surface_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
@@ -344,8 +345,7 @@ def collect_surface_data(layout, participant_label):
 
     Parameters
     ----------
-    layout : :obj:`bids.BIDSLayout`
-        Layout object indexing the preprocessed derivatives.
+    %(layout)s
     participant_label : :obj:`str`
         Subject ID.
 
@@ -522,19 +522,18 @@ def collect_surface_data(layout, participant_label):
     return out_surface_files, standard_space_surfaces, surfaces_found
 
 
+@fill_doc
 def collect_run_data(layout, input_type, bold_file, cifti):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
-    layout : :obj:`bids.layout.BIDSLayout`
-        The BIDSLayout object used to grab files from the dataset.
+    %(layout)s
     bold_file : :obj:`str`
         Path to the BOLD file.
-    cifti : :obj:`bool`
+    %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
-    input_type: :obj:`str`
-        Input type.
+    %(input_type)s
 
     Returns
     -------
@@ -567,7 +566,7 @@ def collect_run_data(layout, input_type, bold_file, cifti):
             desc="brain",
             suffix="mask",
         )
-        run_data["t1w_to_native_xform"] = layout.get_nearest(
+        run_data["t1w_to_native_xfm"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             **{"from": "T1w"},  # "from" is protected Python kw

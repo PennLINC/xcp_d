@@ -11,11 +11,11 @@ fsaverage.R_LR.spherical_std.164k_fs_LR.surf.gii
 R.sphere.59k_fs_LR.surf.gii
 R.sphere.32k_fs_LR.surf.gii
 
-Importantly, note that “fs_LR” spheres have correspondence between the vertices of the L and R hemispheres.  Some names start with “fsaverage” for historical reasons (and are kept for compatibility purposes; see http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3432236); they are not the same as the fsaverage spheres discussed in the next section.
+Importantly, note that "fs_LR" spheres have correspondence between the vertices of the L and R hemispheres.  Some names start with "fsaverage" for historical reasons (and are kept for compatibility purposes; see http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3432236); they are not the same as the fsaverage spheres discussed in the next section.
 
 The fs_L and fs_R directories each contain two spheres:
 
-1) fsaverage.{L,R}.sphere.164k_fs_{L,R}.surf.gii -- the fsaverage 164k standard sphere (from FreeSurfer) converted to GIFTI format (where “{L,R}” is shorthand for either “L” or “R”).  Note that these particular files are the “true” fsaverage (164k) spheres (and therefore do not have correspondence of the L and R hemisphere vertices).
+1) fsaverage.{L,R}.sphere.164k_fs_{L,R}.surf.gii -- the fsaverage 164k standard sphere (from FreeSurfer) converted to GIFTI format (where "{L,R}" is shorthand for either "L" or "R").  Note that these particular files are the "true" fsaverage (164k) spheres (and therefore do not have correspondence of the L and R hemisphere vertices).
 2) fs_{L,R}-to-fs_LR_fsaverage.{L,R}_LR.spherical_std.164k_fs_{L,R}.surf.gii -- a version of the fsaverage sphere (i.e., (1)) that has been deformed to register to the fs_LR atlas.
 
 The resample_fsaverage directory contains files to allow resampling between fs_LR and fsaverage with minimal preparatory steps.  See FAQ 9 here:
@@ -31,7 +31,7 @@ fsaverage4_std_sphere.{L,R}.3k_fsavg_{L,R}.surf.gii
 and fs_LR spheres deformed to register to the fsaverage atlas
 fs_LR-deformed_to-fsaverage.{L,R}.sphere.{164,59,32}k_fs_LR.surf.gii
 
-In order to assist with resampling group average data, the resample_fsaverage directory also contains data files consisting of the group average of the vertex areas (“va_avg”) from midthickness surfaces from many HCP subjects (i.e., the various *midthickness_va_avg*.shape.gii files).  These are used with the -area-metrics option of the wb_command -*-resample commands, when appropriate.  (See FAQ mentioned above for some examples).
+In order to assist with resampling group average data, the resample_fsaverage directory also contains data files consisting of the group average of the vertex areas ("va_avg") from midthickness surfaces from many HCP subjects (i.e., the various *midthickness_va_avg*.shape.gii files).  These are used with the -area-metrics option of the wb_command -*-resample commands, when appropriate.  (See FAQ mentioned above for some examples).
 
 
 *** Files for creating CIFTI files in standard grayordinate spaces ***

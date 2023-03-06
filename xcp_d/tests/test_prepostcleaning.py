@@ -43,10 +43,10 @@ def test_conversion_to_32bit_nifti(fmriprep_with_freesurfer_data, tmp_path_facto
 
     # Run converter
     converter_interface = ConvertTo32()
-    converter_interface.inputs.ref_file = float64_file
+    converter_interface.inputs.boldref = float64_file
     converter_interface.inputs.bold_mask = int64_file
     results = converter_interface.run(cwd=tmpdir)
-    float32_file = results.outputs.ref_file
+    float32_file = results.outputs.boldref
     int32_file = results.outputs.bold_mask
 
     # Check that new files were created
@@ -93,10 +93,10 @@ def test_conversion_to_32bit_cifti(fmriprep_with_freesurfer_data, tmp_path_facto
 
     # Run converter
     converter_interface = ConvertTo32()
-    converter_interface.inputs.ref_file = float64_file
+    converter_interface.inputs.boldref = float64_file
     converter_interface.inputs.bold_mask = int64_file
     results = converter_interface.run(cwd=tmpdir)
-    float32_file = results.outputs.ref_file
+    float32_file = results.outputs.boldref
     int32_file = results.outputs.bold_mask
 
     # Check that new files were created

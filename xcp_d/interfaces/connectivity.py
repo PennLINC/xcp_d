@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiLabelsMasker
+from nilearn.maskers import NiftiLabelsMasker
 from nilearn.plotting import plot_matrix
 from nipype import logging
 from nipype.interfaces.base import (
@@ -64,7 +64,7 @@ class NiftiConnect(SimpleInterface):
         mask = self.inputs.mask
         atlas = self.inputs.atlas
         atlas_labels = self.inputs.atlas_labels
-        coverage_threshold = self.inputs.min_coverage
+        min_coverage = self.inputs.min_coverage
 
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
         node_labels_df.sort_index(inplace=True)  # ensure index is in order
@@ -121,16 +121,16 @@ class NiftiConnect(SimpleInterface):
         n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
         n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
         parcel_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
-        coverage_thresholded = parcel_coverage < coverage_threshold
+        coverage_thresholded = parcel_coverage < min_coverage
 
         n_nodes = len(node_labels)
         n_found_nodes = coverage_thresholded.size
         n_bad_nodes = np.sum(parcel_coverage == 0)
         n_poor_parcels = np.sum(
-            np.logical_and(parcel_coverage > 0, parcel_coverage < coverage_threshold)
+            np.logical_and(parcel_coverage > 0, parcel_coverage < min_coverage)
         )
         n_partial_parcels = np.sum(
-            np.logical_and(parcel_coverage >= coverage_threshold, parcel_coverage < 1)
+            np.logical_and(parcel_coverage >= min_coverage, parcel_coverage < 1)
         )
 
         if n_found_nodes != n_nodes:
@@ -248,9 +248,17 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
 
 
 class _CiftiConnectOutputSpec(TraitedSpec):
-    coverage_pscalar = File(exists=True, mandatory=True, desc="Coverage CIFTI file.")
-    ptseries = File(exists=True, mandatory=True, desc="Parcellated data CIFTI file.")
-    pconn = File(exists=True, mandatory=True, desc="Correlation matrix pconn.nii file.")
+    coverage_ciftis = File(exists=True, mandatory=True, desc="Coverage CIFTI file.")
+    timeseries_ciftis = File(
+        exists=True,
+        mandatory=True,
+        desc="Parcellated data ptseries.nii file.",
+    )
+    correlation_ciftis = File(
+        exists=True,
+        mandatory=True,
+        desc="Correlation matrix pconn.nii file.",
+    )
     coverage = File(exists=True, mandatory=True, desc="Coverage tsv file.")
     timeseries = File(exists=True, mandatory=True, desc="Parcellated data tsv file.")
     correlations = File(exists=True, mandatory=True, desc="Correlation matrix tsv file.")
@@ -268,7 +276,7 @@ class CiftiConnect(SimpleInterface):
     output_spec = _CiftiConnectOutputSpec
 
     def _run_interface(self, runtime):
-        coverage_threshold = self.inputs.min_coverage
+        min_coverage = self.inputs.min_coverage
         data_file = self.inputs.data_file
         atlas_file = self.inputs.atlas_file
         pscalar_file = self.inputs.parcellated_atlas
@@ -376,7 +384,7 @@ class CiftiConnect(SimpleInterface):
                 parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
                 coverage_df.loc[parcel_name, "coverage"] = parcel_coverage
 
-                if parcel_coverage < coverage_threshold:
+                if parcel_coverage < min_coverage:
                     # If the parcel has >=50% bad data, replace all of the values with zeros.
                     data_arr[:, parcel_idx] = np.nan
 
@@ -438,12 +446,12 @@ class CiftiConnect(SimpleInterface):
             pscalar_img.header,
             nifti_header=pscalar_img.nifti_header,
         )
-        self._results["coverage_pscalar"] = fname_presuffix(
+        self._results["coverage_ciftis"] = fname_presuffix(
             "coverage.pscalar.nii",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        coverage_img.to_filename(self._results["coverage_pscalar"])
+        coverage_img.to_filename(self._results["coverage_ciftis"])
 
         # Save out the timeseries CIFTI
         time_axis = data_img.header.get_axis(0)
@@ -455,12 +463,12 @@ class CiftiConnect(SimpleInterface):
             new_header,
             nifti_header=nifti_header,
         )
-        self._results["ptseries"] = fname_presuffix(
+        self._results["timeseries_ciftis"] = fname_presuffix(
             "timeseries.ptseries.nii",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        timeseries_img.to_filename(self._results["ptseries"])
+        timeseries_img.to_filename(self._results["timeseries_ciftis"])
 
         # Save out the correlation matrix CIFTI
         new_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
@@ -471,12 +479,12 @@ class CiftiConnect(SimpleInterface):
             new_header,
             nifti_header=nifti_header,
         )
-        self._results["pconn"] = fname_presuffix(
+        self._results["correlation_ciftis"] = fname_presuffix(
             "correlations.pconn.nii",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        conn_img.to_filename(self._results["pconn"])
+        conn_img.to_filename(self._results["correlation_ciftis"])
 
         return runtime
 

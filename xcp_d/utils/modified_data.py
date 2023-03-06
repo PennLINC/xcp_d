@@ -5,10 +5,13 @@ import os
 
 import nibabel as nb
 import numpy as np
+import pandas as pd
 from nipype import logging
 
+from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import estimate_brain_radius
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -39,28 +42,6 @@ def compute_fd(confound, head_radius=50):
     fdres = np.hstack([0, fd_res])
 
     return fdres
-
-
-@fill_doc
-def generate_mask(fd_res, fd_thresh):
-    """Create binary temporal mask flagging high-motion volumes.
-
-    Parameters
-    ----------
-    fd_res : numpy.ndarray of shape (T)
-        Framewise displacement time series.
-        T = time.
-    %(fd_thresh)s
-
-    Returns
-    -------
-    tmask : numpy.ndarray of shape (T)
-        The temporal mask. Zeros are low-motion volumes. Ones are high-motion volumes.
-    """
-    tmask = np.zeros(len(fd_res), dtype=int)
-    tmask[fd_res > fd_thresh] = 1
-
-    return tmask
 
 
 def _drop_dummy_scans(bold_file, dummy_scans):
@@ -201,3 +182,64 @@ def scale_to_min_max(X, x_min, x_max):
         denom = 1
 
     return x_min + (nom / denom)
+
+
+@fill_doc
+def flag_bad_run(
+    fmriprep_confounds_file,
+    dummy_scans,
+    TR,
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    head_radius,
+    fd_thresh,
+    brain_mask,
+):
+    """Determine if a run has too many high-motion volumes to continue processing.
+
+    Parameters
+    ----------
+    %(fmriprep_confounds_file)s
+    %(dummy_scans)s
+    %(TR)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(head_radius)s
+    %(fd_thresh)s
+    brain_mask
+
+    Returns
+    -------
+    n_good_volumes : :obj:`int`
+        Number of good volumes in the run, after dummy scan removal.
+    """
+    dummy_scans = _infer_dummy_scans(
+        dummy_scans=dummy_scans,
+        confounds_file=fmriprep_confounds_file,
+    )
+
+    # Read in fmriprep confounds tsv to calculate FD
+    fmriprep_confounds_df = pd.read_table(fmriprep_confounds_file)
+
+    # Remove dummy volumes
+    fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
+
+    # Determine head radius
+    head_radius = estimate_brain_radius(mask_file=brain_mask, head_radius=head_radius)
+
+    # Calculate filtered FD
+    motion_df = load_motion(
+        fmriprep_confounds_df,
+        TR=TR,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+    )
+    fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
+
+    return int(np.sum(fd_arr <= fd_thresh))

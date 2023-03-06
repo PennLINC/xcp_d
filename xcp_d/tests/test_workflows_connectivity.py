@@ -5,14 +5,14 @@ import sys
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.input_data import NiftiLabelsMasker
+from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows.connectivity import (
-    init_cifti_functional_connectivity_wf,
-    init_nifti_functional_connectivity_wf,
+    init_functional_connectivity_cifti_wf,
+    init_functional_connectivity_nifti_wf,
 )
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -24,9 +24,9 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
-    template_to_t1w_xform = fmriprep_with_freesurfer_data["template_to_t1w_xform"]
+    template_to_t1w_xfm = fmriprep_with_freesurfer_data["template_to_t1w_xfm"]
     boldref = fmriprep_with_freesurfer_data["boldref"]
-    t1w_to_native_xform = fmriprep_with_freesurfer_data["t1w_to_native_xform"]
+    t1w_to_native_xfm = fmriprep_with_freesurfer_data["t1w_to_native_xfm"]
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -42,19 +42,19 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(fake_bold_file)
 
     # Let's define the inputs and create the workflow
-    connectivity_wf = init_nifti_functional_connectivity_wf(
+    connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=tmpdir,
         min_coverage=0.5,
         mem_gb=4,
         name="connectivity_wf",
         omp_nthreads=2,
     )
-    connectivity_wf.inputs.inputnode.template_to_t1w = template_to_t1w_xform
-    connectivity_wf.inputs.inputnode.t1w_to_native = t1w_to_native_xform
-    connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.template_to_t1w_xfm = template_to_t1w_xfm
+    connectivity_wf.inputs.inputnode.t1w_to_native_xfm = t1w_to_native_xfm
+    connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.bold_file = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
-    connectivity_wf.inputs.inputnode.ref_file = boldref
+    connectivity_wf.inputs.inputnode.boldref = boldref
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
@@ -143,26 +143,26 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(fake_bold_file)
 
     # Create the node and a tmpdir to write its results out to
-    connectivity_wf = init_cifti_functional_connectivity_wf(
+    connectivity_wf = init_functional_connectivity_cifti_wf(
         output_dir=tmpdir,
         min_coverage=0.5,
         mem_gb=4,
         omp_nthreads=2,
         name="connectivity_wf",
     )
-    connectivity_wf.inputs.inputnode.clean_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.bold_file = bold_file
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the cifti files
-    pscalar = nodes["connectivity_wf.cifti_connect"].get_output("coverage_pscalar")[9]
+    pscalar = nodes["connectivity_wf.cifti_connect"].get_output("coverage_ciftis")[9]
     assert os.path.isfile(pscalar)
-    ptseries = nodes["connectivity_wf.cifti_connect"].get_output("ptseries")[9]
-    assert os.path.isfile(ptseries)
-    pconn = nodes["connectivity_wf.cifti_connect"].get_output("pconn")[9]
-    assert os.path.isfile(pconn)
+    timeseries_ciftis = nodes["connectivity_wf.cifti_connect"].get_output("timeseries_ciftis")[9]
+    assert os.path.isfile(timeseries_ciftis)
+    correlation_ciftis = nodes["connectivity_wf.cifti_connect"].get_output("correlation_ciftis")[9]
+    assert os.path.isfile(correlation_ciftis)
 
     # Let's find the tsv files
     coverage = nodes["connectivity_wf.cifti_connect"].get_output("coverage")[9]
@@ -175,9 +175,9 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's read in the ciftis' data
     pscalar_arr = nb.load(pscalar).get_fdata().T
     assert pscalar_arr.shape == (1000, 1)
-    ptseries_arr = nb.load(ptseries).get_fdata()
+    ptseries_arr = nb.load(timeseries_ciftis).get_fdata()
     assert ptseries_arr.shape == (60, 1000)
-    pconn_arr = nb.load(pconn).get_fdata()
+    pconn_arr = nb.load(correlation_ciftis).get_fdata()
     assert pconn_arr.shape == (1000, 1000)
 
     # Read in the tsvs' data

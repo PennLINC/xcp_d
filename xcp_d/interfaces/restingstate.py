@@ -20,8 +20,8 @@ from nipype.interfaces.base import (
     traits_extension,
 )
 
-from xcp_d.utils.fcon import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.restingstate import compute_2d_reho, compute_alff, mesh_adjacency
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -86,15 +86,15 @@ class SurfaceReHo(SimpleInterface):
 class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
     TR = traits.Float(mandatory=True, desc="repetition time")
-    lowpass = traits.Float(
+    low_pass = traits.Float(
         mandatory=True,
         default_value=0.10,
-        desc="lowpass filter in Hz",
+        desc="low_pass filter in Hz",
     )
-    highpass = traits.Float(
+    high_pass = traits.Float(
         mandatory=True,
         default_value=0.01,
-        desc="highpass filter in Hz",
+        desc="high_pass filter in Hz",
     )
     mask = File(
         exists=True,
@@ -104,7 +104,7 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
-    alff_out = File(exists=True, mandatory=True, desc=" alff")
+    alff = File(exists=True, mandatory=True, desc=" alff")
 
 
 class ComputeALFF(SimpleInterface):
@@ -119,8 +119,8 @@ class ComputeALFF(SimpleInterface):
         # compute the ALFF
         alff_mat = compute_alff(
             data_matrix=data_matrix,
-            low_pass=self.inputs.lowpass,
-            high_pass=self.inputs.highpass,
+            low_pass=self.inputs.low_pass,
+            high_pass=self.inputs.high_pass,
             TR=self.inputs.TR,
         )
 
@@ -131,7 +131,7 @@ class ComputeALFF(SimpleInterface):
         elif self.inputs.in_file.endswith(".nii.gz"):
             suffix = "_alff.nii.gz"
 
-        self._results["alff_out"] = fname_presuffix(
+        self._results["alff"] = fname_presuffix(
             self.inputs.in_file,
             suffix=suffix,
             newpath=runtime.cwd,
@@ -140,7 +140,7 @@ class ComputeALFF(SimpleInterface):
         write_ndata(
             data_matrix=alff_mat,
             template=self.inputs.in_file,
-            filename=self._results["alff_out"],
+            filename=self._results["alff"],
             mask=self.inputs.mask,
         )
         return runtime

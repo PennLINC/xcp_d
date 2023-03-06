@@ -12,7 +12,7 @@ from xcp_d.interfaces import (
     prepostcleaning,
     report,
     report_core,
-    resting_state,
+    restingstate,
     workbench,
 )
 
@@ -27,6 +27,6 @@ __all__ = [
     "prepostcleaning",
     "report",
     "report_core",
-    "resting_state",
+    "restingstate",
     "workbench",
 ]

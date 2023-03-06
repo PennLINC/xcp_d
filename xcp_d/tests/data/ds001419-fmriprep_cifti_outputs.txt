@@ -126,6 +126,8 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bo
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolated_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.tsv
@@ -219,6 +221,8 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bo
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolated_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-Glasser_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-Glasser_timeseries.tsv
@@ -248,3 +252,4 @@ xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-subcortical_den-91k_times
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-subcortical_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
+xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii

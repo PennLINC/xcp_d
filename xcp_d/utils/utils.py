@@ -1,114 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Miscellaneous utility functions for xcp_d."""
-import glob
-import os
-import tempfile
 import warnings
-from pathlib import Path
 
 import numpy as np
 
-
-def _t12native(fname):
-    """Select T1w-to-scanner transform associated with a given BOLD file.
-
-    TODO: Update names and refactor
-
-    Parameters
-    ----------
-    fname : str
-        The BOLD file from which to identify the transform.
-
-    Returns
-    -------
-    t1w_to_native_xform : str
-        Path to the T1w-to-scanner transform.
-
-    Notes
-    -----
-    Only used in get_segfile, which should be removed ASAP.
-    """
-    import os
-
-    pth, fname = os.path.split(fname)
-    file_prefix = fname.split("space-")[0]
-    t1w_to_native_xform = os.path.join(pth, f"{file_prefix}from-T1w_to-scanner_mode-image_xfm.txt")
-
-    if not os.path.isfile(t1w_to_native_xform):
-        raise FileNotFoundError(f"File not found: {t1w_to_native_xform}")
-
-    return t1w_to_native_xform
+from xcp_d.utils.doc import fill_doc
 
 
-def get_segfile(bold_file):
-    """Select the segmentation file associated with a given BOLD file.
-
-    This function identifies the appropriate MNI-space discrete segmentation file for carpet
-    plots, then applies the necessary transforms to warp the file into BOLD reference space.
-    The warped segmentation file will be written to a temporary file and its path returned.
-
-    Parameters
-    ----------
-    bold_file : str
-        Path to the BOLD file.
-
-    Returns
-    -------
-    segfile : str
-        The associated segmentation file.
-
-    Notes
-    -----
-    Only used in concatenation code and should be dropped in favor of BIDSLayout methods ASAP.
-    """
-    from templateflow.api import get as get_template
-
-    from xcp_d.interfaces.ants import ApplyTransforms
-
-    # get transform files
-    dd = Path(os.path.dirname(bold_file))
-    anatdir = str(dd.parent) + "/anat"
-
-    if Path(anatdir).is_dir():
-        mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
-    else:
-        anatdir = str(dd.parent.parent) + "/anat"
-        mni_to_t1 = glob.glob(anatdir + "/*MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5")[0]
-
-    transformfilex = get_std2bold_xforms(
-        bold_file=bold_file,
-        template_to_t1w=mni_to_t1,
-        t1w_to_native=_t12native(bold_file),
-    )
-
-    boldref = bold_file.split("desc-preproc_bold.nii.gz")[0] + "boldref.nii.gz"
-
-    segfile = tempfile.mkdtemp() + "segfile.nii.gz"
-    carpet = str(
-        get_template(
-            "MNI152NLin2009cAsym",
-            resolution=1,
-            desc="carpet",
-            suffix="dseg",
-            extension=[".nii", ".nii.gz"],
-        ),
-    )
-
-    # seg_data file to bold space
-    at = ApplyTransforms()
-    at.inputs.dimension = 3
-    at.inputs.input_image = carpet
-    at.inputs.reference_image = boldref
-    at.inputs.output_image = segfile
-    at.inputs.interpolation = "MultiLabel"
-    at.inputs.transforms = transformfilex
-    os.system(at.cmdline)
-
-    return segfile
-
-
-def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
+def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):
     """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
@@ -120,12 +20,10 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
     ----------
     bold_file : str
         The preprocessed BOLD file.
-    template_to_t1w : str
-        The MNI-to-T1w transform file.
+    template_to_t1w_xfm
         The ``from`` field is assumed to be the same space as the BOLD file is in.
         The MNI space could be MNI152NLin2009cAsym, MNI152NLin6Asym, or MNIInfant.
-    t1w_to_native : str
-        The T1w-to-native space transform file.
+    t1w_to_native_xfm
 
     Returns
     -------
@@ -142,7 +40,7 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
 
     Notes
     -----
-    Only used for QCReport in init_boldpostprocess_wf.
+    Only used for QCReport in init_postprocess_nifti_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
     from pkg_resources import resource_filename as pkgrf
@@ -154,12 +52,14 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
     bold_space = get_entity(bold_file, "space")
 
     if bold_space in ("native", "T1w"):
-        base_std_space = get_entity(template_to_t1w, "from")
-    elif f"from-{bold_space}" not in template_to_t1w:
-        raise ValueError(f"Transform does not match BOLD space: {bold_space} != {template_to_t1w}")
+        base_std_space = get_entity(template_to_t1w_xfm, "from")
+    elif f"from-{bold_space}" not in template_to_t1w_xfm:
+        raise ValueError(
+            f"Transform does not match BOLD space: {bold_space} != {template_to_t1w_xfm}"
+        )
 
     # Pull out the correct transforms based on bold_file name and string them together.
-    xforms_to_T1w = [template_to_t1w]  # used for all spaces except T1w and native
+    xforms_to_T1w = [template_to_t1w_xfm]  # used for all spaces except T1w and native
     xforms_to_T1w_invert = [False]
     if bold_space == "MNI152NLin2009cAsym":
         # Data already in MNI152NLin2009cAsym space.
@@ -190,7 +90,7 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
         xforms_to_MNI_invert = [False]
 
     elif bold_space == "T1w":
-        # T1w --> ?? (extract from template_to_t1w) --> MNI152NLin2009cAsym
+        # T1w --> ?? (extract from template_to_t1w_xfm) --> MNI152NLin2009cAsym
         # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
         if base_std_space != "MNI152NLin2009cAsym":
             std_to_mni_xform = str(
@@ -202,17 +102,17 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
                     **{"from": base_std_space},
                 ),
             )
-            xforms_to_MNI = [std_to_mni_xform, template_to_t1w]
+            xforms_to_MNI = [std_to_mni_xform, template_to_t1w_xfm]
             xforms_to_MNI_invert = [False, True]
         else:
-            xforms_to_MNI = [template_to_t1w]
+            xforms_to_MNI = [template_to_t1w_xfm]
             xforms_to_MNI_invert = [True]
 
         xforms_to_T1w = ["identity"]
         xforms_to_T1w_invert = [False]
 
     elif bold_space == "native":
-        # native (BOLD) --> T1w --> ?? (extract from template_to_t1w) --> MNI152NLin2009cAsym
+        # native (BOLD) --> T1w --> ?? (extract from template_to_t1w_xfm) --> MNI152NLin2009cAsym
         # Should not be reachable, since xcpd doesn't support native-space BOLD inputs
         if base_std_space != "MNI152NLin2009cAsym":
             std_to_mni_xform = str(
@@ -224,13 +124,13 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
                     **{"from": base_std_space},
                 ),
             )
-            xforms_to_MNI = [std_to_mni_xform, template_to_t1w, t1w_to_native]
+            xforms_to_MNI = [std_to_mni_xform, template_to_t1w_xfm, t1w_to_native_xfm]
             xforms_to_MNI_invert = [False, True, True]
         else:
-            xforms_to_MNI = [template_to_t1w, t1w_to_native]
+            xforms_to_MNI = [template_to_t1w_xfm, t1w_to_native_xfm]
             xforms_to_MNI_invert = [True, True]
 
-        xforms_to_T1w = [t1w_to_native]
+        xforms_to_T1w = [t1w_to_native_xfm]
         xforms_to_T1w_invert = [True]
 
     else:
@@ -239,7 +139,7 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w, t1w_to_native):
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
 
-def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
+def get_std2bold_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):
     """Obtain transforms to warp atlases from MNI152NLin6Asym to the same space as the BOLD.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
@@ -251,11 +151,9 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
     ----------
     bold_file : str
         The preprocessed BOLD file.
-    template_to_t1w : str
-        The MNI-to-T1w transform file.
+    %(template_to_t1w_xfm)s
         The ``from`` field is assumed to be the same space as the BOLD file is in.
-    t1w_to_native : str
-        The T1w-to-native space transform file.
+    %(t1w_to_native_xfm)s
 
     Returns
     -------
@@ -266,9 +164,8 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
     -----
     Used by:
 
-    - get_segfile (to be removed)
-    - to resample dseg in init_boldpostprocess_wf for QCReport
-    - to warp atlases to the same space as the BOLD data in init_nifti_functional_connectivity_wf
+    - to resample dseg in init_postprocess_nifti_wf for QCReport
+    - to warp atlases to the same space as the BOLD data in init_functional_connectivity_nifti_wf
     - to resample dseg to BOLD space for the executive summary plots
 
     Does not include inversion flag output because there is no need (yet).
@@ -286,9 +183,11 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
 
     # Check that the MNI-to-T1w xform is from the right space
     if bold_space in ("native", "T1w"):
-        base_std_space = get_entity(template_to_t1w, "from")
-    elif f"from-{bold_space}" not in template_to_t1w:
-        raise ValueError(f"Transform does not match BOLD space: {bold_space} != {template_to_t1w}")
+        base_std_space = get_entity(template_to_t1w_xfm, "from")
+    elif f"from-{bold_space}" not in template_to_t1w_xfm:
+        raise ValueError(
+            f"Transform does not match BOLD space: {bold_space} != {template_to_t1w_xfm}"
+        )
 
     # Load useful inter-template transforms from templateflow
     MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
@@ -322,7 +221,7 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
         ]
 
     elif bold_space == "T1w":
-        # NLin6 --> ?? (extract from template_to_t1w) --> T1w (BOLD)
+        # NLin6 --> ?? (extract from template_to_t1w_xfm) --> T1w (BOLD)
         if base_std_space != "MNI152NLin6Asym":
             mni_to_std_xform = str(
                 get_template(
@@ -333,13 +232,13 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
                     **{"from": "MNI152NLin6Asym"},
                 ),
             )
-            transform_list = [template_to_t1w, mni_to_std_xform]
+            transform_list = [template_to_t1w_xfm, mni_to_std_xform]
         else:
-            transform_list = [template_to_t1w]
+            transform_list = [template_to_t1w_xfm]
 
     elif bold_space == "native":
         # The BOLD data are in native space
-        # NLin6 --> ?? (extract from template_to_t1w) --> T1w --> native (BOLD)
+        # NLin6 --> ?? (extract from template_to_t1w_xfm) --> T1w --> native (BOLD)
         if base_std_space != "MNI152NLin6Asym":
             mni_to_std_xform = str(
                 get_template(
@@ -350,9 +249,9 @@ def get_std2bold_xforms(bold_file, template_to_t1w, t1w_to_native):
                     **{"from": "MNI152NLin6Asym"},
                 ),
             )
-            transform_list = [t1w_to_native, template_to_t1w, mni_to_std_xform]
+            transform_list = [t1w_to_native_xfm, template_to_t1w_xfm, mni_to_std_xform]
         else:
-            transform_list = [t1w_to_native, template_to_t1w]
+            transform_list = [t1w_to_native_xfm, template_to_t1w_xfm]
 
     else:
         file_base = os.path.basename(bold_file)
@@ -482,12 +381,13 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
     return brain_radius
 
 
+@fill_doc
 def denoise_with_nilearn(
     preprocessed_bold,
     confounds_file,
-    censoring_file,
-    lowpass,
-    highpass,
+    temporal_mask,
+    low_pass,
+    high_pass,
     filter_order,
     TR,
 ):
@@ -512,28 +412,21 @@ def denoise_with_nilearn(
     confounds_file : str
         Path to TSV file containing selected confounds, after dummy volume removal,
         but without any additional censoring.
-    censoring_file : str
-        Path to TSV file containing one column with zeros for low-motion volumes and
-        ones for high-motion outliers.
-    lowpass, highpass : float or None
-        Lowpass and highpass thresholds, in Hertz.
+    %(temporal_mask)s
+    low_pass, high_pass : float or None
+        Lowpass and high_pass thresholds, in Hertz.
     filter_order : int
         Filter order.
-    TR : float
-        Repetition time, in seconds.
+    %(TR)s
 
     Returns
     -------
-    uncensored_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
-        The result of denoising the full (uncensored) preprocessed BOLD data using
-        betas estimated using the *censored* BOLD data and nuisance regressors.
-        This is only used for DCAN figures.
-    interpolated_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
-        The result of denoising the censored preprocessed BOLD data,
-        followed by cubic spline interpolation.
-    filtered_denoised_bold : :obj:`numpy.ndarray` of shape (T, S)
-        The result of denoising the censored preprocessed BOLD data,
-        followed by cubic spline interpolation and band-pass filtering.
+    %(uncensored_denoised_bold)s
+        Returned as a :obj:`numpy.ndarray` of shape (T, S)
+    %(interpolated_unfiltered_bold)s
+        Returned as a :obj:`numpy.ndarray` of shape (T, S)
+    %(interpolated_filtered_bold)s
+        Returned as a :obj:`numpy.ndarray` of shape (T, S)
         This is the primary output.
     """
     import pandas as pd
@@ -546,7 +439,7 @@ def denoise_with_nilearn(
     assert "linear_trend" in confounds_df.columns
     assert confounds_df.columns[-1] == "intercept"
 
-    censoring_df = pd.read_table(censoring_file)
+    censoring_df = pd.read_table(temporal_mask)
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
     # Orthogonalize full nuisance regressors w.r.t. any signal regressors
@@ -590,33 +483,33 @@ def denoise_with_nilearn(
     censored_denoised_bold = preprocessed_bold_censored - np.dot(nuisance_censored, betas)
 
     # Now interpolate the censored, denoised data with cubic spline interpolation
-    interpolated_denoised_bold = np.zeros(
+    interpolated_unfiltered_bold = np.zeros(
         (n_volumes, n_voxels),
         dtype=censored_denoised_bold.dtype,
     )
-    interpolated_denoised_bold[sample_mask, :] = censored_denoised_bold
-    interpolated_denoised_bold = signal._interpolate_volumes(
-        interpolated_denoised_bold,
+    interpolated_unfiltered_bold[sample_mask, :] = censored_denoised_bold
+    interpolated_unfiltered_bold = signal._interpolate_volumes(
+        interpolated_unfiltered_bold,
         sample_mask=sample_mask,
         t_r=TR,
     )
 
     # Now apply the bandpass filter to the interpolated, denoised data
-    if lowpass is not None and highpass is not None:
+    if low_pass is not None and high_pass is not None:
         # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.
-        filtered_denoised_bold = butter_bandpass(
-            interpolated_denoised_bold.copy(),
+        interpolated_filtered_bold = butter_bandpass(
+            interpolated_unfiltered_bold.copy(),
             sampling_rate=1 / TR,
-            low_pass=lowpass,
-            high_pass=highpass,
+            low_pass=low_pass,
+            high_pass=high_pass,
             order=filter_order / 2,
             padtype="constant",
             padlen=n_volumes - 1,
         )
     else:
-        filtered_denoised_bold = interpolated_denoised_bold
+        interpolated_filtered_bold = interpolated_unfiltered_bold
 
-    return uncensored_denoised_bold, interpolated_denoised_bold, filtered_denoised_bold
+    return uncensored_denoised_bold, interpolated_unfiltered_bold, interpolated_filtered_bold
 
 
 def _select_first(lst):

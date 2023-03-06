@@ -437,9 +437,8 @@ def plot_confounds_es(
 def plot_fmri_es(
     preprocessed_bold,
     uncensored_denoised_bold,
-    filtered_denoised_bold,
+    interpolated_filtered_bold,
     TR,
-    dummy_scans,
     filtered_motion,
     preprocessed_bold_figure,
     denoised_bold_figure,
@@ -454,19 +453,12 @@ def plot_fmri_es(
     Parameters
     ----------
     preprocessed_bold : str
-        Preprocessed BOLD file, after mean-centering and detrending
-        *using only the low-motion volumes*.
-    uncensored_denoised_bold : str
-        BOLD file after regression and interpolation, but not filtering.
-        The preprocessed BOLD data are censored and denoised to get the betas,
-        and then the full, uncensored preprocessed BOLD data are denoised using those betas.
-    filtered_denoised_bold : str
-        BOLD file after regression, interpolation, and filtering.
-    TR : float
-        Repetition time, in seconds.
+        Preprocessed BOLD file, dummy scan removal.
+    %(uncensored_denoised_bold)s
+    %(interpolated_filtered_bold)s
+    %(TR)s
     %(dummy_scans)s
-    filtered_motion : str
-       Filtered motion parameters, including framewise displacement, in a TSV file.
+    %(filtered_motion)s
     preprocessed_bold_figure : str
         output file svg before processing
     denoised_bold_figure : str
@@ -486,11 +478,7 @@ def plot_fmri_es(
     # Compute dvars correctly if not already done
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     uncensored_denoised_bold_arr = read_ndata(datafile=uncensored_denoised_bold, maskfile=mask)
-    filtered_denoised_bold_arr = read_ndata(datafile=filtered_denoised_bold, maskfile=mask)
-
-    # Remove dummy time from the preprocessed_bold_arr if needed
-    if dummy_scans > 0:
-        preprocessed_bold_arr = preprocessed_bold_arr[:, dummy_scans:]
+    filtered_denoised_bold_arr = read_ndata(datafile=interpolated_filtered_bold, maskfile=mask)
 
     if not isinstance(preprocessed_bold_dvars, np.ndarray):
         preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
@@ -510,7 +498,7 @@ def plot_fmri_es(
             "Shapes do not match:\n"
             f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
             f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{filtered_denoised_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{interpolated_filtered_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
     if not (
@@ -522,7 +510,7 @@ def plot_fmri_es(
             "Shapes do not match:\n"
             f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
             f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{filtered_denoised_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{interpolated_filtered_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
     # Formatting & setting of files
@@ -649,6 +637,7 @@ def plot_fmri_es(
     return preprocessed_bold_figure, denoised_bold_figure
 
 
+@fill_doc
 class FMRIPlot:
     """Generates the fMRI Summary Plot.
 
@@ -659,7 +648,7 @@ class FMRIPlot:
     data
     confound_file
     seg_file
-    TR
+    %(TR)s
     usecols
     units
     vlines
@@ -1196,7 +1185,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     return output_path
 
 
-def plot_design_matrix(design_matrix, censoring_file=None):
+def plot_design_matrix(design_matrix, temporal_mask=None):
     """Plot design matrix TSV with Nilearn.
 
     NOTE: This is a Node function.
@@ -1205,7 +1194,7 @@ def plot_design_matrix(design_matrix, censoring_file=None):
     ----------
     design_matrix : str
         Path to TSV file containing the design matrix.
-    censoring_file : str, optional
+    temporal_mask : str, optional
         Path to TSV file containing a list of volumes to censor.
 
     Returns
@@ -1220,8 +1209,8 @@ def plot_design_matrix(design_matrix, censoring_file=None):
     from nilearn import plotting
 
     design_matrix_df = pd.read_table(design_matrix)
-    if censoring_file:
-        censoring_df = pd.read_table(censoring_file)
+    if temporal_mask:
+        censoring_df = pd.read_table(temporal_mask)
         n_outliers = censoring_df["framewise_displacement"].sum()
         new_df = pd.DataFrame(
             data=np.zeros((censoring_df.shape[0], n_outliers), dtype=np.int16),

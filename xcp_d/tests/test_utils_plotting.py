@@ -10,8 +10,8 @@ def test_plot_fmri_es(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     preprocessed_bold = fmriprep_with_freesurfer_data["cifti_file"]
     uncensored_denoised_bold = fmriprep_with_freesurfer_data["cifti_file"]
-    filtered_denoised_bold = fmriprep_with_freesurfer_data["cifti_file"]
-    dummy_scans = 0
+    interpolated_filtered_bold = fmriprep_with_freesurfer_data["cifti_file"]
+
     # Using unfiltered FD instead of calculating filtered version.
     filtered_motion = fmriprep_with_freesurfer_data["confounds_file"]
     preprocessed_bold_figure = os.path.join(tmpdir, "unprocessed.svg")
@@ -21,8 +21,7 @@ def test_plot_fmri_es(fmriprep_with_freesurfer_data, tmp_path_factory):
     out_file1, out_file2 = plotting.plot_fmri_es(
         preprocessed_bold=preprocessed_bold,
         uncensored_denoised_bold=uncensored_denoised_bold,
-        filtered_denoised_bold=filtered_denoised_bold,
-        dummy_scans=dummy_scans,
+        interpolated_filtered_bold=interpolated_filtered_bold,
         filtered_motion=filtered_motion,
         preprocessed_bold_figure=preprocessed_bold_figure,
         denoised_bold_figure=denoised_bold_figure,

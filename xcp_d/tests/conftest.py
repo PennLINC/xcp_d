@@ -76,15 +76,15 @@ def fmriprep_with_freesurfer_data(datasets):
         func_dir,
         "sub-01_task-rest_desc-confounds_timeseries.tsv",
     )
-    files["t1w_to_template_xform"] = os.path.join(
+    files["t1w_to_template_xfm"] = os.path.join(
         anat_dir,
         "sub-01_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5",
     )
-    files["template_to_t1w_xform"] = os.path.join(
+    files["template_to_t1w_xfm"] = os.path.join(
         anat_dir,
         "sub-01_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
     )
-    files["t1w_to_native_xform"] = os.path.join(
+    files["t1w_to_native_xfm"] = os.path.join(
         func_dir,
         "sub-01_task-rest_from-T1w_to-scanner_mode-image_xfm.txt",
     )

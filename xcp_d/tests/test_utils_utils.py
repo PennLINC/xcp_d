@@ -20,7 +20,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
     tmpdir = tmp_path_factory.mktemp("test_denoise_with_nilearn")
 
-    highpass, lowpass, filter_order, TR = 0.01, 0.08, 2, 2
+    high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
     preprocessed_bold = fmriprep_with_freesurfer_data["nifti_file"]
     confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
@@ -44,46 +44,46 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
     n_censored_volumes = censoring_df["framewise_displacement"].sum()
     assert n_censored_volumes > 0
-    censoring_file = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(censoring_file, sep="\t", index=False)
+    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # First, try out filtering
     (
         uncensored_denoised_bold,
-        unfiltered_denoised_bold,
-        filtered_denoised_bold,
+        interpolated_unfiltered_bold,
+        interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
-        censoring_file=censoring_file,
-        lowpass=lowpass,
-        highpass=highpass,
+        temporal_mask=temporal_mask,
+        low_pass=low_pass,
+        high_pass=high_pass,
         filter_order=filter_order,
         TR=TR,
     )
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert unfiltered_denoised_bold.shape == (n_volumes, n_voxels)
-    assert filtered_denoised_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_unfiltered_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
     # Now, no filtering
     (
         uncensored_denoised_bold,
-        unfiltered_denoised_bold,
-        filtered_denoised_bold,
+        interpolated_unfiltered_bold,
+        interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
-        censoring_file=censoring_file,
-        lowpass=None,
-        highpass=None,
+        temporal_mask=temporal_mask,
+        low_pass=None,
+        high_pass=None,
         filter_order=None,
         TR=TR,
     )
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert unfiltered_denoised_bold.shape == (n_volumes, n_voxels)
-    assert filtered_denoised_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_unfiltered_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
     # Finally, do the orthogonalization
     reduced_confounds_df["signal__test"] = confounds_df["global_signal"]
@@ -96,18 +96,18 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     reduced_confounds_df.to_csv(orth_confounds_file, sep="\t", index=False)
     (
         uncensored_denoised_bold,
-        unfiltered_denoised_bold,
-        filtered_denoised_bold,
+        interpolated_unfiltered_bold,
+        interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=orth_confounds_file,
-        censoring_file=censoring_file,
-        lowpass=lowpass,
-        highpass=highpass,
+        temporal_mask=temporal_mask,
+        low_pass=low_pass,
+        high_pass=high_pass,
         filter_order=filter_order,
         TR=TR,
     )
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert unfiltered_denoised_bold.shape == (n_volumes, n_voxels)
-    assert filtered_denoised_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_unfiltered_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
