@@ -696,7 +696,6 @@ def collect_run_data(layout, input_type, bold_file, cifti):
         run_data["boldmask"] = layout.get(desc="brain", datatype="anat")
 
     LOGGER.debug(
-    
         f"Collected run data for {bold_file}:\n"
         f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
     )
