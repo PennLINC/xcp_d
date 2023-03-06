@@ -323,7 +323,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["name_sourc", "denoised_bold"]),
+        niu.IdentityInterface(fields=["name_source", "denoised_bold"]),
         name="inputnode",
     )
     outputnode = pe.Node(
