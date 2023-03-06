@@ -15,82 +15,6 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger("nipype.utils")
 
 
-def get_confounds_tsv(datafile):
-    """Find path to confounds TSV file.
-
-    Parameters
-    ----------
-    datafile : str
-        Real nifti or cifti file.
-
-    Returns
-    -------
-    confounds_timeseries : str
-        Associated confounds TSV file.
-    """
-    if "space" in os.path.basename(datafile):
-        confounds_timeseries = datafile.replace(
-            "_space-" + datafile.split("space-")[1], "_desc-confounds_timeseries.tsv"
-        )
-    else:
-        confounds_timeseries = (
-            datafile.split("_desc-preproc_bold.nii.gz")[0] + "_desc-confounds_timeseries.tsv"
-        )
-
-    return confounds_timeseries
-
-
-def load_confound(datafile):
-    """Load confound amd json.
-
-    Parameters
-    ----------
-    datafile : str
-        Real nifti or cifti file.
-
-    Returns
-    -------
-    confounds_df : pandas.DataFrame
-        Loaded confounds TSV file.
-    confounds_metadata : dict
-        Metadata from associated confounds JSON file.
-    """
-    confounds_tsv = get_confounds_tsv(datafile)
-    confound_file_base, _ = os.path.splitext(confounds_tsv)
-    confounds_json = confound_file_base + ".json"
-    if not os.path.isfile(confounds_json):
-        raise FileNotFoundError(
-            "No json found for confounds tsv.\n"
-            f"\tTSV file: {confounds_tsv}\n"
-            f"\tJSON file (DNE): {confounds_json}"
-        )
-
-    confounds_df = pd.read_table(confounds_tsv)
-    confounds_metadata = readjson(confounds_json)
-
-    return confounds_df, confounds_metadata
-
-
-def readjson(jsonfile):
-    """Load JSON file into a dictionary.
-
-    Parameters
-    ----------
-    jsonfile : str
-        JSON file to load.
-
-    Returns
-    -------
-    data : dict
-        Data loaded from the JSON file.
-    """
-    import json
-
-    with open(jsonfile) as f:
-        data = json.load(f)
-    return data
-
-
 @fill_doc
 def load_motion(
     confounds_df,
@@ -106,21 +30,17 @@ def load_motion(
     ----------
     confounds_df : pandas.DataFrame
         The confounds DataFrame from which to extract the six basic motion regressors.
-    TR : float
-        The repetition time of the associated scan.
-    motion_filter_type : {"lp", "notch", None}
-        The filter type to use.
+    %(TR)s
+    %(motion_filter_type)s
         If "lp" or "notch", that filtering will be done in this function.
         Otherwise, no filtering will be applied.
     %(band_stop_min)s
     %(band_stop_max)s
-    motion_filter_order : int, optional
-        This only has an impact if ``motion_filter_type`` is "lp" or "notch".
-        Default is 4.
+    %(motion_filter_order)s
 
     Returns
     -------
-    motion_confounds : pandas.DataFrame
+    motion_confounds_df : pandas.DataFrame
         The six motion regressors.
         The three rotations are listed first, then the three translations.
 
@@ -154,21 +74,19 @@ def load_motion(
     return motion_confounds_df
 
 
-def get_customfile(custom_confounds_folder, fmriprep_confounds_file):
+@fill_doc
+def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
     """Identify a custom confounds file.
 
     Parameters
     ----------
-    custom_confounds_folder : str or None
-        The path to the custom confounds file.
-    fmriprep_confounds_file : str
-        Path to the confounds file from the preprocessing pipeline.
+    %(custom_confounds_folder)s
+    %(fmriprep_confounds_file)s
         We expect the custom confounds file to have the same name.
 
     Returns
     -------
-    custom_confounds_file : str or None
-        The appropriate custom confounds file.
+    %(custom_confounds_file)s
     """
     import os
 
@@ -199,12 +117,14 @@ def consolidate_confounds(
 ):
     """Combine confounds files into a single tsv.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     img_file : str
         bold file
     params
-    custom_confounds_folder : str or None
+    custom_confounds_file : str or None
         Path to custom confounds tsv. May be None.
 
     Returns
@@ -214,6 +134,8 @@ def consolidate_confounds(
     """
     import os
 
+    import numpy as np
+
     from xcp_d.utils.confounds import load_confound_matrix
 
     confounds_df = load_confound_matrix(
@@ -221,6 +143,8 @@ def consolidate_confounds(
         params=params,
         custom_confounds=custom_confounds_file,
     )
+    confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
+    confounds_df["intercept"] = np.ones(confounds_df.shape[0])
 
     out_file = os.path.abspath("confounds.tsv")
     confounds_df.to_csv(out_file, sep="\t", index=False)
@@ -235,7 +159,7 @@ def describe_regression(params, custom_confounds_file):
     Parameters
     ----------
     %(params)s
-    custom_confounds_file : str or None
+    %(custom_confounds_file)s
 
     Returns
     -------
@@ -432,7 +356,7 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
 
     Returns
     -------
-    confound : pandas.DataFrame
+    confounds_df : pandas.DataFrame
         The loaded and selected confounds.
         If "AROMA" is requested, then this DataFrame will include signal components as well.
         These will be named something like "signal_[XX]".
@@ -491,11 +415,11 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
 
     if params in PARAM_KWARGS.keys():
         kwargs = PARAM_KWARGS[params]
-        confound = load_confounds(img_file, **kwargs)[0]
+        confounds_df = load_confounds(img_file, **kwargs)[0]
 
     elif params == "custom":
         # For custom confounds with no other confounds
-        confound = pd.read_table(custom_confounds, sep="\t")
+        confounds_df = pd.read_table(custom_confounds, sep="\t")
 
     else:
         raise ValueError(f"Unrecognized parameter string '{params}'")
@@ -504,14 +428,14 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
         ica_mixing_matrix = _get_mixing_matrix(img_file)
         aroma_noise_comps_idx = _get_aroma_noise_comps(img_file)
         labeled_ica_mixing_matrix = _label_mixing_matrix(ica_mixing_matrix, aroma_noise_comps_idx)
-        confound = pd.concat([confound, labeled_ica_mixing_matrix], axis=1)
+        confounds_df = pd.concat([confounds_df, labeled_ica_mixing_matrix], axis=1)
 
     if params != "custom" and custom_confounds is not None:
         # For both custom and fMRIPrep confounds
-        custom = pd.read_table(custom_confounds, sep="\t")
-        confound = pd.concat([custom, confound], axis=1)
+        custom_confounds_df = pd.read_table(custom_confounds, sep="\t")
+        confounds_df = pd.concat([custom_confounds_df, confounds_df], axis=1)
 
-    return confound
+    return confounds_df
 
 
 def _get_mixing_matrix(img_file):
@@ -582,8 +506,7 @@ def motion_regression_filter(
     data : (T, R) numpy.ndarray
         Data to filter. T = time, R = motion regressors
         The filter will be applied independently to each variable, across time.
-    TR : float
-        Repetition time of the data.
+    %(TR)s
     %(motion_filter_type)s
         If not "notch" or "lp", an exception will be raised.
     %(band_stop_min)s

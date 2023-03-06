@@ -5,10 +5,13 @@ import os
 
 import nibabel as nb
 import numpy as np
+import pandas as pd
 from nipype import logging
 
+from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import estimate_brain_radius
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -39,85 +42,6 @@ def compute_fd(confound, head_radius=50):
     fdres = np.hstack([0, fd_res])
 
     return fdres
-
-
-@fill_doc
-def generate_mask(fd_res, fd_thresh):
-    """Create binary temporal mask flagging high-motion volumes.
-
-    Parameters
-    ----------
-    fd_res : numpy.ndarray of shape (T)
-        Framewise displacement time series.
-        T = time.
-    %(fd_thresh)s
-
-    Returns
-    -------
-    tmask : numpy.ndarray of shape (T)
-        The temporal mask. Zeros are low-motion volumes. Ones are high-motion volumes.
-    """
-    tmask = np.zeros(len(fd_res), dtype=int)
-    tmask[fd_res > fd_thresh] = 1
-
-    return tmask
-
-
-def interpolate_masked_data(bold_data, tmask, TR=1):
-    """Interpolate masked data.
-
-    No interpolation will be performed if more than 50% of the volumes in the BOLD data are
-    flagged by the temporal mask.
-
-    NOTE: TS- Why are slice times being inferred from the number of volumes?
-    Am I missing something?
-
-    Parameters
-    ----------
-    bold_data : numpy.ndarray of shape (S, T)
-        The BOLD data to interpolate.
-        T = time, S = samples.
-    tmask : numpy.ndarray of shape (T)
-        A temporal mask in which ones indicate volumes to be flagged and interpolated across.
-    TR : float, optional
-        The repetition time of the BOLD data, in seconds. Default is 1.
-
-    Returns
-    -------
-    bold_data_interpolated : numpy.ndarray of shape (S, T)
-        The interpolated BOLD data.
-    """
-    # import interpolate functionality
-    from scipy.interpolate import interp1d
-
-    # Confirm that interpolation can be correctly performed
-    bold_data_interpolated = bold_data
-    if np.mean(tmask) == 0:
-        print("No flagged volume, interpolation will not be done.")
-    elif np.mean(tmask) > 0.5:
-        print("More than 50% of volumes are flagged, interpolation will not be done.")
-    else:
-        # Create slice time array
-        slice_times = TR * np.arange(0, (bold_data.shape[1]), 1)
-        # then add all the times which were not scrubbed. Append the last
-        # time to the end
-        slice_times_extended = np.append(slice_times[tmask == 0], slice_times[-1])
-        # Stack bold data: all timepoints not scrubbed are appended to
-        # the last timepoint
-        clean_volume = np.hstack(
-            (bold_data[:, (tmask == 0)], np.reshape(bold_data[:, -1], [bold_data.shape[0], 1]))
-        )
-
-        # looping through each voxel
-        for voxel in range(0, bold_data.shape[0]):
-            # create interpolation function
-            interpolation_function = interp1d(slice_times_extended, clean_volume[voxel, :])
-            # create data
-            interpolated_data = interpolation_function(slice_times)
-            # if the data was scrubbed, replace it with the interpolated data
-            bold_data_interpolated[voxel, (tmask == 1)] = interpolated_data[tmask == 1]
-
-    return bold_data_interpolated
 
 
 def _drop_dummy_scans(bold_file, dummy_scans):
@@ -219,6 +143,8 @@ def cast_cifti_to_int16(in_file):
     DerivativesDataSink class from niworkflows version 1.7.1.
     For more information, see https://github.com/nipreps/niworkflows/issues/778.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     in_file : str
@@ -256,3 +182,64 @@ def scale_to_min_max(X, x_min, x_max):
         denom = 1
 
     return x_min + (nom / denom)
+
+
+@fill_doc
+def flag_bad_run(
+    fmriprep_confounds_file,
+    dummy_scans,
+    TR,
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    head_radius,
+    fd_thresh,
+    brain_mask,
+):
+    """Determine if a run has too many high-motion volumes to continue processing.
+
+    Parameters
+    ----------
+    %(fmriprep_confounds_file)s
+    %(dummy_scans)s
+    %(TR)s
+    %(motion_filter_type)s
+    %(motion_filter_order)s
+    %(band_stop_min)s
+    %(band_stop_max)s
+    %(head_radius)s
+    %(fd_thresh)s
+    brain_mask
+
+    Returns
+    -------
+    n_good_volumes : :obj:`int`
+        Number of good volumes in the run, after dummy scan removal.
+    """
+    dummy_scans = _infer_dummy_scans(
+        dummy_scans=dummy_scans,
+        confounds_file=fmriprep_confounds_file,
+    )
+
+    # Read in fmriprep confounds tsv to calculate FD
+    fmriprep_confounds_df = pd.read_table(fmriprep_confounds_file)
+
+    # Remove dummy volumes
+    fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
+
+    # Determine head radius
+    head_radius = estimate_brain_radius(mask_file=brain_mask, head_radius=head_radius)
+
+    # Calculate filtered FD
+    motion_df = load_motion(
+        fmriprep_confounds_df,
+        TR=TR,
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+    )
+    fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
+
+    return int(np.sum(fd_arr <= fd_thresh))

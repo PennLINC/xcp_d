@@ -12,7 +12,7 @@ import nibabel as nb
 import numpy as np
 from nipype.pipeline import engine as pe
 
-from xcp_d.interfaces.resting_state import DespikePatch
+from xcp_d.interfaces.restingstate import DespikePatch
 from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.write_save import read_ndata, write_ndata
 

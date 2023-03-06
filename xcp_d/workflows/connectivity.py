@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for extracting time series and computing functional connectivity."""
-
 import nilearn as nl
 from nipype import Function
 from nipype.interfaces import utility as niu
@@ -10,13 +9,8 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import ConnectPlot, NiftiConnect
-from xcp_d.interfaces.prepostcleaning import CiftiPrepareForParcellation
-from xcp_d.interfaces.workbench import (
-    CiftiCorrelation,
-    CiftiCreateDenseFromTemplate,
-    CiftiParcellate,
-)
+from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import cast_cifti_to_int16
@@ -24,12 +18,12 @@ from xcp_d.utils.utils import get_std2bold_xforms
 
 
 @fill_doc
-def init_nifti_functional_connectivity_wf(
+def init_functional_connectivity_nifti_wf(
     output_dir,
     min_coverage,
     mem_gb,
     omp_nthreads,
-    name="nifti_fcon_wf",
+    name="connectivity_wf",
 ):
     """Extract BOLD time series and compute functional connectivity.
 
@@ -38,32 +32,33 @@ def init_nifti_functional_connectivity_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.connectivity import init_nifti_functional_connectivity_wf
-            wf = init_nifti_functional_connectivity_wf(
+            from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
+            wf = init_functional_connectivity_nifti_wf(
                 output_dir=".",
                 min_coverage=0.5,
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="nifti_fcon_wf",
+                name="connectivity_wf",
             )
 
     Parameters
     ----------
     %(output_dir)s
+    %(min_coverage)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "nifti_fcon_wf".
+        Default is "connectivity_wf".
 
     Inputs
     ------
     bold_file
         Used for names.
-    ref_file
-    clean_bold
+    %(boldref)s
+    denoised_bold
         clean bold after filtered out nuisscance and filtering
-    %(template_to_t1w)s
-    t1w_to_native
+    %(template_to_t1w_xfm)s
+    %(t1w_to_native_xfm)s
 
     Outputs
     -------
@@ -71,8 +66,7 @@ def init_nifti_functional_connectivity_wf(
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
     %(correlations)s
-    coverage : list of str
-        Paths to atlas-specific coverage files.
+    %(coverage)s
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -98,10 +92,10 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
             fields=[
                 "bold_file",
                 "bold_mask",
-                "ref_file",
-                "clean_bold",
-                "template_to_t1w",
-                "t1w_to_native",
+                "boldref",
+                "denoised_bold",
+                "template_to_t1w_xfm",
+                "t1w_to_native_xfm",
             ],
         ),
         name="inputnode",
@@ -124,30 +118,47 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
         name="atlas_name_grabber",
     )
 
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
+    ])
+    # fmt:on
+
     # get atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file"],
+            output_names=["atlas_file", "atlas_labels_file"],
             function=get_atlas_nifti,
         ),
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
     )
 
-    atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
-        name="atlas_name_grabber",
-    )
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
+    ])
+    # fmt:on
 
     get_transforms_to_bold_space = pe.Node(
         Function(
-            input_names=["bold_file", "template_to_t1w", "t1w_to_native"],
+            input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
             output_names=["transformfile"],
             function=get_std2bold_xforms,
         ),
         name="get_transforms_to_bold_space",
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, get_transforms_to_bold_space, [
+            ("bold_file", "bold_file"),
+            ("template_to_t1w_xfm", "template_to_t1w_xfm"),
+            ("t1w_to_native_xfm", "t1w_to_native_xfm"),
+        ]),
+    ])
+    # fmt:on
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     warp_atlases_to_bold_space = pe.MapNode(
@@ -162,19 +173,43 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
         n_procs=omp_nthreads,
     )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, warp_atlases_to_bold_space, [
+            ("boldref", "reference_image"),
+        ]),
+        (atlas_file_grabber, warp_atlases_to_bold_space, [
+            ("atlas_file", "input_image"),
+        ]),
+        (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
+            ("transformfile", "transforms"),
+        ]),
+    ])
+    # fmt:on
+
     nifti_connect = pe.MapNode(
         NiftiConnect(min_coverage=min_coverage),
         name="nifti_connect",
-        iterfield=["atlas"],
+        iterfield=["atlas", "atlas_labels"],
         mem_gb=mem_gb,
     )
 
     # fmt:off
     workflow.connect([
+        (inputnode, nifti_connect, [
+            ("denoised_bold", "filtered_file"),
+            ("bold_mask", "mask"),
+        ]),
+        (atlas_file_grabber, nifti_connect, [
+            ("atlas_labels_file", "atlas_labels"),
+        ]),
+        (warp_atlases_to_bold_space, nifti_connect, [
+            ("output_image", "atlas"),
+        ]),
         (nifti_connect, outputnode, [
-            ("time_series_tsv", "timeseries"),
-            ("fcon_matrix_tsv", "correlations"),
-            ("parcel_coverage_file", "coverage"),
+            ("timeseries", "timeseries"),
+            ("correlations", "correlations"),
+            ("coverage", "coverage"),
         ]),
     ])
     # fmt:on
@@ -185,6 +220,15 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
         name="matrix_plot",
         mem_gb=mem_gb,
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, matrix_plot, [("denoised_bold", "in_file")]),
+        (atlas_name_grabber, matrix_plot, [("atlas_names", "atlas_names")]),
+        (nifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
+        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
+    ])
+    # fmt:on
 
     ds_atlas = pe.MapNode(
         DerivativesDataSink(
@@ -206,42 +250,16 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     ])
     # fmt:on
 
-    # fmt:off
-    workflow.connect([
-        # Transform Atlas to correct MNI2009 space
-        (inputnode, get_transforms_to_bold_space, [("bold_file", "bold_file"),
-                                                   ("template_to_t1w", "template_to_t1w"),
-                                                   ("t1w_to_native", "t1w_to_native")]),
-        (inputnode, warp_atlases_to_bold_space, [("ref_file", "reference_image")]),
-        (inputnode, nifti_connect, [
-            ("clean_bold", "filtered_file"),
-            ("bold_mask", "mask"),
-        ]),
-        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
-        (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
-            ("transformfile", "transforms"),
-        ]),
-        (warp_atlases_to_bold_space, nifti_connect, [("output_image", "atlas")]),
-        (nifti_connect, matrix_plot, [("time_series_tsv", "time_series_tsv")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
-    ])
-    # fmt:on
-
     return workflow
 
 
 @fill_doc
-def init_cifti_functional_connectivity_wf(
-    TR,
+def init_functional_connectivity_cifti_wf(
     output_dir,
     min_coverage,
     mem_gb,
     omp_nthreads,
-    name="cifti_fcon_wf",
+    name="connectivity_wf",
 ):
     """Extract CIFTI time series.
 
@@ -250,28 +268,27 @@ def init_cifti_functional_connectivity_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.connectivity import init_cifti_functional_connectivity_wf
-            wf = init_cifti_functional_connectivity_wf(
-                TR=1.,
+            from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
+            wf = init_functional_connectivity_cifti_wf(
                 output_dir=".",
                 min_coverage=0.5,
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="cifti_fcon_wf",
+                name="connectivity_wf",
             )
 
     Parameters
     ----------
-    TR
     %(output_dir)s
+    %(min_coverage)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "cifti_fcon_wf".
+        Default is "connectivity_wf".
 
     Inputs
     ------
-    clean_bold
+    denoised_bold
         Clean CIFTI after filtering and nuisance regression.
         The CIFTI file is in the same standard space as the atlases,
         so no transformations will be applied to the data before parcellation.
@@ -283,9 +300,11 @@ def init_cifti_functional_connectivity_wf(
     %(atlas_names)s
         Used for indexing ``timeseries`` and ``correlations``.
     %(timeseries)s
+    %(timeseries_ciftis)s
     %(correlations)s
-    coverage : list of str
-        Paths to atlas-specific coverage files.
+    %(correlation_ciftis)s
+    %(coverage)s
+    %(coverage_ciftis)s
     connectplot : str
         Path to the connectivity plot.
         This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
@@ -306,16 +325,19 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["clean_bold", "bold_file"]),
+        niu.IdentityInterface(fields=["denoised_bold", "bold_file"]),
         name="inputnode",
     )
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 "atlas_names",
+                "coverage_ciftis",
+                "timeseries_ciftis",
+                "correlation_ciftis",
+                "coverage",
                 "timeseries",
                 "correlations",
-                "coverage",
                 "connectplot",
             ],
         ),
@@ -328,15 +350,27 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         name="atlas_name_grabber",
     )
 
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
+    ])
+    # fmt:on
+
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file"],
+            output_names=["atlas_file", "atlas_labels_file"],
             function=get_atlas_cifti,
         ),
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
     )
+
+    # fmt:off
+    workflow.connect([
+        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
+    ])
+    # fmt:on
 
     resample_atlas_to_data = pe.MapNode(
         CiftiCreateDenseFromTemplate(),
@@ -347,29 +381,18 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (inputnode, resample_atlas_to_data, [("clean_bold", "template_cifti")]),
+        (inputnode, resample_atlas_to_data, [("denoised_bold", "template_cifti")]),
         (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
     ])
     # fmt:on
 
-    prepare_data_for_parcellation = pe.MapNode(
-        CiftiPrepareForParcellation(min_coverage=min_coverage, TR=TR),
-        name="prepare_data_for_parcellation",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=["atlas_file"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, prepare_data_for_parcellation, [("clean_bold", "data_file")]),
-        (resample_atlas_to_data, prepare_data_for_parcellation, [("cifti_out", "atlas_file")]),
-    ])
-    # fmt:on
-
-    parcellate_data = pe.MapNode(
-        CiftiParcellate(direction="COLUMN", only_numeric=True),
-        name="parcellate_data",
+    parcellate_atlas = pe.MapNode(
+        CiftiParcellate(
+            direction="COLUMN",
+            only_numeric=True,
+            out_file="parcellated_atlas.pscalar.nii",
+        ),
+        name="parcellate_atlas",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=["in_file", "atlas_label"],
@@ -377,41 +400,35 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (resample_atlas_to_data, parcellate_data, [("cifti_out", "atlas_label")]),
-        (prepare_data_for_parcellation, parcellate_data, [("out_file", "in_file")]),
+        (atlas_file_grabber, parcellate_atlas, [("atlas_file", "atlas_label")]),
+        (resample_atlas_to_data, parcellate_atlas, [("cifti_out", "in_file")]),
     ])
     # fmt:on
 
-    parcellate_coverage_file = pe.MapNode(
-        CiftiParcellate(direction="ROW", only_numeric=True),
-        name="parcellate_coverage_file",
+    cifti_connect = pe.MapNode(
+        CiftiConnect(min_coverage=min_coverage),
         mem_gb=mem_gb,
+        name="cifti_connect",
         n_procs=omp_nthreads,
-        iterfield=["in_file", "atlas_label"],
+        iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
     )
-    parcellate_coverage_file.inputs.out_file = "parcel_coverage.pscalar.nii"
 
     # fmt:off
     workflow.connect([
-        (resample_atlas_to_data, parcellate_coverage_file, [
-            ("cifti_out", "atlas_label"),
-        ]),
-        (prepare_data_for_parcellation, parcellate_coverage_file, [
-            ("parcel_coverage_file", "in_file"),
-        ]),
-        (parcellate_coverage_file, outputnode, [
-            ("out_file", "coverage"),
+        (inputnode, cifti_connect, [("denoised_bold", "data_file")]),
+        (atlas_file_grabber, cifti_connect, [("atlas_labels_file", "atlas_labels")]),
+        (resample_atlas_to_data, cifti_connect, [("cifti_out", "atlas_file")]),
+        (parcellate_atlas, cifti_connect, [("out_file", "parcellated_atlas")]),
+        (cifti_connect, outputnode, [
+            ("coverage_ciftis", "coverage_ciftis"),
+            ("timeseries_ciftis", "timeseries_ciftis"),
+            ("correlation_ciftis", "correlation_ciftis"),
+            ("coverage", "coverage"),
+            ("timeseries", "timeseries"),
+            ("correlations", "correlations"),
         ]),
     ])
     # fmt:on
-
-    correlate_data = pe.MapNode(
-        CiftiCorrelation(),
-        mem_gb=mem_gb,
-        name="correlate_data",
-        n_procs=omp_nthreads,
-        iterfield=["in_file"],
-    )
 
     # Create a node to plot the matrixes
     matrix_plot = pe.Node(
@@ -419,6 +436,15 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         name="matrix_plot",
         mem_gb=mem_gb,
     )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, matrix_plot, [("denoised_bold", "in_file")]),
+        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
+        (cifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
+        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
+    ])
+    # fmt:on
 
     # Coerce the bold_file to int16 before feeding it in as source_file,
     # as niworkflows 1.7.1's DerivativesDataSink tries to change the datatype of dseg files,
@@ -458,20 +484,6 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         (inputnode, ds_atlas, [("bold_file", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (cast_atlas_to_int16, ds_atlas, [("out_file", "in_file")]),
-    ])
-    # fmt:on
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, matrix_plot, [("clean_bold", "in_file")]),
-        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (parcellate_data, correlate_data, [("out_file", "in_file")]),
-        (parcellate_data, outputnode, [("out_file", "timeseries")]),
-        (correlate_data, outputnode, [("out_file", "correlations")]),
-        (parcellate_data, matrix_plot, [("out_file", "time_series_tsv")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
 

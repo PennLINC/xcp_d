@@ -5,7 +5,6 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
-import os
 import warnings
 
 import nibabel as nb
@@ -171,11 +170,11 @@ def collect_data(
     bids_validate
     bids_filters
     %(cifti)s
-    layout
+    %(layout)s
 
     Returns
     -------
-    layout : pybids.layout.BIDSLayout
+    %(layout)s
     subj_data : dict
     """
     if not isinstance(layout, BIDSLayout):
@@ -285,6 +284,56 @@ def collect_data(
             },
         }
 
+    queries = {
+        # all preprocessed BOLD files in the right space/resolution/density
+        "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
+        # native T1w-space, preprocessed T1w file
+        "t1w": {
+            "datatype": "anat",
+            "space": None,
+            "desc": "preproc",
+            "suffix": "T1w",
+            "extension": ".nii.gz",
+        },
+        # native T2w-space, preprocessed T1w file
+        "t2w": {
+            "datatype": "anat",
+            "space": [None, "T1w"],
+            "desc": "preproc",
+            "suffix": "T2w",
+            "extension": ".nii.gz",
+        },
+        # native T1w-space dseg file, but not aseg or aparcaseg
+        "t1w_seg": {
+            "datatype": "anat",
+            "space": None,
+            "desc": None,
+            "suffix": "dseg",
+            "extension": ".nii.gz",
+        },
+        # transform from standard space to T1w space
+        # from entity will be set later
+        "template_to_t1w_xfm": {
+            "datatype": "anat",
+            "to": ["T1w", "T2w"],
+            "suffix": "xfm",
+        },
+        # native T1w-space brain mask
+        "t1w_mask": {
+            "datatype": "anat",
+            "space": None,
+            "desc": "brain",
+            "suffix": "mask",
+            "extension": ".nii.gz",
+        },
+        # transform from T1w space to standard space
+        # to entity will be set later
+        "t1w_to_template_xfm": {
+            "datatype": "anat",
+            "from": ["T1w", "T2w"],
+            "suffix": "xfm",
+        },
+    }
     if cifti:
         queries["bold"]["extension"] = ".dtseries.nii"
     else:
@@ -325,12 +374,12 @@ def collect_data(
 
     if not cifti:
         # use the BOLD file's space if the BOLD file is a nifti.
-        queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
-        queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
+        queries["t1w_to_template_xfm"]["to"] = queries["bold"]["space"]
+        queries["template_to_t1w_xfm"]["from"] = queries["bold"]["space"]
     else:
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        temp_query = queries["t1w_to_template_xform"].copy()
+        temp_query = queries["t1w_to_template_xfm"].copy()
         volumetric_space = ASSOCIATED_TEMPLATES[space]
 
         temp_query["to"] = volumetric_space
@@ -340,8 +389,8 @@ def collect_data(
                 f"No nifti transforms found to allowed space ({volumetric_space})"
             )
 
-        queries["t1w_to_template_xform"]["to"] = volumetric_space
-        queries["template_to_t1w_xform"]["from"] = volumetric_space
+        queries["t1w_to_template_xfm"]["to"] = volumetric_space
+        queries["template_to_t1w_xfm"]["from"] = volumetric_space
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -385,6 +434,7 @@ def collect_data(
     return layout, subj_data
 
 
+@fill_doc
 def collect_surface_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
@@ -394,8 +444,7 @@ def collect_surface_data(layout, participant_label):
 
     Parameters
     ----------
-    layout : :obj:`bids.BIDSLayout`
-        Layout object indexing the preprocessed derivatives.
+    %(layout)s
     participant_label : :obj:`str`
         Subject ID.
 
@@ -572,20 +621,18 @@ def collect_surface_data(layout, participant_label):
     return out_surface_files, standard_space_surfaces, surfaces_found
 
 
-def collect_run_data(layout, input_type, bold_file, cifti=False):
+@fill_doc
+def collect_run_data(layout, input_type, bold_file, cifti):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
-    layout : :obj:`bids.layout.BIDSLayout`
-        The BIDSLayout object used to grab files from the dataset.
+    %(layout)s
     bold_file : :obj:`str`
         Path to the BOLD file.
-    cifti : :obj:`bool`, optional
+    %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
-        Default is False.
-    input_type: :obj:`str`
-        Input type.
+    %(input_type)s
 
     Returns
     -------
@@ -618,7 +665,7 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             desc="brain",
             suffix="mask",
         )
-        run_data["t1w_to_native_xform"] = layout.get_nearest(
+        run_data["t1w_to_native_xfm"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             **{"from": "T1w"},  # "from" is protected Python kw
@@ -636,11 +683,20 @@ def collect_run_data(layout, input_type, bold_file, cifti=False):
             space=allowed_nifti_spaces,
             suffix="boldref",
         )
+        run_data["nifti_file"] = layout.get_nearest(
+            bids_file.path,
+            strict=False,
+            space=allowed_nifti_spaces,
+            desc="preproc",
+            suffix="bold",
+            extension=[".nii", ".nii.gz"],
+        )
 
     if input_type == "hcp":
         run_data["boldmask"] = layout.get(desc="brain", datatype="anat")
 
     LOGGER.debug(
+    
         f"Collected run data for {bold_file}:\n"
         f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
     )
@@ -785,6 +841,8 @@ def _get_tr(img):
 def get_freesurfer_dir(fmri_dir):
     """Find FreeSurfer derivatives associated with preprocessing pipeline.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     fmri_dir : str
@@ -833,6 +891,8 @@ def get_freesurfer_dir(fmri_dir):
 
 def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
     """Find FreeSurfer sphere file.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
@@ -888,6 +948,7 @@ def get_entity(filename, entity):
     entity_value : str or None
         The BOLD file's entity value associated with the requested entity.
     """
+    import os
     import re
 
     folder, file_base = os.path.split(filename)
@@ -910,3 +971,50 @@ def get_entity(filename, entity):
             raise ValueError(f"Unknown space for {filename}")
 
     return entity_value
+
+
+def group_across_runs(in_files):
+    """Group preprocessed BOLD files by unique sets of entities, ignoring run.
+
+    Parameters
+    ----------
+    in_files : :obj:`list` of :obj:`str`
+        A list of preprocessed BOLD files to group.
+
+    Returns
+    -------
+    out_files : :obj:`list` of :obj:`list` of :obj:`str`
+        The grouped BOLD files. Each sublist corresponds to a single set of runs.
+    """
+    import os
+    import re
+
+    # First, extract run information and sort the input files by the runs,
+    # so that any cases where files are not already in ascending run order get fixed.
+    run_numbers = []
+    for in_file in in_files:
+        run = get_entity(in_file, "run")
+        if run is None:
+            run = 0
+
+        run_numbers.append(int(run))
+
+    # Sort the files by the run numbers.
+    zipped_pairs = zip(run_numbers, in_files)
+    sorted_in_files = [x for _, x in sorted(zipped_pairs)]
+
+    # Extract the unique sets of entities (i.e., the filename, minus the run entity).
+    unique_filenames = [re.sub("_run-[0-9]+_", "_", os.path.basename(f)) for f in sorted_in_files]
+
+    # Assign each in_file to a group of files with the same entities, except run.
+    out_files, grouped_unique_filenames = [], []
+    for i_file, in_file in enumerate(sorted_in_files):
+        unique_filename = unique_filenames[i_file]
+        if unique_filename not in grouped_unique_filenames:
+            grouped_unique_filenames.append(unique_filename)
+            out_files.append([])
+
+        group_idx = grouped_unique_filenames.index(unique_filename)
+        out_files[group_idx].append(in_file)
+
+    return out_files

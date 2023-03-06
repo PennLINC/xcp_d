@@ -4,7 +4,7 @@ orbs:
 
 .dockersetup: &dockersetup
   docker:
-    - image: pennlinc/xcp_d_build:0.0.6rc5
+    - image: pennlinc/xcp_d_build:0.0.6rc15
   working_directory: /src/xcp_d
 
 runinstall: &runinstall
@@ -169,7 +169,7 @@ jobs:
           paths:
               - .coverage.nibabies
       - store_artifacts:
-          path: /src/xcp_d/.circleci/
+          path: /src/xcp_d/.circleci/out/test_nibabies/xcp_d/
 
   cifti_with_freesurfer:
     <<: *dockersetup

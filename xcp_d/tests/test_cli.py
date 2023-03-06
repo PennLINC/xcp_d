@@ -14,7 +14,6 @@ from xcp_d.tests.utils import (
     get_test_data_path,
     run_command,
 )
-from xcp_d.utils.concatenation import concatenate_derivatives
 
 
 @pytest.mark.ds001419_nifti
@@ -40,10 +39,9 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--nuisance-regressors=aroma_gsr",
         "--despike",
         "--dummytime=8",
-        "--fd-thresh=0.04",
+        "--fd-thresh=0.2",
         "--head_radius=40",
         "--smoothing=6",
-        "-vvv",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--min-coverage=1",
@@ -116,17 +114,6 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     plugin_settings = retval["plugin_settings"]
     xcpd_wf.run(**plugin_settings)
 
-    # Apply the concatenation outside of the workflow run
-    concatenate_derivatives(
-        subjects=["01"],
-        fmri_dir=data_dir,
-        output_dir=os.path.join(out_dir, "xcp_d"),
-        cifti=opts.cifti,
-        dcan_qc=opts.dcan_qc,
-        dummy_scans=opts.dummy_scans,
-        dummytime=opts.dummytime,
-    )
-
     generate_reports(
         subject_list=["01"],
         fmri_dir=data_dir,
@@ -181,7 +168,6 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         "--head_radius 40 "
         "--smoothing 6 "
         "-f 100 "
-        "-vv "
         "--nuisance-regressors 27P "
         "--disable-bandpass-filter "
         "--dcan-qc "
@@ -223,7 +209,6 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--head_radius=auto",
         "--smoothing=6",
         "--fd-thresh=100",
-        "-vv",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}

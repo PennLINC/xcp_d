@@ -19,22 +19,32 @@ from xcp_d.__about__ import __version__
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
+    _get_tr,
     collect_data,
+    collect_run_data,
     collect_surface_data,
     get_entity,
     get_preproc_pipeline_info,
+    group_across_runs,
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.modified_data import flag_bad_run
 from xcp_d.workflows.anatomical import (
     init_warp_anats_to_template_wf,
     init_warp_surfaces_to_template_wf,
 )
-from xcp_d.workflows.bold import init_boldpostprocess_wf
-from xcp_d.workflows.cifti import init_ciftipostprocess_wf
-from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
+from xcp_d.workflows.bold import init_postprocess_nifti_wf
+from xcp_d.workflows.cifti import init_postprocess_cifti_wf
+from xcp_d.workflows.concatenation import init_concatenate_data_wf
+from xcp_d.workflows.execsummary import (
+    init_brainsprite_figures_wf,
+    init_execsummary_anatomical_plots_wf,
+)
 
 LOGGER = logging.getLogger("nipype.workflow")
+MINIMUM_RUN_VOLUMES = 10
+MINIMUM_CONCATENATED_VOLUMES = 30
 
 
 @fill_doc
@@ -47,8 +57,8 @@ def init_xcpd_wf(
     task_id,
     bids_filters,
     bandpass_filter,
-    lower_bpf,
-    upper_bpf,
+    high_pass,
+    low_pass,
     bpf_order,
     fd_thresh,
     motion_filter_type,
@@ -69,6 +79,7 @@ def init_xcpd_wf(
     dcan_qc=False,
     input_type="fmriprep",
     min_coverage=0.5,
+    combineruns=False,
     name="xcpd_wf",
 ):
     """Build and organize execution of xcp_d pipeline.
@@ -101,8 +112,8 @@ def init_xcpd_wf(
                 task_id="imagery",
                 bids_filters=None,
                 bandpass_filter=True,
-                lower_bpf=0.01,
-                upper_bpf=0.08,
+                high_pass=0.01,
+                low_pass=0.08,
                 bpf_order=2,
                 fd_thresh=0.2,
                 motion_filter_type=None,
@@ -123,33 +134,28 @@ def init_xcpd_wf(
                 dcan_qc=False,
                 input_type="fmriprep",
                 min_coverage=0.5,
+                combineruns=False,
                 name="xcpd_wf",
             )
 
     Parameters
     ----------
-    layout : :obj:`bids.layout.BIDSLayout`
-        BIDS dataset layout or None.
+    %(layout)s
     %(bandpass_filter)s
-    %(lower_bpf)s
-    %(upper_bpf)s
-    despike: bool
-        afni depsike
+    %(high_pass)s
+    %(low_pass)s
+    %(despike)s
     %(bpf_order)s
     %(analysis_level)s
     %(motion_filter_type)s
     %(motion_filter_order)s
     %(band_stop_min)s
     %(band_stop_max)s
-    fmriprep_dir : Path
-        fmriprep output directory
     %(omp_nthreads)s
     %(cifti)s
-    task_id : str or None
+    task_id : :obj:`str` or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     bids_filters : dict or None
-    low_mem : bool
-        Write uncompressed .nii files in some cases to reduce memory usage
     %(output_dir)s
     %(fd_thresh)s
     run_uuid : str
@@ -160,17 +166,14 @@ def init_xcpd_wf(
     %(head_radius)s
     %(params)s
     %(smoothing)s
-    custom_confounds_folder : str or None
-        Path to custom nuisance regressors.
-        Must be a folder containing confounds files,
-        in which case the file with the name matching the fMRIPrep confounds file will be selected.
+    %(custom_confounds_folder)s
     %(dummytime)s
     %(dummy_scans)s
     %(process_surfaces)s
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
+    %(dcan_qc)s
     %(input_type)s
-    min_coverage
+    %(min_coverage)s
+    combineruns
     %(name)s
 
     References
@@ -186,8 +189,8 @@ def init_xcpd_wf(
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
             layout=layout,
-            lower_bpf=lower_bpf,
-            upper_bpf=upper_bpf,
+            high_pass=high_pass,
+            low_pass=low_pass,
             bpf_order=bpf_order,
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
@@ -213,6 +216,7 @@ def init_xcpd_wf(
             dcan_qc=dcan_qc,
             input_type=input_type,
             min_coverage=min_coverage,
+            combineruns=combineruns,
             name=f"single_subject_{subject_id}_wf",
         )
 
@@ -229,34 +233,35 @@ def init_xcpd_wf(
 
 @fill_doc
 def init_subject_wf(
-    layout,
-    lower_bpf,
-    upper_bpf,
-    bpf_order,
-    motion_filter_order,
-    motion_filter_type,
+    fmri_dir,
+    subject_id,
+    input_type,
+    process_surfaces,
+    combineruns,
+    cifti,
+    task_id,
+    bids_filters,
     bandpass_filter,
+    high_pass,
+    low_pass,
+    bpf_order,
+    motion_filter_type,
+    motion_filter_order,
     band_stop_min,
     band_stop_max,
-    fmri_dir,
-    omp_nthreads,
-    subject_id,
-    cifti,
-    despike,
+    smoothing,
     head_radius,
     params,
+    output_dir,
+    custom_confounds_folder,
     dummytime,
     dummy_scans,
     fd_thresh,
-    task_id,
-    bids_filters,
-    smoothing,
-    custom_confounds_folder,
-    process_surfaces,
+    despike,
     dcan_qc,
-    output_dir,
-    input_type,
     min_coverage,
+    omp_nthreads,
+    layout,
     name,
 ):
     """Organize the postprocessing pipeline for a single subject.
@@ -273,75 +278,69 @@ def init_subject_wf(
 
             wf = init_subject_wf(
                 fmri_dir=fmri_dir,
-                output_dir=".",
                 subject_id="01",
+                input_type="fmriprep",
+                process_surfaces=False,
+                combineruns=False,
+                cifti=False,
                 task_id="imagery",
                 bids_filters=None,
                 bandpass_filter=True,
-                lower_bpf=0.01,
-                upper_bpf=0.08,
+                high_pass=0.01,
+                low_pass=0.08,
                 bpf_order=2,
                 motion_filter_type=None,
                 motion_filter_order=4,
                 band_stop_min=12,
                 band_stop_max=20,
-                cifti=False,
-                despike=True,
+                smoothing=6.,
                 head_radius=50,
                 params="36P",
+                output_dir=".",
+                custom_confounds_folder=None,
                 dummytime=0,
                 dummy_scans=0,
                 fd_thresh=0.2,
-                smoothing=6.,
-                custom_confounds_folder=None,
-                process_surfaces=False,
+                despike=True,
+                dcan_qc=False,
+                min_coverage=0.5,
                 omp_nthreads=1,
                 layout=None,
-                dcan_qc=False,
-                input_type="fmriprep",
-                min_coverage=0.5,
                 name="single_subject_sub-01_wf",
             )
 
     Parameters
     ----------
-    layout : BIDSLayout object
-        BIDS dataset layout or None.
+    %(fmri_dir)s
+    %(subject_id)s
+    %(input_type)s
+    %(process_surfaces)s
+    combineruns
+    %(cifti)s
+    task_id : :obj:`str` or None
+        Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
+    bids_filters : dict or None
     %(bandpass_filter)s
-    %(lower_bpf)s
-    %(upper_bpf)s
-    despike: bool
-        afni depsike
+    %(high_pass)s
+    %(low_pass)s
     %(bpf_order)s
     %(motion_filter_type)s
     %(motion_filter_order)s
     %(band_stop_min)s
     %(band_stop_max)s
-    %(fmri_dir)s
-    %(omp_nthreads)s
-    %(cifti)s
-    task_id : str or None
-        Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
-    bids_filters : dict or None
-    low_mem : bool
-        Write uncompressed .nii files in some cases to reduce memory usage
-    %(output_dir)s
-    %(fd_thresh)s
+    %(smoothing)s
     %(head_radius)s
     %(params)s
-    %(smoothing)s
-    custom_confounds_folder : str or None
-        Path to custom nuisance regressors.
-        Must be a folder containing confounds files,
-        in which case the file with the name matching the fMRIPrep confounds file will be selected.
+    %(output_dir)s
+    %(custom_confounds_folder)s
     %(dummytime)s
     %(dummy_scans)s
-    %(process_surfaces)s
-    dcan_qc : bool
-        Whether to run DCAN QC or not.
-    %(subject_id)s
-    %(input_type)s
-    min_coverage
+    %(fd_thresh)s
+    %(despike)s
+    %(dcan_qc)s
+    %(min_coverage)s
+    %(omp_nthreads)s
+    %(layout)s
     %(name)s
 
     References
@@ -365,7 +364,7 @@ def init_subject_wf(
     )
 
     # determine the appropriate post-processing workflow
-    postproc_wf_function = init_ciftipostprocess_wf if cifti else init_boldpostprocess_wf
+    postproc_wf_function = init_postprocess_cifti_wf if cifti else init_postprocess_nifti_wf
     preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
@@ -376,8 +375,8 @@ def init_subject_wf(
                 "t2w",  # optional
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
-                "template_to_t1w_xform",  # not used by cifti workflow
-                "t1w_to_template_xform",
+                "template_to_t1w_xfm",  # not used by cifti workflow
+                "t1w_to_template_xfm",
                 # surface files
                 "lh_pial_surf",
                 "rh_pial_surf",
@@ -399,8 +398,8 @@ def init_subject_wf(
     inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
-    inputnode.inputs.template_to_t1w_xform = subj_data["template_to_t1w_xform"]
-    inputnode.inputs.t1w_to_template_xform = subj_data["t1w_to_template_xform"]
+    inputnode.inputs.template_to_t1w_xfm = subj_data["template_to_t1w_xfm"]
+    inputnode.inputs.t1w_to_template_xfm = subj_data["t1w_to_template_xfm"]
 
     # surface files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
@@ -481,7 +480,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     # Extract target volumetric space for T1w image
-    target_space = get_entity(subj_data["t1w_to_template_xform"], "to")
+    target_space = get_entity(subj_data["t1w_to_template_xfm"], "to")
 
     warp_anats_to_template_wf = init_warp_anats_to_template_wf(
         output_dir=output_dir,
@@ -489,7 +488,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         t2w_available=subj_data["t2w"] is not None,
         target_space=target_space,
         omp_nthreads=omp_nthreads,
-        mem_gb=5,  # RF: need to change memory size
+        mem_gb=5,
     )
 
     # fmt:off
@@ -498,10 +497,28 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
             ("t1w_seg", "inputnode.t1seg"),
-            ("t1w_to_template_xform", "inputnode.t1w_to_template"),
+            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
         ]),
     ])
     # fmt:on
+
+    if dcan_qc:
+        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+            t1w_available=subj_data["t1w"] is not None,
+            t2w_available=subj_data["t2w"] is not None,
+            output_dir=output_dir,
+            name="execsummary_anatomical_plots_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (warp_anats_to_template_wf, execsummary_anatomical_plots_wf, [
+                ("outputnode.t1w", "inputnode.t1w"),
+                ("outputnode.t2w", "inputnode.t2w"),
+                ("outputnode.template", "inputnode.template"),
+            ]),
+        ])
+        # fmt:on
 
     if surfaces_found and dcan_qc:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
@@ -537,8 +554,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_inflated_surf", "inputnode.rh_inflated_surf"),
                 ("lh_vinflated_surf", "inputnode.lh_vinflated_surf"),
                 ("rh_vinflated_surf", "inputnode.rh_vinflated_surf"),
-                ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
-                ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
+                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ]),
         ])
         # fmt:on
@@ -578,57 +595,168 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
         )
 
-    # loop over each bold run to be postprocessed
-    # NOTE: Look at https://miykael.github.io/nipype_tutorial/notebooks/basic_iteration.html
-    # for hints on iteration
-    for i_run, bold_file in enumerate(preproc_files):
-        bold_postproc_wf = postproc_wf_function(
-            input_type=input_type,
-            bold_file=bold_file,
-            lower_bpf=lower_bpf,
-            upper_bpf=upper_bpf,
-            bpf_order=bpf_order,
-            motion_filter_type=motion_filter_type,
-            motion_filter_order=motion_filter_order,
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            bandpass_filter=bandpass_filter,
-            smoothing=smoothing,
-            params=params,
-            head_radius=head_radius,
-            omp_nthreads=omp_nthreads,
-            n_runs=len(preproc_files),
-            custom_confounds_folder=custom_confounds_folder,
-            layout=layout,
-            despike=despike,
-            dummytime=dummytime,
-            dummy_scans=dummy_scans,
-            fd_thresh=fd_thresh,
-            dcan_qc=dcan_qc,
-            output_dir=output_dir,
-            min_coverage=min_coverage,
-            name=f"{'cifti' if cifti else 'nifti'}_postprocess_{i_run}_wf",
-        )
+    # What if I grouped the preproc_files by task first, here?
+    # Then I get a list of lists of preproc files.
+    # I need a nested for loop to initialize all of the post-processing workflows.
+    # Then the concatenation workflows get connected within the first for loop.
+    # The concatenation workflow doesn't need to group inputs,
+    # but it may need to filter them to remove any runs that didn't succeed?
+    n_runs = len(preproc_files)
+    preproc_files = group_across_runs(preproc_files)
+    run_counter = 0
+    for ent_set, task_files in enumerate(preproc_files):
+        # Assuming TR is constant across runs for a given combination of entities.
+        TR = _get_tr(nb.load(task_files[0]))
 
-        # fmt:off
-        workflow.connect([
-            (inputnode, bold_postproc_wf, [
-                ('t1w', 'inputnode.t1w'),
-                ('t1w_seg', 'inputnode.t1seg'),
-                ('t1w_mask', 'inputnode.t1w_mask'),
-            ]),
-        ])
-        if not cifti:
+        n_task_runs = len(task_files)
+        if combineruns and (n_task_runs > 1):
+            merge_elements = [
+                "name_source",
+                "preprocessed_bold",
+                "fmriprep_confounds_file",
+                "filtered_motion",
+                "temporal_mask",
+                "uncensored_denoised_bold",
+                "interpolated_filtered_bold",
+                "censored_denoised_bold",
+                "smoothed_denoised_bold",
+                "t1w_to_native_xfm",
+                "bold_mask",
+                "boldref",
+                "atlas_names",  # this will be exactly the same across runs
+                "timeseries",
+                "timeseries_ciftis",
+            ]
+            merge_dict = {
+                io_name: pe.Node(
+                    niu.Merge(n_task_runs, no_flatten=True),
+                    name=f"collect_{io_name}_{ent_set}",
+                )
+                for io_name in merge_elements
+            }
+
+        n_good_volumes_in_task = []
+        for j_run, bold_file in enumerate(task_files):
+            run_data = collect_run_data(layout, input_type, bold_file, cifti=cifti)
+
+            n_good_volumes_in_run = flag_bad_run(
+                fmriprep_confounds_file=run_data["confounds"],
+                dummy_scans=dummy_scans,
+                TR=run_data["bold_metadata"]["RepetitionTime"],
+                motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
+                band_stop_min=band_stop_min,
+                band_stop_max=band_stop_max,
+                head_radius=head_radius,
+                fd_thresh=fd_thresh,
+                brain_mask=subj_data["t1w_mask"],
+            )
+            if n_good_volumes_in_run < MINIMUM_RUN_VOLUMES:
+                LOGGER.warning(
+                    f"Fewer than {MINIMUM_RUN_VOLUMES} volumes in {bold_file} "
+                    "are not high-motion outliers. This run will not be processed."
+                )
+                continue
+
+            n_good_volumes_in_task.append(n_good_volumes_in_run)
+            bold_postproc_wf = postproc_wf_function(
+                bold_file=bold_file,
+                bandpass_filter=bandpass_filter,
+                high_pass=high_pass,
+                low_pass=low_pass,
+                bpf_order=bpf_order,
+                motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
+                band_stop_min=band_stop_min,
+                band_stop_max=band_stop_max,
+                smoothing=smoothing,
+                head_radius=head_radius,
+                params=params,
+                output_dir=output_dir,
+                custom_confounds_folder=custom_confounds_folder,
+                dummytime=dummytime,
+                dummy_scans=dummy_scans,
+                fd_thresh=fd_thresh,
+                despike=despike,
+                dcan_qc=dcan_qc,
+                run_data=run_data,
+                n_runs=n_runs,
+                min_coverage=min_coverage,
+                omp_nthreads=omp_nthreads,
+                layout=layout,
+                name=f"{'cifti' if cifti else 'nifti'}_postprocess_{run_counter}_wf",
+            )
+            run_counter += 1
+
+            # fmt:off
             workflow.connect([
-                (inputnode, bold_postproc_wf, [
-                    ('template_to_t1w_xform', 'inputnode.template_to_t1w'),
+                (inputnode, bold_postproc_wf, [("t1w_mask", "inputnode.t1w_mask")]),
+                (warp_anats_to_template_wf, bold_postproc_wf, [
+                    ("outputnode.t1w", "inputnode.t1w"),
+                    ("outputnode.t2w", "inputnode.t2w"),
                 ]),
             ])
-        # fmt:on
+            # fmt:on
+
+            if not cifti:
+                # fmt:off
+                workflow.connect([
+                    (inputnode, bold_postproc_wf, [
+                        ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                    ]),
+                ])
+                # fmt:on
+
+            if combineruns and (n_task_runs > 1):
+                for io_name, node in merge_dict.items():
+                    # fmt:off
+                    workflow.connect([
+                        (bold_postproc_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
+                    ])
+                    # fmt:on
+
+        if combineruns and (n_task_runs > 1):
+            n_good_volumes_in_task = np.sum(n_good_volumes_in_task)
+            if n_good_volumes_in_task < MINIMUM_CONCATENATED_VOLUMES:
+                LOGGER.warning(
+                    f"Fewer than {MINIMUM_CONCATENATED_VOLUMES} volumes in entity set {ent_set} "
+                    "are not high-motion outliers. Concatenation will not be performed."
+                )
+                continue
+
+            concatenate_data_wf = init_concatenate_data_wf(
+                output_dir=output_dir,
+                motion_filter_type=motion_filter_type,
+                fd_thresh=fd_thresh,
+                mem_gb=1,
+                omp_nthreads=omp_nthreads,
+                TR=TR,
+                smoothing=smoothing,
+                cifti=cifti,
+                dcan_qc=dcan_qc,
+                name=f"concatenate_entity_set_{ent_set}_wf",
+            )
+            concatenate_data_wf.inputs.inputnode.head_radius = head_radius
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, concatenate_data_wf, [
+                    ("t1w_mask", "inputnode.t1w_mask"),
+                    ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ]),
+            ])
+            # fmt:on
+
+            for io_name, node in merge_dict.items():
+                # fmt:off
+                workflow.connect([(node, concatenate_data_wf, [("out", f"inputnode.{io_name}")])])
+                # fmt:on
 
     # fmt:off
-    workflow.connect([(summary, ds_report_summary, [('out_report', 'in_file')]),
-                      (about, ds_report_about, [('out_report', 'in_file')])])
+    workflow.connect([
+        (summary, ds_report_summary, [("out_report", "in_file")]),
+        (about, ds_report_about, [("out_report", "in_file")]),
+    ])
     # fmt:on
 
     for node in workflow.list_node_names():
