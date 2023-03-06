@@ -443,6 +443,7 @@ def init_despike_wf(
     return workflow
 
 
+@fill_doc
 def init_denoise_bold_wf(
     TR,
     low_pass,
@@ -606,7 +607,7 @@ def init_denoise_bold_wf(
         (censor_interpolated_data, resd_smoothing_wf, [
             ("censored_denoised_bold", "inputnode.bold_file"),
         ]),
-        (resd_smoothing_wf, outputnode, [("smoothed_bold", "smoothed_denoised_bold")]),
+        (resd_smoothing_wf, outputnode, [("outputnode.smoothed_bold", "smoothed_denoised_bold")]),
     ])
     # fmt:on
 
