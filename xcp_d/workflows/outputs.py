@@ -81,11 +81,8 @@ def init_postproc_derivatives_wf(
     qc_file
         LINC-style quality control file
     %(interpolated_filtered_bold)s
-    censored_denoised_bold
-        clean bold after censoring, regression, interpolation, filtering, and re-censoring
-    smoothed_bold
-        clean bold after censoring, regression, interpolation, filtering, re-censoring, and
-        smoothing
+    %(censored_denoised_bold)s
+    %(smoothed_denoised_bold)s
     alff
         alff nifti
     smoothed_alff
@@ -110,7 +107,7 @@ def init_postproc_derivatives_wf(
                 "correlations",
                 "qc_file",
                 "censored_denoised_bold",
-                "smoothed_bold",
+                "smoothed_denoised_bold",
                 "interpolated_filtered_bold",
                 "alff",
                 "smoothed_alff",
@@ -583,7 +580,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([(inputnode, ds_alff, [("alff", "in_file")])])
 
     if smoothing:
-        workflow.connect([(inputnode, ds_smoothed_bold, [("smoothed_bold", "in_file")])])
+        workflow.connect([(inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")])])
 
         if bandpass_filter:
             workflow.connect([(inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")])])

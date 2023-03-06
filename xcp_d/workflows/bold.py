@@ -541,7 +541,7 @@ def init_postprocess_nifti_wf(
         (denoise_bold_wf, postproc_derivatives_wf, [
             ("outputnode.interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
             ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
-            ("outputnode.smoothed_bold", "inputnode.smoothed_bold"),
+            ("outputnode.smoothed_denoised_bold", "inputnode.smoothed_denoised_bold"),
         ]),
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
