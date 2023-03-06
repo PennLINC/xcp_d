@@ -35,7 +35,7 @@ from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 from xcp_d.workflows.plotting import init_qc_report_wf
 from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
-from xcp_d.workflows.restingstate import init_compute_alff_wf, init_nifti_reho_wf
+from xcp_d.workflows.restingstate import init_alff_wf, init_nifti_reho_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -395,7 +395,7 @@ First, {dummy_scans_str}outlier detection was performed.
     # fmt:on
 
     if bandpass_filter:
-        alff_wf = init_compute_alff_wf(
+        alff_wf = init_alff_wf(
             bold_file=bold_file,
             output_dir=output_dir,
             TR=TR,
@@ -409,10 +409,11 @@ First, {dummy_scans_str}outlier detection was performed.
         )
 
     reho_wf = init_nifti_reho_wf(
-        mem_gb=mem_gbx["timeseries"],
         bold_file=bold_file,
-        name="reho_wf",
+        output_dir=output_dir,
+        mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
+        name="reho_wf",
     )
 
     postproc_derivatives_wf = init_postproc_derivatives_wf(

@@ -24,7 +24,7 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
-    compute_alff_wf = restingstate.init_compute_alff_wf(
+    compute_alff_wf = restingstate.init_alff_wf(
         omp_nthreads=2,
         bold_file=bold_file,
         mem_gb=4,
@@ -100,7 +100,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
     tempdir = tmp_path_factory.mktemp("test_cifti_alff_01")
-    compute_alff_wf = restingstate.init_compute_alff_wf(
+    compute_alff_wf = restingstate.init_alff_wf(
         bold_file=bold_file,
         output_dir=tempdir,
         TR=TR,

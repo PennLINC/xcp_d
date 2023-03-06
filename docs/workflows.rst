@@ -330,7 +330,7 @@ These include regional homogeneity (ReHo) and amplitude of low-frequency fluctua
 
 ALFF
 ----
-:func:`~xcp_d.workflows.restingstate.init_compute_alff_wf`
+:func:`~xcp_d.workflows.restingstate.init_alff_wf`
 
 Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is used.
 

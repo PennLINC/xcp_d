@@ -23,7 +23,7 @@ from xcp_d.utils.utils import fwhm2sigma
 
 
 @fill_doc
-def init_compute_alff_wf(
+def init_alff_wf(
     bold_file,
     output_dir,
     TR,
@@ -42,11 +42,11 @@ def init_compute_alff_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.restingstate import init_compute_alff_wf
-            wf = init_compute_alff_wf(
+            from xcp_d.workflows.restingstate import init_alff_wf
+            wf = init_alff_wf(
                 bold_file="/path/to/file.nii.gz",
-                TR=2.,
                 output_dir=".",
+                TR=2.,
                 low_pass=0.1,
                 high_pass=0.01,
                 smoothing=6,
