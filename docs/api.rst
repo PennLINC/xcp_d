@@ -92,11 +92,11 @@ xcp_d-combineqc
    xcp_d.utils.hcp2fmriprep
    xcp_d.utils.doc
    xcp_d.utils.execsummary
-   xcp_d.utils.fcon
    xcp_d.utils.filemanip
    xcp_d.utils.modified_data
    xcp_d.utils.plotting
    xcp_d.utils.qcmetrics
+   xcp_d.utils.restingstate
    xcp_d.utils.sentry
    xcp_d.utils.utils
    xcp_d.utils.write_save

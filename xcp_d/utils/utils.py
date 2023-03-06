@@ -164,7 +164,6 @@ def get_std2bold_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):
     -----
     Used by:
 
-    - get_segfile (to be removed)
     - to resample dseg in init_postprocess_nifti_wf for QCReport
     - to warp atlases to the same space as the BOLD data in init_functional_connectivity_nifti_wf
     - to resample dseg to BOLD space for the executive summary plots
