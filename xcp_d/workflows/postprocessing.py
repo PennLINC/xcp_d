@@ -19,6 +19,7 @@ from xcp_d.utils.plotting import plot_design_matrix
 from xcp_d.utils.utils import estimate_brain_radius, fwhm2sigma
 
 
+@fill_doc
 def init_prepare_confounds_wf(
     output_dir,
     TR,
@@ -85,7 +86,7 @@ def init_prepare_confounds_wf(
     preprocessed_bold : :obj:`str`
     %(fmriprep_confounds_file)s
     %(custom_confounds_file)s
-    %(t1w_mask)s
+    t1w_mask : :obj:`str`
     %(dummy_scans)s
         Set from the parameter.
 
@@ -93,7 +94,7 @@ def init_prepare_confounds_wf(
     -------
     preprocessed_bold : :obj:`str`
     %(fmriprep_confounds_file)s
-    %(confounds_file)s
+    confounds_file : :obj:`str`
         The selected confounds, potentially including custom confounds, after dummy scan removal.
     %(dummy_scans)s
         If originally set to "auto", this output will have the actual number of dummy volumes.
@@ -438,7 +439,7 @@ def init_resd_smoothing_wf(
 
             wf = init_resd_smoothing_wf(
                 smoothing=6,
-                cifti=False,
+                cifti=True,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="resd_smoothing_wf",
@@ -446,7 +447,7 @@ def init_resd_smoothing_wf(
 
     Parameters
     ----------
-    smoothing
+    %(smoothing)s
     %(cifti)s
     %(mem_gb)s
     %(omp_nthreads)s
@@ -469,8 +470,8 @@ def init_resd_smoothing_wf(
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
         workflow.__desc__ = f""" \
-The processed BOLD  was smoothed using Connectome Workbench with a gaussian kernel
-size of {str(smoothing)} mm  (FWHM).
+The processed BOLD was smoothed using Connectome Workbench with a Gaussian kernel
+(FWHM={str(smoothing)} mm).
 """
 
         # Call connectome workbench to smooth for each hemisphere
@@ -516,8 +517,7 @@ size of {str(smoothing)} mm  (FWHM).
 
     else:
         workflow.__desc__ = f""" \
-The processed BOLD was smoothed using Nilearn with a gaussian kernel size of {str(smoothing)} mm
-(FWHM).
+The processed BOLD was smoothed using Nilearn with a Gaussian kernel (FWHM={str(smoothing)} mm).
 """
         # Use nilearn to smooth the image
         smooth_data = pe.Node(

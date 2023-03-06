@@ -599,7 +599,7 @@ def init_execsummary_anatomical_plots_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
+            from xcp_d.workflows.execsummary import init_execsummary_anatomical_plots_wf
 
             wf = init_execsummary_anatomical_plots_wf(
                 t1w_available=True,

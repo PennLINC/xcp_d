@@ -605,7 +605,7 @@ the following post-processing was performed.
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
             ("outputnode.filtered_motion_metadata", "inputnode.filtered_motion_metadata"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-            ("outputnode.temporal_mask_metadata", "inputnode.tmask_metadata"),
+            ("outputnode.temporal_mask_metadata", "inputnode.temporal_mask_metadata"),
         ]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
         (connectivity_wf, postproc_derivatives_wf, [

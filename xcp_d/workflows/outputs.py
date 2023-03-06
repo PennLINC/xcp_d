@@ -95,7 +95,7 @@ def init_postproc_derivatives_wf(
     %(filtered_motion)s
     filtered_motion_metadata
     %(temporal_mask)s
-    tmask_metadata
+    temporal_mask_metadata
     %(dummy_scans)s
     """
     workflow = Workflow(name=name)
@@ -120,7 +120,7 @@ def init_postproc_derivatives_wf(
                 "filtered_motion",
                 "filtered_motion_metadata",
                 "temporal_mask",
-                "tmask_metadata",
+                "temporal_mask_metadata",
                 "dummy_scans",
                 # cifti-only inputs
                 "coverage_ciftis",
@@ -158,7 +158,7 @@ def init_postproc_derivatives_wf(
     )
 
     # fmt:off
-    workflow.connect([(inputnode, ds_temporal_mask, [("tmask_metadata", "meta_dict")])])
+    workflow.connect([(inputnode, ds_temporal_mask, [("temporal_mask_metadata", "meta_dict")])])
     # fmt:on
 
     ds_filtered_motion = pe.Node(
