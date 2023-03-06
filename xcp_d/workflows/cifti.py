@@ -35,7 +35,7 @@ from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 from xcp_d.workflows.plotting import init_qc_report_wf
 from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
-from xcp_d.workflows.restingstate import init_cifti_reho_wf, init_alff_wf
+from xcp_d.workflows.restingstate import init_alff_wf, init_cifti_reho_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
