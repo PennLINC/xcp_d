@@ -11,7 +11,6 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
-from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.prepostcleaning import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
@@ -563,23 +562,6 @@ def init_postprocess_nifti_wf(
             ]),
         ])
         # fmt:on
-
-    ds_report_connectivity = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=bold_file,
-            desc="connectivityplot",
-            datatype="figures",
-        ),
-        name="ds_report_connectivity",
-        run_without_submitting=False,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (connectivity_wf, ds_report_connectivity, [("outputnode.connectplot", "in_file")]),
-    ])
-    # fmt:on
 
     # executive summary workflow
     if dcan_qc:

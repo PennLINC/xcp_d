@@ -66,9 +66,6 @@ def init_functional_connectivity_nifti_wf(
     %(timeseries)s
     %(correlations)s
     %(coverage)s
-    connectplot : :obj:`str`
-        Path to the connectivity plot.
-        This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
     """
     workflow = Workflow(name=name)
 
@@ -106,7 +103,6 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
                 "timeseries",
                 "correlations",
                 "coverage",
-                "connectplot",
             ],
         ),
         name="outputnode",
@@ -225,7 +221,6 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
         (inputnode, matrix_plot, [("denoised_bold", "in_file")]),
         (atlas_name_grabber, matrix_plot, [("atlas_names", "atlas_names")]),
         (nifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
 
@@ -246,6 +241,23 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
         (inputnode, ds_atlas, [("name_source", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (warp_atlases_to_bold_space, ds_atlas, [("output_image", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_report_connectivity = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivityplot",
+            datatype="figures",
+        ),
+        name="ds_report_connectivity",
+        run_without_submitting=False,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_report_connectivity, [("name_source", "source_file")]),
+        (matrix_plot, ds_report_connectivity, [("connectplot", "in_file")]),
     ])
     # fmt:on
 
@@ -303,9 +315,6 @@ def init_functional_connectivity_cifti_wf(
     %(correlation_ciftis)s
     %(coverage)s
     %(coverage_ciftis)s
-    connectplot : :obj:`str`
-        Path to the connectivity plot.
-        This figure contains four ROI-to-ROI correlation heat maps from four of the atlases.
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
@@ -440,7 +449,6 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         (inputnode, matrix_plot, [("denoised_bold", "in_file")]),
         (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
         (cifti_connect, matrix_plot, [("correlations", "correlations_tsv")]),
-        (matrix_plot, outputnode, [("connectplot", "connectplot")]),
     ])
     # fmt:on
 
@@ -479,6 +487,23 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         (inputnode, ds_atlas, [("name_source", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (cast_atlas_to_int16, ds_atlas, [("out_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_report_connectivity = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="connectivityplot",
+            datatype="figures",
+        ),
+        name="ds_report_connectivity",
+        run_without_submitting=False,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_report_connectivity, [("name_source", "source_file")]),
+        (matrix_plot, ds_report_connectivity, [("connectplot", "in_file")]),
     ])
     # fmt:on
 
