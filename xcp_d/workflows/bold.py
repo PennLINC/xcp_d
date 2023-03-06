@@ -618,7 +618,7 @@ First, {dummy_scans_str}outlier detection was performed.
     if despike:
         despike_wf = init_despike_wf(
             TR=TR,
-            cifti=True,
+            cifti=False,
             mem_gb=mem_gbx["timeseries"],
             omp_nthreads=omp_nthreads,
             name="despike_wf",
