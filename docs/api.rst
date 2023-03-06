@@ -65,7 +65,7 @@ xcp_d-combineqc
    xcp_d.interfaces.qc_plot
    xcp_d.interfaces.report_core
    xcp_d.interfaces.report
-   xcp_d.interfaces.resting_state
+   xcp_d.interfaces.restingstate
    xcp_d.interfaces.surfplotting
    xcp_d.interfaces.workbench
 

@@ -10,7 +10,7 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
-from xcp_d.interfaces.resting_state import ComputeALFF, ReHoNamePatch, SurfaceReHo
+from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseScalar,
     CiftiSeparateMetric,

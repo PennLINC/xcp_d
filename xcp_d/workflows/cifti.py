@@ -19,8 +19,6 @@ from xcp_d.interfaces.prepostcleaning import (
     FlagMotionOutliers,
     RemoveDummyVolumes,
 )
-from xcp_d.interfaces.resting_state import DespikePatch
-from xcp_d.interfaces.workbench import CiftiConvert
 from xcp_d.utils.confounds import (
     consolidate_confounds,
     describe_censoring,
@@ -34,7 +32,7 @@ from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
 from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 from xcp_d.workflows.plotting import init_qc_report_wf
-from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
+from xcp_d.workflows.postprocessing import init_despike_wf, init_resd_smoothing_wf
 from xcp_d.workflows.restingstate import init_alff_wf, init_reho_cifti_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -116,8 +114,8 @@ def init_postprocess_cifti_wf(
                 params="27P",
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
-                dummy_scans=0,
                 dummytime=0,
+                dummy_scans=2,
                 fd_thresh=0.2,
                 despike=True,
                 dcan_qc=True,
@@ -266,14 +264,6 @@ def init_postprocess_cifti_wf(
             "regressors were discarded, then "
         )
 
-    despike_str = ""
-    if despike:
-        despike_str = (
-            "After censoring, but before nuisance regression, "
-            "the BOLD data were converted to NIfTI format, despiked with 3dDespike, "
-            "and converted back to CIFTI format."
-        )
-
     bandpass_str = ""
     if bandpass_filter:
         bandpass_str = (
@@ -287,7 +277,6 @@ For each of the {num2words(n_runs)} BOLD runs found per subject (across all task
 the following post-processing was performed.
 First, {dummy_scans_str}outlier detection was performed.
 {censoring_description}
-{despike_str}
 Next, the BOLD data and confounds were mean-centered and linearly detrended.
 {regression_description}
 Any volumes censored earlier in the workflow were then interpolated in the residual time series
@@ -593,44 +582,27 @@ produced by the regression.
     # fmt:on
 
     if despike:
-        # first, convert the cifti to a nifti
-        convert_to_nifti = pe.Node(
-            CiftiConvert(target="to"),
-            name="convert_to_nifti",
+        despike_wf = init_despike_wf(
+            TR=TR,
+            cifti=True,
             mem_gb=mem_gbx["timeseries"],
-            n_procs=omp_nthreads,
-        )
-
-        # next, run 3dDespike
-        despike3d = pe.Node(
-            DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
-            name="despike3d",
-            mem_gb=mem_gbx["timeseries"],
-            n_procs=omp_nthreads,
-        )
-
-        # finally, convert the despiked nifti back to cifti
-        convert_to_cifti = pe.Node(
-            CiftiConvert(target="from", TR=TR),
-            name="convert_to_cifti",
-            mem_gb=mem_gbx["timeseries"],
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
+            name="despike_wf",
         )
 
         # fmt:off
         workflow.connect([
-            (convert_to_nifti, despike3d, [("out_file", "in_file")]),
-            (downcast_data, convert_to_cifti, [("bold_file", "cifti_template")]),
-            (despike3d, convert_to_cifti, [("out_file", "in_file")]),
-            (convert_to_cifti, denoise_bold, [("out_file", "preprocessed_bold")]),
+            (despike_wf, denoise_bold, [("outputnode.bold_file", "preprocessed_bold")]),
         ])
 
         if dummy_scans:
             workflow.connect([
-                (remove_dummy_scans, convert_to_nifti, [("bold_file_dropped_TR", "in_file")]),
+                (remove_dummy_scans, despike_wf, [
+                    ("bold_file_dropped_TR", "inputnode.bold_file"),
+                ]),
             ])
         else:
-            workflow.connect([(downcast_data, convert_to_nifti, [("bold_file", "in_file")])])
+            workflow.connect([(downcast_data, despike_wf, [("bold_file", "inputnode.bold_file")])])
         # fmt:on
 
     elif dummy_scans:

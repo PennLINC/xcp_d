@@ -229,7 +229,7 @@ These volumes will later be removed from the denoised data.
 
 Despiking [OPTIONAL]
 ====================
-:class:`~xcp_d.interfaces.resting_state.DespikePatch`
+:class:`~xcp_d.interfaces.restingstate.DespikePatch`
 
 Despiking is a process in which large spikes in the BOLD times series are truncated.
 Despiking reduces/limits the amplitude or magnitude of the large spikes but preserves those

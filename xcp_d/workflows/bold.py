@@ -19,7 +19,6 @@ from xcp_d.interfaces.prepostcleaning import (
     FlagMotionOutliers,
     RemoveDummyVolumes,
 )
-from xcp_d.interfaces.resting_state import DespikePatch
 from xcp_d.utils.confounds import (
     consolidate_confounds,
     describe_censoring,
@@ -34,7 +33,7 @@ from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 from xcp_d.workflows.plotting import init_qc_report_wf
-from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
+from xcp_d.workflows.postprocessing import init_despike_wf, init_resd_smoothing_wf
 from xcp_d.workflows.restingstate import init_alff_wf, init_reho_nifti_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
@@ -119,7 +118,7 @@ def init_postprocess_nifti_wf(
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
                 dummytime=0,
-                dummy_scans=0,
+                dummy_scans=2,
                 fd_thresh=0.2,
                 despike=True,
                 dcan_qc=True,
@@ -286,10 +285,6 @@ def init_postprocess_nifti_wf(
             "regressors were discarded, then "
         )
 
-    despike_str = ""
-    if despike:
-        despike_str = "The BOLD data were then despiked with 3dDespike."
-
     bandpass_str = ""
     if bandpass_filter:
         bandpass_str = (
@@ -307,7 +302,6 @@ For each of the {num2words(n_runs)} BOLD runs found per subject (across all task
 the following post-processing was performed.
 First, {dummy_scans_str}outlier detection was performed.
 {censoring_description}
-{despike_str}
 {regression_description}
 {bandpass_str}
 """
@@ -621,30 +615,28 @@ First, {dummy_scans_str}outlier detection was performed.
     ])
     # fmt:on
 
-    if despike:  # If we despike
-        # Despiking truncates large spikes in the BOLD times series
-        # Despiking reduces/limits the amplitude or magnitude of
-        # large spikes but preserves those data points with an imputed
-        # reduced amplitude. Despiking is done before regression and filtering
-        # to minimize the impact of spike. Despiking is applied to whole volumes
-        # and data, and different from temporal censoring. It can be added to the
-        # command line arguments with --despike.
-        despike3d = pe.Node(
-            DespikePatch(outputtype="NIFTI_GZ", args="-NEW"),
-            name="despike3d",
+    if despike:
+        despike_wf = init_despike_wf(
+            TR=TR,
+            cifti=True,
             mem_gb=mem_gbx["timeseries"],
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
+            name="despike_wf",
         )
 
         # fmt:off
-        workflow.connect([(despike3d, denoise_bold, [("out_file", "preprocessed_bold")])])
-
         if dummy_scans:
             workflow.connect([
-                (remove_dummy_scans, despike3d, [("bold_file_dropped_TR", "in_file")]),
+                (remove_dummy_scans, despike_wf, [
+                    ("bold_file_dropped_TR", "inputnode.bold_file"),
+                ]),
             ])
         else:
-            workflow.connect([(downcast_data, despike3d, [("bold_file", "in_file")])])
+            workflow.connect([(downcast_data, despike_wf, [("bold_file", "inputnode.bold_file")])])
+
+        workflow.connect([
+            (despike_wf, denoise_bold, [("outputnode.bold_file", "preprocessed_bold")]),
+        ])
         # fmt:on
 
     elif dummy_scans:
