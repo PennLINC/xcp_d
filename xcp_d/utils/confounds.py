@@ -166,7 +166,6 @@ def describe_regression(params, custom_confounds_file):
     desc : :obj:`str`
         A text description of the regression.
     """
-    import nilearn
     import pandas as pd
 
     use_custom_confounds, non_aggro = False, False
@@ -242,34 +241,22 @@ def describe_regression(params, custom_confounds_file):
         desc += (
             "Custom confounds prefixed with 'signal__' were used to account for variance "
             "explained by known signals. "
-            "These regressors were included in the regression, "
-            f"as implemented in nilearn {nilearn.__version__} [@nilearn], "
-            "after which the resulting parameter estimates from only the nuisance regressors "
-            "were used to denoise the BOLD data. "
+            "Prior to denoising the BOLD data, the nuisance confounds were orthogonalized "
+            "with respect to the signal regressors."
         )
     elif "aroma" in params and not non_aggro:
         desc += (
-            "AROMA non-motion components (i.e., ones assumed to reflect signal) were also "
-            "included in the regression, "
-            f"as implemented in nilearn {nilearn.__version__} [@nilearn], "
-            "after which the resulting parameter estimates from only the nuisance regressors "
-            "were used to denoise the BOLD data. "
+            "AROMA non-motion components (i.e., ones assumed to reflect signal) were used to "
+            "account for variance by known signals. "
+            "Prior to denoising the BOLD data, the nuisance confounds were orthogonalized "
+            "with respect to the non-motion components."
         )
 
     if "aroma" in params or non_aggro:
         desc += (
-            "In this way, shared variance between the nuisance regressors "
-            "and the signal regressors was separated smartly, "
-            "so that signal would not be removed by the regression. "
-            "This is colloquially known as 'non-aggressive' denoising, "
-            "and is the recommended denoising method when nuisance regressors may share variance "
-            "with known signal regressors [@pruim2015ica]."
-        )
-    else:
-        desc += (
-            "These nuisance regressors were regressed from the BOLD data using "
-            "linear regression, "
-            f"as implemented in nilearn {nilearn.__version__} [@nilearn]."
+            "In this way, the confound regressors were orthogonalized to produce regressors "
+            "without variance explained by known signals, so that signal would not be removed "
+            "from the BOLD data in the later regression. "
         )
 
     return desc
@@ -336,8 +323,8 @@ def describe_censoring(
         "framewise displacement was calculated using the formula from @power_fd_dvars, "
         f"with a head radius {fd_substr}. "
         f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
-        f"greater than {fd_thresh} mm were flagged as outliers and excluded from nuisance "
-        f"regression [@power_fd_dvars]. {filter_post_str}"
+        f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of later "
+        f"censoring [@power_fd_dvars]. {filter_post_str}"
     )
     return desc
 

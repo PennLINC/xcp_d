@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing BOLD data."""
+import nilearn
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
@@ -9,11 +10,19 @@ from num2words import num2words
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.nilearn import Smooth
-from xcp_d.interfaces.prepostcleaning import FlagMotionOutliers, RemoveDummyVolumes
+from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
+from xcp_d.interfaces.prepostcleaning import (
+    Censor,
+    FlagMotionOutliers,
+    RemoveDummyVolumes,
+)
 from xcp_d.interfaces.restingstate import DespikePatch
 from xcp_d.interfaces.workbench import CiftiConvert, FixCiftiIntent
-from xcp_d.utils.confounds import consolidate_confounds
+from xcp_d.utils.confounds import (
+    consolidate_confounds,
+    describe_censoring,
+    describe_regression,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix
 from xcp_d.utils.utils import estimate_brain_radius, fwhm2sigma
@@ -31,6 +40,7 @@ def init_prepare_confounds_wf(
     motion_filter_order,
     head_radius,
     fd_thresh,
+    custom_confounds_file,
     mem_gb,
     omp_nthreads,
     name="prepare_confounds_wf",
@@ -58,6 +68,7 @@ def init_prepare_confounds_wf(
                 motion_filter_order=4,
                 head_radius="auto",
                 fd_thresh=0.2,
+                custom_confounds_file=None,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="prepare_confounds_wf",
@@ -75,6 +86,7 @@ def init_prepare_confounds_wf(
     %(motion_filter_order)s
     %(head_radius)s
     %(fd_thresh)s
+    %(custom_confounds_file)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -118,7 +130,18 @@ def init_prepare_confounds_wf(
             f"The first {num2words(dummy_scans)} of both the BOLD data and nuisance "
             "regressors were discarded. "
         )
-    workflow.__desc__ = f"{dummy_scans_str}. Then, outlier detection was performed."
+
+    censoring_description = describe_censoring(
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        head_radius=head_radius,
+        fd_thresh=fd_thresh,
+    )
+    confounds_description = describe_regression(params, custom_confounds_file)
+
+    workflow.__desc__ = f"{dummy_scans_str}{censoring_description}{confounds_description}"
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -416,6 +439,176 @@ def init_despike_wf(
             (despike3d, outputnode, [("out_file", "bold_file")]),
         ])
         # fmt:on
+
+    return workflow
+
+
+def init_denoise_bold_wf(
+    TR,
+    low_pass,
+    high_pass,
+    bpf_order,
+    bandpass_filter,
+    smoothing,
+    cifti,
+    mem_gb,
+    omp_nthreads,
+    name="denoise_bold_wf",
+):
+    """Denoise BOLD data.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.postprocessing import init_denoise_bold_wf
+
+            wf = init_denoise_bold_wf(
+                TR=0.8,
+                high_pass=0.01,
+                low_pass=0.08,
+                bpf_order=2,
+                bandpass_filter=True,
+                smoothing=6,
+                cifti=False,
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="denoise_bold_wf",
+            )
+
+    Parameters
+    ----------
+    %(TR)s
+    %(low_pass)s
+    %(high_pass)s
+    %(bpf_order)s
+    %(bandpass_filter)s
+    %(smoothing)s
+    %(cifti)s
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "denoise_bold_wf".
+
+    Inputs
+    ------
+    preprocessed_bold
+    %(temporal_mask)s
+    mask
+    confounds_file
+
+    Outputs
+    -------
+    %(uncensored_denoised_bold)s
+    %(interpolated_filtered_bold)s
+    %(censored_denoised_bold)s
+    %(smoothed_denoised_bold)s
+    """
+    workflow = Workflow(name=name)
+
+    workflow.__desc__ = (
+        "Nuisance regressors were regressed from the BOLD data using linear regression, "
+        f"as implemented in nilearn {nilearn.__version__} [@nilearn]."
+    )
+    if bandpass_filter:
+        workflow.__desc__ += (
+            " Any volumes censored earlier in the workflow were then interpolated in the residual "
+            "time series produced by the regression. "
+            "The interpolated timeseries were then band-pass filtered using a(n) "
+            f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
+            f"in order to retain signals within the {high_pass}-{low_pass} Hz frequency band. "
+            "The filtered, interpolated time series were then re-censored to remove high-motion "
+            "outlier volumes."
+        )
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "preprocessed_bold",
+                "temporal_mask",
+                "mask",  # only used for NIFTIs
+                "confounds_file",
+            ],
+        ),
+        name="inputnode",
+    )
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "uncensored_denoised_bold",
+                "interpolated_filtered_bold",
+                "censored_denoised_bold",
+                "smoothed_denoised_bold",
+            ],
+        ),
+        name="outputnode",
+    )
+
+    denoising_interface = DenoiseCifti if cifti else DenoiseNifti
+    regress_and_filter_bold = pe.Node(
+        denoising_interface(
+            TR=TR,
+            low_pass=low_pass,
+            high_pass=high_pass,
+            filter_order=bpf_order,
+            bandpass_filter=bandpass_filter,
+        ),
+        name="regress_and_filter_bold",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, regress_and_filter_bold, [
+            ("preprocessed_bold", "preprocessed_bold"),
+            ("confounds_file", "confounds_file"),
+            ("temporal_mask", "temporal_mask"),
+        ]),
+        (regress_and_filter_bold, outputnode, [
+            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
+            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+        ]),
+    ])
+    if not cifti:
+        workflow.connect([(inputnode, regress_and_filter_bold, [("mask", "mask")])])
+    # fmt:on
+
+    censor_interpolated_data = pe.Node(
+        Censor(),
+        name="censor_interpolated_data",
+        mem_gb=mem_gb,
+        omp_nthreads=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (regress_and_filter_bold, censor_interpolated_data, [
+            ("interpolated_filtered_bold", "in_file"),
+        ]),
+        (censor_interpolated_data, outputnode, [
+            ("censored_denoised_bold", "censored_denoised_bold"),
+        ]),
+    ])
+    # fmt:on
+
+    resd_smoothing_wf = init_resd_smoothing_wf(
+        smoothing=smoothing,
+        cifti=False,
+        mem_gb=mem_gb,
+        omp_nthreads=omp_nthreads,
+        name="resd_smoothing_wf",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (censor_interpolated_data, resd_smoothing_wf, [
+            ("censored_denoised_bold", "inputnode.bold_file"),
+        ]),
+        (resd_smoothing_wf, outputnode, [("smoothed_bold", "smoothed_denoised_bold")]),
+    ])
+    # fmt:on
 
     return workflow
 

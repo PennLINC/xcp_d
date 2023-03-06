@@ -423,8 +423,6 @@ def denoise_with_nilearn(
     -------
     %(uncensored_denoised_bold)s
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
-    %(interpolated_unfiltered_bold)s
-        Returned as a :obj:`numpy.ndarray` of shape (T, S)
     %(interpolated_filtered_bold)s
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
         This is the primary output.
@@ -509,7 +507,7 @@ def denoise_with_nilearn(
     else:
         interpolated_filtered_bold = interpolated_unfiltered_bold
 
-    return uncensored_denoised_bold, interpolated_unfiltered_bold, interpolated_filtered_bold
+    return uncensored_denoised_bold, interpolated_filtered_bold
 
 
 def _select_first(lst):
