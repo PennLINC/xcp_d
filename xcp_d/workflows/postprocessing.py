@@ -585,6 +585,7 @@ def init_denoise_bold_wf(
 
     # fmt:off
     workflow.connect([
+        (inputnode, censor_interpolated_data, [("temporal_mask", "temporal_mask")]),
         (regress_and_filter_bold, censor_interpolated_data, [
             ("interpolated_filtered_bold", "in_file"),
         ]),
