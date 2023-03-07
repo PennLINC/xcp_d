@@ -332,6 +332,7 @@ def init_postprocess_cifti_wf(
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+            ("outputnode.confounds_file", "inputnode.confounds_file"),
         ]),
         (denoise_bold_wf, outputnode, [
             ("outputnode.uncensored_denoised_bold", "uncensored_denoised_bold"),
