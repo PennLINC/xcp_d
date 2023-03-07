@@ -214,7 +214,7 @@ def collect_data(
             },
             # transform from standard space to T1w space
             # from entity will be set later
-            "template_to_t1w_xform": {
+            "template_to_t1w_xfm": {
                 "datatype": "anat",
                 "to": ["T1w", "T2w"],
                 "suffix": "xfm",
@@ -229,7 +229,7 @@ def collect_data(
             },
             # transform from T1w space to standard space
             # to entity will be set later
-            "t1w_to_template_xform": {
+            "t1w_to_template_xfm": {
                 "datatype": "anat",
                 "from": ["T1w", "T2w"],
                 "suffix": "xfm",
@@ -243,6 +243,7 @@ def collect_data(
             "t1w": {
                 "datatype": "anat",
                 "desc": "preproc",
+                "space": "MNI152NLin6Asym",
                 "suffix": "T1w",
                 "extension": ".nii.gz",
             },
@@ -263,7 +264,7 @@ def collect_data(
             },
             # transform from standard space to T1w space
             # from entity will be set later
-            "template_to_t1w_xform": {
+            "template_to_t1w_xfm": {
                 "datatype": "anat",
                 "to": ["T1w", "T2w"],
                 "suffix": "xfm",
@@ -277,63 +278,13 @@ def collect_data(
             },
             # transform from T1w space to standard space
             # to entity will be set later
-            "t1w_to_template_xform": {
+            "t1w_to_template_xfm": {
                 "datatype": "anat",
                 "from": ["T1w", "T2w"],
                 "suffix": "xfm",
             },
         }
 
-    queries = {
-        # all preprocessed BOLD files in the right space/resolution/density
-        "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
-        # native T1w-space, preprocessed T1w file
-        "t1w": {
-            "datatype": "anat",
-            "space": None,
-            "desc": "preproc",
-            "suffix": "T1w",
-            "extension": ".nii.gz",
-        },
-        # native T2w-space, preprocessed T1w file
-        "t2w": {
-            "datatype": "anat",
-            "space": [None, "T1w"],
-            "desc": "preproc",
-            "suffix": "T2w",
-            "extension": ".nii.gz",
-        },
-        # native T1w-space dseg file, but not aseg or aparcaseg
-        "t1w_seg": {
-            "datatype": "anat",
-            "space": None,
-            "desc": None,
-            "suffix": "dseg",
-            "extension": ".nii.gz",
-        },
-        # transform from standard space to T1w space
-        # from entity will be set later
-        "template_to_t1w_xfm": {
-            "datatype": "anat",
-            "to": ["T1w", "T2w"],
-            "suffix": "xfm",
-        },
-        # native T1w-space brain mask
-        "t1w_mask": {
-            "datatype": "anat",
-            "space": None,
-            "desc": "brain",
-            "suffix": "mask",
-            "extension": ".nii.gz",
-        },
-        # transform from T1w space to standard space
-        # to entity will be set later
-        "t1w_to_template_xfm": {
-            "datatype": "anat",
-            "from": ["T1w", "T2w"],
-            "suffix": "xfm",
-        },
-    }
     if cifti:
         queries["bold"]["extension"] = ".dtseries.nii"
     else:
