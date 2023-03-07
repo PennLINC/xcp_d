@@ -474,8 +474,6 @@ def init_postprocess_nifti_wf(
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
         TR=TR,
-        motion_filter_type=motion_filter_type,
-        fd_thresh=fd_thresh,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         dcan_qc=dcan_qc,

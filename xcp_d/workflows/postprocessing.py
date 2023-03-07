@@ -11,6 +11,7 @@ from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
+from xcp_d.interfaces.plotting import CensoringPlot
 from xcp_d.interfaces.prepostcleaning import (
     Censor,
     FlagMotionOutliers,
@@ -276,6 +277,50 @@ def init_prepare_confounds_wf(
     ])
     # fmt:on
 
+    censor_report = pe.Node(
+        CensoringPlot(
+            TR=TR,
+            motion_filter_type=motion_filter_type,
+            fd_thresh=fd_thresh,
+        ),
+        name="censor_report",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (determine_head_radius, censor_report, [
+            ("head_radius", "head_radius"),
+        ]),
+        (flag_motion_outliers, censor_report, [
+            ("filtered_motion", "filtered_motion"),
+            ("temporal_mask", "temporal_mask"),
+        ]),
+        # use the undropped version
+        (inputnode, censor_report, [("fmriprep_confounds_file", "fmriprep_confounds_file")]),
+    ])
+    # fmt:on
+
+    ds_report_censoring = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            datatype="figures",
+            desc="censoring",
+            suffix="motion",
+            extension=".svg",
+        ),
+        name="ds_report_censoring",
+        run_without_submitting=False,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_report_censoring, [("name_source", "source_file")]),
+        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
+    ])
+    # fmt:on
+
     if dummy_scans:
         remove_dummy_scans = pe.Node(
             RemoveDummyVolumes(),
@@ -303,6 +348,7 @@ def init_prepare_confounds_wf(
             (remove_dummy_scans, plot_design_matrix_node, [
                 ("confounds_file_dropped_TR", "design_matrix"),
             ]),
+            (remove_dummy_scans, censor_report, [("dummy_scans", "dummy_scans")]),
             (remove_dummy_scans, outputnode, [
                 ("bold_file_dropped_TR", "preprocessed_bold"),
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
@@ -320,6 +366,7 @@ def init_prepare_confounds_wf(
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ]),
+            (inputnode, censor_report, [("dummy_scans", "dummy_scans")]),
             (inputnode, outputnode, [
                 ("preprocessed_bold", "preprocessed_bold"),
                 ("fmriprep_confounds_file", "fmriprep_confounds_file"),

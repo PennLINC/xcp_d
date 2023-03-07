@@ -86,7 +86,7 @@ class CensoringPlot(SimpleInterface):
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
         dummy_scans = self.inputs.dummy_scans
-        # This check is necessary, because init_qc_report_wf connects dummy_scans from the
+        # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
         # inputnode, forcing it to be undefined instead of using the default when not set.
         if not isdefined(dummy_scans):
             dummy_scans = 0
@@ -103,6 +103,7 @@ class CensoringPlot(SimpleInterface):
         # Plot censored volumes as vertical lines
         tmask_df = pd.read_table(self.inputs.temporal_mask)
         tmask_arr = tmask_df["framewise_displacement"].values
+        assert tmask_arr.size == preproc_fd_timeseries.size
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
             if i_idx == 0:

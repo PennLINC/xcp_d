@@ -7,7 +7,7 @@ from templateflow.api import get as get_template
 
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.plotting import CensoringPlot, QCPlots, QCPlotsES
+from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.qcmetrics import _make_dcan_qc_file
@@ -18,8 +18,6 @@ from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
 def init_qc_report_wf(
     output_dir,
     TR,
-    motion_filter_type,
-    fd_thresh,
     mem_gb,
     omp_nthreads,
     cifti,
@@ -37,8 +35,6 @@ def init_qc_report_wf(
             wf = init_qc_report_wf(
                 output_dir=".",
                 TR=0.5,
-                motion_filter_type=None,
-                fd_thresh=0.2,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 cifti=False,
@@ -50,8 +46,6 @@ def init_qc_report_wf(
     ----------
     %(output_dir)s
     %(TR)s
-    %(motion_filter_type)s
-    %(fd_thresh)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(cifti)s
@@ -127,29 +121,6 @@ def init_qc_report_wf(
         ),
         name="outputnode",
     )
-
-    censor_report = pe.Node(
-        CensoringPlot(
-            TR=TR,
-            motion_filter_type=motion_filter_type,
-            fd_thresh=fd_thresh,
-        ),
-        name="censor_report",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, censor_report, [
-            ("head_radius", "head_radius"),
-            ("temporal_mask", "temporal_mask"),
-            ("dummy_scans", "dummy_scans"),
-            ("filtered_motion", "filtered_motion"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-        ]),
-    ])
-    # fmt:on
 
     nlin2009casym_brain_mask = str(
         get_template(
@@ -501,25 +472,6 @@ def init_qc_report_wf(
         (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
         (qcreport, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
         (qcreport, ds_report_postprocessing, [("clean_qcplot", "in_file")]),
-    ])
-    # fmt:on
-
-    ds_report_censoring = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            datatype="figures",
-            desc="censoring",
-            suffix="motion",
-            extension=".svg",
-        ),
-        name="ds_report_censoring",
-        run_without_submitting=False,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_report_censoring, [("name_source", "source_file")]),
-        (censor_report, ds_report_censoring, [("out_file", "in_file")]),
     ])
     # fmt:on
 

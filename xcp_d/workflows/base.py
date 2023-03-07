@@ -735,7 +735,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             concatenate_data_wf = init_concatenate_data_wf(
                 output_dir=output_dir,
                 motion_filter_type=motion_filter_type,
-                fd_thresh=fd_thresh,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 TR=TR,
