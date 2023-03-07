@@ -127,8 +127,8 @@ def init_prepare_confounds_wf(
         )
     elif dummy_scans > 0:
         dummy_scans_str = (
-            f"The first {num2words(dummy_scans)} of both the BOLD data and nuisance "
-            "regressors were discarded. "
+            f"The first {num2words(dummy_scans)} volumes of both the BOLD data and nuisance "
+            "regressors were discarded as non-steady-state volumes, or 'dummy scans'. "
         )
 
     censoring_description = describe_censoring(
@@ -669,7 +669,7 @@ def init_resd_smoothing_wf(
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
         workflow.__desc__ = f""" \
-The processed BOLD was smoothed using Connectome Workbench with a Gaussian kernel
+The denoised BOLD was then smoothed using Connectome Workbench with a Gaussian kernel
 (FWHM={str(smoothing)} mm).
 """
 
@@ -716,7 +716,7 @@ The processed BOLD was smoothed using Connectome Workbench with a Gaussian kerne
 
     else:
         workflow.__desc__ = f""" \
-The processed BOLD was smoothed using Nilearn with a Gaussian kernel (FWHM={str(smoothing)} mm).
+The denoised BOLD was smoothed using Nilearn with a Gaussian kernel (FWHM={str(smoothing)} mm).
 """
         # Use nilearn to smooth the image
         smooth_data = pe.Node(

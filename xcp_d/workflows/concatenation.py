@@ -96,7 +96,7 @@ def init_concatenate_data_wf(
     """
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """\
+    workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs.
 """
 

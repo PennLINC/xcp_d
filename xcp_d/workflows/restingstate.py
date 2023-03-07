@@ -136,8 +136,8 @@ calculated at each voxel to yield voxel-wise ALFF measures.
     if smoothing:  # If we want to smooth
         if not cifti:  # If nifti
             workflow.__desc__ = workflow.__desc__ + (
-                " The ALFF maps were smoothed with Nilearn using a Gaussian kernel size of "
-                f"{str(smoothing)} mm (FWHM)."
+                " The ALFF maps were smoothed with Nilearn using a Gaussian kernel "
+                f"(FWHM={str(smoothing)} mm)."
             )
             # Smooth via Nilearn
             smooth_data = pe.Node(
@@ -155,7 +155,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
                 " The ALFF maps were smoothed with the Connectome Workbench using a Gaussian "
-                f"kernel size of {str(smoothing)} mm (FWHM)."
+                f"kernel (FWHM={str(smoothing)} mm)."
             )
 
             # Smooth via Connectome Workbench
@@ -267,7 +267,7 @@ For each hemisphere, regional homogeneity (ReHo) was computed using surface-base
 Specifically, for each vertex on the surface, the Kendall's coefficient of concordance (KCC)
 was computed with nearest-neighbor vertices to yield ReHo.
 For the subcortical, volumetric data, ReHo was computed with neighborhood voxels using
-*3dReHo* in AFNI [@afni].
+*3dReHo* in AFNI [@cox1997software].
 """
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["denoised_bold"]),
@@ -417,7 +417,8 @@ def init_reho_nifti_wf(
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
-Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo* in AFNI [@afni].
+Regional homogeneity (ReHo) was computed with neighborhood voxels using *3dReHo* in AFNI
+[@cox1997software].
 """
 
     inputnode = pe.Node(
