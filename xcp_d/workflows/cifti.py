@@ -322,7 +322,7 @@ def init_postprocess_cifti_wf(
         bpf_order=bpf_order,
         bandpass_filter=bandpass_filter,
         smoothing=smoothing,
-        cifti=False,
+        cifti=True,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         name="denoise_bold_wf",
