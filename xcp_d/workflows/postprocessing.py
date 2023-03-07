@@ -182,7 +182,7 @@ def init_prepare_confounds_wf(
                 "custom_confounds_file",
                 "params",
             ],
-            output_names=["out_file"],
+            output_names=["confounds_file"],
             function=consolidate_confounds,
         ),
         name="consolidate_confounds",
@@ -292,7 +292,9 @@ def init_prepare_confounds_wf(
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ]),
-            (consolidate_confounds_node, remove_dummy_scans, [("out_file", "confounds_file")]),
+            (consolidate_confounds_node, remove_dummy_scans, [
+                ("confounds_file", "confounds_file"),
+            ]),
             (remove_dummy_scans, flag_motion_outliers, [
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
@@ -324,7 +326,9 @@ def init_prepare_confounds_wf(
                 ("dummy_scans", "dummy_scans"),
             ]),
             (consolidate_confounds_node, outputnode, [("confounds_file", "confounds_file")]),
-            (consolidate_confounds_node, plot_design_matrix_node, [("out_file", "design_matrix")]),
+            (consolidate_confounds_node, plot_design_matrix_node, [
+                ("confounds_file", "design_matrix"),
+            ]),
         ])
         # fmt:on
 

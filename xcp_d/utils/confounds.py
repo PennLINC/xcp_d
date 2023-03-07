@@ -129,7 +129,7 @@ def consolidate_confounds(
 
     Returns
     -------
-    out_file : :obj:`str`
+    confounds_file : :obj:`str`
         Path to combined tsv.
     """
     import os
@@ -146,10 +146,10 @@ def consolidate_confounds(
     confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
     confounds_df["intercept"] = np.ones(confounds_df.shape[0])
 
-    out_file = os.path.abspath("confounds.tsv")
-    confounds_df.to_csv(out_file, sep="\t", index=False)
+    confounds_file = os.path.abspath("confounds.tsv")
+    confounds_df.to_csv(confounds_file, sep="\t", index=False)
 
-    return out_file
+    return confounds_file
 
 
 @fill_doc
