@@ -61,7 +61,9 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
     ]
 
     if participant_ids is None:
-        subject_folders = sorted(glob.glob(os.path.join(in_dir,"*", "*.L.BA.164k_fs_LR.label.gii")))
+        subject_folders = sorted(
+            glob.glob(os.path.join(in_dir, "*", "*.L.BA.164k_fs_LR.label.gii"))
+        )
         subject_folders = [
             subject_folder for subject_folder in subject_folders if os.path.exists(subject_folder)
         ]
@@ -216,9 +218,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     print("finished collecting anat files")
 
     # Collect functional files to copy
-    subject_task_folders = sorted(
-        glob.glob(os.path.join(anat_dir_orig, "*", "Results", "*"))
-    )
+    subject_task_folders = sorted(glob.glob(os.path.join(anat_dir_orig, "*", "Results", "*")))
     subject_task_folders = [
         task for task in subject_task_folders if task.endswith("RL") or task.endswith("LR")
     ]
