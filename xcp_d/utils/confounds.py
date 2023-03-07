@@ -168,38 +168,42 @@ def describe_regression(params, custom_confounds_file):
     """
     import pandas as pd
 
-    use_custom_confounds, non_aggro = False, False
+    use_custom_confounds, orth = False, False
     if custom_confounds_file is not None:
         use_custom_confounds = True
         custom_confounds = pd.read_table(custom_confounds_file)
-        non_aggro = any([c.startswith("signal__") for c in custom_confounds.columns])
+        orth = any([c.startswith("signal__") for c in custom_confounds.columns])
 
     BASE_DESCRIPTIONS = {
-        "custom": "A custom set of regressors was used, with no other regressors from XCP-D. ",
+        "custom": "A custom set of regressors was used, with no other regressors from XCP-D.",
         "24P": (
-            "In total, 24 nuisance regressors were selected from the preprocessing confounds. "
+            "In total, 24 nuisance regressors were selected from the preprocessing confounds, "
+            "according to the '24P' strategy. "
             "These nuisance regressors included "
             "six motion parameters with their temporal derivatives, "
             "and their quadratic expansion of those six motion parameters and their "
-            "temporal derivatives [@benchmarkp;@satterthwaite_2013]. "
+            "temporal derivatives [@benchmarkp;@satterthwaite_2013]."
         ),
         "27P": (
-            "In total, 27 nuisance regressors were selected from the preprocessing confounds. "
+            "In total, 27 nuisance regressors were selected from the preprocessing confounds, "
+            "according to the '27P' strategy. "
             "These nuisance regressors included "
             "six motion parameters with their temporal derivatives, "
             "the quadratic expansion of those six motion parameters and their derivatives, "
             "mean global signal, mean white matter signal, and mean CSF signal "
-            "[@benchmarkp;@satterthwaite_2013]. "
+            "[@benchmarkp;@satterthwaite_2013]."
         ),
         "36P": (
-            "In total, 36 nuisance regressors were selected from the preprocessing confounds. "
+            "In total, 36 nuisance regressors were selected from the preprocessing confounds, "
+            "according to the '36P' strategy. "
             "These nuisance regressors included "
             "six motion parameters, mean global signal, mean white matter signal, "
             "mean CSF signal with their temporal derivatives, "
             "and the quadratic expansion of six motion parameters, tissues signals and "
-            "their temporal derivatives [@benchmarkp;@satterthwaite_2013]. "
+            "their temporal derivatives [@benchmarkp;@satterthwaite_2013]."
         ),
         "acompcor": (
+            "Nuisance regressors were selected according to the 'acompcor' strategy. "
             "The top 5 aCompCor principal components from the WM and CSF compartments "
             "were selected as nuisance regressors [@behzadi2007component], "
             "along with the six motion parameters and their temporal derivatives "
@@ -209,6 +213,7 @@ def describe_regression(params, custom_confounds_file):
             "This has the effect of high-pass filtering the data as well."
         ),
         "acompcor_gsr": (
+            "Nuisance regressors were selected according to the 'acompcor_gsr' strategy. "
             "The top 5 aCompCor principal components from the WM and CSF compartments "
             "were selected as nuisance regressors [@behzadi2007component], "
             "along with the six motion parameters and their temporal derivatives, "
@@ -219,14 +224,16 @@ def describe_regression(params, custom_confounds_file):
             "This has the effect of high-pass filtering the data as well."
         ),
         "aroma": (
+            "Nuisance regressors were selected according to the 'aroma' strategy. "
             "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
             "and mean CSF signal were selected as nuisance regressors "
-            "[@benchmarkp;@satterthwaite_2013]. "
+            "[@benchmarkp;@satterthwaite_2013]."
         ),
         "aroma_gsr": (
+            "Nuisance regressors were selected according to the 'aroma_gsr' strategy. "
             "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
             "mean CSF signal, and mean global signal were selected as nuisance regressors "
-            "[@benchmarkp;@satterthwaite_2013]. "
+            "[@benchmarkp;@satterthwaite_2013]."
         ),
     }
 
@@ -235,29 +242,34 @@ def describe_regression(params, custom_confounds_file):
 
     desc = BASE_DESCRIPTIONS[params]
     if use_custom_confounds and params != "custom":
-        desc += "Additionally, custom confounds were also included as nuisance regressors. "
+        desc += " Additionally, custom confounds were also included as nuisance regressors."
 
-    if "aroma" not in params and non_aggro:
+    if "aroma" not in params and orth:
         desc += (
-            "Custom confounds prefixed with 'signal__' were used to account for variance "
+            " Custom confounds prefixed with 'signal__' were used to account for variance "
             "explained by known signals. "
             "Prior to denoising the BOLD data, the nuisance confounds were orthogonalized "
             "with respect to the signal regressors."
         )
-    elif "aroma" in params and not non_aggro:
+    elif "aroma" in params and not orth:
         desc += (
-            "AROMA non-motion components (i.e., ones assumed to reflect signal) were used to "
+            " AROMA non-motion components (i.e., ones assumed to reflect signal) were used to "
             "account for variance by known signals. "
             "Prior to denoising the BOLD data, the nuisance confounds were orthogonalized "
             "with respect to the non-motion components."
         )
 
-    if "aroma" in params or non_aggro:
+    if "aroma" in params or orth:
         desc += (
-            "In this way, the confound regressors were orthogonalized to produce regressors "
+            " In this way, the confound regressors were orthogonalized to produce regressors "
             "without variance explained by known signals, so that signal would not be removed "
-            "from the BOLD data in the later regression. "
+            "from the BOLD data in the later regression."
         )
+
+    desc += (
+        " Finally, linear trend and intercept terms were added to the regressors prior to "
+        "denoising."
+    )
 
     return desc
 

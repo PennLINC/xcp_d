@@ -343,7 +343,7 @@ def init_despike_wf(
     omp_nthreads,
     name="despike_wf",
 ):
-    """Despike BOLD data with 3dDespike.
+    """Despike BOLD data with AFNI's 3dDespike.
 
     Despiking truncates large spikes in the BOLD times series.
     Despiking reduces/limits the amplitude or magnitude of large spikes,

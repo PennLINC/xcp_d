@@ -5,7 +5,10 @@ import os
 import sys
 from copy import deepcopy
 
+import bids
+import matplotlib
 import nibabel as nb
+import nilearn
 import numpy as np
 import scipy
 import templateflow
@@ -430,9 +433,14 @@ XCP was built with *Nipype* {nipype_ver} [@nipype1, RRID:SCR_002502].
     workflow.__postdesc__ = f"""
 
 Many internal operations of *XCP* use
+*AFNI* [@cox1996afni,@cox1997software],
+{"*Connectome Workbench* [@marcus2011informatics], " if cifti else ""}*ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
+*matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
 *Nibabel* version {nb.__version__} [@brett_matthew_2022_6658382],
+*Nilearn* version {nilearn.__version__} [@abraham2014machine],
 *numpy* version {np.__version__} [@harris2020array],
+*pybids* version {bids.__version__} [@yarkoni2019pybids],
 and *scipy* version {scipy.__version__} [@2020SciPy-NMeth].
 For more details, see the *xcp_d* website https://xcp-d.readthedocs.io.
 
