@@ -597,7 +597,7 @@ def init_denoise_bold_wf(
 
     resd_smoothing_wf = init_resd_smoothing_wf(
         smoothing=smoothing,
-        cifti=False,
+        cifti=cifti,
         mem_gb=mem_gb,
         omp_nthreads=omp_nthreads,
         name="resd_smoothing_wf",
