@@ -311,6 +311,8 @@ def init_postprocess_cifti_wf(
         (prepare_confounds_wf, outputnode, [
             ("outputnode.filtered_motion", "filtered_motion"),
             ("outputnode.temporal_mask", "temporal_mask"),
+            ("outputnode.fmriprep_confounds_file", "fmriprep_confounds_file"),
+            ("outputnode.preprocessed_bold", "preprocessed_bold"),
         ]),
     ])
     # fmt:on

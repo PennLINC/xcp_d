@@ -338,6 +338,8 @@ def init_postprocess_nifti_wf(
         (prepare_confounds_wf, outputnode, [
             ("outputnode.filtered_motion", "filtered_motion"),
             ("outputnode.temporal_mask", "temporal_mask"),
+            ("outputnode.fmriprep_confounds_file", "fmriprep_confounds_file"),
+            ("outputnode.preprocessed_bold", "preprocessed_bold"),
         ]),
     ])
     # fmt:on
@@ -366,6 +368,7 @@ def init_postprocess_nifti_wf(
             ("outputnode.uncensored_denoised_bold", "uncensored_denoised_bold"),
             ("outputnode.interpolated_filtered_bold", "interpolated_filtered_bold"),
             ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
+            ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
         ]),
     ])
     # fmt:on
@@ -464,14 +467,6 @@ def init_postprocess_nifti_wf(
         (downcast_data, reho_wf, [("bold_mask", "inputnode.bold_mask")]),
         (denoise_bold_wf, reho_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
-        ]),
-    ])
-    # fmt:on
-
-    # fmt:off
-    workflow.connect([
-        (denoise_bold_wf, outputnode, [
-            ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
         ]),
     ])
     # fmt:on
