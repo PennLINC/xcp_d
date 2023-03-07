@@ -218,7 +218,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     # Collect functional files to copy
     subject_task_folders = sorted(
-        glob.glob(os.path.join(anat_dir_orig, "MNINonLinear/Results", "*"))
+        glob.glob(os.path.join(anat_dir_orig, "Results", "*"))
     )
     subject_task_folders = [
         task for task in subject_task_folders if task.endswith("RL") or task.endswith("LR")
