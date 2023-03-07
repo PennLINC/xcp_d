@@ -191,7 +191,7 @@ def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Set up and run the ReHo wf in a tempdir
     reho_wf = restingstate.init_reho_nifti_wf(
-        bold_file=bold_file,
+        name_source=bold_file,
         output_dir=tempdir,
         omp_nthreads=2,
         mem_gb=4,
