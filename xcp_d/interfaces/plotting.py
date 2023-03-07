@@ -126,7 +126,7 @@ class CensoringPlot(SimpleInterface):
             ]
 
             ax.plot(
-                time_array,
+                time_array[dummy_scans:],
                 filtered_fd_timeseries,
                 label="Filtered Framewise Displacement",
                 color=palette[2],
