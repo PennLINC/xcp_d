@@ -418,8 +418,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             scans_dict[item] = key
 
     # Make sure the fake files are represented accurately
-    scans_dict[template_to_t1w_orig] = "NA"
-    scans_dict[t1w_to_template_orig] = "NA"
+    scans_dict[template_to_t1w_orig] = "n/a"
+    scans_dict[t1w_to_template_orig] = "n/a"
 
     scans_tuple = tuple(scans_dict.items())
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
