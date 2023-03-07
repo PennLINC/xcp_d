@@ -514,7 +514,7 @@ def init_denoise_bold_wf(
 
     workflow.__desc__ = (
         "Nuisance regressors were regressed from the BOLD data using linear regression, "
-        f"as implemented in nilearn {nilearn.__version__} [@nilearn]."
+        f"as implemented in nilearn {nilearn.__version__} [@abraham2014machine]."
     )
     if bandpass_filter:
         workflow.__desc__ += (

@@ -71,8 +71,8 @@ def init_functional_connectivity_nifti_wf(
 
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
-with *Nilearn's* [version {nl.__version__}, @nilearn] *NiftiLabelsMasker* for the following
-atlases:
+with *Nilearn's* [version {nl.__version__}, @abraham2014machine] *NiftiLabelsMasker* for the
+following atlases:
 the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
 atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
 the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
