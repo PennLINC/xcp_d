@@ -141,7 +141,7 @@ def init_prepare_confounds_wf(
     )
     confounds_description = describe_regression(params, custom_confounds_file)
 
-    workflow.__desc__ = f"{dummy_scans_str}{censoring_description}{confounds_description}"
+    workflow.__desc__ = f" {dummy_scans_str}{censoring_description}{confounds_description}"
 
     inputnode = pe.Node(
         niu.IdentityInterface(

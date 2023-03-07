@@ -89,7 +89,7 @@ def init_alff_wf(
 
     workflow.__desc__ = f""" \
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming
-the processed BOLD timeseries  to the frequency domain. The power spectrum was computed within
+the processed BOLD timeseries to the frequency domain. The power spectrum was computed within
 the {high_pass}-{low_pass} Hz frequency band and the mean square root of the power spectrum was
 calculated at each voxel to yield voxel-wise ALFF measures.
 """

@@ -336,12 +336,12 @@ class QCPlots(SimpleInterface):
 
         # Calculate QC measures
         mean_fd = np.mean(preproc_fd_timeseries)
-        mean_rms = np.mean(rmsd_censored)
+        mean_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
         motionDVCorrInit = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[0][1]
         motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[0][1]
-        rmsd_max_value = np.max(rmsd_censored)
+        rmsd_max_value = np.nanmax(rmsd_censored)
 
         # A summary of all the values
         qc_values = {
