@@ -235,7 +235,7 @@ def collect_data(
             "suffix": "xfm",
         },
     }
-    if input_type == 'hcp':
+    if input_type == "hcp":
         queries["t1w"]["space"] = "MNI152NLin6Asym"
         queries["t1w_seg"]["desc"] = "aparcaseg"
         queries["t1w_seg"]["space"] = "MNI152NLin6Asym"
