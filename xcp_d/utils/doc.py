@@ -188,6 +188,7 @@ docdict[
 fd_thresh : :obj:`float`
     Framewise displacement threshold for censoring, in millimeters.
     Any framewise displacement values higher than the threshold are flagged as "high motion".
+    If set to <=0, no censoring will be performed.
     Default is 0.2 mm.
 """
 

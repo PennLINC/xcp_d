@@ -431,7 +431,7 @@ def init_postprocess_nifti_wf(
     ])
     # fmt:on
 
-    if bandpass_filter:
+    if bandpass_filter and (fd_thresh <= 0):
         alff_wf = init_alff_wf(
             name_source=bold_file,
             output_dir=output_dir,
@@ -517,6 +517,7 @@ def init_postprocess_nifti_wf(
         output_dir=output_dir,
         low_pass=low_pass,
         high_pass=high_pass,
+        fd_thresh=fd_thresh,
         motion_filter_type=motion_filter_type,
         TR=TR,
         name="postproc_derivatives_wf",
@@ -547,7 +548,7 @@ def init_postprocess_nifti_wf(
     ])
     # fmt:on
 
-    if bandpass_filter:
+    if bandpass_filter and (fd_thresh <= 0):
         # fmt:off
         workflow.connect([
             (alff_wf, postproc_derivatives_wf, [

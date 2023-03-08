@@ -351,7 +351,9 @@ ALFF
 :func:`~xcp_d.workflows.restingstate.init_alff_wf`
 
 ALFF will only be calculated if the bandpass filter is enabled
-(i.e., if the ``--disable-bandpass-filter`` flag is not used).
+(i.e., if the ``--disable-bandpass-filter`` flag is not used)
+and censoring is disabled
+(i.e., if ``--fd-thresh`` is set to a value less than or equal to zero).
 
 Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is used.
 

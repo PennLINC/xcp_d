@@ -132,14 +132,18 @@ def init_prepare_confounds_wf(
             "regressors were discarded as non-steady-state volumes, or 'dummy scans'. "
         )
 
-    censoring_description = describe_censoring(
-        motion_filter_type=motion_filter_type,
-        motion_filter_order=motion_filter_order,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        head_radius=head_radius,
-        fd_thresh=fd_thresh,
-    )
+    if fd_thresh > 0:
+        censoring_description = describe_censoring(
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            head_radius=head_radius,
+            fd_thresh=fd_thresh,
+        )
+    else:
+        censoring_description = ""
+
     confounds_description = describe_regression(params, custom_confounds_file)
 
     workflow.__desc__ = f" {dummy_scans_str}{censoring_description}{confounds_description}"
