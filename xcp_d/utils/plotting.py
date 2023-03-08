@@ -908,7 +908,6 @@ def _carpet(
     output_file=None,
 ):
     """Build carpetplot for volumetric / CIFTI plots."""
-    legend = False  # was an unused parameter
     if TR is None:
         TR = 1.0  # Default TR
 
@@ -923,9 +922,9 @@ def _carpet(
     wratios = [1, 100, 20]
     grid_specification = mgs.GridSpecFromSubplotSpec(
         1,
-        2 + int(legend),
+        2 + int(colorbar),
         subplot_spec=subplot,
-        width_ratios=wratios[: 2 + int(legend)],
+        width_ratios=wratios[: 2 + int(colorbar)],
         wspace=0.0,
     )
 
