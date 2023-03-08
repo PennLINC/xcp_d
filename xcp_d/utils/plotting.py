@@ -911,7 +911,7 @@ def _carpet(
     if TR is None:
         TR = 1.0  # Default TR
 
-    sns.set_style("whitegrid")
+    sns.set_style("white")
     v = (None, None)
 
     # If subplot is not defined
@@ -962,7 +962,6 @@ def _carpet(
         vmin=v[0],
         vmax=v[1],
     )
-
     ax1.grid(False)
     ax1.set_yticks([])
     ax1.set_yticklabels([])
@@ -986,8 +985,17 @@ def _carpet(
     # Use the last axis for a colorbar
     if colorbar:
         ax2 = plt.subplot(grid_specification[2])
-        fig = ax2.get_figure()
-        fig.colorbar(pos, ax=ax2)
+        ax2.set_xticks([])
+        ax2.set_yticks([])
+        fig = ax0.get_figure()
+        cbar = fig.colorbar(
+            pos,
+            ax=ax2,
+            location="right",
+            fraction=1,
+            shrink=1,
+            ticks=[int(np.min(data)), int(np.max(data))])
+        cbar.ax.tick_params(size=0)
     else:
         ax2 = None
 
