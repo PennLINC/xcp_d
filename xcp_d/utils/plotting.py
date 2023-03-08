@@ -233,6 +233,7 @@ def plot_confounds(
 
     time_series_axis.plot(time_series, color=color, linewidth=2.5)
     time_series_axis.set_xlim((0, ntsteps - 1))
+
     # Plotting
     if gs_dist is not None:
         ax_dist = plt.subplot(gs_dist)
@@ -242,194 +243,218 @@ def plot_confounds(
         ax_dist.set_yticklabels([])
 
         return [time_series_axis, ax_dist], grid_specification
+
     return time_series_axis, grid_specification
 
 
-def plot_confounds_es(
-    time_series,
-    grid_spec_ts,
-    TR=None,
-    hide_x=True,
-    ylims=None,
-    ylabel=None,
-    is_fd=False,
-    is_whole_brain=False,
-):
-    """Create confounds plot for the executive summary."""
+def plot_dvars_es(time_series, ax):
+    """Create DVARS plot for the executive summary."""
     sns.set_style("whitegrid")
 
-    # Define TR and number of frames
-    no_repetition_time = False
-    if TR is None:
-        no_repetition_time = True
-        TR = 1.0
-
     ntsteps = time_series.shape[0]
-    # time_series = np.array(time_series)
-
-    # Define nested GridSpec
-    grid_specification = mgs.GridSpecFromSubplotSpec(
-        1,
-        2,
-        subplot_spec=grid_spec_ts,
-        width_ratios=[1, 100],
-        wspace=0.0,
-    )
-
-    time_series_axis = plt.subplot(grid_specification[1])
-    time_series_axis.grid(False)
+    ax.grid(False)
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
     xticks = list(range(0, ntsteps)[::interval])
-    time_series_axis.set_xticks(xticks)
-
-    # Set the x-axis labels
-    if not hide_x:
-        if no_repetition_time:
-            time_series_axis.set_xlabel("Time (frame #)")
-        else:
-            time_series_axis.set_xlabel("Time (s)")
-            labels = TR * np.array(xticks)
-            labels = labels.astype(int)
-            time_series_axis.set_xticklabels(labels)
-    else:
-        time_series_axis.set_xticklabels([])
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([])
 
     # Set y-axis labels
-    if ylabel:
-        time_series_axis.set_ylabel(ylabel)
+    ax.set_ylabel("DVARS")
 
     columns = time_series.columns
     maximum_values = []
     minimum_values = []
 
-    if is_fd:
-        for c in columns:
-            time_series_axis.plot(time_series[c], label=c, linewidth=3, color="black")
-            maximum_values.append(max(time_series[c]))
-            minimum_values.append(min(time_series[c]))
-
-            # Threshold fd at 0.1, 0.2 and 0.5 and plot
-            time_series_axis.axhline(
-                y=1, color="lightgray", linestyle="-", linewidth=10, alpha=0.5
-            )
-
-            # Plot zero line
-            fd_dots = time_series[c].copy()
-            fd_line = time_series[c].copy()
-
-            fd_dots[fd_dots < 0] = np.nan
-            fd_line[fd_line > 0] = 1.05
-            time_series_axis.plot(fd_dots, ".", color="gray", markersize=40)
-            time_series_axis.plot(fd_line, ".", color="gray", markersize=40)
-
-            THRESHOLDS = [0.05, 0.1, 0.2, 0.5]
-            COLORS = ["gray", "#66c2a5", "#fc8d62", "#8da0cb"]
-            for i_thresh, threshold in enumerate(THRESHOLDS):
-                color = COLORS[i_thresh]
-
-                time_series_axis.axhline(
-                    y=threshold,
-                    color=color,
-                    linestyle="-",
-                    linewidth=10,
-                    alpha=0.5,
-                )
-
-                fd_dots[fd_dots < threshold] = np.nan
-                time_series_axis.plot(fd_dots, ".", color=color, markersize=40)
-
-                fd_line = time_series[c].copy()
-                fd_line[fd_line >= threshold] = 1.05
-                fd_line[fd_line < threshold] = np.nan
-                time_series_axis.plot(fd_line, ".", color=color, markersize=40)
-
-                # Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
-                good_vols = len(time_series[c][time_series[c] < threshold])
-                time_series_axis.text(
-                    1.01,
-                    threshold,
-                    good_vols,
-                    c=color,
-                    verticalalignment="top",
-                    horizontalalignment="left",
-                    transform=time_series_axis.transAxes,
-                    fontsize=30,
-                )
-
-    elif is_whole_brain:
-        # Plot the whole brain mean and std.
-        # Mean scale on the left, std scale on the right.
-        mean_line = time_series_axis.plot(
-            time_series["Mean"],
-            label="Mean",
-            linewidth=10,
-            alpha=0.5,
-        )
-        maximum_values.append(max(time_series["Mean"]))
-        minimum_values.append(min(time_series["Mean"]))
-        ax_right = time_series_axis.twinx()
-        ax_right.set_ylabel("Standard Deviation")
-        std_line = ax_right.plot(
-            time_series["Std"],
-            label="Std",
-            color="orange",
-            linewidth=10,
-            alpha=0.5,
-        )
-
-        std_mean = np.mean(time_series["Std"])
-        ax_right.set_ylim(
-            (1.5 * np.min(time_series["Std"] - std_mean)) + std_mean,
-            (1.5 * np.max(time_series["Std"] - std_mean)) + std_mean,
-        )
-        ax_right.yaxis.label.set_fontsize(30)
-        for item in ax_right.get_yticklabels():
-            item.set_fontsize(30)
-
-        lines = mean_line + std_line
-        line_labels = [line.get_label() for line in lines]
-        time_series_axis.legend(lines, line_labels, fontsize=40)
-
-    else:  # If no thresholding
-        for c in columns:
-            time_series_axis.plot(time_series[c], label=c, linewidth=10, alpha=0.5)
-            maximum_values.append(max(time_series[c]))
-            minimum_values.append(min(time_series[c]))
+    colors = {
+        "Pre regression": "#68AC57",
+        "Post regression": "#8E549F",
+        "Post all": "#EF8532",
+    }
+    for c in columns:
+        color = colors[c]
+        ax.plot(time_series[c], label=c, linewidth=2, alpha=1, color=color)
+        maximum_values.append(max(time_series[c]))
+        minimum_values.append(min(time_series[c]))
 
     # Set limits and format
     minimum_x_value = [abs(x) for x in minimum_values]
 
-    time_series_axis.set_xlim((0, ntsteps - 1))
-    if is_fd is True:
-        time_series_axis.legend(fontsize=40)
-        time_series_axis.set_ylim(0, 1.1)
-        time_series_axis.set_yticks([0, 0.05, 0.1, 0.2, 0.5, 1])
-    elif ylims:
-        time_series_axis.legend(fontsize=40)
-        time_series_axis.set_ylim(ylims)
-    elif is_whole_brain:
-        mean_mean = np.mean(time_series["Mean"])
-        time_series_axis.set_ylim(
-            (1.5 * np.min(time_series["Mean"] - mean_mean)) + mean_mean,
-            (1.5 * np.max(time_series["Mean"] - mean_mean)) + mean_mean,
-        )
-    else:
-        time_series_axis.legend(fontsize=40)
-        time_series_axis.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_values)])
+    ax.set_xlim((0, ntsteps - 1))
+
+    ax.legend(fontsize=30)
+    ax.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_values)])
 
     for item in (
-        [time_series_axis.title, time_series_axis.xaxis.label, time_series_axis.yaxis.label]
-        + time_series_axis.get_xticklabels()
-        + time_series_axis.get_yticklabels()
+        [ax.title, ax.xaxis.label, ax.yaxis.label]
+        + ax.get_xticklabels()
+        + ax.get_yticklabels()
     ):
         item.set_fontsize(30)
 
     for axis in ["top", "bottom", "left", "right"]:
-        time_series_axis.spines[axis].set_linewidth(4)
+        ax.spines[axis].set_linewidth(4)
     sns.despine()
-    return time_series_axis, grid_specification
+
+    return ax
+
+
+def plot_global_signal_es(time_series, ax):
+    """Create global signal plot for the executive summary."""
+    sns.set_style("whitegrid")
+    ntsteps = time_series.shape[0]
+
+    ax.grid(False)
+
+    # Set 10 frame markers in X axis
+    interval = max((ntsteps // 10, ntsteps // 5, 1))
+    xticks = list(range(0, ntsteps)[::interval])
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([])
+
+    # Set y-axis labels
+    ax.set_ylabel("WB")
+
+    # Plot the whole brain mean and std.
+    # Mean scale on the left, std scale on the right.
+    mean_line = ax.plot(
+        time_series["Mean"],
+        label="Mean",
+        linewidth=2,
+        alpha=1,
+        color="#D1352B",
+    )
+    ax_right = ax.twinx()
+    ax_right.set_ylabel("Standard Deviation")
+    std_line = ax_right.plot(
+        time_series["Std"],
+        label="Std",
+        linewidth=2,
+        alpha=1,
+        color="#497DB3",
+    )
+
+    std_mean = np.mean(time_series["Std"])
+    ax_right.set_ylim(
+        (1.5 * np.min(time_series["Std"] - std_mean)) + std_mean,
+        (1.5 * np.max(time_series["Std"] - std_mean)) + std_mean,
+    )
+    ax_right.yaxis.label.set_fontsize(30)
+    for item in ax_right.get_yticklabels():
+        item.set_fontsize(30)
+
+    lines = mean_line + std_line
+    line_labels = [line.get_label() for line in lines]
+    ax.legend(lines, line_labels, fontsize=30)
+
+    ax.set_xlim((0, ntsteps - 1))
+
+    mean_mean = np.mean(time_series["Mean"])
+    ax.set_ylim(
+        (1.5 * np.min(time_series["Mean"] - mean_mean)) + mean_mean,
+        (1.5 * np.max(time_series["Mean"] - mean_mean)) + mean_mean,
+    )
+
+    for item in (
+        [ax.title, ax.xaxis.label, ax.yaxis.label]
+        + ax.get_xticklabels()
+        + ax.get_yticklabels()
+    ):
+        item.set_fontsize(30)
+
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(4)
+    sns.despine()
+
+    return ax
+
+
+def plot_framewise_displacement_es(
+    time_series,
+    ax,
+    TR,
+):
+    """Create framewise displacement plot for the executive summary."""
+    sns.set_style("whitegrid")
+
+    ntsteps = time_series.shape[0]
+    ax.grid(axis="y")
+
+    # Set 10 frame markers in X axis
+    interval = max((ntsteps // 10, ntsteps // 5, 1))
+    xticks = list(range(0, ntsteps)[::interval])
+    ax.set_xticks(xticks)
+
+    # Set the x-axis labels
+    ax.set_xlabel("Time (s)")
+    labels = TR * np.array(xticks)
+    labels = labels.astype(int)
+    ax.set_xticklabels(labels)
+
+    # Set y-axis labels
+    ax.set_ylabel("FD[mm]")
+    ax.plot(time_series, label="FD", linewidth=3, color="black")
+
+    # Threshold fd at 0.1, 0.2 and 0.5 and plot
+    # Plot zero line
+    fd_dots = time_series.copy()  # dots in line with FD time series
+    fd_line = time_series.copy()  # dots on top of axis
+    top_line = 0.8
+    ymax = 0.85
+
+    fd_dots[fd_dots < 0] = np.nan
+
+    THRESHOLDS = [0.05, 0.1, 0.2, 0.5]
+    COLORS = ["#969696", "#377C21", "#EF8532", "#EB392A"]
+    for i_thresh, threshold in enumerate(THRESHOLDS):
+        color = COLORS[i_thresh]
+
+        ax.axhline(
+            y=threshold,
+            color=color,
+            linestyle="-",
+            linewidth=3,
+            alpha=1,
+        )
+
+        fd_dots[fd_dots < threshold] = np.nan
+        ax.plot(fd_dots, ".", color=color, markersize=10)
+
+        fd_line = time_series.copy()
+        fd_line[fd_line >= threshold] = top_line
+        fd_line[fd_line < threshold] = np.nan
+        ax.plot(fd_line, ".", color=color, markersize=10)
+
+        # Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
+        good_vols = len(time_series[time_series < threshold])
+        ax.text(
+            1.01,
+            threshold / ymax,
+            good_vols,
+            c=color,
+            verticalalignment="center",
+            horizontalalignment="left",
+            transform=ax.transAxes,
+            fontsize=20,
+        )
+
+    ax.set_xlim((0, ntsteps - 1))
+    ax.set_ylim(0, ymax)
+    ax.set_yticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+
+    for item in (
+        [ax.title, ax.xaxis.label, ax.yaxis.label]
+        + ax.get_xticklabels()
+        + ax.get_yticklabels()
+    ):
+        item.set_fontsize(30)
+
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(4)
+    sns.despine()
+
+    return ax
 
 
 @fill_doc
@@ -524,11 +549,7 @@ def plot_fmri_es(
         }
     )
 
-    fd_regressor = pd.DataFrame(
-        {
-            "FD": pd.read_table(filtered_motion)["framewise_displacement"].values,
-        }
-    )
+    fd_regressor = pd.read_table(filtered_motion)["framewise_displacement"].values
 
     # The mean and standard deviation of the preprocessed data,
     # after mean-centering and detrending.
@@ -595,39 +616,34 @@ def plot_fmri_es(
         plt.clf()
 
         fig = plt.figure(constrained_layout=True, figsize=(22.5, 30))
-        grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
+        grid = fig.add_gridspec(
+            nrows=4,
+            ncols=105,
+            wspace=0.0,
+            hspace=0.1,
+            height_ratios=[1, 1, 2.5, 1],
+        )
+        ax0 = fig.add_subplot(grid[0, :-5])
+        ax1 = fig.add_subplot(grid[1, :-5])
+        ax2a = fig.add_subplot(grid[2, :1])
+        ax2b = fig.add_subplot(grid[2, 1:-5])
+        ax2c = fig.add_subplot(grid[2, -5:])
+        ax3 = fig.add_subplot(grid[3, :-5])
 
-        plot_confounds_es(
-            time_series=dvars_regressors,
-            grid_spec_ts=grid[0],
-            TR=TR,
-            ylabel="DVARS",
-            hide_x=True,
-        )
-        plot_confounds_es(
-            time_series=data_arr,
-            grid_spec_ts=grid[1],
-            TR=TR,
-            hide_x=True,
-            ylabel="WB",
-            is_whole_brain=True,
-        )
+        plot_dvars_es(dvars_regressors, ax0)
+        plot_global_signal_es(data_arr, ax1)
         plot_carpet(
             func=file_for_carpet,
             atlaslabels=atlaslabels,
             TR=TR,
-            subplot=grid[3],
+            axes=(ax2a, ax2b, ax2c),
             legend=False,
             colorbar=True,
         )
-        plot_confounds_es(
-            time_series=fd_regressor,
-            grid_spec_ts=grid[4],
+        plot_framewise_displacement_es(
+            fd_regressor,
+            ax3,
             TR=TR,
-            hide_x=False,
-            ylims=[0, 1],
-            ylabel="FD[mm]",
-            is_fd=True,
         )
 
         # Save out the before processing file
@@ -770,6 +786,7 @@ def plot_carpet(
     legend=True,
     TR=None,
     lut=None,
+    axes=None,
     colorbar=False,
 ):
     """Plot an image representation of voxel intensities across time.
@@ -891,6 +908,7 @@ def plot_carpet(
         TR=TR,
         colorbar=colorbar,
         subplot=subplot,
+        axes=axes,
         output_file=output_file,
     )
 
@@ -905,6 +923,7 @@ def _carpet(
     TR=None,
     colorbar=False,
     subplot=None,
+    axes=None,
     output_file=None,
 ):
     """Build carpetplot for volumetric / CIFTI plots."""
@@ -919,17 +938,24 @@ def _carpet(
         subplot = mgs.GridSpec(1, 1)[0]
 
     # Define nested GridSpec
-    wratios = [1, 100, 20]
-    grid_specification = mgs.GridSpecFromSubplotSpec(
-        1,
-        2 + int(colorbar),
-        subplot_spec=subplot,
-        width_ratios=wratios[: 2 + int(colorbar)],
-        wspace=0.0,
-    )
+    if colorbar:
+        assert axes is not None
+        ax0, ax1, ax2 = axes
+        grid_specification = None
+    else:
+        wratios = [1, 99]
+        grid_specification = mgs.GridSpecFromSubplotSpec(
+            1,
+            2,
+            subplot_spec=subplot,
+            width_ratios=wratios,
+            wspace=0.0,
+        )
+        ax0 = plt.subplot(grid_specification[0])
+        ax1 = plt.subplot(grid_specification[1])
+        ax2 = None
 
     # Segmentation colorbar
-    ax0 = plt.subplot(grid_specification[0])
     ax0.set_xticks([])
     ax0.imshow(seg_data[order, np.newaxis], interpolation="none", aspect="auto", cmap=cmap)
 
@@ -953,7 +979,6 @@ def _carpet(
     ax0.set_xticklabels([])
 
     # Carpet plot
-    ax1 = plt.subplot(grid_specification[1])
     pos = ax1.imshow(
         data[order],
         interpolation="nearest",
@@ -984,21 +1009,17 @@ def _carpet(
 
     # Use the last axis for a colorbar
     if colorbar:
-        ax2 = plt.subplot(grid_specification[2])
         ax2.set_xticks([])
         ax2.set_yticks([])
-        fig = ax0.get_figure()
+        fig = ax2.get_figure()
         cbar = fig.colorbar(
             pos,
             ax=ax2,
             location="right",
             fraction=1,
-            shrink=1,
             ticks=[int(np.min(data)), int(np.max(data))],
         )
-        cbar.ax.tick_params(size=0)
-    else:
-        ax2 = None
+        cbar.ax.tick_params(size=0, labelsize=20)
 
     #  Write out file
     if output_file is not None:
