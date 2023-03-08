@@ -256,16 +256,15 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
         # Grab transforms
-        # TODO: Find actual native-to-T1w transform
-        native_to_t1w_orig = os.path.join(xforms_dir_orig, "acpc_dc2standard.nii.gz")
+
+        native_to_t1w_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
         native_to_t1w_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_from-scanner_to-T1w_mode-image_xfm.nii.gz",
         )
         copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
 
-        # TODO: Find actual T1w-to-native transform
-        t1w_to_native_orig = os.path.join(xforms_dir_orig, "standard2acpc_dc.nii.gz")
+        t1w_to_native_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
         t1w_to_native_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_from-T1w_to-scanner_mode-image_xfm.nii.gz",
