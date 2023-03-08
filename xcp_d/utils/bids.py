@@ -342,7 +342,7 @@ def collect_data(
 
 
 @fill_doc
-def collect_surface_data(layout, participant_label):
+def collect_surface_data(layout, participant_label, input_type):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
@@ -354,6 +354,8 @@ def collect_surface_data(layout, participant_label):
     %(layout)s
     participant_label : :obj:`str`
         Subject ID.
+    input_type : :obj:`str`
+        Type of input.
 
     Returns
     -------
@@ -519,6 +521,8 @@ def collect_surface_data(layout, participant_label):
                 f"Surfaces found:\n\t{surface_str}\n"
                 f"Query: {surface_queries[dtype]}"
             )
+    if input_type == "hcp":
+        standard_space_surfaces = True
 
     LOGGER.debug(
         f"Collected surface data:\n"

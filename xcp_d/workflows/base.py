@@ -363,10 +363,9 @@ def init_subject_wf(
 
     surface_data, standard_space_surfaces, surfaces_found = collect_surface_data(
         layout=layout,
+        input_type=input_type,
         participant_label=subject_id,
     )
-    if input_type == "hcp":
-        standard_space_surfaces = True
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_postprocess_cifti_wf if cifti else init_postprocess_nifti_wf
