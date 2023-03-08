@@ -54,16 +54,16 @@ def split_filename(fname):
 
     Parameters
     ----------
-    fname : str
+    fname : :obj:`str`
         file or path name
 
     Returns
     -------
-    pth : str
+    pth : :obj:`str`
         base path from fname
-    fname : str
+    fname : :obj:`str`
         filename from fname, without extension
-    ext : str
+    ext : :obj:`str`
         file extension from fname
 
     Examples
@@ -285,7 +285,7 @@ def on_cifs(fname):
 
     Parameters
     ----------
-    fname : str
+    fname : :obj:`str`
         The file to be checked.
 
     Returns
@@ -319,9 +319,9 @@ def copyfile(
 
     Parameters
     ----------
-    originalfile : str
+    originalfile : :obj:`str`
         full path to original file
-    newfile : str
+    newfile : :obj:`str`
         full path to new file
     copy : bool
         specifies whether to copy or symlink files
@@ -335,7 +335,7 @@ def copyfile(
 
     Returns
     -------
-    newfile : str
+    newfile : :obj:`str`
         The full path to the new file.
     """
     newhash = None
@@ -458,7 +458,7 @@ def get_related_files(filename, include_this_file=True):
 
     Parameters
     ----------
-    filename : str
+    filename : :obj:`str`
         File name to find related filetypes of.
     include_this_file : bool
         If true, output includes the input filename.
@@ -485,19 +485,19 @@ def copyfiles(filelist, dest, copy=False, create_new=False):
 
     Parameters
     ----------
-    filelist : list of str
+    filelist : :obj:`list` of :obj:`str`
         List of files to copy.
-    dest : str or list of str
+    dest : :obj:`str` or :obj:`list` of :obj:`str`
         full path to destination. If it is a list of length greater
         than 1, then it assumes that these are the names of the new
         files.
-    copy : Bool
+    copy : :obj:`str`
         specifies whether to copy or symlink files
         (default=False) but only for posix systems
 
     Returns
     -------
-    newfiles : list of str
+    newfiles : :obj:`list` of :obj:`str`
         List of new copied files.
     """
     outfiles = ensure_list(dest)
@@ -555,16 +555,16 @@ def relpath(path, start=None):
 
     Parameters
     ----------
-    path : str
+    path : :obj:`str`
         Path to reformat.
-    start : None or str, optional
+    start : None or :obj:`str`, optional
         The starting location for the relative path.
         If None, use the current working directory.
         Default is None.
 
     Returns
     -------
-    str
+    :obj:`str`
         Relative version of the path.
     """
     try:

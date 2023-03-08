@@ -275,17 +275,6 @@ class _FlagMotionOutliersInputSpec(BaseInterfaceInputSpec):
 
 
 class _FlagMotionOutliersOutputSpec(TraitedSpec):
-    temporal_mask = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Temporal mask; all values above fd_thresh set to 1. "
-            "This is a TSV file with one column: 'framewise_displacement'."
-        ),
-    )
-    tmask_metadata = traits.Dict(
-        desc="Metadata associated with the temporal_mask output.",
-    )
     filtered_motion = File(
         exists=True,
         mandatory=True,
@@ -296,6 +285,17 @@ class _FlagMotionOutliersOutputSpec(TraitedSpec):
     )
     filtered_motion_metadata = traits.Dict(
         desc="Metadata associated with the filtered_motion output.",
+    )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Temporal mask; all values above fd_thresh set to 1. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc="Metadata associated with the temporal_mask output.",
     )
 
 
@@ -387,7 +387,7 @@ class FlagMotionOutliers(SimpleInterface):
                 "Threshold": self.inputs.fd_thresh,
             }
         }
-        self._results["tmask_metadata"] = outliers_metadata
+        self._results["temporal_mask_metadata"] = outliers_metadata
 
         motion_df.to_csv(
             self._results["filtered_motion"],

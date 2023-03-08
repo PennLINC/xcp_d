@@ -225,13 +225,6 @@ class _DenoiseImageOutputSpec(TraitedSpec):
             "betas estimated using the *censored* BOLD data and nuisance regressors."
         ),
     )
-    interpolated_unfiltered_bold = File(
-        exists=True,
-        desc=(
-            "The result of denoising the censored preprocessed BOLD data, "
-            "followed by cubic spline interpolation."
-        ),
-    )
     interpolated_filtered_bold = File(
         exists=True,
         desc=(
@@ -260,7 +253,6 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
 
         (
             uncensored_denoised_bold,
-            interpolated_unfiltered_bold,
             interpolated_filtered_bold,
         ) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
@@ -274,7 +266,6 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
 
         # Transpose from TxS (nilearn order) to SxT (xcpd order)
         uncensored_denoised_bold = uncensored_denoised_bold.T
-        interpolated_unfiltered_bold = interpolated_unfiltered_bold.T
         interpolated_filtered_bold = interpolated_filtered_bold.T
 
         self._results["uncensored_denoised_bold"] = os.path.join(
@@ -285,17 +276,6 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             uncensored_denoised_bold,
             template=self.inputs.preprocessed_bold,
             filename=self._results["uncensored_denoised_bold"],
-            TR=self.inputs.TR,
-        )
-
-        self._results["interpolated_unfiltered_bold"] = os.path.join(
-            runtime.cwd,
-            "interpolated_unfiltered_bold.dtseries.nii",
-        )
-        write_ndata(
-            interpolated_unfiltered_bold,
-            template=self.inputs.preprocessed_bold,
-            filename=self._results["interpolated_unfiltered_bold"],
             TR=self.inputs.TR,
         )
 
@@ -353,7 +333,6 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
 
         (
             uncensored_denoised_bold,
-            interpolated_unfiltered_bold,
             interpolated_filtered_bold,
         ) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
@@ -371,13 +350,6 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         )
         uncensored_denoised_img = masker.inverse_transform(uncensored_denoised_bold)
         uncensored_denoised_img.to_filename(self._results["uncensored_denoised_bold"])
-
-        self._results["interpolated_unfiltered_bold"] = os.path.join(
-            runtime.cwd,
-            "unfiltered_denoised.nii.gz",
-        )
-        unfiltered_denoised_img = masker.inverse_transform(interpolated_unfiltered_bold)
-        unfiltered_denoised_img.to_filename(self._results["interpolated_unfiltered_bold"])
 
         self._results["interpolated_filtered_bold"] = os.path.join(
             runtime.cwd,

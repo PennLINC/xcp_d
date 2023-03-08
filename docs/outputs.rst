@@ -175,6 +175,7 @@ Resting-state metric derivatives (Regional Homogeneity and ALFF)
 ================================================================
 
 .. code-block::
+
    xcp_d/
       sub-<label>/[ses-<label>/]
          func/
@@ -201,6 +202,7 @@ Other outputs include quality control, framewise displacement, and confounds fil
 ==================================================================================
 
 .. code-block::
+
    xcp_d/
       sub-<label>/[ses-<label>/]
          func/

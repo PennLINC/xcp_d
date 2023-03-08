@@ -48,9 +48,9 @@ class BIDSError(ValueError):
 
     Parameters
     ----------
-    message : str
+    message : :obj:`str`
         The error message.
-    bids_root : str
+    bids_root : :obj:`str`
         The path to the BIDS dataset.
     """
 
@@ -79,7 +79,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
 
     Parameters
     ----------
-    bids_dir : str or pybids.layout.BIDSLayout
+    bids_dir : :obj:`str` or pybids.layout.BIDSLayout
     participant_label : None or str, optional
     strict : bool, optional
     bids_validate : bool, optional
@@ -620,9 +620,9 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
     Parameters
     ----------
-    fmri_dir : str
+    fmri_dir : :obj:`str`
         Path to the BIDS derivative dataset being ingested.
-    xcpd_dir : str
+    xcpd_dir : :obj:`str`
         Path to the output xcp-d dataset.
     """
     import json
@@ -706,7 +706,7 @@ def _add_subject_prefix(subid):
 
     Parameters
     ----------
-    subid : str
+    subid : :obj:`str`
         A subject ID (e.g., 'sub-XX' or just 'XX').
 
     Returns
@@ -748,12 +748,12 @@ def get_freesurfer_dir(fmri_dir):
 
     Parameters
     ----------
-    fmri_dir : str
+    fmri_dir : :obj:`str`
         Path to preprocessed derivatives.
 
     Returns
     -------
-    freesurfer_path : str
+    freesurfer_path : :obj:`str`
         Path to FreeSurfer derivatives.
 
     Raises
@@ -799,16 +799,16 @@ def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
 
     Parameters
     ----------
-    freesurfer_path : str
+    freesurfer_path : :obj:`str`
         Path to the FreeSurfer derivatives.
-    subject_id : str
+    subject_id : :obj:`str`
         Subject ID. This may or may not be prefixed with "sub-".
     hemisphere : {"L", "R"}
         The hemisphere to grab.
 
     Returns
     -------
-    sphere_raw : str
+    sphere_raw : :obj:`str`
         Sphere file for the requested subject and hemisphere.
 
     Raises
@@ -841,14 +841,14 @@ def get_entity(filename, entity):
 
     Parameters
     ----------
-    filename : str
+    filename : :obj:`str`
         Path to the BIDS file.
-    entity : str
+    entity : :obj:`str`
         The entity to extract from the filename.
 
     Returns
     -------
-    entity_value : str or None
+    entity_value : :obj:`str` or None
         The BOLD file's entity value associated with the requested entity.
     """
     import os

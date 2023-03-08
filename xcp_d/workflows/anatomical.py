@@ -71,7 +71,7 @@ def init_warp_anats_to_template_wf(
     %(input_type)s
     t2w_available : bool
         True if a preprocessed T2w is available, False if not.
-    target_space : str
+    target_space : :obj:`str`
         Target NIFTI template for T1w.
     %(omp_nthreads)s
     %(mem_gb)s
@@ -80,26 +80,26 @@ def init_warp_anats_to_template_wf(
 
     Inputs
     ------
-    t1w : str
+    t1w : :obj:`str`
         Path to the preprocessed T1w file.
         This file may be in standard space or native T1w space.
-    t2w : str or None
+    t2w : :obj:`str` or None
         Path to the preprocessed T2w file.
         This file may be in standard space or native T1w space.
-    t1seg : str
+    t1seg : :obj:`str`
         Path to the T1w segmentation file.
     %(t1w_to_template_xfm)s
         We need to use MNI152NLin6Asym for the template.
-    template : str
+    template : :obj:`str`
 
     Outputs
     -------
-    t1w : str
+    t1w : :obj:`str`
         Path to the preprocessed T1w file in standard space.
-    t2w : str or None
+    t2w : :obj:`str` or None
         Path to the preprocessed T2w file in standard space.
-    t1seg : str
-    template : str
+    t1seg : :obj:`str`
+    template : :obj:`str`
     """
     workflow = Workflow(name=name)
 
@@ -364,7 +364,7 @@ def init_warp_surfaces_to_template_wf(
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
 
         If ``warp_to_standard`` is False, this file is unused.
-    lh_pial_surf, rh_pial_surf : str
+    lh_pial_surf, rh_pial_surf : :obj:`str`
         Left- and right-hemisphere pial surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -372,7 +372,7 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then it is also warped to standard space and used
         to generate HCP-style midthickness, inflated, and veryinflated surfaces.
-    lh_wm_surf, rh_wm_surf : str
+    lh_wm_surf, rh_wm_surf : :obj:`str`
         Left- and right-hemisphere smoothed white matter surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -380,7 +380,7 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then it is also warped to standard space and used
         to generate HCP-style midthickness, inflated, and veryinflated surfaces.
-    lh_midthickness_surf, rh_midthickness_surf : str
+    lh_midthickness_surf, rh_midthickness_surf : :obj:`str`
         Left- and right-hemisphere midthickness surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -388,7 +388,7 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then this input is ignored and a replacement file
         are generated from the pial and wm files after they are warped to standard space.
-    lh_inflated_surf, rh_inflated_surf : str
+    lh_inflated_surf, rh_inflated_surf : :obj:`str`
         Left- and right-hemisphere inflated surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -396,7 +396,7 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then this input is ignored and a replacement file
         are generated from the pial and wm files after they are warped to standard space.
-    lh_vinflated_surf, rh_vinflated_surf : str
+    lh_vinflated_surf, rh_vinflated_surf : :obj:`str`
         Left- and right-hemisphere very-inflated surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -705,11 +705,11 @@ def init_generate_hcp_surfaces_wf(
 
     Inputs
     ------
-    name_source : str
+    name_source : :obj:`str`
         Path to the file that will be used as the source_file for datasinks.
-    pial_surf : str
+    pial_surf : :obj:`str`
         The surface file to inflate.
-    wm_surf : str
+    wm_surf : :obj:`str`
         The surface file to inflate.
     """
     workflow = Workflow(name=name)

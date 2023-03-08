@@ -18,7 +18,7 @@ def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xf
 
     Parameters
     ----------
-    bold_file : str
+    bold_file : :obj:`str`
         The preprocessed BOLD file.
     template_to_t1w_xfm
         The ``from`` field is assumed to be the same space as the BOLD file is in.
@@ -149,7 +149,7 @@ def get_std2bold_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):
 
     Parameters
     ----------
-    bold_file : str
+    bold_file : :obj:`str`
         The preprocessed BOLD file.
     %(template_to_t1w_xfm)s
         The ``from`` field is assumed to be the same space as the BOLD file is in.
@@ -339,7 +339,7 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
 
     Parameters
     ----------
-    mask_file : str
+    mask_file : :obj:`str`
         Binary brain mask file, in nifti format.
     head_radius : float or "auto", optional
         Head radius to use. Either a number, in millimeters, or "auto".
@@ -409,7 +409,7 @@ def denoise_with_nilearn(
     preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
         Preprocessed BOLD data, after dummy volume removal,
         but without any additional censoring.
-    confounds_file : str
+    confounds_file : :obj:`str`
         Path to TSV file containing selected confounds, after dummy volume removal,
         but without any additional censoring.
     %(temporal_mask)s
@@ -422,8 +422,6 @@ def denoise_with_nilearn(
     Returns
     -------
     %(uncensored_denoised_bold)s
-        Returned as a :obj:`numpy.ndarray` of shape (T, S)
-    %(interpolated_unfiltered_bold)s
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
     %(interpolated_filtered_bold)s
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
@@ -509,7 +507,7 @@ def denoise_with_nilearn(
     else:
         interpolated_filtered_bold = interpolated_unfiltered_bold
 
-    return uncensored_denoised_bold, interpolated_unfiltered_bold, interpolated_filtered_bold
+    return uncensored_denoised_bold, interpolated_filtered_bold
 
 
 def _select_first(lst):

@@ -86,7 +86,7 @@ class CensoringPlot(SimpleInterface):
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
         dummy_scans = self.inputs.dummy_scans
-        # This check is necessary, because init_qc_report_wf connects dummy_scans from the
+        # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
         # inputnode, forcing it to be undefined instead of using the default when not set.
         if not isdefined(dummy_scans):
             dummy_scans = 0
@@ -103,6 +103,7 @@ class CensoringPlot(SimpleInterface):
         # Plot censored volumes as vertical lines
         tmask_df = pd.read_table(self.inputs.temporal_mask)
         tmask_arr = tmask_df["framewise_displacement"].values
+        assert preproc_fd_timeseries.size == tmask_arr.size + dummy_scans
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
             if i_idx == 0:
@@ -125,7 +126,7 @@ class CensoringPlot(SimpleInterface):
             ]
 
             ax.plot(
-                time_array,
+                time_array[dummy_scans:],
                 filtered_fd_timeseries,
                 label="Filtered Framewise Displacement",
                 color=palette[2],
@@ -336,12 +337,12 @@ class QCPlots(SimpleInterface):
 
         # Calculate QC measures
         mean_fd = np.mean(preproc_fd_timeseries)
-        mean_rms = np.mean(rmsd_censored)
+        mean_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
         motionDVCorrInit = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[0][1]
         motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[0][1]
-        rmsd_max_value = np.max(rmsd_censored)
+        rmsd_max_value = np.nanmax(rmsd_censored)
 
         # A summary of all the values
         qc_values = {
