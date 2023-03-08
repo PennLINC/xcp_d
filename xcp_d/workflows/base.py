@@ -365,6 +365,8 @@ def init_subject_wf(
         layout=layout,
         participant_label=subject_id,
     )
+    if input_type == 'hcp':
+        standard_space_surfaces = True
 
     # determine the appropriate post-processing workflow
     postproc_wf_function = init_postprocess_cifti_wf if cifti else init_postprocess_nifti_wf
