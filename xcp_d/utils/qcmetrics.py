@@ -24,13 +24,13 @@ def compute_registration_qc(bold2t1w_mask, t1w_mask, bold2template_mask, templat
 
     Parameters
     ----------
-    bold2t1w_mask : str
+    bold2t1w_mask : :obj:`str`
         Path to the BOLD mask in T1w space.
-    t1w_mask : str
+    t1w_mask : :obj:`str`
         Path to the T1w mask.
-    bold2template_mask : str
+    bold2template_mask : :obj:`str`
         Path to the BOLD mask in template space.
-    template_mask : str
+    template_mask : :obj:`str`
         Path to the template mask.
 
     Returns
@@ -207,7 +207,7 @@ def make_dcan_df(filtered_motion, name, TR):
     Parameters
     ----------
     %(filtered_motion)s
-    name : str
+    name : :obj:`str`
         Name of the HDF5-format file to be created.
     %(TR)s
 

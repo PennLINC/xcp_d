@@ -49,9 +49,9 @@ def _drop_dummy_scans(bold_file, dummy_scans):
 
     Parameters
     ----------
-    bold_file : str
+    bold_file : :obj:`str`
         Path to a nifti or cifti file.
-    dummy_scans : int
+    dummy_scans : :obj:`int`
         If an integer, the first ``dummy_scans`` volumes will be removed.
 
     Returns
@@ -147,12 +147,12 @@ def cast_cifti_to_int16(in_file):
 
     Parameters
     ----------
-    in_file : str
+    in_file : :obj:`str`
         Path to input CIFTI file.
 
     Returns
     -------
-    out_file : str
+    out_file : :obj:`str`
         Path to output CIFTI file.
         The file will have the same filename, but will be written to the working directory.
     """

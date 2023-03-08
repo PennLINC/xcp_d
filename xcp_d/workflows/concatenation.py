@@ -18,7 +18,6 @@ from xcp_d.workflows.plotting import init_qc_report_wf
 def init_concatenate_data_wf(
     output_dir,
     motion_filter_type,
-    fd_thresh,
     mem_gb,
     omp_nthreads,
     TR,
@@ -39,7 +38,6 @@ def init_concatenate_data_wf(
             wf = init_concatenate_data_wf(
                 output_dir=".",
                 motion_filter_type=None,
-                fd_thresh=0.2,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 TR=2,
@@ -53,7 +51,6 @@ def init_concatenate_data_wf(
     ----------
     %(output_dir)s
     %(motion_filter_type)s
-    %(fd_thresh)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(TR)s
@@ -96,9 +93,9 @@ def init_concatenate_data_wf(
     """
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """\
-    Postprocessing derivatives from multi-run tasks were then concatenated across runs.
-    """
+    workflow.__desc__ = """
+Postprocessing derivatives from multi-run tasks were then concatenated across runs.
+"""
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -205,8 +202,6 @@ def init_concatenate_data_wf(
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
         TR=TR,
-        motion_filter_type=motion_filter_type,
-        fd_thresh=fd_thresh,
         mem_gb=mem_gb,
         omp_nthreads=omp_nthreads,
         cifti=cifti,

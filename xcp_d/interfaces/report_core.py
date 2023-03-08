@@ -56,17 +56,17 @@ def run_reports(
 
     Parameters
     ----------
-    out_dir : str
+    out_dir : :obj:`str`
         The output directory.
-    subject_label : str
+    subject_label : :obj:`str`
         The subject ID.
-    run_uuid : str
+    run_uuid : :obj:`str`
         The UUID of the run for which the report will be generated.
-    config : None or str, optional
+    config : None or :obj:`str`, optional
         Configuration file.
-    reportlets_dir : None or str, optional
+    reportlets_dir : None or :obj:`str`, optional
         Path to the reportlets directory.
-    packagename : None or str, optional
+    packagename : None or :obj:`str`, optional
         The name of the package.
 
     Returns
@@ -97,21 +97,21 @@ def generate_reports(
 ):
     """Execute run_reports on a list of subjects.
 
-    subject_list : list of str
+    subject_list : :obj:`list` of :obj:`str`
         List of subject IDs.
-    fmri_dir : str
+    fmri_dir : :obj:`str`
         The path to the fMRI directory.
-    work_dir : str
+    work_dir : :obj:`str`
         The path to the working directory.
-    output_dir : str
+    output_dir : :obj:`str`
         The path to the output directory.
-    run_uuid : str
+    run_uuid : :obj:`str`
         The UUID of the run for which the report will be generated.
-    config : None or str, optional
+    config : None or :obj:`str`, optional
         Configuration file.
-    packagename : None or str, optional
+    packagename : None or :obj:`str`, optional
         The name of the package.
-    dcan_qc : bool, optional
+    dcan_qc : :obj:`bool`, optional
         Whether to perform DCAN QC steps or not. Default is False.
     """
     # reportlets_dir = None

@@ -5,7 +5,10 @@ import os
 import sys
 from copy import deepcopy
 
+import bids
+import matplotlib
 import nibabel as nb
+import nilearn
 import numpy as np
 import scipy
 import templateflow
@@ -158,7 +161,7 @@ def init_xcpd_wf(
     bids_filters : dict or None
     %(output_dir)s
     %(fd_thresh)s
-    run_uuid : str
+    run_uuid : :obj:`str`
         Unique identifier for execution instance
     subject_list : list
         List of subject labels
@@ -430,9 +433,14 @@ XCP was built with *Nipype* {nipype_ver} [@nipype1, RRID:SCR_002502].
     workflow.__postdesc__ = f"""
 
 Many internal operations of *XCP* use
+*AFNI* [@cox1996afni;@cox1997software],
+{"*Connectome Workbench* [@marcus2011informatics], " if cifti else ""}*ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
+*matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
 *Nibabel* version {nb.__version__} [@brett_matthew_2022_6658382],
+*Nilearn* version {nilearn.__version__} [@abraham2014machine],
 *numpy* version {np.__version__} [@harris2020array],
+*pybids* version {bids.__version__} [@yarkoni2019pybids],
 and *scipy* version {scipy.__version__} [@2020SciPy-NMeth].
 For more details, see the *xcp_d* website https://xcp-d.readthedocs.io.
 
@@ -727,7 +735,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             concatenate_data_wf = init_concatenate_data_wf(
                 output_dir=output_dir,
                 motion_filter_type=motion_filter_type,
-                fd_thresh=fd_thresh,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 TR=TR,

@@ -27,7 +27,7 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
     alff_wf = restingstate.init_alff_wf(
-        bold_file=bold_file,
+        name_source=bold_file,
         output_dir=tempdir,
         TR=TR,
         low_pass=0.08,
@@ -103,7 +103,7 @@ def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     TR = _get_tr(nb.load(bold_file))
     tempdir = tmp_path_factory.mktemp("test_cifti_alff_01")
     alff_wf = restingstate.init_alff_wf(
-        bold_file=bold_file,
+        name_source=bold_file,
         output_dir=tempdir,
         TR=TR,
         low_pass=0.08,
@@ -191,7 +191,7 @@ def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Set up and run the ReHo wf in a tempdir
     reho_wf = restingstate.init_reho_nifti_wf(
-        bold_file=bold_file,
+        name_source=bold_file,
         output_dir=tempdir,
         omp_nthreads=2,
         mem_gb=4,
@@ -245,7 +245,7 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Set up and run the ReHo wf in a tempdir
     reho_wf = restingstate.init_reho_cifti_wf(
-        bold_file=source_file,
+        name_source=source_file,
         output_dir=tempdir,
         omp_nthreads=2,
         mem_gb=4,
@@ -271,7 +271,7 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Create a new workflow
     reho_wf = restingstate.init_reho_cifti_wf(
-        bold_file=source_file,
+        name_source=source_file,
         output_dir=tempdir,
         omp_nthreads=2,
         mem_gb=4,

@@ -50,7 +50,6 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     # First, try out filtering
     (
         uncensored_denoised_bold,
-        interpolated_unfiltered_bold,
         interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
@@ -63,13 +62,11 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_unfiltered_bold.shape == (n_volumes, n_voxels)
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
     # Now, no filtering
     (
         uncensored_denoised_bold,
-        interpolated_unfiltered_bold,
         interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
@@ -82,7 +79,6 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_unfiltered_bold.shape == (n_volumes, n_voxels)
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
     # Finally, do the orthogonalization
@@ -96,7 +92,6 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     reduced_confounds_df.to_csv(orth_confounds_file, sep="\t", index=False)
     (
         uncensored_denoised_bold,
-        interpolated_unfiltered_bold,
         interpolated_filtered_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
@@ -109,5 +104,4 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
 
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_unfiltered_bold.shape == (n_volumes, n_voxels)
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)

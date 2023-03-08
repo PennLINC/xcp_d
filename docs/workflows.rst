@@ -46,6 +46,7 @@ derivatives will be warped to fsLR-32k space.
 
 Confound regressor selection
 ============================
+:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
 :func:`~xcp_d.utils.confounds.consolidate_confounds`
 
 The confound regressor configurations in the table below are implemented in XCP-D,
@@ -141,6 +142,7 @@ For more information about confound regressor selection, please refer to :footci
 
 Dummy scan removal [OPTIONAL]
 =============================
+:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.prepostcleaning.RemoveDummyVolumes`
 
 XCP-D allows the first *N* volumes to be removed before processing.
@@ -155,6 +157,7 @@ or they may rely on the preprocessing pipeline's estimated non-steady-state volu
 
 Identification of high-motion outlier volumes
 =============================================
+:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`
 
 XCP-D uses framewise displacement to identify high-motion outlier volumes.
@@ -181,6 +184,7 @@ It can be added to the command line arguments with ``--despike``.
 
 Motion parameter filtering [OPTIONAL]
 -------------------------------------
+:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`,
 :func:`~xcp_d.utils.confounds.load_motion`
 
@@ -233,6 +237,7 @@ per :footcite:t:`gratton2020removal`.
 
 Framewise displacement calculation and thresholding
 ---------------------------------------------------
+:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`,
 :func:`~xcp_d.utils.modified_data.compute_fd`
 
