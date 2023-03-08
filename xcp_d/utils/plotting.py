@@ -18,7 +18,6 @@ from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.modified_data import scale_to_min_max
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -569,25 +568,25 @@ def plot_fmri_es(
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
+    # But first we will detrend and standardize the data
     detrended_preprocessed_bold_arr = clean(
         preprocessed_bold_arr.T,
         t_r=TR,
         detrend=True,
-        standardize=False,
         filter=None,
     ).T
     detrended_uncensored_denoised_bold_arr = clean(
         uncensored_denoised_bold_arr.T,
         t_r=TR,
         detrend=True,
-        standardize=False,
         filter=None,
     ).T
-    scaled_preprocessed_data = scale_to_min_max(detrended_preprocessed_bold_arr, -600, 600)
-    scaled_uncensored_denoised_data = scale_to_min_max(
-        detrended_uncensored_denoised_bold_arr,
-        -600,
-        600,
+    # Scale to maximum absolute value of 600
+    scaled_preprocessed_data = detrended_preprocessed_bold_arr * (
+        600 / np.max(np.abs(detrended_preprocessed_bold_arr))
+    )
+    scaled_uncensored_denoised_data = detrended_uncensored_denoised_bold_arr * (
+        600 / np.max(np.abs(detrended_uncensored_denoised_bold_arr))
     )
 
     # Make a temporary file for niftis and ciftis
@@ -650,7 +649,7 @@ def plot_fmri_es(
             atlaslabels=atlaslabels,
             TR=TR,
             axes=(ax2a, ax2b, ax2c),
-            detrend=False,
+            detrend=False,  # Data are already detrended
             legend=False,
             colorbar=True,
         )
@@ -953,9 +952,9 @@ def _carpet(
     sns.set_style("white")
     v = (None, None)
 
-    # Detrend data
+    # Detrend and z-score data
     if detrend:
-        data = clean(data.T, t_r=TR, detrend=True, standardize=False, filter=None).T
+        data = clean(data.T, t_r=TR, detrend=True, filter=None).T
         v = (-2, 2)
 
     # If subplot is not defined
@@ -967,6 +966,7 @@ def _carpet(
         assert axes is not None
         ax0, ax1, ax2 = axes
         grid_specification = None
+        v = (-600, 600)
     else:
         wratios = [1, 99]
         grid_specification = mgs.GridSpecFromSubplotSpec(
@@ -1042,7 +1042,7 @@ def _carpet(
             ax=ax2,
             location="right",
             fraction=1,
-            ticks=[int(np.min(data)), int(np.max(data))],
+            ticks=[-600, 600],
         )
         cbar.ax.tick_params(size=0, labelsize=20)
 
