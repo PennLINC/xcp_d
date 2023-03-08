@@ -115,8 +115,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     volspace_ent = f"space-{volspace}"
     res_ent = "res-2"
 
-    anat_dir_orig = in_dir  # just for readability
-    xforms_dir_orig = os.path.join(anat_dir_orig, "MNINonLinear/xfms")
+    anat_dir_orig = os.path.join(in_dir, "MNINonLinear")
+    xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
 
     subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
     anat_dir_fmriprep = os.path.join(subject_dir_fmriprep, "anat")
@@ -133,7 +133,6 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary = {}
 
     # Collect anatomical files to copy
-    anat_dir_orig += "/MNINonLinear/"
     t1w_orig = os.path.join(anat_dir_orig, "T1w_restore.nii.gz")
     t1w_fmriprep = os.path.join(
         anat_dir_fmriprep,
@@ -189,8 +188,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary[template_to_t1w_orig] = [template_to_t1w_fmriprep]
 
     # Grab surface morphometry files
-    anat_dir_orig = in_dir
-    fsaverage_dir_orig = os.path.join(anat_dir_orig, "MNINonLinear", "fsaverage_LR32k")
+    fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
 
     SURFACE_DICT = {
         "R.midthickness": "hemi-R_desc-hcp_midthickness",
@@ -218,7 +216,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     print("finished collecting anat files")
 
     # Collect functional files to copy
-    subject_task_folders = sorted(glob.glob(os.path.join(anat_dir_orig, "*", "Results", "*")))
+    subject_task_folders = sorted(glob.glob(os.path.join(in_dir, "*", "Results", "*")))
     subject_task_folders = [
         task for task in subject_task_folders if task.endswith("RL") or task.endswith("LR")
     ]
