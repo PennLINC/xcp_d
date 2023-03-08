@@ -630,17 +630,17 @@ def plot_fmri_es(
         fig = plt.figure(constrained_layout=True, figsize=(22.5, 30))
         grid = fig.add_gridspec(
             nrows=4,
-            ncols=105,
+            ncols=106,
             wspace=0.0,
             hspace=0.1,
             height_ratios=[1, 1, 2.5, 1],
         )
-        ax0 = fig.add_subplot(grid[0, :-5])
-        ax1 = fig.add_subplot(grid[1, :-5])
+        ax0 = fig.add_subplot(grid[0, 1:101])
+        ax1 = fig.add_subplot(grid[1, 1:101])
         ax2a = fig.add_subplot(grid[2, :1])
-        ax2b = fig.add_subplot(grid[2, 1:-5])
-        ax2c = fig.add_subplot(grid[2, -5:])
-        ax3 = fig.add_subplot(grid[3, :-5])
+        ax2b = fig.add_subplot(grid[2, 1:101])
+        ax2c = fig.add_subplot(grid[2, 102:])
+        ax3 = fig.add_subplot(grid[3, 1:101])
 
         plot_dvars_es(dvars_regressors, ax0)
         plot_global_signal_es(data_arr, ax1)
@@ -1042,6 +1042,7 @@ def _carpet(
             ax=ax2,
             location="right",
             fraction=1,
+            pad=0,
             ticks=[-600, 600],
         )
         cbar.ax.tick_params(size=0, labelsize=20)
