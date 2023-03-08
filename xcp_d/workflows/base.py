@@ -433,7 +433,7 @@ XCP was built with *Nipype* {nipype_ver} [@nipype1, RRID:SCR_002502].
     workflow.__postdesc__ = f"""
 
 Many internal operations of *XCP* use
-*AFNI* [@cox1996afni,@cox1997software],
+*AFNI* [@cox1996afni;@cox1997software],
 {"*Connectome Workbench* [@marcus2011informatics], " if cifti else ""}*ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
 *matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
