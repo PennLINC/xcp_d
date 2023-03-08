@@ -14,6 +14,7 @@ from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
+from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.doc import fill_doc
@@ -568,8 +569,26 @@ def plot_fmri_es(
         atlaslabels = None
 
     # The plot going to carpet plot will be rescaled to [-600,600]
-    scaled_preprocessed_data = scale_to_min_max(preprocessed_bold_arr, -600, 600)
-    scaled_uncensored_denoised_data = scale_to_min_max(uncensored_denoised_bold_arr, -600, 600)
+    detrended_preprocessed_bold_arr = clean(
+        preprocessed_bold_arr.T,
+        t_r=TR,
+        detrend=True,
+        standardize=False,
+        filter=None,
+    ).T
+    detrended_uncensored_denoised_bold_arr = clean(
+        uncensored_denoised_bold_arr.T,
+        t_r=TR,
+        detrend=True,
+        standardize=False,
+        filter=None,
+    ).T
+    scaled_preprocessed_data = scale_to_min_max(detrended_preprocessed_bold_arr, -600, 600)
+    scaled_uncensored_denoised_data = scale_to_min_max(
+        detrended_uncensored_denoised_bold_arr,
+        -600,
+        600,
+    )
 
     # Make a temporary file for niftis and ciftis
     if preprocessed_bold.endswith(".nii.gz"):
@@ -631,6 +650,7 @@ def plot_fmri_es(
             atlaslabels=atlaslabels,
             TR=TR,
             axes=(ax2a, ax2b, ax2c),
+            detrend=False,
             legend=False,
             colorbar=True,
         )
@@ -762,6 +782,7 @@ class FMRIPlot:
             self.func_file,
             atlaslabels=self.seg_data,
             subplot=grid[-1],
+            detrend=True,
             TR=self.TR,
             labelsize=labelsize,
             colorbar=False,
@@ -773,6 +794,7 @@ class FMRIPlot:
 def plot_carpet(
     func,
     atlaslabels=None,
+    detrend=True,
     size=(950, 800),
     labelsize=30,
     subplot=None,
@@ -796,6 +818,8 @@ def plot_carpet(
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
         Required if ``func`` is a NIfTI image.
         Unused if ``func`` is a CIFTI.
+    detrend : bool, optional
+        Detrend and standardize the data prior to plotting.
     size : tuple, optional
         Size of figure.
     labelsize : int, optional
@@ -900,6 +924,7 @@ def plot_carpet(
         cmap,
         labelsize,
         TR=TR,
+        detrend=detrend,
         colorbar=colorbar,
         subplot=subplot,
         axes=axes,
@@ -915,6 +940,7 @@ def _carpet(
     cmap,
     labelsize,
     TR=None,
+    detrend=True,
     colorbar=False,
     subplot=None,
     axes=None,
@@ -926,6 +952,11 @@ def _carpet(
 
     sns.set_style("white")
     v = (None, None)
+
+    # Detrend data
+    if detrend:
+        data = clean(data.T, t_r=TR, detrend=True, standardize=False, filter=None).T
+        v = (-2, 2)
 
     # If subplot is not defined
     if subplot is None:
