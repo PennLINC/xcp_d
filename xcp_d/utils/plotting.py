@@ -14,7 +14,6 @@ from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
 from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import _safe_get_data
-from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.doc import fill_doc
@@ -619,6 +618,7 @@ def plot_fmri_es(
             TR=TR,
             subplot=grid[3],
             legend=False,
+            colorbar=True,
         )
         plot_confounds_es(
             time_series=fd_regressor,
@@ -754,6 +754,7 @@ class FMRIPlot:
             subplot=grid[-1],
             TR=self.TR,
             labelsize=labelsize,
+            colorbar=False,
         )
         # spikesplot_cb([0.7, 0.78, 0.2, 0.008])
         return figure
@@ -769,6 +770,7 @@ def plot_carpet(
     legend=True,
     TR=None,
     lut=None,
+    colorbar=False,
 ):
     """Plot an image representation of voxel intensities across time.
 
@@ -783,14 +785,11 @@ def plot_carpet(
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
         Required if ``func`` is a NIfTI image.
         Unused if ``func`` is a CIFTI.
-    detrend : bool, optional
-        Detrend and standardize the data prior to plotting.
     size : tuple, optional
         Size of figure.
+    labelsize : int, optional
     subplot : matplotlib Subplot, optional
         Subplot to plot figure on.
-    title : :obj:`str`, optional
-        The title displayed on the figure.
     output_file : :obj:`str` or None, optional
         The name of an image file to export the plot to. Valid extensions
         are .png, .pdf, .svg. If output_file is not None, the plot
@@ -798,10 +797,12 @@ def plot_carpet(
     legend : bool
         Whether to render the average functional series with ``atlaslabels`` as overlay.
     TR : float, optional
-        Specify the TR, if specified it uses this value. If left as None,
-        # of frames is plotted instead of time.
+        Specify the TR, if specified it uses this value.
+        If left as None, # of frames is plotted instead of time.
     lut : numpy.ndarray, optional
         Look up table for segmentations
+    colorbar : bool, optional
+        Default is False.
     """
     epinii = None
     segnii = None
@@ -888,6 +889,7 @@ def plot_carpet(
         cmap,
         labelsize,
         TR=TR,
+        colorbar=colorbar,
         subplot=subplot,
         output_file=output_file,
     )
@@ -901,20 +903,17 @@ def _carpet(
     cmap,
     labelsize,
     TR=None,
-    detrend=True,
+    colorbar=False,
     subplot=None,
-    legend=False,
     output_file=None,
 ):
     """Build carpetplot for volumetric / CIFTI plots."""
+    legend = False  # was an unused parameter
     if TR is None:
         TR = 1.0  # Default TR
+
     sns.set_style("whitegrid")
-    # Detrend data
     v = (None, None)
-    if detrend:
-        data = clean(data.T, t_r=TR).T
-        v = (-2, 2)
 
     # If subplot is not defined
     if subplot is None:
@@ -956,7 +955,7 @@ def _carpet(
 
     # Carpet plot
     ax1 = plt.subplot(grid_specification[1])
-    ax1.imshow(
+    pos = ax1.imshow(
         data[order],
         interpolation="nearest",
         aspect="auto",
@@ -985,7 +984,14 @@ def _carpet(
     ax1.spines["left"].set_color("none")
     ax1.spines["left"].set_visible(False)
 
-    ax2 = None
+    # Use the last axis for a colorbar
+    if colorbar:
+        ax2 = plt.subplot(grid_specification[2])
+        fig = ax2.get_figure()
+        fig.colorbar(pos, ax=ax2)
+    else:
+        ax2 = None
+
     #  Write out file
     if output_file is not None:
         figure = plt.gcf()
@@ -1048,7 +1054,8 @@ def plot_alff_reho_volumetric(output_path, filename, name_source):
 def surf_data_from_cifti(data, axis, surf_name):
     """From https://neurostars.org/t/separate-cifti-by-structure-in-python/17301/2.
 
-    https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/we-nibabel-markiewicz/NiBabel.ipynb
+    https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/\
+    we-nibabel-markiewicz/NiBabel.ipynb
     """
     assert isinstance(axis, nb.cifti2.BrainModelAxis)
     for name, data_indices, model in axis.iter_structures():
