@@ -17,9 +17,9 @@ def read_ndata(datafile, maskfile=None):
 
     Parameters
     ----------
-    datafile : str
+    datafile : :obj:`str`
         nifti or cifti file
-    maskfile : str
+    maskfile : :obj:`str`
         Path to a binary mask.
         Unused for CIFTI data.
 
@@ -79,11 +79,11 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     ----------
     data matrix : (SxT) numpy.ndarray
         The array to save to a file.
-    template : str
+    template : :obj:`str`
         Path to a template image, from which header and affine information will be used.
-    filename : str
+    filename : :obj:`str`
         Name of the output file to be written.
-    mask : str or None, optional
+    mask : :obj:`str` or None, optional
         The path to a binary mask file.
         The mask is only used for nifti files- masking is not supported in ciftis.
         Default is None.
@@ -91,7 +91,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
 
     Returns
     -------
-    filename : str
+    filename : :obj:`str`
         The name of the generated output file. Same as the "filename" input.
     """
     assert data_matrix.ndim in (1, 2), f"Input data must be a 1-2D array, not {data_matrix.ndim}."
@@ -175,9 +175,9 @@ def write_gii(datat, template, filename, hemi):
     ----------
     datatt : numpy.ndarray
         vector
-    template : str
+    template : :obj:`str`
         real file loaded with nibabel to get header and filemap
-    filename : str
+    filename : :obj:`str`
         name of the output
 
     Returns

@@ -13,11 +13,11 @@ class ExecutiveSummary(object):
 
     Parameters
     ----------
-    xcpd_path : str
+    xcpd_path : :obj:`str`
         Path to the xcp-d derivatives.
-    subject_id : str
+    subject_id : :obj:`str`
         Subject ID.
-    session_id : None or str, optional
+    session_id : None or :obj:`str`, optional
         Session ID.
     """
 
@@ -36,9 +36,9 @@ class ExecutiveSummary(object):
 
         Parameters
         ----------
-        document : str
+        document : :obj:`str`
             html document.
-        filename : str
+        filename : :obj:`str`
             name of html file.
         """
         soup = BeautifulSoup(document, features="lxml")

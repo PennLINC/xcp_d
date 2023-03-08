@@ -599,7 +599,7 @@ def init_execsummary_anatomical_plots_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
+            from xcp_d.workflows.execsummary import init_execsummary_anatomical_plots_wf
 
             wf = init_execsummary_anatomical_plots_wf(
                 t1w_available=True,
@@ -773,7 +773,7 @@ def init_plot_custom_slices_wf(
     Parameters
     ----------
     %(output_dir)s
-    desc : str
+    desc : :obj:`str`
         String to be used as ``desc`` entity in output filename.
     %(name)s
         Default is "plot_custom_slices_wf".

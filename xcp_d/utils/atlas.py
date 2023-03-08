@@ -47,7 +47,7 @@ def get_atlas_nifti(atlas_name):
 
     Returns
     -------
-    atlas_file : str
+    atlas_file : :obj:`str`
         Path to the atlas file.
     """
     from pkg_resources import resource_filename as pkgrf
@@ -103,7 +103,7 @@ def get_atlas_cifti(atlas_name):
 
     Returns
     -------
-    atlas_file : str
+    atlas_file : :obj:`str`
         Path to the atlas file.
     """
     from pkg_resources import resource_filename as pkgrf

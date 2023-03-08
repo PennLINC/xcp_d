@@ -452,20 +452,20 @@ def plot_fmri_es(
 
     Parameters
     ----------
-    preprocessed_bold : str
+    preprocessed_bold : :obj:`str`
         Preprocessed BOLD file, dummy scan removal.
     %(uncensored_denoised_bold)s
     %(interpolated_filtered_bold)s
     %(TR)s
     %(dummy_scans)s
     %(filtered_motion)s
-    preprocessed_bold_figure : str
+    preprocessed_bold_figure : :obj:`str`
         output file svg before processing
-    denoised_bold_figure : str
+    denoised_bold_figure : :obj:`str`
         output file svg after processing
-    mask : str, optional
+    mask : :obj:`str`, optional
         Brain mask file. Used only when the pre- and post-processed BOLD data are NIFTIs.
-    seg_data : str, optional
+    seg_data : :obj:`str`, optional
         Three-tissue segmentation file. This is only used for NIFTI inputs.
         With CIFTI inputs, the tissue types are inferred directly from the CIFTI file.
     preprocessed_bold_dvars : :obj:`numpy.ndarray` or None, optional
@@ -777,7 +777,7 @@ def plot_carpet(
 
     Parameters
     ----------
-    func : str
+    func : :obj:`str`
         Path to NIfTI or CIFTI BOLD image
     atlaslabels : numpy.ndarray, optional
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
@@ -789,9 +789,9 @@ def plot_carpet(
         Size of figure.
     subplot : matplotlib Subplot, optional
         Subplot to plot figure on.
-    title : str, optional
+    title : :obj:`str`, optional
         The title displayed on the figure.
-    output_file : str or None, optional
+    output_file : :obj:`str` or None, optional
         The name of an image file to export the plot to. Valid extensions
         are .png, .pdf, .svg. If output_file is not None, the plot
         is saved to a file, and the display is closed.
@@ -997,7 +997,7 @@ def _carpet(
     return (ax0, ax1, ax2), grid_specification
 
 
-def plot_alff_reho_volumetric(output_path, filename, bold_file):
+def plot_alff_reho_volumetric(output_path, filename, name_source):
     """Plot ReHo and ALFF mosaics for niftis.
 
     NOTE: This is a Node function.
@@ -1008,7 +1008,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
         path to save plot
     filename : :obj:`str`
         surface file
-    bold_file : :obj:`str`
+    name_source : :obj:`str`
         original input bold file
 
     Returns
@@ -1028,8 +1028,8 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     # templateflow uses the full entity names in its BIDSLayout config,
     # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
     ENTITY_NAMES_MAPPER = {"den": "density", "res": "resolution"}
-    space = parse_file_entities(bold_file)["space"]
-    file_entities = parse_file_entities(bold_file)
+    space = parse_file_entities(name_source)["space"]
+    file_entities = parse_file_entities(name_source)
     entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
     entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in entities_to_use.items()}
 
@@ -1065,7 +1065,7 @@ def surf_data_from_cifti(data, axis, surf_name):
     raise ValueError(f"No structure named {surf_name}")
 
 
-def plot_alff_reho_surface(output_path, filename, bold_file):
+def plot_alff_reho_surface(output_path, filename, name_source):
     """Plot ReHo and ALFF for ciftis on surface.
 
     NOTE: This is a Node function.
@@ -1076,7 +1076,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
         path to save plot
     filename : :obj:`str`
         surface file
-    bold_file : :obj:`str`
+    name_source : :obj:`str`
         original input bold file
 
     Returns
@@ -1096,7 +1096,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
     from xcp_d.utils.plotting import surf_data_from_cifti
 
-    density = parse_file_entities(bold_file).get("den", "32k")
+    density = parse_file_entities(name_source).get("den", "32k")
     if density == "91k":
         density = "32k"
     rh = str(
@@ -1192,14 +1192,14 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
 
     Parameters
     ----------
-    design_matrix : str
+    design_matrix : :obj:`str`
         Path to TSV file containing the design matrix.
-    temporal_mask : str, optional
+    temporal_mask : :obj:`str`, optional
         Path to TSV file containing a list of volumes to censor.
 
     Returns
     -------
-    design_matrix_figure : str
+    design_matrix_figure : :obj:`str`
         Path to SVG figure file.
     """
     import os
