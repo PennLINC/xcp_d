@@ -521,9 +521,6 @@ def collect_surface_data(layout, participant_label, input_type):
                 f"Surfaces found:\n\t{surface_str}\n"
                 f"Query: {surface_queries[dtype]}"
             )
-    if input_type == "hcp":
-        standard_space_surfaces = True
-
     LOGGER.debug(
         f"Collected surface data:\n"
         f"{yaml.dump(out_surface_files, default_flow_style=False, indent=4)}"
