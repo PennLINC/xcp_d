@@ -116,7 +116,6 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     res_ent = "res-2"
 
     anat_dir_orig = os.path.join(in_dir, "MNINonLinear")
-    xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
 
     subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
     anat_dir_fmriprep = os.path.join(subject_dir_fmriprep, "anat")
