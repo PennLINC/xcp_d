@@ -287,9 +287,7 @@ def plot_dvars_es(time_series, ax):
     ax.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_values)])
 
     for item in (
-        [ax.title, ax.xaxis.label, ax.yaxis.label]
-        + ax.get_xticklabels()
-        + ax.get_yticklabels()
+        [ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()
     ):
         item.set_fontsize(30)
 
@@ -357,9 +355,7 @@ def plot_global_signal_es(time_series, ax):
     )
 
     for item in (
-        [ax.title, ax.xaxis.label, ax.yaxis.label]
-        + ax.get_xticklabels()
-        + ax.get_yticklabels()
+        [ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()
     ):
         item.set_fontsize(30)
 
@@ -444,9 +440,7 @@ def plot_framewise_displacement_es(
     ax.set_yticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
 
     for item in (
-        [ax.title, ax.xaxis.label, ax.yaxis.label]
-        + ax.get_xticklabels()
-        + ax.get_yticklabels()
+        [ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()
     ):
         item.set_fontsize(30)
 
