@@ -168,8 +168,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     matrix = np.zeros(16)
     nifti_file = nb.Nifti1Image(matrix, affine)
     tempdir = tempfile.mkdtemp()
-    fake_nifti_1 = tempdir + "/fakenifti1.nii.gz"
-    fake_nifti_2 = tempdir + "/fakenifti2.nii.gz"
+    fake_nifti_1 = os.path.join(tempdir, "fakenifti1.nii.gz")
+    fake_nifti_2 = os.path.join(tempdir, "fakenifti2.nii.gz")
     nb.save(nifti_file, fake_nifti_1)
     nb.save(nifti_file, fake_nifti_2)
 
@@ -190,7 +190,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     # Grab surface morphometry files
     anat_dir_orig = in_dir
-    fsaverage_dir_orig = os.path.join(anat_dir_orig, "MNINonLinear/fsaverage_LR32k")
+    fsaverage_dir_orig = os.path.join(anat_dir_orig, "MNINonLinear", "fsaverage_LR32k")
 
     SURFACE_DICT = {
         "R.midthickness": "hemi-R_desc-hcp_midthickness",
@@ -228,12 +228,12 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         task_ent = f"task-{task_id}"
         dir_ent = f"dir-{dir_id}"
         # TODO: Rename variable
-        filenamex = os.path.basename(subject_task_folder)
+        run_foldername = os.path.basename(subject_task_folder)
 
         # Find original task files
         brainmask_orig_temp = os.path.join(subject_task_folder, "brainmask_fs.2.nii.gz")
 
-        bold_nifti_orig = os.path.join(subject_task_folder, f"{filenamex}.nii.gz")
+        bold_nifti_orig = os.path.join(subject_task_folder, f"{run_foldername}.nii.gz")
         bold_nifti_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_{volspace_ent}_{res_ent}_desc-preproc_bold.nii.gz",
@@ -249,7 +249,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         bold_cifti_orig = os.path.join(
             subject_task_folder,
-            f"{filenamex}_Atlas_MSMAll.dtseries.nii",
+            f"{run_foldername}_Atlas_MSMAll.dtseries.nii",
         )
         bold_cifti_fmriprep = os.path.join(
             func_dir_fmriprep,
