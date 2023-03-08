@@ -342,7 +342,7 @@ def collect_data(
 
 
 @fill_doc
-def collect_surface_data(layout, participant_label, input_type):
+def collect_surface_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
