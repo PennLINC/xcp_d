@@ -994,7 +994,8 @@ def _carpet(
             location="right",
             fraction=1,
             shrink=1,
-            ticks=[int(np.min(data)), int(np.max(data))])
+            ticks=[int(np.min(data)), int(np.max(data))],
+        )
         cbar.ax.tick_params(size=0)
     else:
         ax2 = None
