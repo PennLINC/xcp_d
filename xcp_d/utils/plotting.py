@@ -823,7 +823,6 @@ def plot_carpet(
     legend=True,
     TR=None,
     lut=None,
-    axes=None,
     colorbar=False,
 ):
     """Plot an image representation of voxel intensities across time.
@@ -948,7 +947,6 @@ def plot_carpet(
         detrend=detrend,
         colorbar=colorbar,
         subplot=subplot,
-        axes=axes,
         output_file=output_file,
     )
 
