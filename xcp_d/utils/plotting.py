@@ -587,14 +587,15 @@ def plot_fmri_es(
         preprocessed_bold_arr.T,
         t_r=TR,
         detrend=True,
-        filter=None,
+        filter=False,
     ).T
     detrended_uncensored_denoised_bold_arr = clean(
         uncensored_denoised_bold_arr.T,
         t_r=TR,
         detrend=True,
-        filter=None,
+        filter=False,
     ).T
+
     # Scale to maximum absolute value of 600
     scaled_preprocessed_data = detrended_preprocessed_bold_arr * (
         600 / np.max(np.abs(detrended_preprocessed_bold_arr))
@@ -985,7 +986,7 @@ def _carpet(
 
     # Detrend and z-score data
     if detrend:
-        data = clean(data.T, t_r=TR, detrend=True, filter=None).T
+        data = clean(data.T, t_r=TR, detrend=True, filter=False).T
         v = (-2, 2)
 
     # If subplot is not defined
