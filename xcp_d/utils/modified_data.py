@@ -241,5 +241,9 @@ def flag_bad_run(
         band_stop_max=band_stop_max,
     )
     fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
+    if fd_thresh > 0:
+        n_good_volumes = int(np.sum(fd_arr <= fd_thresh))
+    else:
+        n_good_volumes = fd_arr.size
 
-    return int(np.sum(fd_arr <= fd_thresh))
+    return n_good_volumes

@@ -334,7 +334,10 @@ class FlagMotionOutliers(SimpleInterface):
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
         outlier_mask = np.zeros(len(fd_timeseries), dtype=int)
-        outlier_mask[fd_timeseries > self.inputs.fd_thresh] = 1
+        if self.inputs.fd_thresh > 0:
+            outlier_mask[fd_timeseries > self.inputs.fd_thresh] = 1
+        else:
+            LOGGER.info(f"FD threshold set to {self.inputs.fd_thresh}. Censoring is disabled.")
 
         # get the output
         self._results["temporal_mask"] = fname_presuffix(

@@ -195,7 +195,9 @@ Resting-state metric derivatives (Regional Homogeneity and ALFF)
 
 .. important::
       ALFF images will not be generated if bandpass filtering is disabled
-      (i.e., with the ``--disable-bandpass-filtering`` parameter).
+      (i.e., with the ``--disable-bandpass-filtering`` parameter),
+      or if high-motion outlier censoring is enabled
+      (i.e., ``--fd-thresh`` is greater than zero).
 
 
 Other outputs include quality control, framewise displacement, and confounds files

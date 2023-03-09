@@ -208,7 +208,7 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--despike",
         "--head_radius=auto",
         "--smoothing=6",
-        "--fd-thresh=100",
+        "--fd-thresh=0",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}

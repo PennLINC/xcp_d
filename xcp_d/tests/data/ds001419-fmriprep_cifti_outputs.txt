@@ -118,10 +118,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-subcortical_den-91
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-subcortical_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-subcortical_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-subcortical_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_alff.dscalar.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_reho.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_alff.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
@@ -213,10 +210,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-subcortical_den-91
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-subcortical_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-subcortical_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-subcortical_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_alff.dscalar.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_reho.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_alff.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
