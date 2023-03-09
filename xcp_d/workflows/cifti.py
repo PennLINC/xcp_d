@@ -473,6 +473,7 @@ def init_postprocess_cifti_wf(
         output_dir=output_dir,
         low_pass=low_pass,
         high_pass=high_pass,
+        fd_thresh=fd_thresh,
         motion_filter_type=motion_filter_type,
         TR=TR,
         name="postproc_derivatives_wf",

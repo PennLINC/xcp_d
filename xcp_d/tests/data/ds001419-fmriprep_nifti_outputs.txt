@@ -64,10 +64,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Sch
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-subcortical_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-subcortical_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-subcortical_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_alff.nii.gz
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_reho.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.json
@@ -119,10 +115,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Sch
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-subcortical_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-subcortical_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-subcortical_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_alff.nii.gz
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_reho.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.json
@@ -174,10 +166,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Schaefer917_t
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-subcortical_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-subcortical_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-subcortical_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_alff.nii.gz
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_reho.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_reho.nii.gz
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.json

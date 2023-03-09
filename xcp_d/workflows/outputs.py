@@ -16,6 +16,7 @@ def init_postproc_derivatives_wf(
     bandpass_filter,
     low_pass,
     high_pass,
+    fd_thresh,
     motion_filter_type,
     smoothing,
     params,
@@ -39,6 +40,7 @@ def init_postproc_derivatives_wf(
                 bandpass_filter=True,
                 low_pass=0.1,
                 high_pass=0.008,
+                fd_thresh=0.2,
                 motion_filter_type=None,
                 smoothing=6,
                 params="36P",
@@ -57,6 +59,7 @@ def init_postproc_derivatives_wf(
         low pass filter
     high_pass : float
         high pass filter
+    %(fd_thresh)s
     %(motion_filter_type)s
     %(smoothing)s
     %(params)s
@@ -322,7 +325,7 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
         )
 
-        if bandpass_filter:
+        if bandpass_filter and (fd_thresh <= 0):
             ds_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -355,7 +358,7 @@ def init_postproc_derivatives_wf(
                 mem_gb=2,
             )
 
-            if bandpass_filter:
+            if bandpass_filter and (fd_thresh <= 0):
                 ds_smoothed_alff = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -504,7 +507,7 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
         )
 
-        if bandpass_filter:
+        if bandpass_filter and (fd_thresh <= 0):
             ds_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -540,7 +543,7 @@ def init_postproc_derivatives_wf(
                 mem_gb=2,
             )
 
-            if bandpass_filter:
+            if bandpass_filter and (fd_thresh <= 0):
                 ds_smoothed_alff = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -576,13 +579,13 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
-    if bandpass_filter:
+    if bandpass_filter and (fd_thresh <= 0):
         workflow.connect([(inputnode, ds_alff, [("alff", "in_file")])])
 
     if smoothing:
         workflow.connect([(inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")])])
 
-        if bandpass_filter:
+        if bandpass_filter and (fd_thresh <= 0):
             workflow.connect([(inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")])])
 
     return workflow

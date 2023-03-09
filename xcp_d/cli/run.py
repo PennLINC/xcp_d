@@ -386,7 +386,8 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help=(
             "Framewise displacement threshold for censoring. "
             "Any volumes with an FD value greater than the threshold will be removed from the "
-            "denoised BOLD data."
+            "denoised BOLD data. "
+            "A threshold of <=0 will disable censoring completely."
         ),
     )
 
