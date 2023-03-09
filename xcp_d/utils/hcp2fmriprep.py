@@ -252,12 +252,11 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
 
-        t1w_to_native_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
         t1w_to_native_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_from-T1w_to-scanner_mode-image_xfm.txt",
         )
-        copy_dictionary[t1w_to_native_orig] = [t1w_to_native_fmriprep]
+        copy_dictionary[identity_xfm].append(t1w_to_native_fmriprep)
 
         # Extract metadata for JSON files
         TR = nb.load(bold_nifti_orig).header.get_zooms()[-1]  # repetition time
