@@ -629,7 +629,7 @@ def plot_fmri_es(
         plt.cla()
         plt.clf()
 
-        fig = plt.figure(constrained_layout=True, figsize=(22.5, 30))
+        fig = plt.figure(constrained_layout=False, figsize=(22.5, 30))
         grid = fig.add_gridspec(
             nrows=4,
             ncols=1,
@@ -643,7 +643,7 @@ def plot_fmri_es(
             1,
             3,
             subplot_spec=grid[0],
-            width_ratios=[1, 100, 1],
+            width_ratios=[1, 100, 2],
             wspace=0.0,
         )
         ax0 = plt.subplot(gridspec0[1])
@@ -654,7 +654,7 @@ def plot_fmri_es(
             1,
             3,
             subplot_spec=grid[1],
-            width_ratios=[1, 100, 1],
+            width_ratios=[1, 100, 2],
             wspace=0.0,
         )
         ax1 = plt.subplot(gridspec1[1])
@@ -665,7 +665,7 @@ def plot_fmri_es(
             func=file_for_carpet,
             atlaslabels=atlaslabels,
             TR=TR,
-            subplot=grid[2],
+            subplot=grid[2],  # Use grid for now.
             detrend=False,  # Data are already detrended
             legend=False,
             colorbar=True,
@@ -676,7 +676,7 @@ def plot_fmri_es(
             1,
             3,
             subplot_spec=grid[3],
-            width_ratios=[1, 100, 1],
+            width_ratios=[1, 100, 2],
             wspace=0.0,
         )
         ax3 = plt.subplot(gridspec3[1])
@@ -982,7 +982,7 @@ def _carpet(
 
     # Define nested GridSpec
     if colorbar:
-        wratios = [1, 100, 1]
+        wratios = [1, 100, 2]
         grid_specification = mgs.GridSpecFromSubplotSpec(
             1,
             3,
@@ -1068,8 +1068,8 @@ def _carpet(
             pos,
             ax=ax2,
             location="right",
-            fraction=1,
-            pad=0,
+            shrink=1,
+            pad=0.1,
             ticks=[-600, 600],
         )
         cbar.ax.tick_params(size=0, labelsize=20)
