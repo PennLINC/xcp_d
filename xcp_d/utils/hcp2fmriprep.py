@@ -4,7 +4,6 @@
 import glob
 import logging
 import os
-import tempfile
 
 import nibabel as nb
 import numpy as np
@@ -160,7 +159,6 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         f"{sub_ent}_{volspace_ent}_{res_ent}_desc-aparcaseg_dseg.nii.gz",
     )
     copy_dictionary[dseg_orig] = [dseg_fmriprep]
-
 
     # Grab transforms
     t1w_to_template_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
