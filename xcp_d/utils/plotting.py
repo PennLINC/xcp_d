@@ -251,8 +251,9 @@ def plot_dvars_es(time_series, ax):
     """Create DVARS plot for the executive summary."""
     sns.set_style("whitegrid")
 
-    ntsteps = time_series.shape[0]
     ax.grid(False)
+
+    ntsteps = time_series.shape[0]
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
@@ -301,6 +302,7 @@ def plot_dvars_es(time_series, ax):
 def plot_global_signal_es(time_series, ax):
     """Create global signal plot for the executive summary."""
     sns.set_style("whitegrid")
+
     ntsteps = time_series.shape[0]
 
     ax.grid(False)
@@ -630,34 +632,55 @@ def plot_fmri_es(
         fig = plt.figure(constrained_layout=True, figsize=(22.5, 30))
         grid = fig.add_gridspec(
             nrows=4,
-            ncols=106,
+            ncols=1,
             wspace=0.0,
             hspace=0.1,
-            height_ratios=[1, 1, 2.5, 1],
+            height_ratios=[1, 1, 2.5, 1.3],
         )
-        ax0 = fig.add_subplot(grid[0, 1:101])
-        ax1 = fig.add_subplot(grid[1, 1:101])
-        ax2a = fig.add_subplot(grid[2, :1])
-        ax2b = fig.add_subplot(grid[2, 1:101])
-        ax2c = fig.add_subplot(grid[2, 102:])
-        ax3 = fig.add_subplot(grid[3, 1:101])
 
+        # The DVARS plot in the first row
+        gridspec0 = mgs.GridSpecFromSubplotSpec(
+            1,
+            3,
+            subplot_spec=grid[0],
+            width_ratios=[1, 100, 1],
+            wspace=0.0,
+        )
+        ax0 = plt.subplot(gridspec0[1])
         plot_dvars_es(dvars_regressors, ax0)
+
+        # The WB plot in the second row
+        gridspec1 = mgs.GridSpecFromSubplotSpec(
+            1,
+            3,
+            subplot_spec=grid[1],
+            width_ratios=[1, 100, 1],
+            wspace=0.0,
+        )
+        ax1 = plt.subplot(gridspec1[1])
         plot_global_signal_es(data_arr, ax1)
+
+        # The carpet plot in the third row
         plot_carpet(
             func=file_for_carpet,
             atlaslabels=atlaslabels,
             TR=TR,
-            axes=(ax2a, ax2b, ax2c),
+            axes=grid[2],
             detrend=False,  # Data are already detrended
             legend=False,
             colorbar=True,
         )
-        plot_framewise_displacement_es(
-            fd_regressor,
-            ax3,
-            TR=TR,
+
+        # The FD plot at the bottom
+        gridspec3 = mgs.GridSpecFromSubplotSpec(
+            1,
+            3,
+            subplot_spec=grid[3],
+            width_ratios=[1, 100, 1],
+            wspace=0.0,
         )
+        ax3 = plt.subplot(gridspec3[1])
+        plot_framewise_displacement_es(fd_regressor, ax3, TR=TR)
 
         # Save out the before processing file
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
@@ -786,7 +809,6 @@ class FMRIPlot:
             labelsize=labelsize,
             colorbar=False,
         )
-        # spikesplot_cb([0.7, 0.78, 0.2, 0.008])
         return figure
 
 
@@ -942,7 +964,6 @@ def _carpet(
     detrend=True,
     colorbar=False,
     subplot=None,
-    axes=None,
     output_file=None,
 ):
     """Build carpetplot for volumetric / CIFTI plots."""
@@ -963,12 +984,20 @@ def _carpet(
 
     # Define nested GridSpec
     if colorbar:
-        assert axes is not None
-        ax0, ax1, ax2 = axes
-        grid_specification = None
+        wratios = [1, 100, 1]
+        grid_specification = mgs.GridSpecFromSubplotSpec(
+            1,
+            3,
+            subplot_spec=subplot,
+            width_ratios=wratios,
+            wspace=0.0,
+        )
+        ax0 = plt.subplot(grid_specification[0])
+        ax1 = plt.subplot(grid_specification[1])
+        ax2 = plt.subplot(grid_specification[2])
         v = (-600, 600)
     else:
-        wratios = [1, 99]
+        wratios = [1, 100]
         grid_specification = mgs.GridSpecFromSubplotSpec(
             1,
             2,
