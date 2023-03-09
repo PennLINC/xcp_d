@@ -596,14 +596,6 @@ def plot_fmri_es(
         filter=False,
     ).T
 
-    # Scale to maximum absolute value of 600
-    scaled_preprocessed_data = detrended_preprocessed_bold_arr * (
-        600 / np.max(np.abs(detrended_preprocessed_bold_arr))
-    )
-    scaled_uncensored_denoised_data = detrended_uncensored_denoised_bold_arr * (
-        600 / np.max(np.abs(detrended_uncensored_denoised_bold_arr))
-    )
-
     # Make a temporary file for niftis and ciftis
     if preprocessed_bold.endswith(".nii.gz"):
         scaled_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
@@ -617,14 +609,14 @@ def plot_fmri_es(
 
     # Write out the scaled data
     scaled_preprocessed_file = write_ndata(
-        data_matrix=scaled_preprocessed_data,
+        data_matrix=detrended_preprocessed_bold_arr,
         template=uncensored_denoised_bold,  # residuals file is censored, so length matches
         filename=scaled_preprocessed_file,
         mask=mask,
         TR=TR,
     )
     scaled_uncensored_denoised_file = write_ndata(
-        data_matrix=scaled_uncensored_denoised_data,
+        data_matrix=detrended_uncensored_denoised_bold_arr,
         template=uncensored_denoised_bold,  # residuals file is censored, so length matches
         filename=scaled_uncensored_denoised_file,
         mask=mask,
@@ -1006,7 +998,7 @@ def _carpet(
         ax0 = plt.subplot(grid_specification[0])
         ax1 = plt.subplot(grid_specification[1])
         ax2 = plt.subplot(grid_specification[3])
-        v = (-600, 600)
+        v = (-2, 2)
     else:
         wratios = [1, 100]
         grid_specification = mgs.GridSpecFromSubplotSpec(
@@ -1080,7 +1072,7 @@ def _carpet(
         cbar = fig.colorbar(
             pos,
             cax=ax2,
-            ticks=[-600, 600],
+            ticks=v,
         )
         cbar.ax.tick_params(size=0, labelsize=20)
 
