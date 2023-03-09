@@ -665,7 +665,7 @@ def plot_fmri_es(
             func=file_for_carpet,
             atlaslabels=atlaslabels,
             TR=TR,
-            axes=grid[2],
+            subplot=grid[2],
             detrend=False,  # Data are already detrended
             legend=False,
             colorbar=True,
