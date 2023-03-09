@@ -643,7 +643,7 @@ def plot_fmri_es(
             1,
             3,
             subplot_spec=grid[0],
-            width_ratios=[1, 100, 2],
+            width_ratios=[1, 100, 3],
             wspace=0.0,
         )
         ax0 = plt.subplot(gridspec0[1])
@@ -654,7 +654,7 @@ def plot_fmri_es(
             1,
             3,
             subplot_spec=grid[1],
-            width_ratios=[1, 100, 2],
+            width_ratios=[1, 100, 3],
             wspace=0.0,
         )
         ax1 = plt.subplot(gridspec1[1])
@@ -676,7 +676,7 @@ def plot_fmri_es(
             1,
             3,
             subplot_spec=grid[3],
-            width_ratios=[1, 100, 2],
+            width_ratios=[1, 100, 3],
             wspace=0.0,
         )
         ax3 = plt.subplot(gridspec3[1])
@@ -982,17 +982,17 @@ def _carpet(
 
     # Define nested GridSpec
     if colorbar:
-        wratios = [1, 100, 2]
+        wratios = [1, 100, 1, 2]
         grid_specification = mgs.GridSpecFromSubplotSpec(
             1,
-            3,
+            4,
             subplot_spec=subplot,
             width_ratios=wratios,
             wspace=0.0,
         )
         ax0 = plt.subplot(grid_specification[0])
         ax1 = plt.subplot(grid_specification[1])
-        ax2 = plt.subplot(grid_specification[2])
+        ax2 = plt.subplot(grid_specification[3])
         v = (-600, 600)
     else:
         wratios = [1, 100]
@@ -1066,10 +1066,7 @@ def _carpet(
         fig = ax2.get_figure()
         cbar = fig.colorbar(
             pos,
-            ax=ax2,
-            location="right",
-            shrink=1,
-            pad=0.1,
+            cax=ax2,
             ticks=[-600, 600],
         )
         cbar.ax.tick_params(size=0, labelsize=20)
