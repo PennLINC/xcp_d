@@ -166,14 +166,14 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     t1w_to_template_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
     t1w_to_template_fmriprep = os.path.join(
         anat_dir_fmriprep,
-        f"{sub_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
+        f"{sub_ent}_from-T1w_to-{volspace}_mode-image_xfm.txt",
     )
     copy_dictionary[t1w_to_template_orig] = [t1w_to_template_fmriprep]
 
     template_to_t1w_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
     template_to_t1w_fmriprep = os.path.join(
         anat_dir_fmriprep,
-        f"{sub_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
+        f"{sub_ent}_from-{volspace}_to-T1w_mode-image_xfm.txt",
     )
     copy_dictionary[template_to_t1w_orig] = [template_to_t1w_fmriprep]
 
@@ -250,14 +250,14 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         native_to_t1w_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
         native_to_t1w_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{sub_ent}_{task_ent}_{dir_ent}_from-scanner_to-T1w_mode-image_xfm.nii.gz",
+            f"{sub_ent}_{task_ent}_{dir_ent}_from-scanner_to-T1w_mode-image_xfm.txt",
         )
         copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
 
         t1w_to_native_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
         t1w_to_native_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{sub_ent}_{task_ent}_{dir_ent}_from-T1w_to-scanner_mode-image_xfm.nii.gz",
+            f"{sub_ent}_{task_ent}_{dir_ent}_from-T1w_to-scanner_mode-image_xfm.txt",
         )
         copy_dictionary[t1w_to_native_orig] = [t1w_to_native_fmriprep]
 
