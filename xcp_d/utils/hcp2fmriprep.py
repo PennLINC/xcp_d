@@ -244,12 +244,11 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         # Grab transforms
 
-        native_to_t1w_orig = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
         native_to_t1w_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_from-scanner_to-T1w_mode-image_xfm.txt",
         )
-        copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
+        copy_dictionary[identity_xfm].append(native_to_t1w_fmriprep)
 
         t1w_to_native_fmriprep = os.path.join(
             func_dir_fmriprep,
