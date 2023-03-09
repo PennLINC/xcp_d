@@ -391,7 +391,7 @@ def plot_framewise_displacement_es(
     ax.set_xticklabels(labels)
 
     # Set y-axis labels
-    ax.set_ylabel("FD[mm]")
+    ax.set_ylabel("FD (mm)")
     ax.plot(time_series, label="FD", linewidth=3, color="black")
 
     # Threshold fd at 0.1, 0.2 and 0.5 and plot
@@ -436,6 +436,18 @@ def plot_framewise_displacement_es(
             transform=ax.transAxes,
             fontsize=20,
         )
+
+    # Log the total number of volumes as well
+    ax.text(
+        1.01,
+        top_line / ymax,
+        time_series.size,
+        c="black",
+        verticalalignment="center",
+        horizontalalignment="left",
+        transform=ax.transAxes,
+        fontsize=20,
+    )
 
     ax.set_xlim((0, ntsteps - 1))
     ax.set_ylim(0, ymax)
