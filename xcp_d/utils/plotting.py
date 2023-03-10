@@ -474,11 +474,9 @@ def plot_fmri_es(
     filtered_motion,
     preprocessed_bold_figure,
     denoised_bold_figure,
+    standardize,
     mask=None,
     seg_data=None,
-    preprocessed_bold_dvars=None,
-    uncensored_denoised_bold_dvars=None,
-    filtered_denoised_bold_dvars=None,
 ):
     """Generate carpet plot with DVARS, FD, and WB for the executive summary.
 
@@ -495,31 +493,25 @@ def plot_fmri_es(
         output file svg before processing
     denoised_bold_figure : :obj:`str`
         output file svg after processing
+    standardize : :obj:`bool`
+        Whether to standardize the data or not.
+        If False, then the preferred DCAN version of the plot will be generated,
+        where the BOLD data are not rescaled, and the carpet plot has color limits of -600 and 600.
+        If True, then the BOLD data will be z-scored and the color limits will be -2 and 2.
     mask : :obj:`str`, optional
         Brain mask file. Used only when the pre- and post-processed BOLD data are NIFTIs.
     seg_data : :obj:`str`, optional
         Three-tissue segmentation file. This is only used for NIFTI inputs.
         With CIFTI inputs, the tissue types are inferred directly from the CIFTI file.
-    preprocessed_bold_dvars : :obj:`numpy.ndarray` or None, optional
-        Pre-calculated DVARS for preprocessed BOLD data.
-    uncensored_denoised_bold_dvars : :obj:`numpy.ndarray` or None, optional
-        Pre-calculated DVARS for uncensored, denoised BOLD data.
-    filtered_denoised_bold_dvars : :obj:`numpy.ndarray` or None, optional
-        Pre-calculated DVARS for filtered, denoised BOLD data.
     """
     # Compute dvars correctly if not already done
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     uncensored_denoised_bold_arr = read_ndata(datafile=uncensored_denoised_bold, maskfile=mask)
     filtered_denoised_bold_arr = read_ndata(datafile=interpolated_filtered_bold, maskfile=mask)
 
-    if not isinstance(preprocessed_bold_dvars, np.ndarray):
-        preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
-
-    if not isinstance(uncensored_denoised_bold_dvars, np.ndarray):
-        uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
-
-    if not isinstance(filtered_denoised_bold_dvars, np.ndarray):
-        filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
+    preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
+    uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
+    filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
 
     if not (
         preprocessed_bold_dvars.shape
@@ -581,49 +573,53 @@ def plot_fmri_es(
     else:
         atlaslabels = None
 
-    # The plot going to carpet plot will be rescaled to [-600,600]
-    # But first we will detrend and standardize the data
-    detrended_preprocessed_bold_arr = clean(
-        preprocessed_bold_arr.T,
-        t_r=TR,
-        detrend=True,
-        filter=False,
-    ).T
-    detrended_uncensored_denoised_bold_arr = clean(
-        uncensored_denoised_bold_arr.T,
-        t_r=TR,
-        detrend=True,
-        filter=False,
-    ).T
+    if not standardize:
+        # The plot going to carpet plot will be rescaled to mean-centered and detrended,
+        # but will not otherwise be rescaled.
+        detrended_preprocessed_bold_arr = clean(
+            preprocessed_bold_arr.T,
+            t_r=TR,
+            detrend=True,
+            filter=False,
+        ).T
+        detrended_uncensored_denoised_bold_arr = clean(
+            uncensored_denoised_bold_arr.T,
+            t_r=TR,
+            detrend=True,
+            filter=False,
+        ).T
 
-    # Make a temporary file for niftis and ciftis
-    if preprocessed_bold.endswith(".nii.gz"):
-        scaled_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
-        scaled_uncensored_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
-    else:
-        scaled_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
-        scaled_uncensored_denoised_file = os.path.join(
-            tempfile.mkdtemp(),
-            "filex_red.dtseries.nii",
+        # Make a temporary file for niftis and ciftis
+        if preprocessed_bold.endswith(".nii.gz"):
+            temp_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
+            temp_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
+        else:
+            temp_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
+            temp_denoised_file = os.path.join(
+                tempfile.mkdtemp(),
+                "filex_red.dtseries.nii",
+            )
+
+        # Write out the scaled data
+        temp_preprocessed_file = write_ndata(
+            data_matrix=detrended_preprocessed_bold_arr,
+            template=uncensored_denoised_bold,  # residuals file is censored, so length matches
+            filename=temp_preprocessed_file,
+            mask=mask,
+            TR=TR,
         )
+        temp_denoised_file = write_ndata(
+            data_matrix=detrended_uncensored_denoised_bold_arr,
+            template=uncensored_denoised_bold,  # residuals file is censored, so length matches
+            filename=temp_denoised_file,
+            mask=mask,
+            TR=TR,
+        )
+    else:
+        temp_preprocessed_file = preprocessed_bold
+        temp_denoised_file = uncensored_denoised_bold
 
-    # Write out the scaled data
-    scaled_preprocessed_file = write_ndata(
-        data_matrix=detrended_preprocessed_bold_arr,
-        template=uncensored_denoised_bold,  # residuals file is censored, so length matches
-        filename=scaled_preprocessed_file,
-        mask=mask,
-        TR=TR,
-    )
-    scaled_uncensored_denoised_file = write_ndata(
-        data_matrix=detrended_uncensored_denoised_bold_arr,
-        template=uncensored_denoised_bold,  # residuals file is censored, so length matches
-        filename=scaled_uncensored_denoised_file,
-        mask=mask,
-        TR=TR,
-    )
-
-    files_for_carpet = [scaled_preprocessed_file, scaled_uncensored_denoised_file]
+    files_for_carpet = [temp_preprocessed_file, temp_denoised_file]
     figure_names = [preprocessed_bold_figure, denoised_bold_figure]
     data_arrays = [preprocessed_bold_timeseries, uncensored_denoised_bold_timeseries]
     for i_fig, figure_name in enumerate(figure_names):
@@ -671,7 +667,7 @@ def plot_fmri_es(
             atlaslabels=atlaslabels,
             TR=TR,
             subplot=grid[2],  # Use grid for now.
-            detrend=False,  # Data are already detrended
+            detrend=standardize,  # Data are already detrended if standardize is False
             legend=False,
             colorbar=True,
         )
@@ -974,12 +970,15 @@ def _carpet(
         TR = 1.0  # Default TR
 
     sns.set_style("white")
-    v = (None, None)
 
     # Detrend and z-score data
     if detrend:
         data = clean(data.T, t_r=TR, detrend=True, filter=False).T
-        v = (-2, 2)
+        vlimits = (-2, 2)
+    else:
+        # If detrend is False, then the data are assumed to have native BOLD units.
+        # The executive summary uses the following range for native BOLD units.
+        vlimits = (-600, 600)
 
     # If subplot is not defined
     if subplot is None:
@@ -998,7 +997,6 @@ def _carpet(
         ax0 = plt.subplot(grid_specification[0])
         ax1 = plt.subplot(grid_specification[1])
         ax2 = plt.subplot(grid_specification[3])
-        v = (-2, 2)
     else:
         wratios = [1, 100]
         grid_specification = mgs.GridSpecFromSubplotSpec(
@@ -1041,8 +1039,8 @@ def _carpet(
         interpolation="nearest",
         aspect="auto",
         cmap="gray",
-        vmin=v[0],
-        vmax=v[1],
+        vmin=vlimits[0],
+        vmax=vlimits[1],
     )
     ax1.grid(False)
     ax1.set_yticks([])
@@ -1072,7 +1070,7 @@ def _carpet(
         cbar = fig.colorbar(
             pos,
             cax=ax2,
-            ticks=v,
+            ticks=vlimits,
         )
         cbar.ax.tick_params(size=0, labelsize=20)
 

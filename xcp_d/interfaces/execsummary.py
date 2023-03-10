@@ -174,7 +174,7 @@ class ExecutiveSummary(object):
             "subject": self.subject_id,
             "task": "rest",
             "run": Query.NONE,
-            "desc": "precarpetplot",
+            "desc": "preprocESQC",
             "suffix": "bold",
             "extension": ".svg",
         }
@@ -195,7 +195,7 @@ class ExecutiveSummary(object):
 
             query = {
                 "subject": self.subject_id,
-                "desc": "precarpetplot",
+                "desc": "postprocESQC",
                 "suffix": "bold",
                 "extension": [".svg", ".png"],
                 **task_entity_set,
