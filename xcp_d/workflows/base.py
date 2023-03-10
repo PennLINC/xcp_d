@@ -542,7 +542,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
-            warp_to_standard=~standard_space_surfaces,
+            warp_to_standard=(not standard_space_surfaces),
             omp_nthreads=omp_nthreads,
             mem_gb=5,  # RF: need to change memory size
             name="warp_surfaces_to_template_wf",

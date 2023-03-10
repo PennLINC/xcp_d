@@ -759,31 +759,25 @@ def build_workflow(opts, retval):
 
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp"):
-        from xcp_d.utils.bids import _add_subject_prefix
-
         if opts.input_type == "dcan":
-            from xcp_d.utils.dcan2fmriprep import dcan2fmriprep as convert_to_fmriprep
+            from xcp_d.utils.dcan2fmriprep import convert_dcan2bids as convert_to_bids
         elif opts.input_type == "hcp":
-            from xcp_d.utils.hcp2fmriprep import hcp2fmriprep as convert_to_fmriprep
+            from xcp_d.utils.hcp2fmriprep import convert_hcp2bids as convert_to_bids
 
         NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
         print(f"checking the {opts.input_type} files")
-        converted_fmri_dir = os.path.join(work_dir, "dcanhcp/derivatives")
+        converted_fmri_dir = os.path.join(work_dir, f"dset_bids/derivatives/{opts.input_type}")
         os.makedirs(converted_fmri_dir, exist_ok=True)
 
-        if opts.participant_label is not None:
-            for subject_id in opts.participant_label:
-                convert_to_fmriprep(
-                    fmri_dir,
-                    outdir=converted_fmri_dir,
-                    sub_id=_add_subject_prefix(str(subject_id)),
-                )
-        else:
-            convert_to_fmriprep(fmri_dir, outdir=converted_fmri_dir)
+        convert_to_bids(
+            fmri_dir,
+            out_dir=converted_fmri_dir,
+            participant_ids=opts.participant_label,
+        )
 
         fmri_dir = converted_fmri_dir
 
-    if not (fmri_dir / "dataset_description.json").is_file():
+    if not os.path.isfile((os.path.join(fmri_dir, "dataset_description.json"))):
         build_log.error(
             "No dataset_description.json file found in input directory. "
             "Make sure to point to the specific pipeline's derivatives folder. "

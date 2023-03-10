@@ -204,7 +204,7 @@ def collect_data(
             "suffix": "T2w",
             "extension": ".nii.gz",
         },
-        # native T1w-space dseg file, but not aseg or aparcaseg
+        # native T1w-space dseg file
         "t1w_seg": {
             "datatype": "anat",
             "space": None,
@@ -235,6 +235,12 @@ def collect_data(
             "suffix": "xfm",
         },
     }
+    if input_type == "hcp":
+        queries["t1w"]["space"] = "MNI152NLin6Asym"
+        queries["t1w_seg"]["desc"] = "aparcaseg"
+        queries["t1w_seg"]["space"] = "MNI152NLin6Asym"
+        queries["t1w_mask"]["space"] = "MNI152NLin6Asym"
+
     if cifti:
         queries["bold"]["extension"] = ".dtseries.nii"
     else:
@@ -393,7 +399,7 @@ def collect_surface_data(layout, participant_label):
         subject=participant_label,
         datatype="anat",
         space="fsLR",
-        res="32k",
+        den="32k",
         extension=".surf.gii",
         **temp_query,
     )
@@ -409,7 +415,7 @@ def collect_surface_data(layout, participant_label):
     if standard_space_surfaces:
         query_extras = {
             "space": "fsLR",
-            "res": "32k",
+            "den": "32k",
         }
     else:
         query_extras = {
@@ -513,7 +519,6 @@ def collect_surface_data(layout, participant_label):
                 f"Surfaces found:\n\t{surface_str}\n"
                 f"Query: {surface_queries[dtype]}"
             )
-
     LOGGER.debug(
         f"Collected surface data:\n"
         f"{yaml.dump(out_surface_files, default_flow_style=False, indent=4)}"
