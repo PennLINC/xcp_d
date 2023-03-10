@@ -587,17 +587,10 @@ def plot_fmri_es(
         atlaslabels = None
 
     if not standardize:
-        # The plot going to carpet plot will be rescaled to mean-centered and detrended,
+        # The plot going to carpet plot will be mean-centered and detrended,
         # but will not otherwise be rescaled.
         detrended_preprocessed_bold_arr = clean(
             preprocessed_bold_arr.T,
-            t_r=TR,
-            detrend=True,
-            filter=False,
-            standardize=False,
-        ).T
-        detrended_uncensored_denoised_bold_arr = clean(
-            uncensored_denoised_bold_arr.T,
             t_r=TR,
             detrend=True,
             filter=False,
@@ -607,13 +600,8 @@ def plot_fmri_es(
         # Make a temporary file for niftis and ciftis
         if preprocessed_bold.endswith(".nii.gz"):
             temp_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
-            temp_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
         else:
             temp_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
-            temp_denoised_file = os.path.join(
-                tempfile.mkdtemp(),
-                "filex_red.dtseries.nii",
-            )
 
         # Write out the scaled data
         temp_preprocessed_file = write_ndata(
@@ -623,18 +611,10 @@ def plot_fmri_es(
             mask=mask,
             TR=TR,
         )
-        temp_denoised_file = write_ndata(
-            data_matrix=detrended_uncensored_denoised_bold_arr,
-            template=uncensored_denoised_bold,  # residuals file is censored, so length matches
-            filename=temp_denoised_file,
-            mask=mask,
-            TR=TR,
-        )
     else:
         temp_preprocessed_file = preprocessed_bold
-        temp_denoised_file = uncensored_denoised_bold
 
-    files_for_carpet = [temp_preprocessed_file, temp_denoised_file]
+    files_for_carpet = [temp_preprocessed_file, uncensored_denoised_bold]
     figure_names = [preprocessed_bold_figure, denoised_bold_figure]
     data_arrays = [preprocessed_bold_timeseries, uncensored_denoised_bold_timeseries]
     for i_fig, figure_name in enumerate(figure_names):
