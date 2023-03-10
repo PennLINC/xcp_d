@@ -17,6 +17,7 @@ from nipype.interfaces.base import (
     OutputMultiPath,
     SimpleInterface,
     TraitedSpec,
+    Undefined,
     isdefined,
     traits,
 )
@@ -435,6 +436,15 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
     # Optional inputs
     mask = File(exists=True, mandatory=False, desc="Bold mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
+    run_index = traits.Either(
+        traits.List(traits.Int()),
+        Undefined,
+        mandatory=False,
+        desc=(
+            "An index indicating splits between runs, for concatenated data. "
+            "If not Undefined, this should be a list of integers, indicating the volumes."
+        ),
+    )
 
 
 class _QCPlotsESOutputSpec(TraitedSpec):
@@ -478,6 +488,9 @@ class QCPlotsES(SimpleInterface):
         segmentation_file = self.inputs.seg_data
         segmentation_file = segmentation_file if isdefined(segmentation_file) else None
 
+        run_index = self.inputs.run_index
+        run_index = run_index if isdefined(run_index) else None
+
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
             uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
@@ -489,6 +502,7 @@ class QCPlotsES(SimpleInterface):
             standardize=self.inputs.standardize,
             mask=mask_file,
             seg_data=segmentation_file,
+            run_index=run_index,
         )
 
         return runtime

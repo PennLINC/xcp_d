@@ -232,6 +232,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("filtered_motion", "inputnode.filtered_motion"),
             ("temporal_mask", "inputnode.temporal_mask"),
+            ("run_index", "inputnode.run_index"),
         ]),
     ])
     # fmt:on

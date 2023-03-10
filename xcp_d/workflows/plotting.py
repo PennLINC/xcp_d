@@ -102,6 +102,7 @@ def init_qc_report_wf(
                 "filtered_motion",
                 "temporal_mask",
                 "head_radius",
+                "run_index",  # will only be set for concatenated data
                 # nifti-only inputs
                 "bold_mask",
                 "t1w_mask",
@@ -356,6 +357,7 @@ def init_qc_report_wf(
                 ("uncensored_denoised_bold", "uncensored_denoised_bold"),
                 ("interpolated_filtered_bold", "interpolated_filtered_bold"),
                 ("filtered_motion", "filtered_motion"),
+                ("run_index", "run_index"),
             ]),
         ])
         # fmt:on
@@ -374,6 +376,7 @@ def init_qc_report_wf(
                 ("uncensored_denoised_bold", "uncensored_denoised_bold"),
                 ("interpolated_filtered_bold", "interpolated_filtered_bold"),
                 ("filtered_motion", "filtered_motion"),
+                ("run_index", "run_index"),
             ]),
         ])
         # fmt:on

@@ -247,7 +247,7 @@ def plot_confounds(
     return time_series_axis, grid_specification
 
 
-def plot_dvars_es(time_series, ax):
+def plot_dvars_es(time_series, ax, run_index=None):
     """Create DVARS plot for the executive summary."""
     sns.set_style("whitegrid")
 
@@ -279,6 +279,9 @@ def plot_dvars_es(time_series, ax):
         maximum_values.append(max(time_series[c]))
         minimum_values.append(min(time_series[c]))
 
+    if run_index:
+        ax.axvline(run_index, color="yellow")
+
     # Set limits and format
     minimum_x_value = [abs(x) for x in minimum_values]
 
@@ -299,7 +302,7 @@ def plot_dvars_es(time_series, ax):
     return ax
 
 
-def plot_global_signal_es(time_series, ax):
+def plot_global_signal_es(time_series, ax, run_index=None):
     """Create global signal plot for the executive summary."""
     sns.set_style("whitegrid")
 
@@ -348,6 +351,9 @@ def plot_global_signal_es(time_series, ax):
     line_labels = [line.get_label() for line in lines]
     ax.legend(lines, line_labels, fontsize=30)
 
+    if run_index:
+        ax.axvline(run_index, color="yellow")
+
     ax.set_xlim((0, ntsteps - 1))
 
     mean_mean = np.mean(time_series["Mean"])
@@ -372,6 +378,7 @@ def plot_framewise_displacement_es(
     time_series,
     ax,
     TR,
+    run_index=None,
 ):
     """Create framewise displacement plot for the executive summary."""
     sns.set_style("whitegrid")
@@ -449,6 +456,9 @@ def plot_framewise_displacement_es(
         fontsize=20,
     )
 
+    if run_index:
+        ax.axvline([idx * TR for idx in run_index], color="yellow")
+
     ax.set_xlim((0, ntsteps - 1))
     ax.set_ylim(0, ymax)
     ax.set_yticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
@@ -477,6 +487,7 @@ def plot_fmri_es(
     standardize,
     mask=None,
     seg_data=None,
+    run_index=None,
 ):
     """Generate carpet plot with DVARS, FD, and WB for the executive summary.
 
@@ -503,6 +514,9 @@ def plot_fmri_es(
     seg_data : :obj:`str`, optional
         Three-tissue segmentation file. This is only used for NIFTI inputs.
         With CIFTI inputs, the tissue types are inferred directly from the CIFTI file.
+    run_index : None or array_like, optional
+        An index indicating splits between runs, for concatenated data.
+        If not None, this should be an array/list of integers, indicating the volumes.
     """
     # Compute dvars correctly if not already done
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
@@ -648,7 +662,7 @@ def plot_fmri_es(
             wspace=0.0,
         )
         ax0 = plt.subplot(gridspec0[1])
-        plot_dvars_es(dvars_regressors, ax0)
+        plot_dvars_es(dvars_regressors, ax0, run_index=run_index)
 
         # The WB plot in the second row
         gridspec1 = mgs.GridSpecFromSubplotSpec(
@@ -659,7 +673,7 @@ def plot_fmri_es(
             wspace=0.0,
         )
         ax1 = plt.subplot(gridspec1[1])
-        plot_global_signal_es(data_arr, ax1)
+        plot_global_signal_es(data_arr, ax1, run_index=run_index)
 
         # The carpet plot in the third row
         plot_carpet(
@@ -681,7 +695,7 @@ def plot_fmri_es(
             wspace=0.0,
         )
         ax3 = plt.subplot(gridspec3[1])
-        plot_framewise_displacement_es(fd_regressor, ax3, TR=TR)
+        plot_framewise_displacement_es(fd_regressor, ax3, run_index=run_index, TR=TR)
 
         # Save out the before processing file
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
