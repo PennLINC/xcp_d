@@ -59,18 +59,26 @@ analysis_level : {"participant"}
 """
 
 docdict[
-    "t1w_to_template"
+    "t1w_to_template_xfm"
 ] = """
-t1w_to_template : :obj:`str`
+t1w_to_template_xfm : :obj:`str`
     Path to the T1w-to-MNI transform file.
     May be "identity", for testing purposes.
 """
 
 docdict[
-    "template_to_t1w"
+    "template_to_t1w_xfm"
 ] = """
-template_to_t1w : :obj:`str`
+template_to_t1w_xfm : :obj:`str`
     Path to the MNI-to-T1w transform file.
+    May be "identity", for testing purposes.
+"""
+
+docdict[
+    "t1w_to_native_xfm"
+] = """
+t1w_to_native_xfm : :obj:`str`
+    Path to the T1w-to-native BOLD space transform file.
     May be "identity", for testing purposes.
 """
 
@@ -81,6 +89,28 @@ name_source : :obj:`str`
     Path to the file that will be used as the ``source_file`` for derivatives.
     This is generally the preprocessed BOLD file.
     This file does not need to exist (e.g., in the case of a concatenated version of the filename).
+"""
+
+docdict[
+    "boldref"
+] = """
+boldref : :obj:`str`
+    Path to the BOLD reference file associated with the target BOLD run.
+    This comes from the preprocessing derivatives.
+"""
+
+docdict[
+    "TR"
+] = """
+TR : :obj:`float`
+    Repetition time of the BOLD run, in seconds.
+"""
+
+docdict[
+    "fmriprep_confounds_file"
+] = """
+fmriprep_confounds_file : :obj:`str`
+    Confounds TSV file from preprocessing derivatives.
 """
 
 docdict[
@@ -106,7 +136,7 @@ input_type : {"fmriprep", "dcan", "hcp", "nibabies"}
 docdict[
     "dcan_qc"
 ] = """
-dcan_qc : obj:`bool`
+dcan_qc : :obj:`bool`
     This flag determines if DCAN-related QC steps will be taken.
     Enabling this flag will trigger the following steps:
 
@@ -118,16 +148,33 @@ dcan_qc : obj:`bool`
 docdict[
     "smoothing"
 ] = """
-smoothing : float
+smoothing : :obj:`float`
     The full width at half maximum (FWHM), in millimeters,
     of the Gaussian smoothing kernel that will be applied to the post-processed and denoised data.
     ALFF and ReHo outputs will also be smoothing with this kernel.
 """
 
 docdict[
+    "custom_confounds_folder"
+] = """
+custom_confounds_folder : :obj:`str` or None
+    Path to folder containing custom nuisance regressors.
+    Must be a folder containing confounds files,
+    in which case the file with the name matching the preprocessing confounds file will be
+    selected.
+"""
+
+docdict[
+    "custom_confounds_file"
+] = """
+custom_confounds_file : :obj:`str` or None
+    Path to custom nuisance regressors.
+"""
+
+docdict[
     "head_radius"
 ] = """
-head_radius : float or "auto"
+head_radius : :obj:`float` or "auto"
     Radius of the head, in millimeters, for framewise displacement calculation.
 
     ``xcp_d``'s default head radius is 50. The recommended value for infants is 35.
@@ -138,9 +185,10 @@ head_radius : float or "auto"
 docdict[
     "fd_thresh"
 ] = """
-fd_thresh : float
+fd_thresh : :obj:`float`
     Framewise displacement threshold for censoring, in millimeters.
     Any framewise displacement values higher than the threshold are flagged as "high motion".
+    If set to <=0, no censoring will be performed.
     Default is 0.2 mm.
 """
 
@@ -154,23 +202,27 @@ bandpass_filter : :obj:`bool`
 """
 
 docdict[
-    "lower_bpf"
+    "high_pass"
 ] = """
-lower_bpf : :obj:`float`
+high_pass : :obj:`float`
     Lower cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
-    This parameter is used in conjunction with ``upper_bpf`` and ``bpf_order``.
+    This internal parameter corresponds to the command-line parameter ``--lower-bpf``.
+
+    Default value is 0.01.
 """
 
 docdict[
-    "upper_bpf"
+    "low_pass"
 ] = """
-upper_bpf : :obj:`float`
+low_pass : :obj:`float`
     Upper cut-off frequency for the Butterworth bandpass filter, in Hertz.
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
-    This parameter is used in conjunction with ``lower_bpf`` and ``bpf_order``.
+    This internal parameter corresponds to the command-line parameter ``--upper-bpf``.
+
+    Default value is 0.08.
 """
 
 docdict[
@@ -179,7 +231,8 @@ docdict[
 bpf_order : :obj:`int`
     Number of filter coefficients for Butterworth bandpass filter.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
-    This parameter is used in conjunction with ``lower_bpf`` and ``upper_bpf``.
+    This parameter is used in conjunction with ``lower_bpf``/``high_pass`` and
+    ``upper_bpf``/``low_pass``.
 """
 
 docdict[
@@ -278,38 +331,6 @@ cifti : :obj:`bool`
 """
 
 docdict[
-    "atlas_names"
-] = """
-atlas_names : :obj:`list` of :obj:`str`
-    A list of atlases used for parcellating the BOLD data.
-    The list of atlas names is generated by :func:`xcp_d.utils.atlas.get_atlas_names`.
-    The atlases include: "Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417",
-    "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", "Schaefer917",
-    "Schaefer1017", "Glasser", "Gordon", and "subcortical" (Tian).
-"""
-
-docdict[
-    "timeseries"
-] = """
-timeseries : :obj:`list` of :obj:`str`
-    List of paths to atlas-specific time series TSV files.
-"""
-
-docdict[
-    "timeseries_ciftis"
-] = """
-timeseries_ciftis : :obj:`list` of :obj:`str`
-    List of paths to atlas-specific time series CIFTI (ptseries) files.
-"""
-
-docdict[
-    "correlations"
-] = """
-correlations : :obj:`list` of :obj:`str`
-    List of paths to atlas-specific ROI-to-ROI correlation files.
-"""
-
-docdict[
     "process_surfaces"
 ] = """
 process_surfaces : :obj:`bool`, optional
@@ -353,6 +374,28 @@ dummy_scans : :obj:`int` or "auto"
 """
 
 docdict[
+    "min_coverage"
+] = """
+min_coverage : :obj:`float`
+    Coverage threshold to apply to parcels in each atlas.
+    Any parcels with lower coverage than the threshold will be replaced with NaNs.
+    Must be a value between zero and one.
+    Default is 0.5.
+"""
+
+docdict[
+    "despike"
+] = """
+despike : :obj:`bool`
+    If True, the BOLD data will be despiked before censoring/denoising/filtering/interpolation.
+    If False, no despiking will be performed.
+
+    For NIFTI data, despiking is performed with AFNI's 3dDespike.
+    For CIFTI data, the data will be converted to NIFTI format, 3dDespike will be run, and then
+    the despiked data will be converted back to CIFTI format.
+"""
+
+docdict[
     "filtered_motion"
 ] = """
 filtered_motion : :obj:`str`
@@ -375,33 +418,106 @@ uncensored_denoised_bold : :obj:`str`
     Path to the uncensored, denoised BOLD file.
     This file is the result of denoising the full (uncensored) preprocessed BOLD data using
     betas estimated using the *censored* BOLD data and nuisance regressors.
+
+    This output should not be used for analysis. It is primarily used for DCAN QC plots.
 """
 
 docdict[
-    "unfiltered_denoised_bold"
+    "interpolated_unfiltered_bold"
 ] = """
-unfiltered_denoised_bold : :obj:`str`
+interpolated_unfiltered_bold : :obj:`str`
     Path to the censored, denoised, and interpolated BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
     followed by cubic spline interpolation.
 """
 
 docdict[
-    "filtered_denoised_bold"
+    "interpolated_filtered_bold"
 ] = """
-filtered_denoised_bold : :obj:`str`
+interpolated_filtered_bold : :obj:`str`
     Path to the censored, denoised, interpolated, and filtered BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
     followed by cubic spline interpolation and band-pass filtering.
+
+    This output should not be used for analysis. It is primarily for DCAN QC plots.
+"""
+
+docdict[
+    "censored_denoised_bold"
+] = """
+censored_denoised_bold : :obj:`str`
+    Path to the censored, denoised, interpolated, filtered, and re-censored BOLD file.
+    This file is the result of denoising the censored preprocessed BOLD data,
+    followed by cubic spline interpolation, band-pass filtering, and re-censoring.
+
+    This output is the primary derivative for analysis.
 """
 
 docdict[
     "smoothed_denoised_bold"
 ] = """
 smoothed_denoised_bold : :obj:`str`
-    Path to the censored, denoised, interpolated, filtered, and smoothed BOLD file.
+    Path to the censored, denoised, interpolated, filtered, re-censored, and smoothed BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
-    followed by cubic spline interpolation, band-pass filtering, and spatial smoothing.
+    followed by cubic spline interpolation, band-pass filtering, re-censoring, and spatial
+    smoothing.
+"""
+
+docdict[
+    "atlas_names"
+] = """
+atlas_names : :obj:`list` of :obj:`str`
+    A list of atlases used for parcellating the BOLD data.
+    The list of atlas names is generated by :func:`xcp_d.utils.atlas.get_atlas_names`.
+    The atlases include: "Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417",
+    "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", "Schaefer917",
+    "Schaefer1017", "Glasser", "Gordon", and "subcortical" (Tian).
+"""
+
+docdict[
+    "coverage"
+] = """
+coverage : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific coverage TSV files.
+"""
+
+docdict[
+    "coverage_ciftis"
+] = """
+coverage_ciftis : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific coverage CIFTI (pscalar) files.
+"""
+
+docdict[
+    "timeseries"
+] = """
+timeseries : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific time series TSV files.
+    These time series are produced from the ``censored_denoised_bold`` outputs.
+"""
+
+docdict[
+    "timeseries_ciftis"
+] = """
+timeseries_ciftis : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific time series CIFTI (ptseries) files.
+    These time series are produced from the ``censored_denoised_bold`` outputs.
+"""
+
+docdict[
+    "correlations"
+] = """
+correlations : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific ROI-to-ROI correlation TSV files.
+    These correlations are produced from the ``timeseries`` outputs.
+"""
+
+docdict[
+    "correlation_ciftis"
+] = """
+correlation_ciftis : :obj:`list` of :obj:`str`
+    List of paths to atlas-specific ROI-to-ROI correlation CIFTI (pconn) files.
+    These correlations are produced from the ``timeseries_cifti`` outputs.
 """
 
 docdict_indented = {}

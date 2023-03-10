@@ -9,16 +9,16 @@ from xcp_d.utils.confounds import motion_regression_filter
 
 
 def test_motion_filtering_lp():
-    """Run lowpass filter on toy data, compare to simplified results."""
+    """Run low-pass filter on toy data, compare to simplified results."""
     raw_data = np.random.random(500)
 
     band_stop_min = 6
     TR = 0.8
 
-    lowpass = band_stop_min / 60
+    low_pass = band_stop_min / 60
     b, a = signal.butter(
         1,
-        lowpass,
+        low_pass,
         btype="lowpass",
         output="ba",
         fs=1 / TR,

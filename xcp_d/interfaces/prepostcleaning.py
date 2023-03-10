@@ -1,6 +1,7 @@
 """Interfaces for the post-processing workflows."""
 import os
 
+import nibabel as nb
 import numpy as np
 import pandas as pd
 from nipype import logging
@@ -14,12 +15,7 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import (
-    _drop_dummy_scans,
-    compute_fd,
-    downcast_to_32,
-    generate_mask,
-)
+from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd, downcast_to_32
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -32,7 +28,7 @@ class _ConvertTo32InputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         usedefault=True,
     )
-    ref_file = traits.Either(
+    boldref = traits.Either(
         None,
         File(exists=True),
         desc="BOLD reference file",
@@ -76,7 +72,7 @@ class _ConvertTo32OutputSpec(TraitedSpec):
         desc="BOLD file",
         mandatory=False,
     )
-    ref_file = traits.Either(
+    boldref = traits.Either(
         None,
         File(exists=True),
         desc="BOLD reference file",
@@ -116,7 +112,7 @@ class ConvertTo32(SimpleInterface):
 
     def _run_interface(self, runtime):
         self._results["bold_file"] = downcast_to_32(self.inputs.bold_file)
-        self._results["ref_file"] = downcast_to_32(self.inputs.ref_file)
+        self._results["boldref"] = downcast_to_32(self.inputs.boldref)
         self._results["bold_mask"] = downcast_to_32(self.inputs.bold_mask)
         self._results["t1w"] = downcast_to_32(self.inputs.t1w)
         self._results["t1seg"] = downcast_to_32(self.inputs.t1seg)
@@ -125,7 +121,7 @@ class ConvertTo32(SimpleInterface):
         return runtime
 
 
-class _RemoveTRInputSpec(BaseInterfaceInputSpec):
+class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
     bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
     dummy_scans = traits.Either(
         traits.Int,
@@ -149,7 +145,7 @@ class _RemoveTRInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _RemoveTROutputSpec(TraitedSpec):
+class _RemoveDummyVolumesOutputSpec(TraitedSpec):
     confounds_file_dropped_TR = File(
         exists=True,
         mandatory=True,
@@ -170,15 +166,15 @@ class _RemoveTROutputSpec(TraitedSpec):
     dummy_scans = traits.Int(desc="Number of volumes dropped.")
 
 
-class RemoveTR(SimpleInterface):
+class RemoveDummyVolumes(SimpleInterface):
     """Removes initial volumes from a nifti or cifti file.
 
     A bold file and its corresponding confounds TSV (fmriprep format)
     are adjusted to remove the first n seconds of data.
     """
 
-    input_spec = _RemoveTRInputSpec
-    output_spec = _RemoveTROutputSpec
+    input_spec = _RemoveDummyVolumesInputSpec
+    output_spec = _RemoveDummyVolumesOutputSpec
 
     def _run_interface(self, runtime):
         dummy_scans = _infer_dummy_scans(
@@ -245,7 +241,7 @@ class RemoveTR(SimpleInterface):
         return runtime
 
 
-class _CensorScrubInputSpec(BaseInterfaceInputSpec):
+class _FlagMotionOutliersInputSpec(BaseInterfaceInputSpec):
     fd_thresh = traits.Float(
         mandatory=False,
         default_value=0.2,
@@ -278,18 +274,7 @@ class _CensorScrubInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _CensorScrubOutputSpec(TraitedSpec):
-    tmask = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Temporal mask; all values above fd_thresh set to 1. "
-            "This is a TSV file with one column: 'framewise_displacement'."
-        ),
-    )
-    tmask_metadata = traits.Dict(
-        desc="Metadata associated with the tmask output.",
-    )
+class _FlagMotionOutliersOutputSpec(TraitedSpec):
     filtered_motion = File(
         exists=True,
         mandatory=True,
@@ -301,9 +286,20 @@ class _CensorScrubOutputSpec(TraitedSpec):
     filtered_motion_metadata = traits.Dict(
         desc="Metadata associated with the filtered_motion output.",
     )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Temporal mask; all values above fd_thresh set to 1. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc="Metadata associated with the temporal_mask output.",
+    )
 
 
-class CensorScrub(SimpleInterface):
+class FlagMotionOutliers(SimpleInterface):
     """Generate a temporal mask based on recalculated FD.
 
     Takes in confound files and information about filtering-
@@ -314,8 +310,8 @@ class CensorScrub(SimpleInterface):
     Outputs temporal mask and framewise displacement timeseries.
     """
 
-    input_spec = _CensorScrubInputSpec
-    output_spec = _CensorScrubOutputSpec
+    input_spec = _FlagMotionOutliersInputSpec
+    output_spec = _FlagMotionOutliersOutputSpec
 
     def _run_interface(self, runtime):
         # Read in fmriprep confounds tsv to calculate FD
@@ -337,13 +333,14 @@ class CensorScrub(SimpleInterface):
 
         # Generate temporal mask with all timepoints have FD over threshold
         # set to 1 and then dropped.
-        tmask = generate_mask(
-            fd_res=fd_timeseries,
-            fd_thresh=self.inputs.fd_thresh,
-        )
+        outlier_mask = np.zeros(len(fd_timeseries), dtype=int)
+        if self.inputs.fd_thresh > 0:
+            outlier_mask[fd_timeseries > self.inputs.fd_thresh] = 1
+        else:
+            LOGGER.info(f"FD threshold set to {self.inputs.fd_thresh}. Censoring is disabled.")
 
         # get the output
-        self._results["tmask"] = fname_presuffix(
+        self._results["temporal_mask"] = fname_presuffix(
             "desc-fd_outliers.tsv",
             newpath=runtime.cwd,
             use_ext=True,
@@ -354,9 +351,9 @@ class CensorScrub(SimpleInterface):
             use_ext=True,
         )
 
-        outliers_df = pd.DataFrame(data=tmask, columns=["framewise_displacement"])
+        outliers_df = pd.DataFrame(data=outlier_mask, columns=["framewise_displacement"])
         outliers_df.to_csv(
-            self._results["tmask"],
+            self._results["temporal_mask"],
             index=False,
             header=True,
             sep="\t",
@@ -393,7 +390,7 @@ class CensorScrub(SimpleInterface):
                 "Threshold": self.inputs.fd_thresh,
             }
         }
-        self._results["tmask_metadata"] = outliers_metadata
+        self._results["temporal_mask_metadata"] = outliers_metadata
 
         motion_df.to_csv(
             self._results["filtered_motion"],
@@ -401,4 +398,105 @@ class CensorScrub(SimpleInterface):
             header=True,
             sep="\t",
         )
+
+        return runtime
+
+
+class _CensorInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="BOLD file after denoising, interpolation, and filtering",
+    )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Temporal mask; all motion outlier volumes set to 1. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+
+
+class _CensorOutputSpec(TraitedSpec):
+    censored_denoised_bold = File(
+        exists=True,
+        mandatory=True,
+        desc="Censored bold file",
+    )
+    censored_confounds = File(
+        exists=True,
+        mandatory=True,
+        desc="confounds_file censored",
+    )
+    censored_motion = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Framewise displacement timeseries. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+
+
+class Censor(SimpleInterface):
+    """Apply temporal mask to data."""
+
+    input_spec = _CensorInputSpec
+    output_spec = _CensorOutputSpec
+
+    def _run_interface(self, runtime):
+        # Read in temporal mask
+        temporal_mask = pd.read_table(self.inputs.temporal_mask)
+        temporal_mask = temporal_mask["framewise_displacement"].to_numpy()
+
+        if np.sum(temporal_mask) == 0:  # No censoring needed
+            self._results["censored_denoised_bold"] = self.inputs.in_file
+            return runtime
+
+        # Read in other files
+        bold_img_interp = nb.load(self.inputs.in_file)
+        bold_data_interp = bold_img_interp.get_fdata()
+
+        if bold_img_interp.ndim > 2:  # If Nifti
+            bold_data_censored = bold_data_interp[:, :, :, temporal_mask == 0]
+        else:
+            bold_data_censored = bold_data_interp[temporal_mask == 0, :]
+
+        # Turn censored bold into image
+        if nb.load(self.inputs.in_file).ndim > 2:
+            # If it's a Nifti image
+            bold_img_censored = nb.Nifti1Image(
+                bold_data_censored,
+                affine=bold_img_interp.affine,
+                header=bold_img_interp.header,
+            )
+        else:
+            # If it's a Cifti image
+            time_axis, brain_model_axis = [
+                bold_img_interp.header.get_axis(i) for i in range(bold_img_interp.ndim)
+            ]
+            new_total_volumes = bold_data_censored.shape[0]
+            censored_time_axis = time_axis[:new_total_volumes]
+            # Note: not an error. A time axis cannot be accessed with irregularly
+            # spaced values. Since we use the temporal_mask for marking the volumes removed,
+            # the time axis also is not used further in XCP.
+            censored_header = nb.cifti2.Cifti2Header.from_axes(
+                (censored_time_axis, brain_model_axis)
+            )
+            bold_img_censored = nb.Cifti2Image(
+                bold_data_censored,
+                header=censored_header,
+                nifti_header=bold_img_interp.nifti_header,
+            )
+
+        # get the output
+        self._results["censored_denoised_bold"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_censored",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+
+        bold_img_censored.to_filename(self._results["censored_denoised_bold"])
         return runtime

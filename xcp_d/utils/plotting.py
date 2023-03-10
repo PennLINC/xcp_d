@@ -437,9 +437,8 @@ def plot_confounds_es(
 def plot_fmri_es(
     preprocessed_bold,
     uncensored_denoised_bold,
-    filtered_denoised_bold,
+    interpolated_filtered_bold,
     TR,
-    dummy_scans,
     filtered_motion,
     preprocessed_bold_figure,
     denoised_bold_figure,
@@ -453,27 +452,20 @@ def plot_fmri_es(
 
     Parameters
     ----------
-    preprocessed_bold : str
-        Preprocessed BOLD file, after mean-centering and detrending
-        *using only the low-motion volumes*.
-    uncensored_denoised_bold : str
-        BOLD file after regression and interpolation, but not filtering.
-        The preprocessed BOLD data are censored and denoised to get the betas,
-        and then the full, uncensored preprocessed BOLD data are denoised using those betas.
-    filtered_denoised_bold : str
-        BOLD file after regression, interpolation, and filtering.
-    TR : float
-        Repetition time, in seconds.
+    preprocessed_bold : :obj:`str`
+        Preprocessed BOLD file, dummy scan removal.
+    %(uncensored_denoised_bold)s
+    %(interpolated_filtered_bold)s
+    %(TR)s
     %(dummy_scans)s
-    filtered_motion : str
-       Filtered motion parameters, including framewise displacement, in a TSV file.
-    preprocessed_bold_figure : str
+    %(filtered_motion)s
+    preprocessed_bold_figure : :obj:`str`
         output file svg before processing
-    denoised_bold_figure : str
+    denoised_bold_figure : :obj:`str`
         output file svg after processing
-    mask : str, optional
+    mask : :obj:`str`, optional
         Brain mask file. Used only when the pre- and post-processed BOLD data are NIFTIs.
-    seg_data : str, optional
+    seg_data : :obj:`str`, optional
         Three-tissue segmentation file. This is only used for NIFTI inputs.
         With CIFTI inputs, the tissue types are inferred directly from the CIFTI file.
     preprocessed_bold_dvars : :obj:`numpy.ndarray` or None, optional
@@ -486,11 +478,7 @@ def plot_fmri_es(
     # Compute dvars correctly if not already done
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     uncensored_denoised_bold_arr = read_ndata(datafile=uncensored_denoised_bold, maskfile=mask)
-    filtered_denoised_bold_arr = read_ndata(datafile=filtered_denoised_bold, maskfile=mask)
-
-    # Remove dummy time from the preprocessed_bold_arr if needed
-    if dummy_scans > 0:
-        preprocessed_bold_arr = preprocessed_bold_arr[:, dummy_scans:]
+    filtered_denoised_bold_arr = read_ndata(datafile=interpolated_filtered_bold, maskfile=mask)
 
     if not isinstance(preprocessed_bold_dvars, np.ndarray):
         preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
@@ -510,7 +498,7 @@ def plot_fmri_es(
             "Shapes do not match:\n"
             f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
             f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{filtered_denoised_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{interpolated_filtered_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
     if not (
@@ -522,7 +510,7 @@ def plot_fmri_es(
             "Shapes do not match:\n"
             f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
             f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{filtered_denoised_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{interpolated_filtered_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
     # Formatting & setting of files
@@ -649,6 +637,7 @@ def plot_fmri_es(
     return preprocessed_bold_figure, denoised_bold_figure
 
 
+@fill_doc
 class FMRIPlot:
     """Generates the fMRI Summary Plot.
 
@@ -659,7 +648,7 @@ class FMRIPlot:
     data
     confound_file
     seg_file
-    TR
+    %(TR)s
     usecols
     units
     vlines
@@ -788,7 +777,7 @@ def plot_carpet(
 
     Parameters
     ----------
-    func : str
+    func : :obj:`str`
         Path to NIfTI or CIFTI BOLD image
     atlaslabels : numpy.ndarray, optional
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
@@ -800,9 +789,9 @@ def plot_carpet(
         Size of figure.
     subplot : matplotlib Subplot, optional
         Subplot to plot figure on.
-    title : str, optional
+    title : :obj:`str`, optional
         The title displayed on the figure.
-    output_file : str or None, optional
+    output_file : :obj:`str` or None, optional
         The name of an image file to export the plot to. Valid extensions
         are .png, .pdf, .svg. If output_file is not None, the plot
         is saved to a file, and the display is closed.
@@ -1008,9 +997,10 @@ def _carpet(
     return (ax0, ax1, ax2), grid_specification
 
 
-def plot_alff_reho_volumetric(output_path, filename, bold_file):
-    """
-    Plot ReHo and ALFF mosaics for niftis.
+def plot_alff_reho_volumetric(output_path, filename, name_source):
+    """Plot ReHo and ALFF mosaics for niftis.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
@@ -1018,7 +1008,7 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
         path to save plot
     filename : :obj:`str`
         surface file
-    bold_file : :obj:`str`
+    name_source : :obj:`str`
         original input bold file
 
     Returns
@@ -1038,8 +1028,8 @@ def plot_alff_reho_volumetric(output_path, filename, bold_file):
     # templateflow uses the full entity names in its BIDSLayout config,
     # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
     ENTITY_NAMES_MAPPER = {"den": "density", "res": "resolution"}
-    space = parse_file_entities(bold_file)["space"]
-    file_entities = parse_file_entities(bold_file)
+    space = parse_file_entities(name_source)["space"]
+    file_entities = parse_file_entities(name_source)
     entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
     entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in entities_to_use.items()}
 
@@ -1075,9 +1065,10 @@ def surf_data_from_cifti(data, axis, surf_name):
     raise ValueError(f"No structure named {surf_name}")
 
 
-def plot_alff_reho_surface(output_path, filename, bold_file):
-    """
-    Plot ReHo and ALFF for ciftis on surface.
+def plot_alff_reho_surface(output_path, filename, name_source):
+    """Plot ReHo and ALFF for ciftis on surface.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
@@ -1085,7 +1076,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
         path to save plot
     filename : :obj:`str`
         surface file
-    bold_file : :obj:`str`
+    name_source : :obj:`str`
         original input bold file
 
     Returns
@@ -1105,7 +1096,7 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
 
     from xcp_d.utils.plotting import surf_data_from_cifti
 
-    density = parse_file_entities(bold_file).get("den", "32k")
+    density = parse_file_entities(name_source).get("den", "32k")
     if density == "91k":
         density = "32k"
     rh = str(
@@ -1194,19 +1185,21 @@ def plot_alff_reho_surface(output_path, filename, bold_file):
     return output_path
 
 
-def plot_design_matrix(design_matrix, censoring_file=None):
+def plot_design_matrix(design_matrix, temporal_mask=None):
     """Plot design matrix TSV with Nilearn.
+
+    NOTE: This is a Node function.
 
     Parameters
     ----------
-    design_matrix : str
+    design_matrix : :obj:`str`
         Path to TSV file containing the design matrix.
-    censoring_file : str, optional
+    temporal_mask : :obj:`str`, optional
         Path to TSV file containing a list of volumes to censor.
 
     Returns
     -------
-    design_matrix_figure : str
+    design_matrix_figure : :obj:`str`
         Path to SVG figure file.
     """
     import os
@@ -1216,8 +1209,8 @@ def plot_design_matrix(design_matrix, censoring_file=None):
     from nilearn import plotting
 
     design_matrix_df = pd.read_table(design_matrix)
-    if censoring_file:
-        censoring_df = pd.read_table(censoring_file)
+    if temporal_mask:
+        censoring_df = pd.read_table(temporal_mask)
         n_outliers = censoring_df["framewise_displacement"].sum()
         new_df = pd.DataFrame(
             data=np.zeros((censoring_df.shape[0], n_outliers), dtype=np.int16),

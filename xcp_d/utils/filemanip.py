@@ -2,8 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Miscellaneous file manipulation functions."""
-import contextlib
-import glob
 import hashlib
 import os
 import os.path as op
@@ -56,16 +54,16 @@ def split_filename(fname):
 
     Parameters
     ----------
-    fname : str
+    fname : :obj:`str`
         file or path name
 
     Returns
     -------
-    pth : str
+    pth : :obj:`str`
         base path from fname
-    fname : str
+    fname : :obj:`str`
         filename from fname, without extension
-    ext : str
+    ext : :obj:`str`
         file extension from fname
 
     Examples
@@ -287,7 +285,7 @@ def on_cifs(fname):
 
     Parameters
     ----------
-    fname : str
+    fname : :obj:`str`
         The file to be checked.
 
     Returns
@@ -321,9 +319,9 @@ def copyfile(
 
     Parameters
     ----------
-    originalfile : str
+    originalfile : :obj:`str`
         full path to original file
-    newfile : str
+    newfile : :obj:`str`
         full path to new file
     copy : bool
         specifies whether to copy or symlink files
@@ -337,7 +335,7 @@ def copyfile(
 
     Returns
     -------
-    newfile : str
+    newfile : :obj:`str`
         The full path to the new file.
     """
     newhash = None
@@ -460,7 +458,7 @@ def get_related_files(filename, include_this_file=True):
 
     Parameters
     ----------
-    filename : str
+    filename : :obj:`str`
         File name to find related filetypes of.
     include_this_file : bool
         If true, output includes the input filename.
@@ -487,19 +485,19 @@ def copyfiles(filelist, dest, copy=False, create_new=False):
 
     Parameters
     ----------
-    filelist : list of str
+    filelist : :obj:`list` of :obj:`str`
         List of files to copy.
-    dest : str or list of str
+    dest : :obj:`str` or :obj:`list` of :obj:`str`
         full path to destination. If it is a list of length greater
         than 1, then it assumes that these are the names of the new
         files.
-    copy : Bool
+    copy : :obj:`str`
         specifies whether to copy or symlink files
         (default=False) but only for posix systems
 
     Returns
     -------
-    newfiles : list of str
+    newfiles : :obj:`list` of :obj:`str`
         List of new copied files.
     """
     outfiles = ensure_list(dest)
@@ -557,16 +555,16 @@ def relpath(path, start=None):
 
     Parameters
     ----------
-    path : str
+    path : :obj:`str`
         Path to reformat.
-    start : None or str, optional
+    start : None or :obj:`str`, optional
         The starting location for the relative path.
         If None, use the current working directory.
         Default is None.
 
     Returns
     -------
-    str
+    :obj:`str`
         Relative version of the path.
     """
     try:
@@ -581,8 +579,8 @@ def relpath(path, start=None):
     start_list = op.abspath(start).split(op.sep)
     path_list = op.abspath(path).split(op.sep)
     if start_list[0].lower() != path_list[0].lower():
-        unc_path, rest = op.splitunc(path)
-        unc_start, rest = op.splitunc(start)
+        unc_path, _ = op.splitunc(path)
+        unc_start, _ = op.splitunc(start)
         if bool(unc_path) ^ bool(unc_start):
             raise ValueError(("Cannot mix UNC and non-UNC paths (%s and %s)") % (path, start))
         else:
@@ -598,78 +596,3 @@ def relpath(path, start=None):
     if not rel_list:
         return os.curdir
     return op.join(*rel_list)
-
-
-@contextlib.contextmanager
-def indirectory(path):
-    """Change working directory to path."""
-    cwd = os.getcwd()
-    os.chdir(str(path))
-    try:
-        yield
-    finally:
-        os.chdir(cwd)
-
-
-def find_and_copy_files(seek_dir, pattern, output_dir):
-    """Find all files within the directory specified that match the glob-style pattern.
-
-    Copies each file to the output directory.
-
-    Parameters
-    ----------
-    seek_dir : str
-        Directory to be searched.
-    pattern : str
-        Unix shell pattern for finding files.
-    output_dir : str
-        Directory to which to copy files.
-
-    Returns
-    -------
-    rel_paths : list of str
-        List of relative paths of copied files (may be empty).
-    """
-    rel_paths = []
-
-    glob_pattern = os.path.join(seek_dir, pattern)
-    for found_file in glob.glob(glob_pattern):
-        # TODO: change name to BIDS name?
-        filename = os.path.basename(found_file)
-        rel_path = os.path.relpath(os.path.join(output_dir, filename), os.getcwd())
-        shutil.copy(found_file, rel_path)
-        rel_paths.append(rel_path)
-
-    return rel_paths
-
-
-def find_one_file(seek_dir, pattern):
-    """Find a single file within seek_dir, using the pattern.
-
-    Parameters
-    ----------
-    seek_dir : str
-        Directory to be searched.
-    pattern : str
-        Unix shell pattern for finding files.
-
-    Returns
-    -------
-    one_file : str
-        Path to the found file.
-    """
-    one_file = None
-
-    # Try to find a file with the pattern given in the directory given.
-    glob_pattern = os.path.join(seek_dir, pattern)
-    filelist = glob.glob(glob_pattern)
-
-    # Make sure we got exactly one file.
-    # numfiles = len(filelist)
-    # if numfiles is 1:
-    # one_file = filelist[0]
-    # else:
-    # TODO: Log info in errorfile.
-    # print('info: Found %s files with pattern: %s' % (numfiles, glob_pattern))
-    one_file = filelist[0]
-    return one_file

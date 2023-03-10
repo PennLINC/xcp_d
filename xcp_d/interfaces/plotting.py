@@ -27,7 +27,7 @@ from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
-from xcp_d.utils.write_save import read_ndata, write_ndata
+from xcp_d.utils.write_save import read_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -35,7 +35,7 @@ LOGGER = logging.getLogger("nipype.interface")
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
     fmriprep_confounds_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
     filtered_motion = File(exists=True, mandatory=True, desc="Filtered motion file.")
-    tmask = File(exists=True, mandatory=True, desc="Temporal mask.")
+    temporal_mask = File(exists=True, mandatory=True, desc="Temporal mask.")
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
@@ -86,7 +86,7 @@ class CensoringPlot(SimpleInterface):
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
         dummy_scans = self.inputs.dummy_scans
-        # This check is necessary, because init_qc_report_wf connects dummy_scans from the
+        # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
         # inputnode, forcing it to be undefined instead of using the default when not set.
         if not isdefined(dummy_scans):
             dummy_scans = 0
@@ -101,8 +101,9 @@ class CensoringPlot(SimpleInterface):
             )
 
         # Plot censored volumes as vertical lines
-        tmask_df = pd.read_table(self.inputs.tmask)
+        tmask_df = pd.read_table(self.inputs.temporal_mask)
         tmask_arr = tmask_df["framewise_displacement"].values
+        assert preproc_fd_timeseries.size == tmask_arr.size + dummy_scans
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
             if i_idx == 0:
@@ -125,7 +126,7 @@ class CensoringPlot(SimpleInterface):
             ]
 
             ax.plot(
-                time_array,
+                time_array[dummy_scans:],
                 filtered_fd_timeseries,
                 label="Filtered Framewise Displacement",
                 color=palette[2],
@@ -177,16 +178,20 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
     bold_file = File(
         exists=True,
         mandatory=True,
-        desc="Preprocessed BOLD file. Used in carpet plot.",
+        desc="Preprocessed BOLD file, after dummy scan removal. Used in carpet plot.",
     )
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
-    tmask = File(exists=True, mandatory=True, desc="Temporal mask")
+    temporal_mask = File(exists=True, mandatory=True, desc="Temporal mask")
     fmriprep_confounds_file = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds file, after dummy scans removal",
     )
-    cleaned_file = File(exists=True, mandatory=True, desc="Processed file")
+    cleaned_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Processed file, after denoising and censoring.",
+    )
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
     mask_file = traits.Either(
@@ -225,7 +230,7 @@ class QCPlots(SimpleInterface):
     qcplots.inputs.name_source = rawbold
     qcplots.inputs.bold_file = rawbold
     qcplots.inputs.TR = TR
-    qcplots.inputs.tmask = temporalmask
+    qcplots.inputs.temporal_mask = temporalmask
     qcplots.inputs.mask_file = mask
     qcplots.inputs.dummy_scans = dummy_scans
     qcplots.run()
@@ -248,21 +253,19 @@ class QCPlots(SimpleInterface):
             confound=preproc_motion_df,
             head_radius=self.inputs.head_radius,
         )
-        postproc_fd_timeseries = preproc_fd_timeseries.copy()
 
         # Get rmsd
-        rmsd = confounds_df["rmsd"]
+        rmsd = confounds_df["rmsd"].to_numpy()
 
-        # Drop volumes from time series
-        # NOTE: TS- Why drop dummy volumes in preprocessed plot?
+        # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans
+        tmask_df = pd.read_table(self.inputs.temporal_mask)
+        tmask_arr = tmask_df["framewise_displacement"].values
+        num_censored_volumes = int(tmask_arr.sum())
 
-        if self.inputs.tmask:  # If a tmask is provided, find # vols censored
-            tmask_df = pd.read_table(self.inputs.tmask)
-            tmask_arr = tmask_df["framewise_displacement"].values
-            num_censored_volumes = np.sum(tmask_arr)
-        else:
-            num_censored_volumes = 0
+        # Apply temporal mask to interpolated/full data
+        rmsd_censored = rmsd[tmask_arr == 0]
+        postproc_fd_timeseries = preproc_fd_timeseries[tmask_arr == 0]
 
         # get QC plot names
         self._results["raw_qcplot"] = fname_presuffix(
@@ -277,39 +280,13 @@ class QCPlots(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-        if dummy_scans > 0:
-            raw_data_removed_TR = read_ndata(
+
+        dvars_before_processing = compute_dvars(
+            read_ndata(
                 datafile=self.inputs.bold_file,
                 maskfile=self.inputs.mask_file,
-            )[:, dummy_scans:]
-
-            dvars_before_processing = compute_dvars(raw_data_removed_TR)
-
-            # Get file names to write out & write data out
-            dropped_bold_file = fname_presuffix(
-                self.inputs.name_source,
-                newpath=runtime.cwd,
-                suffix="_dropped",
-                use_ext=True,
             )
-
-            write_ndata(
-                data_matrix=raw_data_removed_TR,
-                template=self.inputs.bold_file,
-                mask=self.inputs.mask_file,
-                filename=dropped_bold_file,
-                TR=self.inputs.TR,
-            )
-        else:
-            dropped_bold_file = self.inputs.bold_file
-
-            dvars_before_processing = compute_dvars(
-                read_ndata(
-                    datafile=self.inputs.bold_file,
-                    maskfile=self.inputs.mask_file,
-                )
-            )
-
+        )
         dvars_after_processing = compute_dvars(
             read_ndata(
                 datafile=self.inputs.cleaned_file,
@@ -328,7 +305,7 @@ class QCPlots(SimpleInterface):
         )
 
         preproc_fig = FMRIPlot(
-            func_file=dropped_bold_file,
+            func_file=self.inputs.bold_file,
             seg_file=self.inputs.seg_file,
             data=preproc_confounds,
             mask_file=self.inputs.mask_file,
@@ -339,43 +316,6 @@ class QCPlots(SimpleInterface):
             bbox_inches="tight",
         )
 
-        # If censoring occurs, censor the cleaned BOLD data and FD time series
-        # NOTE: TS- Why are we censoring these plots? This ignores/misrepresents the
-        # interpolation step.
-        if num_censored_volumes > 0:
-            # Apply temporal mask to time series
-            postproc_fd_timeseries = preproc_fd_timeseries[tmask_arr == 0]
-            rmsd = rmsd[tmask_arr == 0]
-            # NOTE: TS- Why mask DVARS before processing?
-            dvars_before_processing = dvars_before_processing[tmask_arr == 0]
-            dvars_after_processing = dvars_after_processing[tmask_arr == 0]
-
-            # Apply temporal mask to data
-            raw_data_removed_TR = read_ndata(
-                datafile=self.inputs.cleaned_file,
-                maskfile=self.inputs.mask_file,
-            )
-            raw_data_censored = raw_data_removed_TR[:, tmask_arr == 0]
-
-            # Get temporary filename and write data out
-            dropped_clean_file = fname_presuffix(
-                self.inputs.name_source,
-                newpath=runtime.cwd,
-                suffix="_droppedClean",
-                use_ext=True,
-            )
-
-            write_ndata(
-                data_matrix=raw_data_censored,
-                template=self.inputs.bold_file,
-                mask=self.inputs.mask_file,
-                filename=dropped_clean_file,
-                TR=self.inputs.TR,
-            )
-
-        else:
-            dropped_clean_file = self.inputs.cleaned_file
-
         postproc_confounds = pd.DataFrame(
             {
                 "FD": postproc_fd_timeseries,
@@ -384,7 +324,7 @@ class QCPlots(SimpleInterface):
         )
 
         postproc_fig = FMRIPlot(
-            func_file=dropped_clean_file,
+            func_file=self.inputs.cleaned_file,
             seg_file=self.inputs.seg_file,
             data=postproc_confounds,
             mask_file=self.inputs.mask_file,
@@ -396,14 +336,13 @@ class QCPlots(SimpleInterface):
         )
 
         # Calculate QC measures
-        mean_fd = np.mean(postproc_fd_timeseries)
-        mean_rms = np.mean(rmsd)
+        mean_fd = np.mean(preproc_fd_timeseries)
+        mean_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
-        # NOTE: TS- If we didn't mask DVARS before postproc, we'd use preproc_fd_timeseries here.
-        motionDVCorrInit = np.corrcoef(postproc_fd_timeseries, dvars_before_processing)[0][1]
+        motionDVCorrInit = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[0][1]
         motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[0][1]
-        rmsd_max_value = np.max(rmsd)
+        rmsd_max_value = np.nanmax(rmsd_censored)
 
         # A summary of all the values
         qc_values = {
@@ -471,7 +410,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
             "are denoised using those betas."
         ),
     )
-    filtered_denoised_bold = File(
+    interpolated_filtered_bold = File(
         exists=True,
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
@@ -486,11 +425,6 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
     # Optional inputs
     mask = File(exists=True, mandatory=False, desc="Bold mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
-    dummy_scans = traits.Int(
-        0,
-        usedefault=True,
-        desc="Number of dummy volumes to drop from the beginning of the run.",
-    )
 
 
 class _QCPlotsESOutputSpec(TraitedSpec):
@@ -537,8 +471,7 @@ class QCPlotsES(SimpleInterface):
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
             uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
-            filtered_denoised_bold=self.inputs.filtered_denoised_bold,
-            dummy_scans=self.inputs.dummy_scans,
+            interpolated_filtered_bold=self.inputs.interpolated_filtered_bold,
             TR=self.inputs.TR,
             mask=mask_file,
             filtered_motion=self.inputs.filtered_motion,

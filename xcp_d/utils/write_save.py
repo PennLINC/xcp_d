@@ -2,13 +2,13 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Utilities to read and write nifiti and cifti data."""
 import os
-import subprocess
 
 import nibabel as nb
 import numpy as np
 from nilearn import masking
 from templateflow.api import get as get_template
 
+from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import split_filename
 
 
@@ -17,9 +17,9 @@ def read_ndata(datafile, maskfile=None):
 
     Parameters
     ----------
-    datafile : str
+    datafile : :obj:`str`
         nifti or cifti file
-    maskfile : str
+    maskfile : :obj:`str`
         Path to a binary mask.
         Unused for CIFTI data.
 
@@ -71,6 +71,7 @@ def get_cifti_intents():
     return CIFTI_INTENTS
 
 
+@fill_doc
 def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     """Save numpy array to a nifti or cifti file.
 
@@ -78,19 +79,19 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     ----------
     data matrix : (SxT) numpy.ndarray
         The array to save to a file.
-    template : str
+    template : :obj:`str`
         Path to a template image, from which header and affine information will be used.
-    filename : str
+    filename : :obj:`str`
         Name of the output file to be written.
-    mask : str or None, optional
+    mask : :obj:`str` or None, optional
         The path to a binary mask file.
         The mask is only used for nifti files- masking is not supported in ciftis.
         Default is None.
-    TR : float, optional
+    %(TR)s
 
     Returns
     -------
-    filename : str
+    filename : :obj:`str`
         The name of the generated output file. Same as the "filename" input.
     """
     assert data_matrix.ndim in (1, 2), f"Input data must be a 1-2D array, not {data_matrix.ndim}."
@@ -167,37 +168,6 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     return filename
 
 
-def run_shell(cmd, env=os.environ):
-    """Run shell in python.
-
-    Parameters
-    ----------
-    cmd : str
-        shell command that wanted to be run
-    env
-        Environment variables.
-
-    Returns
-    -------
-    output
-    error
-    """
-    if type(cmd) is list:
-        cmd = " ".join(cmd)
-
-    call_command = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        shell=True,
-    )
-    output, error = call_command.communicate("Hello from the other side!")
-    call_command.wait()
-
-    return output, error
-
-
 def write_gii(datat, template, filename, hemi):
     """Use nibabel to write surface file.
 
@@ -205,9 +175,9 @@ def write_gii(datat, template, filename, hemi):
     ----------
     datatt : numpy.ndarray
         vector
-    template : str
+    template : :obj:`str`
         real file loaded with nibabel to get header and filemap
-    filename : str
+    filename : :obj:`str`
         name of the output
 
     Returns

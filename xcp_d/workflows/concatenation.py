@@ -18,11 +18,10 @@ from xcp_d.workflows.plotting import init_qc_report_wf
 def init_concatenate_data_wf(
     output_dir,
     motion_filter_type,
-    fd_thresh,
     mem_gb,
     omp_nthreads,
     TR,
-    smooth,
+    smoothing,
     cifti,
     dcan_qc,
     name="concatenate_data_wf",
@@ -39,11 +38,10 @@ def init_concatenate_data_wf(
             wf = init_concatenate_data_wf(
                 output_dir=".",
                 motion_filter_type=None,
-                fd_thresh=0.2,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 TR=2,
-                smooth=False,
+                smoothing=None,
                 cifti=False,
                 dcan_qc=True,
                 name="concatenate_data_wf",
@@ -53,11 +51,10 @@ def init_concatenate_data_wf(
     ----------
     %(output_dir)s
     %(motion_filter_type)s
-    %(fd_thresh)s
     %(mem_gb)s
     %(omp_nthreads)s
-    TR
-    smooth
+    %(TR)s
+    %(smoothing)s
     %(cifti)s
     %(dcan_qc)s
     %(name)s
@@ -76,13 +73,16 @@ def init_concatenate_data_wf(
         One list entry for each run.
     %(uncensored_denoised_bold)s
         One list entry for each run.
-    %(filtered_denoised_bold)s
+    %(interpolated_filtered_bold)s
+        One list entry for each run.
+    %(censored_denoised_bold)s
         One list entry for each run.
     bold_mask : :obj:`list` of :obj:`str` or :obj:`~nipype.interfaces.base.Undefined`
         Brain mask files for each of the BOLD runs.
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
     t1w_mask : :obj:`str`
-    boldref : :obj:`str`
+    %(template_to_t1w_xfm)s
+    %(boldref)s
     %(head_radius)s
     %(atlas_names)s
         This will be a list of lists, with one sublist for each run.
@@ -93,9 +93,9 @@ def init_concatenate_data_wf(
     """
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = """\
-    Postprocessing derivatives from multi-run tasks were then concatenated across runs.
-    """
+    workflow.__desc__ = """
+Postprocessing derivatives from multi-run tasks were then concatenated across runs.
+"""
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -106,14 +106,15 @@ def init_concatenate_data_wf(
                 "filtered_motion",
                 "temporal_mask",
                 "uncensored_denoised_bold",
-                "filtered_denoised_bold",
+                "interpolated_filtered_bold",
+                "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "head_radius",
                 "bold_mask",  # only for niftis, from postproc workflows
                 "boldref",  # only for niftis, from postproc workflows
-                "t1w_to_native_xform",  # only for niftis, from postproc workflows
+                "t1w_to_native_xfm",  # only for niftis, from postproc workflows
                 "t1w_mask",  # only for niftis, from data collection
-                "template_to_t1w_xform",  # only for niftis, from data collection
+                "template_to_t1w_xfm",  # only for niftis, from data collection
                 "atlas_names",  # this will be exactly the same across runs
                 "timeseries",
                 "timeseries_ciftis",  # only for ciftis, from postproc workflows
@@ -162,11 +163,12 @@ def init_concatenate_data_wf(
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("filtered_denoised_bold", "filtered_denoised_bold"),
+            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("bold_mask", "bold_mask"),
             ("boldref", "boldref"),
-            ("t1w_to_native_xform", "t1w_to_native_xform"),
+            ("t1w_to_native_xfm", "t1w_to_native_xfm"),
             ("atlas_names", "atlas_names"),
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
@@ -187,7 +189,8 @@ def init_concatenate_data_wf(
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("filtered_denoised_bold", "filtered_denoised_bold"),
+            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
@@ -199,8 +202,6 @@ def init_concatenate_data_wf(
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
         TR=TR,
-        motion_filter_type=motion_filter_type,
-        fd_thresh=fd_thresh,
         mem_gb=mem_gb,
         omp_nthreads=omp_nthreads,
         cifti=cifti,
@@ -212,7 +213,7 @@ def init_concatenate_data_wf(
     # fmt:off
     workflow.connect([
         (inputnode, qc_report_wf, [
-            ("template_to_t1w_xform", "inputnode.template_to_t1w"),
+            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ("t1w_mask", "inputnode.t1w_mask"),
         ]),
         (clean_name_source, qc_report_wf, [("name_source", "inputnode.name_source")]),
@@ -221,15 +222,16 @@ def init_concatenate_data_wf(
             # nifti-only inputs
             (("bold_mask", _select_first), "inputnode.bold_mask"),
             (("boldref", _select_first), "inputnode.boldref"),
-            (("t1w_to_native_xform", _select_first), "inputnode.t1w_to_native"),
+            (("t1w_to_native_xfm", _select_first), "inputnode.t1w_to_native_xfm"),
         ]),
         (concatenate_inputs, qc_report_wf, [
             ("preprocessed_bold", "inputnode.preprocessed_bold"),
-            ("filtered_denoised_bold", "inputnode.filtered_denoised_bold"),
             ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
+            ("interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
+            ("censored_denoised_bold", "inputnode.censored_denoised_bold"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("filtered_motion", "inputnode.filtered_motion"),
-            ("temporal_mask", "inputnode.tmask"),
+            ("temporal_mask", "inputnode.temporal_mask"),
         ]),
     ])
     # fmt:on
@@ -295,7 +297,7 @@ def init_concatenate_data_wf(
     # fmt:on
 
     if cifti:
-        ds_filtered_denoised_bold = pe.Node(
+        ds_censored_filtered_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["den"],
@@ -303,7 +305,7 @@ def init_concatenate_data_wf(
                 den="91k",
                 extension=".dtseries.nii",
             ),
-            name="ds_filtered_denoised_bold",
+            name="ds_censored_filtered_bold",
             run_without_submitting=True,
             mem_gb=2,
         )
@@ -333,7 +335,7 @@ def init_concatenate_data_wf(
         ])
         # fmt:on
 
-        if smooth:
+        if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -346,19 +348,34 @@ def init_concatenate_data_wf(
                 run_without_submitting=True,
                 mem_gb=2,
             )
+
+        if dcan_qc:
+            ds_interpolated_filtered_bold = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    dismiss_entities=["den"],
+                    desc="interpolated",
+                    den="91k",
+                    extension=".dtseries.nii",
+                ),
+                name="ds_interpolated_filtered_bold",
+                run_without_submitting=True,
+                mem_gb=2,
+            )
+
     else:
-        ds_filtered_denoised_bold = pe.Node(
+        ds_censored_filtered_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 desc="denoised",
                 extension=".nii.gz",
                 compression=True,
             ),
-            name="ds_filtered_denoised_bold",
+            name="ds_censored_filtered_bold",
             run_without_submitting=True,
             mem_gb=2,
         )
-        if smooth:
+        if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -371,19 +388,42 @@ def init_concatenate_data_wf(
                 mem_gb=2,
             )
 
+        if dcan_qc:
+            ds_interpolated_filtered_bold = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    desc="interpolated",
+                    extension=".nii.gz",
+                    compression=True,
+                ),
+                name="ds_interpolated_filtered_bold",
+                run_without_submitting=True,
+                mem_gb=2,
+            )
+
     # fmt:off
     workflow.connect([
-        (clean_name_source, ds_filtered_denoised_bold, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_filtered_denoised_bold, [("filtered_denoised_bold", "in_file")]),
+        (clean_name_source, ds_censored_filtered_bold, [("name_source", "source_file")]),
+        (concatenate_inputs, ds_censored_filtered_bold, [("censored_denoised_bold", "in_file")]),
     ])
     # fmt:on
 
-    if smooth:
+    if smoothing:
         # fmt:off
         workflow.connect([
             (clean_name_source, ds_smoothed_denoised_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_smoothed_denoised_bold, [
                 ("smoothed_denoised_bold", "in_file"),
+            ]),
+        ])
+        # fmt:on
+
+    if dcan_qc:
+        # fmt:off
+        workflow.connect([
+            (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
+            (concatenate_inputs, ds_interpolated_filtered_bold, [
+                ("interpolated_filtered_bold", "in_file"),
             ]),
         ])
         # fmt:on

@@ -6,15 +6,16 @@
    .. include:: ../LICENSE
 
 
+********
 Contents
---------
+********
 
 .. toctree::
    :maxdepth: 3
 
    installation
    usage
-   generalworkflow
-   output
+   workflows
+   outputs
    api
    dev_guide

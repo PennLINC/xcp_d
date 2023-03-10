@@ -33,8 +33,8 @@ def test_collect_data_ds001419(datasets):
     assert "space-MNI152NLin2009cAsym" in subj_data["bold"][0]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_desc-preproc_T1w.nii.gz"
     assert "space-" not in subj_data["t1w"]
-    assert "to-MNI152NLin2009cAsym" in subj_data["t1w_to_template_xform"]
-    assert "from-MNI152NLin2009cAsym" in subj_data["template_to_t1w_xform"]
+    assert "to-MNI152NLin2009cAsym" in subj_data["t1w_to_template_xfm"]
+    assert "from-MNI152NLin2009cAsym" in subj_data["template_to_t1w_xfm"]
 
     # CIFTI workflow
     _, subj_data = xbids.collect_data(
@@ -52,8 +52,8 @@ def test_collect_data_ds001419(datasets):
     assert "space-fsLR" in subj_data["bold"][0]
     assert "space-" not in subj_data["t1w"]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_desc-preproc_T1w.nii.gz"
-    assert "to-MNI152NLin6Asym" in subj_data["t1w_to_template_xform"]
-    assert "from-MNI152NLin6Asym" in subj_data["template_to_t1w_xform"]
+    assert "to-MNI152NLin6Asym" in subj_data["t1w_to_template_xfm"]
+    assert "from-MNI152NLin6Asym" in subj_data["template_to_t1w_xfm"]
 
 
 def test_collect_data_nibabies(datasets):
@@ -83,8 +83,8 @@ def test_collect_data_nibabies(datasets):
     assert "cohort-1" in subj_data["bold"][0]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_ses-1mo_run-001_desc-preproc_T1w.nii.gz"
     assert "space-" not in subj_data["t1w"]
-    assert "to-MNIInfant" in subj_data["t1w_to_template_xform"]
-    assert "from-MNIInfant" in subj_data["template_to_t1w_xform"]
+    assert "to-MNIInfant" in subj_data["t1w_to_template_xfm"]
+    assert "from-MNIInfant" in subj_data["template_to_t1w_xfm"]
 
     # CIFTI workflow
     with pytest.raises(FileNotFoundError):

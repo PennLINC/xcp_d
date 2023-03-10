@@ -20,9 +20,9 @@ def concatenate_tsvs(tsv_files, out_file):
 
     Parameters
     ----------
-    tsv_files : list of str
+    tsv_files : :obj:`list` of :obj:`str`
         Paths to TSV files to concatenate.
-    out_file : str
+    out_file : :obj:`str`
         Path to the file that will be written out.
     """
     try:
@@ -45,7 +45,7 @@ def concatenate_niimgs(files, out_file):
 
     Parameters
     ----------
-    files : :obj:`list` of :obj:`bids.layout.models.BIDSImageFile`
+    files : :obj:`list` of :obj:`str`
         List of BOLD files to concatenate over the time dimension.
     out_file : :obj:`str`
         The concatenated file to write out.

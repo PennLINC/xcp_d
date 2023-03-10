@@ -48,9 +48,9 @@ class BIDSError(ValueError):
 
     Parameters
     ----------
-    message : str
+    message : :obj:`str`
         The error message.
-    bids_root : str
+    bids_root : :obj:`str`
         The path to the BIDS dataset.
     """
 
@@ -79,7 +79,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
 
     Parameters
     ----------
-    bids_dir : str or pybids.layout.BIDSLayout
+    bids_dir : :obj:`str` or pybids.layout.BIDSLayout
     participant_label : None or str, optional
     strict : bool, optional
     bids_validate : bool, optional
@@ -170,11 +170,11 @@ def collect_data(
     bids_validate
     bids_filters
     %(cifti)s
-    layout
+    %(layout)s
 
     Returns
     -------
-    layout : pybids.layout.BIDSLayout
+    %(layout)s
     subj_data : dict
     """
     if not isinstance(layout, BIDSLayout):
@@ -204,7 +204,7 @@ def collect_data(
             "suffix": "T2w",
             "extension": ".nii.gz",
         },
-        # native T1w-space dseg file, but not aseg or aparcaseg
+        # native T1w-space dseg file
         "t1w_seg": {
             "datatype": "anat",
             "space": None,
@@ -214,7 +214,7 @@ def collect_data(
         },
         # transform from standard space to T1w space
         # from entity will be set later
-        "template_to_t1w_xform": {
+        "template_to_t1w_xfm": {
             "datatype": "anat",
             "to": ["T1w", "T2w"],
             "suffix": "xfm",
@@ -229,12 +229,18 @@ def collect_data(
         },
         # transform from T1w space to standard space
         # to entity will be set later
-        "t1w_to_template_xform": {
+        "t1w_to_template_xfm": {
             "datatype": "anat",
             "from": ["T1w", "T2w"],
             "suffix": "xfm",
         },
     }
+    if input_type == "hcp":
+        queries["t1w"]["space"] = "MNI152NLin6Asym"
+        queries["t1w_seg"]["desc"] = "aparcaseg"
+        queries["t1w_seg"]["space"] = "MNI152NLin6Asym"
+        queries["t1w_mask"]["space"] = "MNI152NLin6Asym"
+
     if cifti:
         queries["bold"]["extension"] = ".dtseries.nii"
     else:
@@ -275,12 +281,12 @@ def collect_data(
 
     if not cifti:
         # use the BOLD file's space if the BOLD file is a nifti.
-        queries["t1w_to_template_xform"]["to"] = queries["bold"]["space"]
-        queries["template_to_t1w_xform"]["from"] = queries["bold"]["space"]
+        queries["t1w_to_template_xfm"]["to"] = queries["bold"]["space"]
+        queries["template_to_t1w_xfm"]["from"] = queries["bold"]["space"]
     else:
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        temp_query = queries["t1w_to_template_xform"].copy()
+        temp_query = queries["t1w_to_template_xfm"].copy()
         volumetric_space = ASSOCIATED_TEMPLATES[space]
 
         temp_query["to"] = volumetric_space
@@ -290,8 +296,8 @@ def collect_data(
                 f"No nifti transforms found to allowed space ({volumetric_space})"
             )
 
-        queries["t1w_to_template_xform"]["to"] = volumetric_space
-        queries["template_to_t1w_xform"]["from"] = volumetric_space
+        queries["t1w_to_template_xfm"]["to"] = volumetric_space
+        queries["template_to_t1w_xfm"]["from"] = volumetric_space
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -414,6 +420,7 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
     return surface_files_found, standard_space_surfaces, out_surface_files
 
 
+@fill_doc
 def collect_surface_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
@@ -423,8 +430,7 @@ def collect_surface_data(layout, participant_label):
 
     Parameters
     ----------
-    layout : :obj:`bids.BIDSLayout`
-        Layout object indexing the preprocessed derivatives.
+    %(layout)s
     participant_label : :obj:`str`
         Subject ID.
 
@@ -539,19 +545,18 @@ def collect_surface_data(layout, participant_label):
     return surface_files_found, standard_spaces, surface_files
 
 
+@fill_doc
 def collect_run_data(layout, input_type, bold_file, cifti):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
-    layout : :obj:`bids.layout.BIDSLayout`
-        The BIDSLayout object used to grab files from the dataset.
+    %(layout)s
     bold_file : :obj:`str`
         Path to the BOLD file.
-    cifti : :obj:`bool`
+    %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
-    input_type: :obj:`str`
-        Input type.
+    %(input_type)s
 
     Returns
     -------
@@ -584,7 +589,7 @@ def collect_run_data(layout, input_type, bold_file, cifti):
             desc="brain",
             suffix="mask",
         )
-        run_data["t1w_to_native_xform"] = layout.get_nearest(
+        run_data["t1w_to_native_xfm"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             **{"from": "T1w"},  # "from" is protected Python kw
@@ -632,9 +637,9 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
     Parameters
     ----------
-    fmri_dir : str
+    fmri_dir : :obj:`str`
         Path to the BIDS derivative dataset being ingested.
-    xcpd_dir : str
+    xcpd_dir : :obj:`str`
         Path to the output xcp-d dataset.
     """
     import json
@@ -718,7 +723,7 @@ def _add_subject_prefix(subid):
 
     Parameters
     ----------
-    subid : str
+    subid : :obj:`str`
         A subject ID (e.g., 'sub-XX' or just 'XX').
 
     Returns
@@ -756,14 +761,16 @@ def _get_tr(img):
 def get_freesurfer_dir(fmri_dir):
     """Find FreeSurfer derivatives associated with preprocessing pipeline.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
-    fmri_dir : str
+    fmri_dir : :obj:`str`
         Path to preprocessed derivatives.
 
     Returns
     -------
-    freesurfer_path : str
+    freesurfer_path : :obj:`str`
         Path to FreeSurfer derivatives.
 
     Raises
@@ -805,18 +812,20 @@ def get_freesurfer_dir(fmri_dir):
 def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
     """Find FreeSurfer sphere file.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
-    freesurfer_path : str
+    freesurfer_path : :obj:`str`
         Path to the FreeSurfer derivatives.
-    subject_id : str
+    subject_id : :obj:`str`
         Subject ID. This may or may not be prefixed with "sub-".
     hemisphere : {"L", "R"}
         The hemisphere to grab.
 
     Returns
     -------
-    sphere_raw : str
+    sphere_raw : :obj:`str`
         Sphere file for the requested subject and hemisphere.
 
     Raises
@@ -849,14 +858,14 @@ def get_entity(filename, entity):
 
     Parameters
     ----------
-    filename : str
+    filename : :obj:`str`
         Path to the BIDS file.
-    entity : str
+    entity : :obj:`str`
         The entity to extract from the filename.
 
     Returns
     -------
-    entity_value : str or None
+    entity_value : :obj:`str` or None
         The BOLD file's entity value associated with the requested entity.
     """
     import os

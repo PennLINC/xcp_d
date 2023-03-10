@@ -315,7 +315,7 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
     """Test xcp_d.workflows.anatomical.init_warp_anats_to_template_wf."""
     tmpdir = tmp_path_factory.mktemp("test_nifti_conn")
 
-    t1w_to_template_xform = fmriprep_with_freesurfer_data["t1w_to_template_xform"]
+    t1w_to_template_xfm = fmriprep_with_freesurfer_data["t1w_to_template_xfm"]
     t1w = fmriprep_with_freesurfer_data["t1w"]
     t1seg = fmriprep_with_freesurfer_data["t1seg"]
     t2w = os.path.join(tmpdir, "sub-01_desc-preproc_T2w.nii.gz")  # pretend t1w is t2w
@@ -330,7 +330,7 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
         mem_gb=0.1,
         name="warp_anats_to_template_wf",
     )
-    wf.inputs.inputnode.t1w_to_template = t1w_to_template_xform
+    wf.inputs.inputnode.t1w_to_template_xfm = t1w_to_template_xfm
     wf.inputs.inputnode.t1w = t1w
     wf.inputs.inputnode.t1seg = t1seg
     wf.inputs.inputnode.t2w = t2w

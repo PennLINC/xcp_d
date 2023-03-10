@@ -6,6 +6,8 @@ def get_atlas_names():
 
     The actual list of files for the atlases is loaded from a different function.
 
+    NOTE: This is a Node function.
+
     Returns
     -------
     :obj:`list` of :obj:`str`
@@ -33,6 +35,8 @@ def get_atlas_nifti(atlas_name):
 
     All atlases are in MNI space.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
@@ -43,7 +47,7 @@ def get_atlas_nifti(atlas_name):
 
     Returns
     -------
-    atlas_file : str
+    atlas_file : :obj:`str`
         Path to the atlas file.
     """
     from pkg_resources import resource_filename as pkgrf
@@ -87,6 +91,8 @@ def get_atlas_cifti(atlas_name):
 
     All atlases are in 91K space.
 
+    NOTE: This is a Node function.
+
     Parameters
     ----------
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
@@ -97,7 +103,7 @@ def get_atlas_cifti(atlas_name):
 
     Returns
     -------
-    atlas_file : str
+    atlas_file : :obj:`str`
         Path to the atlas file.
     """
     from pkg_resources import resource_filename as pkgrf

@@ -110,20 +110,20 @@ def test_nilearn_denoisenifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     censoring_df = confounds_df[["framewise_displacement"]]
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
     assert censoring_df["framewise_displacement"].sum() > 0
-    censoring_file = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(censoring_file, sep="\t", index=False)
+    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     preprocessed_img = nb.load(preprocessed_bold)
 
     interface = nilearn.DenoiseNifti(
         preprocessed_bold=preprocessed_bold,
         confounds_file=reduced_confounds_file,
-        censoring_file=censoring_file,
+        temporal_mask=temporal_mask,
         mask=mask,
         TR=2,
         bandpass_filter=True,
-        highpass=0.01,
-        lowpass=0.08,
+        high_pass=0.01,
+        low_pass=0.08,
         filter_order=2,
     )
     results = interface.run(cwd=tmpdir)
@@ -150,19 +150,19 @@ def test_nilearn_denoisecifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     censoring_df = confounds_df[["framewise_displacement"]]
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
     assert censoring_df["framewise_displacement"].sum() > 0
-    censoring_file = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(censoring_file, sep="\t", index=False)
+    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     preprocessed_img = nb.load(preprocessed_bold)
 
     interface = nilearn.DenoiseCifti(
         preprocessed_bold=preprocessed_bold,
         confounds_file=reduced_confounds_file,
-        censoring_file=censoring_file,
+        temporal_mask=temporal_mask,
         TR=2,
         bandpass_filter=True,
-        highpass=0.01,
-        lowpass=0.08,
+        high_pass=0.01,
+        low_pass=0.08,
         filter_order=2,
     )
     results = interface.run(cwd=tmpdir)
@@ -195,24 +195,9 @@ def _check_denoising_outputs(preprocessed_img, outputs, cifti):
         preprocessed_img_header.get_zooms()[:-1],
     )
 
-    # unfiltered_denoised_bold is the censored, denoised, and interpolated data
-    assert os.path.isfile(outputs.unfiltered_denoised_bold)
-    unfiltered_denoised_img = nb.load(outputs.unfiltered_denoised_bold)
-    unfiltered_denoised_img_header = getattr(unfiltered_denoised_img, hdr_attr)
-    assert unfiltered_denoised_img.ndim == ndim
-    assert unfiltered_denoised_img.shape == preprocessed_img.shape
-    assert np.array_equal(
-        unfiltered_denoised_img_header.get_sform(),
-        preprocessed_img_header.get_sform(),
-    )
-    assert np.array_equal(
-        unfiltered_denoised_img_header.get_zooms()[:-1],
-        preprocessed_img_header.get_zooms()[:-1],
-    )
-
-    # filtered_denoised_bold is the censored, denoised, interpolated, and filtered data
-    assert os.path.isfile(outputs.filtered_denoised_bold)
-    filtered_denoised_img = nb.load(outputs.filtered_denoised_bold)
+    # interpolated_filtered_bold is the censored, denoised, interpolated, and filtered data
+    assert os.path.isfile(outputs.interpolated_filtered_bold)
+    filtered_denoised_img = nb.load(outputs.interpolated_filtered_bold)
     filtered_denoised_img_header = getattr(filtered_denoised_img, hdr_attr)
     assert filtered_denoised_img.ndim == ndim
     assert filtered_denoised_img.shape == preprocessed_img.shape

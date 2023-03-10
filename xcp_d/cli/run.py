@@ -41,7 +41,7 @@ def get_parser():
 
     parser = ArgumentParser(
         description="xcp_d postprocessing workflow of fMRI data",
-        epilog="see https://xcp-d.readthedocs.io/en/latest/generalworkflow.html",
+        epilog="see https://xcp-d.readthedocs.io/en/latest/workflows.html",
         formatter_class=ArgumentDefaultsHelpFormatter,
     )
 
@@ -50,19 +50,26 @@ def get_parser():
         "fmri_dir",
         action="store",
         type=Path,
-        help="the root folder of a preprocessed fMRI output.",
+        help=(
+            "The root folder of fMRI preprocessing derivatives. "
+            "For example, '/path/to/dset/derivatives/fmriprep'."
+        ),
     )
     parser.add_argument(
         "output_dir",
         action="store",
         type=Path,
-        help="the output path for xcp_d",
+        help=(
+            "The output path for xcp_d. "
+            "This should not include the 'xcp_d' folder. "
+            "For example, '/path/to/dset/derivatives'."
+        ),
     )
     parser.add_argument(
         "analysis_level",
         action="store",
         choices=["participant"],
-        help='the analysis level for xcp_d, must be specified as "participant".',
+        help="The analysis level for xcp_d. Must be specified as 'participant'.",
     )
 
     # optional arguments
@@ -75,15 +82,18 @@ def get_parser():
         action="store",
         nargs="+",
         help=(
-            "a space delimited list of participant identifiers or a single "
-            "identifier (the sub- prefix can be removed)"
+            "A space-delimited list of participant identifiers, or a single identifier. "
+            "The 'sub-' prefix can be removed."
         ),
     )
     g_bids.add_argument(
         "-t",
         "--task-id",
         action="store",
-        help="select a specific task to be selected for the postprocessing ",
+        help=(
+            "The name of a specific task to postprocess. "
+            "By default, all tasks will be postprocessed."
+        ),
     )
     g_bids.add_argument(
         "--bids-filter-file",
@@ -99,7 +109,7 @@ def get_parser():
         "--combineruns",
         action="store_true",
         default=False,
-        help="this option combines all runs into one file",
+        help="After denoising, concatenate each derivative from each task across runs.",
     )
 
     g_surfx = parser.add_argument_group("Options for cifti processing")
@@ -108,38 +118,42 @@ def get_parser():
         "--cifti",
         action="store_true",
         default=False,
-        help="postprocess cifti instead of nifti this is set default for dcan and hcp",
+        help=(
+            "Postprocess CIFTI inputs instead of NIfTIs. "
+            "A preprocessing pipeline with CIFTI derivatives is required for this flag to work. "
+            "This flag is enabled by default for the 'hcp' and 'dcan' input types."
+        ),
     )
 
-    g_perfm = parser.add_argument_group("Options to for resource management")
+    g_perfm = parser.add_argument_group("Options for resource management")
     g_perfm.add_argument(
         "--nthreads",
         action="store",
         type=int,
         default=2,
-        help="maximum number of threads across all processes",
+        help="Maximum number of threads across all processes.",
     )
     g_perfm.add_argument(
         "--omp-nthreads",
         action="store",
         type=int,
         default=1,
-        help="maximum number of threads per-process",
+        help="Maximum number of threads per process.",
     )
     g_perfm.add_argument(
         "--mem_gb",
         "--mem_gb",
         action="store",
         type=int,
-        help="upper bound memory limit for xcp_d processes",
+        help="Upper bound memory limit for xcp_d processes.",
     )
     g_perfm.add_argument(
         "--use-plugin",
         action="store",
         default=None,
         help=(
-            "nipype plugin configuration file. for more information see "
-            "https://nipype.readthedocs.io/en/0.11.0/users/plugins.html"
+            "Nipype plugin configuration file. "
+            "For more information, see https://nipype.readthedocs.io/en/0.11.0/users/plugins.html."
         ),
     )
     g_perfm.add_argument(
@@ -148,7 +162,7 @@ def get_parser():
         dest="verbose_count",
         action="count",
         default=0,
-        help="increases log verbosity for each occurence, debug level is -vvv",
+        help="Increases log verbosity for each occurence. Debug level is '-vvv'.",
     )
 
     g_outputoption = parser.add_argument_group("Input flags")
@@ -165,19 +179,23 @@ def get_parser():
         ),
     )
 
-    g_param = parser.add_argument_group("Parameters for postprocessing")
+    g_param = parser.add_argument_group("Postprocessing parameters")
     g_param.add_argument(
         "--smoothing",
         default=6,
         action="store",
         type=float,
-        help="smoothing the postprocessed output (fwhm)",
+        help=(
+            "FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD "
+            "data. "
+            "This may be set to 0."
+        ),
     )
     g_param.add_argument(
         "--despike",
         action="store_true",
         default=False,
-        help="despike the nifti/cifti before postprocessing",
+        help="Despike the BOLD data before postprocessing.",
     )
     g_param.add_argument(
         "-p",
@@ -196,7 +214,10 @@ def get_parser():
         ],
         default="36P",
         type=str,
-        help="Nuisance parameters to be selected. See Ciric et. al (2007).",
+        help=(
+            "Nuisance parameters to be selected. "
+            "Descriptions of each of the options are included in xcp_d's documentation."
+        ),
     )
     g_param.add_argument(
         "-c",
@@ -205,10 +226,10 @@ def get_parser():
         default=None,
         type=Path,
         help=(
-            "Custom confound to be added to nuisance regressors. "
+            "Custom confounds to be added to the nuisance regressors. "
             "Must be a folder containing confounds files, "
-            "in which case the file with the name matching the fMRIPrep confounds "
-            "file will be selected. "
+            "in which the file with the name matching the preprocessing confounds file will be "
+            "selected."
         ),
     )
     g_param.add_argument(
@@ -220,7 +241,7 @@ def get_parser():
         help=(
             "Coverage threshold to apply to parcels in each atlas. "
             "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
-            "Must be a value between zero and one. "
+            "Must be a value between zero and one, indicating proportion of the parcel. "
             "Default is 0.5."
         ),
     )
@@ -252,7 +273,7 @@ def get_parser():
         ),
     )
 
-    g_filter = parser.add_argument_group("Filtering parameters and default value")
+    g_filter = parser.add_argument_group("Filtering parameters")
 
     g_filter.add_argument(
         "--disable-bandpass-filter",
@@ -270,8 +291,9 @@ def get_parser():
         default=0.01,
         type=float,
         help=(
-            "lower cut-off frequency (Hz) for the butterworth bandpass filter, "
-            " see Satterthwaite et al. (2013)"
+            "Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
+            "the denoised BOLD data. "
+            "See Satterthwaite et al. (2013)."
         ),
     )
     g_filter.add_argument(
@@ -280,8 +302,9 @@ def get_parser():
         default=0.08,
         type=float,
         help=(
-            "upper cut-off frequency (Hz) for the butterworth bandpass filter, "
-            " see Satterthwaite et al. (2013)"
+            "Upper cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
+            "the denoised BOLD data. "
+            "See Satterthwaite et al. (2013)."
         ),
     )
     g_filter.add_argument(
@@ -289,7 +312,7 @@ def get_parser():
         action="store",
         default=2,
         type=int,
-        help="number of filter coefficients for butterworth bandpass filter",
+        help="Number of filter coefficients for the Butterworth bandpass filter.",
     )
     g_filter.add_argument(
         "--motion-filter-type",
@@ -298,7 +321,7 @@ def get_parser():
         default=None,
         choices=["lp", "notch"],
         help="""\
-Type of band-stop filter to use for removing respiratory artifact from motion regressors.
+Type of filter to use for removing respiratory artifact from motion regressors.
 If not set, no filter will be applied.
 
 If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
@@ -312,7 +335,7 @@ If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
         type=float,
         metavar="BPM",
         help="""\
-Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+Lower frequency for the motion parameter filter, in breaths-per-minute (bpm).
 Motion filtering is only performed if ``motion-filter-type`` is not None.
 If used with the "lp" ``motion-filter-type``, this parameter essentially corresponds to a
 low-pass filter (the maximum allowed frequency in the filtered data).
@@ -338,7 +361,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--motion-filter-order",
         default=4,
         type=int,
-        help="number of filter coeffecients for the band-stop filter",
+        help="Number of filter coeffecients for the motion parameter filter.",
     )
 
     g_censor = parser.add_argument_group("Censoring and scrubbing options")
@@ -352,7 +375,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
             "The default value is 50 mm, which is recommended for adults. "
             "For infants, we recommend a value of 35 mm. "
             "A value of 'auto' is also supported, in which case the brain radius is "
-            "estimated from the preprocessed brain mask."
+            "estimated from the preprocessed brain mask by treating the mask as a sphere."
         ),
     )
     g_censor.add_argument(
@@ -360,7 +383,12 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--fd-thresh",
         default=0.2,
         type=float,
-        help="framewise displacement threshold for censoring, default is 0.2mm",
+        help=(
+            "Framewise displacement threshold for censoring. "
+            "Any volumes with an FD value greater than the threshold will be removed from the "
+            "denoised BOLD data. "
+            "A threshold of <=0 will disable censoring completely."
+        ),
     )
 
     g_other = parser.add_argument_group("Other options")
@@ -370,28 +398,28 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         action="store",
         type=Path,
         default=Path("working_dir"),
-        help="path where intermediate results should be stored",
+        help="Path to working directory, where intermediate results should be stored.",
     )
     g_other.add_argument(
         "--clean-workdir",
         action="store_true",
         default=False,
         help=(
-            "Clears working directory of contents. Use of this flag is not"
-            "recommended when running concurrent processes of xcp_d."
+            "Clears working directory of contents. "
+            "Use of this flag is not recommended when running concurrent processes of xcp_d."
         ),
     )
     g_other.add_argument(
         "--resource-monitor",
         action="store_true",
         default=False,
-        help="enable Nipype's resource monitoring to keep track of memory and CPU usage",
+        help="Enable Nipype's resource monitoring to keep track of memory and CPU usage.",
     )
     g_other.add_argument(
         "--notrack",
         action="store_true",
         default=False,
-        help="Opt-out of sending tracking information",
+        help="Opt out of sending tracking information.",
     )
 
     g_experimental = parser.add_argument_group("Experimental options")
@@ -731,31 +759,25 @@ def build_workflow(opts, retval):
 
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp"):
-        from xcp_d.utils.bids import _add_subject_prefix
-
         if opts.input_type == "dcan":
-            from xcp_d.utils.dcan2fmriprep import dcan2fmriprep as convert_to_fmriprep
+            from xcp_d.utils.dcan2fmriprep import convert_dcan2bids as convert_to_bids
         elif opts.input_type == "hcp":
-            from xcp_d.utils.hcp2fmriprep import hcp2fmriprep as convert_to_fmriprep
+            from xcp_d.utils.hcp2fmriprep import convert_hcp2bids as convert_to_bids
 
         NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
         print(f"checking the {opts.input_type} files")
-        converted_fmri_dir = os.path.join(work_dir, "dcanhcp/derivatives")
+        converted_fmri_dir = os.path.join(work_dir, f"dset_bids/derivatives/{opts.input_type}")
         os.makedirs(converted_fmri_dir, exist_ok=True)
 
-        if opts.participant_label is not None:
-            for subject_id in opts.participant_label:
-                convert_to_fmriprep(
-                    fmri_dir,
-                    outdir=converted_fmri_dir,
-                    sub_id=_add_subject_prefix(str(subject_id)),
-                )
-        else:
-            convert_to_fmriprep(fmri_dir, outdir=converted_fmri_dir)
+        convert_to_bids(
+            fmri_dir,
+            out_dir=converted_fmri_dir,
+            participant_ids=opts.participant_label,
+        )
 
         fmri_dir = converted_fmri_dir
 
-    if not (fmri_dir / "dataset_description.json").is_file():
+    if not os.path.isfile((os.path.join(fmri_dir, "dataset_description.json"))):
         build_log.error(
             "No dataset_description.json file found in input directory. "
             "Make sure to point to the specific pipeline's derivatives folder. "
@@ -867,8 +889,8 @@ Running xcp_d version {__version__}:
         layout=layout,
         omp_nthreads=omp_nthreads,
         fmri_dir=str(fmri_dir),
-        lower_bpf=opts.lower_bpf,
-        upper_bpf=opts.upper_bpf,
+        high_pass=opts.lower_bpf,
+        low_pass=opts.upper_bpf,
         bpf_order=opts.bpf_order,
         bandpass_filter=opts.bandpass_filter,
         motion_filter_type=opts.motion_filter_type,

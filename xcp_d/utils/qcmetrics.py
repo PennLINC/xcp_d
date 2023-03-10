@@ -5,25 +5,32 @@ import numpy as np
 import pandas as pd
 from nipype import logging
 
+from xcp_d.utils.doc import fill_doc
+
 LOGGER = logging.getLogger("nipype.utils")
 
 
 def compute_registration_qc(bold2t1w_mask, t1w_mask, bold2template_mask, template_mask):
     """Compute quality of registration metrics.
 
-    This function will calculate a series of metrics, including Dice's similarity index,
-    Jaccard's coefficient, cross-correlation, and coverage, between the BOLD-to-T1w brain mask
-    and the T1w mask, as well as between the BOLD-to-template brain mask and the template mask.
+    This function will calculate a series of metrics, including:
+
+    - Dice's similarity index,
+    - Pearson correlation coefficient, and
+    - Coverage
+
+    between the BOLD-to-T1w brain mask and the T1w mask,
+    as well as between the BOLD-to-template brain mask and the template mask.
 
     Parameters
     ----------
-    bold2t1w_mask : str
+    bold2t1w_mask : :obj:`str`
         Path to the BOLD mask in T1w space.
-    t1w_mask : str
+    t1w_mask : :obj:`str`
         Path to the T1w mask.
-    bold2template_mask : str
+    bold2template_mask : :obj:`str`
         Path to the BOLD mask in template space.
-    template_mask : str
+    template_mask : :obj:`str`
         Path to the template mask.
 
     Returns
@@ -31,24 +38,26 @@ def compute_registration_qc(bold2t1w_mask, t1w_mask, bold2template_mask, templat
     reg_qc : dict
         Quality control measures between different inputs.
     """
+    bold2t1w_mask_arr = nb.load(bold2t1w_mask).get_fdata()
+    t1w_mask_arr = nb.load(t1w_mask).get_fdata()
+    bold2template_mask_arr = nb.load(bold2template_mask).get_fdata()
+    template_mask_arr = nb.load(template_mask).get_fdata()
+
     reg_qc = {
-        "coregDice": [dc(bold2t1w_mask, t1w_mask)],
-        "coregJaccard": [jc(bold2t1w_mask, t1w_mask)],
-        "coregCrossCorr": [crosscorr(bold2t1w_mask, t1w_mask)],
-        "coregCoverag": [coverage(bold2t1w_mask, t1w_mask)],
-        "normDice": [dc(bold2template_mask, template_mask)],
-        "normJaccard": [jc(bold2template_mask, template_mask)],
-        "normCrossCorr": [crosscorr(bold2template_mask, template_mask)],
-        "normCoverage": [coverage(bold2template_mask, template_mask)],
+        "coregDice": [dice(bold2t1w_mask_arr, t1w_mask_arr)],
+        "coregPearson": [pearson(bold2t1w_mask_arr, t1w_mask_arr)],
+        "coregCoverage": [coverage(bold2t1w_mask_arr, t1w_mask_arr)],
+        "normDice": [dice(bold2template_mask_arr, template_mask_arr)],
+        "normPearson": [pearson(bold2template_mask_arr, template_mask_arr)],
+        "normCoverage": [coverage(bold2template_mask_arr, template_mask_arr)],
     }
     return reg_qc
 
 
-def dc(input1, input2):
-    r"""Calculate Dice coefficient between two images.
+def dice(input1, input2):
+    r"""Calculate Dice coefficient between two arrays.
 
-    Computes the Dice coefficient (also known as Sorensen index) between the binary
-    objects in twom j images.
+    Computes the Dice coefficient (also known as Sorensen index) between two binary images.
 
     The metric is defined as
 
@@ -57,26 +66,26 @@ def dc(input1, input2):
         DC=\frac{2|A\cap B|}{|A|+|B|}
 
     , where :math:`A` is the first and :math:`B` the second set of samples (here: binary objects).
+    This method was first proposed in :footcite:t:`dice1945measures` and
+    :footcite:t:`sorensen1948method`.
 
     Parameters
     ----------
-    input1/input2 : str
-        Path to a NIFTI image.
+    input1/input2 : :obj:`numpy.ndarray`
+        Numpy arrays to compare.
         Can be any type but will be converted into binary:
         False where 0, True everywhere else.
 
     Returns
     -------
-    dc : float
-        The Dice coefficient between the object(s) in ```input1``` and the
-        object(s) in ```input2```. It ranges from 0 (no overlap) to 1 (perfect overlap).
+    dice : :obj:`float`
+        The Dice coefficient between ``input1`` and ``input2``.
+        It ranges from 0 (no overlap) to 1 (perfect overlap).
 
-    Notes
-    -----
-    This is a real metric.
+    References
+    ----------
+    .. footbibliography::
     """
-    input1 = nb.load(input1).get_fdata()
-    input2 = nb.load(input2).get_fdata()
     input1 = np.atleast_1d(input1.astype(bool))
     input2 = np.atleast_1d(input2.astype(bool))
 
@@ -86,72 +95,34 @@ def dc(input1, input2):
     size_i2 = np.count_nonzero(input2)
 
     try:
-        dc = 2.0 * intersection / float(size_i1 + size_i2)
+        dsi = (2 * intersection) / (size_i1 + size_i2)
     except ZeroDivisionError:
-        dc = 0.0
+        dsi = 0
 
-    return dc
+    return dsi
 
 
-def jc(input1, input2):
-    r"""Calculate Jaccard coefficient between two images.
-
-    Computes the Jaccard coefficient between the binary objects in two images.
+def pearson(input1, input2):
+    """Calculate Pearson product moment correlation between two images.
 
     Parameters
     ----------
-    input1/input2 : str
-        Path to a NIFTI image.
+    input1/input2 : :obj:`numpy.ndarray`
+        Numpy arrays to compare.
         Can be any type but will be converted into binary:
         False where 0, True everywhere else.
 
     Returns
     -------
-    jc : float
-        The Jaccard coefficient between the object(s) in ``input1`` and the
-        object(s) in ``input2``.
-        It ranges from 0 (no overlap) to 1 (perfect overlap).
-
-    Notes
-    -----
-    This is a real metric.
-    """
-    input1 = nb.load(input1).get_fdata()
-    input2 = nb.load(input2).get_fdata()
-    input1 = np.atleast_1d(input1.astype(bool))
-    input2 = np.atleast_1d(input2.astype(bool))
-
-    intersection = np.count_nonzero(input1 & input2)
-    union = np.count_nonzero(input1 | input2)
-
-    jc = float(intersection) / float(union)
-
-    return jc
-
-
-def crosscorr(input1, input2):
-    """Calculate cross correlation between two images.
-
-    NOTE: TS- This appears to be Pearson's correlation, not cross-correlation.
-
-    Parameters
-    ----------
-    input1/input2 : str
-        Path to a NIFTI image.
-        Can be any type but will be converted into binary:
-        False where 0, True everywhere else.
-
-    Returns
-    -------
-    cc : float
+    corr : :obj:`float`
         Correlation between the two images.
     """
-    input1 = nb.load(input1).get_fdata()
-    input2 = nb.load(input2).get_fdata()
     input1 = np.atleast_1d(input1.astype(bool)).flatten()
     input2 = np.atleast_1d(input2.astype(bool)).flatten()
-    cc = np.corrcoef(input1, input2)[0][1]
-    return cc
+
+    corr = np.corrcoef(input1, input2)[0][1]
+
+    return corr
 
 
 def coverage(input1, input2):
@@ -159,26 +130,25 @@ def coverage(input1, input2):
 
     Parameters
     ----------
-    input1/input2 : str
-        Path to a NIFTI image.
+    input1/input2 : :obj:`numpy.ndarray`
+        Numpy arrays to compare.
         Can be any type but will be converted into binary:
         False where 0, True everywhere else.
 
     Returns
     -------
-    cov : float
+    cov : :obj:`float`
         Coverage between two images.
     """
-    input1 = nb.load(input1).get_fdata()
-    input2 = nb.load(input2).get_fdata()
     input1 = np.atleast_1d(input1.astype(bool))
     input2 = np.atleast_1d(input2.astype(bool))
-    intsec = np.count_nonzero(input1 & input2)
-    if np.sum(input1) > np.sum(input2):
-        smallv = np.sum(input2)
-    else:
-        smallv = np.sum(input1)
-    cov = float(intsec) / float(smallv)
+
+    intersection = np.count_nonzero(input1 & input2)
+
+    smallv = np.minimum(np.sum(input1), np.sum(input2))
+
+    cov = intersection / smallv
+
     return cov
 
 
@@ -187,13 +157,13 @@ def compute_dvars(datat):
 
     Parameters
     ----------
-    datat : numpy.ndarray
+    datat : :obj:`numpy.ndarray`
         The data matrix from which to calculate DVARS.
         Ordered as vertices by timepoints.
 
     Returns
     -------
-    numpy.ndarray
+    :obj:`numpy.ndarray`
         The calculated DVARS array.
         A (timepoints,) array.
     """
@@ -204,7 +174,22 @@ def compute_dvars(datat):
 
 
 def _make_dcan_qc_file(filtered_motion, TR):
-    """Make DCAN HDF5 file from single motion file."""
+    """Make DCAN HDF5 file from single motion file.
+
+    NOTE: This is a Node function.
+
+    Parameters
+    ----------
+    filtered_motion_file : :obj:`str`
+        File from which to extract information.
+    TR : :obj:`float`
+        Repetition time.
+
+    Returns
+    -------
+    dcan_df_file : :obj:`str`
+        Name of the HDF5-format file that is created.
+    """
     import os
 
     from xcp_d.utils.qcmetrics import make_dcan_df
@@ -215,40 +200,40 @@ def _make_dcan_qc_file(filtered_motion, TR):
     return dcan_df_file
 
 
-def make_dcan_df(filtered_motion_file, name, TR):
+@fill_doc
+def make_dcan_df(filtered_motion, name, TR):
     """Create an HDF5-format file containing a DCAN-format dataset.
 
     Parameters
     ----------
-    filtered_motion_file : str
-        File from which to extract information.
-    name : str
+    %(filtered_motion)s
+    name : :obj:`str`
         Name of the HDF5-format file to be created.
-    TR : float
-        Repetition time.
+    %(TR)s
 
     Notes
     -----
-    FD_threshold: a number >= 0 that represents the FD threshold used to calculate
-    the metrics in this list.
-    frame_removal: a binary vector/array the same length as the number of frames
-    in the concatenated time series, indicates whether a frame is removed (1) or
-    not (0)
-    format_string (legacy): a string that denotes how the frames were excluded
-    -- uses a notation devised by Avi Snyder
-    total_frame_count: a whole number that represents the total number of frames
-    in the concatenated series
-    remaining_frame_count: a whole number that represents the number of remaining
-    frames in the concatenated series
-    remaining_seconds: a whole number that represents the amount of time remaining
-    after thresholding
-    remaining_frame_mean_FD: a number >= 0 that represents the mean FD of the
-    remaining frames
+    The metrics in the file are:
+
+    -   ``FD_threshold``: a number >= 0 that represents the FD threshold used to calculate
+        the metrics in this list.
+    -   ``frame_removal``: a binary vector/array the same length as the number of frames
+        in the concatenated time series, indicates whether a frame is removed (1) or not (0)
+    -   ``format_string`` (legacy): a string that denotes how the frames were excluded.
+        This uses a notation devised by Avi Snyder.
+    -   ``total_frame_count``: a whole number that represents the total number of frames
+        in the concatenated series
+    -   ``remaining_frame_count``: a whole number that represents the number of remaining
+        frames in the concatenated series
+    -   ``remaining_seconds``: a whole number that represents the amount of time remaining
+        after thresholding
+    -   ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the
+        remaining frames
     """
     LOGGER.debug(f"Generating DCAN file: {name}")
 
     # Load filtered framewise_displacement values from file
-    filtered_motion_df = pd.read_table(filtered_motion_file)
+    filtered_motion_df = pd.read_table(filtered_motion)
     fd = filtered_motion_df["framewise_displacement"].values
 
     with h5py.File(name, "w") as dcan:

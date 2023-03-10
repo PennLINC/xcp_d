@@ -71,7 +71,7 @@ def init_warp_anats_to_template_wf(
     %(input_type)s
     t2w_available : bool
         True if a preprocessed T2w is available, False if not.
-    target_space : str
+    target_space : :obj:`str`
         Target NIFTI template for T1w.
     %(omp_nthreads)s
     %(mem_gb)s
@@ -80,21 +80,31 @@ def init_warp_anats_to_template_wf(
 
     Inputs
     ------
-    t1w : str
+    t1w : :obj:`str`
         Path to the preprocessed T1w file.
         This file may be in standard space or native T1w space.
-    t2w : str
+    t2w : :obj:`str` or None
         Path to the preprocessed T2w file.
         This file may be in standard space or native T1w space.
-    t1seg : str
+    t1seg : :obj:`str`
         Path to the T1w segmentation file.
-    %(t1w_to_template)s
+    %(t1w_to_template_xfm)s
         We need to use MNI152NLin6Asym for the template.
+    template : :obj:`str`
+
+    Outputs
+    -------
+    t1w : :obj:`str`
+        Path to the preprocessed T1w file in standard space.
+    t2w : :obj:`str` or None
+        Path to the preprocessed T2w file in standard space.
+    t1seg : :obj:`str`
+    template : :obj:`str`
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_template", "template"]),
+        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_template_xfm", "template"]),
         name="inputnode",
     )
 
@@ -182,7 +192,7 @@ def init_warp_anats_to_template_wf(
         workflow.connect([
             (inputnode, warp_t1w_to_template, [
                 ("t1w", "input_image"),
-                ("t1w_to_template", "transforms"),
+                ("t1w_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
         ])
@@ -204,7 +214,7 @@ def init_warp_anats_to_template_wf(
         workflow.connect([
             (inputnode, warp_t1seg_to_template, [
                 ("t1seg", "input_image"),
-                ("t1w_to_template", "transforms"),
+                ("t1w_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
         ])
@@ -238,7 +248,7 @@ def init_warp_anats_to_template_wf(
             workflow.connect([
                 (inputnode, t2w_transform, [
                     ("t2w", "input_image"),
-                    ("t1w_to_template", "transforms"),
+                    ("t1w_to_template_xfm", "transforms"),
                     ("template", "reference_image"),
                 ]),
                 (t2w_transform, ds_t2w_std, [("output_image", "in_file")]),
@@ -470,23 +480,19 @@ def init_warp_surfaces_to_template_wf(
 
     Inputs
     ------
-    t1w_to_template_xform : str
-        The transform from T1w space to template space.
-
+    %(t1w_to_template_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
 
         If ``warp_to_standard`` is False, this file is unused.
-    template_to_t1w_xform : str
-        The transform from template space to T1w space.
-
+    %(template_to_t1w_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
 
         If ``warp_to_standard`` is False, this file is unused.
-    lh_pial_surf, rh_pial_surf : str
+    lh_pial_surf, rh_pial_surf : :obj:`str`
         Left- and right-hemisphere pial surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -494,7 +500,7 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then it is also warped to standard space and used
         to generate HCP-style midthickness, inflated, and veryinflated surfaces.
-    lh_wm_surf, rh_wm_surf : str
+    lh_wm_surf, rh_wm_surf : :obj:`str`
         Left- and right-hemisphere smoothed white matter surface files.
 
         If ``warp_to_standard`` is False, then this file is just written out to the output
@@ -508,6 +514,13 @@ def init_warp_surfaces_to_template_wf(
         Should only be a string if ``shapes_available`` is True.
     lh_cortical_thickness, rh_cortical_thickness : str or None
         Should only be a string if ``shapes_available`` is True.
+
+    Outputs
+    -------
+    lh_pial_surf, rh_pial_surf : :obj:`str`
+        Left- and right-hemisphere pial surface files, in standard space.
+    lh_wm_surf, rh_wm_surf : :obj:`str`
+        Left- and right-hemisphere smoothed white matter surface files, in standard space.
 
     Notes
     -----
@@ -537,8 +550,8 @@ def init_warp_surfaces_to_template_wf(
                 "lh_cortical_thickness",
                 "rh_cortical_thickness",
                 # transforms (only used if warp_to_standard is True)
-                "t1w_to_template_xform",
-                "template_to_t1w_xform",
+                "t1w_to_template_xfm",
+                "template_to_t1w_xfm",
             ],
         ),
         name="inputnode",
@@ -593,8 +606,8 @@ def init_warp_surfaces_to_template_wf(
         # fmt:off
         workflow.connect([
             (inputnode, update_xform_wf, [
-                ("t1w_to_template_xform", "inputnode.t1w_to_template_xform"),
-                ("template_to_t1w_xform", "inputnode.template_to_t1w_xform"),
+                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ]),
         ])
         # fmt:on
@@ -883,7 +896,7 @@ def init_generate_hcp_surfaces_wf(
 
     Parameters
     ----------
-    output_dir
+    %(output_dir)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -891,11 +904,11 @@ def init_generate_hcp_surfaces_wf(
 
     Inputs
     ------
-    name_source : str
+    name_source : :obj:`str`
         Path to the file that will be used as the source_file for datasinks.
-    pial_surf : str
+    pial_surf : :obj:`str`
         The surface file to inflate.
-    wm_surf : str
+    wm_surf : :obj:`str`
         The surface file to inflate.
     """
     workflow = Workflow(name=name)
@@ -1035,9 +1048,9 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
 
     Inputs
     ------
-    t1w_to_template_xform
+    t1w_to_template_xfm
         ANTS/fMRIPrep-style H5 transform from T1w image to template.
-    template_to_t1w_xform
+    template_to_t1w_xfm
         ANTS/fMRIPrep-style H5 transform from template to T1w image.
 
     Outputs
@@ -1052,7 +1065,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w_to_template_xform", "template_to_t1w_xform"]),
+        niu.IdentityInterface(fields=["t1w_to_template_xfm", "template_to_t1w_xfm"]),
         name="inputnode",
     )
 
@@ -1075,7 +1088,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
 
     # fmt:off
     workflow.connect([
-        (inputnode, disassemble_h5, [("t1w_to_template_xform", "in_file")]),
+        (inputnode, disassemble_h5, [("t1w_to_template_xfm", "in_file")]),
     ])
     # fmt:on
 
@@ -1094,7 +1107,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
 
     # fmt:off
     workflow.connect([
-        (inputnode, disassemble_h5_inv, [("template_to_t1w_xform", "in_file")]),
+        (inputnode, disassemble_h5_inv, [("template_to_t1w_xfm", "in_file")]),
     ])
     # fmt:on
 

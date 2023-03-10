@@ -1,8 +1,12 @@
 {
-    "restructuredtext.confPath": "",
-    "restructuredtext.preview.name": "sphinx",
-    "restructuredtext.preview.docutil.disabled": true,
+    "[restructuredtext]": {
+        "editor.tabSize": 3,
+        "editor.rulers": [99]
+    },
+    "[python]": {
+        "editor.rulers": [99]
+    },
     "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true
-    
+    "python.linting.enabled": true,
+    "python.analysis.typeCheckingMode": "off",
 }

@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Functions for calculating functional connectivity in NIFTI files."""
+"""Functions for calculating resting-state derivatives (ReHo and ALFF)."""
 import nibabel as nb
 import numpy as np
 from nipype import logging
@@ -42,7 +42,7 @@ def compute_2d_reho(datat, adjacency_matrix):
         neigbor, timepoint = neidata.shape[0], neidata.shape[1]
 
         for j in range(neidata.shape[0]):  # loop through each neighbour
-            rankeddata[j, :] = rankdata(neidata[j,])  # assign ranks to timepoints for each voxel
+            rankeddata[j, :] = rankdata(neidata[j, :])  # assign ranks to timepoints for each voxel
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
         # KC is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared
@@ -98,9 +98,9 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     ----------
     data_matrix : numpy.ndarray
         data matrix points by timepoints
-    lowpass : float
+    low_pass : float
         low pass frequency in Hz
-    highpass : float
+    high_pass : float
         high pass frequency in Hz
     TR : float
         repetition time in seconds

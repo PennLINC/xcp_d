@@ -11,14 +11,14 @@ import os.path as op
 import nibabel as nb
 import pandas as pd
 
-from xcp_d.interfaces.prepostcleaning import RemoveTR
+from xcp_d.interfaces.prepostcleaning import RemoveDummyVolumes
 
 
-def test_RemoveTR_nifti(data_dir, tmp_path_factory):
-    """Test RemoveTR() for NIFTI input data."""
+def test_RemoveDummyVolumes_nifti(data_dir, tmp_path_factory):
+    """Test RemoveDummyVolumes() for NIFTI input data."""
     # Define inputs
     data_dir = os.path.join(data_dir, "fmriprepwithoutfreesurfer/fmriprep/")
-    temp_dir = tmp_path_factory.mktemp("test_RemoveTR_nifti")
+    temp_dir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_nifti")
 
     boldfile = (
         data_dir + "sub-01/func/"
@@ -34,7 +34,7 @@ def test_RemoveTR_nifti(data_dir, tmp_path_factory):
     original_nvols_nifti = nb.load(boldfile).get_fdata().shape[3]
 
     # Test a nifti file with 0 volumes to remove
-    remove_nothing = RemoveTR(
+    remove_nothing = RemoveDummyVolumes(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
         confounds_file=confounds_file,
@@ -54,7 +54,7 @@ def test_RemoveTR_nifti(data_dir, tmp_path_factory):
 
     # Test a nifti file with 1-10 volumes to remove
     for n in range(0, 10):
-        remove_n_vols = RemoveTR(
+        remove_n_vols = RemoveDummyVolumes(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             confounds_file=confounds_file,
@@ -79,10 +79,10 @@ def test_RemoveTR_nifti(data_dir, tmp_path_factory):
             raise Exception(f"Number of volumes in dropped nifti is {exc}.")
 
 
-def test_RemoveTR_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
-    """Test RemoveTR() for CIFTI input data."""
+def test_RemoveDummyVolumes_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test RemoveDummyVolumes() for CIFTI input data."""
     # Define inputs
-    temp_dir = tmp_path_factory.mktemp("test_RemoveTR_cifti")
+    temp_dir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_cifti")
 
     boldfile = fmriprep_with_freesurfer_data["cifti_file"]
     confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
@@ -92,7 +92,7 @@ def test_RemoveTR_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     original_nvols_cifti = nb.load(boldfile).get_fdata().shape[0]
 
     # Test a cifti file with 0 volumes to remove
-    remove_nothing = RemoveTR(
+    remove_nothing = RemoveDummyVolumes(
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
         confounds_file=confounds_file,
@@ -112,7 +112,7 @@ def test_RemoveTR_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Test a cifti file with 1-10 volumes to remove
     for n in range(0, 10):
-        remove_n_vols = RemoveTR(
+        remove_n_vols = RemoveDummyVolumes(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             confounds_file=confounds_file,
@@ -147,7 +147,7 @@ def test_RemoveTR_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
 #     custom_confounds_tsv = data_dir + "/fmriprep/sub-colornest001/ses-1/func/customcifti.tsv"
 
 #     # Run workflow
-#     remvtr = RemoveTR()
+#     remvtr = RemoveDummyVolumes()
 #     remvtr.inputs.bold_file = boldfile
 #     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
 #     remvtr.inputs.custom_confounds = custom_confounds_tsv
@@ -174,7 +174,7 @@ def test_RemoveTR_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
 #         "sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv"
 #     custom_confounds_tsv = data_dir + "sub-01/func/customnifti.tsv"
 #     # Run workflow
-#     remvtr = RemoveTR()
+#     remvtr = RemoveDummyVolumes()
 #     remvtr.inputs.bold_file = boldfile
 #     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
 #     remvtr.inputs.custom_confounds = custom_confounds_tsv

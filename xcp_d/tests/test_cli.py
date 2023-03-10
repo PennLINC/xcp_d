@@ -39,7 +39,7 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--nuisance-regressors=aroma_gsr",
         "--despike",
         "--dummytime=8",
-        "--fd-thresh=0.04",
+        "--fd-thresh=0.2",
         "--head_radius=40",
         "--smoothing=6",
         "--motion-filter-type=lp",
@@ -208,7 +208,7 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--despike",
         "--head_radius=auto",
         "--smoothing=6",
-        "--fd-thresh=100",
+        "--fd-thresh=0",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
