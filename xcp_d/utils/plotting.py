@@ -594,12 +594,14 @@ def plot_fmri_es(
             t_r=TR,
             detrend=True,
             filter=False,
+            standardize=False,
         ).T
         detrended_uncensored_denoised_bold_arr = clean(
             uncensored_denoised_bold_arr.T,
             t_r=TR,
             detrend=True,
             filter=False,
+            standardize=False,
         ).T
 
         # Make a temporary file for niftis and ciftis
