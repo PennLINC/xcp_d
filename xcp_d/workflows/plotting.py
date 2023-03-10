@@ -385,6 +385,10 @@ def init_qc_report_wf(
                 (warp_dseg_to_bold, plot_execsummary_carpets_dcan, [
                     ("output_image", "seg_data"),
                 ]),
+                (inputnode, plot_execsummary_carpets_linc, [("bold_mask", "mask")]),
+                (warp_dseg_to_bold, plot_execsummary_carpets_linc, [
+                    ("output_image", "seg_data"),
+                ]),
             ])
             # fmt:on
 
