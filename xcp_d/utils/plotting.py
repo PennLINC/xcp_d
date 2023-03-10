@@ -498,7 +498,6 @@ def plot_fmri_es(
     %(uncensored_denoised_bold)s
     %(interpolated_filtered_bold)s
     %(TR)s
-    %(dummy_scans)s
     %(filtered_motion)s
     preprocessed_bold_figure : :obj:`str`
         output file svg before processing

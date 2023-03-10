@@ -76,7 +76,7 @@ class CensoringPlot(SimpleInterface):
 
         fig, ax = plt.subplots(figsize=(16, 8))
 
-        time_array = np.arange(0, self.inputs.TR * preproc_fd_timeseries.size, self.inputs.TR)
+        time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
 
         ax.plot(
             time_array,
