@@ -18,7 +18,6 @@ from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.modified_data import scale_to_min_max
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
@@ -234,6 +233,7 @@ def plot_confounds(
 
     time_series_axis.plot(time_series, color=color, linewidth=2.5)
     time_series_axis.set_xlim((0, ntsteps - 1))
+
     # Plotting
     if gs_dist is not None:
         ax_dist = plt.subplot(gs_dist)
@@ -243,194 +243,236 @@ def plot_confounds(
         ax_dist.set_yticklabels([])
 
         return [time_series_axis, ax_dist], grid_specification
+
     return time_series_axis, grid_specification
 
 
-def plot_confounds_es(
-    time_series,
-    grid_spec_ts,
-    TR=None,
-    hide_x=True,
-    ylims=None,
-    ylabel=None,
-    is_fd=False,
-    is_whole_brain=False,
-):
-    """Create confounds plot for the executive summary."""
+def plot_dvars_es(time_series, ax, run_index=None):
+    """Create DVARS plot for the executive summary."""
     sns.set_style("whitegrid")
 
-    # Define TR and number of frames
-    no_repetition_time = False
-    if TR is None:
-        no_repetition_time = True
-        TR = 1.0
+    ax.grid(False)
 
     ntsteps = time_series.shape[0]
-    # time_series = np.array(time_series)
-
-    # Define nested GridSpec
-    grid_specification = mgs.GridSpecFromSubplotSpec(
-        1,
-        2,
-        subplot_spec=grid_spec_ts,
-        width_ratios=[1, 100],
-        wspace=0.0,
-    )
-
-    time_series_axis = plt.subplot(grid_specification[1])
-    time_series_axis.grid(False)
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
     xticks = list(range(0, ntsteps)[::interval])
-    time_series_axis.set_xticks(xticks)
-
-    # Set the x-axis labels
-    if not hide_x:
-        if no_repetition_time:
-            time_series_axis.set_xlabel("Time (frame #)")
-        else:
-            time_series_axis.set_xlabel("Time (s)")
-            labels = TR * np.array(xticks)
-            labels = labels.astype(int)
-            time_series_axis.set_xticklabels(labels)
-    else:
-        time_series_axis.set_xticklabels([])
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([])
 
     # Set y-axis labels
-    if ylabel:
-        time_series_axis.set_ylabel(ylabel)
+    ax.set_ylabel("DVARS")
 
     columns = time_series.columns
     maximum_values = []
     minimum_values = []
 
-    if is_fd:
-        for c in columns:
-            time_series_axis.plot(time_series[c], label=c, linewidth=3, color="black")
-            maximum_values.append(max(time_series[c]))
-            minimum_values.append(min(time_series[c]))
+    colors = {
+        "Pre regression": "#68AC57",
+        "Post regression": "#8E549F",
+        "Post all": "#EF8532",
+    }
+    for c in columns:
+        color = colors[c]
+        ax.plot(time_series[c], label=c, linewidth=2, alpha=1, color=color)
+        maximum_values.append(max(time_series[c]))
+        minimum_values.append(min(time_series[c]))
 
-            # Threshold fd at 0.1, 0.2 and 0.5 and plot
-            time_series_axis.axhline(
-                y=1, color="lightgray", linestyle="-", linewidth=10, alpha=0.5
-            )
-
-            # Plot zero line
-            fd_dots = time_series[c].copy()
-            fd_line = time_series[c].copy()
-
-            fd_dots[fd_dots < 0] = np.nan
-            fd_line[fd_line > 0] = 1.05
-            time_series_axis.plot(fd_dots, ".", color="gray", markersize=40)
-            time_series_axis.plot(fd_line, ".", color="gray", markersize=40)
-
-            THRESHOLDS = [0.05, 0.1, 0.2, 0.5]
-            COLORS = ["gray", "#66c2a5", "#fc8d62", "#8da0cb"]
-            for i_thresh, threshold in enumerate(THRESHOLDS):
-                color = COLORS[i_thresh]
-
-                time_series_axis.axhline(
-                    y=threshold,
-                    color=color,
-                    linestyle="-",
-                    linewidth=10,
-                    alpha=0.5,
-                )
-
-                fd_dots[fd_dots < threshold] = np.nan
-                time_series_axis.plot(fd_dots, ".", color=color, markersize=40)
-
-                fd_line = time_series[c].copy()
-                fd_line[fd_line >= threshold] = 1.05
-                fd_line[fd_line < threshold] = np.nan
-                time_series_axis.plot(fd_line, ".", color=color, markersize=40)
-
-                # Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
-                good_vols = len(time_series[c][time_series[c] < threshold])
-                time_series_axis.text(
-                    1.01,
-                    threshold,
-                    good_vols,
-                    c=color,
-                    verticalalignment="top",
-                    horizontalalignment="left",
-                    transform=time_series_axis.transAxes,
-                    fontsize=30,
-                )
-
-    elif is_whole_brain:
-        # Plot the whole brain mean and std.
-        # Mean scale on the left, std scale on the right.
-        mean_line = time_series_axis.plot(
-            time_series["Mean"],
-            label="Mean",
-            linewidth=10,
-            alpha=0.5,
-        )
-        maximum_values.append(max(time_series["Mean"]))
-        minimum_values.append(min(time_series["Mean"]))
-        ax_right = time_series_axis.twinx()
-        ax_right.set_ylabel("Standard Deviation")
-        std_line = ax_right.plot(
-            time_series["Std"],
-            label="Std",
-            color="orange",
-            linewidth=10,
-            alpha=0.5,
-        )
-
-        std_mean = np.mean(time_series["Std"])
-        ax_right.set_ylim(
-            (1.5 * np.min(time_series["Std"] - std_mean)) + std_mean,
-            (1.5 * np.max(time_series["Std"] - std_mean)) + std_mean,
-        )
-        ax_right.yaxis.label.set_fontsize(30)
-        for item in ax_right.get_yticklabels():
-            item.set_fontsize(30)
-
-        lines = mean_line + std_line
-        line_labels = [line.get_label() for line in lines]
-        time_series_axis.legend(lines, line_labels, fontsize=40)
-
-    else:  # If no thresholding
-        for c in columns:
-            time_series_axis.plot(time_series[c], label=c, linewidth=10, alpha=0.5)
-            maximum_values.append(max(time_series[c]))
-            minimum_values.append(min(time_series[c]))
+    if run_index:
+        ax.axvline(run_index, color="yellow")
 
     # Set limits and format
     minimum_x_value = [abs(x) for x in minimum_values]
 
-    time_series_axis.set_xlim((0, ntsteps - 1))
-    if is_fd is True:
-        time_series_axis.legend(fontsize=40)
-        time_series_axis.set_ylim(0, 1.1)
-        time_series_axis.set_yticks([0, 0.05, 0.1, 0.2, 0.5, 1])
-    elif ylims:
-        time_series_axis.legend(fontsize=40)
-        time_series_axis.set_ylim(ylims)
-    elif is_whole_brain:
-        mean_mean = np.mean(time_series["Mean"])
-        time_series_axis.set_ylim(
-            (1.5 * np.min(time_series["Mean"] - mean_mean)) + mean_mean,
-            (1.5 * np.max(time_series["Mean"] - mean_mean)) + mean_mean,
-        )
-    else:
-        time_series_axis.legend(fontsize=40)
-        time_series_axis.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_values)])
+    ax.set_xlim((0, ntsteps - 1))
+
+    ax.legend(fontsize=30)
+    ax.set_ylim([-1.5 * max(minimum_x_value), 1.5 * max(maximum_values)])
 
     for item in (
-        [time_series_axis.title, time_series_axis.xaxis.label, time_series_axis.yaxis.label]
-        + time_series_axis.get_xticklabels()
-        + time_series_axis.get_yticklabels()
+        [ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()
     ):
         item.set_fontsize(30)
 
     for axis in ["top", "bottom", "left", "right"]:
-        time_series_axis.spines[axis].set_linewidth(4)
+        ax.spines[axis].set_linewidth(4)
     sns.despine()
-    return time_series_axis, grid_specification
+
+    return ax
+
+
+def plot_global_signal_es(time_series, ax, run_index=None):
+    """Create global signal plot for the executive summary."""
+    sns.set_style("whitegrid")
+
+    ntsteps = time_series.shape[0]
+
+    ax.grid(False)
+
+    # Set 10 frame markers in X axis
+    interval = max((ntsteps // 10, ntsteps // 5, 1))
+    xticks = list(range(0, ntsteps)[::interval])
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([])
+
+    # Set y-axis labels
+    ax.set_ylabel("WB")
+
+    # Plot the whole brain mean and std.
+    # Mean scale on the left, std scale on the right.
+    mean_line = ax.plot(
+        time_series["Mean"],
+        label="Mean",
+        linewidth=2,
+        alpha=1,
+        color="#D1352B",
+    )
+    ax_right = ax.twinx()
+    ax_right.set_ylabel("Standard Deviation")
+    std_line = ax_right.plot(
+        time_series["Std"],
+        label="Std",
+        linewidth=2,
+        alpha=1,
+        color="#497DB3",
+    )
+
+    std_mean = np.mean(time_series["Std"])
+    ax_right.set_ylim(
+        (1.5 * np.min(time_series["Std"] - std_mean)) + std_mean,
+        (1.5 * np.max(time_series["Std"] - std_mean)) + std_mean,
+    )
+    ax_right.yaxis.label.set_fontsize(30)
+    for item in ax_right.get_yticklabels():
+        item.set_fontsize(30)
+
+    lines = mean_line + std_line
+    line_labels = [line.get_label() for line in lines]
+    ax.legend(lines, line_labels, fontsize=30)
+
+    if run_index:
+        ax.axvline(run_index, color="yellow")
+
+    ax.set_xlim((0, ntsteps - 1))
+
+    mean_mean = np.mean(time_series["Mean"])
+    ax.set_ylim(
+        (1.5 * np.min(time_series["Mean"] - mean_mean)) + mean_mean,
+        (1.5 * np.max(time_series["Mean"] - mean_mean)) + mean_mean,
+    )
+
+    for item in (
+        [ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()
+    ):
+        item.set_fontsize(30)
+
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(4)
+    sns.despine()
+
+    return ax
+
+
+def plot_framewise_displacement_es(
+    time_series,
+    ax,
+    TR,
+    run_index=None,
+):
+    """Create framewise displacement plot for the executive summary."""
+    sns.set_style("whitegrid")
+
+    ntsteps = time_series.shape[0]
+    ax.grid(axis="y")
+
+    # Set 10 frame markers in X axis
+    interval = max((ntsteps // 10, ntsteps // 5, 1))
+    xticks = list(range(0, ntsteps)[::interval])
+    ax.set_xticks(xticks)
+
+    # Set the x-axis labels
+    ax.set_xlabel("Time (s)")
+    labels = TR * np.array(xticks)
+    labels = labels.astype(int)
+    ax.set_xticklabels(labels)
+
+    # Set y-axis labels
+    ax.set_ylabel("FD (mm)")
+    ax.plot(time_series, label="FD", linewidth=3, color="black")
+
+    # Threshold fd at 0.1, 0.2 and 0.5 and plot
+    # Plot zero line
+    fd_dots = time_series.copy()  # dots in line with FD time series
+    fd_line = time_series.copy()  # dots on top of axis
+    top_line = 0.8
+    ymax = 0.85
+
+    fd_dots[fd_dots < 0] = np.nan
+
+    THRESHOLDS = [0.05, 0.1, 0.2, 0.5]
+    COLORS = ["#969696", "#377C21", "#EF8532", "#EB392A"]
+    for i_thresh, threshold in enumerate(THRESHOLDS):
+        color = COLORS[i_thresh]
+
+        ax.axhline(
+            y=threshold,
+            color=color,
+            linestyle="-",
+            linewidth=3,
+            alpha=1,
+        )
+
+        fd_dots[fd_dots < threshold] = np.nan
+        ax.plot(fd_dots, ".", color=color, markersize=10)
+
+        fd_line = time_series.copy()
+        fd_line[fd_line >= threshold] = top_line
+        fd_line[fd_line < threshold] = np.nan
+        ax.plot(fd_line, ".", color=color, markersize=10)
+
+        # Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
+        good_vols = len(time_series[time_series < threshold])
+        ax.text(
+            1.01,
+            threshold / ymax,
+            good_vols,
+            c=color,
+            verticalalignment="center",
+            horizontalalignment="left",
+            transform=ax.transAxes,
+            fontsize=20,
+        )
+
+    # Log the total number of volumes as well
+    ax.text(
+        1.01,
+        top_line / ymax,
+        time_series.size,
+        c="black",
+        verticalalignment="center",
+        horizontalalignment="left",
+        transform=ax.transAxes,
+        fontsize=20,
+    )
+
+    if run_index:
+        ax.axvline([idx * TR for idx in run_index], color="yellow")
+
+    ax.set_xlim((0, ntsteps - 1))
+    ax.set_ylim(0, ymax)
+    ax.set_yticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+
+    for item in (
+        [ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()
+    ):
+        item.set_fontsize(30)
+
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(4)
+    sns.despine()
+
+    return ax
 
 
 @fill_doc
@@ -442,11 +484,10 @@ def plot_fmri_es(
     filtered_motion,
     preprocessed_bold_figure,
     denoised_bold_figure,
+    standardize,
     mask=None,
     seg_data=None,
-    preprocessed_bold_dvars=None,
-    uncensored_denoised_bold_dvars=None,
-    filtered_denoised_bold_dvars=None,
+    run_index=None,
 ):
     """Generate carpet plot with DVARS, FD, and WB for the executive summary.
 
@@ -457,37 +498,33 @@ def plot_fmri_es(
     %(uncensored_denoised_bold)s
     %(interpolated_filtered_bold)s
     %(TR)s
-    %(dummy_scans)s
     %(filtered_motion)s
     preprocessed_bold_figure : :obj:`str`
         output file svg before processing
     denoised_bold_figure : :obj:`str`
         output file svg after processing
+    standardize : :obj:`bool`
+        Whether to standardize the data or not.
+        If False, then the preferred DCAN version of the plot will be generated,
+        where the BOLD data are not rescaled, and the carpet plot has color limits of -600 and 600.
+        If True, then the BOLD data will be z-scored and the color limits will be -2 and 2.
     mask : :obj:`str`, optional
         Brain mask file. Used only when the pre- and post-processed BOLD data are NIFTIs.
     seg_data : :obj:`str`, optional
         Three-tissue segmentation file. This is only used for NIFTI inputs.
         With CIFTI inputs, the tissue types are inferred directly from the CIFTI file.
-    preprocessed_bold_dvars : :obj:`numpy.ndarray` or None, optional
-        Pre-calculated DVARS for preprocessed BOLD data.
-    uncensored_denoised_bold_dvars : :obj:`numpy.ndarray` or None, optional
-        Pre-calculated DVARS for uncensored, denoised BOLD data.
-    filtered_denoised_bold_dvars : :obj:`numpy.ndarray` or None, optional
-        Pre-calculated DVARS for filtered, denoised BOLD data.
+    run_index : None or array_like, optional
+        An index indicating splits between runs, for concatenated data.
+        If not None, this should be an array/list of integers, indicating the volumes.
     """
     # Compute dvars correctly if not already done
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     uncensored_denoised_bold_arr = read_ndata(datafile=uncensored_denoised_bold, maskfile=mask)
     filtered_denoised_bold_arr = read_ndata(datafile=interpolated_filtered_bold, maskfile=mask)
 
-    if not isinstance(preprocessed_bold_dvars, np.ndarray):
-        preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
-
-    if not isinstance(uncensored_denoised_bold_dvars, np.ndarray):
-        uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
-
-    if not isinstance(filtered_denoised_bold_dvars, np.ndarray):
-        filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
+    preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
+    uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
+    filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
 
     if not (
         preprocessed_bold_dvars.shape
@@ -525,11 +562,7 @@ def plot_fmri_es(
         }
     )
 
-    fd_regressor = pd.DataFrame(
-        {
-            "FD": pd.read_table(filtered_motion)["framewise_displacement"].values,
-        }
-    )
+    fd_regressor = pd.read_table(filtered_motion)["framewise_displacement"].values
 
     # The mean and standard deviation of the preprocessed data,
     # after mean-centering and detrending.
@@ -553,38 +586,35 @@ def plot_fmri_es(
     else:
         atlaslabels = None
 
-    # The plot going to carpet plot will be rescaled to [-600,600]
-    scaled_preprocessed_data = scale_to_min_max(preprocessed_bold_arr, -600, 600)
-    scaled_uncensored_denoised_data = scale_to_min_max(uncensored_denoised_bold_arr, -600, 600)
+    if not standardize:
+        # The plot going to carpet plot will be mean-centered and detrended,
+        # but will not otherwise be rescaled.
+        detrended_preprocessed_bold_arr = clean(
+            preprocessed_bold_arr.T,
+            t_r=TR,
+            detrend=True,
+            filter=False,
+            standardize=False,
+        ).T
 
-    # Make a temporary file for niftis and ciftis
-    if preprocessed_bold.endswith(".nii.gz"):
-        scaled_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
-        scaled_uncensored_denoised_file = os.path.join(tempfile.mkdtemp(), "filex_red.nii.gz")
-    else:
-        scaled_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
-        scaled_uncensored_denoised_file = os.path.join(
-            tempfile.mkdtemp(),
-            "filex_red.dtseries.nii",
+        # Make a temporary file for niftis and ciftis
+        if preprocessed_bold.endswith(".nii.gz"):
+            temp_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
+        else:
+            temp_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
+
+        # Write out the scaled data
+        temp_preprocessed_file = write_ndata(
+            data_matrix=detrended_preprocessed_bold_arr,
+            template=uncensored_denoised_bold,  # residuals file is censored, so length matches
+            filename=temp_preprocessed_file,
+            mask=mask,
+            TR=TR,
         )
+    else:
+        temp_preprocessed_file = preprocessed_bold
 
-    # Write out the scaled data
-    scaled_preprocessed_file = write_ndata(
-        data_matrix=scaled_preprocessed_data,
-        template=uncensored_denoised_bold,  # residuals file is censored, so length matches
-        filename=scaled_preprocessed_file,
-        mask=mask,
-        TR=TR,
-    )
-    scaled_uncensored_denoised_file = write_ndata(
-        data_matrix=scaled_uncensored_denoised_data,
-        template=uncensored_denoised_bold,  # residuals file is censored, so length matches
-        filename=scaled_uncensored_denoised_file,
-        mask=mask,
-        TR=TR,
-    )
-
-    files_for_carpet = [scaled_preprocessed_file, scaled_uncensored_denoised_file]
+    files_for_carpet = [temp_preprocessed_file, uncensored_denoised_bold]
     figure_names = [preprocessed_bold_figure, denoised_bold_figure]
     data_arrays = [preprocessed_bold_timeseries, uncensored_denoised_bold_timeseries]
     for i_fig, figure_name in enumerate(figure_names):
@@ -595,40 +625,58 @@ def plot_fmri_es(
         plt.cla()
         plt.clf()
 
-        fig = plt.figure(constrained_layout=True, figsize=(22.5, 30))
-        grid = mgs.GridSpec(5, 1, wspace=0.0, hspace=0.05, height_ratios=[1, 1, 0.2, 2.5, 1])
+        fig = plt.figure(constrained_layout=False, figsize=(22.5, 30))
+        grid = fig.add_gridspec(
+            nrows=4,
+            ncols=1,
+            wspace=0.0,
+            hspace=0.1,
+            height_ratios=[1, 1, 2.5, 1.3],
+        )
 
-        plot_confounds_es(
-            time_series=dvars_regressors,
-            grid_spec_ts=grid[0],
-            TR=TR,
-            ylabel="DVARS",
-            hide_x=True,
+        # The DVARS plot in the first row
+        gridspec0 = mgs.GridSpecFromSubplotSpec(
+            1,
+            3,
+            subplot_spec=grid[0],
+            width_ratios=[1, 100, 3],
+            wspace=0.0,
         )
-        plot_confounds_es(
-            time_series=data_arr,
-            grid_spec_ts=grid[1],
-            TR=TR,
-            hide_x=True,
-            ylabel="WB",
-            is_whole_brain=True,
+        ax0 = plt.subplot(gridspec0[1])
+        plot_dvars_es(dvars_regressors, ax0, run_index=run_index)
+
+        # The WB plot in the second row
+        gridspec1 = mgs.GridSpecFromSubplotSpec(
+            1,
+            3,
+            subplot_spec=grid[1],
+            width_ratios=[1, 100, 3],
+            wspace=0.0,
         )
+        ax1 = plt.subplot(gridspec1[1])
+        plot_global_signal_es(data_arr, ax1, run_index=run_index)
+
+        # The carpet plot in the third row
         plot_carpet(
             func=file_for_carpet,
             atlaslabels=atlaslabels,
             TR=TR,
-            subplot=grid[3],
+            subplot=grid[2],  # Use grid for now.
+            detrend=standardize,  # Data are already detrended if standardize is False
             legend=False,
+            colorbar=True,
         )
-        plot_confounds_es(
-            time_series=fd_regressor,
-            grid_spec_ts=grid[4],
-            TR=TR,
-            hide_x=False,
-            ylims=[0, 1],
-            ylabel="FD[mm]",
-            is_fd=True,
+
+        # The FD plot at the bottom
+        gridspec3 = mgs.GridSpecFromSubplotSpec(
+            1,
+            3,
+            subplot_spec=grid[3],
+            width_ratios=[1, 100, 3],
+            wspace=0.0,
         )
+        ax3 = plt.subplot(gridspec3[1])
+        plot_framewise_displacement_es(fd_regressor, ax3, run_index=run_index, TR=TR)
 
         # Save out the before processing file
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
@@ -752,16 +800,18 @@ class FMRIPlot:
             self.func_file,
             atlaslabels=self.seg_data,
             subplot=grid[-1],
+            detrend=True,
             TR=self.TR,
             labelsize=labelsize,
+            colorbar=False,
         )
-        # spikesplot_cb([0.7, 0.78, 0.2, 0.008])
         return figure
 
 
 def plot_carpet(
     func,
     atlaslabels=None,
+    detrend=True,
     size=(950, 800),
     labelsize=30,
     subplot=None,
@@ -769,6 +819,7 @@ def plot_carpet(
     legend=True,
     TR=None,
     lut=None,
+    colorbar=False,
 ):
     """Plot an image representation of voxel intensities across time.
 
@@ -787,10 +838,9 @@ def plot_carpet(
         Detrend and standardize the data prior to plotting.
     size : tuple, optional
         Size of figure.
+    labelsize : int, optional
     subplot : matplotlib Subplot, optional
         Subplot to plot figure on.
-    title : :obj:`str`, optional
-        The title displayed on the figure.
     output_file : :obj:`str` or None, optional
         The name of an image file to export the plot to. Valid extensions
         are .png, .pdf, .svg. If output_file is not None, the plot
@@ -798,10 +848,12 @@ def plot_carpet(
     legend : bool
         Whether to render the average functional series with ``atlaslabels`` as overlay.
     TR : float, optional
-        Specify the TR, if specified it uses this value. If left as None,
-        # of frames is plotted instead of time.
+        Specify the TR, if specified it uses this value.
+        If left as None, # of frames is plotted instead of time.
     lut : numpy.ndarray, optional
         Look up table for segmentations
+    colorbar : bool, optional
+        Default is False.
     """
     epinii = None
     segnii = None
@@ -888,6 +940,8 @@ def plot_carpet(
         cmap,
         labelsize,
         TR=TR,
+        detrend=detrend,
+        colorbar=colorbar,
         subplot=subplot,
         output_file=output_file,
     )
@@ -902,36 +956,56 @@ def _carpet(
     labelsize,
     TR=None,
     detrend=True,
+    colorbar=False,
     subplot=None,
-    legend=False,
     output_file=None,
 ):
     """Build carpetplot for volumetric / CIFTI plots."""
     if TR is None:
         TR = 1.0  # Default TR
-    sns.set_style("whitegrid")
-    # Detrend data
-    v = (None, None)
+
+    sns.set_style("white")
+
+    # Detrend and z-score data
     if detrend:
-        data = clean(data.T, t_r=TR).T
-        v = (-2, 2)
+        data = clean(data.T, t_r=TR, detrend=True, filter=False).T
+        vlimits = (-2, 2)
+    else:
+        # If detrend is False, then the data are assumed to have native BOLD units.
+        # The executive summary uses the following range for native BOLD units.
+        vlimits = tuple(np.percentile(data, q=(2.5, 97.5)))
 
     # If subplot is not defined
     if subplot is None:
         subplot = mgs.GridSpec(1, 1)[0]
 
     # Define nested GridSpec
-    wratios = [1, 100, 20]
-    grid_specification = mgs.GridSpecFromSubplotSpec(
-        1,
-        2 + int(legend),
-        subplot_spec=subplot,
-        width_ratios=wratios[: 2 + int(legend)],
-        wspace=0.0,
-    )
+    if colorbar:
+        wratios = [1, 100, 1, 2]
+        grid_specification = mgs.GridSpecFromSubplotSpec(
+            1,
+            4,
+            subplot_spec=subplot,
+            width_ratios=wratios,
+            wspace=0.0,
+        )
+        ax0 = plt.subplot(grid_specification[0])
+        ax1 = plt.subplot(grid_specification[1])
+        ax2 = plt.subplot(grid_specification[3])
+    else:
+        wratios = [1, 100]
+        grid_specification = mgs.GridSpecFromSubplotSpec(
+            1,
+            2,
+            subplot_spec=subplot,
+            width_ratios=wratios,
+            wspace=0.0,
+        )
+        ax0 = plt.subplot(grid_specification[0])
+        ax1 = plt.subplot(grid_specification[1])
+        ax2 = None
 
     # Segmentation colorbar
-    ax0 = plt.subplot(grid_specification[0])
     ax0.set_xticks([])
     ax0.imshow(seg_data[order, np.newaxis], interpolation="none", aspect="auto", cmap=cmap)
 
@@ -955,16 +1029,14 @@ def _carpet(
     ax0.set_xticklabels([])
 
     # Carpet plot
-    ax1 = plt.subplot(grid_specification[1])
-    ax1.imshow(
+    pos = ax1.imshow(
         data[order],
         interpolation="nearest",
         aspect="auto",
         cmap="gray",
-        vmin=v[0],
-        vmax=v[1],
+        vmin=vlimits[0],
+        vmax=vlimits[1],
     )
-
     ax1.grid(False)
     ax1.set_yticks([])
     ax1.set_yticklabels([])
@@ -985,7 +1057,18 @@ def _carpet(
     ax1.spines["left"].set_color("none")
     ax1.spines["left"].set_visible(False)
 
-    ax2 = None
+    # Use the last axis for a colorbar
+    if colorbar:
+        ax2.set_xticks([])
+        ax2.set_yticks([])
+        fig = ax2.get_figure()
+        cbar = fig.colorbar(
+            pos,
+            cax=ax2,
+            ticks=vlimits,
+        )
+        cbar.ax.tick_params(size=0, labelsize=20)
+
     #  Write out file
     if output_file is not None:
         figure = plt.gcf()
@@ -1048,7 +1131,8 @@ def plot_alff_reho_volumetric(output_path, filename, name_source):
 def surf_data_from_cifti(data, axis, surf_name):
     """From https://neurostars.org/t/separate-cifti-by-structure-in-python/17301/2.
 
-    https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/we-nibabel-markiewicz/NiBabel.ipynb
+    https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/\
+    we-nibabel-markiewicz/NiBabel.ipynb
     """
     assert isinstance(axis, nb.cifti2.BrainModelAxis)
     for name, data_indices, model in axis.iter_structures():

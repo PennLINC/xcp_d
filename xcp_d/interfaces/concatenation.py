@@ -3,6 +3,7 @@ import itertools
 import os
 import re
 
+import pandas as pd
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -373,6 +374,10 @@ class _ConcatenateInputsOutputSpec(TraitedSpec):
             "Only defined for CIFTI processing."
         ),
     )
+    run_index = traits.List(
+        traits.Int(),
+        desc="Index of join points between the *uncensored* runs.",
+    )
 
 
 class ConcatenateInputs(SimpleInterface):
@@ -394,6 +399,13 @@ class ConcatenateInputs(SimpleInterface):
             "temporal_mask": self.inputs.temporal_mask,
             "timeseries": self.inputs.timeseries,
         }
+
+        run_index, n_volumes = [], 0
+        for run_tmask in self.inputs.temporal_mask[:-1]:
+            n_volumes = n_volumes + pd.read_table(run_tmask).shape[0]
+            run_index.append(n_volumes)
+
+        self._results["run_index"] = run_index
 
         for name, run_files in merge_inputs.items():
             LOGGER.info(f"Concatenating {name}")
