@@ -973,7 +973,7 @@ def _carpet(
     else:
         # If detrend is False, then the data are assumed to have native BOLD units.
         # The executive summary uses the following range for native BOLD units.
-        vlimits = (-600, 600)
+        vlimits = tuple(np.percentile(data, q=(2.5, 97.5)))
 
     # If subplot is not defined
     if subplot is None:
