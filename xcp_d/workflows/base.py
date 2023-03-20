@@ -33,18 +33,10 @@ from xcp_d.utils.bids import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import flag_bad_run
-from xcp_d.workflows.anatomical import (
-    init_copy_inputs_to_outputs_wf,
-    init_warp_anats_to_template_wf,
-    init_warp_surfaces_to_template_wf,
-)
+from xcp_d.workflows.anatomical import init_postprocess_anat_wf
 from xcp_d.workflows.bold import init_postprocess_nifti_wf
 from xcp_d.workflows.cifti import init_postprocess_cifti_wf
 from xcp_d.workflows.concatenation import init_concatenate_data_wf
-from xcp_d.workflows.execsummary import (
-    init_brainsprite_figures_wf,
-    init_execsummary_anatomical_plots_wf,
-)
 
 LOGGER = logging.getLogger("nipype.workflow")
 MINIMUM_RUN_VOLUMES = 10
@@ -491,131 +483,44 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # Extract target volumetric space for T1w image
     target_space = get_entity(subj_data["t1w_to_template_xfm"], "to")
 
-    warp_anats_to_template_wf = init_warp_anats_to_template_wf(
-        output_dir=output_dir,
+    postprocess_anat_wf = init_postprocess_anat_wf(
+        fmri_dir=fmri_dir,
+        subject_id=subject_id,
+        dcan_qc=dcan_qc,
         input_type=input_type,
+        t1w_available=subj_data["t1w"] is not None,
         t2w_available=subj_data["t2w"] is not None,
+        mesh_available=mesh_available,
+        standard_space_mesh=standard_space_mesh,
+        shape_available=shape_available,
         target_space=target_space,
+        process_surfaces=process_surfaces,
+        output_dir=output_dir,
         omp_nthreads=omp_nthreads,
-        mem_gb=5,
+        name="postprocess_anat_wf",
     )
 
     # fmt:off
     workflow.connect([
-        (inputnode, warp_anats_to_template_wf, [
+        (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
             ("t1w_seg", "inputnode.t1seg"),
+            ("lh_pial_surf", "inputnode.lh_pial_surf"),
+            ("rh_pial_surf", "inputnode.rh_pial_surf"),
+            ("lh_wm_surf", "inputnode.lh_wm_surf"),
+            ("rh_wm_surf", "inputnode.rh_wm_surf"),
             ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+            ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
+            ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
+            ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
+            ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
+            ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
+            ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
         ]),
     ])
     # fmt:on
-
-    if dcan_qc:
-        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
-            t1w_available=subj_data["t1w"] is not None,
-            t2w_available=subj_data["t2w"] is not None,
-            output_dir=output_dir,
-            name="execsummary_anatomical_plots_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (warp_anats_to_template_wf, execsummary_anatomical_plots_wf, [
-                ("outputnode.t1w", "inputnode.t1w"),
-                ("outputnode.t2w", "inputnode.t2w"),
-                ("outputnode.template", "inputnode.template"),
-            ]),
-        ])
-        # fmt:on
-
-    if dcan_qc and mesh_available:
-        # Plot the white and pial surfaces on the brain in a brainsprite figure.
-        brainsprite_wf = init_brainsprite_figures_wf(
-            output_dir=output_dir,
-            t2w_available=False,
-            omp_nthreads=omp_nthreads,
-            mem_gb=5,
-        )
-
-    if process_surfaces and shape_available:
-        copy_inputs_to_outputs_wf = init_copy_inputs_to_outputs_wf(
-            output_dir=output_dir,
-            name="copy_inputs_to_outputs_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, copy_inputs_to_outputs_wf, [
-                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
-            ]),
-        ])
-        # fmt:on
-
-    if process_surfaces and mesh_available and cifti:
-        warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
-            fmri_dir=fmri_dir,
-            subject_id=subject_id,
-            output_dir=output_dir,
-            warp_to_standard=not standard_space_mesh,
-            omp_nthreads=omp_nthreads,
-            mem_gb=5,  # RF: need to change memory size
-            name="warp_surfaces_to_template_wf",
-        )
-
-        # Use standard-space T1w and surfaces for brainsprite.
-        # fmt:off
-        workflow.connect([
-            (inputnode, warp_surfaces_to_template_wf, [
-                ("lh_pial_surf", "inputnode.lh_pial_surf"),
-                ("rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("lh_wm_surf", "inputnode.lh_wm_surf"),
-                ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
-            ]),
-        ])
-        # fmt:on
-
-        if dcan_qc:
-            # fmt:off
-            workflow.connect([
-                (warp_anats_to_template_wf, brainsprite_wf, [
-                    ("outputnode.t1w", "inputnode.t1w"),
-                ]),
-                (warp_surfaces_to_template_wf, brainsprite_wf, [
-                    ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
-                    ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
-                    ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
-                    ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
-                ]),
-            ])
-            # fmt:on
-
-    elif mesh_available and dcan_qc and not process_surfaces:
-        # Use native-space T1w and surfaces for brainsprite.
-        # fmt:off
-        workflow.connect([
-            (inputnode, brainsprite_wf, [
-                ("t1w", "inputnode.t1w"),
-                ("lh_pial_surf", "inputnode.lh_pial_surf"),
-                ("rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("lh_wm_surf", "inputnode.lh_wm_surf"),
-                ("rh_wm_surf", "inputnode.rh_wm_surf"),
-            ]),
-        ])
-        # fmt:on
-
-    elif process_surfaces and not mesh_available:
-        raise ValueError(
-            "No surfaces found. "
-            "Surfaces are required if `--warp-surfaces-native2std` is enabled."
-        )
 
     # What if I grouped the preproc_files by task first, here?
     # Then I get a list of lists of preproc files.
@@ -713,7 +618,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # fmt:off
             workflow.connect([
                 (inputnode, postprocess_bold_wf, [("t1w_mask", "inputnode.t1w_mask")]),
-                (warp_anats_to_template_wf, postprocess_bold_wf, [
+                (postprocess_anat_wf, postprocess_bold_wf, [
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
                 ]),
