@@ -301,6 +301,7 @@ def init_warp_anats_to_template_wf(
     return workflow
 
 
+@fill_doc
 def init_copy_inputs_to_outputs_wf(name_source, output_dir, name="copy_inputs_to_outputs_wf"):
     """Copy files from the preprocessing derivatives to the output folder, with no modifications.
 
@@ -429,23 +430,6 @@ def init_warp_surfaces_to_template_wf(
                 subject_id="01",
                 output_dir=".",
                 warp_to_standard=True,
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="warp_surfaces_to_template_wf",
-            )
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflows.anatomical import init_warp_surfaces_to_template_wf
-
-            wf = init_warp_surfaces_to_template_wf(
-                fmri_dir=".",
-                subject_id="01",
-                output_dir=".",
-                warp_to_standard=False,
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="warp_surfaces_to_template_wf",
