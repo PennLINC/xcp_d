@@ -302,7 +302,7 @@ def init_warp_anats_to_template_wf(
 
 
 @fill_doc
-def init_copy_inputs_to_outputs_wf(name_source, output_dir, name="copy_inputs_to_outputs_wf"):
+def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf"):
     """Copy files from the preprocessing derivatives to the output folder, with no modifications.
 
     Workflow Graph
@@ -313,14 +313,12 @@ def init_copy_inputs_to_outputs_wf(name_source, output_dir, name="copy_inputs_to
             from xcp_d.workflows.anatomical import init_copy_inputs_to_outputs_wf
 
             wf = init_copy_inputs_to_outputs_wf(
-                name_source="/path/to/file.nii.gz",
                 output_dir=".",
                 name="copy_inputs_to_outputs_wf",
             )
 
     Parameters
     ----------
-    %(name_source)s
     %(output_dir)s
     %(name)s
         Default is "copy_inputs_to_outputs_wf".
@@ -387,12 +385,16 @@ def init_copy_inputs_to_outputs_wf(name_source, output_dir, name="copy_inputs_to
         name="ds_outputs",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["in_file"],
+        iterfield=["in_file", "source_file"],
     )
-    ds_outputs.inputs.source_file = name_source
 
     # fmt:off
-    workflow.connect([(filter_out_undefined, ds_outputs, [("outlist", "in_file")])])
+    workflow.connect([
+        (filter_out_undefined, ds_outputs, [
+            ("outlist", "in_file"),
+            ("outlist", "source_file"),
+        ]),
+    ])
     # fmt:on
 
     return workflow
