@@ -505,7 +505,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("t1w_seg", "inputnode.t1seg"),
+            ("t1w_seg", "inputnode.t1w_seg"),
             ("lh_pial_surf", "inputnode.lh_pial_surf"),
             ("rh_pial_surf", "inputnode.rh_pial_surf"),
             ("lh_wm_surf", "inputnode.lh_wm_surf"),

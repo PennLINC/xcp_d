@@ -169,7 +169,7 @@ def init_postprocess_anat_wf(
         (inputnode, warp_anats_to_template_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("t1w_seg", "inputnode.t1seg"),
+            ("t1w_seg", "inputnode.t1w_seg"),
             ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
         ]),
         (warp_anats_to_template_wf, outputnode, [
@@ -340,7 +340,7 @@ def init_warp_anats_to_template_wf(
     t2w : :obj:`str` or None
         Path to the preprocessed T2w file.
         This file may be in standard space or native T1w space.
-    t1seg : :obj:`str`
+    t1w_seg : :obj:`str`
         Path to the T1w segmentation file.
     %(t1w_to_template_xfm)s
         We need to use MNI152NLin6Asym for the template.
@@ -352,18 +352,18 @@ def init_warp_anats_to_template_wf(
         Path to the preprocessed T1w file in standard space.
     t2w : :obj:`str` or None
         Path to the preprocessed T2w file in standard space.
-    t1seg : :obj:`str`
+    t1w_seg : :obj:`str`
     template : :obj:`str`
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "t1w_to_template_xfm", "template"]),
+        niu.IdentityInterface(fields=["t1w", "t2w", "t1w_seg", "t1w_to_template_xfm", "template"]),
         name="inputnode",
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1seg", "template"]),
+        niu.IdentityInterface(fields=["t1w", "t2w", "t1w_seg", "template"]),
         name="outputnode",
     )
 
@@ -393,19 +393,19 @@ def init_warp_anats_to_template_wf(
             run_without_submitting=False,
         )
 
-        ds_t1seg_std = pe.Node(
+        ds_t1w_seg_std = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 extension=".nii.gz",
             ),
-            name="ds_t1seg_std",
+            name="ds_t1w_seg_std",
             run_without_submitting=False,
         )
 
         # fmt:off
         workflow.connect([
             (inputnode, ds_t1w_std, [("t1w", "in_file")]),
-            (inputnode, ds_t1seg_std, [("t1seg", "in_file")]),
+            (inputnode, ds_t1w_seg_std, [("t1w_seg", "in_file")]),
         ])
         # fmt:on
 
@@ -452,22 +452,22 @@ def init_warp_anats_to_template_wf(
         ])
         # fmt:on
 
-        warp_t1seg_to_template = pe.Node(
+        warp_t1w_seg_to_template = pe.Node(
             ApplyTransforms(
                 num_threads=2,
                 interpolation="GenericLabel",
                 input_image_type=3,
                 dimension=3,
             ),
-            name="warp_t1seg_to_template",
+            name="warp_t1w_seg_to_template",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, warp_t1seg_to_template, [
-                ("t1seg", "input_image"),
+            (inputnode, warp_t1w_seg_to_template, [
+                ("t1w_seg", "input_image"),
                 ("t1w_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
@@ -523,25 +523,25 @@ def init_warp_anats_to_template_wf(
 
         workflow.connect([(warp_t1w_to_template, ds_t1w_std, [("output_image", "in_file")])])
 
-        ds_t1seg_std = pe.Node(
+        ds_t1w_seg_std = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 space=target_space,
                 cohort=cohort,
                 extension=".nii.gz",
             ),
-            name="ds_t1seg_std",
+            name="ds_t1w_seg_std",
             run_without_submitting=False,
         )
 
-        workflow.connect([(warp_t1seg_to_template, ds_t1seg_std, [("output_image", "in_file")])])
+        workflow.connect([(warp_t1w_seg_to_template, ds_t1w_seg_std, [("output_image", "in_file")])])
 
     # fmt:off
     workflow.connect([
         (inputnode, ds_t1w_std, [("t1w", "source_file")]),
-        (inputnode, ds_t1seg_std, [("t1seg", "source_file")]),
+        (inputnode, ds_t1w_seg_std, [("t1w_seg", "source_file")]),
         (ds_t1w_std, outputnode, [("out_file", "t1w")]),
-        (ds_t1seg_std, outputnode, [("out_file", "t1seg")]),
+        (ds_t1w_seg_std, outputnode, [("out_file", "t1w_seg")]),
     ])
     # fmt:on
 

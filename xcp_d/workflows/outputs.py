@@ -20,7 +20,7 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.anatomical import init_copy_inputs_to_outputs_wf
+            from xcp_d.workflows.outputs import init_copy_inputs_to_outputs_wf
 
             wf = init_copy_inputs_to_outputs_wf(
                 output_dir=".",
