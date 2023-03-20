@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 
-from xcp_d.tests.utils import get_nodes, get_test_data_path
+from xcp_d.tests.utils import get_nodes
 from xcp_d.workflows import anatomical
 
 
