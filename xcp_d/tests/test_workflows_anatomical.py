@@ -157,5 +157,5 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
     out_t2w = wf_nodes["warp_anats_to_template_wf.ds_t2w_std"].get_output("out_file")
     assert os.path.isfile(out_t2w), os.listdir(out_anat_dir)
 
-    out_t1seg = wf_nodes["warp_anats_to_template_wf.ds_t1seg_std"].get_output("out_file")
-    assert os.path.isfile(out_t1seg), os.listdir(out_anat_dir)
+    out_t1w_seg = wf_nodes["warp_anats_to_template_wf.ds_t1w_seg_std"].get_output("out_file")
+    assert os.path.isfile(out_t1w_seg), os.listdir(out_anat_dir)
