@@ -534,7 +534,11 @@ def init_warp_anats_to_template_wf(
             run_without_submitting=False,
         )
 
-        workflow.connect([(warp_t1w_seg_to_template, ds_t1w_seg_std, [("output_image", "in_file")])])
+        # fmt:off
+        workflow.connect([
+            (warp_t1w_seg_to_template, ds_t1w_seg_std, [("output_image", "in_file")]),
+        ])
+        # fmt:on
 
     # fmt:off
     workflow.connect([
