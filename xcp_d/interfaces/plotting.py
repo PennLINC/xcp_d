@@ -17,6 +17,7 @@ from nipype.interfaces.base import (
     OutputMultiPath,
     SimpleInterface,
     TraitedSpec,
+    Undefined,
     isdefined,
     traits,
 )
@@ -75,7 +76,7 @@ class CensoringPlot(SimpleInterface):
 
         fig, ax = plt.subplots(figsize=(16, 8))
 
-        time_array = np.arange(0, self.inputs.TR * preproc_fd_timeseries.size, self.inputs.TR)
+        time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
 
         ax.plot(
             time_array,
@@ -421,10 +422,29 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         desc="TSV file with filtered motion parameters.",
     )
     TR = traits.Float(default_value=1, desc="Repetition time")
+    standardize = traits.Bool(
+        mandatory=True,
+        desc=(
+            "Whether to standardize the data or not. "
+            "If False, then the preferred DCAN version of the plot will be generated, "
+            "where the BOLD data are not rescaled, and the carpet plot has color limits of -600 "
+            "and 600. "
+            "If True, then the BOLD data will be z-scored and the color limits will be -2 and 2."
+        ),
+    )
 
     # Optional inputs
     mask = File(exists=True, mandatory=False, desc="Bold mask")
     seg_data = File(exists=True, mandatory=False, desc="Segmentation file")
+    run_index = traits.Either(
+        traits.List(traits.Int()),
+        Undefined,
+        mandatory=False,
+        desc=(
+            "An index indicating splits between runs, for concatenated data. "
+            "If not Undefined, this should be a list of integers, indicating the volumes."
+        ),
+    )
 
 
 class _QCPlotsESOutputSpec(TraitedSpec):
@@ -468,16 +488,21 @@ class QCPlotsES(SimpleInterface):
         segmentation_file = self.inputs.seg_data
         segmentation_file = segmentation_file if isdefined(segmentation_file) else None
 
+        run_index = self.inputs.run_index
+        run_index = run_index if isdefined(run_index) else None
+
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
             uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
             interpolated_filtered_bold=self.inputs.interpolated_filtered_bold,
             TR=self.inputs.TR,
-            mask=mask_file,
             filtered_motion=self.inputs.filtered_motion,
-            seg_data=segmentation_file,
             preprocessed_bold_figure=preprocessed_bold_figure,
             denoised_bold_figure=denoised_bold_figure,
+            standardize=self.inputs.standardize,
+            mask=mask_file,
+            seg_data=segmentation_file,
+            run_index=run_index,
         )
 
         return runtime

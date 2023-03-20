@@ -174,7 +174,7 @@ class ExecutiveSummary(object):
             "subject": self.subject_id,
             "task": "rest",
             "run": Query.NONE,
-            "desc": "precarpetplot",
+            "desc": "preprocESQC",
             "suffix": "bold",
             "extension": ".svg",
         }
@@ -195,7 +195,7 @@ class ExecutiveSummary(object):
 
             query = {
                 "subject": self.subject_id,
-                "desc": "precarpetplot",
+                "desc": "preprocESQC",
                 "suffix": "bold",
                 "extension": [".svg", ".png"],
                 **task_entity_set,
@@ -203,7 +203,7 @@ class ExecutiveSummary(object):
 
             task_file_figures["preproc_carpet"] = self._get_bids_file(query)
 
-            query["desc"] = "postcarpetplot"
+            query["desc"] = "postprocESQC"
             task_file_figures["postproc_carpet"] = self._get_bids_file(query)
 
             query["desc"] = "boldref"

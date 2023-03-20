@@ -102,6 +102,7 @@ def init_qc_report_wf(
                 "filtered_motion",
                 "temporal_mask",
                 "head_radius",
+                "run_index",  # will only be set for concatenated data
                 # nifti-only inputs
                 "bold_mask",
                 "t1w_mask",
@@ -342,20 +343,40 @@ def init_qc_report_wf(
         # fmt:on
 
         # Generate preprocessing and postprocessing carpet plots.
-        plot_executive_summary_carpets = pe.Node(
-            QCPlotsES(TR=TR),
-            name="plot_executive_summary_carpets",
+        plot_execsummary_carpets_dcan = pe.Node(
+            QCPlotsES(TR=TR, standardize=False),
+            name="plot_execsummary_carpets_dcan",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, plot_executive_summary_carpets, [
+            (inputnode, plot_execsummary_carpets_dcan, [
                 ("preprocessed_bold", "preprocessed_bold"),
                 ("uncensored_denoised_bold", "uncensored_denoised_bold"),
                 ("interpolated_filtered_bold", "interpolated_filtered_bold"),
                 ("filtered_motion", "filtered_motion"),
+                ("run_index", "run_index"),
+            ]),
+        ])
+        # fmt:on
+
+        plot_execsummary_carpets_linc = pe.Node(
+            QCPlotsES(TR=TR, standardize=True),
+            name="plot_execsummary_carpets_linc",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, plot_execsummary_carpets_linc, [
+                ("preprocessed_bold", "preprocessed_bold"),
+                ("uncensored_denoised_bold", "uncensored_denoised_bold"),
+                ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+                ("filtered_motion", "filtered_motion"),
+                ("run_index", "run_index"),
             ]),
         ])
         # fmt:on
@@ -363,43 +384,90 @@ def init_qc_report_wf(
         if not cifti:
             # fmt:off
             workflow.connect([
-                (inputnode, plot_executive_summary_carpets, [("bold_mask", "mask")]),
-                (warp_dseg_to_bold, plot_executive_summary_carpets, [
+                (inputnode, plot_execsummary_carpets_dcan, [("bold_mask", "mask")]),
+                (warp_dseg_to_bold, plot_execsummary_carpets_dcan, [
+                    ("output_image", "seg_data"),
+                ]),
+                (inputnode, plot_execsummary_carpets_linc, [("bold_mask", "mask")]),
+                (warp_dseg_to_bold, plot_execsummary_carpets_linc, [
                     ("output_image", "seg_data"),
                 ]),
             ])
             # fmt:on
 
-        ds_preproc_executive_summary_carpet = pe.Node(
+        ds_preproc_execsummary_carpet_dcan = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["den"],
                 datatype="figures",
-                desc="precarpetplot",
+                desc="preprocESQC",
             ),
-            name="ds_preproc_executive_summary_carpet",
+            name="ds_preproc_execsummary_carpet_dcan",
             run_without_submitting=True,
         )
 
-        ds_postproc_executive_summary_carpet = pe.Node(
+        ds_postproc_execsummary_carpet_dcan = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["den"],
                 datatype="figures",
-                desc="postcarpetplot",
+                desc="postprocESQC",
             ),
-            name="ds_postproc_executive_summary_carpet",
+            name="ds_postproc_execsummary_carpet_dcan",
             run_without_submitting=True,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_preproc_executive_summary_carpet, [("name_source", "source_file")]),
-            (inputnode, ds_postproc_executive_summary_carpet, [("name_source", "source_file")]),
-            (plot_executive_summary_carpets, ds_preproc_executive_summary_carpet, [
+            (inputnode, ds_preproc_execsummary_carpet_dcan, [
+                ("name_source", "source_file"),
+            ]),
+            (inputnode, ds_postproc_execsummary_carpet_dcan, [
+                ("name_source", "source_file"),
+            ]),
+            (plot_execsummary_carpets_dcan, ds_preproc_execsummary_carpet_dcan, [
                 ("before_process", "in_file"),
             ]),
-            (plot_executive_summary_carpets, ds_postproc_executive_summary_carpet, [
+            (plot_execsummary_carpets_dcan, ds_postproc_execsummary_carpet_dcan, [
+                ("after_process", "in_file"),
+            ]),
+        ])
+        # fmt:on
+
+        ds_preproc_execsummary_carpet_linc = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["den"],
+                datatype="figures",
+                desc="preprocESQCScaled",
+            ),
+            name="ds_preproc_execsummary_carpet_linc",
+            run_without_submitting=True,
+        )
+
+        ds_postproc_execsummary_carpet_linc = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["den"],
+                datatype="figures",
+                desc="postprocESQCScaled",
+            ),
+            name="ds_postproc_execsummary_carpet_linc",
+            run_without_submitting=True,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_preproc_execsummary_carpet_linc, [
+                ("name_source", "source_file"),
+            ]),
+            (inputnode, ds_postproc_execsummary_carpet_linc, [
+                ("name_source", "source_file"),
+            ]),
+            (plot_execsummary_carpets_linc, ds_preproc_execsummary_carpet_linc, [
+                ("before_process", "in_file"),
+            ]),
+            (plot_execsummary_carpets_linc, ds_postproc_execsummary_carpet_linc, [
                 ("after_process", "in_file"),
             ]),
         ])

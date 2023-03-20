@@ -104,7 +104,7 @@ def test_concatenateinputs(fmriprep_with_freesurfer_data, tmp_path_factory):
     preprocessed_bold = [nifti_file] * n_runs
     fmriprep_confounds_file = [tsv_file] * n_runs
     filtered_motion = [tsv_file] * n_runs
-    temporal_mask = [nifti_file] * n_runs
+    temporal_mask = [tsv_file] * n_runs
     uncensored_denoised_bold = [nifti_file] * n_runs
     interpolated_filtered_bold = [nifti_file] * n_runs
 
