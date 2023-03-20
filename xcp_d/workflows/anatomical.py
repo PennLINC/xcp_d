@@ -108,7 +108,7 @@ def init_postprocess_anat_wf(
     t1w
         Native-space T1w file.
     t2w
-        Native-space T1w file.
+        Native-space T2w file.
     t1w_seg
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
