@@ -418,7 +418,7 @@ def init_warp_surfaces_to_template_wf(
     The FreeSurfer derivatives must be indexed to grab sphere files needed to warp the surfaces.
     If Freesurfer derivatives are not available, then an error will be raised.
 
-    Workflow Graph
+    If mesh files are in fsnative space.
         .. workflow::
             :graph2use: orig
             :simple_form: yes
@@ -430,6 +430,23 @@ def init_warp_surfaces_to_template_wf(
                 subject_id="01",
                 output_dir=".",
                 warp_to_standard=True,
+                omp_nthreads=1,
+                mem_gb=0.1,
+                name="warp_surfaces_to_template_wf",
+            )
+
+    If mesh files are already in fsLR space.
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.anatomical import init_warp_surfaces_to_template_wf
+
+            wf = init_warp_surfaces_to_template_wf(
+                fmri_dir=".",
+                subject_id="01",
+                output_dir=".",
+                warp_to_standard=False,
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="warp_surfaces_to_template_wf",
