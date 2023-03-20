@@ -562,15 +562,15 @@ def init_warp_surfaces_to_template_wf(
         get_freesurfer_dir_node.inputs.fmri_dir = fmri_dir
 
         # First, we create the Connectome WorkBench-compatible transform files.
-        update_xform_wf = init_ants_xform_to_fsl_wf(
+        update_xfm_wf = init_ants_xfm_to_fsl_wf(
             mem_gb=mem_gb,
             omp_nthreads=omp_nthreads,
-            name="update_xform_wf",
+            name="update_xfm_wf",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, update_xform_wf, [
+            (inputnode, update_xfm_wf, [
                 ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
                 ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ]),
@@ -619,10 +619,10 @@ def init_warp_surfaces_to_template_wf(
                 (get_freesurfer_dir_node, apply_transforms_wf, [
                     ("freesurfer_path", "inputnode.freesurfer_path"),
                 ]),
-                (update_xform_wf, apply_transforms_wf, [
+                (update_xfm_wf, apply_transforms_wf, [
                     ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
                     ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
-                    ("outputnode.world_xform", "inputnode.world_xform"),
+                    ("outputnode.world_xfm", "inputnode.world_xfm"),
                 ]),
                 (collect_surfaces, apply_transforms_wf, [
                     ("out", "inputnode.hemi_files"),
@@ -868,7 +868,7 @@ def init_generate_hcp_surfaces_wf(
 
 
 @fill_doc
-def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf"):
+def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     """Modify ANTS-style fMRIPrep transforms to work with Connectome Workbench/FSL FNIRT.
 
     Workflow Graph
@@ -876,11 +876,11 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.anatomical import init_ants_xform_to_fsl_wf
-            wf = init_ants_xform_to_fsl_wf(
+            from xcp_d.workflows.anatomical import init_ants_xfm_to_fsl_wf
+            wf = init_ants_xfm_to_fsl_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
-                name="ants_xform_to_fsl_wf",
+                name="ants_xfm_to_fsl_wf",
             )
 
     Parameters
@@ -888,7 +888,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
-        Default is "ants_xform_to_fsl_wf".
+        Default is "ants_xfm_to_fsl_wf".
 
     Inputs
     ------
@@ -899,7 +899,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
 
     Outputs
     -------
-    world_xform
+    world_xfm
         TODO: Add description.
     merged_warpfield
         TODO: Add description.
@@ -914,7 +914,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["world_xform", "merged_warpfield", "merged_inv_warpfield"]),
+        niu.IdentityInterface(fields=["world_xfm", "merged_warpfield", "merged_inv_warpfield"]),
         name="outputnode",
     )
 
@@ -1139,7 +1139,7 @@ def init_ants_xform_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xform_to_fsl_wf")
     workflow.connect([
         (collect_new_components, remerge_warpfield, [("out", "in_files")]),
         (collect_new_inv_components, remerge_inv_warpfield, [("out", "in_files")]),
-        (convert_xfm2world, outputnode, [("out_file", "world_xform")]),
+        (convert_xfm2world, outputnode, [("out_file", "world_xfm")]),
         (remerge_warpfield, outputnode, [("out_file", "merged_warpfield")]),
         (remerge_inv_warpfield, outputnode, [("out_file", "merged_inv_warpfield")]),
     ])
@@ -1177,7 +1177,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     ------
     hemi_files : list of str
         A list of surface files for the requested hemisphere, in fsnative space.
-    world_xform
+    world_xfm
     merged_warpfield
     merged_inv_warpfield
     freesurfer_path
@@ -1194,7 +1194,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
         niu.IdentityInterface(
             fields=[
                 "hemi_files",
-                "world_xform",
+                "world_xfm",
                 "merged_warpfield",
                 "merged_inv_warpfield",
                 "freesurfer_path",
@@ -1322,7 +1322,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     # fmt:off
     workflow.connect([
         (resample_to_fsLR32k, apply_affine_to_fsLR32k, [("out_file", "in_file")]),
-        (inputnode, apply_affine_to_fsLR32k, [("world_xform", "affine")]),
+        (inputnode, apply_affine_to_fsLR32k, [("world_xfm", "affine")]),
     ])
     # fmt:on
 

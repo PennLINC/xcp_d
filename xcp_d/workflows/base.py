@@ -577,8 +577,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("t1w_to_template_xform", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xform", "inputnode.template_to_t1w_xfm"),
+                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ]),
         ])
         # fmt:on

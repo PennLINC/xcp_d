@@ -11,7 +11,7 @@ from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.qcmetrics import _make_dcan_qc_file
-from xcp_d.utils.utils import get_bold2std_and_t1w_xforms, get_std2bold_xforms
+from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
 
 
 @fill_doc
@@ -139,12 +139,12 @@ def init_qc_report_wf(
             Function(
                 input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
                 output_names=[
-                    "bold_to_std_xforms",
-                    "bold_to_std_xforms_invert",
-                    "bold_to_t1w_xforms",
-                    "bold_to_t1w_xforms_invert",
+                    "bold_to_std_xfms",
+                    "bold_to_std_xfms_invert",
+                    "bold_to_t1w_xfms",
+                    "bold_to_t1w_xfms_invert",
                 ],
-                function=get_bold2std_and_t1w_xforms,
+                function=get_bold2std_and_t1w_xfms,
             ),
             name="get_native2space_transforms",
         )
@@ -176,8 +176,8 @@ def init_qc_report_wf(
                 ("t1w_mask", "reference_image"),
             ]),
             (get_native2space_transforms, warp_boldmask_to_t1w, [
-                ("bold_to_t1w_xforms", "transforms"),
-                ("bold_to_t1w_xforms_invert", "invert_transform_flags"),
+                ("bold_to_t1w_xfms", "transforms"),
+                ("bold_to_t1w_xfms_invert", "invert_transform_flags"),
             ]),
         ])
         # fmt:on
@@ -197,8 +197,8 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, warp_boldmask_to_mni, [("bold_mask", "input_image")]),
             (get_native2space_transforms, warp_boldmask_to_mni, [
-                ("bold_to_std_xforms", "transforms"),
-                ("bold_to_std_xforms_invert", "invert_transform_flags"),
+                ("bold_to_std_xfms", "transforms"),
+                ("bold_to_std_xfms_invert", "invert_transform_flags"),
             ]),
         ])
         # fmt:on
@@ -206,18 +206,18 @@ def init_qc_report_wf(
         # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
         # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
         # Given that xcp-d doesn't process native-space data, this transform will never be used.
-        get_mni_to_bold_xforms = pe.Node(
+        get_mni_to_bold_xfms = pe.Node(
             Function(
                 input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
                 output_names=["transform_list"],
-                function=get_std2bold_xforms,
+                function=get_std2bold_xfms,
             ),
             name="get_std2native_transform",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, get_mni_to_bold_xforms, [
+            (inputnode, get_mni_to_bold_xfms, [
                 ("name_source", "bold_file"),
                 ("template_to_t1w_xfm", "template_to_t1w_xfm"),
                 ("t1w_to_native_xfm", "t1w_to_native_xfm"),
@@ -249,15 +249,15 @@ def init_qc_report_wf(
 
         # Add the MNI152NLin2009cAsym --> MNI152NLin6Asym xform to the end of the
         # BOLD --> MNI152NLin6Asym xform list, because xforms are applied in reverse order.
-        add_xform_to_nlin6asym = pe.Node(
+        add_xfm_to_nlin6asym = pe.Node(
             niu.Merge(2),
-            name="add_xform_to_nlin6asym",
+            name="add_xfm_to_nlin6asym",
         )
-        add_xform_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
+        add_xfm_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
 
         # fmt:off
         workflow.connect([
-            (get_mni_to_bold_xforms, add_xform_to_nlin6asym, [("transform_list", "in1")]),
+            (get_mni_to_bold_xfms, add_xfm_to_nlin6asym, [("transform_list", "in1")]),
         ])
         # fmt:on
 
@@ -276,7 +276,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, warp_dseg_to_bold, [("boldref", "reference_image")]),
-            (add_xform_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
+            (add_xfm_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
         ])
         # fmt:on
 

@@ -57,11 +57,11 @@ def test_init_warp_surfaces_to_template_wf_01(
     wf.inputs.inputnode.lh_wm_surf = surface_files["fsLR_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["fsLR_rh_wm"]
     # transforms (only used if warp_to_standard is True)
-    wf.inputs.inputnode.t1w_to_template_xform = fmriprep_with_freesurfer_data[
-        "t1w_to_template_xform"
+    wf.inputs.inputnode.t1w_to_template_xfm = fmriprep_with_freesurfer_data[
+        "t1w_to_template_xfm"
     ]
-    wf.inputs.inputnode.template_to_t1w_xform = fmriprep_with_freesurfer_data[
-        "template_to_t1w_xform"
+    wf.inputs.inputnode.template_to_t1w_xfm = fmriprep_with_freesurfer_data[
+        "template_to_t1w_xfm"
     ]
 
     wf.base_dir = tmpdir
@@ -107,11 +107,11 @@ def test_init_warp_surfaces_to_template_wf_02(
     wf.inputs.inputnode.lh_wm_surf = surface_files["native_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["native_rh_wm"]
     # transforms (only used if warp_to_standard is True)
-    wf.inputs.inputnode.t1w_to_template_xform = fmriprep_with_freesurfer_data[
-        "t1w_to_template_xform"
+    wf.inputs.inputnode.t1w_to_template_xfm = fmriprep_with_freesurfer_data[
+        "t1w_to_template_xfm"
     ]
-    wf.inputs.inputnode.template_to_t1w_xform = fmriprep_with_freesurfer_data[
-        "template_to_t1w_xform"
+    wf.inputs.inputnode.template_to_t1w_xfm = fmriprep_with_freesurfer_data[
+        "template_to_t1w_xfm"
     ]
 
     wf.base_dir = tmpdir
