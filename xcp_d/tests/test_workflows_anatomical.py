@@ -9,18 +9,16 @@ from xcp_d.workflows import anatomical
 
 
 @pytest.fixture
-def surface_files(datasets, tmp_path_factory):
+def surface_files(datasets):
     """Collect real and fake surface files to test the anatomical workflow."""
     anat_dir = os.path.join(datasets["ds001419"], "sub-01", "anat")
 
-    files = {
+    return {
         "native_lh_pial": os.path.join(anat_dir, "sub-01_hemi-L_pial.surf.gii"),
         "native_lh_wm": os.path.join(anat_dir, "sub-01_hemi-L_smoothwm.surf.gii"),
         "native_rh_pial": os.path.join(anat_dir, "sub-01_hemi-R_pial.surf.gii"),
         "native_rh_wm": os.path.join(anat_dir, "sub-01_hemi-R_smoothwm.surf.gii"),
     }
-
-    return files
 
 
 def test_init_warp_surfaces_to_template_wf_01(
