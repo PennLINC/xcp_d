@@ -368,7 +368,7 @@ def init_subject_wf(
     )
 
     # determine the appropriate post-processing workflow
-    postproc_wf_function = init_postprocess_cifti_wf if cifti else init_postprocess_nifti_wf
+    init_postprocess_bold_wf = init_postprocess_cifti_wf if cifti else init_postprocess_nifti_wf
     preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
@@ -540,7 +540,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     if process_surfaces and shape_available:
         copy_inputs_to_outputs_wf = init_copy_inputs_to_outputs_wf(
-            name_source=preproc_files[0],
             output_dir=output_dir,
             name="copy_inputs_to_outputs_wf",
         )
@@ -682,7 +681,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 continue
 
             n_good_volumes_in_task.append(n_good_volumes_in_run)
-            bold_postproc_wf = postproc_wf_function(
+            postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
                 bandpass_filter=bandpass_filter,
                 high_pass=high_pass,
@@ -713,8 +712,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             # fmt:off
             workflow.connect([
-                (inputnode, bold_postproc_wf, [("t1w_mask", "inputnode.t1w_mask")]),
-                (warp_anats_to_template_wf, bold_postproc_wf, [
+                (inputnode, postprocess_bold_wf, [("t1w_mask", "inputnode.t1w_mask")]),
+                (warp_anats_to_template_wf, postprocess_bold_wf, [
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
                 ]),
@@ -724,7 +723,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             if not cifti:
                 # fmt:off
                 workflow.connect([
-                    (inputnode, bold_postproc_wf, [
+                    (inputnode, postprocess_bold_wf, [
                         ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
                     ]),
                 ])
@@ -734,7 +733,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 for io_name, node in merge_dict.items():
                     # fmt:off
                     workflow.connect([
-                        (bold_postproc_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
+                        (postprocess_bold_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
                     ])
                     # fmt:on
 
