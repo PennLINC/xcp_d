@@ -521,7 +521,9 @@ def init_warp_anats_to_template_wf(
             run_without_submitting=False,
         )
 
+        # fmt:off
         workflow.connect([(warp_t1w_to_template, ds_t1w_std, [("output_image", "in_file")])])
+        # fmt:on
 
         ds_t1w_seg_std = pe.Node(
             DerivativesDataSink(
@@ -551,9 +553,7 @@ def init_warp_anats_to_template_wf(
 
     if t2w_available:
         # fmt:off
-        workflow.connect([
-            (ds_t2w_std, outputnode, [("out_file", "t2w")]),
-        ])
+        workflow.connect([(ds_t2w_std, outputnode, [("out_file", "t2w")])])
         # fmt:on
 
     return workflow
