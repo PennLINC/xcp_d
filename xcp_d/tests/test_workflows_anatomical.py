@@ -88,9 +88,6 @@ def test_init_warp_surfaces_to_template_wf_02(
     """
     tmpdir = tmp_path_factory.mktemp("test_init_warp_surfaces_to_template_wf_02")
 
-    test_data_dir = get_test_data_path()
-    os.environ["FS_LICENSE"] = os.path.join(test_data_dir, "license.txt")
-
     subject_id = "01"
 
     wf = anatomical.init_warp_surfaces_to_template_wf(
