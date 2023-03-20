@@ -34,6 +34,7 @@ from xcp_d.utils.bids import (
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import flag_bad_run
 from xcp_d.workflows.anatomical import (
+    init_copy_inputs_to_outputs_wf,
     init_warp_anats_to_template_wf,
     init_warp_surfaces_to_template_wf,
 )
@@ -361,7 +362,7 @@ def init_subject_wf(
         layout=layout,
     )
 
-    surfaces_found, standard_space_surfaces, surface_data = collect_surface_data(
+    mesh_available, shape_available, standard_space_mesh, surface_data = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
     )
@@ -528,7 +529,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ])
         # fmt:on
 
-    if surfaces_found["mesh"] and dcan_qc:
+    if dcan_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             output_dir=output_dir,
@@ -537,13 +538,32 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             mem_gb=5,
         )
 
-    if process_surfaces and surfaces_found["mesh"] and cifti:
+    if process_surfaces and shape_available:
+        copy_inputs_to_outputs_wf = init_copy_inputs_to_outputs_wf(
+            name_source=preproc_files[0],
+            output_dir=output_dir,
+            name="copy_inputs_to_outputs_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, copy_inputs_to_outputs_wf, [
+                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
+                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
+                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
+                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
+                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
+                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
+            ]),
+        ])
+        # fmt:on
+
+    if process_surfaces and mesh_available and cifti:
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
-            standard_spaces_available=standard_space_surfaces,
-            surfaces_found=surfaces_found,
+            warp_to_standard=not standard_space_mesh,
             omp_nthreads=omp_nthreads,
             mem_gb=5,  # RF: need to change memory size
             name="warp_surfaces_to_template_wf",
@@ -557,12 +577,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
                 ("t1w_to_template_xform", "inputnode.t1w_to_template_xfm"),
                 ("template_to_t1w_xform", "inputnode.template_to_t1w_xfm"),
             ]),
@@ -584,7 +598,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])
             # fmt:on
 
-    elif surfaces_found["mesh"] and dcan_qc and not process_surfaces:
+    elif mesh_available and dcan_qc and not process_surfaces:
         # Use native-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
@@ -598,7 +612,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         ])
         # fmt:on
 
-    elif process_surfaces and not surfaces_found["mesh"]:
+    elif process_surfaces and not mesh_available:
         raise ValueError(
             "No surfaces found. "
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."

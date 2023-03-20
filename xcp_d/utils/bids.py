@@ -436,16 +436,16 @@ def collect_surface_data(layout, participant_label):
 
     Returns
     -------
+    mesh_available : :obj:`bool`
+        True if surface mesh files (pial and smoothwm) were found. False if they were not.
+    shape_available : :obj:`bool`
+        True if surface shape files (curv, sulc, and thickness) were found. False if they were not.
+    standard_space_mesh : :obj:`bool`
+        True if standard-space (fsLR) surface mesh files were found. False if they were not.
     surface_files : :obj:`dict`
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
-    standard_spaces : :obj:`dict`
-        True if standard-space surface files were found. False if they were not.
-    surface_files_found : :obj:`dict`
-        True if surface files were found at all. False if they were not.
     """
-    surface_files_found, standard_spaces = {}, {}
-
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
@@ -476,11 +476,7 @@ def collect_surface_data(layout, participant_label):
         },
     }
 
-    (
-        surface_files_found["mesh"],
-        standard_spaces["mesh"],
-        mesh_files,
-    ) = _find_standard_space_surfaces(
+    mesh_available, standard_space_mesh, mesh_files = _find_standard_space_surfaces(
         layout,
         participant_label,
         mesh_queries,
@@ -525,11 +521,7 @@ def collect_surface_data(layout, participant_label):
         },
     }
 
-    (
-        surface_files_found["shape"],
-        standard_spaces["shape"],
-        shape_files,
-    ) = _find_standard_space_surfaces(
+    shape_available, _, shape_files = _find_standard_space_surfaces(
         layout,
         participant_label,
         shape_queries,
@@ -542,7 +534,7 @@ def collect_surface_data(layout, participant_label):
         f"{yaml.dump(surface_files, default_flow_style=False, indent=4)}"
     )
 
-    return surface_files_found, standard_spaces, surface_files
+    return mesh_available, shape_available, standard_space_mesh, surface_files
 
 
 @fill_doc

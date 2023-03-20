@@ -18,7 +18,7 @@ from xcp_d.interfaces.ants import (
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
-from xcp_d.interfaces.utils import CleanExtension
+from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.interfaces.workbench import (  # MB,TM
     ApplyAffine,
     ApplyWarpfield,
@@ -301,18 +301,113 @@ def init_warp_anats_to_template_wf(
     return workflow
 
 
+def init_copy_inputs_to_outputs_wf(name_source, output_dir, name="copy_inputs_to_outputs_wf"):
+    """Copy files from the preprocessing derivatives to the output folder, with no modifications.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.anatomical import init_copy_inputs_to_outputs_wf
+
+            wf = init_copy_inputs_to_outputs_wf(
+                name_source="/path/to/file.nii.gz",
+                output_dir=".",
+                name="copy_inputs_to_outputs_wf",
+            )
+
+    Parameters
+    ----------
+    %(name_source)s
+    %(output_dir)s
+    %(name)s
+        Default is "copy_inputs_to_outputs_wf".
+
+    Inputs
+    ------
+    lh_sulcal_depth
+    rh_sulcal_depth
+    lh_sulcal_curv
+    rh_sulcal_curv
+    lh_cortical_thickness
+    rh_cortical_thickness
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                # required surfaces
+                "lh_sulcal_depth",
+                "rh_sulcal_depth",
+                "lh_sulcal_curv",
+                "rh_sulcal_curv",
+                "lh_cortical_thickness",
+                "rh_cortical_thickness",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    # Place the surfaces in a single node.
+    collect_files = pe.Node(
+        niu.Merge(10),
+        name="collect_files",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, collect_files, [
+            # fsLR-space surface shape files
+            ("lh_sulcal_depth", "in1"),
+            ("rh_sulcal_depth", "in2"),
+            ("lh_sulcal_curv", "in3"),
+            ("rh_sulcal_curv", "in4"),
+            ("lh_cortical_thickness", "in5"),
+            ("rh_cortical_thickness", "in6"),
+        ]),
+    ])
+    # fmt:on
+
+    filter_out_undefined = pe.Node(
+        FilterUndefined(),
+        name="filter_out_undefined",
+    )
+
+    # fmt:off
+    workflow.connect([(collect_files, filter_out_undefined, [("out", "inlist")])])
+    # fmt:on
+
+    ds_outputs = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+        ),
+        name="ds_outputs",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["in_file"],
+    )
+    ds_outputs.inputs.source_file = name_source
+
+    # fmt:off
+    workflow.connect([(filter_out_undefined, ds_outputs, [("outlist", "in_file")])])
+    # fmt:on
+
+    return workflow
+
+
 @fill_doc
 def init_warp_surfaces_to_template_wf(
     fmri_dir,
     subject_id,
     output_dir,
-    standard_spaces_available,
-    surfaces_found,
+    warp_to_standard,
     omp_nthreads,
     mem_gb,
     name="warp_surfaces_to_template_wf",
 ):
-    """Warp surfaces from fsnative to standard fsLR-32k space.
+    """Transform surfaces from native to standard fsLR-32k space.
 
     For the ``hcp`` and ``dcan`` preprocessing workflows,
     the fsLR-32k-space surfaces already exist and will simply be copied to the output directory.
@@ -322,7 +417,22 @@ def init_warp_surfaces_to_template_wf(
     The FreeSurfer derivatives must be indexed to grab sphere files needed to warp the surfaces.
     If Freesurfer derivatives are not available, then an error will be raised.
 
-    Shapes in standard space, meshes in native space
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.anatomical import init_warp_surfaces_to_template_wf
+
+            wf = init_warp_surfaces_to_template_wf(
+                fmri_dir=".",
+                subject_id="01",
+                output_dir=".",
+                warp_to_standard=True,
+                omp_nthreads=1,
+                mem_gb=0.1,
+                name="warp_surfaces_to_template_wf",
+            )
 
     Workflow Graph
         .. workflow::
@@ -331,132 +441,11 @@ def init_warp_surfaces_to_template_wf(
 
             from xcp_d.workflows.anatomical import init_warp_surfaces_to_template_wf
 
-            standard_spaces_available = {
-                "mesh": False,
-                "shape": True,
-            }
-            surfaces_found = {
-                "mesh": True,
-                "shape": True,
-            }
             wf = init_warp_surfaces_to_template_wf(
                 fmri_dir=".",
                 subject_id="01",
                 output_dir=".",
-                standard_spaces_available=standard_spaces_available,
-                surfaces_found=surfaces_found,
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="warp_surfaces_to_template_wf",
-            )
-
-    Everything in standard space
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
-
-            standard_spaces_available = {
-                "mesh": True,
-                "shape": True,
-            }
-            surfaces_found = {
-                "mesh": True,
-                "shape": True,
-            }
-            wf = init_warp_surfaces_to_template_wf(
-                fmri_dir=".",
-                subject_id="01",
-                output_dir=".",
-                standard_spaces_available=standard_spaces_available,
-                surfaces_found=surfaces_found,
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="warp_surfaces_to_template_wf",
-            )
-
-    Native-space meshes
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
-
-            standard_spaces_available = {
-                "mesh": False,
-                "shape": True,
-            }
-            surfaces_found = {
-                "mesh": True,
-                "shape": True,
-            }
-            wf = init_warp_surfaces_to_template_wf(
-                fmri_dir=".",
-                subject_id="01",
-                output_dir=".",
-                standard_spaces_available=standard_spaces_available,
-                surfaces_found=surfaces_found,
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="warp_surfaces_to_template_wf",
-            )
-
-    Nothing in standard space
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
-
-            standard_spaces_available = {
-                "mesh": False,
-                "shape": False,
-            }
-            surfaces_found = {
-                "mesh": True,
-                "shape": True,
-            }
-            wf = init_warp_surfaces_to_template_wf(
-                fmri_dir=".",
-                subject_id="01",
-                output_dir=".",
-                standard_spaces_available=standard_spaces_available,
-                surfaces_found=surfaces_found,
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="warp_surfaces_to_template_wf",
-            )
-
-    Meshes in standard space, no shapes
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflow.anatomical import init_warp_surfaces_to_template_wf
-
-            standard_spaces_available = {
-                "mesh": True,
-                "shape": False,
-            }
-            surfaces_found = {
-                "mesh": True,
-                "shape": False,
-            }
-            wf = init_warp_surfaces_to_template_wf(
-                fmri_dir=".",
-                subject_id="01",
-                output_dir=".",
-                standard_spaces_available=standard_spaces_available,
-                surfaces_found=surfaces_found,
+                warp_to_standard=False,
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="warp_surfaces_to_template_wf",
@@ -470,9 +459,6 @@ def init_warp_surfaces_to_template_wf(
     warp_to_standard : :obj:`bool`
         Whether to warp native-space surface files to standard space or not.
         If False, the files are assumed to be in standard space already.
-    shapes_available : :obj:`bool`
-        True if shape files (sulcal depth, sulcal curvature, and cortical thickness)
-        are available. False if not.
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
@@ -508,12 +494,6 @@ def init_warp_surfaces_to_template_wf(
 
         If ``warp_to_standard`` is True, then it is also warped to standard space and used
         to generate HCP-style midthickness, inflated, and veryinflated surfaces.
-    lh_sulcal_depth, rh_sulcal_depth : str or None
-        Should only be a string if ``shapes_available`` is True.
-    lh_sulcal_curv, rh_sulcal_curv : str or None
-        Should only be a string if ``shapes_available`` is True.
-    lh_cortical_thickness, rh_cortical_thickness : str or None
-        Should only be a string if ``shapes_available`` is True.
 
     Outputs
     -------
@@ -537,18 +517,11 @@ def init_warp_surfaces_to_template_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                # surface mesh files
+                # required surfaces
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                # optional surface shape files
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
                 # transforms (only used if warp_to_standard is True)
                 "t1w_to_template_xfm",
                 "template_to_t1w_xfm",
@@ -570,22 +543,14 @@ def init_warp_surfaces_to_template_wf(
         name="outputnode",
     )
 
-    apply_warps_to = {}
-    if standard_spaces_available["mesh"]:
-        # Run HCP-generation workflow, then pass along to datasink/outputnode.
-        apply_warps_to["mesh"] = False
-    elif surfaces_found["mesh"] and not standard_spaces_available["mesh"]:
-        # Run warp workflows, apply to mesh files, and generate HCP morphometry files.
-        apply_warps_to["mesh"] = True
-
-    if surfaces_found["shape"] and not standard_spaces_available["shape"]:
-        # Run warp workflows, apply to shape files.
-        apply_warps_to["shape"] = True
-    elif standard_spaces_available["shape"] or not surfaces_found["shape"]:
-        apply_warps_to["shape"] = False
-
-    # Prepare to warp (at least some) surfaces to standard space
-    if apply_warps_to["mesh"] or apply_warps_to["shape"]:
+    if warp_to_standard:
+        # Warp the surfaces to space-fsLR, den-32k.
+        # We want the following output surfaces:
+        # 1. Pial
+        # 2. Smoothed white matter
+        # 3. HCP-style midthickness
+        # 4. HCP-style inflated
+        # 5. HCP-style very-inflated
         get_freesurfer_dir_node = pe.Node(
             Function(
                 function=get_freesurfer_dir,
@@ -612,65 +577,35 @@ def init_warp_surfaces_to_template_wf(
         ])
         # fmt:on
 
+    # TODO: It would be nice to replace this for loop with MapNodes or iterables some day.
     for hemi in ["L", "R"]:
         hemi_label = f"{hemi.lower()}h"
 
-        # To collect the standard-space pial and wm surfaces for the outputnode
-        standard_space_meshes = pe.Node(
-            niu.IdentityInterface(fields=["pial_surf", "wm_surf"]),
-            name=f"{hemi_label}_standard_space_meshes",
-        )
-
-        standard_space_surfaces = pe.Node(
-            niu.Merge(5),  # maximum number of surfaces per hemisphere
-            name=f"standard_space_surfaces_{hemi_label}",
-        )
-
-        # Place the surfaces in a single node that will feed into the datasink.
-        # Used for filenames
-        incoming_surfaces = pe.Node(
-            niu.Merge(5),
-            name=f"incoming_surfaces_{hemi_label}",
+        # Place the surfaces in a single node.
+        collect_surfaces = pe.Node(
+            niu.Merge(2),
+            name=f"collect_surfaces_{hemi_label}",
         )
 
         # fmt:off
+        # NOTE: Must match order of split_up_surfaces_fsLR_32k.
         workflow.connect([
-            (inputnode, incoming_surfaces, [
+            (inputnode, collect_surfaces, [
                 (f"{hemi_label}_pial_surf", "in1"),
                 (f"{hemi_label}_wm_surf", "in2"),
-                (f"{hemi_label}_sulcal_depth", "in3"),
-                (f"{hemi_label}_sulcal_curv", "in4"),
-                (f"{hemi_label}_cortical_thickness", "in5"),
             ]),
         ])
         # fmt:on
 
-        if not apply_warps_to["mesh"]:
-            # fmt:off
-            workflow.connect([
-                (inputnode, standard_space_meshes, [
-                    (f"{hemi_label}_pial_surf", "pial_surf"),
-                    (f"{hemi_label}_wm_surf", "wm_surf"),
-                ]),
-            ])
-            # fmt:on
+        # Generate and output HCP-style surface files
+        generate_hcp_surfaces_wf = init_generate_hcp_surfaces_wf(
+            output_dir=output_dir,
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+            name=f"{hemi_label}_generate_hcp_surfaces_wf",
+        )
 
-        if not apply_warps_to["mesh"] and not apply_warps_to["shape"]:
-            # All mesh and shape files get passed on to the datasink, unmodified.
-            # fmt:off
-            workflow.connect([
-                (inputnode, standard_space_surfaces, [
-                    (f"{hemi_label}_pial_surf", "in1"),
-                    (f"{hemi_label}_wm_surf", "in2"),
-                    (f"{hemi_label}_sulcal_depth", "in3"),
-                    (f"{hemi_label}_sulcal_curv", "in4"),
-                    (f"{hemi_label}_cortical_thickness", "in5"),
-                ]),
-            ])
-            # fmt:on
-
-        else:
-            # Some warps must be applied, so prepare the warping workflows.
+        if warp_to_standard:
             apply_transforms_wf = init_warp_one_hemisphere_wf(
                 hemisphere=hemi,
                 mem_gb=mem_gb,
@@ -689,146 +624,57 @@ def init_warp_surfaces_to_template_wf(
                     ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
                     ("outputnode.world_xform", "inputnode.world_xform"),
                 ]),
-            ])
-            # fmt:on
-
-            if apply_warps_to["mesh"] and not apply_warps_to["shape"]:
-                # Warp mesh files and pass shape files along to datasink
-                splits = [1, 1]
-            elif apply_warps_to["shape"] and not apply_warps_to["mesh"]:
-                # Warp shape files and pass mesh files along to datasink
-                splits = [1, 1, 1]
-            else:
-                # Warp both mesh and shape files
-                splits = [1, 1, 1, 1, 1]
-
-            n_native_to_warp = len(splits)
-
-            # Place the surfaces in a single node that will feed into the transform workflow.
-            collect_surfaces_to_warp = pe.Node(
-                niu.Merge(n_native_to_warp),
-                name=f"collect_surfaces_to_warp_{hemi_label}",
-            )
-
-            # fmt:off
-            workflow.connect([
-                (collect_surfaces_to_warp, apply_transforms_wf, [
+                (collect_surfaces, apply_transforms_wf, [
                     ("out", "inputnode.hemi_files"),
                 ]),
             ])
             # fmt:on
 
-            # Split up the surfaces
-            # NOTE: Must match order of collect_surfaces
-            split_up_warped_surfaces = pe.Node(
-                niu.Split(
-                    splits=splits,
-                    squeeze=True,
-                ),
-                name=f"split_up_warped_surfaces_{hemi_label}",
-            )
+        # Split up the surfaces
+        # NOTE: Must match order of collect_surfaces
+        split_up_surfaces_fsLR_32k = pe.Node(
+            niu.Split(
+                splits=[
+                    1,  # pial
+                    1,  # wm
+                ],
+                squeeze=True,
+            ),
+            name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
+        )
 
-            if apply_warps_to["mesh"] and not apply_warps_to["shape"]:
-                # Warp mesh files, generate morphometry files,
-                # and pass shape files along to datasink
-                # NOTE: Must match order of split_up_surfaces_fsLR_32k.
-                # fmt:off
-                workflow.connect([
-                    (inputnode, standard_space_surfaces, [
-                        (f"{hemi_label}_sulcal_depth", "in3"),
-                        (f"{hemi_label}_sulcal_curv", "in4"),
-                        (f"{hemi_label}_cortical_thickness", "in5"),
-                    ]),
-                    (inputnode, collect_surfaces_to_warp, [
-                        (f"{hemi_label}_pial_surf", "in1"),
-                        (f"{hemi_label}_wm_surf", "in2"),
-                    ]),
-                    (split_up_warped_surfaces, standard_space_meshes, [
-                        ("out1", "pial_surf"),
-                        ("out2", "wm_surf"),
-                    ]),
-                    (split_up_warped_surfaces, standard_space_surfaces, [
-                        ("out1", "in1"),
-                        ("out2", "in2"),
-                    ]),
-                ])
-                # fmt:on
-
-            elif apply_warps_to["shape"] and not apply_warps_to["mesh"]:
-                # Warp shape files and pass mesh files along to datasink
-                # fmt:off
-                workflow.connect([
-                    (inputnode, standard_space_meshes, [
-                        (f"{hemi_label}_pial_surf", "pial_surf"),
-                        (f"{hemi_label}_wm_surf", "wm_surf"),
-                    ]),
-                    (inputnode, collect_surfaces_to_warp, [
-                        (f"{hemi_label}_sulcal_depth", "in1"),
-                        (f"{hemi_label}_sulcal_curv", "in2"),
-                        (f"{hemi_label}_cortical_thickness", "in3"),
-                    ]),
-                    (split_up_warped_surfaces, standard_space_surfaces, [
-                        ("out1", "in3"),
-                        ("out2", "in4"),
-                        ("out3", "in5"),
-                    ]),
-                    (inputnode, standard_space_surfaces, [
-                        (f"{hemi_label}_pial_surf", "in1"),
-                        (f"{hemi_label}_wm_surf", "in2"),
-                    ]),
-                ])
-                # fmt:on
-
-            else:
-                # Warp both mesh and shape files
-                # fmt:off
-                workflow.connect([
-                    (inputnode, collect_surfaces_to_warp, [
-                        (f"{hemi_label}_pial_surf", "in1"),
-                        (f"{hemi_label}_wm_surf", "in2"),
-                        (f"{hemi_label}_sulcal_depth", "in3"),
-                        (f"{hemi_label}_sulcal_curv", "in4"),
-                        (f"{hemi_label}_cortical_thickness", "in5"),
-                    ]),
-                    (split_up_warped_surfaces, standard_space_meshes, [
-                        ("out1", "pial_surf"),
-                        ("out2", "wm_surf"),
-                    ]),
-                    (split_up_warped_surfaces, standard_space_surfaces, [
-                        ("out1", "in1"),
-                        ("out2", "in2"),
-                        ("out3", "in3"),
-                        ("out4", "in4"),
-                        ("out5", "in5"),
-                    ]),
-                ])
-                # fmt:on
-
-            clean_extensions_for_datasink = pe.MapNode(
-                CleanExtension(),
-                name=f"clean_extensions_for_datasink_{hemi_label}",
-                iterfield=["in_file"],
-            )
-
+        if warp_to_standard:
             # fmt:off
             workflow.connect([
-                (apply_transforms_wf, clean_extensions_for_datasink, [
-                    ("outputnode.warped_hemi_files", "in_file"),
-                ]),
-                (clean_extensions_for_datasink, split_up_warped_surfaces, [
-                    ("out_file", "inlist"),
+                (apply_transforms_wf, split_up_surfaces_fsLR_32k, [
+                    ("outputnode.warped_hemi_files", "inlist"),
                 ]),
             ])
             # fmt:on
+        else:
+            # fmt:off
+            workflow.connect([
+                (collect_surfaces, split_up_surfaces_fsLR_32k, [("out", "inlist")]),
+            ])
+            # fmt:on
+
+        # fmt:off
+        workflow.connect([
+            (split_up_surfaces_fsLR_32k, outputnode, [
+                ("out1", f"{hemi_label}_pial_surf"),
+                ("out2", f"{hemi_label}_wm_surf"),
+            ]),
+        ])
+        # fmt:on
 
         ds_standard_space_surfaces = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                keep_extension=False,
                 space="fsLR",
                 den="32k",
+                extension=".surf.gii",  # the extension is taken from the in_file by default
             ),
-            name=f"ds_warped_standard_space_surfaces_{hemi_label}",
+            name=f"ds_standard_space_surfaces_{hemi_label}",
             run_without_submitting=True,
             mem_gb=1,
             iterfield=["in_file", "source_file"],
@@ -836,38 +682,36 @@ def init_warp_surfaces_to_template_wf(
 
         # fmt:off
         workflow.connect([
-            (incoming_surfaces, ds_standard_space_surfaces, [
-                ("out", "source_file"),
-            ]),
-            (standard_space_surfaces, ds_standard_space_surfaces, [
-                ("out_file", "in_file"),
-            ]),
-            (standard_space_meshes, outputnode, [
-                ("pial_surf", f"{hemi_label}_pial_surf"),
-                ("wm_surf", f"{hemi_label}_wm_surf"),
-            ]),
+            (collect_surfaces, ds_standard_space_surfaces, [("out", "source_file")]),
         ])
         # fmt:on
 
-        # Finally, generate and output HCP-style surface files
-        generate_hcp_surfaces_wf = init_generate_hcp_surfaces_wf(
-            output_dir=output_dir,
-            mem_gb=mem_gb,
-            omp_nthreads=omp_nthreads,
-            name=f"{hemi_label}_generate_hcp_surfaces_wf",
-        )
+        if warp_to_standard:
+            # fmt:off
+            workflow.connect([
+                (apply_transforms_wf, ds_standard_space_surfaces, [
+                    ("outputnode.warped_hemi_files", "in_file"),
+                ]),
+            ])
+            # fmt:on
+        else:
+            # fmt:off
+            workflow.connect([
+                (collect_surfaces, ds_standard_space_surfaces, [("out", "in_file")]),
+            ])
+            # fmt:on
 
-        # fmt:off
-        workflow.connect([
-            (inputnode, generate_hcp_surfaces_wf, [
-                (f"{hemi_label}_pial_surf", "inputnode.name_source"),
-            ]),
-            (standard_space_meshes, generate_hcp_surfaces_wf, [
-                ("pial_surf", "inputnode.pial_surf"),
-                ("wm_surf", "inputnode.wm_surf"),
-            ]),
-        ])
-        # fmt:on
+    # fmt:off
+    workflow.connect([
+        (inputnode, generate_hcp_surfaces_wf, [
+            (f"{hemi_label}_pial_surf", "inputnode.name_source"),
+        ]),
+        (split_up_surfaces_fsLR_32k, generate_hcp_surfaces_wf, [
+            ("out1", "inputnode.pial_surf"),
+            ("out2", "inputnode.wm_surf"),
+        ]),
+    ])
+    # fmt:on
 
     return workflow
 
