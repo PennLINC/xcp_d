@@ -308,6 +308,7 @@ def init_warp_anats_to_template_wf(
             :simple_form: yes
 
             from xcp_d.workflows.anatomical import init_warp_anats_to_template_wf
+
             wf = init_warp_anats_to_template_wf(
                 output_dir=".",
                 input_type="fmriprep",
@@ -852,17 +853,17 @@ def init_warp_surfaces_to_template_wf(
             ])
             # fmt:on
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, generate_hcp_surfaces_wf, [
-            (f"{hemi_label}_pial_surf", "inputnode.name_source"),
-        ]),
-        (split_up_surfaces_fsLR_32k, generate_hcp_surfaces_wf, [
-            ("out1", "inputnode.pial_surf"),
-            ("out2", "inputnode.wm_surf"),
-        ]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, generate_hcp_surfaces_wf, [
+                (f"{hemi_label}_pial_surf", "inputnode.name_source"),
+            ]),
+            (split_up_surfaces_fsLR_32k, generate_hcp_surfaces_wf, [
+                ("out1", "inputnode.pial_surf"),
+                ("out2", "inputnode.wm_surf"),
+            ]),
+        ])
+        # fmt:on
 
     return workflow
 
