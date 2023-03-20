@@ -410,13 +410,7 @@ def init_warp_surfaces_to_template_wf(
 ):
     """Transform surfaces from native to standard fsLR-32k space.
 
-    For the ``hcp`` and ``dcan`` preprocessing workflows,
-    the fsLR-32k-space surfaces already exist and will simply be copied to the output directory.
-
-    For other preprocessing workflows, the native space surfaces are present in the preprocessed
-    derivatives directory (if Freesurfer was run), and must be transformed to standard space.
-    The FreeSurfer derivatives must be indexed to grab sphere files needed to warp the surfaces.
-    If Freesurfer derivatives are not available, then an error will be raised.
+    Also generate HCP-style midthickness, inflated, and very-inflated surface files.
 
     If mesh files are in fsnative space.
         .. workflow::
