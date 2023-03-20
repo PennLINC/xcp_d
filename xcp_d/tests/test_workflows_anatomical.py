@@ -132,7 +132,7 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
 
     t1w_to_template_xfm = fmriprep_with_freesurfer_data["t1w_to_template_xfm"]
     t1w = fmriprep_with_freesurfer_data["t1w"]
-    t1seg = fmriprep_with_freesurfer_data["t1seg"]
+    t1w_seg = fmriprep_with_freesurfer_data["t1w_seg"]
     t2w = os.path.join(tmpdir, "sub-01_desc-preproc_T2w.nii.gz")  # pretend t1w is t2w
     shutil.copyfile(t1w, t2w)
 
@@ -147,7 +147,7 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
     )
     wf.inputs.inputnode.t1w_to_template_xfm = t1w_to_template_xfm
     wf.inputs.inputnode.t1w = t1w
-    wf.inputs.inputnode.t1seg = t1seg
+    wf.inputs.inputnode.t1w_seg = t1w_seg
     wf.inputs.inputnode.t2w = t2w
     wf.base_dir = tmpdir
     wf_res = wf.run()

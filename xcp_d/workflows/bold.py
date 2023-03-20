@@ -172,7 +172,7 @@ def init_postprocess_nifti_wf(
     t2w
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
-    t1seg
+    t1w_seg
     t1w_mask
         T1w brain mask, used to estimate head/brain radius.
         Fed from the subject workflow.
@@ -219,7 +219,7 @@ def init_postprocess_nifti_wf(
                 "template_to_t1w_xfm",
                 "t1w",
                 "t2w",
-                "t1seg",
+                "t1w_seg",
                 "t1w_mask",
                 "fmriprep_confounds_file",
                 "t1w_to_native_xfm",
