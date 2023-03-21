@@ -336,7 +336,8 @@ def collect_data(
             else:
                 subj_data[field] = None
 
-    LOGGER.IMPORTANT(
+    LOGGER.log(
+        25,
         f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}"
     )
 
@@ -531,9 +532,12 @@ def collect_surface_data(layout, participant_label):
 
     surface_files = {**mesh_files, **shape_files}
 
-    LOGGER.IMPORTANT(
-        f"Collected surface data:\n"
-        f"{yaml.dump(surface_files, default_flow_style=False, indent=4)}"
+    LOGGER.log(
+        25,
+        (
+            f"Collected surface data:\n"
+            f"{yaml.dump(surface_files, default_flow_style=False, indent=4)}"
+        ),
     )
 
     return mesh_available, shape_available, standard_space_mesh, surface_files
@@ -610,9 +614,12 @@ def collect_run_data(layout, input_type, bold_file, cifti):
             extension=[".nii", ".nii.gz"],
         )
 
-    LOGGER.IMPORTANT(
-        f"Collected run data for {bold_file}:\n"
-        f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
+    LOGGER.log(
+        25,
+        (
+            f"Collected run data for {bold_file}:\n"
+            f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
+        ),
     )
 
     for k, v in run_data.items():
