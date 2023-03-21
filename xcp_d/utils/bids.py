@@ -336,10 +336,7 @@ def collect_data(
             else:
                 subj_data[field] = None
 
-    LOGGER.log(
-        25,
-        f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}"
-    )
+    LOGGER.log(25, f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 
     return layout, subj_data
 
