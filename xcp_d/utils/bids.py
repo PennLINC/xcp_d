@@ -308,7 +308,7 @@ def collect_data(
         queries["bold"]["resolution"] = resolutions[0]
 
     if len(densities) > 1:
-        queries["bold"]["density"] = densities[0]
+        queries["bold"]["den"] = densities[0]
 
     subj_data = {
         dtype: sorted(
@@ -365,7 +365,7 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
             subject=participant_label,
             datatype="anat",
             space="fsLR",
-            density="32k",
+            den="32k",
             **query,
         )
         if len(temp_files) == 0:
@@ -378,7 +378,7 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
     if standard_space_surfaces:
         query_extras = {
             "space": "fsLR",
-            "density": "32k",
+            "den": "32k",
         }
     else:
         query_extras = {
