@@ -365,7 +365,7 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
             subject=participant_label,
             datatype="anat",
             space="fsLR",
-            res="32k",
+            density="32k",
             **query,
         )
         if len(temp_files) == 0:
@@ -378,7 +378,7 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
     if standard_space_surfaces:
         query_extras = {
             "space": "fsLR",
-            "res": "32k",
+            "density": "32k",
         }
     else:
         query_extras = {
