@@ -207,14 +207,14 @@ def init_postprocess_anat_wf(
         )
 
     if process_surfaces and shape_available:
-        copy_inputs_to_outputs_wf = init_copy_inputs_to_outputs_wf(
+        copy_shapes_to_datasink_wf = init_copy_inputs_to_outputs_wf(
             output_dir=output_dir,
-            name="copy_inputs_to_outputs_wf",
+            name="copy_shapes_to_datasink_wf",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, copy_inputs_to_outputs_wf, [
+            (inputnode, copy_shapes_to_datasink_wf, [
                 ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
                 ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
                 ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
