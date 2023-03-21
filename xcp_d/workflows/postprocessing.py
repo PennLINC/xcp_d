@@ -162,6 +162,7 @@ def init_prepare_confounds_wf(
         name="inputnode",
     )
     inputnode.inputs.dummy_scans = dummy_scans
+    inputnode.inputs.custom_confounds_file = custom_confounds_file
 
     outputnode = pe.Node(
         niu.IdentityInterface(
