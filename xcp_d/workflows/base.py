@@ -221,6 +221,7 @@ def init_xcpd_wf(
             dcan_qc=dcan_qc,
             input_type=input_type,
             min_coverage=min_coverage,
+            min_time=min_time,
             combineruns=combineruns,
             name=f"single_subject_{subject_id}_wf",
         )
