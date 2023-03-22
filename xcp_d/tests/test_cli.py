@@ -170,6 +170,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         "-f 100 "
         "--nuisance-regressors 27P "
         "--disable-bandpass-filter "
+        "--min-time 20 "
         "--dcan-qc "
         "--dummy-scans 1 "
         f"--custom_confounds={custom_confounds_dir}"
