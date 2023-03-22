@@ -737,7 +737,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 dcan_qc=dcan_qc,
                 name=f"concatenate_entity_set_{ent_set}_wf",
             )
-            concatenate_data_wf.inputs.inputnode.head_radius = head_radius
 
             # fmt:off
             workflow.connect([
