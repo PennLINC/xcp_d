@@ -325,20 +325,14 @@ def describe_censoring(
             "for denoising."
         )
 
-    if isinstance(head_radius, float):
-        fd_substr = f"{head_radius} mm"
-    else:
-        fd_substr = "estimated from the preprocessed brain mask"
-
-    desc = (
+    return (
         f"In order to identify high-motion outlier volumes, {filter_str}"
         "framewise displacement was calculated using the formula from @power_fd_dvars, "
-        f"with a head radius {fd_substr}. "
+        f"with a head radius of {head_radius} mm. "
         f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
         f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of later "
         f"censoring [@power_fd_dvars]. {filter_post_str}"
     )
-    return desc
 
 
 @fill_doc
