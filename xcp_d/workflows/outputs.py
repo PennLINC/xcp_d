@@ -6,8 +6,108 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
+
+
+@fill_doc
+def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf"):
+    """Copy files from the preprocessing derivatives to the output folder, with no modifications.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.outputs import init_copy_inputs_to_outputs_wf
+
+            wf = init_copy_inputs_to_outputs_wf(
+                output_dir=".",
+                name="copy_inputs_to_outputs_wf",
+            )
+
+    Parameters
+    ----------
+    %(output_dir)s
+    %(name)s
+        Default is "copy_inputs_to_outputs_wf".
+
+    Inputs
+    ------
+    lh_sulcal_depth
+    rh_sulcal_depth
+    lh_sulcal_curv
+    rh_sulcal_curv
+    lh_cortical_thickness
+    rh_cortical_thickness
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                # required surfaces
+                "lh_sulcal_depth",
+                "rh_sulcal_depth",
+                "lh_sulcal_curv",
+                "rh_sulcal_curv",
+                "lh_cortical_thickness",
+                "rh_cortical_thickness",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    # Place the surfaces in a single node.
+    collect_files = pe.Node(
+        niu.Merge(10),
+        name="collect_files",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, collect_files, [
+            # fsLR-space surface shape files
+            ("lh_sulcal_depth", "in1"),
+            ("rh_sulcal_depth", "in2"),
+            ("lh_sulcal_curv", "in3"),
+            ("rh_sulcal_curv", "in4"),
+            ("lh_cortical_thickness", "in5"),
+            ("rh_cortical_thickness", "in6"),
+        ]),
+    ])
+    # fmt:on
+
+    filter_out_undefined = pe.Node(
+        FilterUndefined(),
+        name="filter_out_undefined",
+    )
+
+    # fmt:off
+    workflow.connect([(collect_files, filter_out_undefined, [("out", "inlist")])])
+    # fmt:on
+
+    ds_outputs = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+        ),
+        name="ds_outputs",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["in_file", "source_file"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (filter_out_undefined, ds_outputs, [
+            ("outlist", "in_file"),
+            ("outlist", "source_file"),
+        ]),
+    ])
+    # fmt:on
+
+    return workflow
 
 
 @fill_doc

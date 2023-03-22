@@ -1,5 +1,6 @@
 """Command-line interface tests."""
 import os
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -80,6 +81,17 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
+
+    # Copy shape files to test ability to transfer them to XCP-D derivatives.
+    anat_dir = os.path.join(data_dir, "sub-01/anat")
+    for hemi in ["L", "R"]:
+        base_file = os.path.join(anat_dir, f"sub-01_hemi-{hemi}_smoothwm.surf.gii")
+        for shape in ["curv", "sulc", "thickness"]:
+            out_file = os.path.join(
+                anat_dir,
+                f"sub-01_space-fsLR_den-32k_hemi-{hemi}_{shape}.shape.gii",
+            )
+            shutil.copyfile(base_file, out_file)
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")

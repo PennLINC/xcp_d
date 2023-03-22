@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from xcp_d.interfaces.prepostcleaning import FlagMotionOutliers
+from xcp_d.interfaces.censoring import FlagMotionOutliers
 
 
 def test_fd_interface_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):

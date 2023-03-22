@@ -140,8 +140,9 @@ class _ApplyAffineInputSpec(CommandLineInputSpec):
     out_file = File(
         argstr="%s",
         name_source="in_file",
-        name_template="%s-MNIaffine.surf.gii",
-        keep_extension=False,
+        name_template="MNIAffine_%s.gii",
+        keep_extension=True,
+        extensions=[".surf.gii", ".shape.gii"],
         position=2,
     )
 
@@ -200,8 +201,8 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
     out_file = File(
         argstr="%s",
         name_source="in_file",
-        name_template="%s-MNIwarped.surf.gii",
-        keep_extension=False,
+        name_template="MNIwarped_%s.gii",
+        extensions=[".surf.gii", ".shape.gii"],
         position=2,
     )
 
@@ -645,9 +646,10 @@ class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
 
     out_file = File(
         name_source=["in_file"],
-        name_template="resampled_%s.surf.gii",
+        name_template="resampled_%s.gii",
         keep_extension=True,
-        argstr=" %s",
+        extensions=[".shape.gii", ".surf.gii"],
+        argstr="%s",
         position=4,
         desc="The gifti output, either left and right",
     )

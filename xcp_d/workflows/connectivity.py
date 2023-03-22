@@ -14,7 +14,7 @@ from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcel
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import cast_cifti_to_int16
-from xcp_d.utils.utils import get_std2bold_xforms
+from xcp_d.utils.utils import get_std2bold_xfms
 
 
 @fill_doc
@@ -140,7 +140,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
         Function(
             input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
             output_names=["transformfile"],
-            function=get_std2bold_xforms,
+            function=get_std2bold_xfms,
         ),
         name="get_transforms_to_bold_space",
     )

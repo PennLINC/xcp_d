@@ -11,7 +11,7 @@ import os.path as op
 import nibabel as nb
 import pandas as pd
 
-from xcp_d.interfaces.prepostcleaning import RemoveDummyVolumes
+from xcp_d.interfaces.censoring import RemoveDummyVolumes
 
 
 def test_RemoveDummyVolumes_nifti(data_dir, tmp_path_factory):

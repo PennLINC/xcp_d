@@ -62,7 +62,7 @@ xcp_d-combineqc
    xcp_d.interfaces.execsummary
    xcp_d.interfaces.nilearn
    xcp_d.interfaces.plotting
-   xcp_d.interfaces.prepostcleaning
+   xcp_d.interfaces.censoring
    xcp_d.interfaces.report_core
    xcp_d.interfaces.report
    xcp_d.interfaces.restingstate

@@ -11,7 +11,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
-from xcp_d.interfaces.prepostcleaning import ConvertTo32
+from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import check_binary_mask
@@ -173,7 +173,7 @@ def init_postprocess_nifti_wf(
     t2w
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
-    t1seg
+    t1w_seg
     t1w_mask
         T1w brain mask, used for transforms in the QC report workflow.
         Fed from the subject workflow.
@@ -220,7 +220,7 @@ def init_postprocess_nifti_wf(
                 "template_to_t1w_xfm",
                 "t1w",
                 "t2w",
-                "t1seg",
+                "t1w_seg",
                 "t1w_mask",
                 "fmriprep_confounds_file",
                 "t1w_to_native_xfm",
