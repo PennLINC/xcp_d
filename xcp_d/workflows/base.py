@@ -731,6 +731,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 TR=TR,
+                head_radius=head_radius,
                 smoothing=smoothing,
                 cifti=cifti,
                 dcan_qc=dcan_qc,
