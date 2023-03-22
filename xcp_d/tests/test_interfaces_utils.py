@@ -4,7 +4,7 @@ import os
 import nibabel as nb
 import numpy as np
 
-from xcp_d.interfaces.prepostcleaning import ConvertTo32
+from xcp_d.interfaces.censoring import ConvertTo32
 
 
 def test_conversion_to_32bit_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
