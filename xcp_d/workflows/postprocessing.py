@@ -26,7 +26,7 @@ from xcp_d.utils.confounds import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
-from xcp_d.utils.utils import estimate_brain_radius, fwhm2sigma
+from xcp_d.utils.utils import fwhm2sigma
 
 
 @fill_doc
@@ -67,7 +67,7 @@ def init_prepare_confounds_wf(
                 band_stop_min=12,
                 band_stop_max=20,
                 motion_filter_order=4,
-                head_radius="auto",
+                head_radius=70,
                 fd_thresh=0.2,
                 custom_confounds_file=None,
                 mem_gb=0.1,
@@ -86,6 +86,7 @@ def init_prepare_confounds_wf(
     %(band_stop_max)s
     %(motion_filter_order)s
     %(head_radius)s
+        This will already be estimated before this workflow.
     %(fd_thresh)s
     %(custom_confounds_file)s
     %(mem_gb)s
@@ -99,7 +100,6 @@ def init_prepare_confounds_wf(
     preprocessed_bold : :obj:`str`
     %(fmriprep_confounds_file)s
     %(custom_confounds_file)s
-    t1w_mask : :obj:`str`
     %(dummy_scans)s
         Set from the parameter.
 
@@ -111,8 +111,6 @@ def init_prepare_confounds_wf(
         The selected confounds, potentially including custom confounds, after dummy scan removal.
     %(dummy_scans)s
         If originally set to "auto", this output will have the actual number of dummy volumes.
-    %(head_radius)s
-        If originally set to "auto", this output will have the estimated head radius.
     %(filtered_motion)s
     filtered_motion_metadata : :obj:`dict`
     %(temporal_mask)s
@@ -155,7 +153,6 @@ def init_prepare_confounds_wf(
                 "preprocessed_bold",
                 "fmriprep_confounds_file",
                 "custom_confounds_file",
-                "t1w_mask",
                 "dummy_scans",
             ],
         ),
@@ -171,7 +168,6 @@ def init_prepare_confounds_wf(
                 "fmriprep_confounds_file",  # used to calculate motion in concatenation workflow
                 "confounds_file",
                 "dummy_scans",
-                "head_radius",
                 "filtered_motion",
                 "filtered_motion_metadata",
                 "temporal_mask",
@@ -205,23 +201,6 @@ def init_prepare_confounds_wf(
     ])
     # fmt:on
 
-    determine_head_radius = pe.Node(
-        niu.Function(
-            function=estimate_brain_radius,
-            input_names=["mask_file", "head_radius"],
-            output_names=["head_radius"],
-        ),
-        name="determine_head_radius",
-    )
-    determine_head_radius.inputs.head_radius = head_radius
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, determine_head_radius, [("t1w_mask", "mask_file")]),
-        (determine_head_radius, outputnode, [("head_radius", "head_radius")]),
-    ])
-    # fmt:on
-
     flag_motion_outliers = pe.Node(
         FlagMotionOutliers(
             TR=TR,
@@ -230,6 +209,7 @@ def init_prepare_confounds_wf(
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
             fd_thresh=fd_thresh,
+            head_radius=head_radius,
         ),
         name="flag_motion_outliers",
         mem_gb=mem_gb,
@@ -238,7 +218,6 @@ def init_prepare_confounds_wf(
 
     # fmt:off
     workflow.connect([
-        (determine_head_radius, flag_motion_outliers, [("head_radius", "head_radius")]),
         (flag_motion_outliers, outputnode, [
             ("filtered_motion", "filtered_motion"),
             ("filtered_motion_metadata", "filtered_motion_metadata"),
@@ -287,6 +266,7 @@ def init_prepare_confounds_wf(
             TR=TR,
             motion_filter_type=motion_filter_type,
             fd_thresh=fd_thresh,
+            head_radius=head_radius,
         ),
         name="censor_report",
         mem_gb=mem_gb,
@@ -295,9 +275,6 @@ def init_prepare_confounds_wf(
 
     # fmt:off
     workflow.connect([
-        (determine_head_radius, censor_report, [
-            ("head_radius", "head_radius"),
-        ]),
         (flag_motion_outliers, censor_report, [
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),

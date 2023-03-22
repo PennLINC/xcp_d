@@ -3,9 +3,13 @@
 """Miscellaneous utility functions for xcp_d."""
 import warnings
 
+import nibabel as nb
 import numpy as np
+from nipype import logging
 
 from xcp_d.utils.doc import fill_doc
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def get_bold2std_and_t1w_xforms(bold_file, template_to_t1w_xfm, t1w_to_native_xfm):
@@ -332,19 +336,15 @@ def butter_bandpass(
     return filtered_data
 
 
+@fill_doc
 def estimate_brain_radius(mask_file, head_radius="auto"):
     """Estimate brain radius from binary brain mask file.
-
-    NOTE: This is a Node function.
 
     Parameters
     ----------
     mask_file : :obj:`str`
         Binary brain mask file, in nifti format.
-    head_radius : float or "auto", optional
-        Head radius to use. Either a number, in millimeters, or "auto".
-        If set to "auto", the brain radius will be estimated from the mask file.
-        Default is "auto".
+    %(head_radius)s
 
     Returns
     -------
@@ -358,12 +358,6 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
     This was Paul Taylor's idea, shared in this NeuroStars post:
     https://neurostars.org/t/estimating-head-brain-radius-automatically/24290/2.
     """
-    import nibabel as nb
-    import numpy as np
-    from nipype import logging
-
-    LOGGER = logging.getLogger("nipype.utils")
-
     if head_radius == "auto":
         mask_img = nb.load(mask_file)
         mask_data = mask_img.get_fdata()

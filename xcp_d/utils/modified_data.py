@@ -11,7 +11,6 @@ from nipype import logging
 from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.utils import estimate_brain_radius
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -195,7 +194,6 @@ def flag_bad_run(
     band_stop_max,
     head_radius,
     fd_thresh,
-    brain_mask,
 ):
     """Determine if a run has too many high-motion volumes to continue processing.
 
@@ -231,9 +229,6 @@ def flag_bad_run(
 
     # Remove dummy volumes
     fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
-
-    # Determine head radius
-    head_radius = estimate_brain_radius(mask_file=brain_mask, head_radius=head_radius)
 
     # Calculate filtered FD
     motion_df = load_motion(

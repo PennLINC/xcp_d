@@ -33,6 +33,7 @@ from xcp_d.utils.bids import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import flag_bad_run
+from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.workflows.anatomical import (
     init_warp_anats_to_template_wf,
     init_warp_surfaces_to_template_wf,
@@ -607,6 +608,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
         )
 
+    # Estimate head radius, if necessary
+    head_radius = estimate_brain_radius(mask_file=subj_data["t1w_mask"], head_radius=head_radius)
+
     n_runs = len(preproc_files)
     preproc_files = group_across_runs(preproc_files)
     run_counter = 0
@@ -654,7 +658,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 band_stop_max=band_stop_max,
                 head_radius=head_radius,
                 fd_thresh=fd_thresh,
-                brain_mask=subj_data["t1w_mask"],
             )
             if (min_time >= 0) and (post_scrubbing_duration < min_time):
                 LOGGER.warning(
@@ -695,7 +698,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             # fmt:off
             workflow.connect([
-                (inputnode, bold_postproc_wf, [("t1w_mask", "inputnode.t1w_mask")]),
                 (warp_anats_to_template_wf, bold_postproc_wf, [
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
@@ -707,6 +709,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 # fmt:off
                 workflow.connect([
                     (inputnode, bold_postproc_wf, [
+                        ("t1w_mask", "inputnode.t1w_mask"),
                         ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
                     ]),
                 ])
