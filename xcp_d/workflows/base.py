@@ -46,8 +46,6 @@ from xcp_d.workflows.execsummary import (
 )
 
 LOGGER = logging.getLogger("nipype.workflow")
-MINIMUM_RUN_VOLUMES = 10
-MINIMUM_CONCATENATED_VOLUMES = 30
 
 
 @fill_doc
@@ -82,6 +80,7 @@ def init_xcpd_wf(
     dcan_qc=False,
     input_type="fmriprep",
     min_coverage=0.5,
+    min_time=100,
     combineruns=False,
     name="xcpd_wf",
 ):
@@ -137,6 +136,7 @@ def init_xcpd_wf(
                 dcan_qc=False,
                 input_type="fmriprep",
                 min_coverage=0.5,
+                min_time=100,
                 combineruns=False,
                 name="xcpd_wf",
             )
@@ -176,6 +176,7 @@ def init_xcpd_wf(
     %(dcan_qc)s
     %(input_type)s
     %(min_coverage)s
+    %(min_time)s
     combineruns
     %(name)s
 
@@ -263,6 +264,7 @@ def init_subject_wf(
     despike,
     dcan_qc,
     min_coverage,
+    min_time,
     omp_nthreads,
     layout,
     name,
@@ -307,6 +309,7 @@ def init_subject_wf(
                 despike=True,
                 dcan_qc=False,
                 min_coverage=0.5,
+                min_time=100,
                 omp_nthreads=1,
                 layout=None,
                 name="single_subject_sub-01_wf",
@@ -342,6 +345,7 @@ def init_subject_wf(
     %(despike)s
     %(dcan_qc)s
     %(min_coverage)s
+    %(min_time)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -603,12 +607,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
         )
 
-    # What if I grouped the preproc_files by task first, here?
-    # Then I get a list of lists of preproc files.
-    # I need a nested for loop to initialize all of the post-processing workflows.
-    # Then the concatenation workflows get connected within the first for loop.
-    # The concatenation workflow doesn't need to group inputs,
-    # but it may need to filter them to remove any runs that didn't succeed?
     n_runs = len(preproc_files)
     preproc_files = group_across_runs(preproc_files)
     run_counter = 0
@@ -643,11 +641,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 for io_name in merge_elements
             }
 
-        n_good_volumes_in_task = []
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(layout, input_type, bold_file, cifti=cifti)
 
-            n_good_volumes_in_run = flag_bad_run(
+            post_scrubbing_duration = flag_bad_run(
                 fmriprep_confounds_file=run_data["confounds"],
                 dummy_scans=dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
@@ -659,14 +656,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 fd_thresh=fd_thresh,
                 brain_mask=subj_data["t1w_mask"],
             )
-            if n_good_volumes_in_run < MINIMUM_RUN_VOLUMES:
+            if (min_time >= 0) and (post_scrubbing_duration < min_time):
                 LOGGER.warning(
-                    f"Fewer than {MINIMUM_RUN_VOLUMES} volumes in {bold_file} "
-                    "are not high-motion outliers. This run will not be processed."
+                    f"Less than {min_time} seconds in {bold_file} survive high-motion outlier "
+                    f"scrubbing ({post_scrubbing_duration}). "
+                    "This run will not be processed."
                 )
                 continue
 
-            n_good_volumes_in_task.append(n_good_volumes_in_run)
             bold_postproc_wf = postproc_wf_function(
                 bold_file=bold_file,
                 bandpass_filter=bandpass_filter,
@@ -724,14 +721,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     # fmt:on
 
         if combineruns and (n_task_runs > 1):
-            n_good_volumes_in_task = np.sum(n_good_volumes_in_task)
-            if n_good_volumes_in_task < MINIMUM_CONCATENATED_VOLUMES:
-                LOGGER.warning(
-                    f"Fewer than {MINIMUM_CONCATENATED_VOLUMES} volumes in entity set {ent_set} "
-                    "are not high-motion outliers. Concatenation will not be performed."
-                )
-                continue
-
             concatenate_data_wf = init_concatenate_data_wf(
                 output_dir=output_dir,
                 motion_filter_type=motion_filter_type,

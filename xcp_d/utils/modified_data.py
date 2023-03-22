@@ -214,9 +214,13 @@ def flag_bad_run(
 
     Returns
     -------
-    n_good_volumes : :obj:`int`
-        Number of good volumes in the run, after dummy scan removal.
+    post_scrubbing_duration : :obj:`float`
+        Amount of time remaining in the run after dummy scan removal, in seconds.
     """
+    if fd_thresh <= 0:
+        # No scrubbing will be performed, so there's no point is calculating amount of "good time".
+        return np.inf
+
     dummy_scans = _infer_dummy_scans(
         dummy_scans=dummy_scans,
         confounds_file=fmriprep_confounds_file,
@@ -241,9 +245,4 @@ def flag_bad_run(
         band_stop_max=band_stop_max,
     )
     fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
-    if fd_thresh > 0:
-        n_good_volumes = int(np.sum(fd_arr <= fd_thresh))
-    else:
-        n_good_volumes = fd_arr.size
-
-    return n_good_volumes
+    return np.sum(fd_arr <= fd_thresh) * TR
