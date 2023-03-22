@@ -186,6 +186,13 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
 
     check_affines(data_dir, out_dir, input_type="nifti")
 
+    dm_file = os.path.join(
+        xcpd_dir,
+        "sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv",
+    )
+    dm_df = pd.read_table(dm_file)
+    assert all(c in dm_df.columns for c in confounds_df.columns)
+
 
 @pytest.mark.nibabies
 def test_nibabies(datasets, output_dir, working_dir):
