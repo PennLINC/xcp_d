@@ -143,7 +143,7 @@ For more information about confound regressor selection, please refer to :footci
 Dummy scan removal [OPTIONAL]
 =============================
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.prepostcleaning.RemoveDummyVolumes`
+:class:`~xcp_d.interfaces.censoring.RemoveDummyVolumes`
 
 XCP-D allows the first *N* volumes to be removed before processing.
 These volumes are usually refered to as dummy volumes.
@@ -158,7 +158,7 @@ or they may rely on the preprocessing pipeline's estimated non-steady-state volu
 Identification of high-motion outlier volumes
 =============================================
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`
+:class:`~xcp_d.interfaces.censoring.FlagMotionOutliers`
 
 XCP-D uses framewise displacement to identify high-motion outlier volumes.
 These outlier volumes are removed from the BOLD data prior to denoising.
@@ -185,7 +185,7 @@ It can be added to the command line arguments with ``--despike``.
 Motion parameter filtering [OPTIONAL]
 -------------------------------------
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`,
+:class:`~xcp_d.interfaces.censoring.FlagMotionOutliers`,
 :func:`~xcp_d.utils.confounds.load_motion`
 
 Motion parameters may be contaminated with respiratory effects :footcite:p:`power2019distinctions`.
@@ -238,7 +238,7 @@ per :footcite:t:`gratton2020removal`.
 Framewise displacement calculation and thresholding
 ---------------------------------------------------
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.prepostcleaning.FlagMotionOutliers`,
+:class:`~xcp_d.interfaces.censoring.FlagMotionOutliers`,
 :func:`~xcp_d.utils.modified_data.compute_fd`
 
 Framewise displacement is then calculated according to the formula from Power et al. (CITE).
@@ -333,7 +333,7 @@ Bandpass filtering can be disabled with the ``--disable-bandpass-filter`` flag.
 
 Re-censoring
 ------------
-:class:`~xcp_d.interfaces.prepostcleaning.Censor`
+:class:`~xcp_d.interfaces.censoring.Censor`
 
 After bandpass filtering, high motion volumes are removed from the
 ``filtered, interpolated, denoised BOLD`` once again, to produce ``filtered, denoised BOLD``.

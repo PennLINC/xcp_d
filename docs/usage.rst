@@ -169,10 +169,10 @@ This file is primarily used for figures.
 
 ``"t1w_mask"`` selects a native T1w-space brain mask.
 
-``"t1w_to_template_xform"`` selects a transform from T1w space to standard space.
+``"t1w_to_template_xfm"`` selects a transform from T1w space to standard space.
 The standard space that will be used depends on the ``"bold"`` files that are selected.
 
-``"template_to_t1w_xform"`` selects a transform from standard space to T1w space.
+``"template_to_t1w_xfm"`` selects a transform from standard space to T1w space.
 Again, the standard space is determined based on other files.
 
 
