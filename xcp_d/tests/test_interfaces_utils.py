@@ -1,4 +1,4 @@
-"""Tests for prepostcleaning interfaces."""
+"""Tests for xcp_d.interfaces.utils module."""
 import os
 
 import nibabel as nb

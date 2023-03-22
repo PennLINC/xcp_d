@@ -2,6 +2,7 @@
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
+    File,
     InputMultiObject,
     OutputMultiObject,
     SimpleInterface,
@@ -10,7 +11,110 @@ from nipype.interfaces.base import (
     traits_extension,
 )
 
+from xcp_d.utils.modified_data import downcast_to_32
+
 LOGGER = logging.getLogger("nipype.interface")
+
+
+class _ConvertTo32InputSpec(BaseInterfaceInputSpec):
+    bold_file = traits.Either(
+        None,
+        File(exists=True),
+        desc="BOLD file",
+        mandatory=False,
+        usedefault=True,
+    )
+    boldref = traits.Either(
+        None,
+        File(exists=True),
+        desc="BOLD reference file",
+        mandatory=False,
+        usedefault=True,
+    )
+    bold_mask = traits.Either(
+        None,
+        File(exists=True),
+        desc="BOLD mask file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1w = traits.Either(
+        None,
+        File(exists=True),
+        desc="T1-weighted anatomical file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1w_seg = traits.Either(
+        None,
+        File(exists=True),
+        desc="T1-space segmentation file",
+        mandatory=False,
+        usedefault=True,
+    )
+    t1w_mask = traits.Either(
+        None,
+        File(exists=True),
+        desc="T1-space mask file",
+        mandatory=False,
+        usedefault=True,
+    )
+
+
+class _ConvertTo32OutputSpec(TraitedSpec):
+    bold_file = traits.Either(
+        None,
+        File(exists=True),
+        desc="BOLD file",
+        mandatory=False,
+    )
+    boldref = traits.Either(
+        None,
+        File(exists=True),
+        desc="BOLD reference file",
+        mandatory=False,
+    )
+    bold_mask = traits.Either(
+        None,
+        File(exists=True),
+        desc="BOLD mask file",
+        mandatory=False,
+    )
+    t1w = traits.Either(
+        None,
+        File(exists=True),
+        desc="T1-weighted anatomical file",
+        mandatory=False,
+    )
+    t1w_seg = traits.Either(
+        None,
+        File(exists=True),
+        desc="T1-space segmentation file",
+        mandatory=False,
+    )
+    t1w_mask = traits.Either(
+        None,
+        File(exists=True),
+        desc="T1-space mask file",
+        mandatory=False,
+    )
+
+
+class ConvertTo32(SimpleInterface):
+    """Downcast files from >32-bit to 32-bit if necessary."""
+
+    input_spec = _ConvertTo32InputSpec
+    output_spec = _ConvertTo32OutputSpec
+
+    def _run_interface(self, runtime):
+        self._results["bold_file"] = downcast_to_32(self.inputs.bold_file)
+        self._results["boldref"] = downcast_to_32(self.inputs.boldref)
+        self._results["bold_mask"] = downcast_to_32(self.inputs.bold_mask)
+        self._results["t1w"] = downcast_to_32(self.inputs.t1w)
+        self._results["t1w_seg"] = downcast_to_32(self.inputs.t1w_seg)
+        self._results["t1w_mask"] = downcast_to_32(self.inputs.t1w_mask)
+
+        return runtime
 
 
 class _FilterUndefinedInputSpec(BaseInterfaceInputSpec):
