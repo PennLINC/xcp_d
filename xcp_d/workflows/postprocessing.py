@@ -25,7 +25,7 @@ from xcp_d.utils.confounds import (
     describe_regression,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.plotting import plot_design_matrix
+from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
 from xcp_d.utils.utils import estimate_brain_radius, fwhm2sigma
 
 
@@ -162,6 +162,7 @@ def init_prepare_confounds_wf(
         name="inputnode",
     )
     inputnode.inputs.dummy_scans = dummy_scans
+    inputnode.inputs.custom_confounds_file = custom_confounds_file
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -247,18 +248,18 @@ def init_prepare_confounds_wf(
     ])
     # fmt:on
 
-    plot_design_matrix_node = pe.Node(
+    plot_design_matrix = pe.Node(
         niu.Function(
             input_names=["design_matrix", "temporal_mask"],
             output_names=["design_matrix_figure"],
-            function=plot_design_matrix,
+            function=_plot_design_matrix,
         ),
         name="plot_design_matrix",
     )
 
     # fmt:off
     workflow.connect([
-        (flag_motion_outliers, plot_design_matrix_node, [("temporal_mask", "temporal_mask")]),
+        (flag_motion_outliers, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
     ])
     # fmt:on
 
@@ -277,7 +278,7 @@ def init_prepare_confounds_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_design_matrix_plot, [("name_source", "source_file")]),
-        (plot_design_matrix_node, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
+        (plot_design_matrix, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
     ])
     # fmt:on
 
@@ -349,7 +350,7 @@ def init_prepare_confounds_wf(
                 # The selected confounds are not guaranteed to include motion params.
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
             ]),
-            (remove_dummy_scans, plot_design_matrix_node, [
+            (remove_dummy_scans, plot_design_matrix, [
                 ("confounds_file_dropped_TR", "design_matrix"),
             ]),
             (remove_dummy_scans, censor_report, [("dummy_scans", "dummy_scans")]),
@@ -377,7 +378,7 @@ def init_prepare_confounds_wf(
                 ("dummy_scans", "dummy_scans"),
             ]),
             (consolidate_confounds_node, outputnode, [("confounds_file", "confounds_file")]),
-            (consolidate_confounds_node, plot_design_matrix_node, [
+            (consolidate_confounds_node, plot_design_matrix, [
                 ("confounds_file", "design_matrix"),
             ]),
         ])
