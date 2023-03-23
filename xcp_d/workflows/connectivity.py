@@ -112,6 +112,8 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
                 "timeseries",
                 "correlations",
                 "coverage",
+                "parcellated_alff",
+                "parcellated_reho",
             ],
         ),
         name="outputnode",
