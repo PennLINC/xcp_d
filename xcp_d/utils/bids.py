@@ -634,7 +634,7 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
 
         metadata[f"{k}_metadata"] = layout.get_metadata(v)
 
-    run_data |= metadata
+    run_data.update(metadata)
 
     return run_data
 
