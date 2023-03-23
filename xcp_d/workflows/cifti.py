@@ -50,6 +50,8 @@ def init_postprocess_cifti_wf(
     despike,
     dcan_qc,
     run_data,
+    t1w_available,
+    t2w_available,
     n_runs,
     min_coverage,
     omp_nthreads,
@@ -110,6 +112,8 @@ def init_postprocess_cifti_wf(
                 despike=True,
                 dcan_qc=True,
                 run_data=run_data,
+                t1w_available=True,
+                t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
                 omp_nthreads=1,
@@ -141,6 +145,8 @@ def init_postprocess_cifti_wf(
     %(despike)s
     %(dcan_qc)s
     run_data : dict
+    t1w_available
+    t2w_available
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
@@ -512,8 +518,8 @@ def init_postprocess_cifti_wf(
     if dcan_qc:
         execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
             preproc_nifti=run_data["nifti_file"],
-            t1w_available=True,
-            t2w_available=False,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
             output_dir=output_dir,
             layout=layout,
             name="execsummary_functional_plots_wf",
@@ -539,10 +545,8 @@ def init_postprocess_cifti_wf(
 def _create_mem_gb(bold_fname):
     bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
     bold_tlen = nb.load(bold_fname).shape[-1]
-    mem_gbz = {
+    return {
         "derivative": bold_size_gb,
         "resampled": bold_size_gb * 4,
         "timeseries": bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
-
-    return mem_gbz

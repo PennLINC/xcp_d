@@ -51,6 +51,8 @@ def init_postprocess_nifti_wf(
     despike,
     dcan_qc,
     run_data,
+    t1w_available,
+    t2w_available,
     n_runs,
     min_coverage,
     omp_nthreads,
@@ -113,6 +115,8 @@ def init_postprocess_nifti_wf(
                 despike=True,
                 dcan_qc=True,
                 run_data=run_data,
+                t1w_available=True,
+                t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
                 omp_nthreads=1,
@@ -146,6 +150,8 @@ def init_postprocess_nifti_wf(
     %(despike)s
     %(dcan_qc)s
     run_data : dict
+    t1w_available
+    t2w_available
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
@@ -559,8 +565,8 @@ def init_postprocess_nifti_wf(
     if dcan_qc:
         execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
             preproc_nifti=bold_file,
-            t1w_available=True,
-            t2w_available=False,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
             output_dir=output_dir,
             layout=layout,
             name="execsummary_functional_plots_wf",
