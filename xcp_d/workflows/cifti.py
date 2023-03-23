@@ -369,6 +369,7 @@ def init_postprocess_cifti_wf(
 
     connectivity_wf = init_functional_connectivity_cifti_wf(
         min_coverage=min_coverage,
+        alff_available=bandpass_filter and (fd_thresh <= 0),
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         name="connectivity_wf",

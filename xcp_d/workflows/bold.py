@@ -402,6 +402,7 @@ def init_postprocess_nifti_wf(
     connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=output_dir,
         min_coverage=min_coverage,
+        alff_available=bandpass_filter and (fd_thresh <= 0),
         mem_gb=mem_gbx["timeseries"],
         name="connectivity_wf",
         omp_nthreads=omp_nthreads,
