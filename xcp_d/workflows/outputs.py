@@ -188,9 +188,11 @@ def init_postproc_derivatives_wf(
     %(smoothed_denoised_bold)s
     alff
         alff nifti
+    parcellated_alff
     smoothed_alff
         smoothed alff
     reho
+    parcellated_reho
     confounds_file
     %(filtered_motion)s
     filtered_motion_metadata
@@ -213,10 +215,10 @@ def init_postproc_derivatives_wf(
                 "smoothed_denoised_bold",
                 "interpolated_filtered_bold",
                 "alff",
+                "parcellated_alff",
                 "smoothed_alff",
-                "reho_lh",
-                "reho_rh",
                 "reho",
+                "parcellated_reho",
                 "filtered_motion",
                 "filtered_motion_metadata",
                 "temporal_mask",
@@ -345,6 +347,21 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
         iterfield=["atlas", "in_file"],
     )
+    ds_parcellated_reho = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            dismiss_entities=["desc"],
+            cohort=cohort,
+            desc="reho",
+            suffix="timeseries",
+            extension=".tsv",
+        ),
+        name="ds_parcellated_reho",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file"],
+    )
 
     # fmt:off
     workflow.connect([
@@ -360,8 +377,38 @@ def init_postproc_derivatives_wf(
             ("correlations", "in_file"),
             ("atlas_names", "atlas"),
         ]),
+        (inputnode, ds_parcellated_reho, [
+            ("parcellated_reho", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
     ])
     # fmt:on
+
+    if bandpass_filter and (fd_thresh <= 0):
+        ds_parcellated_alff = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                desc="alff",
+                suffix="timeseries",
+                extension=".tsv",
+            ),
+            name="ds_parcellated_alff",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_parcellated_alff, [
+                ("parcellated_alff", "in_file"),
+                ("atlas_names", "atlas"),
+            ]),
+        ])
+        # fmt:on
 
     # Write out detivatives via DerivativesDataSink
     if not cifti:  # if Nifti

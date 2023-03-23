@@ -408,6 +408,7 @@ def init_postprocess_cifti_wf(
             (denoise_bold_wf, alff_wf, [
                 ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
             ]),
+            (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])
         # fmt:on
 
@@ -424,6 +425,7 @@ def init_postprocess_cifti_wf(
         (denoise_bold_wf, reho_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
+        (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
     ])
     # fmt:on
 
@@ -496,6 +498,7 @@ def init_postprocess_cifti_wf(
             ("outputnode.coverage", "inputnode.coverage"),
             ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
         ]),
     ])
 
@@ -504,6 +507,9 @@ def init_postprocess_cifti_wf(
             (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
+            ]),
+            (connectivity_wf, postproc_derivatives_wf, [
+                ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
             ]),
         ])
     # fmt:on
@@ -539,10 +545,8 @@ def init_postprocess_cifti_wf(
 def _create_mem_gb(bold_fname):
     bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
     bold_tlen = nb.load(bold_fname).shape[-1]
-    mem_gbz = {
+    return {
         "derivative": bold_size_gb,
         "resampled": bold_size_gb * 4,
         "timeseries": bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
-
-    return mem_gbz

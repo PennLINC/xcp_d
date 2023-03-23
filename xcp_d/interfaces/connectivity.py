@@ -40,6 +40,10 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
             "Default is 0.5."
         ),
     )
+    correlate = traits.Bool(
+        mandatory=True,
+        desc="Whether to return correlations (True) or not (False).",
+    )
 
 
 class _NiftiConnectOutputSpec(TraitedSpec):
@@ -65,6 +69,7 @@ class NiftiConnect(SimpleInterface):
         atlas = self.inputs.atlas
         atlas_labels = self.inputs.atlas_labels
         min_coverage = self.inputs.min_coverage
+        correlate = self.inputs.correlate
 
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
         node_labels_df.sort_index(inplace=True)  # ensure index is in order
@@ -84,16 +89,18 @@ class NiftiConnect(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=True,
         )
-        self._results["correlations"] = fname_presuffix(
-            "correlations.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        self._results["coverage"] = fname_presuffix(
-            "coverage.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
+
+        if correlate:
+            self._results["correlations"] = fname_presuffix(
+                "correlations.tsv",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            self._results["coverage"] = fname_presuffix(
+                "coverage.tsv",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
 
         # Before anything, we need to measure coverage
         atlas_img = nb.load(atlas)
@@ -201,13 +208,15 @@ class NiftiConnect(SimpleInterface):
         coverage_df = pd.DataFrame(data=parcel_coverage, index=node_labels, columns=["coverage"])
 
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
-        correlations_df.to_csv(
-            self._results["correlations"],
-            sep="\t",
-            na_rep="n/a",
-            index_label="Node",
-        )
-        coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
+
+        if correlate:
+            correlations_df.to_csv(
+                self._results["correlations"],
+                sep="\t",
+                na_rep="n/a",
+                index_label="Node",
+            )
+            coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
 
         return runtime
 
@@ -245,6 +254,10 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
         ),
     )
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
+    correlate = traits.Bool(
+        mandatory=True,
+        desc="Whether to return correlations (True) or not (False).",
+    )
 
 
 class _CiftiConnectOutputSpec(TraitedSpec):
@@ -281,6 +294,7 @@ class CiftiConnect(SimpleInterface):
         atlas_file = self.inputs.atlas_file
         pscalar_file = self.inputs.parcellated_atlas
         atlas_labels = self.inputs.atlas_labels
+        correlate = self.inputs.correlate
 
         cifti_intents = get_cifti_intents()
 
@@ -311,7 +325,7 @@ class CiftiConnect(SimpleInterface):
         atlas_label_mapper = label_axis.label[0]
         atlas_label_mapper = {k: v[0] for k, v in atlas_label_mapper.items()}
 
-        if 0 in atlas_label_mapper.keys():
+        if 0 in atlas_label_mapper:
             atlas_label_mapper.pop(0)
 
         # Explicitly remove label corresponding to background (index=0), if present.
@@ -409,15 +423,6 @@ class CiftiConnect(SimpleInterface):
 
         # Use parcel names from tsv file instead of internal CIFTI parcel names for tsvs.
         timeseries_df = timeseries_df.rename(columns=parcel_name_mapper)
-        correlations_df = timeseries_df.corr()
-
-        # Save out the coverage tsv
-        self._results["coverage"] = fname_presuffix(
-            "coverage.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
 
         # Save out the timeseries tsv
         self._results["timeseries"] = fname_presuffix(
@@ -426,32 +431,6 @@ class CiftiConnect(SimpleInterface):
             use_ext=True,
         )
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
-
-        # Save out the correlation matrix tsv
-        self._results["correlations"] = fname_presuffix(
-            "correlations.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        correlations_df.to_csv(
-            self._results["correlations"],
-            sep="\t",
-            na_rep="n/a",
-            index_label="Node",
-        )
-
-        # Save out the coverage CIFTI
-        coverage_img = nb.Cifti2Image(
-            coverage_df.to_numpy().T,  # (1 x n_parcels) array
-            pscalar_img.header,
-            nifti_header=pscalar_img.nifti_header,
-        )
-        self._results["coverage_ciftis"] = fname_presuffix(
-            "coverage.pscalar.nii",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        coverage_img.to_filename(self._results["coverage_ciftis"])
 
         # Save out the timeseries CIFTI
         time_axis = data_img.header.get_axis(0)
@@ -470,21 +449,58 @@ class CiftiConnect(SimpleInterface):
         )
         timeseries_img.to_filename(self._results["timeseries_ciftis"])
 
-        # Save out the correlation matrix CIFTI
-        new_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
-        nifti_header = nifti_header.copy()
-        nifti_header.set_intent(cifti_intents[".pconn.nii"])
-        conn_img = nb.Cifti2Image(
-            correlations_df.to_numpy(),
-            new_header,
-            nifti_header=nifti_header,
-        )
-        self._results["correlation_ciftis"] = fname_presuffix(
-            "correlations.pconn.nii",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        conn_img.to_filename(self._results["correlation_ciftis"])
+        if correlate:
+            correlations_df = timeseries_df.corr()
+
+            # Save out the coverage tsv
+            self._results["coverage"] = fname_presuffix(
+                "coverage.tsv",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
+
+            # Save out the correlation matrix tsv
+            self._results["correlations"] = fname_presuffix(
+                "correlations.tsv",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            correlations_df.to_csv(
+                self._results["correlations"],
+                sep="\t",
+                na_rep="n/a",
+                index_label="Node",
+            )
+
+            # Save out the coverage CIFTI
+            coverage_img = nb.Cifti2Image(
+                coverage_df.to_numpy().T,  # (1 x n_parcels) array
+                pscalar_img.header,
+                nifti_header=pscalar_img.nifti_header,
+            )
+            self._results["coverage_ciftis"] = fname_presuffix(
+                "coverage.pscalar.nii",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            coverage_img.to_filename(self._results["coverage_ciftis"])
+
+            # Save out the correlation matrix CIFTI
+            new_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
+            nifti_header = nifti_header.copy()
+            nifti_header.set_intent(cifti_intents[".pconn.nii"])
+            conn_img = nb.Cifti2Image(
+                correlations_df.to_numpy(),
+                new_header,
+                nifti_header=nifti_header,
+            )
+            self._results["correlation_ciftis"] = fname_presuffix(
+                "correlations.pconn.nii",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            conn_img.to_filename(self._results["correlation_ciftis"])
 
         return runtime
 
