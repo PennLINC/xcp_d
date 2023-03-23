@@ -220,7 +220,10 @@ def init_xcpd_wf(
         )
 
         single_subj_wf.config["execution"]["crashdump_dir"] = os.path.join(
-            output_dir, "xcp_d", "sub-" + subject_id, "log"
+            output_dir,
+            "xcp_d",
+            f"sub-{subject_id}",
+            "log",
         )
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
@@ -377,8 +380,8 @@ def init_subject_wf(
                 "t2w",  # optional
                 "t1w_mask",  # not used by cifti workflow
                 "t1w_seg",
-                "template_to_t1w_xfm",  # not used by cifti workflow
-                "t1w_to_template_xfm",
+                "template_to_anat_xfm",  # not used by cifti workflow
+                "anat_to_template_xfm",
                 # mesh files
                 "lh_pial_surf",
                 "rh_pial_surf",
@@ -400,8 +403,8 @@ def init_subject_wf(
     inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
     inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
-    inputnode.inputs.template_to_t1w_xfm = subj_data["template_to_t1w_xfm"]
-    inputnode.inputs.t1w_to_template_xfm = subj_data["t1w_to_template_xfm"]
+    inputnode.inputs.template_to_anat_xfm = subj_data["template_to_anat_xfm"]
+    inputnode.inputs.anat_to_template_xfm = subj_data["anat_to_template_xfm"]
 
     # surface mesh files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
@@ -487,7 +490,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     # Extract target volumetric space for T1w image
-    target_space = get_entity(subj_data["t1w_to_template_xfm"], "to")
+    target_space = get_entity(subj_data["anat_to_template_xfm"], "to")
 
     postprocess_anat_wf = init_postprocess_anat_wf(
         fmri_dir=fmri_dir,
@@ -516,8 +519,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ("rh_pial_surf", "inputnode.rh_pial_surf"),
             ("lh_wm_surf", "inputnode.lh_wm_surf"),
             ("rh_wm_surf", "inputnode.rh_wm_surf"),
-            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+            ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
+            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
             ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
             ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
@@ -630,7 +633,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
                         ("t1w_mask", "inputnode.t1w_mask"),
-                        ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                        ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                     ]),
                 ])
                 # fmt:on
@@ -661,7 +664,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             workflow.connect([
                 (inputnode, concatenate_data_wf, [
                     ("t1w_mask", "inputnode.t1w_mask"),
-                    ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                    ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ]),
             ])
             # fmt:on

@@ -56,7 +56,7 @@ def init_functional_connectivity_nifti_wf(
     %(boldref)s
     denoised_bold
         clean bold after filtered out nuisscance and filtering
-    %(template_to_t1w_xfm)s
+    %(template_to_anat_xfm)s
     %(t1w_to_native_xfm)s
 
     Outputs
@@ -90,7 +90,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
                 "bold_mask",
                 "boldref",
                 "denoised_bold",
-                "template_to_t1w_xfm",
+                "template_to_anat_xfm",
                 "t1w_to_native_xfm",
             ],
         ),
@@ -138,7 +138,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 
     get_transforms_to_bold_space = pe.Node(
         Function(
-            input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
+            input_names=["bold_file", "template_to_anat_xfm", "t1w_to_native_xfm"],
             output_names=["transformfile"],
             function=get_std2bold_xfms,
         ),
@@ -149,7 +149,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     workflow.connect([
         (inputnode, get_transforms_to_bold_space, [
             ("name_source", "bold_file"),
-            ("template_to_t1w_xfm", "template_to_t1w_xfm"),
+            ("template_to_anat_xfm", "template_to_anat_xfm"),
             ("t1w_to_native_xfm", "t1w_to_native_xfm"),
         ]),
     ])

@@ -134,9 +134,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
             bids_dir,
         )
 
-    # Warn if some IDs were not found
-    notfound_label = sorted(set(participant_label) - all_participants)
-    if notfound_label:
+    if notfound_label := sorted(set(participant_label) - all_participants):
         exc = BIDSError(
             f"Some participants were not found: {', '.join(notfound_label)}",
             bids_dir,
@@ -212,11 +210,11 @@ def collect_data(
             "suffix": "dseg",
             "extension": ".nii.gz",
         },
-        # transform from standard space to T1w space
-        # from entity will be set later
-        "template_to_t1w_xfm": {
+        # transform from standard space to T1w or T2w space
+        # "from" entity will be set later
+        "template_to_anat_xfm": {
             "datatype": "anat",
-            "to": ["T1w", "T2w"],
+            "to": "T1w",
             "suffix": "xfm",
         },
         # native T1w-space brain mask
@@ -227,37 +225,33 @@ def collect_data(
             "suffix": "mask",
             "extension": ".nii.gz",
         },
-        # transform from T1w space to standard space
-        # to entity will be set later
-        "t1w_to_template_xfm": {
+        # transform from T1w or T2w space to standard space
+        # "to" entity will be set later
+        "anat_to_template_xfm": {
             "datatype": "anat",
-            "from": ["T1w", "T2w"],
+            "from": "T1w",
             "suffix": "xfm",
         },
     }
     if input_type == "hcp":
         queries["t1w"]["space"] = "MNI152NLin6Asym"
+        queries["t2w"]["space"] = "MNI152NLin6Asym"
         queries["t1w_seg"]["desc"] = "aparcaseg"
         queries["t1w_seg"]["space"] = "MNI152NLin6Asym"
         queries["t1w_mask"]["space"] = "MNI152NLin6Asym"
 
-    if cifti:
-        queries["bold"]["extension"] = ".dtseries.nii"
-    else:
-        queries["bold"]["extension"] = ".nii.gz"
-
-    # List any fields that aren't required
-    OPTIONAL_FIELDS = ["t2w"]
+    queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
     for acq, entities in bids_filters.items():
         queries[acq].update(entities)
 
+    # Some filters are applied as parameters to the function though.
     if task:
         queries["bold"]["task"] = task
 
-    # Select the best available space
+    # Select the best available space.
     if "space" in queries["bold"]:
         # Hopefully no one puts in multiple spaces here,
         # but we'll grab the first one with available data if they did.
@@ -276,17 +270,14 @@ def collect_data(
             break
 
     if not bold_data:
-        allowed_space_str = ", ".join(allowed_spaces)
-        raise FileNotFoundError(f"No BOLD data found in allowed spaces ({allowed_space_str}).")
+        raise FileNotFoundError(
+            f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)})."
+        )
 
-    if not cifti:
-        # use the BOLD file's space if the BOLD file is a nifti.
-        queries["t1w_to_template_xfm"]["to"] = queries["bold"]["space"]
-        queries["template_to_t1w_xfm"]["from"] = queries["bold"]["space"]
-    else:
+    if cifti:
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        temp_query = queries["t1w_to_template_xfm"].copy()
+        temp_query = queries["anat_to_template_xfm"].copy()
         volumetric_space = ASSOCIATED_TEMPLATES[space]
 
         temp_query["to"] = volumetric_space
@@ -296,8 +287,12 @@ def collect_data(
                 f"No nifti transforms found to allowed space ({volumetric_space})"
             )
 
-        queries["t1w_to_template_xfm"]["to"] = volumetric_space
-        queries["template_to_t1w_xfm"]["from"] = volumetric_space
+        queries["anat_to_template_xfm"]["to"] = volumetric_space
+        queries["template_to_anat_xfm"]["from"] = volumetric_space
+    else:
+        # use the BOLD file's space if the BOLD file is a nifti.
+        queries["anat_to_template_xfm"]["to"] = queries["bold"]["space"]
+        queries["template_to_anat_xfm"]["from"] = queries["bold"]["space"]
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -310,6 +305,17 @@ def collect_data(
     if len(densities) > 1:
         queries["bold"]["den"] = densities[0]
 
+    # Check for anatomical images, and determine if T2w xfms must be used.
+    t1w_files = layout.get(return_type="file", subject=participant_label, **queries["t1w"])
+    t2w_files = layout.get(return_type="file", subject=participant_label, **queries["t2w"])
+    if not t1w_files and not t2w_files:
+        raise FileNotFoundError("No T1w or T2w files found.")
+    elif t2w_files and not t1w_files:
+        LOGGER.warning("T2w found, but no T1w. Enabling T2w-only processing.")
+        queries["template_to_anat_xfm"]["to"] = "T2w"
+        queries["anat_to_template_xfm"]["from"] = "T2w"
+
+    # Search for the files.
     subj_data = {
         dtype: sorted(
             layout.get(
@@ -321,10 +327,11 @@ def collect_data(
         for dtype, query in queries.items()
     }
 
+    # Check the query results.
     for field, filenames in subj_data.items():
         # All fields except the BOLD data should have a single file
         if field != "bold" and isinstance(filenames, list):
-            if field not in OPTIONAL_FIELDS and not filenames:
+            if field not in ("t1w", "t2w") and not filenames:
                 raise FileNotFoundError(f"No {field} found with query: {queries[field]}")
 
             if len(filenames) == 1:
@@ -625,7 +632,7 @@ def collect_run_data(layout, input_type, bold_file, cifti):
 
         metadata[f"{k}_metadata"] = layout.get_metadata(v)
 
-    run_data.update(metadata)
+    run_data |= metadata
 
     return run_data
 
@@ -688,20 +695,17 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     import json
     import os
 
-    info_dict = {}
-
     dataset_description = os.path.join(fmri_dir, "dataset_description.json")
     if os.path.isfile(dataset_description):
         with open(dataset_description) as f:
             dataset_dict = json.load(f)
 
-    info_dict["name"] = dataset_dict["GeneratedBy"][0]["Name"]
-
-    if "Version" in dataset_dict["GeneratedBy"][0].keys():
-        info_dict["version"] = dataset_dict["GeneratedBy"][0]["Version"]
-    else:
-        info_dict["version"] = "unknown"
-
+    info_dict = {
+        "name": dataset_dict["GeneratedBy"][0]["Name"],
+        "version": dataset_dict["GeneratedBy"][0]["Version"]
+        if "Version" in dataset_dict["GeneratedBy"][0].keys()
+        else "unknown",
+    }
     if input_type == "fmriprep":
         info_dict["references"] = "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]"
     elif input_type == "dcan":
@@ -729,9 +733,7 @@ def _add_subject_prefix(subid):
     str
         Subject entity (e.g., 'sub-XX').
     """
-    if subid.startswith("sub-"):
-        return subid
-    return "-".join(("sub", subid))
+    return subid if subid.startswith("sub-") else "-".join(("sub", subid))
 
 
 def _get_tr(img):
@@ -836,7 +838,7 @@ def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
     assert hemisphere in ("L", "R"), hemisphere
 
     if not subject_id.startswith("sub-"):
-        subject_id = "sub-" + subject_id
+        subject_id = f"sub-{subject_id}"
 
     sphere_raw = os.path.join(
         freesurfer_path,
@@ -874,11 +876,7 @@ def get_entity(filename, entity):
     # Allow + sign, which is not allowed in BIDS,
     # but is used by templateflow for the MNIInfant template.
     entity_values = re.findall(f"{entity}-([a-zA-Z0-9+]+)", file_base)
-    if len(entity_values) < 1:
-        entity_value = None
-    else:
-        entity_value = entity_values[0]
-
+    entity_value = None if len(entity_values) < 1 else entity_values[0]
     if entity == "space" and entity_value is None:
         foldername = os.path.basename(folder)
         if foldername == "anat":

@@ -76,7 +76,7 @@ def init_qc_report_wf(
         Only used with non-CIFTI data.
     t1w_mask
         Only used with non-CIFTI data.
-    %(template_to_t1w_xfm)s
+    %(template_to_anat_xfm)s
         Only used with non-CIFTI data.
     %(t1w_to_native_xfm)s
         Only used with non-CIFTI data.
@@ -108,7 +108,7 @@ def init_qc_report_wf(
                 "bold_mask",
                 "t1w_mask",
                 "boldref",
-                "template_to_t1w_xfm",
+                "template_to_anat_xfm",
                 "t1w_to_native_xfm",
             ],
         ),
@@ -139,7 +139,7 @@ def init_qc_report_wf(
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
+                input_names=["bold_file", "template_to_anat_xfm", "t1w_to_native_xfm"],
                 output_names=[
                     "bold_to_std_xfms",
                     "bold_to_std_xfms_invert",
@@ -155,7 +155,7 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, get_native2space_transforms, [
                 ("name_source", "bold_file"),
-                ("template_to_t1w_xfm", "template_to_t1w_xfm"),
+                ("template_to_anat_xfm", "template_to_anat_xfm"),
                 ("t1w_to_native_xfm", "t1w_to_native_xfm"),
             ]),
         ])
@@ -210,7 +210,7 @@ def init_qc_report_wf(
         # Given that xcp-d doesn't process native-space data, this transform will never be used.
         get_mni_to_bold_xfms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_t1w_xfm", "t1w_to_native_xfm"],
+                input_names=["bold_file", "template_to_anat_xfm", "t1w_to_native_xfm"],
                 output_names=["transform_list"],
                 function=get_std2bold_xfms,
             ),
@@ -221,7 +221,7 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, get_mni_to_bold_xfms, [
                 ("name_source", "bold_file"),
-                ("template_to_t1w_xfm", "template_to_t1w_xfm"),
+                ("template_to_anat_xfm", "template_to_anat_xfm"),
                 ("t1w_to_native_xfm", "t1w_to_native_xfm"),
             ]),
         ])

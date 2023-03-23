@@ -112,8 +112,8 @@ def init_postprocess_anat_wf(
     t1w_seg
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
-    %(t1w_to_template_xfm)s
-    %(template_to_t1w_xfm)s
+    %(anat_to_template_xfm)s
+    %(template_to_anat_xfm)s
     lh_sulcal_depth, rh_sulcal_depth
     lh_sulcal_curv, rh_sulcal_curv
     lh_cortical_thickness, rh_cortical_thickness
@@ -137,8 +137,8 @@ def init_postprocess_anat_wf(
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
+                "anat_to_template_xfm",
+                "template_to_anat_xfm",
                 "lh_sulcal_depth",
                 "rh_sulcal_depth",
                 "lh_sulcal_curv",
@@ -170,7 +170,7 @@ def init_postprocess_anat_wf(
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
             ("t1w_seg", "inputnode.t1w_seg"),
-            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+            ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
         ]),
         (warp_anats_to_template_wf, outputnode, [
             ("outputnode.t1w", "t1w"),
@@ -225,7 +225,7 @@ def init_postprocess_anat_wf(
         ])
         # fmt:on
 
-    if process_surfaces and mesh_available and dcan_qc:
+    if process_surfaces and mesh_available:
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
@@ -236,7 +236,7 @@ def init_postprocess_anat_wf(
             name="warp_surfaces_to_template_wf",
         )
 
-        # Use standard-space T1w and surfaces for brainsprite.
+        # Warp surfaces to fsLR space.
         # fmt:off
         workflow.connect([
             (inputnode, warp_surfaces_to_template_wf, [
@@ -244,13 +244,14 @@ def init_postprocess_anat_wf(
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
+                ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ]),
         ])
         # fmt:on
 
         if dcan_qc:
+            # Use standard-space T1w and surfaces for brainsprite.
             # fmt:off
             workflow.connect([
                 (warp_anats_to_template_wf, brainsprite_wf, [
@@ -342,7 +343,7 @@ def init_warp_anats_to_template_wf(
         This file may be in standard space or native T1w space.
     t1w_seg : :obj:`str`
         Path to the T1w segmentation file.
-    %(t1w_to_template_xfm)s
+    %(anat_to_template_xfm)s
         We need to use MNI152NLin6Asym for the template.
     template : :obj:`str`
 
@@ -358,7 +359,15 @@ def init_warp_anats_to_template_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1w_seg", "t1w_to_template_xfm", "template"]),
+        niu.IdentityInterface(
+            fields=[
+                "t1w",
+                "t2w",
+                "t1w_seg",
+                "anat_to_template_xfm",
+                "template",
+            ]
+        ),
         name="inputnode",
     )
 
@@ -446,7 +455,7 @@ def init_warp_anats_to_template_wf(
         workflow.connect([
             (inputnode, warp_t1w_to_template, [
                 ("t1w", "input_image"),
-                ("t1w_to_template_xfm", "transforms"),
+                ("anat_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
         ])
@@ -468,7 +477,7 @@ def init_warp_anats_to_template_wf(
         workflow.connect([
             (inputnode, warp_t1w_seg_to_template, [
                 ("t1w_seg", "input_image"),
-                ("t1w_to_template_xfm", "transforms"),
+                ("anat_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
         ])
@@ -502,7 +511,7 @@ def init_warp_anats_to_template_wf(
             workflow.connect([
                 (inputnode, t2w_transform, [
                     ("t2w", "input_image"),
-                    ("t1w_to_template_xfm", "transforms"),
+                    ("anat_to_template_xfm", "transforms"),
                     ("template", "reference_image"),
                 ]),
                 (t2w_transform, ds_t2w_std, [("output_image", "in_file")]),
@@ -622,13 +631,13 @@ def init_warp_surfaces_to_template_wf(
 
     Inputs
     ------
-    %(t1w_to_template_xfm)s
+    %(anat_to_template_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
 
         If ``warp_to_standard`` is False, this file is unused.
-    %(template_to_t1w_xfm)s
+    %(template_to_anat_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
@@ -679,8 +688,8 @@ def init_warp_surfaces_to_template_wf(
                 "lh_wm_surf",
                 "rh_wm_surf",
                 # transforms (only used if warp_to_standard is True)
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
+                "anat_to_template_xfm",
+                "template_to_anat_xfm",
             ],
         ),
         name="inputnode",
@@ -727,8 +736,8 @@ def init_warp_surfaces_to_template_wf(
         # fmt:off
         workflow.connect([
             (inputnode, update_xfm_wf, [
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
+                ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ]),
         ])
         # fmt:on
@@ -1048,9 +1057,9 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
 
     Inputs
     ------
-    t1w_to_template_xfm
+    anat_to_template_xfm
         ANTS/fMRIPrep-style H5 transform from T1w image to template.
-    template_to_t1w_xfm
+    template_to_anat_xfm
         ANTS/fMRIPrep-style H5 transform from template to T1w image.
 
     Outputs
@@ -1065,7 +1074,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w_to_template_xfm", "template_to_t1w_xfm"]),
+        niu.IdentityInterface(fields=["anat_to_template_xfm", "template_to_anat_xfm"]),
         name="inputnode",
     )
 
@@ -1088,7 +1097,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
 
     # fmt:off
     workflow.connect([
-        (inputnode, disassemble_h5, [("t1w_to_template_xfm", "in_file")]),
+        (inputnode, disassemble_h5, [("anat_to_template_xfm", "in_file")]),
     ])
     # fmt:on
 
@@ -1107,7 +1116,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
 
     # fmt:off
     workflow.connect([
-        (inputnode, disassemble_h5_inv, [("template_to_t1w_xfm", "in_file")]),
+        (inputnode, disassemble_h5_inv, [("template_to_anat_xfm", "in_file")]),
     ])
     # fmt:on
 

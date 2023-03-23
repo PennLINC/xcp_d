@@ -59,17 +59,17 @@ analysis_level : {"participant"}
 """
 
 docdict[
-    "t1w_to_template_xfm"
+    "anat_to_template_xfm"
 ] = """
-t1w_to_template_xfm : :obj:`str`
+anat_to_template_xfm : :obj:`str`
     Path to the T1w-to-MNI transform file.
     May be "identity", for testing purposes.
 """
 
 docdict[
-    "template_to_t1w_xfm"
+    "template_to_anat_xfm"
 ] = """
-template_to_t1w_xfm : :obj:`str`
+template_to_anat_xfm : :obj:`str`
     Path to the MNI-to-T1w transform file.
     May be "identity", for testing purposes.
 """

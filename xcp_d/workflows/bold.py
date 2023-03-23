@@ -120,7 +120,7 @@ def init_postprocess_nifti_wf(
                 name="nifti_postprocess_wf",
             )
             wf.inputs.inputnode.t1w = subj_data["t1w"]
-            wf.inputs.inputnode.template_to_t1w_xfm = subj_data["template_to_t1w_xfm"]
+            wf.inputs.inputnode.template_to_anat_xfm = subj_data["template_to_anat_xfm"]
 
     Parameters
     ----------
@@ -165,7 +165,7 @@ def init_postprocess_nifti_wf(
         bold_mask from fmriprep
         Loaded in this workflow.
     %(custom_confounds_file)s
-    %(template_to_t1w_xfm)s
+    %(template_to_anat_xfm)s
         Fed from the subject workflow.
     t1w
         Preprocessed T1w image, warped to standard space.
@@ -217,7 +217,7 @@ def init_postprocess_nifti_wf(
                 "boldref",
                 "bold_mask",
                 "custom_confounds_file",
-                "template_to_t1w_xfm",
+                "template_to_anat_xfm",
                 "t1w",
                 "t2w",
                 "t1w_seg",
@@ -415,7 +415,7 @@ def init_postprocess_nifti_wf(
             ("boldref", "inputnode.boldref"),
         ]),
         (inputnode, connectivity_wf, [
-            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ("t1w_to_native_xfm", "inputnode.t1w_to_native_xfm"),
         ]),
         (denoise_bold_wf, connectivity_wf, [
@@ -486,7 +486,7 @@ def init_postprocess_nifti_wf(
             ("boldref", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
             ("t1w_mask", "inputnode.t1w_mask"),
-            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ("t1w_to_native_xfm", "inputnode.t1w_to_native_xfm"),
         ]),
         (prepare_confounds_wf, qc_report_wf, [
