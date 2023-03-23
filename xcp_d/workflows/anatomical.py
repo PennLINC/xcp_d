@@ -201,7 +201,8 @@ def init_postprocess_anat_wf(
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             output_dir=output_dir,
-            t2w_available=False,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
             omp_nthreads=omp_nthreads,
             mem_gb=5,
         )
@@ -226,6 +227,7 @@ def init_postprocess_anat_wf(
         # fmt:on
 
     if process_surfaces and mesh_available:
+        # Warp surface meshes to fsLR space.
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
@@ -236,7 +238,6 @@ def init_postprocess_anat_wf(
             name="warp_surfaces_to_template_wf",
         )
 
-        # Warp surfaces to fsLR space.
         # fmt:off
         workflow.connect([
             (inputnode, warp_surfaces_to_template_wf, [
@@ -256,6 +257,7 @@ def init_postprocess_anat_wf(
             workflow.connect([
                 (warp_anats_to_template_wf, brainsprite_wf, [
                     ("outputnode.t1w", "inputnode.t1w"),
+                    ("outputnode.t2w", "inputnode.t2w"),
                 ]),
                 (warp_surfaces_to_template_wf, brainsprite_wf, [
                     ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
@@ -280,7 +282,7 @@ def init_postprocess_anat_wf(
         ])
         # fmt:on
 
-    elif process_surfaces and not mesh_available and dcan_qc:
+    elif process_surfaces and dcan_qc:
         raise ValueError(
             "No surfaces found. "
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
