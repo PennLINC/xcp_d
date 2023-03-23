@@ -623,6 +623,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 despike=despike,
                 dcan_qc=dcan_qc,
                 run_data=run_data,
+                t1w_available=t1w_available,
+                t2w_available=t2w_available,
                 n_runs=n_runs,
                 min_coverage=min_coverage,
                 omp_nthreads=omp_nthreads,
