@@ -204,7 +204,7 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
 
     # Inputs used only for nifti data
     seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
-    t1w_mask = File(exists=True, mandatory=False, desc="Mask in T1W")
+    anat_brainmask = File(exists=True, mandatory=False, desc="Mask in T1W")
     template_mask = File(exists=True, mandatory=False, desc="Template mask")
     bold2T1w_mask = File(exists=True, mandatory=False, desc="Bold mask in MNI")
     bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
@@ -373,7 +373,7 @@ class QCPlots(SimpleInterface):
             # Compute quality of registration
             registration_qc = compute_registration_qc(
                 bold2t1w_mask=self.inputs.bold2T1w_mask,
-                t1w_mask=self.inputs.t1w_mask,
+                anat_brainmask=self.inputs.anat_brainmask,
                 bold2template_mask=self.inputs.bold2temp_mask,
                 template_mask=self.inputs.template_mask,
             )

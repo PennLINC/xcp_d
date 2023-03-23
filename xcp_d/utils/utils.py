@@ -12,7 +12,7 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger("nipype.utils")
 
 
-def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, t1w_to_native_xfm):
+def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, anat_to_native_xfm):
     """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
@@ -27,7 +27,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, t1w_to_native_xfm
     template_to_anat_xfm
         The ``from`` field is assumed to be the same space as the BOLD file is in.
         The MNI space could be MNI152NLin2009cAsym, MNI152NLin6Asym, or MNIInfant.
-    t1w_to_native_xfm
+    anat_to_native_xfm
 
     Returns
     -------
@@ -128,13 +128,13 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, t1w_to_native_xfm
                     **{"from": base_std_space},
                 ),
             )
-            xforms_to_MNI = [std_to_mni_xfm, template_to_anat_xfm, t1w_to_native_xfm]
+            xforms_to_MNI = [std_to_mni_xfm, template_to_anat_xfm, anat_to_native_xfm]
             xforms_to_MNI_invert = [False, True, True]
         else:
-            xforms_to_MNI = [template_to_anat_xfm, t1w_to_native_xfm]
+            xforms_to_MNI = [template_to_anat_xfm, anat_to_native_xfm]
             xforms_to_MNI_invert = [True, True]
 
-        xforms_to_T1w = [t1w_to_native_xfm]
+        xforms_to_T1w = [anat_to_native_xfm]
         xforms_to_T1w_invert = [True]
 
     else:
@@ -143,7 +143,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, t1w_to_native_xfm
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
 
-def get_std2bold_xfms(bold_file, template_to_anat_xfm, t1w_to_native_xfm):
+def get_std2bold_xfms(bold_file, template_to_anat_xfm, anat_to_native_xfm):
     """Obtain transforms to warp atlases from MNI152NLin6Asym to the same space as the BOLD.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
@@ -157,7 +157,7 @@ def get_std2bold_xfms(bold_file, template_to_anat_xfm, t1w_to_native_xfm):
         The preprocessed BOLD file.
     %(template_to_anat_xfm)s
         The ``from`` field is assumed to be the same space as the BOLD file is in.
-    %(t1w_to_native_xfm)s
+    %(anat_to_native_xfm)s
 
     Returns
     -------
@@ -253,9 +253,9 @@ def get_std2bold_xfms(bold_file, template_to_anat_xfm, t1w_to_native_xfm):
                     **{"from": "MNI152NLin6Asym"},
                 ),
             )
-            transform_list = [t1w_to_native_xfm, template_to_anat_xfm, mni_to_std_xfm]
+            transform_list = [anat_to_native_xfm, template_to_anat_xfm, mni_to_std_xfm]
         else:
-            transform_list = [t1w_to_native_xfm, template_to_anat_xfm]
+            transform_list = [anat_to_native_xfm, template_to_anat_xfm]
 
     else:
         file_base = os.path.basename(bold_file)

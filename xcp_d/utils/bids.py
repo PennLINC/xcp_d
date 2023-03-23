@@ -203,7 +203,7 @@ def collect_data(
             "extension": ".nii.gz",
         },
         # native T1w-space dseg file
-        "t1w_seg": {
+        "anat_dseg": {
             "datatype": "anat",
             "space": None,
             "desc": None,
@@ -218,7 +218,7 @@ def collect_data(
             "suffix": "xfm",
         },
         # native T1w-space brain mask
-        "t1w_mask": {
+        "anat_brainmask": {
             "datatype": "anat",
             "space": None,
             "desc": "brain",
@@ -236,9 +236,9 @@ def collect_data(
     if input_type == "hcp":
         queries["t1w"]["space"] = "MNI152NLin6Asym"
         queries["t2w"]["space"] = "MNI152NLin6Asym"
-        queries["t1w_seg"]["desc"] = "aparcaseg"
-        queries["t1w_seg"]["space"] = "MNI152NLin6Asym"
-        queries["t1w_mask"]["space"] = "MNI152NLin6Asym"
+        queries["anat_dseg"]["desc"] = "aparcaseg"
+        queries["anat_dseg"]["space"] = "MNI152NLin6Asym"
+        queries["anat_brainmask"]["space"] = "MNI152NLin6Asym"
 
     queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
 
@@ -548,17 +548,19 @@ def collect_surface_data(layout, participant_label):
 
 
 @fill_doc
-def collect_run_data(layout, input_type, bold_file, cifti):
+def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
     %(layout)s
+    %(input_type)s
     bold_file : :obj:`str`
         Path to the BOLD file.
     %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
-    %(input_type)s
+    primary_anat : {"T1w", "T2w"}
+        The anatomical modality to use for the anat-to-native transform.
 
     Returns
     -------
@@ -591,10 +593,10 @@ def collect_run_data(layout, input_type, bold_file, cifti):
             desc="brain",
             suffix="mask",
         )
-        run_data["t1w_to_native_xfm"] = layout.get_nearest(
+        run_data["anat_to_native_xfm"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            **{"from": "T1w"},  # "from" is protected Python kw
+            **{"from": primary_anat},  # "from" is protected Python kw
             to="scanner",
             suffix="xfm",
         )

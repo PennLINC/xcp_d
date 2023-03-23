@@ -74,11 +74,11 @@ def init_qc_report_wf(
         Only used with non-CIFTI data.
     bold_mask
         Only used with non-CIFTI data.
-    t1w_mask
+    anat_brainmask
         Only used with non-CIFTI data.
     %(template_to_anat_xfm)s
         Only used with non-CIFTI data.
-    %(t1w_to_native_xfm)s
+    %(anat_to_native_xfm)s
         Only used with non-CIFTI data.
     %(dummy_scans)s
     %(fmriprep_confounds_file)s
@@ -106,10 +106,10 @@ def init_qc_report_wf(
                 "run_index",  # will only be set for concatenated data
                 # nifti-only inputs
                 "bold_mask",
-                "t1w_mask",
+                "anat_brainmask",
                 "boldref",
                 "template_to_anat_xfm",
-                "t1w_to_native_xfm",
+                "anat_to_native_xfm",
             ],
         ),
         name="inputnode",
@@ -139,7 +139,7 @@ def init_qc_report_wf(
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_anat_xfm", "t1w_to_native_xfm"],
+                input_names=["bold_file", "template_to_anat_xfm", "anat_to_native_xfm"],
                 output_names=[
                     "bold_to_std_xfms",
                     "bold_to_std_xfms_invert",
@@ -156,7 +156,7 @@ def init_qc_report_wf(
             (inputnode, get_native2space_transforms, [
                 ("name_source", "bold_file"),
                 ("template_to_anat_xfm", "template_to_anat_xfm"),
-                ("t1w_to_native_xfm", "t1w_to_native_xfm"),
+                ("anat_to_native_xfm", "anat_to_native_xfm"),
             ]),
         ])
         # fmt:on
@@ -175,7 +175,7 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, warp_boldmask_to_t1w, [
                 ("bold_mask", "input_image"),
-                ("t1w_mask", "reference_image"),
+                ("anat_brainmask", "reference_image"),
             ]),
             (get_native2space_transforms, warp_boldmask_to_t1w, [
                 ("bold_to_t1w_xfms", "transforms"),
@@ -210,7 +210,7 @@ def init_qc_report_wf(
         # Given that xcp-d doesn't process native-space data, this transform will never be used.
         get_mni_to_bold_xfms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_anat_xfm", "t1w_to_native_xfm"],
+                input_names=["bold_file", "template_to_anat_xfm", "anat_to_native_xfm"],
                 output_names=["transform_list"],
                 function=get_std2bold_xfms,
             ),
@@ -222,7 +222,7 @@ def init_qc_report_wf(
             (inputnode, get_mni_to_bold_xfms, [
                 ("name_source", "bold_file"),
                 ("template_to_anat_xfm", "template_to_anat_xfm"),
-                ("t1w_to_native_xfm", "t1w_to_native_xfm"),
+                ("anat_to_native_xfm", "anat_to_native_xfm"),
             ]),
         ])
         # fmt:on
@@ -478,7 +478,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, qcreport, [
-                ("t1w_mask", "t1w_mask"),
+                ("anat_brainmask", "anat_brainmask"),
                 ("bold_mask", "mask_file"),
             ]),
             (warp_dseg_to_bold, qcreport, [("output_image", "seg_file")]),

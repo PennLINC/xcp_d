@@ -362,6 +362,9 @@ def init_subject_wf(
         cifti=cifti,
         layout=layout,
     )
+    t1w_available = subj_data["t1w"] is not None
+    t2w_available = subj_data["t2w"] is not None
+    primary_anat = "T1w" if subj_data["t1w"] else "T2w"
 
     mesh_available, shape_available, standard_space_mesh, surface_data = collect_surface_data(
         layout=layout,
@@ -378,8 +381,8 @@ def init_subject_wf(
                 "subj_data",  # not currently used, but will be in future
                 "t1w",
                 "t2w",  # optional
-                "t1w_mask",  # not used by cifti workflow
-                "t1w_seg",
+                "anat_brainmask",  # not used by cifti workflow
+                "anat_dseg",
                 "template_to_anat_xfm",  # not used by cifti workflow
                 "anat_to_template_xfm",
                 # mesh files
@@ -401,8 +404,8 @@ def init_subject_wf(
     inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t2w = subj_data["t2w"]
-    inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
-    inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
+    inputnode.inputs.anat_brainmask = subj_data["anat_brainmask"]
+    inputnode.inputs.anat_dseg = subj_data["anat_dseg"]
     inputnode.inputs.template_to_anat_xfm = subj_data["template_to_anat_xfm"]
     inputnode.inputs.anat_to_template_xfm = subj_data["anat_to_template_xfm"]
 
@@ -497,8 +500,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         subject_id=subject_id,
         dcan_qc=dcan_qc,
         input_type=input_type,
-        t1w_available=subj_data["t1w"] is not None,
-        t2w_available=subj_data["t2w"] is not None,
+        t1w_available=t1w_available,
+        t2w_available=t2w_available,
         mesh_available=mesh_available,
         standard_space_mesh=standard_space_mesh,
         shape_available=shape_available,
@@ -514,7 +517,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("t1w_seg", "inputnode.t1w_seg"),
+            ("anat_dseg", "inputnode.anat_dseg"),
             ("lh_pial_surf", "inputnode.lh_pial_surf"),
             ("rh_pial_surf", "inputnode.rh_pial_surf"),
             ("lh_wm_surf", "inputnode.lh_wm_surf"),
@@ -532,7 +535,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # fmt:on
 
     # Estimate head radius, if necessary
-    head_radius = estimate_brain_radius(mask_file=subj_data["t1w_mask"], head_radius=head_radius)
+    head_radius = estimate_brain_radius(
+        mask_file=subj_data["anat_brainmask"],
+        head_radius=head_radius,
+    )
 
     n_runs = len(preproc_files)
     preproc_files = group_across_runs(preproc_files)
@@ -553,7 +559,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "interpolated_filtered_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
-                "t1w_to_native_xfm",
+                "anat_to_native_xfm",
                 "bold_mask",
                 "boldref",
                 "atlas_names",  # this will be exactly the same across runs
@@ -569,7 +575,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             }
 
         for j_run, bold_file in enumerate(task_files):
-            run_data = collect_run_data(layout, input_type, bold_file, cifti=cifti)
+            run_data = collect_run_data(
+                layout,
+                input_type,
+                bold_file,
+                cifti=cifti,
+                primary_anat=primary_anat,
+            )
 
             post_scrubbing_duration = flag_bad_run(
                 fmriprep_confounds_file=run_data["confounds"],
@@ -632,7 +644,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 # fmt:off
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
-                        ("t1w_mask", "inputnode.t1w_mask"),
+                        ("anat_brainmask", "inputnode.anat_brainmask"),
                         ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                     ]),
                 ])
@@ -663,7 +675,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # fmt:off
             workflow.connect([
                 (inputnode, concatenate_data_wf, [
-                    ("t1w_mask", "inputnode.t1w_mask"),
+                    ("anat_brainmask", "inputnode.anat_brainmask"),
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ]),
             ])

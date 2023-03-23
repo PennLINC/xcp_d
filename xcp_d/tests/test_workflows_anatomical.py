@@ -57,8 +57,12 @@ def test_init_warp_surfaces_to_template_wf_01(
     wf.inputs.inputnode.lh_wm_surf = surface_files["fsLR_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["fsLR_rh_wm"]
     # transforms (only used if warp_to_standard is True)
-    wf.inputs.inputnode.anat_to_template_xfm = fmriprep_with_freesurfer_data["anat_to_template_xfm"]
-    wf.inputs.inputnode.template_to_anat_xfm = fmriprep_with_freesurfer_data["template_to_anat_xfm"]
+    wf.inputs.inputnode.anat_to_template_xfm = fmriprep_with_freesurfer_data[
+        "anat_to_template_xfm"
+    ]
+    wf.inputs.inputnode.template_to_anat_xfm = fmriprep_with_freesurfer_data[
+        "template_to_anat_xfm"
+    ]
 
     wf.base_dir = tmpdir
     wf.run()
@@ -100,8 +104,12 @@ def test_init_warp_surfaces_to_template_wf_02(
     wf.inputs.inputnode.lh_wm_surf = surface_files["native_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["native_rh_wm"]
     # transforms (only used if warp_to_standard is True)
-    wf.inputs.inputnode.anat_to_template_xfm = fmriprep_with_freesurfer_data["anat_to_template_xfm"]
-    wf.inputs.inputnode.template_to_anat_xfm = fmriprep_with_freesurfer_data["template_to_anat_xfm"]
+    wf.inputs.inputnode.anat_to_template_xfm = fmriprep_with_freesurfer_data[
+        "anat_to_template_xfm"
+    ]
+    wf.inputs.inputnode.template_to_anat_xfm = fmriprep_with_freesurfer_data[
+        "template_to_anat_xfm"
+    ]
 
     wf.base_dir = tmpdir
     wf.run()
@@ -121,7 +129,7 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
 
     anat_to_template_xfm = fmriprep_with_freesurfer_data["anat_to_template_xfm"]
     t1w = fmriprep_with_freesurfer_data["t1w"]
-    t1w_seg = fmriprep_with_freesurfer_data["t1w_seg"]
+    anat_dseg = fmriprep_with_freesurfer_data["anat_dseg"]
     t2w = os.path.join(tmpdir, "sub-01_desc-preproc_T2w.nii.gz")  # pretend t1w is t2w
     shutil.copyfile(t1w, t2w)
 
@@ -136,7 +144,7 @@ def test_warp_anats_to_template_wf(fmriprep_with_freesurfer_data, tmp_path_facto
     )
     wf.inputs.inputnode.anat_to_template_xfm = anat_to_template_xfm
     wf.inputs.inputnode.t1w = t1w
-    wf.inputs.inputnode.t1w_seg = t1w_seg
+    wf.inputs.inputnode.anat_dseg = anat_dseg
     wf.inputs.inputnode.t2w = t2w
     wf.base_dir = tmpdir
     wf_res = wf.run()

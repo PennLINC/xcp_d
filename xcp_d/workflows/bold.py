@@ -173,13 +173,13 @@ def init_postprocess_nifti_wf(
     t2w
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
-    t1w_seg
-    t1w_mask
+    anat_dseg
+    anat_brainmask
         T1w brain mask, used for transforms in the QC report workflow.
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
         Loaded in this workflow.
-    %(t1w_to_native_xfm)s
+    %(anat_to_native_xfm)s
     %(dummy_scans)s
 
     Outputs
@@ -196,7 +196,7 @@ def init_postprocess_nifti_wf(
     %(smoothed_denoised_bold)s
     %(boldref)s
     bold_mask
-    %(t1w_to_native_xfm)s
+    %(anat_to_native_xfm)s
     %(atlas_names)s
     %(timeseries)s
     %(timeseries_ciftis)s
@@ -220,10 +220,10 @@ def init_postprocess_nifti_wf(
                 "template_to_anat_xfm",
                 "t1w",
                 "t2w",
-                "t1w_seg",
-                "t1w_mask",
+                "anat_dseg",
+                "anat_brainmask",
                 "fmriprep_confounds_file",
-                "t1w_to_native_xfm",
+                "anat_to_native_xfm",
                 "dummy_scans",
             ],
         ),
@@ -233,7 +233,7 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
     inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
-    inputnode.inputs.t1w_to_native_xfm = run_data["t1w_to_native_xfm"]
+    inputnode.inputs.anat_to_native_xfm = run_data["anat_to_native_xfm"]
     inputnode.inputs.dummy_scans = dummy_scans
 
     # TODO: This is a workaround for a bug in nibabies.
@@ -272,7 +272,7 @@ def init_postprocess_nifti_wf(
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",
-                "t1w_to_native_xfm",
+                "anat_to_native_xfm",
                 "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",  # will not be defined
@@ -294,7 +294,7 @@ def init_postprocess_nifti_wf(
     workflow.connect([
         (inputnode, outputnode, [
             ("bold_file", "name_source"),
-            ("t1w_to_native_xfm", "t1w_to_native_xfm"),
+            ("anat_to_native_xfm", "anat_to_native_xfm"),
         ]),
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
@@ -416,7 +416,7 @@ def init_postprocess_nifti_wf(
         ]),
         (inputnode, connectivity_wf, [
             ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("t1w_to_native_xfm", "inputnode.t1w_to_native_xfm"),
+            ("anat_to_native_xfm", "inputnode.anat_to_native_xfm"),
         ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
@@ -485,9 +485,9 @@ def init_postprocess_nifti_wf(
             ("bold_file", "inputnode.name_source"),
             ("boldref", "inputnode.boldref"),
             ("bold_mask", "inputnode.bold_mask"),
-            ("t1w_mask", "inputnode.t1w_mask"),
+            ("anat_brainmask", "inputnode.anat_brainmask"),
             ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("t1w_to_native_xfm", "inputnode.t1w_to_native_xfm"),
+            ("anat_to_native_xfm", "inputnode.anat_to_native_xfm"),
         ]),
         (prepare_confounds_wf, qc_report_wf, [
             ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),

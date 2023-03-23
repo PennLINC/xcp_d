@@ -109,7 +109,7 @@ def init_postprocess_anat_wf(
         Native-space T1w file.
     t2w
         Native-space T2w file.
-    t1w_seg
+    anat_dseg
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
     %(anat_to_template_xfm)s
@@ -132,7 +132,7 @@ def init_postprocess_anat_wf(
             fields=[
                 "t1w",
                 "t2w",
-                "t1w_seg",
+                "anat_dseg",
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
@@ -169,7 +169,7 @@ def init_postprocess_anat_wf(
         (inputnode, warp_anats_to_template_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("t1w_seg", "inputnode.t1w_seg"),
+            ("anat_dseg", "inputnode.anat_dseg"),
             ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
         ]),
         (warp_anats_to_template_wf, outputnode, [
@@ -343,7 +343,7 @@ def init_warp_anats_to_template_wf(
     t2w : :obj:`str` or None
         Path to the preprocessed T2w file.
         This file may be in standard space or native T1w space.
-    t1w_seg : :obj:`str`
+    anat_dseg : :obj:`str`
         Path to the T1w segmentation file.
     %(anat_to_template_xfm)s
         We need to use MNI152NLin6Asym for the template.
@@ -355,7 +355,7 @@ def init_warp_anats_to_template_wf(
         Path to the preprocessed T1w file in standard space.
     t2w : :obj:`str` or None
         Path to the preprocessed T2w file in standard space.
-    t1w_seg : :obj:`str`
+    anat_dseg : :obj:`str`
     template : :obj:`str`
     """
     workflow = Workflow(name=name)
@@ -365,7 +365,7 @@ def init_warp_anats_to_template_wf(
             fields=[
                 "t1w",
                 "t2w",
-                "t1w_seg",
+                "anat_dseg",
                 "anat_to_template_xfm",
                 "template",
             ]
@@ -374,7 +374,7 @@ def init_warp_anats_to_template_wf(
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1w_seg", "template"]),
+        niu.IdentityInterface(fields=["t1w", "t2w", "anat_dseg", "template"]),
         name="outputnode",
     )
 
@@ -416,7 +416,7 @@ def init_warp_anats_to_template_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_t1w_std, [("t1w", "in_file")]),
-            (inputnode, ds_t1w_seg_std, [("t1w_seg", "in_file")]),
+            (inputnode, ds_t1w_seg_std, [("anat_dseg", "in_file")]),
         ])
         # fmt:on
 
@@ -478,7 +478,7 @@ def init_warp_anats_to_template_wf(
         # fmt:off
         workflow.connect([
             (inputnode, warp_t1w_seg_to_template, [
-                ("t1w_seg", "input_image"),
+                ("anat_dseg", "input_image"),
                 ("anat_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
@@ -556,9 +556,9 @@ def init_warp_anats_to_template_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_t1w_std, [("t1w", "source_file")]),
-        (inputnode, ds_t1w_seg_std, [("t1w_seg", "source_file")]),
+        (inputnode, ds_t1w_seg_std, [("anat_dseg", "source_file")]),
         (ds_t1w_std, outputnode, [("out_file", "t1w")]),
-        (ds_t1w_seg_std, outputnode, [("out_file", "t1w_seg")]),
+        (ds_t1w_seg_std, outputnode, [("out_file", "anat_dseg")]),
     ])
     # fmt:on
 

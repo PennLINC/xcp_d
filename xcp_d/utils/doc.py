@@ -75,9 +75,9 @@ template_to_anat_xfm : :obj:`str`
 """
 
 docdict[
-    "t1w_to_native_xfm"
+    "anat_to_native_xfm"
 ] = """
-t1w_to_native_xfm : :obj:`str`
+anat_to_native_xfm : :obj:`str`
     Path to the T1w-to-native BOLD space transform file.
     May be "identity", for testing purposes.
 """
