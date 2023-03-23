@@ -18,7 +18,6 @@ from time import strftime
 from niworkflows import NIWORKFLOWS_LOG
 
 from xcp_d.cli.parser_utils import (
-    _DeprecatedStoreAction040,
     _float_or_auto,
     _int_or_auto,
     _restricted_float,
@@ -260,22 +259,7 @@ def get_parser():
             "This parameter can be disabled by providing a zero or a negative value."
         ),
     )
-
-    dummyvols = g_param.add_mutually_exclusive_group()
-    dummyvols.add_argument(
-        "-d",
-        "--dummytime",
-        default=0,
-        type=float,
-        action=_DeprecatedStoreAction040,
-        help=(
-            "Number of seconds to remove from the beginning of each run. "
-            "This value will be rounded up to the nearest TR. "
-            "This parameter is deprecated and will be removed in version 0.4.0. "
-            "Please use ``--dummy-scans``."
-        ),
-    )
-    dummyvols.add_argument(
+    g_param.add_argument(
         "--dummy-scans",
         dest="dummy_scans",
         default=0,
@@ -946,7 +930,6 @@ Running xcp_d version {__version__}:
         output_dir=str(output_dir),
         head_radius=opts.head_radius,
         custom_confounds_folder=opts.custom_confounds,
-        dummytime=opts.dummytime,
         dummy_scans=opts.dummy_scans,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,

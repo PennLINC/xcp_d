@@ -35,7 +35,6 @@ XCPD_CMD="$BASE_XCPD_CMD \
     --bids-filter-file /bids_filter_file.json \
     --nuisance-regressors aroma_gsr \
     --despike \
-    --dummytime 8 \
     --fd-thresh 0.04 \
     --head_radius 40 \
     --smoothing 6 \
