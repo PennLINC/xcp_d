@@ -157,7 +157,11 @@ class _FlagMotionOutliersInputSpec(BaseInterfaceInputSpec):
         traits.Str,
         mandatory=True,
     )
-    motion_filter_order = traits.Int(mandatory=True)
+    motion_filter_order = traits.Either(
+        None,
+        traits.Int,
+        mandatory=True,
+    )
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     band_stop_min = traits.Either(
         None,

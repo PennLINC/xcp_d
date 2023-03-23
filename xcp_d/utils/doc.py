@@ -384,6 +384,19 @@ min_coverage : :obj:`float`
 """
 
 docdict[
+    "min_time"
+] = """
+min_time : :obj:`float`
+    Post-scrubbing threshold to apply to individual runs in the dataset.
+    This threshold determines the minimum amount of time, in seconds,
+    needed to post-process a given run, once high-motion outlier volumes are removed.
+    This will have no impact if scrubbing is disabled
+    (i.e., if the FD threshold is zero or negative).
+    This parameter can be disabled by providing a zero or a negative value.
+    Default is 100.
+"""
+
+docdict[
     "despike"
 ] = """
 despike : :obj:`bool`

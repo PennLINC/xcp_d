@@ -18,6 +18,7 @@ from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
 def init_qc_report_wf(
     output_dir,
     TR,
+    head_radius,
     mem_gb,
     omp_nthreads,
     cifti,
@@ -35,6 +36,7 @@ def init_qc_report_wf(
             wf = init_qc_report_wf(
                 output_dir=".",
                 TR=0.5,
+                head_radius=50,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 cifti=False,
@@ -46,6 +48,7 @@ def init_qc_report_wf(
     ----------
     %(output_dir)s
     %(TR)s
+    %(head_radius)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(cifti)s
@@ -79,7 +82,6 @@ def init_qc_report_wf(
         Only used with non-CIFTI data.
     %(dummy_scans)s
     %(fmriprep_confounds_file)s
-    %(head_radius)s
     %(temporal_mask)s
     %(filtered_motion)s
 
@@ -101,7 +103,6 @@ def init_qc_report_wf(
                 "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
-                "head_radius",
                 "run_index",  # will only be set for concatenated data
                 # nifti-only inputs
                 "bold_mask",
@@ -284,6 +285,7 @@ def init_qc_report_wf(
     qcreport = pe.Node(
         QCPlots(
             TR=TR,
+            head_radius=head_radius,
             template_mask=nlin2009casym_brain_mask,
         ),
         name="qc_report",
@@ -298,7 +300,6 @@ def init_qc_report_wf(
             ("preprocessed_bold", "bold_file"),
             ("censored_denoised_bold", "cleaned_file"),
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("head_radius", "head_radius"),
             ("temporal_mask", "temporal_mask"),
             ("dummy_scans", "dummy_scans"),
         ]),

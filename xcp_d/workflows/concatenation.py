@@ -10,7 +10,7 @@ from xcp_d.interfaces.concatenation import (
     FilterOutFailedRuns,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _select_first, estimate_brain_radius
+from xcp_d.utils.utils import _select_first
 from xcp_d.workflows.plotting import init_qc_report_wf
 
 
@@ -21,6 +21,7 @@ def init_concatenate_data_wf(
     mem_gb,
     omp_nthreads,
     TR,
+    head_radius,
     smoothing,
     cifti,
     dcan_qc,
@@ -41,6 +42,7 @@ def init_concatenate_data_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
                 TR=2,
+                head_radius=50,
                 smoothing=None,
                 cifti=False,
                 dcan_qc=True,
@@ -54,6 +56,7 @@ def init_concatenate_data_wf(
     %(mem_gb)s
     %(omp_nthreads)s
     %(TR)s
+    %(head_radius)s
     %(smoothing)s
     %(cifti)s
     %(dcan_qc)s
@@ -83,7 +86,6 @@ def init_concatenate_data_wf(
     t1w_mask : :obj:`str`
     %(template_to_t1w_xfm)s
     %(boldref)s
-    %(head_radius)s
     %(atlas_names)s
         This will be a list of lists, with one sublist for each run.
     %(timeseries)s
@@ -109,7 +111,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "interpolated_filtered_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
-                "head_radius",
                 "bold_mask",  # only for niftis, from postproc workflows
                 "boldref",  # only for niftis, from postproc workflows
                 "t1w_to_native_xfm",  # only for niftis, from postproc workflows
@@ -130,24 +131,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     # fmt:off
     workflow.connect([(inputnode, clean_name_source, [("name_source", "name_source")])])
-    # fmt:on
-
-    get_head_radius = pe.Node(
-        niu.Function(
-            function=estimate_brain_radius,
-            input_names=["mask_file", "head_radius"],
-            output_names=["head_radius"],
-        ),
-        name="get_head_radius",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, get_head_radius, [
-            ("t1w_mask", "mask_file"),
-            ("head_radius", "head_radius"),
-        ]),
-    ])
     # fmt:on
 
     filter_out_failed_runs = pe.Node(
@@ -202,6 +185,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
         TR=TR,
+        head_radius=head_radius,
         mem_gb=mem_gb,
         omp_nthreads=omp_nthreads,
         cifti=cifti,
@@ -217,7 +201,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("t1w_mask", "inputnode.t1w_mask"),
         ]),
         (clean_name_source, qc_report_wf, [("name_source", "inputnode.name_source")]),
-        (get_head_radius, qc_report_wf, [("head_radius", "inputnode.head_radius")]),
         (filter_out_failed_runs, qc_report_wf, [
             # nifti-only inputs
             (("bold_mask", _select_first), "inputnode.bold_mask"),

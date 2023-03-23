@@ -136,6 +136,7 @@ def init_postprocess_nifti_wf(
     %(band_stop_max)s
     %(smoothing)s
     %(head_radius)s
+        This will already be estimated before this workflow.
     %(params)s
     %(output_dir)s
     %(custom_confounds_folder)s
@@ -174,7 +175,7 @@ def init_postprocess_nifti_wf(
         Fed from the subject workflow.
     t1w_seg
     t1w_mask
-        T1w brain mask, used to estimate head/brain radius.
+        T1w brain mask, used for transforms in the QC report workflow.
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
         Loaded in this workflow.
@@ -299,7 +300,6 @@ def init_postprocess_nifti_wf(
             ("bold_file", "bold_file"),
             ("boldref", "boldref"),
             ("bold_mask", "bold_mask"),
-            ("t1w_mask", "t1w_mask"),
         ]),
         (downcast_data, outputnode, [
             ("bold_mask", "bold_mask"),
@@ -331,10 +331,7 @@ def init_postprocess_nifti_wf(
             ("bold_file", "inputnode.name_source"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
         ]),
-        (downcast_data, prepare_confounds_wf, [
-            ("bold_file", "inputnode.preprocessed_bold"),
-            ("t1w_mask", "inputnode.t1w_mask"),
-        ]),
+        (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
         (prepare_confounds_wf, outputnode, [
             ("outputnode.filtered_motion", "filtered_motion"),
             ("outputnode.temporal_mask", "temporal_mask"),
@@ -474,6 +471,7 @@ def init_postprocess_nifti_wf(
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
         TR=TR,
+        head_radius=head_radius,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         dcan_qc=dcan_qc,
@@ -495,7 +493,6 @@ def init_postprocess_nifti_wf(
             ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),
             ("outputnode.dummy_scans", "inputnode.dummy_scans"),
             ("outputnode.fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
-            ("outputnode.head_radius", "inputnode.head_radius"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
         ]),
