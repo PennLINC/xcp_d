@@ -552,9 +552,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
     )
 
     # fmt:off
-    workflow.connect([
-        (atlas_file_grabber, cast_atlas_to_int16, [("atlas_file", "in_file")]),
-    ])
+    workflow.connect([(atlas_file_grabber, cast_atlas_to_int16, [("atlas_file", "in_file")])])
     # fmt:on
 
     ds_atlas = pe.MapNode(
