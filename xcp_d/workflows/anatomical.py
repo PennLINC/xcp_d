@@ -41,313 +41,14 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 @fill_doc
 def init_postprocess_anat_wf(
-    fmri_dir,
-    subject_id,
+    output_dir,
+    input_type,
+    t2w_available,
+    target_space,
     dcan_qc,
-    input_type,
-    t1w_available,
-    t2w_available,
-    process_surfaces,
-    mesh_available,
-    standard_space_mesh,
-    shape_available,
-    target_space,
-    output_dir,
-    mem_gb,
     omp_nthreads,
+    mem_gb,
     name="postprocess_anat_wf",
-):
-    """Postprocess anatomical data, including volumetric T1w/T2w images and surfaces.
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflows.anatomical import init_postprocess_anat_wf
-
-            wf = init_postprocess_anat_wf(
-                fmri_dir=".",
-                subject_id="01",
-                dcan_qc=True,
-                input_type="fmriprep",
-                t1w_available=True,
-                t2w_available=True,
-                process_surfaces=True,
-                mesh_available=True,
-                standard_space_mesh=False,
-                shape_available=True,
-                target_space="MNI152NLin6Asym",
-                output_dir=".",
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="postprocess_anat_wf",
-            )
-
-    Parameters
-    ----------
-    fmri_dir
-    subject_id
-    %(dcan_qc)s
-    %(input_type)s
-    t1w_available : bool
-        True if a preprocessed T1w is available, False if not.
-    t2w_available : bool
-        True if a preprocessed T2w is available, False if not.
-    process_surfaces : bool
-    mesh_available : bool
-    standard_space_mesh : bool
-    shape_available : bool
-    target_space : :obj:`str`
-        Target NIFTI template for T1w.
-    %(output_dir)s
-    %(mem_gb)s
-    %(omp_nthreads)s
-    %(name)s
-        Default is "postprocess_anat_wf".
-
-    Inputs
-    ------
-    t1w
-        Native-space T1w file.
-    t2w
-        Native-space T2w file.
-    t1w_seg
-    lh_pial_surf, rh_pial_surf
-    lh_wm_surf, rh_wm_surf
-    %(t1w_to_template_xfm)s
-    %(template_to_t1w_xfm)s
-    lh_sulcal_depth, rh_sulcal_depth
-    lh_sulcal_curv, rh_sulcal_curv
-    lh_cortical_thickness, rh_cortical_thickness
-
-    Outputs
-    -------
-    t1w
-        Standard-space T1w file.
-    t2w
-        Standard-space T2w file.
-    """
-    workflow = Workflow(name=name)
-
-    inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "t1w",
-                "t2w",
-                "t1w_seg",
-                "lh_pial_surf",
-                "rh_pial_surf",
-                "lh_wm_surf",
-                "rh_wm_surf",
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
-            ],
-        ),
-        name="inputnode",
-    )
-
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w"]),
-        name="outputnode",
-    )
-
-    warp_anats_to_template_wf = init_warp_anats_to_template_wf(
-        output_dir=output_dir,
-        input_type=input_type,
-        t2w_available=t2w_available,
-        target_space=target_space,
-        omp_nthreads=omp_nthreads,
-        mem_gb=mem_gb,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, warp_anats_to_template_wf, [
-            ("t1w", "inputnode.t1w"),
-            ("t2w", "inputnode.t2w"),
-            ("t1w_seg", "inputnode.t1w_seg"),
-            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-        ]),
-        (warp_anats_to_template_wf, outputnode, [
-            ("outputnode.t1w", "t1w"),
-            ("outputnode.t2w", "t2w"),
-        ]),
-    ])
-    # fmt:on
-
-    if dcan_qc:
-        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
-            t1w_available=t1w_available,
-            t2w_available=t2w_available,
-            output_dir=output_dir,
-            name="execsummary_anatomical_plots_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (warp_anats_to_template_wf, execsummary_anatomical_plots_wf, [
-                ("outputnode.t1w", "inputnode.t1w"),
-                ("outputnode.t2w", "inputnode.t2w"),
-                ("outputnode.template", "inputnode.template"),
-            ]),
-        ])
-        # fmt:on
-
-    if dcan_qc and mesh_available:
-        # Plot the white and pial surfaces on the brain in a brainsprite figure.
-        brainsprite_wf = init_brainsprite_figures_wf(
-            output_dir=output_dir,
-            t2w_available=False,
-            omp_nthreads=omp_nthreads,
-            mem_gb=mem_gb,
-        )
-
-        if not process_surfaces:
-            # Use native-space T1w and surfaces for brainsprite.
-            # fmt:off
-            workflow.connect([
-                (inputnode, brainsprite_wf, [
-                    ("t1w", "inputnode.t1w"),
-                    ("lh_pial_surf", "inputnode.lh_pial_surf"),
-                    ("rh_pial_surf", "inputnode.rh_pial_surf"),
-                    ("lh_wm_surf", "inputnode.lh_wm_surf"),
-                    ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ]),
-            ])
-            # fmt:on
-
-    if not process_surfaces:
-        # Return early, as all other steps require process_surfaces.
-        return workflow
-
-    if shape_available or (mesh_available and standard_space_mesh):
-        # At least some surfaces are already in fsLR space and must be copied,
-        # without modification, to the output directory.
-        copy_shapes_to_datasink_wf = init_copy_inputs_to_outputs_wf(
-            output_dir=output_dir,
-            name="copy_shapes_to_datasink_wf",
-        )
-
-    if shape_available:
-        # fmt:off
-        workflow.connect([
-            (inputnode, copy_shapes_to_datasink_wf, [
-                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
-            ]),
-        ])
-        # fmt:on
-
-    if mesh_available:
-        # Generate and output HCP-style surface files.
-        hcp_surface_wfs = {
-            hemi: init_generate_hcp_surfaces_wf(
-                output_dir=output_dir,
-                mem_gb=mem_gb,
-                omp_nthreads=omp_nthreads,
-                name=f"{hemi}_generate_hcp_surfaces_wf",
-            )
-            for hemi in ["lh", "rh"]
-        }
-
-    if mesh_available and standard_space_mesh:
-        # Mesh files are already in fsLR.
-        # fmt:off
-        workflow.connect([
-            (inputnode, copy_shapes_to_datasink_wf, [
-                ("lh_pial_surf", "inputnode.lh_pial_surf"),
-                ("rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("lh_wm_surf", "inputnode.lh_wm_surf"),
-                ("rh_wm_surf", "inputnode.rh_wm_surf"),
-            ]),
-            (inputnode, hcp_surface_wfs["lh"], [
-                ("lh_pial_surf", "inputnode.pial_surf"),
-                ("lh_wm_surf", "inputnode.wm_surf"),
-            ]),
-            (inputnode, hcp_surface_wfs["rh"], [
-                ("rh_pial_surf", "inputnode.pial_surf"),
-                ("rh_wm_surf", "inputnode.wm_surf"),
-            ]),
-        ])
-        # fmt:on
-
-    elif mesh_available:
-        # Mesh files are in fsnative and must be warped to fsLR.
-        warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
-            fmri_dir=fmri_dir,
-            subject_id=subject_id,
-            output_dir=output_dir,
-            omp_nthreads=omp_nthreads,
-            mem_gb=5,  # RF: need to change memory size
-            name="warp_surfaces_to_template_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, warp_surfaces_to_template_wf, [
-                ("lh_pial_surf", "inputnode.lh_pial_surf"),
-                ("rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("lh_wm_surf", "inputnode.lh_wm_surf"),
-                ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
-            ]),
-            (warp_surfaces_to_template_wf, hcp_surface_wfs["lh"], [
-                ("outputnode.lh_pial_surf", "inputnode.pial_surf"),
-                ("outputnode.lh_wm_surf", "inputnode.wm_surf"),
-            ]),
-            (warp_surfaces_to_template_wf, hcp_surface_wfs["rh"], [
-                ("outputnode.rh_pial_surf", "inputnode.pial_surf"),
-                ("outputnode.rh_wm_surf", "inputnode.wm_surf"),
-            ]),
-        ])
-        # fmt:on
-
-        if dcan_qc:
-            # Use standard-space T1w and surfaces for brainsprite.
-            # fmt:off
-            workflow.connect([
-                (warp_anats_to_template_wf, brainsprite_wf, [
-                    ("outputnode.t1w", "inputnode.t1w"),
-                ]),
-                (warp_surfaces_to_template_wf, brainsprite_wf, [
-                    ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
-                    ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
-                    ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
-                    ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
-                ]),
-            ])
-            # fmt:on
-
-    elif not shape_available:
-        raise ValueError(
-            "No surfaces found. "
-            "Surfaces are required if `--warp-surfaces-native2std` is enabled."
-        )
-
-    return workflow
-
-
-@fill_doc
-def init_warp_anats_to_template_wf(
-    output_dir,
-    input_type,
-    t2w_available,
-    target_space,
-    omp_nthreads,
-    mem_gb,
-    name="warp_anats_to_template_wf",
 ):
     """Copy T1w, segmentation, and, optionally, T2w to the derivative directory.
 
@@ -358,16 +59,17 @@ def init_warp_anats_to_template_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.anatomical import init_warp_anats_to_template_wf
+            from xcp_d.workflows.anatomical import init_postprocess_anat_wf
 
-            wf = init_warp_anats_to_template_wf(
+            wf = init_postprocess_anat_wf(
                 output_dir=".",
                 input_type="fmriprep",
                 t2w_available=True,
                 target_space="MNI152NLin6Asym",
+                dcan_qc=True,
                 omp_nthreads=1,
                 mem_gb=0.1,
-                name="warp_anats_to_template_wf",
+                name="postprocess_anat_wf",
             )
 
     Parameters
@@ -378,10 +80,11 @@ def init_warp_anats_to_template_wf(
         True if a preprocessed T2w is available, False if not.
     target_space : :obj:`str`
         Target NIFTI template for T1w.
+    %(dcan_qc)s
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
-        Default is "warp_anats_to_template_wf".
+        Default is "postprocess_anat_wf".
 
     Inputs
     ------
@@ -403,8 +106,6 @@ def init_warp_anats_to_template_wf(
         Path to the preprocessed T1w file in standard space.
     t2w : :obj:`str` or None
         Path to the preprocessed T2w file in standard space.
-    t1w_seg : :obj:`str`
-    template : :obj:`str`
     """
     workflow = Workflow(name=name)
 
@@ -414,7 +115,7 @@ def init_warp_anats_to_template_wf(
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1w_seg", "template"]),
+        niu.IdentityInterface(fields=["t1w", "t2w"]),
         name="outputnode",
     )
 
@@ -428,7 +129,13 @@ def init_warp_anats_to_template_wf(
     )
     inputnode.inputs.template = template_file
 
-    workflow.connect([(inputnode, outputnode, [("template", "template")])])
+    if dcan_qc:
+        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+            t1w_available=True,
+            t2w_available=t2w_available,
+            output_dir=output_dir,
+            name="execsummary_anatomical_plots_wf",
+        )
 
     if input_type in ("dcan", "hcp"):
         # Assume that the T1w, T1w segmentation, and T2w files are in standard space,
@@ -475,6 +182,17 @@ def init_warp_anats_to_template_wf(
                 (inputnode, ds_t2w_std, [
                     ("t2w", "in_file"),
                     ("t2w", "source_file"),
+                ]),
+            ])
+            # fmt:on
+
+        if dcan_qc:
+            # fmt:off
+            workflow.connect([
+                (inputnode, execsummary_anatomical_plots_wf, [
+                    ("t1w", "inputnode.t1w"),
+                    ("t2w", "inputnode.t2w"),
+                    ("template", "inputnode.template"),
                 ]),
             ])
             # fmt:on
@@ -526,14 +244,14 @@ def init_warp_anats_to_template_wf(
         # fmt:on
 
         if t2w_available:
-            t2w_transform = pe.Node(
+            warp_t2w_to_template = pe.Node(
                 ApplyTransforms(
                     num_threads=2,
                     interpolation="LanczosWindowedSinc",
                     input_image_type=3,
                     dimension=3,
                 ),
-                name="t2w_transform",
+                name="warp_t2w_to_template",
                 mem_gb=mem_gb,
                 n_procs=omp_nthreads,
             )
@@ -551,13 +269,13 @@ def init_warp_anats_to_template_wf(
 
             # fmt:off
             workflow.connect([
-                (inputnode, t2w_transform, [
+                (inputnode, warp_t2w_to_template, [
                     ("t2w", "input_image"),
                     ("t1w_to_template_xfm", "transforms"),
                     ("template", "reference_image"),
                 ]),
-                (t2w_transform, ds_t2w_std, [("output_image", "in_file")]),
                 (inputnode, ds_t2w_std, [("t2w", "source_file")]),
+                (warp_t2w_to_template, ds_t2w_std, [("output_image", "in_file")]),
             ])
             # fmt:on
 
@@ -593,12 +311,30 @@ def init_warp_anats_to_template_wf(
         ])
         # fmt:on
 
+        if dcan_qc:
+            # fmt:off
+            workflow.connect([
+                (warp_t1w_to_template, execsummary_anatomical_plots_wf, [
+                    ("outputnode.t1w", "inputnode.t1w"),
+                    ("outputnode.template", "inputnode.template"),
+                ]),
+            ])
+            # fmt:on
+
+            if t2w_available:
+                # fmt:off
+                workflow.connect([
+                    (warp_t2w_to_template, execsummary_anatomical_plots_wf, [
+                        ("outputnode.t2w", "inputnode.t2w"),
+                    ]),
+                ])
+                # fmt:on
+
     # fmt:off
     workflow.connect([
         (inputnode, ds_t1w_std, [("t1w", "source_file")]),
         (inputnode, ds_t1w_seg_std, [("t1w_seg", "source_file")]),
         (ds_t1w_std, outputnode, [("out_file", "t1w")]),
-        (ds_t1w_seg_std, outputnode, [("out_file", "t1w_seg")]),
     ])
     # fmt:on
 
@@ -606,6 +342,239 @@ def init_warp_anats_to_template_wf(
         # fmt:off
         workflow.connect([(ds_t2w_std, outputnode, [("out_file", "t2w")])])
         # fmt:on
+
+    return workflow
+
+
+@fill_doc
+def init_postprocess_surfaces_wf(
+    fmri_dir,
+    subject_id,
+    dcan_qc,
+    process_surfaces,
+    mesh_available,
+    standard_space_mesh,
+    shape_available,
+    output_dir,
+    mem_gb,
+    omp_nthreads,
+    name="postprocess_surfaces_wf",
+):
+    """Postprocess surfaces.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.anatomical import init_postprocess_surfaces_wf
+
+            wf = init_postprocess_surfaces_wf(
+                fmri_dir=".",
+                subject_id="01",
+                dcan_qc=True,
+                process_surfaces=True,
+                mesh_available=True,
+                standard_space_mesh=False,
+                shape_available=True,
+                output_dir=".",
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="postprocess_surfaces_wf",
+            )
+
+    Parameters
+    ----------
+    fmri_dir
+    subject_id
+    %(dcan_qc)s
+    process_surfaces : bool
+    mesh_available : bool
+    standard_space_mesh : bool
+    shape_available : bool
+    %(output_dir)s
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "postprocess_surfaces_wf".
+
+    Inputs
+    ------
+    t1w
+        Standard-space T1w file.
+    t2w
+        Standard-space T2w file.
+    lh_pial_surf, rh_pial_surf
+    lh_wm_surf, rh_wm_surf
+    %(t1w_to_template_xfm)s
+    %(template_to_t1w_xfm)s
+    lh_sulcal_depth, rh_sulcal_depth
+    lh_sulcal_curv, rh_sulcal_curv
+    lh_cortical_thickness, rh_cortical_thickness
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "t1w",
+                "t2w",
+                "lh_pial_surf",
+                "rh_pial_surf",
+                "lh_wm_surf",
+                "rh_wm_surf",
+                "t1w_to_template_xfm",
+                "template_to_t1w_xfm",
+                "lh_sulcal_depth",
+                "rh_sulcal_depth",
+                "lh_sulcal_curv",
+                "rh_sulcal_curv",
+                "lh_cortical_thickness",
+                "rh_cortical_thickness",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    if dcan_qc and mesh_available:
+        # Plot the white and pial surfaces on the brain in a brainsprite figure.
+        brainsprite_wf = init_brainsprite_figures_wf(
+            output_dir=output_dir,
+            t2w_available=False,
+            omp_nthreads=omp_nthreads,
+            mem_gb=mem_gb,
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, brainsprite_wf, [
+                ("t1w", "inputnode.t1w"),
+                ("t2w", "inputnode.t2w"),
+            ]),
+        ])
+        # fmt:on
+
+        if not process_surfaces:
+            # Use native-space T1w and surfaces for brainsprite.
+            # fmt:off
+            workflow.connect([
+                (inputnode, brainsprite_wf, [
+                    ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                    ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                    ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                    ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ]),
+            ])
+            # fmt:on
+
+    if not process_surfaces:
+        # Return early, as all other steps require process_surfaces.
+        return workflow
+
+    if shape_available or (mesh_available and standard_space_mesh):
+        # At least some surfaces are already in fsLR space and must be copied,
+        # without modification, to the output directory.
+        copy_std_surfaces_to_datasink = init_copy_inputs_to_outputs_wf(
+            output_dir=output_dir,
+            name="copy_std_surfaces_to_datasink",
+        )
+
+    if shape_available:
+        # fmt:off
+        workflow.connect([
+            (inputnode, copy_std_surfaces_to_datasink, [
+                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
+                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
+                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
+                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
+                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
+                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
+            ]),
+        ])
+        # fmt:on
+
+    if mesh_available:
+        # Generate and output HCP-style surface files.
+        hcp_surface_wfs = {
+            hemi: init_generate_hcp_surfaces_wf(
+                output_dir=output_dir,
+                mem_gb=mem_gb,
+                omp_nthreads=omp_nthreads,
+                name=f"{hemi}_generate_hcp_surfaces_wf",
+            )
+            for hemi in ["lh", "rh"]
+        }
+
+    if mesh_available and standard_space_mesh:
+        # Mesh files are already in fsLR.
+        # fmt:off
+        workflow.connect([
+            (inputnode, copy_std_surfaces_to_datasink, [
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
+            ]),
+            (inputnode, hcp_surface_wfs["lh"], [
+                ("lh_pial_surf", "inputnode.pial_surf"),
+                ("lh_wm_surf", "inputnode.wm_surf"),
+            ]),
+            (inputnode, hcp_surface_wfs["rh"], [
+                ("rh_pial_surf", "inputnode.pial_surf"),
+                ("rh_wm_surf", "inputnode.wm_surf"),
+            ]),
+        ])
+        # fmt:on
+
+    elif mesh_available:
+        # Mesh files are in fsnative and must be warped to fsLR.
+        warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
+            fmri_dir=fmri_dir,
+            subject_id=subject_id,
+            output_dir=output_dir,
+            omp_nthreads=omp_nthreads,
+            mem_gb=mem_gb,
+            name="warp_surfaces_to_template_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, warp_surfaces_to_template_wf, [
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+            ]),
+            (warp_surfaces_to_template_wf, hcp_surface_wfs["lh"], [
+                ("outputnode.lh_pial_surf", "inputnode.pial_surf"),
+                ("outputnode.lh_wm_surf", "inputnode.wm_surf"),
+            ]),
+            (warp_surfaces_to_template_wf, hcp_surface_wfs["rh"], [
+                ("outputnode.rh_pial_surf", "inputnode.pial_surf"),
+                ("outputnode.rh_wm_surf", "inputnode.wm_surf"),
+            ]),
+        ])
+        # fmt:on
+
+        if dcan_qc:
+            # Use standard-space T1w and surfaces for brainsprite.
+            # fmt:off
+            workflow.connect([
+                (warp_surfaces_to_template_wf, brainsprite_wf, [
+                    ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
+                    ("outputnode.rh_pial_surf", "inputnode.rh_pial_surf"),
+                    ("outputnode.lh_wm_surf", "inputnode.lh_wm_surf"),
+                    ("outputnode.rh_wm_surf", "inputnode.rh_wm_surf"),
+                ]),
+            ])
+            # fmt:on
+
+    elif not shape_available:
+        raise ValueError(
+            "No surfaces found. "
+            "Surfaces are required if `--warp-surfaces-native2std` is enabled."
+        )
 
     return workflow
 

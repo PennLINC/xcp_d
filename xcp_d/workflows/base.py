@@ -34,7 +34,7 @@ from xcp_d.utils.bids import (
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import flag_bad_run
 from xcp_d.utils.utils import estimate_brain_radius
-from xcp_d.workflows.anatomical import init_postprocess_anat_wf
+from xcp_d.workflows.anatomical import init_postprocess_anat_wf, init_postprocess_surfaces_wf
 from xcp_d.workflows.bold import init_postprocess_nifti_wf
 from xcp_d.workflows.cifti import init_postprocess_cifti_wf
 from xcp_d.workflows.concatenation import init_concatenate_data_wf
@@ -483,21 +483,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     target_space = get_entity(subj_data["t1w_to_template_xfm"], "to")
 
     postprocess_anat_wf = init_postprocess_anat_wf(
-        fmri_dir=fmri_dir,
-        subject_id=subject_id,
-        dcan_qc=dcan_qc,
-        input_type=input_type,
-        t1w_available=subj_data["t1w"] is not None,
-        t2w_available=subj_data["t2w"] is not None,
-        mesh_available=mesh_available,
-        standard_space_mesh=standard_space_mesh,
-        shape_available=shape_available,
-        target_space=target_space,
-        process_surfaces=process_surfaces,
         output_dir=output_dir,
-        mem_gb=1,
+        input_type=input_type,
+        t2w_available=subj_data["t2w"] is not None,
+        target_space=target_space,
         omp_nthreads=omp_nthreads,
-        name="postprocess_anat_wf",
+        mem_gb=1,
     )
 
     # fmt:off
@@ -506,6 +497,28 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
             ("t1w_seg", "inputnode.t1w_seg"),
+            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+        ]),
+    ])
+    # fmt:on
+
+    postprocess_surfaces_wf = init_postprocess_surfaces_wf(
+        fmri_dir=fmri_dir,
+        subject_id=subject_id,
+        dcan_qc=dcan_qc,
+        mesh_available=mesh_available,
+        standard_space_mesh=standard_space_mesh,
+        shape_available=shape_available,
+        process_surfaces=process_surfaces,
+        output_dir=output_dir,
+        mem_gb=1,
+        omp_nthreads=omp_nthreads,
+        name="postprocess_surfaces_wf",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, postprocess_surfaces_wf, [
             ("lh_pial_surf", "inputnode.lh_pial_surf"),
             ("rh_pial_surf", "inputnode.rh_pial_surf"),
             ("lh_wm_surf", "inputnode.lh_wm_surf"),
@@ -518,6 +531,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
             ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
             ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
+        ]),
+        (postprocess_anat_wf, postprocess_surfaces_wf, [
+            ("outputnode.t1w", "inputnode.t1w"),
+            ("outputnode.t2w", "inputnode.t2w"),
         ]),
     ])
     # fmt:on
@@ -611,7 +628,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             # fmt:off
             workflow.connect([
-                (postprocess_anat_wf, postprocess_bold_wf, [
+                (postprocess_surfaces_wf, postprocess_bold_wf, [
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
                 ]),
