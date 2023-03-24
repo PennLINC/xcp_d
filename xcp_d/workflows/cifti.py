@@ -89,6 +89,7 @@ def init_postprocess_cifti_wf(
                 input_type="fmriprep",
                 bold_file=bold_file,
                 cifti=True,
+                primary_anat="T1w",
             )
 
             wf = init_postprocess_cifti_wf(

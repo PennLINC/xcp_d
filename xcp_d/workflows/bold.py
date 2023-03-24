@@ -90,6 +90,7 @@ def init_postprocess_nifti_wf(
                 input_type="fmriprep",
                 bold_file=bold_file,
                 cifti=False,
+                primary_anat="T1w",
             )
 
             custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
