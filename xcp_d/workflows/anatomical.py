@@ -129,12 +129,38 @@ def init_postprocess_anat_wf(
     )
     inputnode.inputs.template = template_file
 
-    if dcan_qc:
-        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
-            t1w_available=True,
-            t2w_available=t2w_available,
-            output_dir=output_dir,
-            name="execsummary_anatomical_plots_wf",
+    ds_t1w_std = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            space=target_space,
+            cohort=cohort,
+            extension=".nii.gz",
+        ),
+        name="ds_t1w_std",
+        run_without_submitting=False,
+    )
+
+    ds_t1w_seg_std = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            space=target_space,
+            cohort=cohort,
+            extension=".nii.gz",
+        ),
+        name="ds_t1w_seg_std",
+        run_without_submitting=False,
+    )
+
+    if t2w_available:
+        ds_t2w_std = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                space=target_space,
+                cohort=cohort,
+                extension=".nii.gz",
+            ),
+            name="ds_t2w_std",
+            run_without_submitting=False,
         )
 
     if input_type in ("dcan", "hcp"):
@@ -142,23 +168,6 @@ def init_postprocess_anat_wf(
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
         # workaround in place.
-        ds_t1w_std = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                extension=".nii.gz",
-            ),
-            name="ds_t1w_std",
-            run_without_submitting=False,
-        )
-
-        ds_t1w_seg_std = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                extension=".nii.gz",
-            ),
-            name="ds_t1w_seg_std",
-            run_without_submitting=False,
-        )
 
         # fmt:off
         workflow.connect([
@@ -168,31 +177,11 @@ def init_postprocess_anat_wf(
         # fmt:on
 
         if t2w_available:
-            ds_t2w_std = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    extension=".nii.gz",
-                ),
-                name="ds_t2w_std",
-                run_without_submitting=False,
-            )
-
             # fmt:off
             workflow.connect([
                 (inputnode, ds_t2w_std, [
                     ("t2w", "in_file"),
                     ("t2w", "source_file"),
-                ]),
-            ])
-            # fmt:on
-
-        if dcan_qc:
-            # fmt:off
-            workflow.connect([
-                (inputnode, execsummary_anatomical_plots_wf, [
-                    ("t1w", "inputnode.t1w"),
-                    ("t2w", "inputnode.t2w"),
-                    ("template", "inputnode.template"),
                 ]),
             ])
             # fmt:on
@@ -218,6 +207,7 @@ def init_postprocess_anat_wf(
                 ("t1w_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
+            (warp_t1w_to_template, ds_t1w_std, [("output_image", "in_file")]),
         ])
         # fmt:on
 
@@ -240,6 +230,7 @@ def init_postprocess_anat_wf(
                 ("t1w_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
+            (warp_t1w_seg_to_template, ds_t1w_seg_std, [("output_image", "in_file")]),
         ])
         # fmt:on
 
@@ -256,17 +247,6 @@ def init_postprocess_anat_wf(
                 n_procs=omp_nthreads,
             )
 
-            ds_t2w_std = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    space=target_space,
-                    cohort=cohort,
-                    extension=".nii.gz",
-                ),
-                name="ds_t2w_std",
-                run_without_submitting=False,
-            )
-
             # fmt:off
             workflow.connect([
                 (inputnode, warp_t2w_to_template, [
@@ -278,57 +258,6 @@ def init_postprocess_anat_wf(
                 (warp_t2w_to_template, ds_t2w_std, [("output_image", "in_file")]),
             ])
             # fmt:on
-
-        ds_t1w_std = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space=target_space,
-                cohort=cohort,
-                extension=".nii.gz",
-            ),
-            name="ds_t1w_std",
-            run_without_submitting=False,
-        )
-
-        # fmt:off
-        workflow.connect([(warp_t1w_to_template, ds_t1w_std, [("output_image", "in_file")])])
-        # fmt:on
-
-        ds_t1w_seg_std = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                space=target_space,
-                cohort=cohort,
-                extension=".nii.gz",
-            ),
-            name="ds_t1w_seg_std",
-            run_without_submitting=False,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (warp_t1w_seg_to_template, ds_t1w_seg_std, [("output_image", "in_file")]),
-        ])
-        # fmt:on
-
-        if dcan_qc:
-            # fmt:off
-            workflow.connect([
-                (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
-                (warp_t1w_to_template, execsummary_anatomical_plots_wf, [
-                    ("output_image", "inputnode.t1w"),
-                ]),
-            ])
-            # fmt:on
-
-            if t2w_available:
-                # fmt:off
-                workflow.connect([
-                    (warp_t2w_to_template, execsummary_anatomical_plots_wf, [
-                        ("output_image", "inputnode.t2w"),
-                    ]),
-                ])
-                # fmt:on
 
     # fmt:off
     workflow.connect([
@@ -342,6 +271,28 @@ def init_postprocess_anat_wf(
         # fmt:off
         workflow.connect([(ds_t2w_std, outputnode, [("out_file", "t2w")])])
         # fmt:on
+
+    if dcan_qc:
+        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+            t1w_available=True,
+            t2w_available=t2w_available,
+            output_dir=output_dir,
+            name="execsummary_anatomical_plots_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
+            (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
+        ])
+        # fmt:on
+
+        if t2w_available:
+            # fmt:off
+            workflow.connect([
+                (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
+            ])
+            # fmt:on
 
     return workflow
 
