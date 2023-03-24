@@ -298,7 +298,7 @@ class CiftiConnect(SimpleInterface):
 
         cifti_intents = get_cifti_intents()
 
-        assert data_file.endswith(".dtseries.nii"), data_file
+        assert data_file.endswith((".dtseries.nii", ".dlabel.nii")), data_file
         assert atlas_file.endswith(".dlabel.nii"), atlas_file
         assert pscalar_file.endswith(".pscalar.nii"), pscalar_file
 
