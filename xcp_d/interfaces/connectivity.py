@@ -432,24 +432,24 @@ class CiftiConnect(SimpleInterface):
         )
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
 
-        # Save out the timeseries CIFTI
-        time_axis = data_img.header.get_axis(0)
-        new_header = nb.cifti2.Cifti2Header.from_axes((time_axis, parcels_axis))
-        nifti_header = data_img.nifti_header.copy()
-        nifti_header.set_intent(cifti_intents[".ptseries.nii"])
-        timeseries_img = nb.Cifti2Image(
-            timeseries_df.to_numpy(),  # (n_vols x n_parcels) array
-            new_header,
-            nifti_header=nifti_header,
-        )
-        self._results["timeseries_ciftis"] = fname_presuffix(
-            "timeseries.ptseries.nii",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        timeseries_img.to_filename(self._results["timeseries_ciftis"])
-
         if correlate:
+            # Save out the timeseries CIFTI
+            time_axis = data_img.header.get_axis(0)
+            new_header = nb.cifti2.Cifti2Header.from_axes((time_axis, parcels_axis))
+            nifti_header = data_img.nifti_header.copy()
+            nifti_header.set_intent(cifti_intents[".ptseries.nii"])
+            timeseries_img = nb.Cifti2Image(
+                timeseries_df.to_numpy(),  # (n_vols x n_parcels) array
+                new_header,
+                nifti_header=nifti_header,
+            )
+            self._results["timeseries_ciftis"] = fname_presuffix(
+                "timeseries.ptseries.nii",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            timeseries_img.to_filename(self._results["timeseries_ciftis"])
+
             correlations_df = timeseries_df.corr()
 
             # Save out the coverage tsv

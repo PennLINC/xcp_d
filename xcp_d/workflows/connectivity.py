@@ -339,6 +339,7 @@ def init_functional_connectivity_cifti_wf(
     Parameters
     ----------
     %(output_dir)s
+    alff_available
     %(min_coverage)s
     %(mem_gb)s
     %(omp_nthreads)s
