@@ -125,9 +125,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     )
 
     # fmt:off
-    workflow.connect([
-        (atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")]),
-    ])
+    workflow.connect([(atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")])])
     # fmt:on
 
     # get atlases via pkgrf
@@ -142,9 +140,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     )
 
     # fmt:off
-    workflow.connect([
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-    ])
+    workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
     # fmt:on
 
     get_transforms_to_bold_space = pe.Node(
@@ -181,12 +177,8 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 
     # fmt:off
     workflow.connect([
-        (inputnode, warp_atlases_to_bold_space, [
-            ("boldref", "reference_image"),
-        ]),
-        (atlas_file_grabber, warp_atlases_to_bold_space, [
-            ("atlas_file", "input_image"),
-        ]),
+        (inputnode, warp_atlases_to_bold_space, [("boldref", "reference_image")]),
+        (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
         (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
             ("transformfile", "transforms"),
         ]),
@@ -255,18 +247,18 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
         ])
         # fmt:on
 
-    # Create a node to plot the matrixes
-    matrix_plot = pe.Node(
+    # Create a node to plot the matrices
+    connectivity_plot = pe.Node(
         ConnectPlot(),
-        name="matrix_plot",
+        name="connectivity_plot",
         mem_gb=mem_gb,
     )
 
     # fmt:off
     workflow.connect([
-        (inputnode, matrix_plot, [("denoised_bold", "in_file")]),
-        (atlas_name_grabber, matrix_plot, [("atlas_names", "atlas_names")]),
-        (functional_connectivity, matrix_plot, [("correlations", "correlations_tsv")]),
+        (inputnode, connectivity_plot, [("denoised_bold", "in_file")]),
+        (atlas_name_grabber, connectivity_plot, [("atlas_names", "atlas_names")]),
+        (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
     ])
     # fmt:on
 
@@ -303,7 +295,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
     # fmt:off
     workflow.connect([
         (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
-        (matrix_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
+        (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
     ])
     # fmt:on
 
@@ -436,9 +428,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
     )
 
     # fmt:off
-    workflow.connect([
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-    ])
+    workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
     # fmt:on
 
     resample_atlas_to_data = pe.MapNode(
@@ -537,17 +527,17 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
         # fmt:on
 
     # Create a node to plot the matrixes
-    matrix_plot = pe.Node(
+    connectivity_plot = pe.Node(
         ConnectPlot(),
-        name="matrix_plot",
+        name="connectivity_plot",
         mem_gb=mem_gb,
     )
 
     # fmt:off
     workflow.connect([
-        (inputnode, matrix_plot, [("denoised_bold", "in_file")]),
-        (atlas_name_grabber, matrix_plot, [["atlas_names", "atlas_names"]]),
-        (functional_connectivity, matrix_plot, [("correlations", "correlations_tsv")]),
+        (inputnode, connectivity_plot, [("denoised_bold", "in_file")]),
+        (atlas_name_grabber, connectivity_plot, [["atlas_names", "atlas_names"]]),
+        (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
     ])
     # fmt:on
 
@@ -602,7 +592,7 @@ or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
     # fmt:off
     workflow.connect([
         (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
-        (matrix_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
+        (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
     ])
     # fmt:on
 
