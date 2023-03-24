@@ -488,6 +488,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     postprocess_anat_wf = init_postprocess_anat_wf(
         output_dir=output_dir,
         input_type=input_type,
+        t1w_available=subj_data["t1w"] is not None,
         t2w_available=subj_data["t2w"] is not None,
         target_space=target_space,
         dcan_qc=dcan_qc,

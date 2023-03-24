@@ -43,6 +43,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 def init_postprocess_anat_wf(
     output_dir,
     input_type,
+    t1w_available,
     t2w_available,
     target_space,
     dcan_qc,
@@ -64,6 +65,7 @@ def init_postprocess_anat_wf(
             wf = init_postprocess_anat_wf(
                 output_dir=".",
                 input_type="fmriprep",
+                t1w_available=True,
                 t2w_available=True,
                 target_space="MNI152NLin6Asym",
                 dcan_qc=True,
@@ -76,6 +78,8 @@ def init_postprocess_anat_wf(
     ----------
     %(output_dir)s
     %(input_type)s
+    t1w_available : bool
+        True if a preprocessed T1w is available, False if not.
     t2w_available : bool
         True if a preprocessed T2w is available, False if not.
     target_space : :obj:`str`
@@ -274,7 +278,7 @@ def init_postprocess_anat_wf(
 
     if dcan_qc:
         execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
-            t1w_available=True,
+            t1w_available=t1w_available,
             t2w_available=t2w_available,
             output_dir=output_dir,
             name="execsummary_anatomical_plots_wf",

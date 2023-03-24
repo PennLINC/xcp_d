@@ -88,6 +88,7 @@ def test_postprocess_anat_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
     wf = anatomical.init_postprocess_anat_wf(
         output_dir=tmpdir,
         input_type="fmriprep",
+        t1w_available=True,
         t2w_available=True,
         target_space="MNI152NLin2009cAsym",
         omp_nthreads=1,
