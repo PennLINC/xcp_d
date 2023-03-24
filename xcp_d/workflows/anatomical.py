@@ -458,6 +458,16 @@ def init_postprocess_surfaces_wf(
             )
             for hemi in ["lh", "rh"]
         }
+        # fmt:off
+        workflow.connect([
+            (inputnode, hcp_surface_wfs["lh"], [
+                ("lh_pial_surf", "inputnode.name_source"),
+            ]),
+            (inputnode, hcp_surface_wfs["rh"], [
+                ("rh_pial_surf", "inputnode.name_source"),
+            ]),
+        ])
+        # fmt:on
 
     if mesh_available and standard_space_mesh:
         # Mesh files are already in fsLR.
