@@ -325,7 +325,7 @@ def init_postprocess_anat_wf(
                 # fmt:off
                 workflow.connect([
                     (warp_t2w_to_template, execsummary_anatomical_plots_wf, [
-                        ("outputnode.t2w", "inputnode.t2w"),
+                        ("output_image", "inputnode.t2w"),
                     ]),
                 ])
                 # fmt:on
