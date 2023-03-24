@@ -508,42 +508,45 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
     # fmt:on
 
-    postprocess_surfaces_wf = init_postprocess_surfaces_wf(
-        fmri_dir=fmri_dir,
-        subject_id=subject_id,
-        dcan_qc=dcan_qc,
-        mesh_available=mesh_available,
-        standard_space_mesh=standard_space_mesh,
-        shape_available=shape_available,
-        process_surfaces=process_surfaces,
-        output_dir=output_dir,
-        mem_gb=1,
-        omp_nthreads=omp_nthreads,
-        name="postprocess_surfaces_wf",
-    )
+    if process_surfaces or (dcan_qc and mesh_available):
+        # Run surface post-processing workflow if we want to warp meshes to standard space *or*
+        # generate brainsprite.
+        postprocess_surfaces_wf = init_postprocess_surfaces_wf(
+            fmri_dir=fmri_dir,
+            subject_id=subject_id,
+            dcan_qc=dcan_qc,
+            mesh_available=mesh_available,
+            standard_space_mesh=standard_space_mesh,
+            shape_available=shape_available,
+            process_surfaces=process_surfaces,
+            output_dir=output_dir,
+            mem_gb=1,
+            omp_nthreads=omp_nthreads,
+            name="postprocess_surfaces_wf",
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, postprocess_surfaces_wf, [
-            ("lh_pial_surf", "inputnode.lh_pial_surf"),
-            ("rh_pial_surf", "inputnode.rh_pial_surf"),
-            ("lh_wm_surf", "inputnode.lh_wm_surf"),
-            ("rh_wm_surf", "inputnode.rh_wm_surf"),
-            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
-            ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-            ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-            ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-            ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-            ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-            ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
-        ]),
-        (postprocess_anat_wf, postprocess_surfaces_wf, [
-            ("outputnode.t1w", "inputnode.t1w"),
-            ("outputnode.t2w", "inputnode.t2w"),
-        ]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, postprocess_surfaces_wf, [
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
+                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
+                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
+                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
+                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
+                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
+            ]),
+            (postprocess_anat_wf, postprocess_surfaces_wf, [
+                ("outputnode.t1w", "inputnode.t1w"),
+                ("outputnode.t2w", "inputnode.t2w"),
+            ]),
+        ])
+        # fmt:on
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(mask_file=subj_data["t1w_mask"], head_radius=head_radius)
