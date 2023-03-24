@@ -490,8 +490,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         input_type=input_type,
         t2w_available=subj_data["t2w"] is not None,
         target_space=target_space,
+        dcan_qc=dcan_qc,
         omp_nthreads=omp_nthreads,
         mem_gb=1,
+        name="postprocess_anat_wf",
     )
 
     # fmt:off

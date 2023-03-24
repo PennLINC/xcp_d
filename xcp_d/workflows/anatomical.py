@@ -314,9 +314,9 @@ def init_postprocess_anat_wf(
         if dcan_qc:
             # fmt:off
             workflow.connect([
+                (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
                 (warp_t1w_to_template, execsummary_anatomical_plots_wf, [
-                    ("outputnode.t1w", "inputnode.t1w"),
-                    ("outputnode.template", "inputnode.template"),
+                    ("output_image", "inputnode.t1w"),
                 ]),
             ])
             # fmt:on
