@@ -34,7 +34,10 @@ from xcp_d.utils.bids import (
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import flag_bad_run
 from xcp_d.utils.utils import estimate_brain_radius
-from xcp_d.workflows.anatomical import init_postprocess_anat_wf, init_postprocess_surfaces_wf
+from xcp_d.workflows.anatomical import (
+    init_postprocess_anat_wf,
+    init_postprocess_surfaces_wf,
+)
 from xcp_d.workflows.bold import init_postprocess_nifti_wf
 from xcp_d.workflows.cifti import init_postprocess_cifti_wf
 from xcp_d.workflows.concatenation import init_concatenate_data_wf
