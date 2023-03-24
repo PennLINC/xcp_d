@@ -633,7 +633,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             # fmt:off
             workflow.connect([
-                (postprocess_surfaces_wf, postprocess_bold_wf, [
+                (postprocess_anat_wf, postprocess_bold_wf, [
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
                 ]),
