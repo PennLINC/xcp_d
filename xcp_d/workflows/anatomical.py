@@ -53,6 +53,7 @@ def init_postprocess_anat_wf(
     shape_available,
     target_space,
     output_dir,
+    mem_gb,
     omp_nthreads,
     name="postprocess_anat_wf",
 ):
@@ -78,6 +79,7 @@ def init_postprocess_anat_wf(
                 shape_available=True,
                 target_space="MNI152NLin6Asym",
                 output_dir=".",
+                mem_gb=0.1,
                 omp_nthreads=1,
                 name="postprocess_anat_wf",
             )
@@ -99,6 +101,7 @@ def init_postprocess_anat_wf(
     target_space : :obj:`str`
         Target NIFTI template for T1w.
     %(output_dir)s
+    %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
         Default is "postprocess_anat_wf".
@@ -161,7 +164,7 @@ def init_postprocess_anat_wf(
         t2w_available=t2w_available,
         target_space=target_space,
         omp_nthreads=omp_nthreads,
-        mem_gb=5,
+        mem_gb=mem_gb,
     )
 
     # fmt:off
@@ -203,15 +206,36 @@ def init_postprocess_anat_wf(
             output_dir=output_dir,
             t2w_available=False,
             omp_nthreads=omp_nthreads,
-            mem_gb=5,
+            mem_gb=mem_gb,
         )
 
-    if process_surfaces and shape_available:
+        if not process_surfaces:
+            # Use native-space T1w and surfaces for brainsprite.
+            # fmt:off
+            workflow.connect([
+                (inputnode, brainsprite_wf, [
+                    ("t1w", "inputnode.t1w"),
+                    ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                    ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                    ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                    ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ]),
+            ])
+            # fmt:on
+
+    if not process_surfaces:
+        # Return early, as all other steps require process_surfaces.
+        return workflow
+
+    if shape_available or (mesh_available and standard_space_mesh):
+        # At least some surfaces are already in fsLR space and must be copied,
+        # without modification, to the output directory.
         copy_shapes_to_datasink_wf = init_copy_inputs_to_outputs_wf(
             output_dir=output_dir,
             name="copy_shapes_to_datasink_wf",
         )
 
+    if shape_available:
         # fmt:off
         workflow.connect([
             (inputnode, copy_shapes_to_datasink_wf, [
@@ -225,18 +249,50 @@ def init_postprocess_anat_wf(
         ])
         # fmt:on
 
-    if process_surfaces and mesh_available and dcan_qc:
+    if mesh_available:
+        # Generate and output HCP-style surface files.
+        hcp_surface_wfs = {
+            hemi: init_generate_hcp_surfaces_wf(
+                output_dir=output_dir,
+                mem_gb=mem_gb,
+                omp_nthreads=omp_nthreads,
+                name=f"{hemi}_generate_hcp_surfaces_wf",
+            )
+            for hemi in ["lh", "rh"]
+        }
+
+    if mesh_available and standard_space_mesh:
+        # Mesh files are already in fsLR.
+        # fmt:off
+        workflow.connect([
+            (inputnode, copy_shapes_to_datasink_wf, [
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
+            ]),
+            (inputnode, hcp_surface_wfs["lh"], [
+                ("lh_pial_surf", "inputnode.pial_surf"),
+                ("lh_wm_surf", "inputnode.wm_surf"),
+            ]),
+            (inputnode, hcp_surface_wfs["rh"], [
+                ("rh_pial_surf", "inputnode.pial_surf"),
+                ("rh_wm_surf", "inputnode.wm_surf"),
+            ]),
+        ])
+        # fmt:on
+
+    elif mesh_available:
+        # Mesh files are in fsnative and must be warped to fsLR.
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
-            warp_to_standard=not standard_space_mesh,
             omp_nthreads=omp_nthreads,
             mem_gb=5,  # RF: need to change memory size
             name="warp_surfaces_to_template_wf",
         )
 
-        # Use standard-space T1w and surfaces for brainsprite.
         # fmt:off
         workflow.connect([
             (inputnode, warp_surfaces_to_template_wf, [
@@ -247,10 +303,19 @@ def init_postprocess_anat_wf(
                 ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
                 ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
             ]),
+            (warp_surfaces_to_template_wf, hcp_surface_wfs["lh"], [
+                ("outputnode.lh_pial_surf", "inputnode.pial_surf"),
+                ("outputnode.lh_wm_surf", "inputnode.wm_surf"),
+            ]),
+            (warp_surfaces_to_template_wf, hcp_surface_wfs["rh"], [
+                ("outputnode.rh_pial_surf", "inputnode.pial_surf"),
+                ("outputnode.rh_wm_surf", "inputnode.wm_surf"),
+            ]),
         ])
         # fmt:on
 
         if dcan_qc:
+            # Use standard-space T1w and surfaces for brainsprite.
             # fmt:off
             workflow.connect([
                 (warp_anats_to_template_wf, brainsprite_wf, [
@@ -265,21 +330,7 @@ def init_postprocess_anat_wf(
             ])
             # fmt:on
 
-    elif not process_surfaces and mesh_available and dcan_qc:
-        # Use native-space T1w and surfaces for brainsprite.
-        # fmt:off
-        workflow.connect([
-            (inputnode, brainsprite_wf, [
-                ("t1w", "inputnode.t1w"),
-                ("lh_pial_surf", "inputnode.lh_pial_surf"),
-                ("rh_pial_surf", "inputnode.rh_pial_surf"),
-                ("lh_wm_surf", "inputnode.lh_wm_surf"),
-                ("rh_wm_surf", "inputnode.rh_wm_surf"),
-            ]),
-        ])
-        # fmt:on
-
-    elif process_surfaces and not mesh_available and dcan_qc:
+    elif not shape_available:
         raise ValueError(
             "No surfaces found. "
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
@@ -564,16 +615,13 @@ def init_warp_surfaces_to_template_wf(
     fmri_dir,
     subject_id,
     output_dir,
-    warp_to_standard,
     omp_nthreads,
     mem_gb,
     name="warp_surfaces_to_template_wf",
 ):
     """Transform surfaces from native to standard fsLR-32k space.
 
-    Also generate HCP-style midthickness, inflated, and very-inflated surface files.
-
-    If mesh files are in fsnative space.
+    Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
@@ -584,24 +632,6 @@ def init_warp_surfaces_to_template_wf(
                 fmri_dir=".",
                 subject_id="01",
                 output_dir=".",
-                warp_to_standard=True,
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="warp_surfaces_to_template_wf",
-            )
-
-    If mesh files are already in fsLR space.
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflows.anatomical import init_warp_surfaces_to_template_wf
-
-            wf = init_warp_surfaces_to_template_wf(
-                fmri_dir=".",
-                subject_id="01",
-                output_dir=".",
-                warp_to_standard=False,
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="warp_surfaces_to_template_wf",
@@ -612,9 +642,6 @@ def init_warp_surfaces_to_template_wf(
     %(fmri_dir)s
     %(subject_id)s
     %(output_dir)s
-    warp_to_standard : :obj:`bool`
-        Whether to warp native-space surface files to standard space or not.
-        If False, the files are assumed to be in standard space already.
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
@@ -626,30 +653,14 @@ def init_warp_surfaces_to_template_wf(
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
-
-        If ``warp_to_standard`` is False, this file is unused.
     %(template_to_t1w_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
-
-        If ``warp_to_standard`` is False, this file is unused.
     lh_pial_surf, rh_pial_surf : :obj:`str`
-        Left- and right-hemisphere pial surface files.
-
-        If ``warp_to_standard`` is False, then this file is just written out to the output
-        directory and returned via outputnode for use in a brainsprite.
-
-        If ``warp_to_standard`` is True, then it is also warped to standard space and used
-        to generate HCP-style midthickness, inflated, and veryinflated surfaces.
+        Left- and right-hemisphere pial surface files in fsnative space.
     lh_wm_surf, rh_wm_surf : :obj:`str`
-        Left- and right-hemisphere smoothed white matter surface files.
-
-        If ``warp_to_standard`` is False, then this file is just written out to the output
-        directory and returned via outputnode for use in a brainsprite.
-
-        If ``warp_to_standard`` is True, then it is also warped to standard space and used
-        to generate HCP-style midthickness, inflated, and veryinflated surfaces.
+        Left- and right-hemisphere smoothed white matter surface files in fsnative space.
 
     Outputs
     -------
@@ -657,16 +668,6 @@ def init_warp_surfaces_to_template_wf(
         Left- and right-hemisphere pial surface files, in standard space.
     lh_wm_surf, rh_wm_surf : :obj:`str`
         Left- and right-hemisphere smoothed white matter surface files, in standard space.
-
-    Notes
-    -----
-    If "hcp" or "dcan" input type, standard-space surface files will be collected from the
-    converted preprocessed derivatives.
-    This includes the HCP-style surfaces (midthickness, inflated, and vinflated).
-
-    If "fmriprep" or "nibabies", surface files in fsnative space will be extracted from
-    the preprocessed derivatives and will be warped to standard space.
-    The HCP-style surfaces will also be generated.
     """
     workflow = Workflow(name=name)
 
@@ -699,39 +700,35 @@ def init_warp_surfaces_to_template_wf(
         name="outputnode",
     )
 
-    if warp_to_standard:
-        # Warp the surfaces to space-fsLR, den-32k.
-        # We want the following output surfaces:
-        # 1. Pial
-        # 2. Smoothed white matter
-        # 3. HCP-style midthickness
-        # 4. HCP-style inflated
-        # 5. HCP-style very-inflated
-        get_freesurfer_dir_node = pe.Node(
-            Function(
-                function=get_freesurfer_dir,
-                input_names=["fmri_dir"],
-                output_names=["freesurfer_path"],
-            ),
-            name="get_freesurfer_dir_node",
-        )
-        get_freesurfer_dir_node.inputs.fmri_dir = fmri_dir
+    # Warp the surfaces to space-fsLR, den-32k.
+    # We want the following output surfaces:
+    # 1. Pial
+    # 2. Smoothed white matter
+    get_freesurfer_dir_node = pe.Node(
+        Function(
+            function=get_freesurfer_dir,
+            input_names=["fmri_dir"],
+            output_names=["freesurfer_path"],
+        ),
+        name="get_freesurfer_dir_node",
+    )
+    get_freesurfer_dir_node.inputs.fmri_dir = fmri_dir
 
-        # First, we create the Connectome WorkBench-compatible transform files.
-        update_xfm_wf = init_ants_xfm_to_fsl_wf(
-            mem_gb=mem_gb,
-            omp_nthreads=omp_nthreads,
-            name="update_xfm_wf",
-        )
+    # First, we create the Connectome WorkBench-compatible transform files.
+    update_xfm_wf = init_ants_xfm_to_fsl_wf(
+        mem_gb=mem_gb,
+        omp_nthreads=omp_nthreads,
+        name="update_xfm_wf",
+    )
 
-        # fmt:off
-        workflow.connect([
-            (inputnode, update_xfm_wf, [
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
-            ]),
-        ])
-        # fmt:on
+    # fmt:off
+    workflow.connect([
+        (inputnode, update_xfm_wf, [
+            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+        ]),
+    ])
+    # fmt:on
 
     # TODO: It would be nice to replace this for loop with MapNodes or iterables some day.
     for hemi in ["L", "R"]:
@@ -753,38 +750,29 @@ def init_warp_surfaces_to_template_wf(
         ])
         # fmt:on
 
-        # Generate and output HCP-style surface files
-        generate_hcp_surfaces_wf = init_generate_hcp_surfaces_wf(
-            output_dir=output_dir,
+        apply_transforms_wf = init_warp_one_hemisphere_wf(
+            hemisphere=hemi,
             mem_gb=mem_gb,
             omp_nthreads=omp_nthreads,
-            name=f"{hemi_label}_generate_hcp_surfaces_wf",
+            name=f"{hemi_label}_apply_transforms_wf",
         )
+        apply_transforms_wf.inputs.inputnode.participant_id = subject_id
 
-        if warp_to_standard:
-            apply_transforms_wf = init_warp_one_hemisphere_wf(
-                hemisphere=hemi,
-                mem_gb=mem_gb,
-                omp_nthreads=omp_nthreads,
-                name=f"{hemi_label}_apply_transforms_wf",
-            )
-            apply_transforms_wf.inputs.inputnode.participant_id = subject_id
-
-            # fmt:off
-            workflow.connect([
-                (get_freesurfer_dir_node, apply_transforms_wf, [
-                    ("freesurfer_path", "inputnode.freesurfer_path"),
-                ]),
-                (update_xfm_wf, apply_transforms_wf, [
-                    ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
-                    ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
-                    ("outputnode.world_xfm", "inputnode.world_xfm"),
-                ]),
-                (collect_surfaces, apply_transforms_wf, [
-                    ("out", "inputnode.hemi_files"),
-                ]),
-            ])
-            # fmt:on
+        # fmt:off
+        workflow.connect([
+            (get_freesurfer_dir_node, apply_transforms_wf, [
+                ("freesurfer_path", "inputnode.freesurfer_path"),
+            ]),
+            (update_xfm_wf, apply_transforms_wf, [
+                ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
+                ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
+                ("outputnode.world_xfm", "inputnode.world_xfm"),
+            ]),
+            (collect_surfaces, apply_transforms_wf, [
+                ("out", "inputnode.hemi_files"),
+            ]),
+        ])
+        # fmt:on
 
         # Split up the surfaces
         # NOTE: Must match order of collect_surfaces
@@ -799,23 +787,11 @@ def init_warp_surfaces_to_template_wf(
             name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
         )
 
-        if warp_to_standard:
-            # fmt:off
-            workflow.connect([
-                (apply_transforms_wf, split_up_surfaces_fsLR_32k, [
-                    ("outputnode.warped_hemi_files", "inlist"),
-                ]),
-            ])
-            # fmt:on
-        else:
-            # fmt:off
-            workflow.connect([
-                (collect_surfaces, split_up_surfaces_fsLR_32k, [("out", "inlist")]),
-            ])
-            # fmt:on
-
         # fmt:off
         workflow.connect([
+            (apply_transforms_wf, split_up_surfaces_fsLR_32k, [
+                ("outputnode.warped_hemi_files", "inlist"),
+            ]),
             (split_up_surfaces_fsLR_32k, outputnode, [
                 ("out1", f"{hemi_label}_pial_surf"),
                 ("out2", f"{hemi_label}_wm_surf"),
@@ -839,32 +815,8 @@ def init_warp_surfaces_to_template_wf(
         # fmt:off
         workflow.connect([
             (collect_surfaces, ds_standard_space_surfaces, [("out", "source_file")]),
-        ])
-        # fmt:on
-
-        if warp_to_standard:
-            # fmt:off
-            workflow.connect([
-                (apply_transforms_wf, ds_standard_space_surfaces, [
-                    ("outputnode.warped_hemi_files", "in_file"),
-                ]),
-            ])
-            # fmt:on
-        else:
-            # fmt:off
-            workflow.connect([
-                (collect_surfaces, ds_standard_space_surfaces, [("out", "in_file")]),
-            ])
-            # fmt:on
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, generate_hcp_surfaces_wf, [
-                (f"{hemi_label}_pial_surf", "inputnode.name_source"),
-            ]),
-            (split_up_surfaces_fsLR_32k, generate_hcp_surfaces_wf, [
-                ("out1", "inputnode.pial_surf"),
-                ("out2", "inputnode.wm_surf"),
+            (apply_transforms_wf, ds_standard_space_surfaces, [
+                ("outputnode.warped_hemi_files", "in_file"),
             ]),
         ])
         # fmt:on

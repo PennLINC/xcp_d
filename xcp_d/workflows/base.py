@@ -495,6 +495,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         target_space=target_space,
         process_surfaces=process_surfaces,
         output_dir=output_dir,
+        mem_gb=1,
         omp_nthreads=omp_nthreads,
         name="postprocess_anat_wf",
     )
