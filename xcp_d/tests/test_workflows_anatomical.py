@@ -32,7 +32,7 @@ def surface_files(datasets, tmp_path_factory):
     return final_files
 
 
-def test_warp_surfaces_to_template_wf_01(
+def test_warp_surfaces_to_template_wf(
     datasets,
     fmriprep_with_freesurfer_data,
     surface_files,
@@ -42,7 +42,7 @@ def test_warp_surfaces_to_template_wf_01(
 
     The transforms should be applied and all of the standard-space outputs should be generated.
     """
-    tmpdir = tmp_path_factory.mktemp("test_warp_surfaces_to_template_wf_01")
+    tmpdir = tmp_path_factory.mktemp("test_warp_surfaces_to_template_wf")
 
     subject_id = "01"
 
@@ -50,7 +50,6 @@ def test_warp_surfaces_to_template_wf_01(
         fmri_dir=datasets["ds001419"],
         subject_id=subject_id,
         output_dir=tmpdir,
-        warp_to_standard=True,
         omp_nthreads=1,
         mem_gb=0.1,
     )
@@ -91,6 +90,7 @@ def test_postprocess_anat_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
         t1w_available=True,
         t2w_available=True,
         target_space="MNI152NLin2009cAsym",
+        dcan_qc=False,
         omp_nthreads=1,
         mem_gb=0.1,
         name="postprocess_anat_wf",
