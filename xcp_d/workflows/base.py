@@ -65,7 +65,6 @@ def init_xcpd_wf(
     params,
     smoothing,
     custom_confounds_folder,
-    dummytime,
     dummy_scans,
     cifti,
     omp_nthreads,
@@ -121,7 +120,6 @@ def init_xcpd_wf(
                 params="36P",
                 smoothing=6,
                 custom_confounds_folder=None,
-                dummytime=0,
                 dummy_scans=0,
                 cifti=False,
                 omp_nthreads=1,
@@ -164,7 +162,6 @@ def init_xcpd_wf(
     %(params)s
     %(smoothing)s
     %(custom_confounds_folder)s
-    %(dummytime)s
     %(dummy_scans)s
     %(process_surfaces)s
     %(dcan_qc)s
@@ -206,7 +203,6 @@ def init_xcpd_wf(
             bids_filters=bids_filters,
             smoothing=smoothing,
             output_dir=output_dir,
-            dummytime=dummytime,
             dummy_scans=dummy_scans,
             custom_confounds_folder=custom_confounds_folder,
             fd_thresh=fd_thresh,
@@ -253,7 +249,6 @@ def init_subject_wf(
     params,
     output_dir,
     custom_confounds_folder,
-    dummytime,
     dummy_scans,
     fd_thresh,
     despike,
@@ -298,7 +293,6 @@ def init_subject_wf(
                 params="36P",
                 output_dir=".",
                 custom_confounds_folder=None,
-                dummytime=0,
                 dummy_scans=0,
                 fd_thresh=0.2,
                 despike=True,
@@ -334,7 +328,6 @@ def init_subject_wf(
     %(params)s
     %(output_dir)s
     %(custom_confounds_folder)s
-    %(dummytime)s
     %(dummy_scans)s
     %(fd_thresh)s
     %(despike)s
@@ -602,7 +595,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 params=params,
                 output_dir=output_dir,
                 custom_confounds_folder=custom_confounds_folder,
-                dummytime=dummytime,
                 dummy_scans=dummy_scans,
                 fd_thresh=fd_thresh,
                 despike=despike,

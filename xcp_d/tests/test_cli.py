@@ -39,7 +39,7 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=aroma_gsr",
         "--despike",
-        "--dummytime=8",
+        "--dummy-scans=4",
         "--fd-thresh=0.2",
         "--head_radius=40",
         "--smoothing=6",
