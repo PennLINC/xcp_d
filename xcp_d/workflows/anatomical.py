@@ -101,8 +101,8 @@ def init_postprocess_anat_wf(
     t1w_seg : :obj:`str`
         Path to the T1w segmentation file.
     %(t1w_to_template_xfm)s
-        We need to use MNI152NLin6Asym for the template.
     template : :obj:`str`
+        The target template.
 
     Outputs
     -------
@@ -359,10 +359,10 @@ def init_postprocess_surfaces_wf(
         Standard-space T1w file.
     t2w
         Standard-space T2w file.
-    lh_pial_surf, rh_pial_surf
-    lh_wm_surf, rh_wm_surf
     %(t1w_to_template_xfm)s
     %(template_to_t1w_xfm)s
+    lh_pial_surf, rh_pial_surf
+    lh_wm_surf, rh_wm_surf
     lh_sulcal_depth, rh_sulcal_depth
     lh_sulcal_curv, rh_sulcal_curv
     lh_cortical_thickness, rh_cortical_thickness
@@ -374,12 +374,12 @@ def init_postprocess_surfaces_wf(
             fields=[
                 "t1w",
                 "t2w",
+                "t1w_to_template_xfm",
+                "template_to_t1w_xfm",
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
                 "lh_sulcal_depth",
                 "rh_sulcal_depth",
                 "lh_sulcal_curv",
@@ -608,20 +608,20 @@ def init_warp_surfaces_to_template_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                # required surfaces
+                # transforms
+                "t1w_to_template_xfm",
+                "template_to_t1w_xfm",
+                # surfaces
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                # transforms (only used if warp_to_standard is True)
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
             ],
         ),
         name="inputnode",
     )
-    # Feed only the standard-space pial and white matter surfaces to the outputnode for the
-    # brainsprite.
+    # Feed the standard-space pial and white matter surfaces to the outputnode for the brainsprite
+    # and the HCP-surface generation workflow.
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -635,9 +635,6 @@ def init_warp_surfaces_to_template_wf(
     )
 
     # Warp the surfaces to space-fsLR, den-32k.
-    # We want the following output surfaces:
-    # 1. Pial
-    # 2. Smoothed white matter
     get_freesurfer_dir_node = pe.Node(
         Function(
             function=get_freesurfer_dir,
@@ -685,12 +682,12 @@ def init_warp_surfaces_to_template_wf(
         # fmt:on
 
         apply_transforms_wf = init_warp_one_hemisphere_wf(
+            participant_id=subject_id,
             hemisphere=hemi,
             mem_gb=mem_gb,
             omp_nthreads=omp_nthreads,
             name=f"{hemi_label}_apply_transforms_wf",
         )
-        apply_transforms_wf.inputs.inputnode.participant_id = subject_id
 
         # fmt:off
         workflow.connect([
@@ -702,9 +699,7 @@ def init_warp_surfaces_to_template_wf(
                 ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
                 ("outputnode.world_xfm", "inputnode.world_xfm"),
             ]),
-            (collect_surfaces, apply_transforms_wf, [
-                ("out", "inputnode.hemi_files"),
-            ]),
+            (collect_surfaces, apply_transforms_wf, [("out", "inputnode.hemi_files")]),
         ])
         # fmt:on
 
@@ -773,6 +768,7 @@ def init_generate_hcp_surfaces_wf(
             :simple_form: yes
 
             from xcp_d.workflows.anatomical import init_generate_hcp_surfaces_wf
+
             wf = init_generate_hcp_surfaces_wf(
                 output_dir=".",
                 mem_gb=0.1,
@@ -919,6 +915,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
             :simple_form: yes
 
             from xcp_d.workflows.anatomical import init_ants_xfm_to_fsl_wf
+
             wf = init_ants_xfm_to_fsl_wf(
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -973,9 +970,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     )  # MB
 
     # fmt:off
-    workflow.connect([
-        (inputnode, disassemble_h5, [("t1w_to_template_xfm", "in_file")]),
-    ])
+    workflow.connect([(inputnode, disassemble_h5, [("t1w_to_template_xfm", "in_file")])])
     # fmt:on
 
     # Nipype's CompositeTransformUtil assumes a certain file naming and
@@ -992,9 +987,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     )
 
     # fmt:off
-    workflow.connect([
-        (inputnode, disassemble_h5_inv, [("template_to_t1w_xfm", "in_file")]),
-    ])
+    workflow.connect([(inputnode, disassemble_h5_inv, [("template_to_t1w_xfm", "in_file")])])
     # fmt:on
 
     # convert affine from ITK binary to txt
@@ -1028,9 +1021,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     )
 
     # fmt:off
-    workflow.connect([
-        (change_xfm_type, convert_xfm2world, [("out_transform", "in_file")]),
-    ])
+    workflow.connect([(change_xfm_type, convert_xfm2world, [("out_transform", "in_file")])])
     # fmt:on
 
     # use C3d to separate the combined warpfield xfm into x, y, and z components
@@ -1191,7 +1182,13 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
 
 
 @fill_doc
-def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one_hemisphere_wf"):
+def init_warp_one_hemisphere_wf(
+    participant_id,
+    hemisphere,
+    mem_gb,
+    omp_nthreads,
+    name="warp_one_hemisphere_wf",
+):
     """Apply transforms to warp one hemisphere's surface files into standard space.
 
     Workflow Graph
@@ -1200,7 +1197,9 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
             :simple_form: yes
 
             from xcp_d.workflows.anatomical import init_warp_one_hemisphere_wf
+
             wf = init_warp_one_hemisphere_wf(
+                participant_id="01",
                 hemisphere="L",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -1225,6 +1224,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
     freesurfer_path
         Path to FreeSurfer derivatives. Used to load the subject's sphere file.
     participant_id
+        Set from parameters.
 
     Outputs
     -------
@@ -1245,6 +1245,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
         ),
         name="inputnode",
     )
+    inputnode.inputs.participant_id = participant_id
 
     # Load the fsaverage-164k sphere
     # NOTE: Why do we need the fsaverage mesh?
@@ -1342,12 +1343,8 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
 
     # fmt:off
     workflow.connect([
-        (inputnode, resample_to_fsLR32k, [
-            ("hemi_files", "in_file"),
-        ]),
-        (surface_sphere_project_unproject, resample_to_fsLR32k, [
-            ("out_file", "current_sphere"),
-        ]),
+        (inputnode, resample_to_fsLR32k, [("hemi_files", "in_file")]),
+        (surface_sphere_project_unproject, resample_to_fsLR32k, [("out_file", "current_sphere")]),
     ])
     # fmt:on
 
@@ -1384,9 +1381,7 @@ def init_warp_one_hemisphere_wf(hemisphere, mem_gb, omp_nthreads, name="warp_one
             ("merged_warpfield", "forward_warp"),
             ("merged_inv_warpfield", "warpfield"),
         ]),
-        (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [
-            ("out_file", "in_file"),
-        ]),
+        (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [("out_file", "in_file")]),
     ])
     # fmt:on
 
