@@ -35,6 +35,10 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
 
     Inputs
     ------
+    lh_pial_surf
+    rh_pial_surf
+    lh_pial_wm
+    rh_pial_wm
     lh_sulcal_depth
     rh_sulcal_depth
     lh_sulcal_curv
@@ -47,7 +51,10 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                # required surfaces
+                "lh_pial_surf",
+                "rh_pial_surf",
+                "lh_pial_wm",
+                "rh_pial_wm",
                 "lh_sulcal_depth",
                 "rh_sulcal_depth",
                 "lh_sulcal_curv",
@@ -68,13 +75,18 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
     # fmt:off
     workflow.connect([
         (inputnode, collect_files, [
+            # fsLR-space surface mesh files
+            ("lh_pial_surf", "in1"),
+            ("rh_pial_surf", "in2"),
+            ("lh_pial_wm", "in3"),
+            ("rh_pial_wm", "in4"),
             # fsLR-space surface shape files
-            ("lh_sulcal_depth", "in1"),
-            ("rh_sulcal_depth", "in2"),
-            ("lh_sulcal_curv", "in3"),
-            ("rh_sulcal_curv", "in4"),
-            ("lh_cortical_thickness", "in5"),
-            ("rh_cortical_thickness", "in6"),
+            ("lh_sulcal_depth", "in5"),
+            ("rh_sulcal_depth", "in6"),
+            ("lh_sulcal_curv", "in7"),
+            ("rh_sulcal_curv", "in8"),
+            ("lh_cortical_thickness", "in9"),
+            ("rh_cortical_thickness", "in10"),
         ]),
     ])
     # fmt:on
