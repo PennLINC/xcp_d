@@ -4,7 +4,6 @@
 import os
 
 import nibabel as nb
-import numpy as np
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -44,7 +43,6 @@ def init_postprocess_cifti_wf(
     params,
     output_dir,
     custom_confounds_folder,
-    dummytime,
     dummy_scans,
     fd_thresh,
     despike,
@@ -107,7 +105,6 @@ def init_postprocess_cifti_wf(
                 params="27P",
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
-                dummytime=0,
                 dummy_scans=2,
                 fd_thresh=0.2,
                 despike=True,
@@ -140,7 +137,6 @@ def init_postprocess_cifti_wf(
     %(params)s
     %(output_dir)s
     %(custom_confounds_folder)s
-    %(dummytime)s
     %(dummy_scans)s
     %(fd_thresh)s
     %(despike)s
@@ -231,9 +227,6 @@ def init_postprocess_cifti_wf(
     )
 
     workflow = Workflow(name=name)
-
-    if dummy_scans == 0 and dummytime != 0:
-        dummy_scans = int(np.ceil(dummytime / TR))
 
     workflow.__desc__ = (
         f"For each of the {num2words(n_runs)} BOLD runs found per subject "

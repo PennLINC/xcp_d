@@ -24,7 +24,7 @@ See :ref:`usage_inputs` for information on input dataset structures.
 
 Anatomical processing
 =====================
-:func:`~xcp_d.workflows.anatomical.init_warp_anats_to_template_wf`
+:func:`~xcp_d.workflows.anatomical.init_postprocess_anat_wf`
 
 XCP-D performs minimal postprocessing on anatomical derivatives from the preprocessing pipeline.
 This includes applying existing transforms to preprocessed T1w and T2w volumes,

@@ -34,7 +34,10 @@ from xcp_d.utils.bids import (
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import flag_bad_run
 from xcp_d.utils.utils import estimate_brain_radius
-from xcp_d.workflows.anatomical import init_postprocess_anat_wf
+from xcp_d.workflows.anatomical import (
+    init_postprocess_anat_wf,
+    init_postprocess_surfaces_wf,
+)
 from xcp_d.workflows.bold import init_postprocess_nifti_wf
 from xcp_d.workflows.cifti import init_postprocess_cifti_wf
 from xcp_d.workflows.concatenation import init_concatenate_data_wf
@@ -65,7 +68,6 @@ def init_xcpd_wf(
     params,
     smoothing,
     custom_confounds_folder,
-    dummytime,
     dummy_scans,
     cifti,
     omp_nthreads,
@@ -121,7 +123,6 @@ def init_xcpd_wf(
                 params="36P",
                 smoothing=6,
                 custom_confounds_folder=None,
-                dummytime=0,
                 dummy_scans=0,
                 cifti=False,
                 omp_nthreads=1,
@@ -164,7 +165,6 @@ def init_xcpd_wf(
     %(params)s
     %(smoothing)s
     %(custom_confounds_folder)s
-    %(dummytime)s
     %(dummy_scans)s
     %(process_surfaces)s
     %(dcan_qc)s
@@ -206,7 +206,6 @@ def init_xcpd_wf(
             bids_filters=bids_filters,
             smoothing=smoothing,
             output_dir=output_dir,
-            dummytime=dummytime,
             dummy_scans=dummy_scans,
             custom_confounds_folder=custom_confounds_folder,
             fd_thresh=fd_thresh,
@@ -256,7 +255,6 @@ def init_subject_wf(
     params,
     output_dir,
     custom_confounds_folder,
-    dummytime,
     dummy_scans,
     fd_thresh,
     despike,
@@ -301,7 +299,6 @@ def init_subject_wf(
                 params="36P",
                 output_dir=".",
                 custom_confounds_folder=None,
-                dummytime=0,
                 dummy_scans=0,
                 fd_thresh=0.2,
                 despike=True,
@@ -337,7 +334,6 @@ def init_subject_wf(
     %(params)s
     %(output_dir)s
     %(custom_confounds_folder)s
-    %(dummytime)s
     %(dummy_scans)s
     %(fd_thresh)s
     %(despike)s
@@ -496,19 +492,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     target_space = get_entity(subj_data["anat_to_template_xfm"], "to")
 
     postprocess_anat_wf = init_postprocess_anat_wf(
-        fmri_dir=fmri_dir,
-        subject_id=subject_id,
-        dcan_qc=dcan_qc,
+        output_dir=output_dir,
         input_type=input_type,
         t1w_available=t1w_available,
         t2w_available=t2w_available,
-        mesh_available=mesh_available,
-        standard_space_mesh=standard_space_mesh,
-        shape_available=shape_available,
         target_space=target_space,
-        process_surfaces=process_surfaces,
-        output_dir=output_dir,
+        dcan_qc=dcan_qc,
         omp_nthreads=omp_nthreads,
+        mem_gb=1,
         name="postprocess_anat_wf",
     )
 
@@ -517,22 +508,51 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("anat_dseg", "inputnode.anat_dseg"),
-            ("lh_pial_surf", "inputnode.lh_pial_surf"),
-            ("rh_pial_surf", "inputnode.rh_pial_surf"),
-            ("lh_wm_surf", "inputnode.lh_wm_surf"),
-            ("rh_wm_surf", "inputnode.rh_wm_surf"),
+            ("t1w_seg", "inputnode.t1w_seg"),
             ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
-            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-            ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-            ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-            ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-            ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-            ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
         ]),
     ])
     # fmt:on
+
+    if process_surfaces or (dcan_qc and mesh_available):
+        # Run surface post-processing workflow if we want to warp meshes to standard space *or*
+        # generate brainsprite.
+        postprocess_surfaces_wf = init_postprocess_surfaces_wf(
+            fmri_dir=fmri_dir,
+            subject_id=subject_id,
+            dcan_qc=dcan_qc,
+            mesh_available=mesh_available,
+            standard_space_mesh=standard_space_mesh,
+            shape_available=shape_available,
+            process_surfaces=process_surfaces,
+            output_dir=output_dir,
+            mem_gb=1,
+            omp_nthreads=omp_nthreads,
+            name="postprocess_surfaces_wf",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, postprocess_surfaces_wf, [
+                ("lh_pial_surf", "inputnode.lh_pial_surf"),
+                ("rh_pial_surf", "inputnode.rh_pial_surf"),
+                ("lh_wm_surf", "inputnode.lh_wm_surf"),
+                ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
+                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
+                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
+                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
+                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
+                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
+            ]),
+            (postprocess_anat_wf, postprocess_surfaces_wf, [
+                ("outputnode.t1w", "inputnode.t1w"),
+                ("outputnode.t2w", "inputnode.t2w"),
+            ]),
+        ])
+        # fmt:on
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(
@@ -617,7 +637,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 params=params,
                 output_dir=output_dir,
                 custom_confounds_folder=custom_confounds_folder,
-                dummytime=dummytime,
                 dummy_scans=dummy_scans,
                 fd_thresh=fd_thresh,
                 despike=despike,

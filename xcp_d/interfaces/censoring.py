@@ -28,8 +28,7 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc=(
             "Number of volumes to drop from the beginning, "
-            "calculated in an earlier workflow from dummytime/dummy_scans "
-            "and repetition time."
+            "calculated in an earlier workflow from dummy_scans."
         ),
     )
     confounds_file = File(
