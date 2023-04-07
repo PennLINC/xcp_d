@@ -200,7 +200,7 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
 
-  cifti_with_freesurfer_and_t2wonly:
+  cifti_with_freesurfer_t2wonly:
     <<: *dockersetup
     steps:
       - checkout
@@ -208,8 +208,8 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer_and_t2wonly\]' )" != "" ]]; then
-              echo "Skipping cifti_with_freesurfer_and_t2wonly build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer_t2wonly\]' )" != "" ]]; then
+              echo "Skipping cifti_with_freesurfer_t2wonly build"
               circleci step halt
             fi
       - restore_cache:
