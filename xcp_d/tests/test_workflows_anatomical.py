@@ -114,5 +114,5 @@ def test_postprocess_anat_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
     out_t2w = wf_nodes["postprocess_anat_wf.ds_t2w_std"].get_output("out_file")
     assert os.path.isfile(out_t2w), os.listdir(out_anat_dir)
 
-    out_t1w_seg = wf_nodes["postprocess_anat_wf.ds_t1w_seg_std"].get_output("out_file")
-    assert os.path.isfile(out_t1w_seg), os.listdir(out_anat_dir)
+    out_anat_dseg = wf_nodes["postprocess_anat_wf.ds_anat_dseg_std"].get_output("out_file")
+    assert os.path.isfile(out_anat_dseg), os.listdir(out_anat_dir)
