@@ -142,27 +142,28 @@ def init_postprocess_anat_wf(
     )
     inputnode.inputs.template = template_file
 
-    ds_t1w_std = pe.Node(
+    ds_anat_dseg_std = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             space=target_space,
             cohort=cohort,
             extension=".nii.gz",
         ),
-        name="ds_t1w_std",
+        name="ds_anat_dseg_std",
         run_without_submitting=False,
     )
 
-    ds_t1w_seg_std = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            space=target_space,
-            cohort=cohort,
-            extension=".nii.gz",
-        ),
-        name="ds_t1w_seg_std",
-        run_without_submitting=False,
-    )
+    if t1w_available:
+        ds_t1w_std = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                space=target_space,
+                cohort=cohort,
+                extension=".nii.gz",
+            ),
+            name="ds_t1w_std",
+            run_without_submitting=False,
+        )
 
     if t2w_available:
         ds_t2w_std = pe.Node(
@@ -181,71 +182,68 @@ def init_postprocess_anat_wf(
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
         # workaround in place.
-
         # fmt:off
-        workflow.connect([
-            (inputnode, ds_t1w_std, [("t1w", "in_file")]),
-            (inputnode, ds_t1w_seg_std, [("anat_dseg", "in_file")]),
-        ])
+        workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "in_file")])])
         # fmt:on
+
+        if t1w_available:
+            # fmt:off
+            workflow.connect([(inputnode, ds_t1w_std, [("t1w", "in_file")])])
+            # fmt:on
 
         if t2w_available:
             # fmt:off
-            workflow.connect([
-                (inputnode, ds_t2w_std, [
-                    ("t2w", "in_file"),
-                    ("t2w", "source_file"),
-                ]),
-            ])
+            workflow.connect([(inputnode, ds_t2w_std, [("t2w", "in_file")])])
             # fmt:on
 
     else:
-        # Warp the native T1w-space T1w, T1w segmentation, and T2w files to standard space.
-        warp_t1w_to_template = pe.Node(
-            ApplyTransforms(
-                num_threads=2,
-                interpolation="LanczosWindowedSinc",
-                input_image_type=3,
-                dimension=3,
-            ),
-            name="warp_t1w_to_template",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, warp_t1w_to_template, [
-                ("t1w", "input_image"),
-                ("anat_to_template_xfm", "transforms"),
-                ("template", "reference_image"),
-            ]),
-            (warp_t1w_to_template, ds_t1w_std, [("output_image", "in_file")]),
-        ])
-        # fmt:on
-
-        warp_t1w_seg_to_template = pe.Node(
+        warp_anat_dseg_to_template = pe.Node(
             ApplyTransforms(
                 num_threads=2,
                 interpolation="GenericLabel",
                 input_image_type=3,
                 dimension=3,
             ),
-            name="warp_t1w_seg_to_template",
+            name="warp_anat_dseg_to_template",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, warp_t1w_seg_to_template, [
+            (inputnode, warp_anat_dseg_to_template, [
                 ("anat_dseg", "input_image"),
                 ("anat_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
-            (warp_t1w_seg_to_template, ds_t1w_seg_std, [("output_image", "in_file")]),
+            (warp_anat_dseg_to_template, ds_anat_dseg_std, [("output_image", "in_file")]),
         ])
         # fmt:on
+
+        if t1w_available:
+            # Warp the native T1w-space T1w, T1w segmentation, and T2w files to standard space.
+            warp_t1w_to_template = pe.Node(
+                ApplyTransforms(
+                    num_threads=2,
+                    interpolation="LanczosWindowedSinc",
+                    input_image_type=3,
+                    dimension=3,
+                ),
+                name="warp_t1w_to_template",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, warp_t1w_to_template, [
+                    ("t1w", "input_image"),
+                    ("anat_to_template_xfm", "transforms"),
+                    ("template", "reference_image"),
+                ]),
+                (warp_t1w_to_template, ds_t1w_std, [("output_image", "in_file")]),
+            ])
+            # fmt:on
 
         if t2w_available:
             warp_t2w_to_template = pe.Node(
@@ -273,16 +271,23 @@ def init_postprocess_anat_wf(
             # fmt:on
 
     # fmt:off
-    workflow.connect([
-        (inputnode, ds_t1w_std, [("t1w", "source_file")]),
-        (inputnode, ds_t1w_seg_std, [("anat_dseg", "source_file")]),
-        (ds_t1w_std, outputnode, [("out_file", "t1w")]),
-    ])
+    workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "source_file")])])
     # fmt:on
+
+    if t1w_available:
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_t1w_std, [("t1w", "source_file")]),
+            (ds_t1w_std, outputnode, [("out_file", "t1w")]),
+        ])
+        # fmt:on
 
     if t2w_available:
         # fmt:off
-        workflow.connect([(ds_t2w_std, outputnode, [("out_file", "t2w")])])
+        workflow.connect([
+            (inputnode, ds_t2w_std, [("t2w", "source_file")]),
+            (ds_t2w_std, outputnode, [("out_file", "t2w")]),
+        ])
         # fmt:on
 
     if dcan_qc:
@@ -296,9 +301,15 @@ def init_postprocess_anat_wf(
         # fmt:off
         workflow.connect([
             (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
-            (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
         ])
         # fmt:on
+
+        if t1w_available:
+            # fmt:off
+            workflow.connect([
+                (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
+            ])
+            # fmt:on
 
         if t2w_available:
             # fmt:off
