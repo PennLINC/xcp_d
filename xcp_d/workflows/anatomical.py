@@ -320,6 +320,8 @@ def init_postprocess_surfaces_wf(
     standard_space_mesh,
     shape_available,
     output_dir,
+    t1w_available,
+    t2w_available,
     mem_gb,
     omp_nthreads,
     name="postprocess_surfaces_wf",
@@ -342,6 +344,8 @@ def init_postprocess_surfaces_wf(
                 standard_space_mesh=False,
                 shape_available=True,
                 output_dir=".",
+                t1w_available=True,
+                t2w_available=True,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="postprocess_surfaces_wf",
@@ -357,6 +361,10 @@ def init_postprocess_surfaces_wf(
     standard_space_mesh : bool
     shape_available : bool
     %(output_dir)s
+    t1w_available : bool
+        True if a T1w image is available.
+    t2w_available : bool
+        True if a T2w image is available.
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -365,11 +373,11 @@ def init_postprocess_surfaces_wf(
     Inputs
     ------
     t1w
-        Standard-space T1w file.
+        Preprocessed T1w file. May be in native or standard space.
     t2w
-        Standard-space T2w file.
-    %(t1w_to_template_xfm)s
-    %(template_to_t1w_xfm)s
+        Preprocessed T2w file. May be in native or standard space.
+    %(anat_to_template_xfm)s
+    %(template_to_anat_xfm)s
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
     lh_sulcal_depth, rh_sulcal_depth
@@ -383,8 +391,8 @@ def init_postprocess_surfaces_wf(
             fields=[
                 "t1w",
                 "t2w",
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
+                "anat_to_template_xfm",
+                "template_to_anat_xfm",
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
@@ -404,7 +412,8 @@ def init_postprocess_surfaces_wf(
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             output_dir=output_dir,
-            t2w_available=False,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
             omp_nthreads=omp_nthreads,
             mem_gb=mem_gb,
         )
@@ -517,8 +526,8 @@ def init_postprocess_surfaces_wf(
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
+                ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ]),
             (warp_surfaces_to_template_wf, hcp_surface_wfs["lh"], [
                 ("outputnode.lh_pial_surf", "inputnode.pial_surf"),
@@ -618,8 +627,8 @@ def init_warp_surfaces_to_template_wf(
         niu.IdentityInterface(
             fields=[
                 # transforms
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
+                "anat_to_template_xfm",
+                "template_to_anat_xfm",
                 # surfaces
                 "lh_pial_surf",
                 "rh_pial_surf",

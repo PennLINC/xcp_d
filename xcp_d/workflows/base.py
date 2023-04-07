@@ -508,7 +508,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("t1w_seg", "inputnode.t1w_seg"),
+            ("anat_dseg", "inputnode.anat_dseg"),
             ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
         ]),
     ])
@@ -526,6 +526,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             shape_available=shape_available,
             process_surfaces=process_surfaces,
             output_dir=output_dir,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
             mem_gb=1,
             omp_nthreads=omp_nthreads,
             name="postprocess_surfaces_wf",
@@ -538,8 +540,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
+                ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
                 ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
                 ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
