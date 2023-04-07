@@ -1,6 +1,6 @@
 {
     "t1w": {
-        "acq": "dummy"
+        "acquisition": "dummy"
     },
     "bold": {
         "task": "imagery",
