@@ -177,9 +177,9 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
         "sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
     ]
     for file_to_copy in files_to_copy:
-        t2w_file = file_to_copy.replace("T1w", "T2w")
+        t2w_file = os.path.join(anat_dir, file_to_copy.replace("T1w", "T2w"))
         if not os.path.isfile(t2w_file):
-            shutil.copyfile(file_to_copy, t2w_file)
+            shutil.copyfile(os.path.join(anat_dir, file_to_copy), t2w_file)
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_filter.json")
