@@ -1,0 +1,9 @@
+{
+    "t1w": {
+        "acq": "dummy"
+    },
+    "bold": {
+        "task": "imagery",
+        "run": ["01", "02"]
+    }
+}
