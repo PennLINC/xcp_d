@@ -153,6 +153,10 @@ def init_postprocess_anat_wf(
         run_without_submitting=False,
     )
 
+    # fmt:off
+    workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "source_file")])])
+    # fmt:on
+
     if t1w_available:
         ds_t1w_std = pe.Node(
             DerivativesDataSink(
@@ -165,6 +169,13 @@ def init_postprocess_anat_wf(
             run_without_submitting=False,
         )
 
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_t1w_std, [("t1w", "source_file")]),
+            (ds_t1w_std, outputnode, [("out_file", "t1w")]),
+        ])
+        # fmt:on
+
     if t2w_available:
         ds_t2w_std = pe.Node(
             DerivativesDataSink(
@@ -176,6 +187,13 @@ def init_postprocess_anat_wf(
             name="ds_t2w_std",
             run_without_submitting=False,
         )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_t2w_std, [("t2w", "source_file")]),
+            (ds_t2w_std, outputnode, [("out_file", "t2w")]),
+        ])
+        # fmt:on
 
     if input_type in ("dcan", "hcp"):
         # Assume that the T1w, T1w segmentation, and T2w files are in standard space,
@@ -265,30 +283,9 @@ def init_postprocess_anat_wf(
                     ("anat_to_template_xfm", "transforms"),
                     ("template", "reference_image"),
                 ]),
-                (inputnode, ds_t2w_std, [("t2w", "source_file")]),
                 (warp_t2w_to_template, ds_t2w_std, [("output_image", "in_file")]),
             ])
             # fmt:on
-
-    # fmt:off
-    workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "source_file")])])
-    # fmt:on
-
-    if t1w_available:
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_t1w_std, [("t1w", "source_file")]),
-            (ds_t1w_std, outputnode, [("out_file", "t1w")]),
-        ])
-        # fmt:on
-
-    if t2w_available:
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_t2w_std, [("t2w", "source_file")]),
-            (ds_t2w_std, outputnode, [("out_file", "t2w")]),
-        ])
-        # fmt:on
 
     if dcan_qc:
         execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
