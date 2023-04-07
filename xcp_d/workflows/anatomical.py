@@ -98,9 +98,10 @@ def init_postprocess_anat_wf(
     t2w : :obj:`str` or None
         Path to the preprocessed T2w file.
         This file may be in standard space or native T1w space.
-    t1w_seg : :obj:`str`
+    anat_dseg : :obj:`str`
         Path to the T1w segmentation file.
-    %(t1w_to_template_xfm)s
+    %(anat_to_template_xfm)s
+        We need to use MNI152NLin6Asym for the template.
     template : :obj:`str`
         The target template.
 
@@ -114,7 +115,15 @@ def init_postprocess_anat_wf(
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w", "t2w", "t1w_seg", "t1w_to_template_xfm", "template"]),
+        niu.IdentityInterface(
+            fields=[
+                "t1w",
+                "t2w",
+                "anat_dseg",
+                "anat_to_template_xfm",
+                "template",
+            ]
+        ),
         name="inputnode",
     )
 
@@ -133,27 +142,39 @@ def init_postprocess_anat_wf(
     )
     inputnode.inputs.template = template_file
 
-    ds_t1w_std = pe.Node(
+    ds_anat_dseg_std = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             space=target_space,
             cohort=cohort,
             extension=".nii.gz",
         ),
-        name="ds_t1w_std",
+        name="ds_anat_dseg_std",
         run_without_submitting=False,
     )
 
-    ds_t1w_seg_std = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            space=target_space,
-            cohort=cohort,
-            extension=".nii.gz",
-        ),
-        name="ds_t1w_seg_std",
-        run_without_submitting=False,
-    )
+    # fmt:off
+    workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "source_file")])])
+    # fmt:on
+
+    if t1w_available:
+        ds_t1w_std = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                space=target_space,
+                cohort=cohort,
+                extension=".nii.gz",
+            ),
+            name="ds_t1w_std",
+            run_without_submitting=False,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_t1w_std, [("t1w", "source_file")]),
+            (ds_t1w_std, outputnode, [("out_file", "t1w")]),
+        ])
+        # fmt:on
 
     if t2w_available:
         ds_t2w_std = pe.Node(
@@ -167,76 +188,80 @@ def init_postprocess_anat_wf(
             run_without_submitting=False,
         )
 
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_t2w_std, [("t2w", "source_file")]),
+            (ds_t2w_std, outputnode, [("out_file", "t2w")]),
+        ])
+        # fmt:on
+
     if input_type in ("dcan", "hcp"):
         # Assume that the T1w, T1w segmentation, and T2w files are in standard space,
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
         # workaround in place.
-
         # fmt:off
-        workflow.connect([
-            (inputnode, ds_t1w_std, [("t1w", "in_file")]),
-            (inputnode, ds_t1w_seg_std, [("t1w_seg", "in_file")]),
-        ])
+        workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "in_file")])])
         # fmt:on
+
+        if t1w_available:
+            # fmt:off
+            workflow.connect([(inputnode, ds_t1w_std, [("t1w", "in_file")])])
+            # fmt:on
 
         if t2w_available:
             # fmt:off
-            workflow.connect([
-                (inputnode, ds_t2w_std, [
-                    ("t2w", "in_file"),
-                    ("t2w", "source_file"),
-                ]),
-            ])
+            workflow.connect([(inputnode, ds_t2w_std, [("t2w", "in_file")])])
             # fmt:on
 
     else:
-        # Warp the native T1w-space T1w, T1w segmentation, and T2w files to standard space.
-        warp_t1w_to_template = pe.Node(
-            ApplyTransforms(
-                num_threads=2,
-                interpolation="LanczosWindowedSinc",
-                input_image_type=3,
-                dimension=3,
-            ),
-            name="warp_t1w_to_template",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, warp_t1w_to_template, [
-                ("t1w", "input_image"),
-                ("t1w_to_template_xfm", "transforms"),
-                ("template", "reference_image"),
-            ]),
-            (warp_t1w_to_template, ds_t1w_std, [("output_image", "in_file")]),
-        ])
-        # fmt:on
-
-        warp_t1w_seg_to_template = pe.Node(
+        warp_anat_dseg_to_template = pe.Node(
             ApplyTransforms(
                 num_threads=2,
                 interpolation="GenericLabel",
                 input_image_type=3,
                 dimension=3,
             ),
-            name="warp_t1w_seg_to_template",
+            name="warp_anat_dseg_to_template",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, warp_t1w_seg_to_template, [
-                ("t1w_seg", "input_image"),
-                ("t1w_to_template_xfm", "transforms"),
+            (inputnode, warp_anat_dseg_to_template, [
+                ("anat_dseg", "input_image"),
+                ("anat_to_template_xfm", "transforms"),
                 ("template", "reference_image"),
             ]),
-            (warp_t1w_seg_to_template, ds_t1w_seg_std, [("output_image", "in_file")]),
+            (warp_anat_dseg_to_template, ds_anat_dseg_std, [("output_image", "in_file")]),
         ])
         # fmt:on
+
+        if t1w_available:
+            # Warp the native T1w-space T1w, T1w segmentation, and T2w files to standard space.
+            warp_t1w_to_template = pe.Node(
+                ApplyTransforms(
+                    num_threads=2,
+                    interpolation="LanczosWindowedSinc",
+                    input_image_type=3,
+                    dimension=3,
+                ),
+                name="warp_t1w_to_template",
+                mem_gb=mem_gb,
+                n_procs=omp_nthreads,
+            )
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, warp_t1w_to_template, [
+                    ("t1w", "input_image"),
+                    ("anat_to_template_xfm", "transforms"),
+                    ("template", "reference_image"),
+                ]),
+                (warp_t1w_to_template, ds_t1w_std, [("output_image", "in_file")]),
+            ])
+            # fmt:on
 
         if t2w_available:
             warp_t2w_to_template = pe.Node(
@@ -255,26 +280,12 @@ def init_postprocess_anat_wf(
             workflow.connect([
                 (inputnode, warp_t2w_to_template, [
                     ("t2w", "input_image"),
-                    ("t1w_to_template_xfm", "transforms"),
+                    ("anat_to_template_xfm", "transforms"),
                     ("template", "reference_image"),
                 ]),
-                (inputnode, ds_t2w_std, [("t2w", "source_file")]),
                 (warp_t2w_to_template, ds_t2w_std, [("output_image", "in_file")]),
             ])
             # fmt:on
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_t1w_std, [("t1w", "source_file")]),
-        (inputnode, ds_t1w_seg_std, [("t1w_seg", "source_file")]),
-        (ds_t1w_std, outputnode, [("out_file", "t1w")]),
-    ])
-    # fmt:on
-
-    if t2w_available:
-        # fmt:off
-        workflow.connect([(ds_t2w_std, outputnode, [("out_file", "t2w")])])
-        # fmt:on
 
     if dcan_qc:
         execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
@@ -287,9 +298,15 @@ def init_postprocess_anat_wf(
         # fmt:off
         workflow.connect([
             (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
-            (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
         ])
         # fmt:on
+
+        if t1w_available:
+            # fmt:off
+            workflow.connect([
+                (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
+            ])
+            # fmt:on
 
         if t2w_available:
             # fmt:off
@@ -311,6 +328,8 @@ def init_postprocess_surfaces_wf(
     standard_space_mesh,
     shape_available,
     output_dir,
+    t1w_available,
+    t2w_available,
     mem_gb,
     omp_nthreads,
     name="postprocess_surfaces_wf",
@@ -333,6 +352,8 @@ def init_postprocess_surfaces_wf(
                 standard_space_mesh=False,
                 shape_available=True,
                 output_dir=".",
+                t1w_available=True,
+                t2w_available=True,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="postprocess_surfaces_wf",
@@ -348,6 +369,10 @@ def init_postprocess_surfaces_wf(
     standard_space_mesh : bool
     shape_available : bool
     %(output_dir)s
+    t1w_available : bool
+        True if a T1w image is available.
+    t2w_available : bool
+        True if a T2w image is available.
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -356,11 +381,11 @@ def init_postprocess_surfaces_wf(
     Inputs
     ------
     t1w
-        Standard-space T1w file.
+        Preprocessed T1w file. May be in native or standard space.
     t2w
-        Standard-space T2w file.
-    %(t1w_to_template_xfm)s
-    %(template_to_t1w_xfm)s
+        Preprocessed T2w file. May be in native or standard space.
+    %(anat_to_template_xfm)s
+    %(template_to_anat_xfm)s
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
     lh_sulcal_depth, rh_sulcal_depth
@@ -374,8 +399,8 @@ def init_postprocess_surfaces_wf(
             fields=[
                 "t1w",
                 "t2w",
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
+                "anat_to_template_xfm",
+                "template_to_anat_xfm",
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
@@ -395,7 +420,8 @@ def init_postprocess_surfaces_wf(
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             output_dir=output_dir,
-            t2w_available=False,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
             omp_nthreads=omp_nthreads,
             mem_gb=mem_gb,
         )
@@ -508,8 +534,8 @@ def init_postprocess_surfaces_wf(
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
+                ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ]),
             (warp_surfaces_to_template_wf, hcp_surface_wfs["lh"], [
                 ("outputnode.lh_pial_surf", "inputnode.pial_surf"),
@@ -583,11 +609,11 @@ def init_warp_surfaces_to_template_wf(
 
     Inputs
     ------
-    %(t1w_to_template_xfm)s
+    %(anat_to_template_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
-    %(template_to_t1w_xfm)s
+    %(template_to_anat_xfm)s
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
@@ -609,8 +635,8 @@ def init_warp_surfaces_to_template_wf(
         niu.IdentityInterface(
             fields=[
                 # transforms
-                "t1w_to_template_xfm",
-                "template_to_t1w_xfm",
+                "anat_to_template_xfm",
+                "template_to_anat_xfm",
                 # surfaces
                 "lh_pial_surf",
                 "rh_pial_surf",
@@ -655,8 +681,8 @@ def init_warp_surfaces_to_template_wf(
     # fmt:off
     workflow.connect([
         (inputnode, update_xfm_wf, [
-            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-            ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+            ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
+            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
         ]),
     ])
     # fmt:on
@@ -931,9 +957,9 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
 
     Inputs
     ------
-    t1w_to_template_xfm
+    anat_to_template_xfm
         ANTS/fMRIPrep-style H5 transform from T1w image to template.
-    template_to_t1w_xfm
+    template_to_anat_xfm
         ANTS/fMRIPrep-style H5 transform from template to T1w image.
 
     Outputs
@@ -948,7 +974,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["t1w_to_template_xfm", "template_to_t1w_xfm"]),
+        niu.IdentityInterface(fields=["anat_to_template_xfm", "template_to_anat_xfm"]),
         name="inputnode",
     )
 
@@ -970,7 +996,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     )  # MB
 
     # fmt:off
-    workflow.connect([(inputnode, disassemble_h5, [("t1w_to_template_xfm", "in_file")])])
+    workflow.connect([(inputnode, disassemble_h5, [("anat_to_template_xfm", "in_file")])])
     # fmt:on
 
     # Nipype's CompositeTransformUtil assumes a certain file naming and
@@ -987,7 +1013,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     )
 
     # fmt:off
-    workflow.connect([(inputnode, disassemble_h5_inv, [("template_to_t1w_xfm", "in_file")])])
+    workflow.connect([(inputnode, disassemble_h5_inv, [("template_to_anat_xfm", "in_file")])])
     # fmt:on
 
     # convert affine from ITK binary to txt

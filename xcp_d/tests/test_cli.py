@@ -91,7 +91,8 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
                 anat_dir,
                 f"sub-01_space-fsLR_den-32k_hemi-{hemi}_{shape}.shape.gii",
             )
-            shutil.copyfile(base_file, out_file)
+            if not os.path.isfile(out_file):
+                shutil.copyfile(base_file, out_file)
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
@@ -138,6 +139,93 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     )
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
+
+    check_affines(data_dir, out_dir, input_type="cifti")
+
+
+@pytest.mark.ds001419_cifti_t2wonly
+def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
+    """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options and a simulated T2w image."""
+    test_name = "test_ds001419_cifti_t2wonly"
+
+    data_dir = datasets["ds001419"]
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
+
+    # Copy shape files to test ability to transfer them to XCP-D derivatives.
+    anat_dir = os.path.join(data_dir, "sub-01/anat")
+    for hemi in ["L", "R"]:
+        base_file = os.path.join(anat_dir, f"sub-01_hemi-{hemi}_smoothwm.surf.gii")
+        for shape in ["curv", "sulc", "thickness"]:
+            out_file = os.path.join(
+                anat_dir,
+                f"sub-01_space-fsLR_den-32k_hemi-{hemi}_{shape}.shape.gii",
+            )
+            if not os.path.isfile(out_file):
+                shutil.copyfile(base_file, out_file)
+
+    # Simulate a T2w image
+    files_to_copy = [
+        "sub-01_desc-preproc_T1w.nii.gz",
+        "sub-01_desc-preproc_T1w.json",
+        "sub-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.nii.gz",
+        "sub-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.json",
+        "sub-01_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        "sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
+        "sub-01_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
+        "sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
+    ]
+    for file_to_copy in files_to_copy:
+        t2w_file = os.path.join(anat_dir, file_to_copy.replace("T1w", "T2w"))
+        if not os.path.isfile(t2w_file):
+            shutil.copyfile(os.path.join(anat_dir, file_to_copy), t2w_file)
+
+    test_data_dir = get_test_data_path()
+    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_filter.json")
+
+    parameters = [
+        data_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        f"--bids-filter-file={filter_file}",
+        "--nuisance-regressors=acompcor_gsr",
+        "--despike",
+        "--head_radius=40",
+        "--smoothing=6",
+        "--motion-filter-type=notch",
+        "--band-stop-min=12",
+        "--band-stop-max=18",
+        "--warp-surfaces-native2std",
+        "--cifti",
+        "--combineruns",
+        "--dcan-qc",
+        "--dummy-scans=auto",
+        "--fd-thresh=0.2",
+    ]
+    opts = get_parser().parse_args(parameters)
+    retval = {}
+    retval = build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
+    xcpd_wf = retval.get("workflow", None)
+    plugin_settings = retval["plugin_settings"]
+    xcpd_wf.run(**plugin_settings)
+
+    generate_reports(
+        subject_list=["01"],
+        fmri_dir=data_dir,
+        work_dir=work_dir,
+        output_dir=out_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+        dcan_qc=opts.dcan_qc,
+    )
+
+    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     check_affines(data_dir, out_dir, input_type="cifti")

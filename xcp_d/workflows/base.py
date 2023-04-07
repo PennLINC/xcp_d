@@ -219,7 +219,10 @@ def init_xcpd_wf(
         )
 
         single_subj_wf.config["execution"]["crashdump_dir"] = os.path.join(
-            output_dir, "xcp_d", "sub-" + subject_id, "log"
+            output_dir,
+            "xcp_d",
+            f"sub-{subject_id}",
+            "log",
         )
         for node in single_subj_wf._get_all_nodes():
             node.config = deepcopy(single_subj_wf.config)
@@ -355,6 +358,9 @@ def init_subject_wf(
         cifti=cifti,
         layout=layout,
     )
+    t1w_available = subj_data["t1w"] is not None
+    t2w_available = subj_data["t2w"] is not None
+    primary_anat = "T1w" if subj_data["t1w"] else "T2w"
 
     mesh_available, shape_available, standard_space_mesh, surface_data = collect_surface_data(
         layout=layout,
@@ -371,10 +377,10 @@ def init_subject_wf(
                 "subj_data",  # not currently used, but will be in future
                 "t1w",
                 "t2w",  # optional
-                "t1w_mask",  # not used by cifti workflow
-                "t1w_seg",
-                "template_to_t1w_xfm",  # not used by cifti workflow
-                "t1w_to_template_xfm",
+                "anat_brainmask",  # not used by cifti workflow
+                "anat_dseg",
+                "template_to_anat_xfm",  # not used by cifti workflow
+                "anat_to_template_xfm",
                 # mesh files
                 "lh_pial_surf",
                 "rh_pial_surf",
@@ -394,10 +400,10 @@ def init_subject_wf(
     inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t2w = subj_data["t2w"]
-    inputnode.inputs.t1w_mask = subj_data["t1w_mask"]
-    inputnode.inputs.t1w_seg = subj_data["t1w_seg"]
-    inputnode.inputs.template_to_t1w_xfm = subj_data["template_to_t1w_xfm"]
-    inputnode.inputs.t1w_to_template_xfm = subj_data["t1w_to_template_xfm"]
+    inputnode.inputs.anat_brainmask = subj_data["anat_brainmask"]
+    inputnode.inputs.anat_dseg = subj_data["anat_dseg"]
+    inputnode.inputs.template_to_anat_xfm = subj_data["template_to_anat_xfm"]
+    inputnode.inputs.anat_to_template_xfm = subj_data["anat_to_template_xfm"]
 
     # surface mesh files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
@@ -483,13 +489,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     # Extract target volumetric space for T1w image
-    target_space = get_entity(subj_data["t1w_to_template_xfm"], "to")
+    target_space = get_entity(subj_data["anat_to_template_xfm"], "to")
 
     postprocess_anat_wf = init_postprocess_anat_wf(
         output_dir=output_dir,
         input_type=input_type,
-        t1w_available=subj_data["t1w"] is not None,
-        t2w_available=subj_data["t2w"] is not None,
+        t1w_available=t1w_available,
+        t2w_available=t2w_available,
         target_space=target_space,
         dcan_qc=dcan_qc,
         omp_nthreads=omp_nthreads,
@@ -502,8 +508,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("t1w_seg", "inputnode.t1w_seg"),
-            ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
+            ("anat_dseg", "inputnode.anat_dseg"),
+            ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
         ]),
     ])
     # fmt:on
@@ -520,6 +526,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             shape_available=shape_available,
             process_surfaces=process_surfaces,
             output_dir=output_dir,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
             mem_gb=1,
             omp_nthreads=omp_nthreads,
             name="postprocess_surfaces_wf",
@@ -532,8 +540,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
-                ("t1w_to_template_xfm", "inputnode.t1w_to_template_xfm"),
-                ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
+                ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
                 ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
                 ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
@@ -549,7 +557,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         # fmt:on
 
     # Estimate head radius, if necessary
-    head_radius = estimate_brain_radius(mask_file=subj_data["t1w_mask"], head_radius=head_radius)
+    head_radius = estimate_brain_radius(
+        mask_file=subj_data["anat_brainmask"],
+        head_radius=head_radius,
+    )
 
     n_runs = len(preproc_files)
     preproc_files = group_across_runs(preproc_files)
@@ -570,7 +581,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "interpolated_filtered_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
-                "t1w_to_native_xfm",
+                "anat_to_native_xfm",
                 "bold_mask",
                 "boldref",
                 "atlas_names",  # this will be exactly the same across runs
@@ -586,7 +597,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             }
 
         for j_run, bold_file in enumerate(task_files):
-            run_data = collect_run_data(layout, input_type, bold_file, cifti=cifti)
+            run_data = collect_run_data(
+                layout,
+                input_type,
+                bold_file,
+                cifti=cifti,
+                primary_anat=primary_anat,
+            )
 
             post_scrubbing_duration = flag_bad_run(
                 fmriprep_confounds_file=run_data["confounds"],
@@ -627,6 +644,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 despike=despike,
                 dcan_qc=dcan_qc,
                 run_data=run_data,
+                t1w_available=t1w_available,
+                t2w_available=t2w_available,
                 n_runs=n_runs,
                 min_coverage=min_coverage,
                 omp_nthreads=omp_nthreads,
@@ -648,8 +667,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 # fmt:off
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
-                        ("t1w_mask", "inputnode.t1w_mask"),
-                        ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                        ("anat_brainmask", "inputnode.anat_brainmask"),
+                        ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                     ]),
                 ])
                 # fmt:on
@@ -679,8 +698,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # fmt:off
             workflow.connect([
                 (inputnode, concatenate_data_wf, [
-                    ("t1w_mask", "inputnode.t1w_mask"),
-                    ("template_to_t1w_xfm", "inputnode.template_to_t1w_xfm"),
+                    ("anat_brainmask", "inputnode.anat_brainmask"),
+                    ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ]),
             ])
             # fmt:on

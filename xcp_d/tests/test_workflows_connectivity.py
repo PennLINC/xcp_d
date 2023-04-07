@@ -24,9 +24,9 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
-    template_to_t1w_xfm = fmriprep_with_freesurfer_data["template_to_t1w_xfm"]
+    template_to_anat_xfm = fmriprep_with_freesurfer_data["template_to_anat_xfm"]
     boldref = fmriprep_with_freesurfer_data["boldref"]
-    t1w_to_native_xfm = fmriprep_with_freesurfer_data["t1w_to_native_xfm"]
+    anat_to_native_xfm = fmriprep_with_freesurfer_data["anat_to_native_xfm"]
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -49,8 +49,8 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         name="connectivity_wf",
         omp_nthreads=2,
     )
-    connectivity_wf.inputs.inputnode.template_to_t1w_xfm = template_to_t1w_xfm
-    connectivity_wf.inputs.inputnode.t1w_to_native_xfm = t1w_to_native_xfm
+    connectivity_wf.inputs.inputnode.template_to_anat_xfm = template_to_anat_xfm
+    connectivity_wf.inputs.inputnode.anat_to_native_xfm = anat_to_native_xfm
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask

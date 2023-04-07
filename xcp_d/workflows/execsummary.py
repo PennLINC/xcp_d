@@ -30,6 +30,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 @fill_doc
 def init_brainsprite_figures_wf(
     output_dir,
+    t1w_available,
     t2w_available,
     mem_gb,
     omp_nthreads,
@@ -46,6 +47,7 @@ def init_brainsprite_figures_wf(
 
             wf = init_brainsprite_figures_wf(
                 output_dir=".",
+                t1w_available=True,
                 t2w_available=True,
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -55,6 +57,8 @@ def init_brainsprite_figures_wf(
     Parameters
     ----------
     %(output_dir)s
+    t1w_available : bool
+        True if a T1w image is available.
     t2w_available : bool
         True if a T2w image is available.
     %(mem_gb)s
@@ -65,7 +69,7 @@ def init_brainsprite_figures_wf(
     Inputs
     ------
     t1w
-        Path to T1w image.
+        Path to T1w image. Optional. Should only be defined if ``t1w_available`` is True.
     t2w
         Path to T2w image. Optional. Should only be defined if ``t2w_available`` is True.
     lh_wm_surf
@@ -96,8 +100,10 @@ def init_brainsprite_figures_wf(
     )
     pngs_scene_template = pkgrf("xcp_d", "data/executive_summary_scenes/pngs_template.scene.gz")
 
-    if t2w_available:
+    if t1w_available and t2w_available:
         image_types = ["T1", "T2"]
+    elif t2w_available:
+        image_types = ["T2"]
     else:
         image_types = ["T1"]
 
@@ -379,7 +385,7 @@ def init_execsummary_functional_plots_wf(
         registration_file = [pat for pat in patterns if fnmatch.filter(all_files, pat)]
         # Get the T1w registration file
         bold_t1w_registration_file = fnmatch.filter(
-            all_files, "*" + bb_register_prefix + registration_file[0]
+            all_files, f"*{bb_register_prefix}{registration_file[0]}"
         )[0]
 
         ds_registration_figure = pe.Node(
@@ -395,11 +401,7 @@ def init_execsummary_functional_plots_wf(
         )
 
         # fmt:off
-        workflow.connect([
-            (inputnode, ds_registration_figure, [
-                ("preproc_nifti", "source_file"),
-            ]),
-        ])
+        workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
         # fmt:on
     else:
         LOGGER.warning(
