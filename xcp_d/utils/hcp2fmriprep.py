@@ -39,7 +39,8 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
     in_dir = os.path.abspath(in_dir)
     out_dir = os.path.abspath(out_dir)
 
-    EXCLUDE_LIST = [  # a list of folders that are not subject identifiers
+    # a list of folders that are not subject identifiers
+    EXCLUDE_LIST = [
         "BiasField",
         "Native",
         "ROIs",
@@ -102,6 +103,11 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         Path to the output fMRIPrep-style derivatives folder.
     sub_ent : str
         Subject identifier, with "sub-" prefix.
+
+    Notes
+    -----
+    Since the T1w is in standard space already, we use identity transforms instead of the
+    individual transforms available in the DCAN derivatives.
     """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir)

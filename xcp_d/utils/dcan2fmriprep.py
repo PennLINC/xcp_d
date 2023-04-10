@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Functions for converting DCAN-format derivatives to fMRIPrep format."""
+"""Functions for converting ABCD-HCP/DCAN-format derivatives to fMRIPrep format."""
 import glob
 import json
 import logging
@@ -11,6 +11,7 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiMasker
+from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.filemanip import ensure_list
 
@@ -18,12 +19,12 @@ LOGGER = logging.getLogger("nipype.utils")
 
 
 def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
-    """Convert DCAN derivatives to BIDS-compliant derivatives.
+    """Convert ABCD-HCP/DCAN derivatives to BIDS-compliant derivatives.
 
     Parameters
     ----------
     in_dir : str
-        Path to DCAN derivatives.
+        Path to ABCD-HCP/DCAN derivatives.
     out_dir : str
         Path to the output BIDS-compliant derivatives folder.
     participant_ids : None or list of str
@@ -48,7 +49,7 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
         participant_ids = [os.path.basename(subject_folder) for subject_folder in subject_folders]
         # Remove sub- prefix.
         participant_ids = [sub_id.replace("sub-", "") for sub_id in participant_ids]
-        if len(participant_ids) == 0:
+        if not participant_ids:
             raise ValueError(f"No subject found in {in_dir}")
 
     else:
@@ -75,6 +76,11 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         Path to the output BIDS-compliant derivatives folder.
     sub_id : str
         Subject identifier, without "sub-" prefix.
+
+    Notes
+    -----
+    Since the T1w is in standard space already, we use identity transforms instead of the
+    individual transforms available in the DCAN derivatives.
     """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir)
@@ -116,7 +122,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         func_dir_fmriprep = os.path.join(session_dir_fmriprep, "func")
         os.makedirs(func_dir_fmriprep, exist_ok=True)
 
-        xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
+        # xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
 
         # Collect anatomical files to copy
         t1w_orig = os.path.join(anat_dir_orig, "T1w.nii.gz")
@@ -149,19 +155,20 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
         # Grab transforms
-        t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
+        identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
+        # t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
         t1w_to_template_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
+            f"{sub_ent}_{ses_ent}_from-T1w_to-{volspace}_mode-image_xfm.txt",
         )
-        copy_dictionary[t1w_to_template_orig] = [t1w_to_template_fmriprep]
+        copy_dictionary[identity_xfm] = [t1w_to_template_fmriprep]
 
-        template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
+        # template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
         template_to_t1w_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
+            f"{sub_ent}_{ses_ent}_from-{volspace}_to-T1w_mode-image_xfm.txt",
         )
-        copy_dictionary[template_to_t1w_orig] = [template_to_t1w_fmriprep]
+        copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
         # Grab surface morphometry files
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
@@ -250,26 +257,26 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
             # TODO: Find actual native-to-T1w transform
-            native_to_t1w_orig = os.path.join(xforms_dir_orig, f"{task_ent}2T1w.nii.gz")
+            # native_to_t1w_orig = os.path.join(xforms_dir_orig, f"{task_ent}2T1w.nii.gz")
             native_to_t1w_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
-                    "from-scanner_to-T1w_mode-image_xfm.nii.gz"
+                    "from-scanner_to-T1w_mode-image_xfm.txt"
                 ),
             )
-            copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
+            copy_dictionary[identity_xfm].append(native_to_t1w_fmriprep)
 
             # TODO: Find actual T1w-to-native transform
-            t1w_to_native_orig = os.path.join(xforms_dir_orig, f"T1w2{task_ent}.nii.gz")
+            # t1w_to_native_orig = os.path.join(xforms_dir_orig, f"T1w2{task_ent}.nii.gz")
             t1w_to_native_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
-                    "from-T1w_to-scanner_mode-image_xfm.nii.gz"
+                    "from-T1w_to-scanner_mode-image_xfm.txt"
                 ),
             )
-            copy_dictionary[t1w_to_native_orig] = [t1w_to_native_fmriprep]
+            copy_dictionary[identity_xfm].append(t1w_to_native_fmriprep)
 
             # Extract metadata for JSON files
             TR = nb.load(bold_nifti_orig).header.get_zooms()[-1]  # repetition time
