@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting ABCD-HCP/DCAN-format derivatives to fMRIPrep format."""
 import glob
-import json
 import logging
 import os
 import re
@@ -10,10 +9,10 @@ import re
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from nilearn.maskers import NiftiMasker
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.filemanip import ensure_list
+from xcp_d.utils.ingestion import plot_bbreg, copy_file, extract_mean_signal, write_json
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -36,6 +35,11 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
     -------
     participant_ids : list of str
         The list of subjects whose derivatives were converted.
+
+    Notes
+    -----
+    Since the T1w is in standard space already, we use identity transforms instead of the
+    individual transforms available in the DCAN derivatives.
     """
     LOGGER.warning("convert_dcan2bids is an experimental function.")
     in_dir = os.path.abspath(in_dir)
@@ -291,7 +295,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                     f"{res_ent}_desc-preproc_bold.json"
                 ),
             )
-            writejson(bold_nifti_json_dict, bold_nifti_json_fmriprep)
+            write_json(bold_nifti_json_dict, bold_nifti_json_fmriprep)
 
             bold_cifti_json_dict = {
                 "RepetitionTime": float(TR),
@@ -307,7 +311,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.json",
             )
 
-            writejson(bold_cifti_json_dict, bold_cifti_json_fmriprep)
+            write_json(bold_cifti_json_dict, bold_cifti_json_fmriprep)
 
             # Create confound regressors
             mvreg = pd.read_csv(
@@ -336,9 +340,9 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 mvreg[f"{col}_power2"] = mvreg[col] ** 2
 
             # use masks: brain, csf, and wm mask to extract timeseries
-            gsreg = extractreg(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
-            csfreg = extractreg(mask=csfmask, nifti=bold_nifti_orig)
-            wmreg = extractreg(mask=wmmask, nifti=bold_nifti_orig)
+            gsreg = extract_mean_signal(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
+            csfreg = extract_mean_signal(mask=csfmask, nifti=bold_nifti_orig)
+            wmreg = extract_mean_signal(mask=wmmask, nifti=bold_nifti_orig)
             rsmd = np.loadtxt(os.path.join(task_dir_orig, "Movement_AbsoluteRMS.txt"))
 
             brainreg = pd.DataFrame(
@@ -379,7 +383,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 func_dir_fmriprep,
                 f"{regressors_file_base}.json",
             )
-            writejson(bold_cifti_json_dict, regressors_json_fmriprep)
+            write_json(bold_cifti_json_dict, regressors_json_fmriprep)
 
             # Make figures
             figdir = os.path.join(subject_dir_fmriprep, "figures")
@@ -388,7 +392,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 figdir,
                 f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_desc-bbregister_bold.svg",
             )
-            bbref_fig_fmriprep = bbregplot(
+            bbref_fig_fmriprep = plot_bbreg(
                 fixed_image=t1w_orig,
                 moving_image=sbref_orig,
                 out_file=bbref_fig_fmriprep,
@@ -406,7 +410,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             print(f"File used for more than one output: {file_orig}")
 
         for file_fmriprep in files_fmriprep:
-            copyfileobj_example(file_orig, file_fmriprep)
+            copy_file(file_orig, file_fmriprep)
 
     dataset_description_dict = {
         "Name": "ABCDDCAN",
@@ -422,7 +426,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     }
     dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
     if not os.path.isfile(dataset_description_fmriprep):
-        writejson(dataset_description_dict, dataset_description_fmriprep)
+        write_json(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from DCAN to fMRIPrep
     scans_dict = {}
@@ -434,75 +438,3 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
     scans_tsv = os.path.join(subject_dir_fmriprep, f"{sub_ent}_scans.tsv")
     scans_df.to_csv(scans_tsv, sep="\t", index=False)
-
-
-def copyfileobj_example(src, dst):
-    """Copy a file from source to dest.
-
-    source and dest must be file-like objects,
-    i.e. any object with a read or write method, like for example StringIO.
-    """
-    import filecmp
-    import shutil
-
-    if not os.path.exists(dst) or not filecmp.cmp(src, dst):
-        shutil.copyfile(src, dst)
-
-
-def extractreg(mask, nifti):
-    """Extract mean signal within mask from NIFTI."""
-    masker = NiftiMasker(mask_img=mask)
-    signals = masker.fit_transform(nifti)
-    return np.mean(signals, axis=1)
-
-
-def writejson(data, outfile):
-    """Write dictionary to JSON file."""
-    with open(outfile, "w") as f:
-        json.dump(data, f)
-    return outfile
-
-
-def bbregplot(fixed_image, moving_image, contour, out_file="report.svg"):
-    """Plot bbref_fig_fmriprep results."""
-    import numpy as np
-    from nilearn.image import load_img, resample_img, threshold_img
-    from niworkflows.viz.utils import compose_view, cuts_from_bbox, plot_registration
-
-    fixed_image_nii = load_img(fixed_image)
-    moving_image_nii = load_img(moving_image)
-    moving_image_nii = resample_img(
-        moving_image_nii, target_affine=np.eye(3), interpolation="nearest"
-    )
-    contour_nii = load_img(contour) if contour is not None else None
-
-    mask_nii = threshold_img(fixed_image_nii, 1e-3)
-
-    n_cuts = 7
-    if contour_nii:
-        cuts = cuts_from_bbox(contour_nii, cuts=n_cuts)
-    else:
-        cuts = cuts_from_bbox(mask_nii, cuts=n_cuts)
-
-    compose_view(
-        plot_registration(
-            fixed_image_nii,
-            "fixed-image",
-            estimate_brightness=True,
-            cuts=cuts,
-            label="fixed",
-            contour=contour_nii,
-            compress="auto",
-        ),
-        plot_registration(
-            moving_image_nii,
-            "moving-image",
-            estimate_brightness=True,
-            cuts=cuts,
-            label="moving",
-            contour=contour_nii,
-            compress="auto",
-        ),
-        out_file=out_file,
-    )
-    return out_file

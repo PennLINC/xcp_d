@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils.dcan2fmriprep import copyfileobj_example, extractreg, writejson
 from xcp_d.utils.filemanip import ensure_list
+from xcp_d.utils.ingestion import copy_file, extract_mean_signal, write_json
 
 LOGGER = logging.getLogger("hcp")
 
@@ -34,6 +34,11 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
     -------
     participant_ids : list of str
         The list of subjects whose derivatives were converted.
+
+    Notes
+    -----
+    Since the T1w is in standard space already, we use identity transforms instead of the
+    individual transforms available in the DCAN derivatives.
     """
     LOGGER.warning("convert_hcp2bids is an experimental function.")
     in_dir = os.path.abspath(in_dir)
@@ -272,7 +277,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_{volspace_ent}_{res_ent}_desc-preproc_bold.json",
         )
-        writejson(bold_nifti_json_dict, bold_nifti_json_fmriprep)
+        write_json(bold_nifti_json_dict, bold_nifti_json_fmriprep)
 
         bold_cifti_json_dict = {
             "RepetitionTime": float(TR),
@@ -287,7 +292,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_space-fsLR_den-91k_bold.dtseries.json",
         )
-        writejson(bold_cifti_json_dict, bold_cifti_json_fmriprep)
+        write_json(bold_cifti_json_dict, bold_cifti_json_fmriprep)
 
         # Create confound regressors
         mvreg = pd.read_csv(
@@ -325,9 +330,9 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             mvreg[f"{col}_power2"] = mvreg[col] ** 2
 
         # use masks: brain, csf, and wm mask to extract timeseries
-        gsreg = extractreg(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
-        csfreg = extractreg(mask=csf_mask, nifti=bold_nifti_orig)
-        wmreg = extractreg(mask=wm_mask, nifti=bold_nifti_orig)
+        gsreg = extract_mean_signal(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
+        csfreg = extract_mean_signal(mask=csf_mask, nifti=bold_nifti_orig)
+        wmreg = extract_mean_signal(mask=wm_mask, nifti=bold_nifti_orig)
         rmsd = np.loadtxt(os.path.join(subject_task_folder, "Movement_AbsoluteRMS.txt"))
 
         brainreg = pd.DataFrame(
@@ -379,7 +384,8 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             print(f"File used for more than one output: {file_orig}")
 
         for file_fmriprep in files_fmriprep:
-            copyfileobj_example(file_orig, file_fmriprep)
+            copy_file(file_orig, file_fmriprep)
+
     print("finished copying files")
 
     # Write the dataset description out last
@@ -396,7 +402,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     }
     dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
     if not os.path.isfile(dataset_description_fmriprep):
-        writejson(dataset_description_dict, dataset_description_fmriprep)
+        write_json(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from HCP to fMRIPrep
     scans_dict = {}
