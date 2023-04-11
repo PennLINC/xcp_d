@@ -129,7 +129,7 @@ def consolidate_confounds(
 
     Returns
     -------
-    confounds_file : :obj:`str`
+    confounds_file : :obj:`str` or None
         Path to combined tsv.
     """
     import os
@@ -137,6 +137,9 @@ def consolidate_confounds(
     import numpy as np
 
     from xcp_d.utils.confounds import load_confound_matrix
+
+    if params == "none":
+        return None
 
     confounds_df = load_confound_matrix(
         img_file=img_file,
@@ -176,6 +179,7 @@ def describe_regression(params, custom_confounds_file):
 
     BASE_DESCRIPTIONS = {
         "custom": "A custom set of regressors was used, with no other regressors from XCP-D.",
+        "none": "No nuisance regression was performed.",
         "24P": (
             "In total, 24 nuisance regressors were selected from the preprocessing confounds, "
             "according to the '24P' strategy. "
@@ -266,10 +270,11 @@ def describe_regression(params, custom_confounds_file):
             "from the BOLD data in the later regression."
         )
 
-    desc += (
-        " Finally, linear trend and intercept terms were added to the regressors prior to "
-        "denoising."
-    )
+    if params != "none":
+        desc += (
+            " Finally, linear trend and intercept terms were added to the regressors prior to "
+            "denoising."
+        )
 
     return desc
 

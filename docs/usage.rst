@@ -294,8 +294,8 @@ The individual confounds files should be tab-delimited, with one column for each
 and one row for each volume in the data being denoised.
 
 
-Signal Confounds for Non-Aggressive Denoising
-=============================================
+Including Signal Regressors
+===========================
 
 Let's say you have some nuisance regressors that are not necessarily orthogonal to some associated
 regressors that are ostensibly noise.
@@ -304,11 +304,10 @@ you would have a series of "rejected" (noise) and "accepted" (signal) ICA compon
 Because tedana uses a spatial ICA, these components' time series are not necessarily independent,
 and there can be shared variance between them.
 If you want to properly denoise your data using the noise components,
-you need to perform "non-aggressive" denoising so that variance from the signal components is not
-removed as well.
-In non-aggressive denoising, you fit a GLM using both the noise and signal regressors,
-then reconstruct the predicted data using just the noise regressors,
-and finally remove that predicted data from the real data.
+you need to account for the shared variance.
+
+XCP-D allows users to include the signal regressors in their custom confounds file,
+so that the noise regressors can be orthogonalized with respect to the signal regressors.
 
 For more information about different types of denoising,
 see `tedana's documentation <https://tedana.readthedocs.io/en/latest/denoising.html>`_,
@@ -317,15 +316,15 @@ and/or `Pruim et al. (2015) <https://doi.org/10.1016/j.neuroimage.2015.02.064>`_
 
 So how do we implement this in XCP-D?
 In order to define regressors that should be treated as signal,
-and thus use non-aggressive denoising instead of the default aggressive denoising,
+and thus orthogonalize the noise regressors w.r.t. known signals instead of regressing them without
+modification,
 you should include those regressors in your custom confounds file,
 with column names starting with ``signal__`` (lower-case "signal", followed by two underscores).
 
 .. important::
 
-   XCP-D will automatically perform non-aggressive denoising with any nuisance-regressor option
-   that uses AROMA regressors
-   (e.g., ``aroma`` or ``aroma_gsr``).
+   XCP-D will automatically orthogonalize noise regressors with respect to signal regressors
+   with any nuisance-regressor option that uses AROMA regressors (e.g., ``aroma`` or ``aroma_gsr``).
 
 
 Task Regression

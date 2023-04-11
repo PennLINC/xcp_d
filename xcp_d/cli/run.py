@@ -210,6 +210,7 @@ def get_parser():
             "acompcor_gsr",
             "aroma_gsr",
             "custom",
+            "none",
         ],
         default="36P",
         type=str,
