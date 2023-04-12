@@ -102,7 +102,7 @@ class RemoveDummyVolumes(SimpleInterface):
         self._results["fmriprep_confounds_file_dropped_TR"] = fname_presuffix(
             self.inputs.fmriprep_confounds_file,
             newpath=runtime.cwd,
-            suffix="_fmriprepDropped",
+            suffix="_fmriprep_dropped",
             use_ext=True,
         )
         self._results["confounds_file_dropped_TR"] = fname_presuffix(
