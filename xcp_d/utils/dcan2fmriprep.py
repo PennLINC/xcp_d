@@ -159,7 +159,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
         # Grab transforms
-        identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
+        identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
         # t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
         t1w_to_template_fmriprep = os.path.join(
             anat_dir_fmriprep,
@@ -208,14 +208,19 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         csfmask = os.path.join(anat_dir_orig, f"vent_2mm_{sub_id}_mask_eroded.nii.gz")
 
         # Collect functional files to copy
-        task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "task-*")))
+        task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, f"{ses_ent}_task-*")))
+        if not task_dirs_orig:
+            raise FileNotFoundError(os.path.join(func_dir_orig, f"{ses_ent}_task-*"))
+
         task_dirs_orig = [task_dir for task_dir in task_dirs_orig if os.path.isdir(task_dir)]
         task_names = [os.path.basename(task_dir) for task_dir in task_dirs_orig]
 
         for base_task_name in task_names:
-            # We assume that the task name doesn't end with a number,
-            # so all trailing numbers are treated as run numbers.
-            found_task_info = re.findall(r"task-([0-9a-zA-Z]+[a-zA-Z]+)(\d+)", base_task_name)
+            # Folder names follow the pattern ses-X_task-Y_run-Z
+            found_task_info = re.findall(
+                ses_ent + r"_task-([0-9a-zA-Z]+)_run-(\d+)",
+                base_task_name,
+            )
             if len(found_task_info) != 1:
                 print(
                     f"Task name and run number could not be inferred for {base_task_name}. "
@@ -253,7 +258,10 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
-            bold_cifti_orig = os.path.join(task_dir_orig, f"{task_ent}_Atlas.dtseries.nii")
+            bold_cifti_orig = os.path.join(
+                task_dir_orig,
+                f"{ses_ent}_{task_ent}_{run_ent}_Atlas.dtseries.nii",
+            )
             bold_cifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.nii",

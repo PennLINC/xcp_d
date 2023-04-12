@@ -172,7 +172,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
     # Grab transforms
-    identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTranform.txt")
+    identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
     t1w_to_template_fmriprep = os.path.join(
         anat_dir_fmriprep,
         f"{sub_ent}_from-T1w_to-{volspace}_mode-image_xfm.txt",
