@@ -12,7 +12,7 @@ import pandas as pd
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.filemanip import ensure_list
-from xcp_d.utils.ingestion import plot_bbreg, copy_file, extract_mean_signal, write_json
+from xcp_d.utils.ingestion import copy_file, extract_mean_signal, plot_bbreg, write_json
 
 LOGGER = logging.getLogger("nipype.utils")
 
