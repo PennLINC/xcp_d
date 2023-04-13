@@ -279,7 +279,6 @@ jobs:
           path: /src/coverage
       - codecov/upload:
           file: /src/coverage/coverage.xml
-          token: CODECOV_TOKEN2
 
   deployable:
     docker:
