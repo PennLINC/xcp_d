@@ -6,7 +6,7 @@
    :target: https://github.com/PennLINC/xcp_d
    :alt: GitHub Repository
 
-.. image:: https://readthedocs.org/projects/xcp_d/badge/?version=latest
+.. image:: https://readthedocs.org/projects/xcp-d/badge/?version=latest
    :target: http://xcp-d.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation
 
