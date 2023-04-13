@@ -380,7 +380,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "-f",
         "--fd-thresh",
-        default=0.3,
+        default=0.2,
         type=float,
         help=(
             "Framewise displacement threshold for censoring. "
