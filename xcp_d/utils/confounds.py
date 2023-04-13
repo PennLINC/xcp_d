@@ -340,7 +340,7 @@ def describe_censoring(
 def _get_acompcor_confounds(confounds_file):
     confounds_df = pd.read_table(confounds_file)
     csf_compcor_columns = [c for c in confounds_df.columns if c.startswith("c_comp_cor")]
-    wm_compcor_columns = [c for c in confounds_df.columns if c.startswith("wm_comp_cor")]
+    wm_compcor_columns = [c for c in confounds_df.columns if c.startswith("w_comp_cor")]
     if not csf_compcor_columns:
         raise ValueError(f"No c_comp_cor columns in {confounds_file}")
 
