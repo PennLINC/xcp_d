@@ -7,7 +7,7 @@
    :alt: GitHub Repository
 
 .. image:: https://readthedocs.org/projects/xcp_d/badge/?version=latest
-   :target: http://xcp_d.readthedocs.io/en/latest/?badge=latest
+   :target: http://xcp-d.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation
 
 .. image:: https://img.shields.io/badge/docker-pennlinc/xcp_d-brightgreen.svg?logo=docker&style=flat
