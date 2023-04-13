@@ -41,7 +41,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     # Create the censoring file
     censoring_df = confounds_df[["framewise_displacement"]]
-    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.2
+    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
     n_censored_volumes = censoring_df["framewise_displacement"].sum()
     assert n_censored_volumes > 0
     temporal_mask = os.path.join(tmpdir, "censoring.tsv")

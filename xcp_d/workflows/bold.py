@@ -109,7 +109,7 @@ def init_postprocess_nifti_wf(
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
                 dummy_scans=2,
-                fd_thresh=0.2,
+                fd_thresh=0.3,
                 despike=True,
                 dcan_qc=True,
                 run_data=run_data,

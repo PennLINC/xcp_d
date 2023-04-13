@@ -152,7 +152,7 @@ def init_postproc_derivatives_wf(
                 bandpass_filter=True,
                 low_pass=0.1,
                 high_pass=0.008,
-                fd_thresh=0.2,
+                fd_thresh=0.3,
                 motion_filter_type=None,
                 smoothing=6,
                 params="36P",
