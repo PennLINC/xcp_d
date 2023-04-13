@@ -251,10 +251,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         # Transpose from SxT (xcpd order) to TxS (nilearn order)
         preprocessed_bold_arr = preprocessed_bold_arr.T
 
-        (
-            uncensored_denoised_bold,
-            interpolated_filtered_bold,
-        ) = denoise_with_nilearn(
+        (uncensored_denoised_bold, interpolated_filtered_bold,) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             temporal_mask=self.inputs.temporal_mask,
@@ -331,10 +328,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         )
         preprocessed_bold_arr = masker.fit_transform(self.inputs.preprocessed_bold)
 
-        (
-            uncensored_denoised_bold,
-            interpolated_filtered_bold,
-        ) = denoise_with_nilearn(
+        (uncensored_denoised_bold, interpolated_filtered_bold,) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             temporal_mask=self.inputs.temporal_mask,
