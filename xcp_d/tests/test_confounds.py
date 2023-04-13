@@ -144,12 +144,12 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
     confounds_df = load_confound_matrix(
         params="acompcor", img_file=bold_file, confounds_file=confounds_file
     )
-    assert confounds_df.shape == (N_VOLUMES, 18)
+    assert confounds_df.shape == (N_VOLUMES, 28)
 
     confounds_df = load_confound_matrix(
         params="acompcor_gsr", img_file=bold_file, confounds_file=confounds_file
     )
-    assert confounds_df.shape == (N_VOLUMES, 19)
+    assert confounds_df.shape == (N_VOLUMES, 29)
 
     confounds_df = load_confound_matrix(
         params="aroma", img_file=bold_file, confounds_file=confounds_file
