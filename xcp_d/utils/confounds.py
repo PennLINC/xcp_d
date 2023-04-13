@@ -113,6 +113,7 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
 def consolidate_confounds(
     img_file,
     params,
+    fmriprep_confounds_file,
     custom_confounds_file=None,
 ):
     """Combine confounds files into a single tsv.
@@ -141,6 +142,7 @@ def consolidate_confounds(
     confounds_df = load_confound_matrix(
         img_file=img_file,
         params=params,
+        confounds_file=fmriprep_confounds_file,
         custom_confounds=custom_confounds_file,
     )
     confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
@@ -335,8 +337,24 @@ def describe_censoring(
     )
 
 
+def _get_acompcor_confounds(confounds_file):
+    confounds_df = pd.read_table(confounds_file)
+    csf_compcor_columns = [c for c in confounds_df.columns if c.startswith("c_comp_cor")]
+    wm_compcor_columns = [c for c in confounds_df.columns if c.startswith("w_comp_cor")]
+    if not csf_compcor_columns:
+        raise ValueError(f"No c_comp_cor columns in {confounds_file}")
+
+    if not wm_compcor_columns:
+        raise ValueError(f"No w_comp_cor columns in {confounds_file}")
+
+    csf_compcor_columns = csf_compcor_columns[: min((5, len(csf_compcor_columns)))]
+    wm_compcor_columns = wm_compcor_columns[: min((5, len(wm_compcor_columns)))]
+    selected_columns = csf_compcor_columns + wm_compcor_columns
+    return confounds_df[selected_columns]
+
+
 @fill_doc
-def load_confound_matrix(params, img_file, custom_confounds=None):
+def load_confound_matrix(params, img_file, confounds_file, custom_confounds=None):
     """Load a subset of the confounds associated with a given file.
 
     Parameters
@@ -344,6 +362,8 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
     %(params)s
     img_file : :obj:`str`
         The path to the bold file.
+    confounds_file : :obj:`str`
+        Only used if aCompCor regressors are required and load_confounds can't find them.
     custom_confounds : :obj:`str` or None, optional
         Custom confounds TSV if there is one. Default is None.
 
@@ -416,6 +436,11 @@ def load_confound_matrix(params, img_file, custom_confounds=None):
 
     else:
         raise ValueError(f"Unrecognized parameter string '{params}'")
+
+    # A workaround for the compcor bug in load_confounds with fMRIPrep v22+
+    if "acompcor" in params and all("comp_cor" not in col for col in confounds_df.columns):
+        LOGGER.warning("No aCompCor confounds detected with load_confounds. Extracting manually.")
+        confounds_df = pd.concat((_get_acompcor_confounds(confounds_file), confounds_df), axis=1)
 
     if "aroma" in params:
         ica_mixing_matrix = _get_mixing_matrix(img_file)
