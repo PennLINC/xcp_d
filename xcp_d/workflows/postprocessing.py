@@ -177,8 +177,9 @@ def init_prepare_confounds_wf(
         niu.Function(
             input_names=[
                 "img_file",
-                "custom_confounds_file",
                 "params",
+                "fmriprep_confounds_file",
+                "custom_confounds_file",
             ],
             output_names=["confounds_file"],
             function=consolidate_confounds,
@@ -192,6 +193,7 @@ def init_prepare_confounds_wf(
     workflow.connect([
         (inputnode, consolidate_confounds_node, [
             ("name_source", "img_file"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
     ])
