@@ -160,7 +160,7 @@ def get_n_frames(anat_file):
     ijk = np.ones((2, 3), dtype=int)
     ijk[:, 0] = [0, n_slices]
     xyz = nb.affines.apply_affine(img.affine, ijk)
-    first_slice, last_slice = xyz[:, 0].astype(int)
+    first_slice, last_slice = sorted(xyz[:, 0].astype(int))
     frame_numbers = list(np.arange(first_slice, last_slice + 1, dtype=int))
 
     return frame_numbers
