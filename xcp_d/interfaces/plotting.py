@@ -489,7 +489,7 @@ class QCPlotsES(SimpleInterface):
         segmentation_file = segmentation_file if isdefined(segmentation_file) else None
 
         run_index = self.inputs.run_index
-        run_index = run_index if isdefined(run_index) else None
+        run_index = np.array(run_index) if isdefined(run_index) else None
 
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
