@@ -269,7 +269,7 @@ class ExecutiveSummary(object):
                     "LaTeX",
                     f"""<pre>{text}</pre>
 <h3>Bibliography</h3>
-<pre>{Path(pkgrf(self.packagename, 'data/boilerplate.bib')).read_text()}</pre>
+<pre>{Path(pkgrf("xcp_d", "data/boilerplate.bib")).read_text()}</pre>
 """,
                 )
             )
