@@ -51,6 +51,19 @@
     .T1pngs, .T2pngs, .Registrations, .Carpets { display: none; }
     .modal { vertical-align: top; margin-top:0; border-top-style:none; padding-top:0; top:0; height: 100%; width: auto; }
     .Images { display: none; height: 100%; width: auto; }
+
+    .boiler-html {
+        font-family: "Bitstream Charter", "Georgia", Times;
+        margin: 20px 25px;
+        padding: 10px;
+        background-color: #F8F9FA;
+    }
+
+    div#boilerplate pre {
+        margin: 20px 25px;
+        padding: 10px;
+        background-color: #F8F9FA;
+    }
 </style>
 <body>
     {# Make the html "title" (what will be seen on the tab, etc.), as well as the page header. #}
@@ -158,6 +171,16 @@
     <p class="text-danger">Failed to generate the boilerplate</p>
     {% endif %}
 </div>
+
+<script type="text/javascript">
+    function toggle(id) {
+        var element = document.getElementById(id);
+        if(element.style.display == 'block')
+            element.style.display = 'none';
+        else
+            element.style.display = 'block';
+    }
+</script>
 
 </body>
 </html>
