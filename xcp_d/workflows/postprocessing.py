@@ -64,7 +64,7 @@ def init_prepare_confounds_wf(
                 band_stop_max=20,
                 motion_filter_order=4,
                 head_radius=70,
-                fd_thresh=0.2,
+                fd_thresh=0.3,
                 custom_confounds_file=None,
                 mem_gb=0.1,
                 omp_nthreads=1,
