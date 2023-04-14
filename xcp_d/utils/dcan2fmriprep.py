@@ -174,10 +174,10 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         )
         copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
-        # Grab surface morphometry files
+        # Grab surface morphometry and shape files
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
 
-        SURFACE_DICT = {
+        MESH_DICT = {
             "R.midthickness": "hemi-R_desc-hcp_midthickness",
             "L.midthickness": "hemi-L_desc-hcp_midthickness",
             "R.inflated": "hemi-R_desc-hcp_inflated",
@@ -190,7 +190,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             "L.white": "hemi-L_smoothwm",
         }
 
-        for in_str, out_str in SURFACE_DICT.items():
+        for in_str, out_str in MESH_DICT.items():
             surf_orig = os.path.join(
                 fsaverage_dir_orig,
                 f"{sub_id}.{in_str}.32k_fs_LR.surf.gii",
@@ -201,6 +201,29 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             surf_fmriprep = os.path.join(
                 anat_dir_fmriprep,
                 f"{sub_ent}_{ses_ent}_space-fsLR_den-32k_{out_str}.surf.gii",
+            )
+            copy_dictionary[surf_orig] = [surf_fmriprep]
+
+        SHAPE_DICT = {
+            "R.corrThickness": "hemi-R_thickness",
+            "L.corrThickness": "hemi-L_thickness",
+            "R.curvature": "hemi-R_curv",
+            "L.curvature": "hemi-L_curv",
+            "R.sulc": "hemi-R_sulc",
+            "L.sulc": "hemi-L_sulc",
+        }
+
+        for in_str, out_str in SHAPE_DICT.items():
+            surf_orig = os.path.join(
+                fsaverage_dir_orig,
+                f"{sub_id}.{in_str}.32k_fs_LR.shape.gii",
+            )
+            if not os.path.isfile(surf_orig):
+                raise FileNotFoundError(f"DNE: {surf_orig}")
+
+            surf_fmriprep = os.path.join(
+                anat_dir_fmriprep,
+                f"{sub_ent}_{ses_ent}_space-fsLR_den-32k_{out_str}.shape.gii",
             )
             copy_dictionary[surf_orig] = [surf_fmriprep]
 
