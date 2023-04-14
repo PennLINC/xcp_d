@@ -138,5 +138,26 @@
     {# Generate scripts and list of images for different mode-specific cyclers. #}
     {% include "cyclers.html.jinja" %}
 
+<div id="boilerplate">
+    <h1 class="sub-report-title">Methods</h1>
+    {% if boilerplate %}
+    <p>We kindly ask to report results preprocessed with this tool using the following boilerplate.</p>
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        {% for b in boilerplate %}
+        <li class="nav-item">
+            <a class="nav-link {% if b[0] == 0 %}active{% endif %}" id="{{ b[1] }}-tab" data-toggle="tab" href="#{{ b[1] }}" role="tab" aria-controls="{{ b[1] }}" aria-selected="{% if b[0] == 0 %}true{%else%}false{% endif %}">{{ b[1] }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="tab-content" id="myTabContent">
+      {% for b in boilerplate %}
+      <div class="tab-pane fade {% if b[0] == 0 %}active show{% endif %}" id="{{ b[1] }}" role="tabpanel" aria-labelledby="{{ b[1] }}-tab">{{ b[2] }}</div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-danger">Failed to generate the boilerplate</p>
+    {% endif %}
+</div>
+
 </body>
 </html>
