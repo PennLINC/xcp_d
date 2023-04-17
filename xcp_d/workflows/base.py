@@ -549,12 +549,29 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
                 ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
             ]),
-            (postprocess_anat_wf, postprocess_surfaces_wf, [
-                ("outputnode.t1w", "inputnode.t1w"),
-                ("outputnode.t2w", "inputnode.t2w"),
-            ]),
         ])
         # fmt:on
+
+        if process_surfaces or standard_space_mesh:
+            # Use standard-space structurals
+            # fmt:off
+            workflow.connect([
+                (postprocess_anat_wf, postprocess_surfaces_wf, [
+                    ("outputnode.t1w", "inputnode.t1w"),
+                    ("outputnode.t2w", "inputnode.t2w"),
+                ]),
+            ])
+            # fmt:on
+        else:
+            # Use native-space structurals
+            # fmt:off
+            workflow.connect([
+                (inputnode, postprocess_surfaces_wf, [
+                    ("t1w", "inputnode.t1w"),
+                    ("t2w", "inputnode.t2w"),
+                ]),
+            ])
+            # fmt:on
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(
