@@ -317,6 +317,7 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--head_radius=auto",
         "--smoothing=6",
         "--fd-thresh=0",
+        "--dcan-qc",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}

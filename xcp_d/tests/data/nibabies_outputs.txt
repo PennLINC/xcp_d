@@ -13,6 +13,7 @@ xcp_d/space-MNIInfant_atlas-Schaefer817_cohort-1_dseg.nii.gz
 xcp_d/space-MNIInfant_atlas-Schaefer917_cohort-1_dseg.nii.gz
 xcp_d/space-MNIInfant_atlas-subcortical_cohort-1_dseg.nii.gz
 xcp_d/sub-01.html
+xcp_d/sub-01_executive_summary.html
 xcp_d/logs
 xcp_d/logs/CITATION.md
 xcp_d/sub-01
