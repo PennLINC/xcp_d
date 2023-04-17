@@ -71,12 +71,8 @@ xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfan
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_alff.nii.gz
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoised_bold.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoised_bold.nii.gz
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoisedSmoothed_bold.json
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-interpolated_bold.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-interpolated_bold.nii.gz
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-linc_qc.csv
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-smooth_alff.json
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-smooth_alff.nii.gz
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_reho.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_reho.nii.gz
