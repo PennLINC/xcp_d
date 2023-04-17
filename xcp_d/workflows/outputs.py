@@ -37,8 +37,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
     ------
     lh_pial_surf
     rh_pial_surf
-    lh_pial_wm
-    rh_pial_wm
+    lh_wm_surf
+    rh_wm_surf
     lh_sulcal_depth
     rh_sulcal_depth
     lh_sulcal_curv
@@ -53,8 +53,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
             fields=[
                 "lh_pial_surf",
                 "rh_pial_surf",
-                "lh_pial_wm",
-                "rh_pial_wm",
+                "lh_wm_surf",
+                "rh_wm_surf",
                 "lh_sulcal_depth",
                 "rh_sulcal_depth",
                 "lh_sulcal_curv",
@@ -78,8 +78,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
             # fsLR-space surface mesh files
             ("lh_pial_surf", "in1"),
             ("rh_pial_surf", "in2"),
-            ("lh_pial_wm", "in3"),
-            ("rh_pial_wm", "in4"),
+            ("lh_wm_surf", "in3"),
+            ("rh_wm_surf", "in4"),
             # fsLR-space surface shape files
             ("lh_sulcal_depth", "in5"),
             ("rh_sulcal_depth", "in6"),
