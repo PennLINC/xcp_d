@@ -626,22 +626,25 @@ def init_denoise_bold_wf(
     ])
     # fmt:on
 
-    resd_smoothing_wf = init_resd_smoothing_wf(
-        smoothing=smoothing,
-        cifti=cifti,
-        mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
-        name="resd_smoothing_wf",
-    )
+    if smoothing:
+        resd_smoothing_wf = init_resd_smoothing_wf(
+            smoothing=smoothing,
+            cifti=cifti,
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+            name="resd_smoothing_wf",
+        )
 
-    # fmt:off
-    workflow.connect([
-        (censor_interpolated_data, resd_smoothing_wf, [
-            ("censored_denoised_bold", "inputnode.bold_file"),
-        ]),
-        (resd_smoothing_wf, outputnode, [("outputnode.smoothed_bold", "smoothed_denoised_bold")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (censor_interpolated_data, resd_smoothing_wf, [
+                ("censored_denoised_bold", "inputnode.bold_file"),
+            ]),
+            (resd_smoothing_wf, outputnode, [
+                ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
+            ]),
+        ])
+        # fmt:on
 
     return workflow
 

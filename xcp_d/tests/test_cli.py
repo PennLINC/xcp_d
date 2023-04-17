@@ -315,8 +315,9 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--nuisance-regressors=27P",
         "--despike",
         "--head_radius=auto",
-        "--smoothing=6",
+        "--smoothing=0",
         "--fd-thresh=0",
+        "--dcan-qc",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
