@@ -665,6 +665,8 @@ def build_workflow(opts, retval):
         retval["return_code"] = 1
 
     # Bandpass filter parameters
+    if opts.lower_bpf == 0 and opts.upper_bpf == 0:
+        opts.bandpass_filter = False
     if (
         opts.bandpass_filter and
         (opts.lower_bpf >= opts.upper_bpf) and
