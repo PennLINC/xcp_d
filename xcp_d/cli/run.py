@@ -666,7 +666,7 @@ def build_workflow(opts, retval):
 
     # Bandpass filter parameters
     if opts.bandpass_filter and (opts.lower_bpf >= opts.upper_bpf) and \
-        (opts.lower_bpf > 0 and opts.upper_bpf > 0):
+            (opts.lower_bpf > 0 and opts.upper_bpf > 0):
         build_log.error(
             f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
             f"'--upper-bpf' ({opts.upper_bpf})."
