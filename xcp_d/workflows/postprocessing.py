@@ -555,8 +555,8 @@ def init_denoise_bold_wf(
         elif low_pass > 0:
             btype = "low-pass"
             preposition = "below"
-            filt_input = f"{low_pass}"       
-        
+            filt_input = f"{low_pass}"
+
         workflow.__desc__ += (
             " Any volumes censored earlier in the workflow were then interpolated in the residual "
             "time series produced by the regression. "
