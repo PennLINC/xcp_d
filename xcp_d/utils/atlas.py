@@ -26,7 +26,7 @@ def get_atlas_names():
         "Schaefer1017",
         "Glasser",
         "Gordon",
-        "subcortical",
+        "Tian",
     ]
 
 
@@ -42,7 +42,7 @@ def get_atlas_nifti(atlas_name):
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
                   "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
                   "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
-                  "subcortical"}
+                  "Tian"}
         The name of the NIFTI atlas to fetch.
 
     Returns
@@ -74,7 +74,7 @@ def get_atlas_nifti(atlas_name):
     elif atlas_name == "Gordon":
         atlas_file = pkgrf("xcp_d", "data/niftiatlas/gordon333/gordon333MNI.nii.gz")
         atlas_labels_file = pkgrf("xcp_d", "data/niftiatlas/Gordon_333Parcels_info.tsv")
-    elif atlas_name == "subcortical":
+    elif atlas_name == "Tian":
         atlas_file = pkgrf(
             "xcp_d",
             "data/niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz",
@@ -98,7 +98,7 @@ def get_atlas_cifti(atlas_name):
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
                   "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
                   "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
-                  "subcortical"}
+                  "Tian"}
         The name of the CIFTI atlas to fetch.
 
     Returns
@@ -135,7 +135,7 @@ def get_atlas_cifti(atlas_name):
             "data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii",
         )
         atlas_labels_file = pkgrf("xcp_d", "data/ciftiatlas/Gordon_333Parcels_info.tsv")
-    elif atlas_name == "subcortical":
+    elif atlas_name == "Tian":
         atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii")
         atlas_labels_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_info.tsv")
     else:
