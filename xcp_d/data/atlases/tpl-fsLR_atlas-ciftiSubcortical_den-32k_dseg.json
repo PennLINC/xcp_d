@@ -12,6 +12,10 @@
     "SpatialReference": {
         "VolumeReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-02_T1w.nii.gz"
     },
+    "cifti_label": {
+        "Description": "The region label present in the CIFTI file.",
+        "LongName": "CIFTI Label"
+    },
     "color_red": {
         "Description": "The red component of the region's specified color, ranging from 0 to 255.",
         "LongName": "Red Color"
