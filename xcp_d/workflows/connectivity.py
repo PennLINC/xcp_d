@@ -75,7 +75,7 @@ with *Nilearn's* [version {nl.__version__}, @abraham2014machine] *NiftiLabelsMas
 following atlases:
 the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
 atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
-the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
+the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
@@ -322,7 +322,7 @@ Processed functional timeseries were extracted from residual BOLD using
 Connectome Workbench [@hcppipelines] for the following atlases:
 the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
 atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
-the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
+the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
