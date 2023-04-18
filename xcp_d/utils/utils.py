@@ -313,7 +313,7 @@ def butter_bandpass(
     """
     from scipy.signal import butter, filtfilt
 
-    if (low_pass > 0 and high_pass > 0) and (low_pass > high_pass):
+    if low_pass > 0 and high_pass > 0:
         btype = "bandpass"
         filt_input = [high_pass, low_pass]
     elif high_pass > 0:
