@@ -291,7 +291,7 @@ def get_parser():
         type=float,
         help=(
             "Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
-            "the denoised BOLD data. "
+            "the denoised BOLD data. Set to 0.0 or negative to disable high-pass filtering. "
             "See Satterthwaite et al. (2013)."
         ),
     )
@@ -302,7 +302,7 @@ def get_parser():
         type=float,
         help=(
             "Upper cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
-            "the denoised BOLD data. "
+            "the denoised BOLD data. Set to 0.0 or negative to disable low-pass filtering. "
             "See Satterthwaite et al. (2013)."
         ),
     )
@@ -665,7 +665,7 @@ def build_workflow(opts, retval):
         retval["return_code"] = 1
 
     # Bandpass filter parameters
-    if opts.bandpass_filter and (opts.lower_bpf >= opts.upper_bpf):
+    if opts.bandpass_filter and (opts.lower_bpf >= opts.upper_bpf) and (opts.lower_bpf > 0 and opts.upper_bpf > 0):
         build_log.error(
             f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
             f"'--upper-bpf' ({opts.upper_bpf})."
