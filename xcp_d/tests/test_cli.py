@@ -118,6 +118,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
+        "--upper-bpf=0.0",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
@@ -205,6 +206,7 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
         "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
+        "--lower-bpf=0.0",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
@@ -342,115 +344,3 @@ def test_nibabies(datasets, output_dir, working_dir):
     check_generated_files(out_dir, output_list_file)
 
     check_affines(data_dir, out_dir, input_type="nibabies")
-
-@pytest.mark.ds001419_highpass
-def test_ds001419_highpass(datasets, output_dir, working_dir):
-    """Run xcp_d on ds001419 fMRIPrep derivatives, while disabling low-pass filtering."""
-    test_name = "test_ds001419_highpass"
-
-    data_dir = datasets["ds001419"]
-    out_dir = os.path.join(output_dir, test_name)
-    work_dir = os.path.join(working_dir, test_name)
-
-    test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_filter.json")
-
-    parameters = [
-        data_dir,
-        out_dir,
-        "participant",
-        f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
-        f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=aroma_gsr",
-        "--despike",
-        "--dummy-scans=4",
-        "--fd-thresh=0.3",
-        "--head_radius=40",
-        "--smoothing=6",
-        "--motion-filter-type=lp",
-        "--band-stop-min=6",
-        "--min-coverage=1",
-        "--upper-bpf=0",
-    ]
-    opts = get_parser().parse_args(parameters)
-
-    retval = {}
-    retval = build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=data_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
-    )
-
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_highpass_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type="nifti")
-
-@pytest.mark.ds001419_lowpass
-def test_ds001419_lowpass(datasets, output_dir, working_dir):
-    """Run xcp_d on ds001419 fMRIPrep derivatives, while disabling high-pass filtering."""
-    test_name = "test_ds001419_lowpass"
-
-    data_dir = datasets["ds001419"]
-    out_dir = os.path.join(output_dir, test_name)
-    work_dir = os.path.join(working_dir, test_name)
-
-    test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_filter.json")
-
-    parameters = [
-        data_dir,
-        out_dir,
-        "participant",
-        f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
-        f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=aroma_gsr",
-        "--despike",
-        "--dummy-scans=4",
-        "--fd-thresh=0.3",
-        "--head_radius=40",
-        "--smoothing=6",
-        "--motion-filter-type=lp",
-        "--band-stop-min=6",
-        "--min-coverage=1",
-        "--lower-bpf=0",
-    ]
-    opts = get_parser().parse_args(parameters)
-
-    retval = {}
-    retval = build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=data_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
-    )
-
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_lowpass_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type="nifti")
