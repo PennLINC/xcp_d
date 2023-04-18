@@ -249,7 +249,16 @@ def init_postproc_derivatives_wf(
         "nuisance parameters": params,
     }
     if bandpass_filter:
-        cleaned_data_dictionary["Freq Band"] = [high_pass, low_pass]
+        if low_pass > 0 and high_pass > 0:
+            key = "Freq Band"
+            val = [high_pass, low_pass]
+        elif high_pass > 0:
+            key = "High-pass Cutoff"
+            val = high_pass
+        elif low_pass > 0:
+            key = "Low-pass Cutoff"
+            val = low_pass
+        cleaned_data_dictionary[key] = val
 
     smoothed_data_dictionary = {"FWHM": smoothing}  # Separate dictionary for smoothing
 
