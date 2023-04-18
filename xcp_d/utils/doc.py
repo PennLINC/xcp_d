@@ -210,7 +210,7 @@ high_pass : :obj:`float`
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This internal parameter corresponds to the command-line parameter ``--lower-bpf``.
     If set to <= 0, high-pass filtering will be disabled.
-    
+
     Default value is 0.01.
 """
 
@@ -223,7 +223,7 @@ low_pass : :obj:`float`
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This internal parameter corresponds to the command-line parameter ``--upper-bpf``.
     If set to <= 0, low-pass filtering will be disabled.
-    
+
     Default value is 0.08.
 """
 
