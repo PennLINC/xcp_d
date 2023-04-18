@@ -195,7 +195,7 @@ class NiftiConnect(SimpleInterface):
 
             parcel_coverage = new_parcel_coverage
 
-        # The time series file is tab-delimited, with node names included in the first row.
+        # The time series file is tab-delimited, with node labels included in the first row.
         timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels)
         correlations_df = timeseries_df.corr()
         coverage_df = pd.DataFrame(data=parcel_coverage, index=node_labels, columns=["coverage"])
@@ -322,10 +322,10 @@ class CiftiConnect(SimpleInterface):
             )
             node_labels_df = node_labels_df.drop(index=[0])
 
-        expected_cifti_node_labels = node_labels_df["cifti_name"].tolist()
-        parcel_name_mapper = dict(zip(node_labels_df["cifti_name"], node_labels_df["name"]))
+        expected_cifti_node_labels = node_labels_df["cifti_label"].tolist()
+        parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
 
-        # Load node names from CIFTI file.
+        # Load node labels from CIFTI file.
         # First axis should be time, second should be parcels
         detected_node_labels = parcels_axis.name
 
@@ -358,22 +358,22 @@ class CiftiConnect(SimpleInterface):
         # (the axis labels are probably already sorted by the atlas values),
         # but I wanted to be extra safe.
         # Code from https://stackoverflow.com/a/6618543/2589328.
-        sorted_parcel_names = [
+        sorted_parcel_labels = [
             x for _, x in sorted(atlas_label_mapper.items(), key=lambda pair: pair[0])
         ]
 
         timeseries_arr = np.zeros((data_arr.shape[0], len(atlas_label_mapper)), dtype=np.float32)
-        timeseries_df = pd.DataFrame(columns=sorted_parcel_names, data=timeseries_arr)
+        timeseries_df = pd.DataFrame(columns=sorted_parcel_labels, data=timeseries_arr)
 
         coverage_arr = np.zeros((len(atlas_label_mapper), 1), dtype=np.float32)
         coverage_df = pd.DataFrame(
-            index=sorted_parcel_names,
+            index=sorted_parcel_labels,
             columns=["coverage"],
             data=coverage_arr,
         )
 
         parcels_in_atlas = []  # list of labels for parcels
-        for parcel_val, parcel_name in atlas_label_mapper.items():
+        for parcel_val, parcel_label in atlas_label_mapper.items():
             parcel_idx = np.where(atlas_arr == parcel_val)[0]
 
             if parcel_idx.size:  # parcel is found in atlas
@@ -382,13 +382,13 @@ class CiftiConnect(SimpleInterface):
 
                 # Determine the percentage of vertices with good data
                 parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
-                coverage_df.loc[parcel_name, "coverage"] = parcel_coverage
+                coverage_df.loc[parcel_label, "coverage"] = parcel_coverage
 
                 if parcel_coverage < min_coverage:
                     # If the parcel has >=50% bad data, replace all of the values with zeros.
                     data_arr[:, parcel_idx] = np.nan
 
-                parcels_in_atlas.append(parcel_name)
+                parcels_in_atlas.append(parcel_label)
                 parcel_data = data_arr[:, parcel_idx]
                 with warnings.catch_warnings():
                     # Ignore warning if calculating mean from only NaNs.
@@ -403,12 +403,12 @@ class CiftiConnect(SimpleInterface):
                     fill_value=np.nan,
                     dtype=data_arr.dtype,
                 )
-                coverage_df.loc[parcel_name, "coverage"] = 0
+                coverage_df.loc[parcel_label, "coverage"] = 0
 
-            timeseries_df[parcel_name] = label_timeseries
+            timeseries_df[parcel_label] = label_timeseries
 
-        # Use parcel names from tsv file instead of internal CIFTI parcel names for tsvs.
-        timeseries_df = timeseries_df.rename(columns=parcel_name_mapper)
+        # Use parcel labels from tsv file instead of internal CIFTI parcel labels for tsvs.
+        timeseries_df = timeseries_df.rename(columns=parcel_label_mapper)
         correlations_df = timeseries_df.corr()
 
         # Save out the coverage tsv
