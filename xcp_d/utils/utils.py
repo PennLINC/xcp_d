@@ -313,15 +313,15 @@ def butter_bandpass(
     """
     from scipy.signal import butter, filtfilt
 
-    if low_pass == 0 and high_pass > 0:
-        btype = "highpass"
-        filt_input = high_pass
-    elif low_pass > 0 and high_pass == 0:
-        btype = "lowpass"
-        filt_input = low_pass
-    elif low_pass > 0 and high_pass > 0:
+    if (low_pass > 0 and high_pass > 0) and (low_pass > high_pass):
         btype = "bandpass"
         filt_input = [high_pass, low_pass]
+    elif high_pass > 0:
+        btype = "highpass"
+        filt_input = high_pass
+    elif low_pass > 0:
+        btype = "lowpass"
+        filt_input = low_pass
     else:
         raise Exception("Filter parameters are not valid.")
     
