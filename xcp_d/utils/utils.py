@@ -322,6 +322,8 @@ def butter_bandpass(
     elif low_pass > 0 and high_pass > 0:
         btype = "bandpass"
         filt_input = [high_pass, low_pass]
+    else:
+        raise Exception("Filter parameters are not valid.")
     
     b, a = butter(
         order,
