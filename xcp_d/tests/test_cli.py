@@ -428,7 +428,7 @@ def test_ds001419_lowpass(datasets, output_dir, working_dir):
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--min-coverage=1",
-        "--upper-bpf=0",
+        "--lower-bpf=0",
     ]
     opts = get_parser().parse_args(parameters)
 
