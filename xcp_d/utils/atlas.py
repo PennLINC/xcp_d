@@ -27,6 +27,7 @@ def get_atlas_names():
         "Glasser",
         "Gordon",
         "Tian",
+        "ciftiSubcortical",
     ]
 
 
@@ -42,7 +43,7 @@ def get_atlas_nifti(atlas_name):
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
                   "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
                   "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
-                  "Tian"}
+                  "Tian", "ciftiSubcortical"}
         The name of the NIFTI atlas to fetch.
 
     Returns
@@ -80,6 +81,12 @@ def get_atlas_nifti(atlas_name):
             "data/niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz",
         )
         atlas_labels_file = pkgrf("xcp_d", "data/niftiatlas/Tian_info.tsv")
+    elif atlas_name == "ciftiSubcortical":
+        atlas_file = pkgrf(
+            "xcp_d",
+            "data/atlases/tpl-MNI152NLin6Asym_atlas-ciftiSubcortical_res-02_dseg.nii.gz",
+        )
+        atlas_labels_file = pkgrf("xcp_d", "data/atlases/atlas-ciftiSubcortical_dseg.tsv")
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
 
@@ -98,7 +105,7 @@ def get_atlas_cifti(atlas_name):
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
                   "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
                   "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
-                  "Tian"}
+                  "Tian", "ciftiSubcortical"}
         The name of the CIFTI atlas to fetch.
 
     Returns
@@ -138,6 +145,12 @@ def get_atlas_cifti(atlas_name):
     elif atlas_name == "Tian":
         atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii")
         atlas_labels_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_info.tsv")
+    elif atlas_name == "ciftiSubcortical":
+        atlas_file = pkgrf(
+            "xcp_d",
+            "data/atlases/tpl-fsLR_atlas-ciftiSubcortical_den-32k_dseg.dlabel.nii",
+        )
+        atlas_labels_file = pkgrf("xcp_d", "data/atlases/atlas-ciftiSubcortical_dseg.tsv")
     else:
         raise RuntimeError(f'Atlas "{atlas_name}" not available')
 
