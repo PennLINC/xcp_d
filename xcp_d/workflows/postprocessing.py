@@ -544,12 +544,25 @@ def init_denoise_bold_wf(
         f"as implemented in nilearn {nilearn.__version__} [@abraham2014machine]."
     )
     if bandpass_filter:
+        if low_pass > 0 and high_pass > 0:
+            btype = "band-pass"
+            preposition = "between"
+            filt_input = f"{high_pass}-{low_pass}"
+        elif high_pass > 0:
+            btype = "high-pass"
+            preposition = "above"
+            filt_input = f"{high_pass}"
+        elif low_pass > 0:
+            btype = "low-pass"
+            preposition = "below"
+            filt_input = f"{low_pass}"
+
         workflow.__desc__ += (
             " Any volumes censored earlier in the workflow were then interpolated in the residual "
             "time series produced by the regression. "
-            "The interpolated timeseries were then band-pass filtered using a(n) "
+            f"The interpolated timeseries were then {btype} filtered using a(n) "
             f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
-            f"in order to retain signals within the {high_pass}-{low_pass} Hz frequency band. "
+            f"in order to retain signals {preposition} {filt_input} Hz. "
             "The filtered, interpolated time series were then re-censored to remove high-motion "
             "outlier volumes."
         )
