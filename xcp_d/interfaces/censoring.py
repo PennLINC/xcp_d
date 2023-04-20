@@ -382,7 +382,7 @@ class Censor(SimpleInterface):
             censored_time_axis = time_axis[:new_total_volumes]
             # Note: not an error. A time axis cannot be accessed with irregularly
             # spaced values. Since we use the temporal_mask for marking the volumes removed,
-            # the time axis also is not used further in XCP.
+            # the time axis also is not used further in XCP-D.
             censored_header = nb.cifti2.Cifti2Header.from_axes(
                 (censored_time_axis, brain_model_axis)
             )
