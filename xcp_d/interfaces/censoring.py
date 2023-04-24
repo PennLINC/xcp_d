@@ -288,6 +288,7 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="BOLD file after denoising, interpolation, and filtering",
     )
+    params = traits.Str(mandatory=True, desc="Parameter set for regression.")
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     fd_thresh = traits.Float(
         mandatory=False,
