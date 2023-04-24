@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from nilearn.interfaces.fmriprep import load_confounds
+from nilearn.interfaces.fmriprep.load_confounds import _get_json, _load_single_confounds_file
 from nipype import logging
 from scipy.signal import butter, filtfilt, iirnotch
 
@@ -71,6 +71,17 @@ def load_motion(
             columns=motion_confounds_df.columns,
         )
 
+    # Volterra expansion
+    columns = motion_confounds_df.columns.tolist()
+    for col in columns:
+        new_col = f"{col}_derivative1"
+        motion_confounds_df[new_col] = motion_confounds_df[col].diff()
+
+    columns = motion_confounds_df.columns.tolist()
+    for col in columns:
+        new_col = f"{col}_power2"
+        motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
+
     return motion_confounds_df
 
 
@@ -110,52 +121,8 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
     return custom_confounds_file
 
 
-def consolidate_confounds(
-    img_file,
-    params,
-    fmriprep_confounds_file,
-    custom_confounds_file=None,
-):
-    """Combine confounds files into a single tsv.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    img_file : :obj:`str`
-        bold file
-    params
-    custom_confounds_file : :obj:`str` or None
-        Path to custom confounds tsv. May be None.
-
-    Returns
-    -------
-    confounds_file : :obj:`str`
-        Path to combined tsv.
-    """
-    import os
-
-    import numpy as np
-
-    from xcp_d.utils.confounds import load_confound_matrix
-
-    confounds_df = load_confound_matrix(
-        img_file=img_file,
-        params=params,
-        confounds_file=fmriprep_confounds_file,
-        custom_confounds=custom_confounds_file,
-    )
-    confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
-    confounds_df["intercept"] = np.ones(confounds_df.shape[0])
-
-    confounds_file = os.path.abspath("confounds.tsv")
-    confounds_df.to_csv(confounds_file, sep="\t", index=False)
-
-    return confounds_file
-
-
 @fill_doc
-def describe_regression(params, custom_confounds_file):
+def describe_regression(params, custom_confounds_file, motion_filter_type):
     """Build a text description of the regression that will be performed.
 
     Parameters
@@ -176,13 +143,15 @@ def describe_regression(params, custom_confounds_file):
         custom_confounds = pd.read_table(custom_confounds_file)
         orth = any([c.startswith("signal__") for c in custom_confounds.columns])
 
+    fstr = "filtered " if motion_filter_type else ""
+
     BASE_DESCRIPTIONS = {
         "custom": "A custom set of regressors was used, with no other regressors from XCP-D.",
         "24P": (
             "In total, 24 nuisance regressors were selected from the preprocessing confounds, "
             "according to the '24P' strategy. "
             "These nuisance regressors included "
-            "six motion parameters with their temporal derivatives, "
+            f"six {fstr}motion parameters with their temporal derivatives, "
             "and their quadratic expansion of those six motion parameters and their "
             "temporal derivatives [@benchmarkp;@satterthwaite_2013]."
         ),
@@ -190,7 +159,7 @@ def describe_regression(params, custom_confounds_file):
             "In total, 27 nuisance regressors were selected from the preprocessing confounds, "
             "according to the '27P' strategy. "
             "These nuisance regressors included "
-            "six motion parameters with their temporal derivatives, "
+            f"six {fstr}motion parameters with their temporal derivatives, "
             "the quadratic expansion of those six motion parameters and their derivatives, "
             "mean global signal, mean white matter signal, and mean CSF signal "
             "[@benchmarkp;@satterthwaite_2013]."
@@ -199,7 +168,7 @@ def describe_regression(params, custom_confounds_file):
             "In total, 36 nuisance regressors were selected from the preprocessing confounds, "
             "according to the '36P' strategy. "
             "These nuisance regressors included "
-            "six motion parameters, mean global signal, mean white matter signal, "
+            f"six {fstr}motion parameters, mean global signal, mean white matter signal, "
             "mean CSF signal with their temporal derivatives, "
             "and the quadratic expansion of six motion parameters, tissues signals and "
             "their temporal derivatives [@benchmarkp;@satterthwaite_2013]."
@@ -208,7 +177,7 @@ def describe_regression(params, custom_confounds_file):
             "Nuisance regressors were selected according to the 'acompcor' strategy. "
             "The top 5 aCompCor principal components from the WM and CSF compartments "
             "were selected as nuisance regressors [@behzadi2007component], "
-            "along with the six motion parameters and their temporal derivatives "
+            f"along with the six {fstr}motion parameters and their temporal derivatives "
             "[@benchmarkp;@satterthwaite_2013]. "
             "As the aCompCor regressors were generated on high-pass filtered data, "
             "the associated cosine basis regressors were included. "
@@ -218,7 +187,7 @@ def describe_regression(params, custom_confounds_file):
             "Nuisance regressors were selected according to the 'acompcor_gsr' strategy. "
             "The top 5 aCompCor principal components from the WM and CSF compartments "
             "were selected as nuisance regressors [@behzadi2007component], "
-            "along with the six motion parameters and their temporal derivatives, "
+            f"along with the six {fstr}motion parameters and their temporal derivatives, "
             "mean white matter signal, mean CSF signal, and mean global signal "
             "[@benchmarkp;@satterthwaite_2013]. "
             "As the aCompCor regressors were generated on high-pass filtered data, "
@@ -303,7 +272,7 @@ def describe_censoring(
     """
     from num2words import num2words
 
-    filter_str, filter_post_str = "", ""
+    filter_str = ""
     if motion_filter_type:
         if motion_filter_type == "notch":
             filter_sub_str = (
@@ -322,10 +291,6 @@ def describe_censoring(
         filter_str = (
             f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
         )
-        filter_post_str = (
-            "The filtered versions of the motion traces and framewise displacement were not used "
-            "for denoising."
-        )
 
     return (
         f"In order to identify high-motion outlier volumes, {filter_str}"
@@ -333,7 +298,7 @@ def describe_censoring(
         f"with a head radius of {head_radius} mm. "
         f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
         f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of later "
-        f"censoring [@power_fd_dvars]. {filter_post_str}"
+        f"censoring [@power_fd_dvars]."
     )
 
 
@@ -361,9 +326,9 @@ def load_confound_matrix(params, img_file, confounds_file, custom_confounds=None
     ----------
     %(params)s
     img_file : :obj:`str`
-        The path to the bold file.
+        The path to the bold file. Used to load the AROMA mixing matrix, if necessary.
     confounds_file : :obj:`str`
-        Only used if aCompCor regressors are required and load_confounds can't find them.
+        Used to load most confounds.
     custom_confounds : :obj:`str` or None, optional
         Custom confounds TSV if there is one. Default is None.
 
@@ -428,7 +393,15 @@ def load_confound_matrix(params, img_file, confounds_file, custom_confounds=None
 
     if params in PARAM_KWARGS.keys():
         kwargs = PARAM_KWARGS[params]
-        confounds_df = load_confounds(img_file, **kwargs)[0]
+        confounds_json_file = _get_json(confounds_file)
+
+        confounds_df = _load_single_confounds_file(
+            confounds_file=confounds_file,
+            strategy=params,
+            demean=False,
+            confounds_json_file=confounds_json_file,
+            **kwargs,
+        )
 
     elif params == "custom":
         # For custom confounds with no other confounds
