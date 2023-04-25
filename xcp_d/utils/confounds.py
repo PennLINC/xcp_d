@@ -6,7 +6,10 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from nilearn.interfaces.fmriprep.load_confounds import _get_json, _load_single_confounds_file
+from nilearn.interfaces.fmriprep.load_confounds import (
+    _get_json,
+    _load_single_confounds_file,
+)
 from nipype import logging
 from scipy.signal import butter, filtfilt, iirnotch
 
