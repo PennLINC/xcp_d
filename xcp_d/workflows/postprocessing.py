@@ -134,7 +134,11 @@ def init_prepare_confounds_wf(
     else:
         censoring_description = ""
 
-    confounds_description = describe_regression(params, custom_confounds_file)
+    confounds_description = describe_regression(
+        params=params,
+        custom_confounds_file=custom_confounds_file,
+        motion_filter_type=motion_filter_type,
+    )
 
     workflow.__desc__ = f" {dummy_scans_str}{censoring_description}{confounds_description}"
 

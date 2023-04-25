@@ -68,6 +68,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     desc = describe_regression(
         params="24P",
         custom_confounds_file=custom_confounds_file,
+        motion_filter_type=None,
     )
     assert isinstance(desc, str)
     assert "custom confounds were also included" in desc
@@ -76,6 +77,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     desc = describe_regression(
         params="custom",
         custom_confounds_file=custom_confounds_file,
+        motion_filter_type=None,
     )
     assert isinstance(desc, str)
     assert "A custom set of regressors was used" in desc
@@ -83,38 +85,46 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
 
 def test_describe_regression():
     """Ensure that xcp_d loads the right confounds."""
-    desc = describe_regression(params="24P", custom_confounds_file=None)
+    desc = describe_regression(params="24P", custom_confounds_file=None, motion_filter_type=None)
     assert isinstance(desc, str)
     assert "24 nuisance regressors were selected" in desc
 
-    desc = describe_regression(params="27P", custom_confounds_file=None)
+    desc = describe_regression(params="27P", custom_confounds_file=None, motion_filter_type=None)
     assert isinstance(desc, str)
     assert "27 nuisance regressors were selected" in desc
 
-    desc = describe_regression(params="36P", custom_confounds_file=None)
+    desc = describe_regression(params="36P", custom_confounds_file=None, motion_filter_type=None)
     assert isinstance(desc, str)
     assert "36 nuisance regressors were selected" in desc
 
-    desc = describe_regression(params="acompcor", custom_confounds_file=None)
+    desc = describe_regression(
+        params="acompcor", custom_confounds_file=None, motion_filter_type=None
+    )
     assert isinstance(desc, str)
     assert "The top 5 aCompCor principal components" in desc
 
-    desc = describe_regression(params="acompcor_gsr", custom_confounds_file=None)
+    desc = describe_regression(
+        params="acompcor_gsr", custom_confounds_file=None, motion_filter_type=None
+    )
     assert isinstance(desc, str)
     assert "The top 5 aCompCor principal components" in desc
 
-    desc = describe_regression(params="aroma", custom_confounds_file=None)
+    desc = describe_regression(params="aroma", custom_confounds_file=None, motion_filter_type=None)
     assert isinstance(desc, str)
     assert "AROMA motion-labeled components" in desc
 
-    desc = describe_regression(params="aroma_gsr", custom_confounds_file=None)
+    desc = describe_regression(
+        params="aroma_gsr", custom_confounds_file=None, motion_filter_type=None
+    )
     assert isinstance(desc, str)
     assert "AROMA motion-labeled components" in desc
 
     with pytest.raises(ValueError, match="Unrecognized parameter string"):
-        describe_regression(params="test", custom_confounds_file=None)
+        describe_regression(params="test", custom_confounds_file=None, motion_filter_type=None)
 
-    desc = describe_regression(params="custom", custom_confounds_file=None)
+    desc = describe_regression(
+        params="custom", custom_confounds_file=None, motion_filter_type=None
+    )
     assert isinstance(desc, str)
     assert "A custom set of regressors was used" in desc
 
