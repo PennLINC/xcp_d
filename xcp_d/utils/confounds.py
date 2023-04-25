@@ -132,6 +132,7 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
     ----------
     %(params)s
     %(custom_confounds_file)s
+    %(motion_filter_type)s
 
     Returns
     -------
