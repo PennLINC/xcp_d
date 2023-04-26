@@ -301,6 +301,12 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="fMRIPrep confounds tsv.",
     )
+    custom_confounds_file = traits.Either(
+        None,
+        File(exists=True),
+        mandatory=True,
+        desc="Custom confounds tsv.",
+    )
     motion_filter_type = traits.Either(
         None,
         traits.Str,

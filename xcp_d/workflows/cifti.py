@@ -483,7 +483,7 @@ def init_postprocess_cifti_wf(
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file"),
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
-            ("outputnode.filtered_motion_metadata", "inputnode.filtered_motion_metadata"),
+            ("outputnode.motion_metadata", "inputnode.motion_metadata"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ("outputnode.temporal_mask_metadata", "inputnode.temporal_mask_metadata"),
         ]),
