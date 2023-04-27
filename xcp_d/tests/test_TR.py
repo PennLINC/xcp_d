@@ -14,7 +14,7 @@ import pandas as pd
 from xcp_d.interfaces.censoring import RemoveDummyVolumes
 
 
-def test_RemoveDummyVolumes_nifti(data_dir, tmp_path_factory):
+def test_removedummyvolumes_nifti(data_dir, tmp_path_factory):
     """Test RemoveDummyVolumes() for NIFTI input data."""
     # Define inputs
     data_dir = os.path.join(data_dir, "fmriprepwithoutfreesurfer/fmriprep/")
@@ -38,6 +38,7 @@ def test_RemoveDummyVolumes_nifti(data_dir, tmp_path_factory):
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
         confounds_file=confounds_file,
+        motion_file=confounds_file,
         dummy_scans=0,
     )
     results = remove_nothing.run(cwd=temp_dir)
@@ -53,7 +54,7 @@ def test_RemoveDummyVolumes_nifti(data_dir, tmp_path_factory):
     )
 
     # Test a nifti file with 1-10 volumes to remove
-    for n in range(0, 10):
+    for n in range(10):
         remove_n_vols = RemoveDummyVolumes(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
@@ -79,7 +80,7 @@ def test_RemoveDummyVolumes_nifti(data_dir, tmp_path_factory):
             raise Exception(f"Number of volumes in dropped nifti is {exc}.")
 
 
-def test_RemoveDummyVolumes_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_removedummyvolumes_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test RemoveDummyVolumes() for CIFTI input data."""
     # Define inputs
     temp_dir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_cifti")
@@ -96,6 +97,7 @@ def test_RemoveDummyVolumes_cifti(fmriprep_with_freesurfer_data, tmp_path_factor
         bold_file=boldfile,
         fmriprep_confounds_file=confounds_file,
         confounds_file=confounds_file,
+        motion_file=confounds_file,
         dummy_scans=0,
     )
     results = remove_nothing.run(cwd=temp_dir)
@@ -111,14 +113,14 @@ def test_RemoveDummyVolumes_cifti(fmriprep_with_freesurfer_data, tmp_path_factor
     )
 
     # Test a cifti file with 1-10 volumes to remove
-    for n in range(0, 10):
+    for n in range(10):
         remove_n_vols = RemoveDummyVolumes(
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             confounds_file=confounds_file,
             dummy_scans=n,
         )
-        #         print(n)
+
         results = remove_n_vols.run(cwd=temp_dir)
         dropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
         # Were the files created?
