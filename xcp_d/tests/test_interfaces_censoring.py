@@ -33,6 +33,7 @@ def test_generate_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
         head_radius=50,
         fmriprep_confounds_file=confounds_tsv,
         fmriprep_confounds_json=confounds_json,
+        custom_confounds_file=None,
         motion_filter_type=None,
         motion_filter_order=4,
         band_stop_min=0,

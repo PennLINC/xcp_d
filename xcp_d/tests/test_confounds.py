@@ -14,6 +14,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     tempdir = tmp_path_factory.mktemp("test_custom_confounds")
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
+    confounds_json = fmriprep_with_freesurfer_data["confounds_json"]
 
     N_VOLUMES = 60
     TR = 2.5
@@ -47,6 +48,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
         params="24P",
         img_file=bold_file,
         confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
         custom_confounds=custom_confounds_file,
     )
     # We expect n params + 2 (one for each condition in custom confounds)
@@ -126,7 +128,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         params="24P",
         img_file=bold_file,
         confounds_file=confounds_file,
-        confounds_json=confounds_json,
+        confounds_json_file=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 24)
 
@@ -134,7 +136,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         params="27P",
         img_file=bold_file,
         confounds_file=confounds_file,
-        confounds_json=confounds_json,
+        confounds_json_file=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 27)
 
@@ -142,7 +144,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         params="36P",
         img_file=bold_file,
         confounds_file=confounds_file,
-        confounds_json=confounds_json,
+        confounds_json_file=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 36)
 
@@ -150,7 +152,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         params="acompcor",
         img_file=bold_file,
         confounds_file=confounds_file,
-        confounds_json=confounds_json,
+        confounds_json_file=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 28)
 
@@ -158,7 +160,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         params="acompcor_gsr",
         img_file=bold_file,
         confounds_file=confounds_file,
-        confounds_json=confounds_json,
+        confounds_json_file=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 29)
 
@@ -166,7 +168,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         params="aroma",
         img_file=bold_file,
         confounds_file=confounds_file,
-        confounds_json=confounds_json,
+        confounds_json_file=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 48)
 
@@ -174,7 +176,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         params="aroma_gsr",
         img_file=bold_file,
         confounds_file=confounds_file,
-        confounds_json=confounds_json,
+        confounds_json_file=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 49)
 
@@ -183,7 +185,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
             params="test",
             img_file=bold_file,
             confounds_file=confounds_file,
-            confounds_json=confounds_json,
+            confounds_json_file=confounds_json,
         )
 
     with pytest.raises(ValueError):
@@ -191,5 +193,5 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
             params="custom",
             img_file=bold_file,
             confounds_file=confounds_file,
-            confounds_json=confounds_json,
+            confounds_json_file=confounds_json,
         )
