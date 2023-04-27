@@ -401,7 +401,6 @@ def load_confound_matrix(params, img_file, confounds_file, custom_confounds=None
 
         confounds_df = _load_single_confounds_file(
             confounds_file=confounds_file,
-            strategy=params,
             demean=False,
             confounds_json_file=confounds_json_file,
             **kwargs,
