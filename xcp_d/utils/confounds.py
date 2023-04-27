@@ -408,7 +408,7 @@ def load_confound_matrix(
             demean=False,
             confounds_json_file=confounds_json_file,
             **kwargs,
-        )
+        )[1]
 
     elif params == "custom":
         # For custom confounds with no other confounds
