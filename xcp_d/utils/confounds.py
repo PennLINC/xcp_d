@@ -358,6 +358,8 @@ def load_confound_matrix(
         "27P": {
             "strategy": ["motion", "global_signal", "wm_csf"],
             "motion": "full",
+            "global_signal": "basic",
+            "wm_csf": "basic",
         },
         # Get rot and trans values, as well as derivatives, WM, CSF,
         # global signal, and square. Add the square and derivative of the WM, CSF
