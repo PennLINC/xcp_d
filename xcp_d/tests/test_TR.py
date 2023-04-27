@@ -18,7 +18,7 @@ def test_removedummyvolumes_nifti(fmriprep_with_freesurfer_data, tmp_path_factor
     # Define inputs
     temp_dir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_nifti")
 
-    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+    boldfile = fmriprep_with_freesurfer_data["nifti_file"]
     confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
 
     # Find the original number of volumes acc. to nifti & confounds timeseries
@@ -52,6 +52,8 @@ def test_removedummyvolumes_nifti(fmriprep_with_freesurfer_data, tmp_path_factor
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             confounds_file=confounds_file,
+            motion_file=confounds_file,
+            temporal_mask=confounds_file,
             dummy_scans=n,
         )
         results = remove_n_vols.run(cwd=temp_dir)
@@ -112,6 +114,8 @@ def test_removedummyvolumes_cifti(fmriprep_with_freesurfer_data, tmp_path_factor
             bold_file=boldfile,
             fmriprep_confounds_file=confounds_file,
             confounds_file=confounds_file,
+            motion_file=confounds_file,
+            temporal_mask=confounds_file,
             dummy_scans=n,
         )
 
