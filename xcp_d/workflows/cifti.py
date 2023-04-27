@@ -166,6 +166,7 @@ def init_postprocess_cifti_wf(
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
+    fmriprep_confounds_json
     %(dummy_scans)s
 
     Outputs
@@ -207,6 +208,7 @@ def init_postprocess_cifti_wf(
                 "t1w",
                 "t2w",
                 "fmriprep_confounds_file",
+                "fmriprep_confounds_json",
                 "dummy_scans",
             ],
         ),
@@ -216,6 +218,7 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
     inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
+    inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
     inputnode.inputs.dummy_scans = dummy_scans
 
     # Load custom confounds
@@ -297,6 +300,7 @@ def init_postprocess_cifti_wf(
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
+            ("fmriprep_confounds_json", "inputnode.fmriprep_confounds_json"),
         ]),
         (downcast_data, prepare_confounds_wf, [
             ("bold_file", "inputnode.preprocessed_bold"),

@@ -6,10 +6,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from nilearn.interfaces.fmriprep.load_confounds import (
-    _get_json,
-    _load_single_confounds_file,
-)
+from nilearn.interfaces.fmriprep.load_confounds import _load_single_confounds_file
 from nipype import logging
 from scipy.signal import butter, filtfilt, iirnotch
 
@@ -323,7 +320,13 @@ def _get_acompcor_confounds(confounds_file):
 
 
 @fill_doc
-def load_confound_matrix(params, img_file, confounds_file, custom_confounds=None):
+def load_confound_matrix(
+    params,
+    img_file,
+    confounds_file,
+    confounds_json_file,
+    custom_confounds=None,
+):
     """Load a subset of the confounds associated with a given file.
 
     Parameters
@@ -332,7 +335,9 @@ def load_confound_matrix(params, img_file, confounds_file, custom_confounds=None
     img_file : :obj:`str`
         The path to the bold file. Used to load the AROMA mixing matrix, if necessary.
     confounds_file : :obj:`str`
-        Used to load most confounds.
+        The fMRIPrep confounds file. Used to load most confounds.
+    confounds_json_file : :obj:`str`
+        The JSON file associated with the fMRIPrep confounds file.
     custom_confounds : :obj:`str` or None, optional
         Custom confounds TSV if there is one. Default is None.
 
@@ -397,7 +402,6 @@ def load_confound_matrix(params, img_file, confounds_file, custom_confounds=None
 
     if params in PARAM_KWARGS.keys():
         kwargs = PARAM_KWARGS[params]
-        confounds_json_file = _get_json(confounds_file)
 
         confounds_df = _load_single_confounds_file(
             confounds_file=confounds_file,

@@ -301,6 +301,11 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="fMRIPrep confounds tsv.",
     )
+    fmriprep_confounds_json = File(
+        exists=True,
+        mandatory=True,
+        desc="fMRIPrep confounds json.",
+    )
     custom_confounds_file = traits.Either(
         None,
         File(exists=True),
@@ -426,6 +431,7 @@ class GenerateConfounds(SimpleInterface):
             params=self.inputs.params,
             img_file=self.inputs.in_file,
             confounds_file=self._results["filtered_confounds_file"],
+            confounds_json_file=self.inputs.fmriprep_confounds_json,
             custom_confounds=self.inputs.custom_confounds_file,
         )
         confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])

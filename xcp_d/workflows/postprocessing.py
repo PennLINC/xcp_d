@@ -91,6 +91,8 @@ def init_prepare_confounds_wf(
     %(name_source)s
     preprocessed_bold : :obj:`str`
     %(fmriprep_confounds_file)s
+    fmriprep_confounds_json : :obj:`str`
+        JSON file associated with the fMRIPrep confounds TSV.
     %(custom_confounds_file)s
     %(dummy_scans)s
         Set from the parameter.
@@ -148,6 +150,7 @@ def init_prepare_confounds_wf(
                 "name_source",
                 "preprocessed_bold",
                 "fmriprep_confounds_file",
+                "fmriprep_confounds_json",
                 "custom_confounds_file",
                 "dummy_scans",
             ],
@@ -195,6 +198,7 @@ def init_prepare_confounds_wf(
         (inputnode, generate_confounds, [
             ("name_source", "in_file"),
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+            ("fmriprep_confounds_json", "fmriprep_confounds_json"),
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
         (generate_confounds, outputnode, [

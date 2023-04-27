@@ -85,94 +85,111 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
 
 def test_describe_regression():
     """Ensure that xcp_d loads the right confounds."""
-    desc = describe_regression(params="24P", custom_confounds_file=None, motion_filter_type=None)
-    assert isinstance(desc, str)
-    assert "24 nuisance regressors were selected" in desc
-
-    desc = describe_regression(params="27P", custom_confounds_file=None, motion_filter_type=None)
-    assert isinstance(desc, str)
-    assert "27 nuisance regressors were selected" in desc
-
-    desc = describe_regression(params="36P", custom_confounds_file=None, motion_filter_type=None)
-    assert isinstance(desc, str)
-    assert "36 nuisance regressors were selected" in desc
-
-    desc = describe_regression(
-        params="acompcor", custom_confounds_file=None, motion_filter_type=None
-    )
-    assert isinstance(desc, str)
-    assert "The top 5 aCompCor principal components" in desc
-
-    desc = describe_regression(
-        params="acompcor_gsr", custom_confounds_file=None, motion_filter_type=None
-    )
-    assert isinstance(desc, str)
-    assert "The top 5 aCompCor principal components" in desc
-
-    desc = describe_regression(params="aroma", custom_confounds_file=None, motion_filter_type=None)
-    assert isinstance(desc, str)
-    assert "AROMA motion-labeled components" in desc
-
-    desc = describe_regression(
-        params="aroma_gsr", custom_confounds_file=None, motion_filter_type=None
-    )
-    assert isinstance(desc, str)
-    assert "AROMA motion-labeled components" in desc
+    _check_describe_regression_result("24P", "24 nuisance regressors were selected")
+    _check_describe_regression_result("27P", "27 nuisance regressors were selected")
+    _check_describe_regression_result("36P", "36 nuisance regressors were selected")
+    _check_describe_regression_result("acompcor", "The top 5 aCompCor principal components")
+    _check_describe_regression_result("acompcor_gsr", "The top 5 aCompCor principal components")
+    _check_describe_regression_result("aroma", "AROMA motion-labeled components")
+    _check_describe_regression_result("aroma_gsr", "AROMA motion-labeled components")
+    _check_describe_regression_result("custom", "A custom set of regressors was used")
 
     with pytest.raises(ValueError, match="Unrecognized parameter string"):
-        describe_regression(params="test", custom_confounds_file=None, motion_filter_type=None)
+        describe_regression(
+            params="test",
+            custom_confounds_file=None,
+            motion_filter_type=None,
+        )
 
-    desc = describe_regression(
-        params="custom", custom_confounds_file=None, motion_filter_type=None
+
+def _check_describe_regression_result(params, match):
+    result = describe_regression(
+        params=params,
+        custom_confounds_file=None,
+        motion_filter_type=None,
     )
-    assert isinstance(desc, str)
-    assert "A custom set of regressors was used" in desc
+    assert isinstance(result, str)
+    assert match in result
+
+    return result
 
 
 def test_load_confounds(fmriprep_with_freesurfer_data):
     """Ensure that xcp_d loads the right confounds."""
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
+    confounds_json = fmriprep_with_freesurfer_data["confounds_json"]
 
     N_VOLUMES = 60
 
     confounds_df = load_confound_matrix(
-        params="24P", img_file=bold_file, confounds_file=confounds_file
+        params="24P",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 24)
 
     confounds_df = load_confound_matrix(
-        params="27P", img_file=bold_file, confounds_file=confounds_file
+        params="27P",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 27)
 
     confounds_df = load_confound_matrix(
-        params="36P", img_file=bold_file, confounds_file=confounds_file
+        params="36P",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 36)
 
     confounds_df = load_confound_matrix(
-        params="acompcor", img_file=bold_file, confounds_file=confounds_file
+        params="acompcor",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 28)
 
     confounds_df = load_confound_matrix(
-        params="acompcor_gsr", img_file=bold_file, confounds_file=confounds_file
+        params="acompcor_gsr",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 29)
 
     confounds_df = load_confound_matrix(
-        params="aroma", img_file=bold_file, confounds_file=confounds_file
+        params="aroma",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 48)
 
     confounds_df = load_confound_matrix(
-        params="aroma_gsr", img_file=bold_file, confounds_file=confounds_file
+        params="aroma_gsr",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json=confounds_json,
     )
     assert confounds_df.shape == (N_VOLUMES, 49)
 
     with pytest.raises(ValueError, match="Unrecognized parameter string"):
-        load_confound_matrix(params="test", img_file=bold_file, confounds_file=confounds_file)
+        load_confound_matrix(
+            params="test",
+            img_file=bold_file,
+            confounds_file=confounds_file,
+            confounds_json=confounds_json,
+        )
 
     with pytest.raises(ValueError):
-        load_confound_matrix(params="custom", img_file=bold_file, confounds_file=confounds_file)
+        load_confound_matrix(
+            params="custom",
+            img_file=bold_file,
+            confounds_file=confounds_file,
+            confounds_json=confounds_json,
+        )
