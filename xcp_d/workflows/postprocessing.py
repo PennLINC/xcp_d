@@ -238,14 +238,14 @@ def init_prepare_confounds_wf(
                 ("temporal_mask", "temporal_mask"),
                 # fMRIPrep confounds file is needed for filtered motion.
                 # The selected confounds are not guaranteed to include motion params.
-                ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+                ("filtered_confounds_file", "fmriprep_confounds_file"),
             ]),
             (remove_dummy_scans, dummy_scan_buffer, [
                 ("bold_file_dropped_TR", "preprocessed_bold"),
                 ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
                 ("confounds_file_dropped_TR", "confounds_file"),
                 ("motion_file_dropped_TR", "motion_file"),
-                ("temporal_mask_droppred_TR", "temporal_mask"),
+                ("temporal_mask_dropped_TR", "temporal_mask"),
                 ("dummy_scans", "dummy_scans"),
             ]),
         ])
