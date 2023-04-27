@@ -60,6 +60,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
         params="custom",
         img_file=bold_file,
         confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
         custom_confounds=custom_confounds_file,
     )
     # We expect 2 (one for each condition in custom confounds)
