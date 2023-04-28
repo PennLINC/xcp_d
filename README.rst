@@ -6,8 +6,8 @@
    :target: https://github.com/PennLINC/xcp_d
    :alt: GitHub Repository
 
-.. image:: https://readthedocs.org/projects/xcp_d/badge/?version=latest
-   :target: http://xcp_d.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/xcp-d/badge/?version=latest
+   :target: http://xcp-d.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation
 
 .. image:: https://img.shields.io/badge/docker-pennlinc/xcp_d-brightgreen.svg?logo=docker&style=flat
@@ -56,7 +56,9 @@ XCP-D leverages the BIDS and NiPrep frameworks to automatically generate denoise
 parcellated time series, functional connectivity matrices, and quality assessment reports.
 XCP-D can also process outputs from: `NiBabies <https://nibabies.readthedocs.io>`_ and
 `Minimally preprocessed HCP data <https://www.humanconnectome.org/study/hcp-lifespan-development/\
-data-releases>`_.
+data-releases>`_. 
+
+*Please note that XCP is only compatible with HCP-YA versions downloaded c.a. Feb 2023 at the moment.*
 
 .. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/schematic_land-01.png
 

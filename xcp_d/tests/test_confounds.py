@@ -13,6 +13,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Ensure that custom confounds can be loaded without issue."""
     tempdir = tmp_path_factory.mktemp("test_custom_confounds")
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
+    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
 
     N_VOLUMES = 60
     TR = 2.5
@@ -45,6 +46,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     combined_confounds = load_confound_matrix(
         params="24P",
         img_file=bold_file,
+        confounds_file=confounds_file,
         custom_confounds=custom_confounds_file,
     )
     # We expect n params + 2 (one for each condition in custom confounds)
@@ -55,6 +57,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     custom_confounds = load_confound_matrix(
         params="custom",
         img_file=bold_file,
+        confounds_file=confounds_file,
         custom_confounds=custom_confounds_file,
     )
     # We expect 2 (one for each condition in custom confounds)
@@ -119,32 +122,47 @@ def test_describe_regression():
 def test_load_confounds(fmriprep_with_freesurfer_data):
     """Ensure that xcp_d loads the right confounds."""
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
+    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
 
     N_VOLUMES = 60
 
-    confounds_df = load_confound_matrix(params="24P", img_file=bold_file)
+    confounds_df = load_confound_matrix(
+        params="24P", img_file=bold_file, confounds_file=confounds_file
+    )
     assert confounds_df.shape == (N_VOLUMES, 24)
 
-    confounds_df = load_confound_matrix(params="27P", img_file=bold_file)
+    confounds_df = load_confound_matrix(
+        params="27P", img_file=bold_file, confounds_file=confounds_file
+    )
     assert confounds_df.shape == (N_VOLUMES, 27)
 
-    confounds_df = load_confound_matrix(params="36P", img_file=bold_file)
+    confounds_df = load_confound_matrix(
+        params="36P", img_file=bold_file, confounds_file=confounds_file
+    )
     assert confounds_df.shape == (N_VOLUMES, 36)
 
-    confounds_df = load_confound_matrix(params="acompcor", img_file=bold_file)
-    assert confounds_df.shape == (N_VOLUMES, 18)
+    confounds_df = load_confound_matrix(
+        params="acompcor", img_file=bold_file, confounds_file=confounds_file
+    )
+    assert confounds_df.shape == (N_VOLUMES, 28)
 
-    confounds_df = load_confound_matrix(params="acompcor_gsr", img_file=bold_file)
-    assert confounds_df.shape == (N_VOLUMES, 19)
+    confounds_df = load_confound_matrix(
+        params="acompcor_gsr", img_file=bold_file, confounds_file=confounds_file
+    )
+    assert confounds_df.shape == (N_VOLUMES, 29)
 
-    confounds_df = load_confound_matrix(params="aroma", img_file=bold_file)
+    confounds_df = load_confound_matrix(
+        params="aroma", img_file=bold_file, confounds_file=confounds_file
+    )
     assert confounds_df.shape == (N_VOLUMES, 48)
 
-    confounds_df = load_confound_matrix(params="aroma_gsr", img_file=bold_file)
+    confounds_df = load_confound_matrix(
+        params="aroma_gsr", img_file=bold_file, confounds_file=confounds_file
+    )
     assert confounds_df.shape == (N_VOLUMES, 49)
 
     with pytest.raises(ValueError, match="Unrecognized parameter string"):
-        load_confound_matrix(params="test", img_file=bold_file)
+        load_confound_matrix(params="test", img_file=bold_file, confounds_file=confounds_file)
 
     with pytest.raises(ValueError):
-        load_confound_matrix(params="custom", img_file=bold_file)
+        load_confound_matrix(params="custom", img_file=bold_file, confounds_file=confounds_file)

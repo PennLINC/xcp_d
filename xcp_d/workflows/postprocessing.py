@@ -64,7 +64,7 @@ def init_prepare_confounds_wf(
                 band_stop_max=20,
                 motion_filter_order=4,
                 head_radius=70,
-                fd_thresh=0.2,
+                fd_thresh=0.3,
                 custom_confounds_file=None,
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -177,8 +177,9 @@ def init_prepare_confounds_wf(
         niu.Function(
             input_names=[
                 "img_file",
-                "custom_confounds_file",
                 "params",
+                "fmriprep_confounds_file",
+                "custom_confounds_file",
             ],
             output_names=["confounds_file"],
             function=consolidate_confounds,
@@ -192,6 +193,7 @@ def init_prepare_confounds_wf(
     workflow.connect([
         (inputnode, consolidate_confounds_node, [
             ("name_source", "img_file"),
+            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
     ])
@@ -542,12 +544,25 @@ def init_denoise_bold_wf(
         f"as implemented in nilearn {nilearn.__version__} [@abraham2014machine]."
     )
     if bandpass_filter:
+        if low_pass > 0 and high_pass > 0:
+            btype = "band-pass"
+            preposition = "between"
+            filt_input = f"{high_pass}-{low_pass}"
+        elif high_pass > 0:
+            btype = "high-pass"
+            preposition = "above"
+            filt_input = f"{high_pass}"
+        elif low_pass > 0:
+            btype = "low-pass"
+            preposition = "below"
+            filt_input = f"{low_pass}"
+
         workflow.__desc__ += (
             " Any volumes censored earlier in the workflow were then interpolated in the residual "
             "time series produced by the regression. "
-            "The interpolated timeseries were then band-pass filtered using a(n) "
+            f"The interpolated timeseries were then {btype} filtered using a(n) "
             f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
-            f"in order to retain signals within the {high_pass}-{low_pass} Hz frequency band. "
+            f"in order to retain signals {preposition} {filt_input} Hz. "
             "The filtered, interpolated time series were then re-censored to remove high-motion "
             "outlier volumes."
         )
@@ -624,22 +639,25 @@ def init_denoise_bold_wf(
     ])
     # fmt:on
 
-    resd_smoothing_wf = init_resd_smoothing_wf(
-        smoothing=smoothing,
-        cifti=cifti,
-        mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
-        name="resd_smoothing_wf",
-    )
+    if smoothing:
+        resd_smoothing_wf = init_resd_smoothing_wf(
+            smoothing=smoothing,
+            cifti=cifti,
+            mem_gb=mem_gb,
+            omp_nthreads=omp_nthreads,
+            name="resd_smoothing_wf",
+        )
 
-    # fmt:off
-    workflow.connect([
-        (censor_interpolated_data, resd_smoothing_wf, [
-            ("censored_denoised_bold", "inputnode.bold_file"),
-        ]),
-        (resd_smoothing_wf, outputnode, [("outputnode.smoothed_bold", "smoothed_denoised_bold")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (censor_interpolated_data, resd_smoothing_wf, [
+                ("censored_denoised_bold", "inputnode.bold_file"),
+            ]),
+            (resd_smoothing_wf, outputnode, [
+                ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
+            ]),
+        ])
+        # fmt:on
 
     return workflow
 

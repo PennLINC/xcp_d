@@ -48,6 +48,8 @@ def init_postprocess_cifti_wf(
     despike,
     dcan_qc,
     run_data,
+    t1w_available,
+    t2w_available,
     n_runs,
     min_coverage,
     omp_nthreads,
@@ -85,6 +87,7 @@ def init_postprocess_cifti_wf(
                 input_type="fmriprep",
                 bold_file=bold_file,
                 cifti=True,
+                primary_anat="T1w",
             )
 
             wf = init_postprocess_cifti_wf(
@@ -103,10 +106,12 @@ def init_postprocess_cifti_wf(
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
                 dummy_scans=2,
-                fd_thresh=0.2,
+                fd_thresh=0.3,
                 despike=True,
                 dcan_qc=True,
                 run_data=run_data,
+                t1w_available=True,
+                t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
                 omp_nthreads=1,
@@ -137,6 +142,8 @@ def init_postprocess_cifti_wf(
     %(despike)s
     %(dcan_qc)s
     run_data : dict
+    t1w_available
+    t2w_available
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
@@ -177,7 +184,7 @@ def init_postprocess_cifti_wf(
     %(boldref)s
     bold_mask
         This will not be defined.
-    %(t1w_to_native_xfm)s
+    %(anat_to_native_xfm)s
         This will not be defined.
     %(atlas_names)s
     %(timeseries)s
@@ -240,7 +247,7 @@ def init_postprocess_cifti_wf(
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",  # will not be defined
-                "t1w_to_native_xfm",  # will not be defined
+                "anat_to_native_xfm",  # will not be defined
                 "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",
@@ -512,8 +519,8 @@ def init_postprocess_cifti_wf(
     if dcan_qc:
         execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
             preproc_nifti=run_data["nifti_file"],
-            t1w_available=True,
-            t2w_available=False,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
             output_dir=output_dir,
             layout=layout,
             name="execsummary_functional_plots_wf",

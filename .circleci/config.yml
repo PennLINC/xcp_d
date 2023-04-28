@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  codecov: codecov/codecov@1.0.5
+  codecov: codecov/codecov@3.2.4
 
 .dockersetup: &dockersetup
   docker:
@@ -200,6 +200,35 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
 
+  cifti_with_freesurfer_t2wonly:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer_t2wonly\]' )" != "" ]]; then
+              echo "Skipping cifti_with_freesurfer_t2wonly build"
+              circleci step halt
+            fi
+      - restore_cache:
+          key: ds001419-fmriprep-05
+      - run: *runinstall
+      - run:
+          name: Run full xcp_d on cifti with freesurfer
+          no_output_timeout: 5h
+          command: |
+            pytest -rP -o log_cli=true -m "ds001419_cifti_t2wonly" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti_t2wonly
+      - persist_to_workspace:
+          root: /src/coverage
+          paths:
+              - .coverage.ds001419_cifti_t2wonly
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/out/test_ds001419_cifti_t2wonly/xcp_d/
+
   pytests:
     <<: *dockersetup
     steps:
@@ -348,6 +377,17 @@ workflows:
             tags:
               only: /.*/
 
+      - cifti_with_freesurfer_t2wonly:
+          requires:
+            - download_data_ds001419-fmriprep
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
       - nifti_with_freesurfer:
           requires:
             - download_data_ds001419-fmriprep
@@ -396,6 +436,7 @@ workflows:
       - merge_coverage:
           requires:
             - cifti_with_freesurfer
+            - cifti_with_freesurfer_t2wonly
             - nifti_with_freesurfer
             - nibabies
             - nifti_without_freesurfer
@@ -414,6 +455,7 @@ workflows:
             - nifti_without_freesurfer
             - nibabies
             - cifti_with_freesurfer
+            - cifti_with_freesurfer_t2wonly
             - pytests
           filters:
             branches:

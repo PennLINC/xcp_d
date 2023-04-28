@@ -59,25 +59,25 @@ analysis_level : {"participant"}
 """
 
 docdict[
-    "t1w_to_template_xfm"
+    "anat_to_template_xfm"
 ] = """
-t1w_to_template_xfm : :obj:`str`
+anat_to_template_xfm : :obj:`str`
     Path to the T1w-to-MNI transform file.
     May be "identity", for testing purposes.
 """
 
 docdict[
-    "template_to_t1w_xfm"
+    "template_to_anat_xfm"
 ] = """
-template_to_t1w_xfm : :obj:`str`
+template_to_anat_xfm : :obj:`str`
     Path to the MNI-to-T1w transform file.
     May be "identity", for testing purposes.
 """
 
 docdict[
-    "t1w_to_native_xfm"
+    "anat_to_native_xfm"
 ] = """
-t1w_to_native_xfm : :obj:`str`
+anat_to_native_xfm : :obj:`str`
     Path to the T1w-to-native BOLD space transform file.
     May be "identity", for testing purposes.
 """
@@ -209,6 +209,7 @@ high_pass : :obj:`float`
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This internal parameter corresponds to the command-line parameter ``--lower-bpf``.
+    If set to <= 0, high-pass filtering will be disabled.
 
     Default value is 0.01.
 """
@@ -221,6 +222,7 @@ low_pass : :obj:`float`
     The bandpass filter is applied to the fMRI data after post-processing and denoising.
     Bandpass filtering will only be performed if ``bandpass_filter`` is True.
     This internal parameter corresponds to the command-line parameter ``--upper-bpf``.
+    If set to <= 0, low-pass filtering will be disabled.
 
     Default value is 0.08.
 """

@@ -10,7 +10,7 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger("nipype.utils")
 
 
-def compute_registration_qc(bold2t1w_mask, t1w_mask, bold2template_mask, template_mask):
+def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, template_mask):
     """Compute quality of registration metrics.
 
     This function will calculate a series of metrics, including:
@@ -26,7 +26,7 @@ def compute_registration_qc(bold2t1w_mask, t1w_mask, bold2template_mask, templat
     ----------
     bold2t1w_mask : :obj:`str`
         Path to the BOLD mask in T1w space.
-    t1w_mask : :obj:`str`
+    anat_brainmask : :obj:`str`
         Path to the T1w mask.
     bold2template_mask : :obj:`str`
         Path to the BOLD mask in template space.
@@ -39,7 +39,7 @@ def compute_registration_qc(bold2t1w_mask, t1w_mask, bold2template_mask, templat
         Quality control measures between different inputs.
     """
     bold2t1w_mask_arr = nb.load(bold2t1w_mask).get_fdata()
-    t1w_mask_arr = nb.load(t1w_mask).get_fdata()
+    t1w_mask_arr = nb.load(anat_brainmask).get_fdata()
     bold2template_mask_arr = nb.load(bold2template_mask).get_fdata()
     template_mask_arr = nb.load(template_mask).get_fdata()
 

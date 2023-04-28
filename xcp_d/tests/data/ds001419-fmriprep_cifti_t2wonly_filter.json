@@ -1,0 +1,9 @@
+{
+    "t1w": {
+        "acquisition": "dummy"
+    },
+    "bold": {
+        "task": "imagery",
+        "run": ["01", "02"]
+    }
+}
