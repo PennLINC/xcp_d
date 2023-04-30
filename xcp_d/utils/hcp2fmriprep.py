@@ -108,6 +108,9 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     assert isinstance(out_dir, str)
     assert isinstance(sub_ent, str)
 
+    if "sub" not in sub_id:
+        sub_id = "sub-"+sub_id
+        
     sub_id = sub_ent.replace("sub-", "")
 
     volspace = "MNI152NLin6Asym"
