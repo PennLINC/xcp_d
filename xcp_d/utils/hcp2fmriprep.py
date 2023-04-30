@@ -61,7 +61,7 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
 
     if participant_ids is None:
         subject_folders = sorted(
-            glob.glob(os.path.join(in_dir, "*", "*.L.BA.164k_fs_LR.label.gii"))
+            glob.glob(os.path.join(in_dir, "*", "*R.pial.32k_fs_LR.surf.gii"))
         )
         subject_folders = [
             subject_folder for subject_folder in subject_folders if os.path.exists(subject_folder)
