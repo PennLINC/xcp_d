@@ -280,7 +280,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "atlas_names",
                 "timeseries",
                 "correlations",
                 "coverage",
@@ -482,7 +481,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "atlas_names",
                 "coverage_ciftis",
                 "timeseries_ciftis",
                 "correlation_ciftis",

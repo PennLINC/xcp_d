@@ -43,8 +43,8 @@ run_pytest_cmd () {
     bids_mount="-v ${data_dir}:/bids-input:ro"
     output_mount="-v ${output_dir}:/out:rw"
     workdir_mount="-v ${workdir}:/work:rw"
-    PYTEST_RUN="docker run --rm -ti -u $(id -u) --entrypoint pytest "
-    PYTEST_RUN+='--data_dir=/bids-input/data --output_dir=/out --working_dir=/work /usr/local/miniconda/lib/python3.8/site-packages/xcp_d'
+    PYTEST_RUN="docker run --rm -ti -u $(id -u) "
+    PYTEST_RUN+='--entrypoint "pytest /usr/local/miniconda/lib/python3.8/site-packages/xcp_d --data_dir=/bids-input/data --output_dir=/out --working_dir=/work" '
     PYTEST_RUN+="${workdir_mount} ${patch_mount} ${cfg_arg} ${fslicense_arg} ${bids_mount} ${output_mount} ${IMAGE} "
 
   fi

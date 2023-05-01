@@ -612,7 +612,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "anat_to_native_xfm",
                 "bold_mask",
                 "boldref",
-                "atlas_names",  # this will be exactly the same across runs
                 "timeseries",
                 "timeseries_ciftis",
             ]
@@ -745,6 +744,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ("anat_brainmask", "inputnode.anat_brainmask"),
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ]),
+                (load_atlases_wf, concatenate_data_wf, [("atlas_names", "inputnode.atlas_names")]),
             ])
             # fmt:on
 

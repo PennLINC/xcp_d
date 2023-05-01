@@ -278,7 +278,6 @@ def init_postprocess_nifti_wf(
                 "boldref",
                 "bold_mask",
                 "anat_to_native_xfm",
-                "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",  # will not be defined
             ],
@@ -425,10 +424,7 @@ def init_postprocess_nifti_wf(
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
-        (connectivity_wf, outputnode, [
-            ("outputnode.atlas_names", "atlas_names"),
-            ("outputnode.timeseries", "timeseries"),
-        ]),
+        (connectivity_wf, outputnode, [("outputnode.timeseries", "timeseries")]),
     ])
     # fmt:on
 
@@ -528,6 +524,7 @@ def init_postprocess_nifti_wf(
 
     # fmt:off
     workflow.connect([
+        (inputnode, postproc_derivatives_wf, [("atlas_names", "inputnode.atlas_names")]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file"),
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
@@ -543,7 +540,6 @@ def init_postprocess_nifti_wf(
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
         (connectivity_wf, postproc_derivatives_wf, [
-            ("outputnode.atlas_names", "inputnode.atlas_names"),
             ("outputnode.correlations", "inputnode.correlations"),
             ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.coverage", "inputnode.coverage"),

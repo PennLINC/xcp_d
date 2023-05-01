@@ -28,9 +28,9 @@ def get_parser():
     return parser
 
 
-def main():
+def main(args=None):
     """Run the combineqc workflow."""
-    opts = get_parser().parse_args()
+    opts = get_parser().parse_args(args)
 
     xcpd_dir = os.path.abspath(opts.xcpd_dir)
     outputfile = os.path.join(os.getcwd(), f"{opts.output_prefix}_allsubjects_qc.csv")

@@ -7,21 +7,17 @@ import pandas as pd
 import pytest
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.cli import combineqc
 from xcp_d.cli.run import build_workflow, get_parser
 from xcp_d.interfaces.report_core import generate_reports
-from xcp_d.tests.utils import (
-    check_affines,
-    check_generated_files,
-    get_test_data_path,
-    run_command,
-)
+from xcp_d.tests.utils import check_affines, check_generated_files, get_test_data_path
 
 
 @pytest.mark.ds001419_nifti
 def test_ds001419_nifti(datasets, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
     test_name = "test_ds001419_nifti"
-
+    input_type = "fmriprep"
     data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
@@ -47,37 +43,22 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--band-stop-min=6",
         "--min-coverage=1",
     ]
-    opts = get_parser().parse_args(parameters)
-
-    retval = {}
-    retval = build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=data_dir,
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
         work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
+        out_dir=out_dir,
+        input_type=input_type,
     )
-
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type="nifti")
 
 
 @pytest.mark.ds001419_cifti
 def test_ds001419_cifti(datasets, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
     test_name = "test_ds001419_cifti"
-
+    input_type = "fmriprep"
     data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
@@ -120,36 +101,22 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
     ]
-    opts = get_parser().parse_args(parameters)
-    retval = {}
-    retval = build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=data_dir,
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
         work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
+        out_dir=out_dir,
+        input_type=input_type,
     )
-
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.ds001419_cifti_t2wonly
 def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options and a simulated T2w image."""
     test_name = "test_ds001419_cifti_t2wonly"
-
+    input_type = "fmriprep"
     data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
@@ -208,29 +175,15 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
     ]
-    opts = get_parser().parse_args(parameters)
-    retval = {}
-    retval = build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=data_dir,
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
         work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
+        out_dir=out_dir,
+        input_type=input_type,
     )
-
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.fmriprep_without_freesurfer
@@ -242,14 +195,12 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     This test also mocks up custom confounds.
     """
     test_name = "test_fmriprep_without_freesurfer"
-
+    input_type = "fmriprep"
     data_dir = datasets["fmriprep_without_freesurfer"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
     custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
     os.makedirs(custom_confounds_dir, exist_ok=True)
-
-    test_data_dir = get_test_data_path()
 
     # Create custom confounds folder
     for run in [1, 2]:
@@ -261,33 +212,37 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         )
         confounds_df.to_csv(out_file, sep="\t", index=False)
 
-    cmd = (
-        f"xcp_d {data_dir} {out_dir} participant "
-        f"-w {work_dir} "
-        "--nthreads 2 "
-        "--omp-nthreads 2 "
-        "--despike "
-        "--head_radius 40 "
-        "--smoothing 6 "
-        "-f 100 "
-        "--nuisance-regressors 27P "
-        "--disable-bandpass-filter "
-        "--min-time 20 "
-        "--dcan-qc "
-        "--dummy-scans 1 "
-        f"--custom_confounds={custom_confounds_dir}"
+    parameters = [
+        data_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        "--despike",
+        "--head_radius=40",
+        "--smoothing=6",
+        "-f=100",
+        "--nuisance-regressors=27P",
+        "--disable-bandpass-filter",
+        "--min-time=20",
+        "--dcan-qc",
+        "--dummy-scans=1",
+        f"--custom_confounds={custom_confounds_dir}",
+    ]
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
+        work_dir=work_dir,
+        out_dir=out_dir,
+        input_type=input_type,
     )
-    run_command(cmd)
 
     # Run combine-qc too
     xcpd_dir = os.path.join(out_dir, "xcp_d")
-    cmd = f"cd {xcpd_dir};xcp_d-combineqc {xcpd_dir} summary"
-    run_command(cmd)
-
-    output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type="nifti")
+    combineqc.main(xcpd_dir, "summary")
 
     dm_file = os.path.join(
         xcpd_dir,
@@ -301,19 +256,17 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
 def test_nibabies(datasets, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
     test_name = "test_nibabies"
-
+    input_type = "nibabies"
     data_dir = datasets["nibabies"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
-
-    test_data_dir = get_test_data_path()
 
     parameters = [
         data_dir,
         out_dir,
         "participant",
         f"-w={work_dir}",
-        "--input-type=nibabies",
+        f"--input-type={input_type}",
         "--nuisance-regressors=27P",
         "--despike",
         "--head_radius=auto",
@@ -321,16 +274,35 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--fd-thresh=0",
         "--dcan-qc",
     ]
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
+        work_dir=work_dir,
+        out_dir=out_dir,
+        input_type=input_type,
+    )
+
+
+def _run_and_generate(
+    test_name,
+    participant_label,
+    parameters,
+    data_dir,
+    work_dir,
+    out_dir,
+    input_type,
+):
     opts = get_parser().parse_args(parameters)
     retval = {}
     retval = build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
+    xcpd_wf = retval["workflow"]
 
+    xcpd_wf.run()
     generate_reports(
-        subject_list=["01"],
+        subject_list=[participant_label],
         fmri_dir=data_dir,
         work_dir=work_dir,
         output_dir=out_dir,
@@ -340,7 +312,6 @@ def test_nibabies(datasets, output_dir, working_dir):
         dcan_qc=opts.dcan_qc,
     )
 
-    output_list_file = os.path.join(test_data_dir, "nibabies_outputs.txt")
+    output_list_file = os.path.join(get_test_data_path(), f"expected_outputs_{test_name}.txt")
     check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type="nibabies")
+    check_affines(data_dir, out_dir, input_type=input_type)
