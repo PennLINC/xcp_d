@@ -422,10 +422,7 @@ def init_postprocess_nifti_wf(
             ("atlas_files", "inputnode.atlas_files"),
             ("atlas_labels_files", "inputnode.atlas_labels_files"),
         ]),
-        (downcast_data, connectivity_wf, [
-            ("bold_mask", "inputnode.bold_mask"),
-            ("boldref", "inputnode.boldref"),
-        ]),
+        (downcast_data, connectivity_wf, [("bold_mask", "inputnode.bold_mask")]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),

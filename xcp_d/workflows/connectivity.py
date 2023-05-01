@@ -107,7 +107,7 @@ def init_load_atlases_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, warp_atlases_to_bold_space, [("boldref", "reference_image")]),
+            (inputnode, warp_atlases_to_bold_space, [("bold_file", "reference_image")]),
             (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
             (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
                 ("transformfile", "transforms"),
@@ -127,7 +127,7 @@ def init_load_atlases_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_atlas_to_data, [("denoised_bold", "template_cifti")]),
+            (inputnode, resample_atlas_to_data, [("bold_file", "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
             (resample_atlas_to_data, outputnode, [("cifti_out", "atlas_files")]),
         ])
@@ -232,7 +232,6 @@ def init_functional_connectivity_nifti_wf(
     Inputs
     ------
     %(name_source)s
-    %(boldref)s
     denoised_bold
         clean bold after filtered out nuisscance and filtering
     alff
@@ -269,7 +268,6 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
             fields=[
                 "name_source",
                 "bold_mask",
-                "boldref",
                 "denoised_bold",
                 "alff",  # may be Undefined
                 "reho",
