@@ -46,7 +46,6 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
         alff_available=False,
         mem_gb=4,
         name="connectivity_wf",
-        omp_nthreads=2,
     )
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.name_source = bold_file

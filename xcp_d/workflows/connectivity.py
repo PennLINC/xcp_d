@@ -214,7 +214,6 @@ def init_functional_connectivity_nifti_wf(
                 alff_available=True,
                 min_coverage=0.5,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="connectivity_wf",
             )
 

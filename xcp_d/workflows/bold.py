@@ -411,7 +411,6 @@ def init_postprocess_nifti_wf(
         alff_available=bandpass_filter and (fd_thresh <= 0),
         mem_gb=mem_gbx["timeseries"],
         name="connectivity_wf",
-        omp_nthreads=omp_nthreads,
     )
 
     # fmt:off
