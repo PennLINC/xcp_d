@@ -44,10 +44,100 @@ derivatives will be warped to fsLR-32k space.
    This step will only succeed if FreeSurfer derivatives are also available.
 
 
+Identification of high-motion outlier volumes
+=============================================
+:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
+:class:`~xcp_d.interfaces.censoring.GenerateConfounds`
+
+XCP-D uses framewise displacement to identify high-motion outlier volumes.
+These outlier volumes are removed from the BOLD data prior to denoising.
+
+The threshold used to identify outlier volumes can be set with the ``--fd-thresh`` parameter.
+
+.. important::
+   If a BOLD run does not have enough low-motion data, then the post-processing workflow
+   will automatically stop early, and no derivatives for that run will be written out.
+
+
+Motion parameter filtering [OPTIONAL]
+-------------------------------------
+:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
+:class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
+:func:`~xcp_d.utils.confounds.load_motion`
+
+Motion parameters may be contaminated with respiratory effects :footcite:p:`power2019distinctions`.
+In order to address this issue, XCP-D optionally allows users to specify a band-stop or low-pass
+filter to remove respiration-related signals from the motion parameters, prior to framewise
+displacement calculation.
+Please refer to :footcite:t:`fair2020correction` and :footcite:t:`gratton2020removal` for
+more information.
+
+.. important::
+   Starting in version 0.4.0, if motion parameters are filtered in this step,
+   the filtered motion parameters (including FD, and any squared or derivative regressors)
+   will be used in the confound regression step.
+
+The two options for the motion-filtering parameter are "notch" (the band-stop filter) and
+"lp" (the low-pass filter).
+
+The cutoff points for either the notch filter
+(the beginning and end of the frequency band to remove)
+or the low-pass filter (the highest frequency to retain) can be set by the user
+(see :ref:`usage_cli`), and may depend on the age of the participant.
+
+Below are some recommendations for cutoff values when using the notch filter.
+
+.. list-table:: Respiratory Filter
+
+   *  - Age Range
+      - Cutoff Range
+        (Breaths per Minute)
+   *  - < 1 year
+      - 30 to  60
+   *  - 1 to 2 years
+      - 25 - 50
+   *  - 2 - 6 years
+      - 20 - 35
+   *  - 6-12 years
+      - 15 - 25
+   *  - 12 - 18 years
+      - 12 - 20
+   *  - 19 - 65 years
+      - 12 - 18
+   *  - 65 - 80 years
+      - 12 - 28
+   *  - > 80 years
+      - 10 - 30
+
+If using the low-pass filter for single-band data, a recommended cutoff is 6 BPM (i.e., 0.1 Hertz),
+per :footcite:t:`gratton2020removal`.
+
+
+Framewise displacement calculation and thresholding
+---------------------------------------------------
+:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
+:class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
+:func:`~xcp_d.utils.modified_data.compute_fd`
+
+Framewise displacement is then calculated according to the formula from Power et al. (CITE).
+Two parameters that impact FD calculation and thresholding are
+(1) the head radius used to convert rotation degrees to millimeters and
+(2) the framewise displacement threshold.
+The former may be set with the ``--head-radius`` parameter, which also has an "auto" option,
+in which a brain mask from the preprocessing derivatives is loaded and
+(treating the brain as a sphere) the radius is directly calculated
+(see :func:`~xcp_d.utils.utils.estimate_brain_radius`).
+The latter is set with the ``--fd-thresh`` parameter.
+
+In this step, volumes with a framewise displacement value over the ``--fd-thresh`` parameter will
+be flagged as "high motion outliers".
+These volumes will later be removed from the denoised data.
+
+
 Confound regressor selection
 ============================
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:func:`~xcp_d.utils.confounds.consolidate_confounds`
+:func:`~xcp_d.interfaces.censoring.GenerateConfounds`
 
 The confound regressor configurations in the table below are implemented in XCP-D,
 with ``36P`` as the default.
@@ -55,6 +145,11 @@ In addition to the standard confound regressors selected from fMRIPrep outputs,
 custom confounds can be added as described in :ref:`usage_custom_confounds`.
 If you want to use custom confounds, without any of the nuisance regressors described here,
 use ``--nuisance-regressors custom``.
+
+.. important::
+   Starting in version 0.4.0, if motion parameters were filtered earlier in the workflow,
+   the filtered motion parameters (including FD, and any squared or derivative regressors)
+   will be used in the confound regression step.
 
 .. list-table:: Confound
 
@@ -155,21 +250,6 @@ or they may rely on the preprocessing pipeline's estimated non-steady-state volu
 ``--dummy-scans auto``.
 
 
-Identification of high-motion outlier volumes
-=============================================
-:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.censoring.FlagMotionOutliers`
-
-XCP-D uses framewise displacement to identify high-motion outlier volumes.
-These outlier volumes are removed from the BOLD data prior to denoising.
-
-The threshold used to identify outlier volumes can be set with the ``--fd-thresh`` parameter.
-
-.. important::
-   If a BOLD run does not have enough low-motion data, then the post-processing workflow
-   will automatically stop early, and no derivatives for that run will be written out.
-
-
 Despiking [OPTIONAL]
 ====================
 :func:`~xcp_d.workflows.postprocessing.init_despike_wf`
@@ -180,80 +260,6 @@ data points with an imputed reduced amplitude.
 This is done before regression and filtering, in order to minimize the impact of large amplitude
 changes in the data.
 It can be added to the command line arguments with ``--despike``.
-
-
-Motion parameter filtering [OPTIONAL]
--------------------------------------
-:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.censoring.FlagMotionOutliers`,
-:func:`~xcp_d.utils.confounds.load_motion`
-
-Motion parameters may be contaminated with respiratory effects :footcite:p:`power2019distinctions`.
-In order to address this issue, XCP-D optionally allows users to specify a band-stop or low-pass
-filter to remove respiration-related signals from the motion parameters, prior to framewise
-displacement calculation.
-Please refer to :footcite:t:`fair2020correction` and :footcite:t:`gratton2020removal` for
-more information.
-
-.. important::
-   Please note that the filtered motion parameters are **only** used to flag high-motion outliers.
-   They will not be used in the confound regression step.
-
-The two options for the motion-filtering parameter are "notch" (the band-stop filter) and
-"lp" (the low-pass filter).
-
-The cutoff points for either the notch filter
-(the beginning and end of the frequency band to remove)
-or the low-pass filter (the highest frequency to retain) can be set by the user
-(see :ref:`usage_cli`), and may depend on the age of the participant.
-
-Below are some recommendations for cutoff values when using the notch filter.
-
-.. list-table:: Respiratory Filter
-
-   *  - Age Range
-      - Cutoff Range
-        (Breaths per Minute)
-   *  - < 1 year
-      - 30 to  60
-   *  - 1 to 2 years
-      - 25 - 50
-   *  - 2 - 6 years
-      - 20 - 35
-   *  - 6-12 years
-      - 15 - 25
-   *  - 12 - 18 years
-      - 12 - 20
-   *  - 19 - 65 years
-      - 12 - 18
-   *  - 65 - 80 years
-      - 12 - 28
-   *  - > 80 years
-      - 10 - 30
-
-If using the low-pass filter for single-band data, a recommended cutoff is 6 BPM (i.e., 0.1 Hertz),
-per :footcite:t:`gratton2020removal`.
-
-
-Framewise displacement calculation and thresholding
----------------------------------------------------
-:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.censoring.FlagMotionOutliers`,
-:func:`~xcp_d.utils.modified_data.compute_fd`
-
-Framewise displacement is then calculated according to the formula from Power et al. (CITE).
-Two parameters that impact FD calculation and thresholding are
-(1) the head radius used to convert rotation degrees to millimeters and
-(2) the framewise displacement threshold.
-The former may be set with the ``--head-radius`` parameter, which also has an "auto" option,
-in which a brain mask from the preprocessing derivatives is loaded and
-(treating the brain as a sphere) the radius is directly calculated
-(see :func:`~xcp_d.utils.utils.estimate_brain_radius`).
-The latter is set with the ``--fd-thresh`` parameter.
-
-In this step, volumes with a framewise displacement value over the ``--fd-thresh`` parameter will
-be flagged as "high motion outliers".
-These volumes will later be removed from the denoised data.
 
 
 Denoising
@@ -270,6 +276,11 @@ Please refer to :footcite:t:`power2012spurious` for more information.
 
 Confound regression
 -------------------
+
+.. important::
+   Starting in version 0.4.0, if motion parameters were filtered earlier in the workflow,
+   the filtered motion parameters (including FD, and any squared or derivative regressors)
+   will be used in the confound regression step.
 
 Prior to confound regression, all nuisance regressors, except the intercept regressor, will be
 mean-centered.
