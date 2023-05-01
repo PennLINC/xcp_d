@@ -262,11 +262,11 @@ def init_reho_cifti_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 
-For each hemisphere, regional homogeneity (ReHo) was computed using surface-based
-*2dReHo* [@surface_reho].
+For each hemisphere, regional homogeneity (ReHo) [@jiang2016regional] was computed using
+surface-based *2dReHo* [@surface_reho].
 Specifically, for each vertex on the surface, the Kendall's coefficient of concordance (KCC)
 was computed with nearest-neighbor vertices to yield ReHo.
-For the subcortical, volumetric data, ReHo was computed with neighborhood voxels using AFNI's
+For the subcortical, volumetric data, ReHo was computed with neighborhood voxels using *AFNI*'s
 *3dReHo* [@taylor2013fatcat].
 """
     inputnode = pe.Node(
@@ -417,8 +417,8 @@ def init_reho_nifti_wf(
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
-Regional homogeneity (ReHo) was computed with neighborhood voxels using AFNI's *3dReHo*
-[@taylor2013fatcat].
+Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood voxels using
+*AFNI*'s *3dReHo* [@taylor2013fatcat].
 """
 
     inputnode = pe.Node(

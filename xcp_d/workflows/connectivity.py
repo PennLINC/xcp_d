@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for extracting time series and computing functional connectivity."""
-import nilearn as nl
 from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -251,16 +250,15 @@ def init_functional_connectivity_nifti_wf(
 
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
-with *Nilearn's* [version {nl.__version__}, @abraham2014machine] *NiftiLabelsMasker* for the
-following atlases:
+with *Nilearn's* *NiftiLabelsMasker* for the following atlases:
 the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
 atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
-the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
+the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
-ignored, when the parcel had >{min_coverage * 100}% coverage,
-or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
+ignored (when the parcel had >{min_coverage * 100}% coverage)
+or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 """
 
     inputnode = pe.Node(
@@ -456,13 +454,13 @@ Processed functional timeseries were extracted from residual BOLD using
 Connectome Workbench [@hcppipelines] for the following atlases:
 the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
 atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
-the Gordon atlas [@Gordon_2014], and the Tian subcortical artlas [@tian2020topographic].
+the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
 In cases of partial coverage, uncovered vertices (values of all zeros or NaNs) were either
-ignored, when the parcel had >{min_coverage * 100}% coverage,
-or were set to zero, when the parcel had <{min_coverage * 100}% coverage.
+ignored (when the parcel had >{min_coverage * 100}% coverage)
+or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 """
 
     inputnode = pe.Node(

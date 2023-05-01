@@ -161,8 +161,8 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
             "according to the '27P' strategy. "
             "These nuisance regressors included "
             f"six {fstr}motion parameters with their temporal derivatives, "
-            "the quadratic expansion of those six motion parameters and their derivatives, "
-            "mean global signal, mean white matter signal, and mean CSF signal "
+            "quadratic expansion of those six motion parameters and their derivatives, "
+            "mean global signal, mean white matter signal, and mean cerebrospinal fluid signal "
             "[@benchmarkp;@satterthwaite_2013]."
         ),
         "36P": (
@@ -170,14 +170,15 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
             "according to the '36P' strategy. "
             "These nuisance regressors included "
             f"six {fstr}motion parameters, mean global signal, mean white matter signal, "
-            "mean CSF signal with their temporal derivatives, "
-            "and the quadratic expansion of six motion parameters, tissues signals and "
+            "mean cerebrospinal fluid signal with their temporal derivatives, "
+            "and quadratic expansion of six motion parameters, tissue signals and "
             "their temporal derivatives [@benchmarkp;@satterthwaite_2013]."
         ),
         "acompcor": (
             "Nuisance regressors were selected according to the 'acompcor' strategy. "
-            "The top 5 aCompCor principal components from the WM and CSF compartments "
-            "were selected as nuisance regressors [@behzadi2007component], "
+            "The top 5 aCompCor principal components from the white matter and "
+            "cerebrospinal fluid compartments were selected as nuisance regressors "
+            "[@behzadi2007component], "
             f"along with the six {fstr}motion parameters and their temporal derivatives "
             "[@benchmarkp;@satterthwaite_2013]. "
             "As the aCompCor regressors were generated on high-pass filtered data, "
@@ -186,10 +187,11 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
         ),
         "acompcor_gsr": (
             "Nuisance regressors were selected according to the 'acompcor_gsr' strategy. "
-            "The top 5 aCompCor principal components from the WM and CSF compartments "
-            "were selected as nuisance regressors [@behzadi2007component], "
+            "The top 5 aCompCor principal components from the white matter and "
+            "cerebrospinal fluid compartments were selected as nuisance regressors "
+            "[@behzadi2007component], "
             f"along with the six {fstr}motion parameters and their temporal derivatives, "
-            "mean white matter signal, mean CSF signal, and mean global signal "
+            "mean white matter signal, mean cerebrospinal fluid signal, and mean global signal "
             "[@benchmarkp;@satterthwaite_2013]. "
             "As the aCompCor regressors were generated on high-pass filtered data, "
             "the associated cosine basis regressors were included. "
@@ -198,14 +200,14 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
         "aroma": (
             "Nuisance regressors were selected according to the 'aroma' strategy. "
             "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
-            "and mean CSF signal were selected as nuisance regressors "
+            "and mean cerebrospinal fluid signal were selected as nuisance regressors "
             "[@benchmarkp;@satterthwaite_2013]."
         ),
         "aroma_gsr": (
             "Nuisance regressors were selected according to the 'aroma_gsr' strategy. "
             "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
-            "mean CSF signal, and mean global signal were selected as nuisance regressors "
-            "[@benchmarkp;@satterthwaite_2013]."
+            "mean cerebrospinal fluid signal, and mean global signal were selected as "
+            "nuisance regressors [@benchmarkp;@satterthwaite_2013]."
         ),
     }
 
