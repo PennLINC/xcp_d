@@ -1,7 +1,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Functions for converting ABCD-HCP/DCAN-format derivatives to fMRIPrep format."""
+"""Functions for converting DCAN-format derivatives to fMRIPrep format."""
 import glob
+import json
 import logging
 import os
 import re
@@ -9,21 +10,20 @@ import re
 import nibabel as nb
 import numpy as np
 import pandas as pd
-from pkg_resources import resource_filename as pkgrf
+from nilearn.maskers import NiftiMasker
 
 from xcp_d.utils.filemanip import ensure_list
-from xcp_d.utils.ingestion import copy_file, extract_mean_signal, plot_bbreg, write_json
 
 LOGGER = logging.getLogger("nipype.utils")
 
 
 def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
-    """Convert ABCD-HCP/DCAN derivatives to BIDS-compliant derivatives.
+    """Convert DCAN derivatives to BIDS-compliant derivatives.
 
     Parameters
     ----------
     in_dir : str
-        Path to ABCD-HCP/DCAN derivatives.
+        Path to DCAN derivatives.
     out_dir : str
         Path to the output BIDS-compliant derivatives folder.
     participant_ids : None or list of str
@@ -35,11 +35,6 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
     -------
     participant_ids : list of str
         The list of subjects whose derivatives were converted.
-
-    Notes
-    -----
-    Since the T1w is in standard space already, we use identity transforms instead of the
-    individual transforms available in the DCAN derivatives.
     """
     LOGGER.warning("convert_dcan2bids is an experimental function.")
     in_dir = os.path.abspath(in_dir)
@@ -53,7 +48,7 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
         participant_ids = [os.path.basename(subject_folder) for subject_folder in subject_folders]
         # Remove sub- prefix.
         participant_ids = [sub_id.replace("sub-", "") for sub_id in participant_ids]
-        if not participant_ids:
+        if len(participant_ids) == 0:
             raise ValueError(f"No subject found in {in_dir}")
 
     else:
@@ -80,11 +75,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         Path to the output BIDS-compliant derivatives folder.
     sub_id : str
         Subject identifier, without "sub-" prefix.
-
-    Notes
-    -----
-    Since the T1w is in standard space already, we use identity transforms instead of the
-    individual transforms available in the DCAN derivatives.
     """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir)
@@ -100,14 +90,14 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
 
     # get session ids
-    session_folders = sorted(glob.glob(os.path.join(in_dir, sub_ent, "ses*")))
+    session_folders = sorted(glob.glob(os.path.join(in_dir, sub_ent, "s*")))
     session_folders = [
         os.path.basename(ses_dir) for ses_dir in session_folders if os.path.isdir(ses_dir)
     ]
     # NOTE: Why split ses- out if you add it right back in?
     ses_entities = [ses_dir.split("ses-")[1] for ses_dir in session_folders]
     ses_entities = [f"ses-{ses_id}" for ses_id in ses_entities]
-    print(ses_entities)
+
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
@@ -126,7 +116,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         func_dir_fmriprep = os.path.join(session_dir_fmriprep, "func")
         os.makedirs(func_dir_fmriprep, exist_ok=True)
 
-        # xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
+        xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
 
         # Collect anatomical files to copy
         t1w_orig = os.path.join(anat_dir_orig, "T1w.nii.gz")
@@ -159,25 +149,24 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         copy_dictionary[dseg_orig] = [dseg_fmriprep]
 
         # Grab transforms
-        identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
-        # t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
+        t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
         t1w_to_template_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-T1w_to-{volspace}_mode-image_xfm.txt",
+            f"{sub_ent}_{ses_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
         )
-        copy_dictionary[identity_xfm] = [t1w_to_template_fmriprep]
+        copy_dictionary[t1w_to_template_orig] = [t1w_to_template_fmriprep]
 
-        # template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
+        template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
         template_to_t1w_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-{volspace}_to-T1w_mode-image_xfm.txt",
+            f"{sub_ent}_{ses_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
         )
-        copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
+        copy_dictionary[template_to_t1w_orig] = [template_to_t1w_fmriprep]
 
-        # Grab surface morphometry and shape files
+        # Grab surface morphometry files
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
 
-        MESH_DICT = {
+        SURFACE_DICT = {
             "R.midthickness": "hemi-R_desc-hcp_midthickness",
             "L.midthickness": "hemi-L_desc-hcp_midthickness",
             "R.inflated": "hemi-R_desc-hcp_inflated",
@@ -190,40 +179,14 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             "L.white": "hemi-L_smoothwm",
         }
 
-        for in_str, out_str in MESH_DICT.items():
+        for in_str, out_str in SURFACE_DICT.items():
             surf_orig = os.path.join(
                 fsaverage_dir_orig,
                 f"{sub_id}.{in_str}.32k_fs_LR.surf.gii",
             )
-            if not os.path.isfile(surf_orig):
-                raise FileNotFoundError(f"DNE: {surf_orig}")
-
             surf_fmriprep = os.path.join(
-                anat_dir_fmriprep,
-                f"{sub_ent}_{ses_ent}_space-fsLR_den-32k_{out_str}.surf.gii",
-            )
-            copy_dictionary[surf_orig] = [surf_fmriprep]
-
-        SHAPE_DICT = {
-            "R.corrThickness": "hemi-R_thickness",
-            "L.corrThickness": "hemi-L_thickness",
-            "R.curvature": "hemi-R_curv",
-            "L.curvature": "hemi-L_curv",
-            "R.sulc": "hemi-R_sulc",
-            "L.sulc": "hemi-L_sulc",
-        }
-
-        for in_str, out_str in SHAPE_DICT.items():
-            surf_orig = os.path.join(
                 fsaverage_dir_orig,
-                f"{sub_id}.{in_str}.32k_fs_LR.shape.gii",
-            )
-            if not os.path.isfile(surf_orig):
-                raise FileNotFoundError(f"DNE: {surf_orig}")
-
-            surf_fmriprep = os.path.join(
-                anat_dir_fmriprep,
-                f"{sub_ent}_{ses_ent}_space-fsLR_den-32k_{out_str}.shape.gii",
+                f"{sub_ent}_{ses_ent}_space-fsLR_den-32k_{out_str}.surf.gii",
             )
             copy_dictionary[surf_orig] = [surf_fmriprep]
 
@@ -234,19 +197,14 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         csfmask = os.path.join(anat_dir_orig, f"vent_2mm_{sub_id}_mask_eroded.nii.gz")
 
         # Collect functional files to copy
-        task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, f"{ses_ent}_task-*")))
-        if not task_dirs_orig:
-            raise FileNotFoundError(os.path.join(func_dir_orig, f"{ses_ent}_task-*"))
-
+        task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "task-*")))
         task_dirs_orig = [task_dir for task_dir in task_dirs_orig if os.path.isdir(task_dir)]
         task_names = [os.path.basename(task_dir) for task_dir in task_dirs_orig]
 
         for base_task_name in task_names:
-            # Folder names follow the pattern ses-X_task-Y_run-Z
-            found_task_info = re.findall(
-                ses_ent + r"_task-([0-9a-zA-Z]+)_run-(\d+)",
-                base_task_name,
-            )
+            # We assume that the task name doesn't end with a number,
+            # so all trailing numbers are treated as run numbers.
+            found_task_info = re.findall(r"task-([0-9a-zA-Z]+[a-zA-Z]+)(\d+)", base_task_name)
             if len(found_task_info) != 1:
                 print(
                     f"Task name and run number could not be inferred for {base_task_name}. "
@@ -284,10 +242,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
-            bold_cifti_orig = os.path.join(
-                task_dir_orig,
-                f"{ses_ent}_{task_ent}_{run_ent}_Atlas.dtseries.nii",
-            )
+            bold_cifti_orig = os.path.join(task_dir_orig, f"{task_ent}_Atlas.dtseries.nii")
             bold_cifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.nii",
@@ -295,26 +250,26 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
             # TODO: Find actual native-to-T1w transform
-            # native_to_t1w_orig = os.path.join(xforms_dir_orig, f"{task_ent}2T1w.nii.gz")
+            native_to_t1w_orig = os.path.join(xforms_dir_orig, f"{task_ent}2T1w.nii.gz")
             native_to_t1w_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
-                    "from-scanner_to-T1w_mode-image_xfm.txt"
+                    "from-scanner_to-T1w_mode-image_xfm.nii.gz"
                 ),
             )
-            copy_dictionary[identity_xfm].append(native_to_t1w_fmriprep)
+            copy_dictionary[native_to_t1w_orig] = [native_to_t1w_fmriprep]
 
             # TODO: Find actual T1w-to-native transform
-            # t1w_to_native_orig = os.path.join(xforms_dir_orig, f"T1w2{task_ent}.nii.gz")
+            t1w_to_native_orig = os.path.join(xforms_dir_orig, f"T1w2{task_ent}.nii.gz")
             t1w_to_native_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
-                    "from-T1w_to-scanner_mode-image_xfm.txt"
+                    "from-T1w_to-scanner_mode-image_xfm.nii.gz"
                 ),
             )
-            copy_dictionary[identity_xfm].append(t1w_to_native_fmriprep)
+            copy_dictionary[t1w_to_native_orig] = [t1w_to_native_fmriprep]
 
             # Extract metadata for JSON files
             TR = nb.load(bold_nifti_orig).header.get_zooms()[-1]  # repetition time
@@ -329,7 +284,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                     f"{res_ent}_desc-preproc_bold.json"
                 ),
             )
-            write_json(bold_nifti_json_dict, bold_nifti_json_fmriprep)
+            writejson(bold_nifti_json_dict, bold_nifti_json_fmriprep)
 
             bold_cifti_json_dict = {
                 "RepetitionTime": float(TR),
@@ -345,7 +300,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.json",
             )
 
-            write_json(bold_cifti_json_dict, bold_cifti_json_fmriprep)
+            writejson(bold_cifti_json_dict, bold_cifti_json_fmriprep)
 
             # Create confound regressors
             mvreg = pd.read_csv(
@@ -374,9 +329,9 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 mvreg[f"{col}_power2"] = mvreg[col] ** 2
 
             # use masks: brain, csf, and wm mask to extract timeseries
-            gsreg = extract_mean_signal(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
-            csfreg = extract_mean_signal(mask=csfmask, nifti=bold_nifti_orig)
-            wmreg = extract_mean_signal(mask=wmmask, nifti=bold_nifti_orig)
+            gsreg = extractreg(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
+            csfreg = extractreg(mask=csfmask, nifti=bold_nifti_orig)
+            wmreg = extractreg(mask=wmmask, nifti=bold_nifti_orig)
             rsmd = np.loadtxt(os.path.join(task_dir_orig, "Movement_AbsoluteRMS.txt"))
 
             brainreg = pd.DataFrame(
@@ -417,7 +372,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 func_dir_fmriprep,
                 f"{regressors_file_base}.json",
             )
-            write_json(bold_cifti_json_dict, regressors_json_fmriprep)
+            writejson(bold_cifti_json_dict, regressors_json_fmriprep)
 
             # Make figures
             figdir = os.path.join(subject_dir_fmriprep, "figures")
@@ -426,7 +381,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 figdir,
                 f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_desc-bbregister_bold.svg",
             )
-            bbref_fig_fmriprep = plot_bbreg(
+            bbref_fig_fmriprep = bbregplot(
                 fixed_image=t1w_orig,
                 moving_image=sbref_orig,
                 out_file=bbref_fig_fmriprep,
@@ -444,7 +399,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             print(f"File used for more than one output: {file_orig}")
 
         for file_fmriprep in files_fmriprep:
-            copy_file(file_orig, file_fmriprep)
+            copyfileobj_example(file_orig, file_fmriprep)
 
     dataset_description_dict = {
         "Name": "ABCDDCAN",
@@ -460,7 +415,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     }
     dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
     if not os.path.isfile(dataset_description_fmriprep):
-        write_json(dataset_description_dict, dataset_description_fmriprep)
+        writejson(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from DCAN to fMRIPrep
     scans_dict = {}
@@ -472,3 +427,75 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
     scans_tsv = os.path.join(subject_dir_fmriprep, f"{sub_ent}_scans.tsv")
     scans_df.to_csv(scans_tsv, sep="\t", index=False)
+
+
+def copyfileobj_example(src, dst):
+    """Copy a file from source to dest.
+
+    source and dest must be file-like objects,
+    i.e. any object with a read or write method, like for example StringIO.
+    """
+    import filecmp
+    import shutil
+
+    if not os.path.exists(dst) or not filecmp.cmp(src, dst):
+        shutil.copyfile(src, dst)
+
+
+def extractreg(mask, nifti):
+    """Extract mean signal within mask from NIFTI."""
+    masker = NiftiMasker(mask_img=mask)
+    signals = masker.fit_transform(nifti)
+    return np.mean(signals, axis=1)
+
+
+def writejson(data, outfile):
+    """Write dictionary to JSON file."""
+    with open(outfile, "w") as f:
+        json.dump(data, f)
+    return outfile
+
+
+def bbregplot(fixed_image, moving_image, contour, out_file="report.svg"):
+    """Plot bbref_fig_fmriprep results."""
+    import numpy as np
+    from nilearn.image import load_img, resample_img, threshold_img
+    from niworkflows.viz.utils import compose_view, cuts_from_bbox, plot_registration
+
+    fixed_image_nii = load_img(fixed_image)
+    moving_image_nii = load_img(moving_image)
+    moving_image_nii = resample_img(
+        moving_image_nii, target_affine=np.eye(3), interpolation="nearest"
+    )
+    contour_nii = load_img(contour) if contour is not None else None
+
+    mask_nii = threshold_img(fixed_image_nii, 1e-3)
+
+    n_cuts = 7
+    if contour_nii:
+        cuts = cuts_from_bbox(contour_nii, cuts=n_cuts)
+    else:
+        cuts = cuts_from_bbox(mask_nii, cuts=n_cuts)
+
+    compose_view(
+        plot_registration(
+            fixed_image_nii,
+            "fixed-image",
+            estimate_brightness=True,
+            cuts=cuts,
+            label="fixed",
+            contour=contour_nii,
+            compress="auto",
+        ),
+        plot_registration(
+            moving_image_nii,
+            "moving-image",
+            estimate_brightness=True,
+            cuts=cuts,
+            label="moving",
+            contour=contour_nii,
+            compress="auto",
+        ),
+        out_file=out_file,
+    )
+    return out_file
