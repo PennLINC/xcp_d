@@ -229,6 +229,9 @@ def init_postprocess_nifti_wf(
                 "fmriprep_confounds_json",
                 "anat_to_native_xfm",
                 "dummy_scans",
+                "atlas_names",
+                "atlas_files",
+                "atlas_labels_files",
             ],
         ),
         name="inputnode",
@@ -413,7 +416,12 @@ def init_postprocess_nifti_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, connectivity_wf, [("bold_file", "inputnode.name_source")]),
+        (inputnode, connectivity_wf, [
+            ("bold_file", "inputnode.name_source"),
+            ("atlas_names", "inputnode.atlas_names"),
+            ("atlas_files", "inputnode.atlas_files"),
+            ("atlas_labels_files", "inputnode.atlas_labels_files"),
+        ]),
         (downcast_data, connectivity_wf, [
             ("bold_mask", "inputnode.bold_mask"),
             ("boldref", "inputnode.boldref"),

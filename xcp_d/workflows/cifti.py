@@ -210,6 +210,10 @@ def init_postprocess_cifti_wf(
                 "fmriprep_confounds_file",
                 "fmriprep_confounds_json",
                 "dummy_scans",
+                "atlas_names",
+                "atlas_files",
+                "atlas_labels_files",
+                "parcellated_atlas_files",
             ],
         ),
         name="inputnode",
@@ -382,7 +386,13 @@ def init_postprocess_cifti_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, connectivity_wf, [("bold_file", "inputnode.name_source")]),
+        (inputnode, connectivity_wf, [
+            ("bold_file", "inputnode.name_source"),
+            ("atlas_names", "inputnode.atlas_names"),
+            ("atlas_files", "inputnode.atlas_files"),
+            ("atlas_labels_files", "inputnode.atlas_labels_files"),
+            ("parcellated_atlas_files", "inputnode.parcellated_atlas_files"),
+        ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
