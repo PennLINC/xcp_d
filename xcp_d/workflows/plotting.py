@@ -210,22 +210,14 @@ def init_qc_report_wf(
         # Given that xcp-d doesn't process native-space data, this transform will never be used.
         get_mni_to_bold_xfms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_anat_xfm", "anat_to_native_xfm"],
+                input_names=["bold_file"],
                 output_names=["transform_list"],
                 function=get_std2bold_xfms,
             ),
             name="get_std2native_transform",
         )
 
-        # fmt:off
-        workflow.connect([
-            (inputnode, get_mni_to_bold_xfms, [
-                ("name_source", "bold_file"),
-                ("template_to_anat_xfm", "template_to_anat_xfm"),
-                ("anat_to_native_xfm", "anat_to_native_xfm"),
-            ]),
-        ])
-        # fmt:on
+        workflow.connect([(inputnode, get_mni_to_bold_xfms, [("name_source", "bold_file")])])
 
         # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
         dseg_file = str(

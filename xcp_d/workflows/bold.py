@@ -415,10 +415,6 @@ def init_postprocess_nifti_wf(
             ("bold_mask", "inputnode.bold_mask"),
             ("boldref", "inputnode.boldref"),
         ]),
-        (inputnode, connectivity_wf, [
-            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("anat_to_native_xfm", "inputnode.anat_to_native_xfm"),
-        ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),

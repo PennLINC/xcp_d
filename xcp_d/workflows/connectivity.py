@@ -34,6 +34,7 @@ def init_functional_connectivity_nifti_wf(
             :simple_form: yes
 
             from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
+
             wf = init_functional_connectivity_nifti_wf(
                 output_dir=".",
                 alff_available=True,
@@ -61,8 +62,6 @@ def init_functional_connectivity_nifti_wf(
         clean bold after filtered out nuisscance and filtering
     alff
     reho
-    %(template_to_anat_xfm)s
-    %(anat_to_native_xfm)s
 
     Outputs
     -------
@@ -99,8 +98,7 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
                 "denoised_bold",
                 "alff",  # may be Undefined
                 "reho",
-                "template_to_anat_xfm",
-                "anat_to_native_xfm",
+                "atlas_names",
             ],
         ),
         name="inputnode",
@@ -145,22 +143,14 @@ or were set to zero,  when the parcel had <{min_coverage * 100}% coverage.
 
     get_transforms_to_bold_space = pe.Node(
         Function(
-            input_names=["bold_file", "template_to_anat_xfm", "anat_to_native_xfm"],
+            input_names=["bold_file"],
             output_names=["transformfile"],
             function=get_std2bold_xfms,
         ),
         name="get_transforms_to_bold_space",
     )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, get_transforms_to_bold_space, [
-            ("name_source", "bold_file"),
-            ("template_to_anat_xfm", "template_to_anat_xfm"),
-            ("anat_to_native_xfm", "anat_to_native_xfm"),
-        ]),
-    ])
-    # fmt:on
+    workflow.connect([(inputnode, get_transforms_to_bold_space, [("name_source", "bold_file")])])
 
     # Using the generated transforms, apply them to get everything in the correct MNI form
     warp_atlases_to_bold_space = pe.MapNode(
