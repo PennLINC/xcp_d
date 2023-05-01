@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 """Classes for building an executive summary file."""
 import os
+import re
+from pathlib import Path
 
 from bids.layout import BIDSLayout, Query
 from bs4 import BeautifulSoup
@@ -229,6 +231,7 @@ class ExecutiveSummary(object):
 
     def generate_report(self, out_file=None):
         """Generate the report."""
+        logs_path = Path(self.xcpd_path) / "logs"
         if out_file is None:
             if self.session_id:
                 out_file = f"sub-{self.subject_id}_ses-{self.session_id}_executive_summary.html"
@@ -236,6 +239,41 @@ class ExecutiveSummary(object):
                 out_file = f"sub-{self.subject_id}_executive_summary.html"
 
             out_file = os.path.join(self.xcpd_path, out_file)
+
+        boilerplate = []
+        boiler_idx = 0
+
+        if (logs_path / "CITATION.html").exists():
+            text = (
+                re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
+                .findall((logs_path / "CITATION.html").read_text())[0]
+                .strip()
+            )
+            boilerplate.append((boiler_idx, "HTML", f'<div class="boiler-html">{text}</div>'))
+            boiler_idx += 1
+
+        if (logs_path / "CITATION.md").exists():
+            text = (logs_path / "CITATION.md").read_text()
+            boilerplate.append((boiler_idx, "Markdown", f"<pre>{text}</pre>\n"))
+            boiler_idx += 1
+
+        if (logs_path / "CITATION.tex").exists():
+            text = (
+                re.compile(r"\\begin{document}(.*?)\\end{document}", re.DOTALL | re.IGNORECASE)
+                .findall((logs_path / "CITATION.tex").read_text())[0]
+                .strip()
+            )
+            boilerplate.append(
+                (
+                    boiler_idx,
+                    "LaTeX",
+                    f"""<pre>{text}</pre>
+<h3>Bibliography</h3>
+<pre>{Path(pkgrf("xcp_d", "data/boilerplate.bib")).read_text()}</pre>
+""",
+                )
+            )
+            boiler_idx += 1
 
         def include_file(name):
             return Markup(loader.get_source(environment, name)[0])
@@ -254,6 +292,7 @@ class ExecutiveSummary(object):
             structural_files=self.structural_files_,
             concatenated_rest_files=self.concatenated_rest_files_,
             task_files=self.task_files_,
+            boilerplate=boilerplate,
         )
 
         self.write_html(html, out_file)

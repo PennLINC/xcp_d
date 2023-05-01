@@ -106,6 +106,8 @@ jobs:
             pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer
+            # remove nifti files before uploading artifacts
+            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage/
           paths:
@@ -135,6 +137,8 @@ jobs:
             pytest -rP -o log_cli=true -m "ds001419_nifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_nifti
+            # remove nifti files before uploading artifacts
+            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage/
           paths:
@@ -164,6 +168,8 @@ jobs:
             pytest -rP -o log_cli=true -m "nibabies" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.nibabies
+            # remove nifti files before uploading artifacts
+            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage/
           paths:
@@ -193,6 +199,8 @@ jobs:
             pytest -rP -o log_cli=true -m "ds001419_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
+            # remove nifti files before uploading artifacts
+            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage
           paths:
@@ -222,6 +230,8 @@ jobs:
             pytest -rP -o log_cli=true -m "ds001419_cifti_t2wonly" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti_t2wonly
+            # remove nifti files before uploading artifacts
+            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage
           paths:

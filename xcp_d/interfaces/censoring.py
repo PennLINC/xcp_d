@@ -13,7 +13,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
+from xcp_d.utils.confounds import _infer_dummy_scans, load_confound_matrix, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd
 
@@ -41,27 +41,40 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="fMRIPrep confounds tsv. Used for motion-based censoring.",
     )
+    motion_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Confounds file containing only filtered motion parameters.",
+    )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc="Temporal mask file.",
+    )
 
 
 class _RemoveDummyVolumesOutputSpec(TraitedSpec):
     confounds_file_dropped_TR = File(
         exists=True,
-        mandatory=True,
         desc="TSV file with selected confounds for denoising, after removing TRs.",
     )
-
     fmriprep_confounds_file_dropped_TR = File(
         exists=True,
-        mandatory=True,
         desc="fMRIPrep confounds tsv after removing TRs. Used for motion-based censoring.",
     )
-
     bold_file_dropped_TR = File(
         exists=True,
-        mandatory=True,
         desc="bold or cifti with volumes dropped",
     )
     dummy_scans = traits.Int(desc="Number of volumes dropped.")
+    motion_file_dropped_TR = File(
+        exists=True,
+        desc="Confounds file containing only filtered motion parameters.",
+    )
+    temporal_mask_dropped_TR = File(
+        exists=True,
+        desc="Temporal mask file.",
+    )
 
 
 class RemoveDummyVolumes(SimpleInterface):
@@ -90,6 +103,8 @@ class RemoveDummyVolumes(SimpleInterface):
                 "fmriprep_confounds_file_dropped_TR"
             ] = self.inputs.fmriprep_confounds_file
             self._results["confounds_file_dropped_TR"] = self.inputs.confounds_file
+            self._results["motion_file_dropped_TR"] = self.inputs.motion_file
+            self._results["temporal_mask_dropped_TR"] = self.inputs.temporal_mask
             return runtime
 
         # get the file names to output to
@@ -111,6 +126,18 @@ class RemoveDummyVolumes(SimpleInterface):
             newpath=os.getcwd(),
             use_ext=False,
         )
+        self._results["motion_file_dropped_TR"] = fname_presuffix(
+            self.inputs.bold_file,
+            suffix="_motion_dropped.tsv",
+            newpath=os.getcwd(),
+            use_ext=False,
+        )
+        self._results["temporal_mask_dropped_TR"] = fname_presuffix(
+            self.inputs.bold_file,
+            suffix="_tmask_dropped.tsv",
+            newpath=os.getcwd(),
+            use_ext=False,
+        )
 
         # Remove the dummy volumes
         dropped_image = _drop_dummy_scans(self.inputs.bold_file, dummy_scans=dummy_scans)
@@ -118,187 +145,38 @@ class RemoveDummyVolumes(SimpleInterface):
 
         # Drop the first N rows from the pandas dataframe
         fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        dropped_fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
-
-        # Drop the first N rows from the confounds file
-        confounds_df = pd.read_table(self.inputs.confounds_file)
-        confounds_tsv_dropped = confounds_df.drop(np.arange(dummy_scans))
-
-        # Save out results
-        dropped_fmriprep_confounds_df.to_csv(
+        fmriprep_confounds_df_dropped = fmriprep_confounds_df.drop(np.arange(dummy_scans))
+        fmriprep_confounds_df_dropped.to_csv(
             self._results["fmriprep_confounds_file_dropped_TR"],
             sep="\t",
             index=False,
         )
-        confounds_tsv_dropped.to_csv(
+
+        # Drop the first N rows from the confounds file
+        confounds_df = pd.read_table(self.inputs.confounds_file)
+        confounds_df_dropped = confounds_df.drop(np.arange(dummy_scans))
+        confounds_df_dropped.to_csv(
             self._results["confounds_file_dropped_TR"],
             sep="\t",
             index=False,
         )
 
-        return runtime
-
-
-class _FlagMotionOutliersInputSpec(BaseInterfaceInputSpec):
-    fd_thresh = traits.Float(
-        mandatory=False,
-        default_value=0.3,
-        desc="Framewise displacement threshold. All values above this will be dropped.",
-    )
-    fmriprep_confounds_file = File(
-        exists=True,
-        mandatory=True,
-        desc="fMRIPrep confounds tsv. Used for flagging high-motion volumes.",
-    )
-    head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
-    motion_filter_type = traits.Either(
-        None,
-        traits.Str,
-        mandatory=True,
-    )
-    motion_filter_order = traits.Either(
-        None,
-        traits.Int,
-        mandatory=True,
-    )
-    TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
-    band_stop_min = traits.Either(
-        None,
-        traits.Float,
-        mandatory=True,
-        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
-    )
-    band_stop_max = traits.Either(
-        None,
-        traits.Float,
-        mandatory=True,
-        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
-    )
-
-
-class _FlagMotionOutliersOutputSpec(TraitedSpec):
-    filtered_motion = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Framewise displacement timeseries. "
-            "This is a TSV file with one column: 'framewise_displacement'."
-        ),
-    )
-    filtered_motion_metadata = traits.Dict(
-        desc="Metadata associated with the filtered_motion output.",
-    )
-    temporal_mask = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Temporal mask; all values above fd_thresh set to 1. "
-            "This is a TSV file with one column: 'framewise_displacement'."
-        ),
-    )
-    temporal_mask_metadata = traits.Dict(
-        desc="Metadata associated with the temporal_mask output.",
-    )
-
-
-class FlagMotionOutliers(SimpleInterface):
-    """Generate a temporal mask based on recalculated FD.
-
-    Takes in confound files and information about filtering-
-    including band stop values and motion filter type.
-    Then proceeds to create a motion-filtered confounds matrix and recalculates FD from
-    filtered motion parameters.
-    Finally generates temporal mask with volumes above FD threshold set to 1.
-    Outputs temporal mask and framewise displacement timeseries.
-    """
-
-    input_spec = _FlagMotionOutliersInputSpec
-    output_spec = _FlagMotionOutliersOutputSpec
-
-    def _run_interface(self, runtime):
-        # Read in fmriprep confounds tsv to calculate FD
-        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        motion_df = load_motion(
-            fmriprep_confounds_df.copy(),
-            TR=self.inputs.TR,
-            motion_filter_type=self.inputs.motion_filter_type,
-            motion_filter_order=self.inputs.motion_filter_order,
-            band_stop_min=self.inputs.band_stop_min,
-            band_stop_max=self.inputs.band_stop_max,
-        )
-
-        fd_timeseries = compute_fd(
-            confound=motion_df,
-            head_radius=self.inputs.head_radius,
-        )
-        motion_df["framewise_displacement"] = fd_timeseries
-
-        # Generate temporal mask with all timepoints have FD over threshold
-        # set to 1 and then dropped.
-        outlier_mask = np.zeros(len(fd_timeseries), dtype=int)
-        if self.inputs.fd_thresh > 0:
-            outlier_mask[fd_timeseries > self.inputs.fd_thresh] = 1
-        else:
-            LOGGER.info(f"FD threshold set to {self.inputs.fd_thresh}. Censoring is disabled.")
-
-        # get the output
-        self._results["temporal_mask"] = fname_presuffix(
-            "desc-fd_outliers.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        self._results["filtered_motion"] = fname_presuffix(
-            "desc-filtered_motion.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-
-        outliers_df = pd.DataFrame(data=outlier_mask, columns=["framewise_displacement"])
-        outliers_df.to_csv(
-            self._results["temporal_mask"],
-            index=False,
-            header=True,
+        # Drop the first N rows from the motion file
+        motion_df = pd.read_table(self.inputs.motion_file)
+        motion_df_dropped = motion_df.drop(np.arange(dummy_scans))
+        motion_df_dropped.to_csv(
+            self._results["motion_file_dropped_TR"],
             sep="\t",
+            index=False,
         )
 
-        motion_metadata = {
-            "framewise_displacement": {
-                "Description": (
-                    "Framewise displacement calculated according to Power et al. (2012)."
-                ),
-                "Units": "mm",
-                "HeadRadius": self.inputs.head_radius,
-            }
-        }
-        if self.inputs.motion_filter_type == "lp":
-            motion_metadata["LowpassFilter"] = self.inputs.band_stop_max
-            motion_metadata["LowpassFilterOrder"] = self.inputs.motion_filter_order
-        elif self.inputs.motion_filter_type == "notch":
-            motion_metadata["BandstopFilter"] = [
-                self.inputs.band_stop_min,
-                self.inputs.band_stop_max,
-            ]
-            motion_metadata["BandstopFilterOrder"] = self.inputs.motion_filter_order
-
-        self._results["filtered_motion_metadata"] = motion_metadata
-
-        outliers_metadata = {
-            "framewise_displacement": {
-                "Description": "Outlier time series based on framewise displacement.",
-                "Levels": {
-                    "0": "Non-outlier volume",
-                    "1": "Outlier volume",
-                },
-                "Threshold": self.inputs.fd_thresh,
-            }
-        }
-        self._results["temporal_mask_metadata"] = outliers_metadata
-
-        motion_df.to_csv(
-            self._results["filtered_motion"],
-            index=False,
-            header=True,
+        # Drop the first N rows from the temporal mask
+        tmask_df = pd.read_table(self.inputs.temporal_mask)
+        tmask_df_dropped = tmask_df.drop(np.arange(dummy_scans))
+        tmask_df_dropped.to_csv(
+            self._results["temporal_mask_dropped_TR"],
             sep="\t",
+            index=False,
         )
 
         return runtime
@@ -401,4 +279,233 @@ class Censor(SimpleInterface):
         )
 
         bold_img_censored.to_filename(self._results["censored_denoised_bold"])
+        return runtime
+
+
+class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="BOLD file after denoising, interpolation, and filtering",
+    )
+    params = traits.Str(mandatory=True, desc="Parameter set for regression.")
+    TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
+    fd_thresh = traits.Float(
+        mandatory=False,
+        default_value=0.3,
+        desc="Framewise displacement threshold. All values above this will be dropped.",
+    )
+    head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
+    fmriprep_confounds_file = File(
+        exists=True,
+        mandatory=True,
+        desc="fMRIPrep confounds tsv.",
+    )
+    fmriprep_confounds_json = File(
+        exists=True,
+        mandatory=True,
+        desc="fMRIPrep confounds json.",
+    )
+    custom_confounds_file = traits.Either(
+        None,
+        File(exists=True),
+        mandatory=True,
+        desc="Custom confounds tsv.",
+    )
+    motion_filter_type = traits.Either(
+        None,
+        traits.Str,
+        mandatory=True,
+    )
+    motion_filter_order = traits.Either(
+        None,
+        traits.Int,
+        mandatory=True,
+    )
+    band_stop_min = traits.Either(
+        None,
+        traits.Float,
+        mandatory=True,
+        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
+    )
+    band_stop_max = traits.Either(
+        None,
+        traits.Float,
+        mandatory=True,
+        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
+    )
+
+
+class _GenerateConfoundsOutputSpec(TraitedSpec):
+    filtered_confounds_file = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "The original fMRIPrep confounds, with the motion parameters and their Volterra "
+            "expansion regressors replaced with filtered versions."
+        ),
+    )
+    confounds_file = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "The selected confounds. This may include custom confounds as well. "
+            "It will also always have the linear trend and a constant column."
+        ),
+    )
+    motion_file = File(
+        exists=True,
+        mandatory=True,
+        desc="The filtered motion parameters.",
+    )
+    motion_metadata = traits.Dict(desc="Metadata associated with the filtered_motion output.")
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Temporal mask; all values above fd_thresh set to 1. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc="Metadata associated with the temporal_mask output.",
+    )
+
+
+class GenerateConfounds(SimpleInterface):
+    """Load, consolidate, and filter confounds.
+
+    Also, generate the temporal mask.
+    """
+
+    input_spec = _GenerateConfoundsInputSpec
+    output_spec = _GenerateConfoundsOutputSpec
+
+    def _run_interface(self, runtime):
+        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        motion_df = load_motion(
+            fmriprep_confounds_df.copy(),
+            TR=self.inputs.TR,
+            motion_filter_type=self.inputs.motion_filter_type,
+            motion_filter_order=self.inputs.motion_filter_order,
+            band_stop_min=self.inputs.band_stop_min,
+            band_stop_max=self.inputs.band_stop_max,
+        )
+
+        # Add in framewise displacement
+        fd_timeseries = compute_fd(
+            confound=motion_df,
+            head_radius=self.inputs.head_radius,
+        )
+        motion_df["framewise_displacement"] = fd_timeseries
+
+        # A file to house the modified fMRIPrep confounds.
+        self._results["filtered_confounds_file"] = fname_presuffix(
+            self.inputs.fmriprep_confounds_file,
+            suffix="_filtered",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+
+        # Replace original motion parameters with filtered versions
+        for col in motion_df.columns.tolist():
+            # Check that the column already exists, in case fMRIPrep changes column names.
+            # We don't want to use the original motion parameters accidentally.
+            if col not in fmriprep_confounds_df.columns:
+                raise ValueError(
+                    f"Column '{col}' not found in confounds "
+                    f"{self.inputs.fmriprep_confounds_file}. "
+                    "Please open an issue on GitHub."
+                )
+
+            fmriprep_confounds_df[col] = motion_df[col]
+
+        fmriprep_confounds_df.to_csv(
+            self._results["filtered_confounds_file"],
+            sep="\t",
+            index=False,
+        )
+
+        # Load nuisance regressors, but use filtered motion parameters.
+        confounds_df = load_confound_matrix(
+            params=self.inputs.params,
+            img_file=self.inputs.in_file,
+            confounds_file=self._results["filtered_confounds_file"],
+            confounds_json_file=self.inputs.fmriprep_confounds_json,
+            custom_confounds=self.inputs.custom_confounds_file,
+        )
+        confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
+        confounds_df["intercept"] = np.ones(confounds_df.shape[0])
+
+        # get the output
+        self._results["confounds_file"] = fname_presuffix(
+            self.inputs.fmriprep_confounds_file,
+            suffix="_confounds",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        self._results["motion_file"] = fname_presuffix(
+            self.inputs.fmriprep_confounds_file,
+            suffix="_motion",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        confounds_df.to_csv(self._results["confounds_file"], sep="\t", index=False)
+        motion_df.to_csv(self._results["motion_file"], sep="\t", index=False)
+
+        # Generate temporal mask with all timepoints have FD over threshold set to 1.
+        outlier_mask = np.zeros(len(fd_timeseries), dtype=int)
+        if self.inputs.fd_thresh > 0:
+            outlier_mask[fd_timeseries > self.inputs.fd_thresh] = 1
+        else:
+            LOGGER.info(f"FD threshold set to {self.inputs.fd_thresh}. Censoring is disabled.")
+
+        self._results["temporal_mask"] = fname_presuffix(
+            "desc-fd_outliers.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+
+        outliers_df = pd.DataFrame(data=outlier_mask, columns=["framewise_displacement"])
+        outliers_df.to_csv(
+            self._results["temporal_mask"],
+            index=False,
+            header=True,
+            sep="\t",
+        )
+
+        # Compile metadata to pass along to outputs.
+        motion_metadata = {
+            "framewise_displacement": {
+                "Description": (
+                    "Framewise displacement calculated according to Power et al. (2012)."
+                ),
+                "Units": "mm",
+                "HeadRadius": self.inputs.head_radius,
+            }
+        }
+        if self.inputs.motion_filter_type == "lp":
+            motion_metadata["LowpassFilter"] = self.inputs.band_stop_max
+            motion_metadata["LowpassFilterOrder"] = self.inputs.motion_filter_order
+        elif self.inputs.motion_filter_type == "notch":
+            motion_metadata["BandstopFilter"] = [
+                self.inputs.band_stop_min,
+                self.inputs.band_stop_max,
+            ]
+            motion_metadata["BandstopFilterOrder"] = self.inputs.motion_filter_order
+
+        self._results["motion_metadata"] = motion_metadata
+
+        outliers_metadata = {
+            "framewise_displacement": {
+                "Description": "Outlier time series based on framewise displacement.",
+                "Levels": {
+                    "0": "Non-outlier volume",
+                    "1": "Outlier volume",
+                },
+                "Threshold": self.inputs.fd_thresh,
+            }
+        }
+        self._results["temporal_mask_metadata"] = outliers_metadata
+
         return runtime

@@ -577,6 +577,7 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
         suffix="timeseries",
         extension=".tsv",
     )
+    run_data["confounds_json"] = layout.get_nearest(run_data["confounds"], extension=".json")
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
