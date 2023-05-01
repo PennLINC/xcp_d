@@ -74,7 +74,7 @@ def init_load_atlases_wf(
     ])
     # fmt:on
 
-    atlas_buffer = pe.Node(niu.IdentityInterface(fields=["atlas_file"], name="atlas_buffer"))
+    atlas_buffer = pe.Node(niu.IdentityInterface(fields=["atlas_file"]), name="atlas_buffer")
 
     if not cifti:
         get_transforms_to_bold_space = pe.Node(
