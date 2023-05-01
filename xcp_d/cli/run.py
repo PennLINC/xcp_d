@@ -88,6 +88,7 @@ def get_parser():
     g_bids.add_argument(
         "-t",
         "--task-id",
+        "--task_id",
         action="store",
         help=(
             "The name of a specific task to postprocess. "
@@ -134,6 +135,7 @@ def get_parser():
     )
     g_perfm.add_argument(
         "--omp-nthreads",
+        "--omp_nthreads",
         action="store",
         type=int,
         default=1,
@@ -141,13 +143,14 @@ def get_parser():
     )
     g_perfm.add_argument(
         "--mem_gb",
-        "--mem_gb",
+        "--mem-gb",
         action="store",
         type=int,
         help="Upper bound memory limit for xcp_d processes.",
     )
     g_perfm.add_argument(
         "--use-plugin",
+        "--use_plugin",
         action="store",
         default=None,
         help=(
@@ -167,6 +170,7 @@ def get_parser():
     g_outputoption = parser.add_argument_group("Input flags")
     g_outputoption.add_argument(
         "--input-type",
+        "--input_type",
         required=False,
         default="fmriprep",
         choices=["fmriprep", "dcan", "hcp", "nibabies"],
@@ -199,6 +203,7 @@ def get_parser():
     g_param.add_argument(
         "-p",
         "--nuisance-regressors",
+        "--nuisance_regressors",
         dest="nuisance_regressors",
         required=False,
         choices=[
@@ -221,6 +226,7 @@ def get_parser():
     g_param.add_argument(
         "-c",
         "--custom_confounds",
+        "--custom-confounds",
         required=False,
         default=None,
         type=Path,
@@ -261,6 +267,7 @@ def get_parser():
     )
     g_param.add_argument(
         "--dummy-scans",
+        "--dummy_scans",
         dest="dummy_scans",
         default=0,
         type=_int_or_auto,
@@ -286,28 +293,31 @@ def get_parser():
     )
     g_filter.add_argument(
         "--lower-bpf",
+        "--lower_bpf",
         action="store",
         default=0.01,
         type=float,
         help=(
             "Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
-            "the denoised BOLD data. "
+            "the denoised BOLD data. Set to 0.0 or negative to disable high-pass filtering. "
             "See Satterthwaite et al. (2013)."
         ),
     )
     g_filter.add_argument(
         "--upper-bpf",
+        "--upper_bpf",
         action="store",
         default=0.08,
         type=float,
         help=(
             "Upper cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
-            "the denoised BOLD data. "
+            "the denoised BOLD data. Set to 0.0 or negative to disable low-pass filtering. "
             "See Satterthwaite et al. (2013)."
         ),
     )
     g_filter.add_argument(
         "--bpf-order",
+        "--bpf_order",
         action="store",
         default=2,
         type=int,
@@ -315,6 +325,7 @@ def get_parser():
     )
     g_filter.add_argument(
         "--motion-filter-type",
+        "--motion_filter_type",
         action="store",
         type=str,
         default=None,
@@ -330,6 +341,7 @@ If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
     )
     g_filter.add_argument(
         "--band-stop-min",
+        "--band_stop_min",
         default=None,
         type=float,
         metavar="BPM",
@@ -346,6 +358,7 @@ this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020
     )
     g_filter.add_argument(
         "--band-stop-max",
+        "--band_stop_max",
         default=None,
         type=float,
         metavar="BPM",
@@ -358,6 +371,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_filter.add_argument(
         "--motion-filter-order",
+        "--motion_filter_order",
         default=4,
         type=int,
         help="Number of filter coeffecients for the motion parameter filter.",
@@ -367,6 +381,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "-r",
         "--head_radius",
+        "--head-radius",
         default=50,
         type=_float_or_auto,
         help=(
@@ -380,6 +395,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "-f",
         "--fd-thresh",
+        "--fd_thresh",
         default=0.3,
         type=float,
         help=(
@@ -394,6 +410,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "-w",
         "--work_dir",
+        "--work-dir",
         action="store",
         type=Path,
         default=Path("working_dir"),
@@ -401,6 +418,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_other.add_argument(
         "--clean-workdir",
+        "--clean_workdir",
         action="store_true",
         default=False,
         help=(
@@ -410,6 +428,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_other.add_argument(
         "--resource-monitor",
+        "--resource_monitor",
         action="store_true",
         default=False,
         help="Enable Nipype's resource monitoring to keep track of memory and CPU usage.",
@@ -424,6 +443,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_experimental = parser.add_argument_group("Experimental options")
     g_experimental.add_argument(
         "--warp-surfaces-native2std",
+        "--warp_surfaces_native2std",
         action="store_true",
         dest="process_surfaces",
         default=False,
@@ -665,7 +685,14 @@ def build_workflow(opts, retval):
         retval["return_code"] = 1
 
     # Bandpass filter parameters
-    if opts.bandpass_filter and (opts.lower_bpf >= opts.upper_bpf):
+    if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
+        opts.bandpass_filter = False
+
+    if (
+        opts.bandpass_filter
+        and (opts.lower_bpf >= opts.upper_bpf)
+        and (opts.lower_bpf > 0 and opts.upper_bpf > 0)
+    ):
         build_log.error(
             f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
             f"'--upper-bpf' ({opts.upper_bpf})."

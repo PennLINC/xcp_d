@@ -118,6 +118,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
+        "--upper-bpf=0.0",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
@@ -205,6 +206,7 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
         "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
+        "--lower-bpf=0.0",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
