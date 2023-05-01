@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing BOLD data."""
-import nilearn
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
@@ -118,7 +117,12 @@ def init_prepare_confounds_wf(
             "Non-steady-state volumes were extracted from the preprocessed confounds "
             "and were discarded from both the BOLD data and nuisance regressors. "
         )
-    elif dummy_scans > 0:
+    elif dummy_scans == 1:
+        dummy_scans_str = (
+            "The first volume of both the BOLD data and nuisance "
+            "regressors was discarded as a non-steady-state volume, or 'dummy scan'. "
+        )
+    elif dummy_scans > 1:
         dummy_scans_str = (
             f"The first {num2words(dummy_scans)} volumes of both the BOLD data and nuisance "
             "regressors were discarded as non-steady-state volumes, or 'dummy scans'. "
@@ -432,10 +436,10 @@ def init_despike_wf(
     )
 
     if cifti:
-        workflow.__desc__ = (
-            "The BOLD data were converted to NIfTI format, despiked with 3dDespike, "
-            "and converted back to CIFTI format."
-        )
+        workflow.__desc__ = """
+The BOLD data were converted to NIfTI format, despiked with *AFNI*'s *3dDespike*,
+and converted back to CIFTI format.
+"""
 
         # first, convert the cifti to a nifti
         convert_to_nifti = pe.Node(
@@ -469,7 +473,9 @@ def init_despike_wf(
         # fmt:on
 
     else:
-        workflow.__desc__ = "The BOLD data were despiked with 3dDespike."
+        workflow.__desc__ = """
+The BOLD data were despiked with *AFNI*'s *3dDespike*.
+"""
 
         # fmt:off
         workflow.connect([
@@ -548,7 +554,7 @@ def init_denoise_bold_wf(
 
     workflow.__desc__ = (
         "Nuisance regressors were regressed from the BOLD data using linear regression, "
-        f"as implemented in nilearn {nilearn.__version__} [@abraham2014machine]."
+        "as implemented in *Nilearn*."
     )
     if bandpass_filter:
         if low_pass > 0 and high_pass > 0:
@@ -719,7 +725,7 @@ def init_resd_smoothing_wf(
     sigma_lx = fwhm2sigma(smoothing)
     if cifti:
         workflow.__desc__ = f""" \
-The denoised BOLD was then smoothed using Connectome Workbench with a Gaussian kernel
+The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian kernel
 (FWHM={str(smoothing)} mm).
 """
 
@@ -766,7 +772,7 @@ The denoised BOLD was then smoothed using Connectome Workbench with a Gaussian k
 
     else:
         workflow.__desc__ = f""" \
-The denoised BOLD was smoothed using Nilearn with a Gaussian kernel (FWHM={str(smoothing)} mm).
+The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str(smoothing)} mm).
 """
         # Use nilearn to smooth the image
         smooth_data = pe.Node(
