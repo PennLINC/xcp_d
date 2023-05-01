@@ -181,7 +181,7 @@ def init_postprocess_nifti_wf(
         T1w brain mask, used for transforms in the QC report workflow.
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
-        Loaded in this workflow.
+    fmriprep_confounds_json
     %(anat_to_native_xfm)s
     %(dummy_scans)s
 
@@ -226,6 +226,7 @@ def init_postprocess_nifti_wf(
                 "anat_dseg",
                 "anat_brainmask",
                 "fmriprep_confounds_file",
+                "fmriprep_confounds_json",
                 "anat_to_native_xfm",
                 "dummy_scans",
             ],
@@ -236,6 +237,7 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
     inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
+    inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
     inputnode.inputs.anat_to_native_xfm = run_data["anat_to_native_xfm"]
     inputnode.inputs.dummy_scans = dummy_scans
 
@@ -330,6 +332,7 @@ def init_postprocess_nifti_wf(
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
+            ("fmriprep_confounds_json", "inputnode.fmriprep_confounds_json"),
         ]),
         (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
         (prepare_confounds_wf, outputnode, [
@@ -524,7 +527,7 @@ def init_postprocess_nifti_wf(
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file"),
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
-            ("outputnode.filtered_motion_metadata", "inputnode.filtered_motion_metadata"),
+            ("outputnode.motion_metadata", "inputnode.motion_metadata"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ("outputnode.temporal_mask_metadata", "inputnode.temporal_mask_metadata"),
         ]),
