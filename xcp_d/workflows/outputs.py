@@ -205,7 +205,7 @@ def init_postproc_derivatives_wf(
     reho
     confounds_file
     %(filtered_motion)s
-    filtered_motion_metadata
+    motion_metadata
     %(temporal_mask)s
     temporal_mask_metadata
     %(dummy_scans)s
@@ -230,7 +230,7 @@ def init_postproc_derivatives_wf(
                 "reho_rh",
                 "reho",
                 "filtered_motion",
-                "filtered_motion_metadata",
+                "motion_metadata",
                 "temporal_mask",
                 "temporal_mask_metadata",
                 "dummy_scans",
@@ -298,7 +298,7 @@ def init_postproc_derivatives_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_filtered_motion, [("filtered_motion_metadata", "meta_dict")]),
+        (inputnode, ds_filtered_motion, [("motion_metadata", "meta_dict")]),
     ])
     # fmt:on
 
