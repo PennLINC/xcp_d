@@ -172,9 +172,11 @@ def init_load_atlases_wf(
     ds_atlas = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
+            check_hdr=False,
             dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
+            allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
             suffix="dseg",
-            extension=".nii.gz",
+            extension=".dlabel.nii" if cifti else ".nii.gz",
         ),
         name="ds_atlas",
         iterfield=["atlas", "in_file"],
