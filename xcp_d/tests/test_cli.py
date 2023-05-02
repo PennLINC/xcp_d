@@ -312,6 +312,6 @@ def _run_and_generate(
         dcan_qc=opts.dcan_qc,
     )
 
-    output_list_file = os.path.join(get_test_data_path(), f"expected_outputs_{test_name}.txt")
+    output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
     check_generated_files(out_dir, output_list_file)
     check_affines(data_dir, out_dir, input_type=input_type)
