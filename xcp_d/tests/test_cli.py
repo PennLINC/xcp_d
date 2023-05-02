@@ -46,7 +46,6 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--min-coverage=1",
-        "--dcan-qc",
     ]
     opts = get_parser().parse_args(parameters)
 
@@ -204,6 +203,7 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
         "--warp-surfaces-native2std",
         "--cifti",
         "--combineruns",
+        "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
