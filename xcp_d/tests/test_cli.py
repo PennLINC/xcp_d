@@ -17,7 +17,7 @@ from xcp_d.tests.utils import check_affines, check_generated_files, get_test_dat
 def test_ds001419_nifti(datasets, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
     test_name = "test_ds001419_nifti"
-    input_type = "fmriprep"
+    input_type = "nifti"
     data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
@@ -58,7 +58,7 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
 def test_ds001419_cifti(datasets, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
     test_name = "test_ds001419_cifti"
-    input_type = "fmriprep"
+    input_type = "cifti"
     data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
@@ -116,7 +116,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
 def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options and a simulated T2w image."""
     test_name = "test_ds001419_cifti_t2wonly"
-    input_type = "fmriprep"
+    input_type = "cifti"
     data_dir = datasets["ds001419"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
@@ -195,7 +195,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     This test also mocks up custom confounds.
     """
     test_name = "test_fmriprep_without_freesurfer"
-    input_type = "fmriprep"
+    input_type = "nifti"
     data_dir = datasets["fmriprep_without_freesurfer"]
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
