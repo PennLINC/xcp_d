@@ -87,7 +87,7 @@ def init_concatenate_data_wf(
     %(template_to_anat_xfm)s
     %(boldref)s
     %(atlas_names)s
-        This will be a list of lists, with one sublist for each run.
+        This will be a list of strings.
     %(timeseries)s
         This will be a list of lists, with one sublist for each run.
     %(timeseries_ciftis)s
@@ -116,7 +116,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "anat_to_native_xfm",  # only for niftis, from postproc workflows
                 "anat_brainmask",  # only for niftis, from data collection
                 "template_to_anat_xfm",  # only for niftis, from data collection
-                "atlas_names",  # this will be exactly the same across runs
+                "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",  # only for ciftis, from postproc workflows
             ],
@@ -152,7 +152,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("bold_mask", "bold_mask"),
             ("boldref", "boldref"),
             ("anat_to_native_xfm", "anat_to_native_xfm"),
-            ("atlas_names", "atlas_names"),
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
         ])
@@ -274,8 +273,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     # fmt:off
     workflow.connect([
+        (inputnode, ds_timeseries, [("atlas_names", "atlas")]),
         (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
-        (filter_out_failed_runs, ds_timeseries, [(("atlas_names", _select_first), "atlas")]),
         (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
     ])
     # fmt:on
@@ -312,9 +311,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         # fmt:off
         workflow.connect([
             (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
-            (filter_out_failed_runs, ds_timeseries_cifti_files, [
-                (("atlas_names", _select_first), "atlas"),
-            ]),
+            (inputnode, ds_timeseries_cifti_files, [("atlas_names", "atlas")]),
             (concatenate_inputs, ds_timeseries_cifti_files, [("timeseries_ciftis", "in_file")]),
         ])
         # fmt:on

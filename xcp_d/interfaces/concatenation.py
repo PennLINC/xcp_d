@@ -126,11 +126,6 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
         Undefined,
         desc="T1w-to-native space transform files. Only used for NIFTI processing.",
     )
-    atlas_names = traits.List(
-        traits.List(traits.Str),
-        mandatory=True,
-        desc="List of lists of atlas names, corresponding to timeseries and timeseries_ciftis.",
-    )
     timeseries = traits.List(
         traits.List(File(exists=True)),
         mandatory=True,
@@ -203,10 +198,6 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         ),
         desc="Smoothed, denoised BOLD data.",
     )
-    atlas_names = traits.List(
-        traits.List(traits.Str),
-        desc="List of lists of atlas names, corresponding to timeseries and timeseries_ciftis.",
-    )
     timeseries = traits.List(
         traits.List(File(exists=True)),
         desc="List of lists of parcellated time series TSV files.",
@@ -242,7 +233,6 @@ class FilterOutFailedRuns(SimpleInterface):
             "bold_mask": self.inputs.bold_mask,
             "boldref": self.inputs.boldref,
             "anat_to_native_xfm": self.inputs.anat_to_native_xfm,
-            "atlas_names": self.inputs.atlas_names,
             "timeseries": self.inputs.timeseries,
             "timeseries_ciftis": self.inputs.timeseries_ciftis,
         }
