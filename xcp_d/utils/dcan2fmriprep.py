@@ -95,7 +95,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         os.path.basename(ses_dir) for ses_dir in session_folders if os.path.isdir(ses_dir)
     ]
     # NOTE: Why split ses- out if you add it right back in?
-    ses_entities = [ses_dir.split("ses-")[1] for ses_dir in session_folders]
+    ses_entities = [ses_dir.split("-")[1] for ses_dir in session_folders]
     ses_entities = [f"ses-{ses_id}" for ses_id in ses_entities]
 
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
