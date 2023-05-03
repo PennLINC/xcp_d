@@ -8,6 +8,7 @@ import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d.tests.utils import get_nodes
+from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows.connectivity import (
@@ -24,7 +25,6 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
 
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
-    boldref = fmriprep_with_freesurfer_data["boldref"]
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -39,6 +39,10 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     assert os.path.isfile(fake_bold_file)
 
+    atlas_names = ["Schaefer1017", "Schaefer217", "Schaefer417", "Gordon", "Glasser"]
+    atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
+    atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
+
     # Let's define the inputs and create the workflow
     connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=tmpdir,
@@ -50,9 +54,10 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
-    connectivity_wf.inputs.inputnode.boldref = boldref
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
-    connectivity_wf.inputs.inputnode.atlas_names = ["Schaefer1017"]
+    connectivity_wf.inputs.inputnode.atlas_names = atlas_names
+    connectivity_wf.inputs.inputnode.atlas_files = atlas_files
+    connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
@@ -140,6 +145,10 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     assert os.path.isfile(fake_bold_file)
 
+    atlas_names = ["Schaefer1017", "Schaefer217", "Schaefer417", "Gordon", "Glasser"]
+    atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
+    atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
+
     # Create the node and a tmpdir to write its results out to
     connectivity_wf = init_functional_connectivity_cifti_wf(
         output_dir=tmpdir,
@@ -152,7 +161,9 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
-    connectivity_wf.inputs.inputnode.atlas_names = ["Schaefer1017"]
+    connectivity_wf.inputs.inputnode.atlas_names = atlas_names
+    connectivity_wf.inputs.inputnode.atlas_files = atlas_files
+    connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
