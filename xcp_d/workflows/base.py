@@ -515,6 +515,17 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
     # fmt:on
 
+    # Load the atlases, warping to the same space as the BOLD data if necessary.
+    load_atlases_wf = init_load_atlases_wf(
+        output_dir=output_dir,
+        cifti=cifti,
+        mem_gb=1,
+        omp_nthreads=omp_nthreads,
+        name="load_atlases_wf",
+    )
+    load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
+    load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
+
     if process_surfaces or (dcan_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
@@ -563,6 +574,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])
             # fmt:on
+
+            # TODO: Parcellate the morphometry files
         else:
             # Use native-space structurals
             # fmt:off
@@ -573,16 +586,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])
             # fmt:on
-
-    load_atlases_wf = init_load_atlases_wf(
-        output_dir=output_dir,
-        cifti=cifti,
-        mem_gb=1,
-        omp_nthreads=omp_nthreads,
-        name="load_atlases_wf",
-    )
-    load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
-    load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(
