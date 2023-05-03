@@ -600,7 +600,12 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     return workflow
 
 
-def init_parcellate_surfaces_wf(name="parcellate_surfaces_wf"):
+def init_parcellate_surfaces_wf(
+    min_coverage,
+    mem_gb,
+    omp_nthreads,
+    name="parcellate_surfaces_wf",
+):
     """Parcellate surface files."""
     workflow = Workflow(name=name)
 
@@ -608,6 +613,7 @@ def init_parcellate_surfaces_wf(name="parcellate_surfaces_wf"):
         niu.IdentityInterface(
             fields=[
                 "name_source",
+                "bold_file",
                 "atlas_names",
                 "atlas_files",
                 "atlas_labels_files",
@@ -624,8 +630,58 @@ def init_parcellate_surfaces_wf(name="parcellate_surfaces_wf"):
     )
 
     # Convert giftis to ciftis
+    resample_surface_to_bold = pe.MapNode(
+        CiftiCreateDenseFromTemplate(),
+        name="resample_surface_to_bold",
+        n_procs=omp_nthreads,
+        iterfield=["label"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, resample_surface_to_bold, [("bold_file", "template_cifti")]),
+        (inputnode, resample_surface_to_bold, [("atlas_files", "label")]),
+    ])
+    # fmt:on
+
+    parcellate_atlas = pe.MapNode(
+        CiftiParcellate(
+            direction="COLUMN",
+            only_numeric=True,
+            out_file="parcellated_atlas.pscalar.nii",
+        ),
+        name="parcellate_atlas",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+        iterfield=["in_file", "atlas_label"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, parcellate_atlas, [("atlas_files", "atlas_label")]),
+        (resample_surface_to_bold, parcellate_atlas, [("cifti_out", "in_file")]),
+    ])
+    # fmt:on
 
     # Parcellate the ciftis
+    parcellate_surface = pe.MapNode(
+        CiftiConnect(min_coverage=min_coverage, correlate=False),
+        mem_gb=mem_gb,
+        name="parcellate_surface",
+        n_procs=omp_nthreads,
+        iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, parcellate_surface, [
+            ("reho", "data_file"),
+            ("atlas_files", "atlas_file"),
+            ("atlas_labels_files", "atlas_labels"),
+            ("parcellated_atlas_files", "parcellated_atlas"),
+        ]),
+    ])
+    # fmt:on
 
     # Write out the parcellated files
 
