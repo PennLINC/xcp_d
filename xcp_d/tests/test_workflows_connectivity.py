@@ -52,6 +52,7 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
     connectivity_wf.inputs.inputnode.boldref = boldref
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
+    connectivity_wf.inputs.inputnode.atlas_names = ["Schaefer1017"]
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
@@ -59,13 +60,13 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     n_parcels, n_parcels_in_atlas = 1000, 1000
 
     # Let's find the correct workflow outputs
-    atlas_file = nodes["connectivity_wf.warp_atlases_to_bold_space"].get_output("output_image")[9]
+    atlas_file = nodes["connectivity_wf.warp_atlases_to_bold_space"].get_output("output_image")[0]
     assert os.path.isfile(atlas_file)
-    coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[9]
+    coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[0]
     assert os.path.isfile(coverage)
-    timeseries = nodes["connectivity_wf.functional_connectivity"].get_output("timeseries")[9]
+    timeseries = nodes["connectivity_wf.functional_connectivity"].get_output("timeseries")[0]
     assert os.path.isfile(timeseries)
-    correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[9]
+    correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[0]
     assert os.path.isfile(correlations)
 
     # Read that into a df
@@ -151,28 +152,29 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
+    connectivity_wf.inputs.inputnode.atlas_names = ["Schaefer1017"]
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the cifti files
-    pscalar = nodes["connectivity_wf.functional_connectivity"].get_output("coverage_ciftis")[9]
+    pscalar = nodes["connectivity_wf.functional_connectivity"].get_output("coverage_ciftis")[0]
     assert os.path.isfile(pscalar)
     timeseries_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
         "timeseries_ciftis"
-    )[9]
+    )[0]
     assert os.path.isfile(timeseries_ciftis)
     correlation_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
         "correlation_ciftis"
-    )[9]
+    )[0]
     assert os.path.isfile(correlation_ciftis)
 
     # Let's find the tsv files
-    coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[9]
+    coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[0]
     assert os.path.isfile(coverage)
-    timeseries = nodes["connectivity_wf.functional_connectivity"].get_output("timeseries")[9]
+    timeseries = nodes["connectivity_wf.functional_connectivity"].get_output("timeseries")[0]
     assert os.path.isfile(timeseries)
-    correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[9]
+    correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[0]
     assert os.path.isfile(correlations)
 
     # Let's read in the ciftis' data
