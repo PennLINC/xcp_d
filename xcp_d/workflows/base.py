@@ -41,7 +41,7 @@ from xcp_d.workflows.anatomical import (
 from xcp_d.workflows.bold import init_postprocess_nifti_wf
 from xcp_d.workflows.cifti import init_postprocess_cifti_wf
 from xcp_d.workflows.concatenation import init_concatenate_data_wf
-from xcp_d.workflows.connectivity import init_load_atlases_wf
+from xcp_d.workflows.connectivity import init_load_atlases_wf, init_parcellate_surfaces_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -576,6 +576,31 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # fmt:on
 
             # TODO: Parcellate the morphometry files
+            parcellate_surfaces_wf = init_parcellate_surfaces_wf(
+                output_dir=output_dir,
+                mem_gb=1,
+                omp_nthreads=omp_nthreads,
+                name="parcellate_surfaces_wf",
+            )
+
+            # fmt:off
+            workflow.connect([
+                (load_atlases_wf, parcellate_surfaces_wf, [
+                    ("outputnode.atlas_names", "inputnode.atlas_names"),
+                    ("outputnode.atlas_files", "inputnode.atlas_files"),
+                    ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
+                ]),
+                (postprocess_surfaces_wf, parcellate_surfaces_wf, [
+                    ("outputnode.lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
+                    ("outputnode.rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
+                    ("outputnode.lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
+                    ("outputnode.rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
+                    ("outputnode.lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
+                    ("outputnode.rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
+                ]),
+            ])
+            # fmt:on
+
         else:
             # Use native-space structurals
             # fmt:off

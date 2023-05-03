@@ -598,3 +598,35 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:on
 
     return workflow
+
+
+def init_parcellate_surfaces_wf(name="parcellate_surfaces_wf"):
+    """Parcellate surface files."""
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "name_source",
+                "atlas_names",
+                "atlas_files",
+                "atlas_labels_files",
+                "parcellated_atlas_files",
+                "lh_sulcal_depth",
+                "rh_sulcal_depth",
+                "lh_sulcal_curv",
+                "rh_sulcal_curv",
+                "lh_cortical_thickness",
+                "rh_cortical_thickness",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    # Convert giftis to ciftis
+
+    # Parcellate the ciftis
+
+    # Write out the parcellated files
+
+    return workflow
