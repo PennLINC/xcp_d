@@ -242,7 +242,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
 
     # Run combine-qc too
     xcpd_dir = os.path.join(out_dir, "xcp_d")
-    combineqc.main(xcpd_dir, "summary")
+    combineqc.main([xcpd_dir, "summary"])
 
     dm_file = os.path.join(
         xcpd_dir,
