@@ -41,7 +41,10 @@ from xcp_d.workflows.anatomical import (
 from xcp_d.workflows.bold import init_postprocess_nifti_wf
 from xcp_d.workflows.cifti import init_postprocess_cifti_wf
 from xcp_d.workflows.concatenation import init_concatenate_data_wf
-from xcp_d.workflows.connectivity import init_load_atlases_wf, init_parcellate_surfaces_wf
+from xcp_d.workflows.connectivity import (
+    init_load_atlases_wf,
+    init_parcellate_surfaces_wf,
+)
 
 LOGGER = logging.getLogger("nipype.workflow")
 
