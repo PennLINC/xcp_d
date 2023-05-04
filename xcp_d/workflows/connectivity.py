@@ -648,7 +648,6 @@ def init_parcellate_surfaces_wf(
             CiftiCreateDenseScalar(),
             name=f"convert_{surf}_to_cifti",
             n_procs=omp_nthreads,
-            iterfield=["label"],
         )
 
         # fmt:off
