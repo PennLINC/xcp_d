@@ -818,28 +818,28 @@ class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
     )
     left_metric = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="-left-metric %s",
         position=1,
         desc="The input surface data from the left hemisphere.",
     )
     right_metric = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="-right-metric %s",
         position=2,
         desc="The input surface data from the right hemisphere.",
     )
     volume_data = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="-volume %s",
         position=3,
         desc="The input volumetric data.",
     )
     structure_label_volume = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="%s",
         position=4,
         desc="A label file indicating the structure of each voxel in volume_data.",

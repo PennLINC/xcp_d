@@ -9,7 +9,11 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
-from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
+from xcp_d.interfaces.workbench import (
+    CiftiCreateDenseFromTemplate,
+    CiftiCreateDenseScalar,
+    CiftiParcellate,
+)
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
@@ -615,12 +619,9 @@ def init_parcellate_surfaces_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "name_source",
-                "bold_file",
                 "atlas_names",
                 "atlas_files",
                 "atlas_labels_files",
-                "parcellated_atlas_files",
                 "lh_sulcal_depth",
                 "rh_sulcal_depth",
                 "lh_sulcal_curv",
@@ -643,17 +644,33 @@ def init_parcellate_surfaces_wf(
 
     for surf, desc in surfaces_descs.items():
         # Convert giftis to ciftis
-        resample_surface_to_atlas = pe.MapNode(
-            CiftiCreateDenseFromTemplate(),
-            name=f"resample_{surf}_to_atlas",
+        convert_giftis_to_cifti = pe.MapNode(
+            CiftiCreateDenseScalar(),
+            name=f"convert_{surf}_to_cifti",
             n_procs=omp_nthreads,
             iterfield=["label"],
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_surface_to_atlas, [("bold_file", "template_cifti")]),
-            (inputnode, resample_surface_to_atlas, [("atlas_files", "label")]),
+            (inputnode, convert_giftis_to_cifti, [
+                (f"lh_{surf}", "left_metric"),
+                (f"rh_{surf}", "right_metric"),
+            ]),
+        ])
+        # fmt:on
+
+        resample_atlas_to_surface = pe.MapNode(
+            CiftiCreateDenseFromTemplate(),
+            name=f"resample_atlas_to_{surf}",
+            n_procs=omp_nthreads,
+            iterfield=["label"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, resample_atlas_to_surface, [("atlas_files", "label")]),
+            (convert_giftis_to_cifti, resample_atlas_to_surface, [("out_file", "template_cifti")]),
         ])
         # fmt:on
 
@@ -671,8 +688,8 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, parcellate_atlas, [("atlas_files", "atlas_label")]),
-            (resample_surface_to_atlas, parcellate_atlas, [("cifti_out", "in_file")]),
+            (convert_giftis_to_cifti, parcellate_atlas, [("out_file", "in_file")]),
+            (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
         ])
         # fmt:on
 
@@ -688,11 +705,11 @@ def init_parcellate_surfaces_wf(
         # fmt:off
         workflow.connect([
             (inputnode, parcellate_surface, [
-                ("reho", "data_file"),
                 ("atlas_files", "atlas_file"),
                 ("atlas_labels_files", "atlas_labels"),
-                ("parcellated_atlas_files", "parcellated_atlas"),
             ]),
+            (convert_giftis_to_cifti, parcellate_surface, [("out_file", "data_file")]),
+            (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
         ])
         # fmt:on
 
