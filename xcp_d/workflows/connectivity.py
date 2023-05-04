@@ -11,6 +11,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
+from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import cast_cifti_to_int16
 from xcp_d.utils.utils import get_std2bold_xfms
@@ -601,6 +602,8 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
 
 def init_parcellate_surfaces_wf(
+    output_dir,
+    name_source,
     min_coverage,
     mem_gb,
     omp_nthreads,
@@ -629,60 +632,92 @@ def init_parcellate_surfaces_wf(
         name="inputnode",
     )
 
-    # Convert giftis to ciftis
-    resample_surface_to_bold = pe.MapNode(
-        CiftiCreateDenseFromTemplate(),
-        name="resample_surface_to_bold",
-        n_procs=omp_nthreads,
-        iterfield=["label"],
-    )
+    surfaces_descs = {
+        "sulcal_depth": "sulc",
+        "sulcal_curv": "curv",
+        "cortical_thickness": "thickness",
+    }
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, resample_surface_to_bold, [("bold_file", "template_cifti")]),
-        (inputnode, resample_surface_to_bold, [("atlas_files", "label")]),
-    ])
-    # fmt:on
+    # Determine cohort (if there is one) in the original data
+    cohort = get_entity(name_source, "cohort")
 
-    parcellate_atlas = pe.MapNode(
-        CiftiParcellate(
-            direction="COLUMN",
-            only_numeric=True,
-            out_file="parcellated_atlas.pscalar.nii",
-        ),
-        name="parcellate_atlas",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=["in_file", "atlas_label"],
-    )
+    for surf, desc in surfaces_descs.items():
+        # Convert giftis to ciftis
+        resample_surface_to_atlas = pe.MapNode(
+            CiftiCreateDenseFromTemplate(),
+            name=f"resample_{surf}_to_atlas",
+            n_procs=omp_nthreads,
+            iterfield=["label"],
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, parcellate_atlas, [("atlas_files", "atlas_label")]),
-        (resample_surface_to_bold, parcellate_atlas, [("cifti_out", "in_file")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, resample_surface_to_atlas, [("bold_file", "template_cifti")]),
+            (inputnode, resample_surface_to_atlas, [("atlas_files", "label")]),
+        ])
+        # fmt:on
 
-    # Parcellate the ciftis
-    parcellate_surface = pe.MapNode(
-        CiftiConnect(min_coverage=min_coverage, correlate=False),
-        mem_gb=mem_gb,
-        name="parcellate_surface",
-        n_procs=omp_nthreads,
-        iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
-    )
+        parcellate_atlas = pe.MapNode(
+            CiftiParcellate(
+                direction="COLUMN",
+                only_numeric=True,
+                out_file="parcellated_atlas.pscalar.nii",
+            ),
+            name=f"parcellate_atlas_for_{surf}",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+            iterfield=["in_file", "atlas_label"],
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, parcellate_surface, [
-            ("reho", "data_file"),
-            ("atlas_files", "atlas_file"),
-            ("atlas_labels_files", "atlas_labels"),
-            ("parcellated_atlas_files", "parcellated_atlas"),
-        ]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, parcellate_atlas, [("atlas_files", "atlas_label")]),
+            (resample_surface_to_atlas, parcellate_atlas, [("cifti_out", "in_file")]),
+        ])
+        # fmt:on
 
-    # Write out the parcellated files
+        # Parcellate the ciftis
+        parcellate_surface = pe.MapNode(
+            CiftiConnect(min_coverage=min_coverage, correlate=False),
+            mem_gb=mem_gb,
+            name=f"parcellate_{surf}",
+            n_procs=omp_nthreads,
+            iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, parcellate_surface, [
+                ("reho", "data_file"),
+                ("atlas_files", "atlas_file"),
+                ("atlas_labels_files", "atlas_labels"),
+                ("parcellated_atlas_files", "parcellated_atlas"),
+            ]),
+        ])
+        # fmt:on
+
+        # Write out the parcellated files
+        ds_parcellated_surface = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                desc=desc,
+                suffix="timeseries",
+                extension=".tsv",
+            ),
+            name=f"ds_parcellated_{surf}",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_parcellated_surface, [("atlas_names", "atlas")]),
+            (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
+        ])
+        # fmt:on
 
     return workflow
