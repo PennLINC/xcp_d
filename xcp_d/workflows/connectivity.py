@@ -644,7 +644,7 @@ def init_parcellate_surfaces_wf(
 
     for surf, desc in surfaces_descs.items():
         # Convert giftis to ciftis
-        convert_giftis_to_cifti = pe.MapNode(
+        convert_giftis_to_cifti = pe.Node(
             CiftiCreateDenseScalar(),
             name=f"convert_{surf}_to_cifti",
             n_procs=omp_nthreads,
@@ -682,7 +682,7 @@ def init_parcellate_surfaces_wf(
             name=f"parcellate_atlas_for_{surf}",
             mem_gb=mem_gb,
             n_procs=omp_nthreads,
-            iterfield=["in_file", "atlas_label"],
+            iterfield=["atlas_label"],
         )
 
         # fmt:off
