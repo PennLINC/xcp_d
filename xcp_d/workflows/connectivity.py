@@ -8,7 +8,12 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, GroupSurfaces, NiftiConnect
+from xcp_d.interfaces.connectivity import (
+    CiftiConnect,
+    ConnectPlot,
+    GroupSurfaces,
+    NiftiConnect,
+)
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiCreateDenseScalar,
