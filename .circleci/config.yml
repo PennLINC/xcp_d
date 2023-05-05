@@ -38,7 +38,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - run:
           name: Download ds001419-fmriprep test data
           command: |
@@ -46,7 +46,7 @@ jobs:
             source get_data.sh
             get_bids_data $PWD ds001419-fmriprep
       - save_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
           paths:
               - /src/xcp_d/.circleci/data/ds001419-fmriprep
 
@@ -128,7 +128,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -190,7 +190,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -221,7 +221,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -252,7 +252,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - restore_cache:
           key: fmriprepwithoutfreesurfer-01
       - restore_cache:
