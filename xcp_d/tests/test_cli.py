@@ -109,7 +109,8 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    # Simulate a T2w image
+    # Simulate T2w images
+    anat_dir = os.path.join(data_dir, "sub-01/anat")
     files_to_copy = [
         "sub-01_desc-preproc_T1w.nii.gz",
         "sub-01_desc-preproc_T1w.json",
