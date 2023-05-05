@@ -809,7 +809,7 @@ class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiSeparateVolumeAll command."""
 
     out_file = File(
-        name_source=["volume_data"],
+        name_source=["volume_data", "left_metric"],
         name_template="%s_combined.dscalar.nii",
         keep_extension=False,
         argstr="%s",
