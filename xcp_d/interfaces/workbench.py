@@ -9,6 +9,7 @@ from nipype.interfaces.base import (
     File,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
 from nipype.interfaces.workbench.base import WBCommand
@@ -809,7 +810,9 @@ class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiSeparateVolumeAll command."""
 
     out_file = File(
-        name_template="combined.dscalar.nii",
+        exists=False,
+        mandatory=False,
+        genfile=True,
         argstr="%s",
         position=0,
         desc="The CIFTI output.",
@@ -875,6 +878,17 @@ class CiftiCreateDenseScalar(WBCommand):
     input_spec = _CiftiCreateDenseScalarInputSpec
     output_spec = _CiftiCreateDenseScalarOutputSpec
     _cmd = "wb_command -cifti-create-dense-scalar"
+
+    def _gen_filename(self, name):
+        if name != "out_file":
+            return None
+
+        if isdefined(self.inputs.volume_data):
+            _, fname, _ = split_filename(self.inputs.volume_data)
+        else:
+            _, fname, _ = split_filename(self.inputs.left_metric)
+
+        return f"{fname}_converted.dscalar.nii"
 
 
 class _ShowSceneInputSpec(CommandLineInputSpec):
