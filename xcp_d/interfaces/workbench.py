@@ -850,7 +850,7 @@ class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
 class _CiftiCreateDenseScalarOutputSpec(TraitedSpec):
     """Output specification for the CiftiCreateDenseScalar command."""
 
-    out_file = File(exists=True, desc="output CIFTI file")
+    out_file = File(exists=True, genfile=True, desc="output CIFTI file")
 
 
 class CiftiCreateDenseScalar(WBCommand):
