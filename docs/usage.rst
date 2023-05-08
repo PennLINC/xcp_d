@@ -190,7 +190,7 @@ In this example file, we only run XCP-D on resting-state preprocessed BOLD runs 
    {
       "bold": {
          "session": ["01"],
-         "task": "rest"
+         "task": ["rest"]
       }
    }
 
