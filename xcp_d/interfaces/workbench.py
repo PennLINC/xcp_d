@@ -890,6 +890,11 @@ class CiftiCreateDenseScalar(WBCommand):
 
         return f"{fname}_converted.dscalar.nii"
 
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
+        return outputs
+
 
 class _ShowSceneInputSpec(CommandLineInputSpec):
     scene_file = File(
@@ -1004,20 +1009,15 @@ class ShowScene(WBCommand):
         return outputs
 
     def _gen_filename(self, name):
-        if name == "out_file":
-            return self._gen_outfilename()
-        else:
-            return None
+        return self._gen_outfilename() if name == "out_file" else None
 
     def _gen_outfilename(self):
         frame_number = self.inputs.scene_name_or_number
-        if isinstance(frame_number, int):
-            # Add a bunch of leading zeros for easy sorting
-            out_file = f"frame_{frame_number:06g}.png"
-        else:
-            out_file = f"frame_{frame_number}.png"
-
-        return out_file
+        return (
+            f"frame_{frame_number:06g}.png"
+            if isinstance(frame_number, int)
+            else f"frame_{frame_number}.png"
+        )
 
 
 class _CiftiConvertInputSpec(CommandLineInputSpec):
@@ -1088,14 +1088,13 @@ class CiftiConvert(WBCommand):
     _cmd = "wb_command -cifti-convert"
 
     def _gen_filename(self, name):
-        if name == "out_file":
-            _, fname, ext = split_filename(self.inputs.in_file)
-            # if we want to support other cifti outputs, we'll need to change this.
-            ext = ".dtseries.nii" if self.inputs.target == "from" else ".nii.gz"
-            output = fname + "_converted" + ext
-            return output
-        else:
+        if name != "out_file":
             return None
+
+        _, fname, ext = split_filename(self.inputs.in_file)
+        # if we want to support other cifti outputs, we'll need to change this.
+        ext = ".dtseries.nii" if self.inputs.target == "from" else ".nii.gz"
+        return f"{fname}_converted{ext}"
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
