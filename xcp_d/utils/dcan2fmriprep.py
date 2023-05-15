@@ -51,9 +51,7 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
             subject_folder for subject_folder in subject_folders if os.path.isdir(subject_folder)
         ]
         participant_ids = [os.path.basename(subject_folder) for subject_folder in subject_folders]
-        # Remove sub- prefix.
-        participant_ids = [sub_id.replace("sub-", "") for sub_id in participant_ids]
-        if len(participant_ids) == 0:
+        if not participant_ids:
             raise ValueError(f"No subject found in {in_dir}")
 
     else:
@@ -63,13 +61,13 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
         convert_dcan_to_bids_single_subject(
             in_dir=in_dir,
             out_dir=out_dir,
-            sub_id=subject_id,
+            sub_ent=subject_id,
         )
 
     return participant_ids
 
 
-def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
+def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     """Convert DCAN derivatives to BIDS-compliant derivatives for a single subject.
 
     Parameters
@@ -78,8 +76,8 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         Path to the subject's DCAN derivatives.
     out_dir : str
         Path to the output BIDS-compliant derivatives folder.
-    sub_id : str
-        Subject identifier, without "sub-" prefix.
+    sub_ent : str
+        Subject identifier, with "sub-" prefix.
 
     Notes
     -----
@@ -89,13 +87,15 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir)
     assert isinstance(out_dir, str)
-    assert isinstance(sub_id, str)
+    assert isinstance(sub_ent, str)
 
+    sub_id = sub_ent.replace("sub-", "")
+    # Reset the subject entity in case the sub- prefix wasn't included originally.
     sub_ent = f"sub-{sub_id}"
 
-    volspace = "MNI152NLin6Asym"
-    volspace_ent = f"space-{volspace}"
-    res_ent = "res-2"
+    VOLSPACE = "MNI152NLin6Asym"
+    volspace_ent = f"space-{VOLSPACE}"
+    RES_ENT = "res-2"
 
     subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
 
@@ -104,7 +104,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     session_folders = [
         os.path.basename(ses_dir) for ses_dir in session_folders if os.path.isdir(ses_dir)
     ]
-    # NOTE: Why split ses- out if you add it right back in?
+    # Split ses- out and add it right back in
     ses_entities = [ses_dir.split("-")[1] for ses_dir in session_folders]
     ses_entities = [f"ses-{ses_id}" for ses_id in ses_entities]
 
@@ -167,14 +167,14 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
         # t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
         t1w_to_template_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-T1w_to-{volspace}_mode-image_xfm.nii.gz",
+            f"{sub_ent}_{ses_ent}_from-T1w_to-{VOLSPACE}_mode-image_xfm.nii.gz",
         )
         copy_dictionary[identity_xfm].append(t1w_to_template_fmriprep)
 
         # template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
         template_to_t1w_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-{volspace}_to-T1w_mode-image_xfm.nii.gz",
+            f"{sub_ent}_{ses_ent}_from-{VOLSPACE}_to-T1w_mode-image_xfm.nii.gz",
         )
         copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
@@ -205,7 +205,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             )
             copy_dictionary[surf_orig] = [surf_fmriprep]
 
-        print("finished collecting anat files")
+        LOGGER.info("Finished collecting anatomical files")
 
         # get masks and transforms
         wmmask = os.path.join(anat_dir_orig, f"wm_2mm_{sub_id}_mask_eroded.nii.gz")
@@ -221,7 +221,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             # so all trailing numbers are treated as run numbers.
             found_task_info = re.findall(r"task-([0-9a-zA-Z]+[a-zA-Z]+)(\d+)", base_task_name)
             if len(found_task_info) != 1:
-                print(
+                LOGGER.warning(
                     f"Task name and run number could not be inferred for {base_task_name}. "
                     "Skipping."
                 )
@@ -242,7 +242,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_{volspace_ent}_"
-                    f"{res_ent}_boldref.nii.gz"
+                    f"{RES_ENT}_boldref.nii.gz"
                 ),
             )
             copy_dictionary[sbref_orig] = [boldref_fmriprep]
@@ -252,7 +252,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
-                    f"{volspace_ent}_{res_ent}_desc-preproc_bold.nii.gz"
+                    f"{volspace_ent}_{RES_ENT}_desc-preproc_bold.nii.gz"
                 ),
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
@@ -294,7 +294,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_{volspace_ent}_"
-                    f"{res_ent}_desc-preproc_bold.json"
+                    f"{RES_ENT}_desc-preproc_bold.json"
                 ),
             )
             write_json(bold_nifti_json_dict, bold_nifti_json_fmriprep)
@@ -401,6 +401,10 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
                 contour=ribbon_orig,
             )
 
+            LOGGER.info(f"Finished {base_task_name}")
+
+    LOGGER.info("Finished collecting functional files")
+
     # Copy HCP files to fMRIPrep folder
     for file_orig, files_fmriprep in copy_dictionary.items():
         if not isinstance(files_fmriprep, list):
@@ -409,7 +413,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
             )
 
         if len(files_fmriprep) > 1:
-            print(f"File used for more than one output: {file_orig}")
+            LOGGER.warning(f"File used for more than one output: {file_orig}")
 
         for file_fmriprep in files_fmriprep:
             copy_file(file_orig, file_fmriprep)
@@ -440,3 +444,4 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_id):
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
     scans_tsv = os.path.join(subject_dir_fmriprep, f"{sub_ent}_scans.tsv")
     scans_df.to_csv(scans_tsv, sep="\t", index=False)
+    LOGGER.info("Conversion completed")

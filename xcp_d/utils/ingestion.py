@@ -5,7 +5,7 @@ import json
 import os
 
 import numpy as np
-from nilearn.maskers import NiftiMasker
+from nilearn import maskers
 
 
 def copy_file(src, dst):
@@ -21,9 +21,11 @@ def copy_file(src, dst):
         shutil.copyfile(src, dst)
 
 
-def extract_mean_signal(mask, nifti):
+def extract_mean_signal(mask, nifti, work_dir):
     """Extract mean signal within mask from NIFTI."""
-    masker = NiftiMasker(mask_img=mask)
+    assert os.path.isfile(mask), f"File DNE: {mask}"
+    assert os.path.isfile(nifti), f"File DNE: {nifti}"
+    masker = maskers.NiftiMasker(mask_img=mask, memory=work_dir, memory_level=5)
     signals = masker.fit_transform(nifti)
     return np.mean(signals, axis=1)
 
