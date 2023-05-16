@@ -4,6 +4,7 @@
 import os
 
 import matplotlib.pyplot as plt
+import nibabel as nb
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -521,9 +522,11 @@ class AnatomicalPlot(SimpleInterface):
         self._results["out_file"] = fname_presuffix(
             self.inputs.in_file, suffix="_file.svg", newpath=runtime.cwd, use_ext=False
         )
+        img = nb.load(self.inputs.in_file)
+        arr = img.get_fdata()
 
         fig = plt.figure(constrained_layout=False, figsize=(25, 10))
-        plot_anat(self.inputs.in_file, draw_cross=False, figure=fig)
+        plot_anat(img, draw_cross=False, figure=fig, vmin=np.min(arr), vmax=np.max(arr))
         fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
 
         return runtime
