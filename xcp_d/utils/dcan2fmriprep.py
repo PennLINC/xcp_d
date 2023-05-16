@@ -119,6 +119,10 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     for ses_ent in ses_entities:
         session_dir_fmriprep = os.path.join(subject_dir_fmriprep, ses_ent)
 
+        if os.path.isdir(session_dir_fmriprep):
+            LOGGER.info("Converted session folder already exists. Skipping conversion.")
+            continue
+
         anat_dir_orig = os.path.join(in_dir, sub_ent, ses_ent, "files", "MNINonLinear")
         anat_dir_fmriprep = os.path.join(session_dir_fmriprep, "anat")
         os.makedirs(anat_dir_fmriprep, exist_ok=True)
@@ -340,6 +344,9 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             columns = mvreg.columns.tolist()
             for col in columns:
                 mvreg[f"{col}_power2"] = mvreg[col] ** 2
+
+            # Use dummy column for framewise displacement, which will be recalculated by XCP-D.
+            mvreg["framewise_displacement"] = 0
 
             # use masks: brain, csf, and wm mask to extract timeseries
             gsreg = extract_mean_signal(mask=brainmask_orig_temp, nifti=bold_nifti_orig)

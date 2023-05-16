@@ -11,7 +11,7 @@ from nipype import logging
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.filemanip import ensure_list
-from xcp_d.utils.ingestion import copy_file, extract_mean_signal, write_json
+from xcp_d.utils.ingestion import copy_file, extract_mean_signal, plot_bbreg, write_json
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -136,6 +136,11 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     anat_dir_fmriprep = os.path.join(subject_dir_fmriprep, "anat")
     func_dir_fmriprep = os.path.join(subject_dir_fmriprep, "func")
     work_dir = os.path.join(subject_dir_fmriprep, "work")
+
+    if os.path.isdir(func_dir_fmriprep):
+        LOGGER.info("Converted dataset already exists. Skipping conversion.")
+        return
+
     os.makedirs(anat_dir_fmriprep, exist_ok=True)
     os.makedirs(func_dir_fmriprep, exist_ok=True)
     os.makedirs(work_dir, exist_ok=True)
@@ -245,12 +250,12 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
-        boldref_orig = os.path.join(subject_task_folder, "SBRef_dc.nii.gz")
+        sbref_orig = os.path.join(subject_task_folder, "SBRef_dc.nii.gz")
         boldref_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{sub_ent}_{task_ent}_{dir_ent}_{volspace_ent}_{RES_ENT}_boldref.nii.gz",
         )
-        copy_dictionary[boldref_orig] = [boldref_fmriprep]
+        copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
         bold_cifti_orig = os.path.join(
             subject_task_folder,
@@ -337,6 +342,9 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         for col in columns:
             mvreg[f"{col}_power2"] = mvreg[col] ** 2
 
+        # Use dummy column for framewise displacement, which will be recalculated by XCP-D.
+        mvreg["framewise_displacement"] = 0
+
         # use masks: brain, csf, and wm mask to extract timeseries
         gsreg = extract_mean_signal(
             mask=brainmask_orig_temp,
@@ -382,6 +390,20 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             f"{regressors_file_base}.json",
         )
         regressors.to_json(regressors_json_fmriprep)
+
+        # Make figures
+        figdir = os.path.join(subject_dir_fmriprep, "figures")
+        os.makedirs(figdir, exist_ok=True)
+        bbref_fig_fmriprep = os.path.join(
+            figdir,
+            f"{sub_ent}_{task_ent}_{dir_ent}_desc-bbregister_bold.svg",
+        )
+        bbref_fig_fmriprep = plot_bbreg(
+            fixed_image=t1w_orig,
+            moving_image=sbref_orig,
+            out_file=bbref_fig_fmriprep,
+            contour=ribbon_orig,
+        )
 
         LOGGER.info(f"Finished {subject_task_folder}")
 
