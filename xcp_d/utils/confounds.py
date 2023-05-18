@@ -409,7 +409,7 @@ def load_confound_matrix(
     if params == "none":
         return None
 
-    if params in PARAM_KWARGS.keys():
+    if params in PARAM_KWARGS:
         kwargs = PARAM_KWARGS[params]
 
         confounds_df = _load_single_confounds_file(
