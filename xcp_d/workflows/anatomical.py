@@ -434,8 +434,10 @@ def init_postprocess_surfaces_wf(
         ])
         # fmt:on
 
-        if not process_surfaces:
-            # Use native-space T1w and surfaces for brainsprite.
+        if (not process_surfaces) or (mesh_available and standard_space_mesh):
+            # Use original surfaces for brainsprite.
+            # For fMRIPrep derivatives, this will be the native-space surfaces.
+            # For DCAN/HCP derivatives, it will be standard-space surfaces.
             # fmt:off
             workflow.connect([
                 (inputnode, brainsprite_wf, [

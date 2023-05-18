@@ -76,6 +76,10 @@ def fmriprep_with_freesurfer_data(datasets):
         func_dir,
         "sub-01_task-rest_desc-confounds_timeseries.tsv",
     )
+    files["confounds_json"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_desc-confounds_timeseries.json",
+    )
     files["anat_to_template_xfm"] = os.path.join(
         anat_dir,
         "sub-01_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5",

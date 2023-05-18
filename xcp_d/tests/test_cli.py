@@ -40,7 +40,7 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--nuisance-regressors=aroma_gsr",
         "--despike",
         "--dummy-scans=4",
-        "--fd-thresh=0.2",
+        "--fd-thresh=0.3",
         "--head_radius=40",
         "--smoothing=6",
         "--motion-filter-type=lp",
@@ -117,7 +117,8 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         "--combineruns",
         "--dcan-qc",
         "--dummy-scans=auto",
-        "--fd-thresh=0.2",
+        "--fd-thresh=0.3",
+        "--upper-bpf=0.0",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
@@ -204,7 +205,8 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
         "--combineruns",
         "--dcan-qc",
         "--dummy-scans=auto",
-        "--fd-thresh=0.2",
+        "--fd-thresh=0.3",
+        "--lower-bpf=0.0",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}
@@ -315,8 +317,9 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--nuisance-regressors=27P",
         "--despike",
         "--head_radius=auto",
-        "--smoothing=6",
+        "--smoothing=0",
         "--fd-thresh=0",
+        "--dcan-qc",
     ]
     opts = get_parser().parse_args(parameters)
     retval = {}

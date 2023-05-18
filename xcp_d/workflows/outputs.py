@@ -37,8 +37,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
     ------
     lh_pial_surf
     rh_pial_surf
-    lh_pial_wm
-    rh_pial_wm
+    lh_wm_surf
+    rh_wm_surf
     lh_sulcal_depth
     rh_sulcal_depth
     lh_sulcal_curv
@@ -53,8 +53,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
             fields=[
                 "lh_pial_surf",
                 "rh_pial_surf",
-                "lh_pial_wm",
-                "rh_pial_wm",
+                "lh_wm_surf",
+                "rh_wm_surf",
                 "lh_sulcal_depth",
                 "rh_sulcal_depth",
                 "lh_sulcal_curv",
@@ -78,8 +78,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
             # fsLR-space surface mesh files
             ("lh_pial_surf", "in1"),
             ("rh_pial_surf", "in2"),
-            ("lh_pial_wm", "in3"),
-            ("rh_pial_wm", "in4"),
+            ("lh_wm_surf", "in3"),
+            ("rh_wm_surf", "in4"),
             # fsLR-space surface shape files
             ("lh_sulcal_depth", "in5"),
             ("rh_sulcal_depth", "in6"),
@@ -152,7 +152,7 @@ def init_postproc_derivatives_wf(
                 bandpass_filter=True,
                 low_pass=0.1,
                 high_pass=0.008,
-                fd_thresh=0.2,
+                fd_thresh=0.3,
                 motion_filter_type=None,
                 smoothing=6,
                 params="36P",
@@ -205,7 +205,7 @@ def init_postproc_derivatives_wf(
     reho
     confounds_file
     %(filtered_motion)s
-    filtered_motion_metadata
+    motion_metadata
     %(temporal_mask)s
     temporal_mask_metadata
     %(dummy_scans)s
@@ -230,7 +230,7 @@ def init_postproc_derivatives_wf(
                 "reho_rh",
                 "reho",
                 "filtered_motion",
-                "filtered_motion_metadata",
+                "motion_metadata",
                 "temporal_mask",
                 "temporal_mask_metadata",
                 "dummy_scans",
@@ -249,7 +249,16 @@ def init_postproc_derivatives_wf(
         "nuisance parameters": params,
     }
     if bandpass_filter:
-        cleaned_data_dictionary["Freq Band"] = [high_pass, low_pass]
+        if low_pass > 0 and high_pass > 0:
+            key = "Freq Band"
+            val = [high_pass, low_pass]
+        elif high_pass > 0:
+            key = "High-pass Cutoff"
+            val = high_pass
+        elif low_pass > 0:
+            key = "Low-pass Cutoff"
+            val = low_pass
+        cleaned_data_dictionary[key] = val
 
     smoothed_data_dictionary = {"FWHM": smoothing}  # Separate dictionary for smoothing
 
@@ -289,7 +298,7 @@ def init_postproc_derivatives_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_filtered_motion, [("filtered_motion_metadata", "meta_dict")]),
+        (inputnode, ds_filtered_motion, [("motion_metadata", "meta_dict")]),
     ])
     # fmt:on
 

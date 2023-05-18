@@ -104,17 +104,12 @@ class CensoringPlot(SimpleInterface):
         # Plot censored volumes as vertical lines
         tmask_df = pd.read_table(self.inputs.temporal_mask)
         tmask_arr = tmask_df["framewise_displacement"].values
-        assert preproc_fd_timeseries.size == tmask_arr.size + dummy_scans
+        assert preproc_fd_timeseries.size == tmask_arr.size
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
-            if i_idx == 0:
-                label = "Censored Volumes"
-            else:
-                label = ""
-
-            idx_after_dummy_scans = idx + dummy_scans
+            label = "Censored Volumes" if i_idx == 0 else ""
             ax.axvline(
-                idx_after_dummy_scans * self.inputs.TR,
+                idx * self.inputs.TR,
                 label=label,
                 color=palette[3],
                 alpha=0.5,
@@ -127,7 +122,7 @@ class CensoringPlot(SimpleInterface):
             ]
 
             ax.plot(
-                time_array[dummy_scans:],
+                time_array,
                 filtered_fd_timeseries,
                 label="Filtered Framewise Displacement",
                 color=palette[2],

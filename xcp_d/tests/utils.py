@@ -52,7 +52,7 @@ def check_generated_files(out_dir, output_list_file):
 
 
 def check_affines(data_dir, out_dir, input_type):
-    """Confirm affines don't change across XCP runs."""
+    """Confirm affines don't change across XCP-D runs."""
     fmri_layout = BIDSLayout(str(data_dir), validate=False, derivatives=False)
     xcp_layout = BIDSLayout(str(out_dir), validate=False, derivatives=False)
     if input_type == "cifti":  # Get the .dtseries.nii
