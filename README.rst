@@ -64,9 +64,22 @@ data-releases>`_.
 
 See the `documentation <https://xcp-d.readthedocs.io/en/latest/>`_ for more details.
 
+
 Why you should use XCP-D
 ````````````````````````
+XCP-D is designed for resting-state or pseudo-resting-state functional connectivity analyses.
+XCP-D derivatives may be useful for seed-to-voxel and ROI-to-ROI functional connectivity analyses,
+as well as decomposition-based methods, such as ICA or NMF.
 
 
 When you should not use XCP-D
 `````````````````````````````
+XCP-D is not designed as a general-purpose postprocessing pipeline.
+It is really only appropriate for certain analyses,
+and other postprocessing/analysis tools are better suited for many types of data/analysis.
+
+XCP-D derivatives are not particularly useful for task-dependent functional connectivity analyses,
+such as psychophysiological interactions (PPIs) or beta series analyses.
+It is also not suitable for general task-based analyses, such as standard task GLMs,
+as we recommend included nuisance regressors in the GLM step,
+rather than denoising data prior to the GLM.
