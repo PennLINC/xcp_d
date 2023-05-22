@@ -67,6 +67,9 @@ See the `documentation <https://xcp-d.readthedocs.io/en/latest/>`_ for more deta
 
 Why you should use XCP-D
 ````````````````````````
+XCP-D produces the following commonly-used outputs: matrices, parcellated time series,
+dense time series, and additional QC measures.
+
 XCP-D is designed for resting-state or pseudo-resting-state functional connectivity analyses.
 XCP-D derivatives may be useful for seed-to-voxel and ROI-to-ROI functional connectivity analyses,
 as well as decomposition-based methods, such as ICA or NMF.
