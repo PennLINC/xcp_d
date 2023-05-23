@@ -58,6 +58,7 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
         participant_ids = ensure_list(participant_ids)
 
     for subject_id in participant_ids:
+        LOGGER.info(f"Processing {subject_id}")
         convert_dcan_to_bids_single_subject(
             in_dir=in_dir,
             out_dir=out_dir,
@@ -117,6 +118,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary[identity_xfm] = []
 
     for ses_ent in ses_entities:
+        LOGGER.info(f"Processing {ses_ent}")
         session_dir_fmriprep = os.path.join(subject_dir_fmriprep, ses_ent)
 
         if os.path.isdir(session_dir_fmriprep):
@@ -125,14 +127,17 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         anat_dir_orig = os.path.join(in_dir, sub_ent, ses_ent, "files", "MNINonLinear")
         anat_dir_fmriprep = os.path.join(session_dir_fmriprep, "anat")
-        os.makedirs(anat_dir_fmriprep, exist_ok=True)
 
         # NOTE: Why *was* this set to the *first* session only? (I fixed it)
         # AFAICT, this would copy the first session's files from DCAN into *every*
         # session of the output directory.
         func_dir_orig = os.path.join(anat_dir_orig, "Results")
         func_dir_fmriprep = os.path.join(session_dir_fmriprep, "func")
+        work_dir = os.path.join(subject_dir_fmriprep, "work")
+
+        os.makedirs(anat_dir_fmriprep, exist_ok=True)
         os.makedirs(func_dir_fmriprep, exist_ok=True)
+        os.makedirs(work_dir, exist_ok=True)
 
         # We don't actually use any transforms, so we don't need the xfms directory.
         # xforms_dir_orig = os.path.join(anat_dir_orig, "xfms")
@@ -171,14 +176,14 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         # t1w_to_template_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedWarp.nii.gz")
         t1w_to_template_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-T1w_to-{VOLSPACE}_mode-image_xfm.nii.gz",
+            f"{sub_ent}_{ses_ent}_from-T1w_to-{VOLSPACE}_mode-image_xfm.txt",
         )
         copy_dictionary[identity_xfm].append(t1w_to_template_fmriprep)
 
         # template_to_t1w_orig = os.path.join(xforms_dir_orig, "ANTS_CombinedInvWarp.nii.gz")
         template_to_t1w_fmriprep = os.path.join(
             anat_dir_fmriprep,
-            f"{sub_ent}_{ses_ent}_from-{VOLSPACE}_to-T1w_mode-image_xfm.nii.gz",
+            f"{sub_ent}_{ses_ent}_from-{VOLSPACE}_to-T1w_mode-image_xfm.txt",
         )
         copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
@@ -216,14 +221,18 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         csfmask = os.path.join(anat_dir_orig, f"vent_2mm_{sub_id}_mask_eroded.nii.gz")
 
         # Collect functional files to copy
-        task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "task-*")))
+        task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, f"{ses_ent}_task-*")))
         task_dirs_orig = [task_dir for task_dir in task_dirs_orig if os.path.isdir(task_dir)]
         task_names = [os.path.basename(task_dir) for task_dir in task_dirs_orig]
 
         for base_task_name in task_names:
+            LOGGER.info(f"Processing {base_task_name}")
             # We assume that the task name doesn't end with a number,
             # so all trailing numbers are treated as run numbers.
-            found_task_info = re.findall(r"task-([0-9a-zA-Z]+[a-zA-Z]+)(\d+)", base_task_name)
+            found_task_info = re.findall(
+                r".*_task-([0-9a-zA-Z]+[a-zA-Z]+)_run-(\d+)",
+                base_task_name,
+            )
             if len(found_task_info) != 1:
                 LOGGER.warning(
                     f"Task name and run number could not be inferred for {base_task_name}. "
@@ -261,7 +270,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
-            bold_cifti_orig = os.path.join(task_dir_orig, f"{task_ent}_Atlas.dtseries.nii")
+            bold_cifti_orig = os.path.join(task_dir_orig, f"{base_task_name}_Atlas.dtseries.nii")
             bold_cifti_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.nii",
@@ -273,7 +282,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
-                    "from-scanner_to-T1w_mode-image_xfm.nii.gz"
+                    "from-scanner_to-T1w_mode-image_xfm.txt"
                 ),
             )
             copy_dictionary[identity_xfm].append(native_to_t1w_fmriprep)
@@ -283,7 +292,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                 func_dir_fmriprep,
                 (
                     f"{sub_ent}_{ses_ent}_{task_ent}_{run_ent}_"
-                    "from-T1w_to-scanner_mode-image_xfm.nii.gz"
+                    "from-T1w_to-scanner_mode-image_xfm.txt"
                 ),
             )
             copy_dictionary[identity_xfm].append(t1w_to_native_fmriprep)
@@ -349,9 +358,21 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             mvreg["framewise_displacement"] = 0
 
             # use masks: brain, csf, and wm mask to extract timeseries
-            gsreg = extract_mean_signal(mask=brainmask_orig_temp, nifti=bold_nifti_orig)
-            csfreg = extract_mean_signal(mask=csfmask, nifti=bold_nifti_orig)
-            wmreg = extract_mean_signal(mask=wmmask, nifti=bold_nifti_orig)
+            gsreg = extract_mean_signal(
+                mask=brainmask_orig_temp,
+                nifti=bold_nifti_orig,
+                work_dir=work_dir,
+            )
+            csfreg = extract_mean_signal(
+                mask=csfmask,
+                nifti=bold_nifti_orig,
+                work_dir=work_dir,
+            )
+            wmreg = extract_mean_signal(
+                mask=wmmask,
+                nifti=bold_nifti_orig,
+                work_dir=work_dir,
+            )
             rsmd = np.loadtxt(os.path.join(task_dir_orig, "Movement_AbsoluteRMS.txt"))
 
             brainreg = pd.DataFrame(
@@ -412,7 +433,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     LOGGER.info("Finished collecting functional files")
 
-    # Copy HCP files to fMRIPrep folder
+    # Copy ABCD files to fMRIPrep folder
     for file_orig, files_fmriprep in copy_dictionary.items():
         if not isinstance(files_fmriprep, list):
             raise ValueError(
@@ -426,7 +447,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             copy_file(file_orig, file_fmriprep)
 
     dataset_description_dict = {
-        "Name": "ABCDDCAN",
+        "Name": "ABCD-DCAN",
         "BIDSVersion": "1.4.0",
         "DatasetType": "derivative",
         "GeneratedBy": [
