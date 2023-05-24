@@ -410,6 +410,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     LOGGER.info("Finished collecting functional files")
 
     # Copy HCP files to fMRIPrep folder
+    LOGGER.info("Copying files")
     for file_orig, files_fmriprep in copy_dictionary.items():
         if not isinstance(files_fmriprep, list):
             raise ValueError(

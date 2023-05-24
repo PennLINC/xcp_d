@@ -191,26 +191,29 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
 
         SURFACE_DICT = {
-            "R.midthickness": "hemi-R_desc-hcp_midthickness",
-            "L.midthickness": "hemi-L_desc-hcp_midthickness",
-            "R.inflated": "hemi-R_desc-hcp_inflated",
-            "L.inflated": "hemi-L_desc-hcp_inflated",
-            "R.very_inflated": "hemi-R_desc-hcp_vinflated",
-            "L.very_inflated": "hemi-L_desc-hcp_vinflated",
-            "R.pial": "hemi-R_pial",
-            "L.pial": "hemi-L_pial",
-            "R.white": "hemi-R_smoothwm",
-            "L.white": "hemi-L_smoothwm",
+            "R.midthickness.32k_fs_LR.surf.gii": "hemi-R_desc-hcp_midthickness.surf.gii",
+            "L.midthickness.32k_fs_LR.surf.gii": "hemi-L_desc-hcp_midthickness.surf.gii",
+            "R.inflated.32k_fs_LR.surf.gii": "hemi-R_desc-hcp_inflated.surf.gii",
+            "L.inflated.32k_fs_LR.surf.gii": "hemi-L_desc-hcp_inflated.surf.gii",
+            "R.very_inflated.32k_fs_LR.surf.gii": "hemi-R_desc-hcp_vinflated.surf.gii",
+            "L.very_inflated.32k_fs_LR.surf.gii": "hemi-L_desc-hcp_vinflated.surf.gii",
+            "R.pial.32k_fs_LR.surf.gii": "hemi-R_pial.surf.gii",
+            "L.pial.32k_fs_LR.surf.gii": "hemi-L_pial.surf.gii",
+            "R.white.32k_fs_LR.surf.gii": "hemi-R_smoothwm.surf.gii",
+            "L.white.32k_fs_LR.surf.gii": "hemi-L_smoothwm.surf.gii",
+            "R.corrThickness.32k_fs_LR.shape.gii": "hemi-R_thickness.shape.gii",
+            "L.corrThickness.32k_fs_LR.shape.gii": "hemi-L_thickness.shape.gii",
+            "R.curvature.32k_fs_LR.shape.gii": "hemi-R_curv.shape.gii",
+            "L.curvature.32k_fs_LR.shape.gii": "hemi-L_curv.shape.gii",
+            "R.sulc.32k_fs_LR.shape.gii": "hemi-R_sulc.shape.gii",
+            "L.sulc.32k_fs_LR.shape.gii": "hemi-L_sulc.shape.gii",
         }
 
         for in_str, out_str in SURFACE_DICT.items():
-            surf_orig = os.path.join(
-                fsaverage_dir_orig,
-                f"{sub_id}.{in_str}.32k_fs_LR.surf.gii",
-            )
+            surf_orig = os.path.join(fsaverage_dir_orig, f"{sub_id}.{in_str}")
             surf_fmriprep = os.path.join(
-                fsaverage_dir_orig,
-                f"{sub_ent}_{ses_ent}_space-fsLR_den-32k_{out_str}.surf.gii",
+                anat_dir_fmriprep,
+                f"{sub_ent}_{ses_ent}_space-fsLR_den-32k_{out_str}",
             )
             copy_dictionary[surf_orig] = [surf_fmriprep]
 
@@ -227,8 +230,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         for base_task_name in task_names:
             LOGGER.info(f"Processing {base_task_name}")
-            # We assume that the task name doesn't end with a number,
-            # so all trailing numbers are treated as run numbers.
+            # Names seem to follow ses-X_task-Y_run-Z format.
             found_task_info = re.findall(
                 r".*_task-([0-9a-zA-Z]+[a-zA-Z]+)_run-(\d+)",
                 base_task_name,
@@ -434,6 +436,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     LOGGER.info("Finished collecting functional files")
 
     # Copy ABCD files to fMRIPrep folder
+    LOGGER.info("Copying files")
     for file_orig, files_fmriprep in copy_dictionary.items():
         if not isinstance(files_fmriprep, list):
             raise ValueError(
