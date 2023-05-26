@@ -445,11 +445,7 @@ def init_execsummary_functional_plots_wf(
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name="plot_boldref")
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, plot_boldref, [("boldref", "in_file")]),
-    ])
-    # fmt:on
+    workflow.connect([(inputnode, plot_boldref, [("boldref", "in_file")])])
 
     # Write out the figures.
     ds_boldref_figure = pe.Node(

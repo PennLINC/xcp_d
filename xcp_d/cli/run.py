@@ -816,7 +816,6 @@ def build_workflow(opts, retval):
             from xcp_d.utils.hcp2fmriprep import convert_hcp2bids as convert_to_bids
 
         NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
-        print(f"checking the {opts.input_type} files")
         converted_fmri_dir = os.path.join(work_dir, f"dset_bids/derivatives/{opts.input_type}")
         os.makedirs(converted_fmri_dir, exist_ok=True)
 
