@@ -66,8 +66,10 @@ class _SmoothInputSpec(BaseInterfaceInputSpec):
             minlen=3,
             maxlen=3,
         ),
-        desc="Full width at half maximum. \
-        Smoothing strength, as a full-width at half maximum, in millimeters.",
+        desc=(
+            "Full width at half maximum. "
+            "Smoothing strength, as a full-width at half maximum, in millimeters."
+        ),
     )
     out_file = File(
         "smooth_img.nii.gz",
