@@ -119,7 +119,7 @@ Framewise displacement calculation and thresholding
 :class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
 :func:`~xcp_d.utils.modified_data.compute_fd`
 
-Framewise displacement is then calculated according to the formula from Power et al. :footcite:t:`power_fd_dvars`.
+Framewise displacement is then calculated according to the formula from :footcite:t:`power_fd_dvars`.
 Two parameters that impact FD calculation and thresholding are
 (1) the head radius used to convert rotation degrees to millimeters and
 (2) the framewise displacement threshold.
