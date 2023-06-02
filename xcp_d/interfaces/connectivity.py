@@ -42,7 +42,7 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
     )
     exact_scans = traits.Either(
         None,
-        traits.Float(),
+        traits.Int(),
         default=None,
         usedefault=True,
         desc="Exact number of scans to retain in time series and correlation matrices.",
@@ -239,7 +239,7 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
     )
     exact_scans = traits.Either(
         None,
-        traits.Float(),
+        traits.Int(),
         default=None,
         usedefault=True,
         desc="Exact number of scans to retain in time series and correlation matrices.",
