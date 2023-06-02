@@ -46,6 +46,7 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--min-coverage=1",
+        "--exact-time=100",
     ]
     opts = get_parser().parse_args(parameters)
 
