@@ -20,6 +20,7 @@ from xcp_d.utils.utils import get_std2bold_xfms
 def init_functional_connectivity_nifti_wf(
     output_dir,
     min_coverage,
+    exact_scans,
     mem_gb,
     omp_nthreads,
     name="connectivity_wf",
@@ -35,6 +36,7 @@ def init_functional_connectivity_nifti_wf(
             wf = init_functional_connectivity_nifti_wf(
                 output_dir=".",
                 min_coverage=0.5,
+                exact_scans=None,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="connectivity_wf",
@@ -181,7 +183,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:on
 
     nifti_connect = pe.MapNode(
-        NiftiConnect(min_coverage=min_coverage),
+        NiftiConnect(min_coverage=min_coverage, exact_scans=exact_scans),
         name="nifti_connect",
         iterfield=["atlas", "atlas_labels"],
         mem_gb=mem_gb,
@@ -266,6 +268,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 def init_functional_connectivity_cifti_wf(
     output_dir,
     min_coverage,
+    exact_scans,
     mem_gb,
     omp_nthreads,
     name="connectivity_wf",
@@ -281,6 +284,7 @@ def init_functional_connectivity_cifti_wf(
             wf = init_functional_connectivity_cifti_wf(
                 output_dir=".",
                 min_coverage=0.5,
+                exact_scans=None,
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="connectivity_wf",
@@ -411,7 +415,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:on
 
     cifti_connect = pe.MapNode(
-        CiftiConnect(min_coverage=min_coverage),
+        CiftiConnect(min_coverage=min_coverage, exact_scans=exact_scans),
         mem_gb=mem_gb,
         name="cifti_connect",
         n_procs=omp_nthreads,

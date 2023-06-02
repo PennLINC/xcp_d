@@ -253,7 +253,9 @@ def get_parser():
             "Default is 0.5."
         ),
     )
-    g_param.add_argument(
+
+    group_data_retainment = g_param.add_mutually_exclusive_group()
+    group_data_retainment.add_argument(
         "--min_time",
         "--min-time",
         required=False,
@@ -265,9 +267,26 @@ def get_parser():
             "needed to post-process a given run, once high-motion outlier volumes are removed. "
             "This will have no impact if scrubbing is disabled "
             "(i.e., if the FD threshold is zero or negative). "
-            "This parameter can be disabled by providing a zero or a negative value."
+            "This parameter can be disabled by providing a zero or a negative value, "
+            "or by using '--exact-time'."
         ),
     )
+    group_data_retainment.add_argument(
+        "--exact_time",
+        "--exact-time",
+        required=False,
+        default=None,
+        type=float,
+        help=(
+            "Amount of data (in seconds) to retain from each run after scrubbing. "
+            "If there is more than the required amount of low-motion data, "
+            "then volumes will be randomly selected to produce denoised outputs with the exact "
+            "amount of time requested. "
+            "If there is less than the required amount of 'good' data, "
+            "then the run will not be post-processed."
+        ),
+    )
+
     g_param.add_argument(
         "--dummy-scans",
         "--dummy_scans",
@@ -966,6 +985,7 @@ Running xcp_d version {__version__}:
         input_type=opts.input_type,
         min_coverage=opts.min_coverage,
         min_time=opts.min_time,
+        exact_time=opts.exact_time,
         combineruns=opts.combineruns,
         name="xcpd_wf",
     )

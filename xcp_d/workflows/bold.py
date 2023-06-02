@@ -53,6 +53,7 @@ def init_postprocess_nifti_wf(
     t2w_available,
     n_runs,
     min_coverage,
+    exact_scans,
     omp_nthreads,
     layout=None,
     name="bold_postprocess_wf",
@@ -117,6 +118,7 @@ def init_postprocess_nifti_wf(
                 t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
+                exact_scans=None,
                 omp_nthreads=1,
                 layout=layout,
                 name="nifti_postprocess_wf",
@@ -405,9 +407,10 @@ def init_postprocess_nifti_wf(
     connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=output_dir,
         min_coverage=min_coverage,
+        exact_scans=exact_scans,
         mem_gb=mem_gbx["timeseries"],
-        name="connectivity_wf",
         omp_nthreads=omp_nthreads,
+        name="connectivity_wf",
     )
 
     # fmt:off

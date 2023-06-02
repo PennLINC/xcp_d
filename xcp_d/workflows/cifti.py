@@ -52,6 +52,7 @@ def init_postprocess_cifti_wf(
     t2w_available,
     n_runs,
     min_coverage,
+    exact_scans,
     omp_nthreads,
     layout=None,
     name="cifti_postprocess_wf",
@@ -114,6 +115,7 @@ def init_postprocess_cifti_wf(
                 t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
+                exact_scans=None,
                 omp_nthreads=1,
                 layout=layout,
                 name="cifti_postprocess_wf",
@@ -372,11 +374,12 @@ def init_postprocess_cifti_wf(
         # fmt:on
 
     connectivity_wf = init_functional_connectivity_cifti_wf(
-        min_coverage=min_coverage,
         output_dir=output_dir,
+        min_coverage=min_coverage,
+        exact_scans=exact_scans,
         mem_gb=mem_gbx["timeseries"],
-        name="connectivity_wf",
         omp_nthreads=omp_nthreads,
+        name="connectivity_wf",
     )
 
     # fmt:off

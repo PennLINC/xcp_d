@@ -77,6 +77,7 @@ def init_xcpd_wf(
     input_type="fmriprep",
     min_coverage=0.5,
     min_time=100,
+    exact_time=None,
     combineruns=False,
     name="xcpd_wf",
 ):
@@ -132,6 +133,7 @@ def init_xcpd_wf(
                 input_type="fmriprep",
                 min_coverage=0.5,
                 min_time=100,
+                exact_time=None,
                 combineruns=False,
                 name="xcpd_wf",
             )
@@ -214,6 +216,7 @@ def init_xcpd_wf(
             input_type=input_type,
             min_coverage=min_coverage,
             min_time=min_time,
+            exact_time=exact_time,
             combineruns=combineruns,
             name=f"single_subject_{subject_id}_wf",
         )
@@ -261,6 +264,7 @@ def init_subject_wf(
     dcan_qc,
     min_coverage,
     min_time,
+    exact_time,
     omp_nthreads,
     layout,
     name,
@@ -305,6 +309,7 @@ def init_subject_wf(
                 dcan_qc=False,
                 min_coverage=0.5,
                 min_time=100,
+                exact_time=None,
                 omp_nthreads=1,
                 layout=None,
                 name="single_subject_sub-01_wf",
@@ -633,13 +638,18 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 head_radius=head_radius,
                 fd_thresh=fd_thresh,
             )
-            if (min_time >= 0) and (post_scrubbing_duration < min_time):
+            temp_min_time = exact_time or min_time
+            if (temp_min_time >= 0) and (post_scrubbing_duration < temp_min_time):
                 LOGGER.warning(
-                    f"Less than {min_time} seconds in {bold_file} survive high-motion outlier "
-                    f"scrubbing ({post_scrubbing_duration}). "
+                    f"Less than {temp_min_time} seconds in {bold_file} survive high-motion "
+                    f"outlier scrubbing ({post_scrubbing_duration}). "
                     "This run will not be processed."
                 )
                 continue
+
+            exact_scans = None
+            if exact_time:
+                exact_scans = exact_time // run_data["bold_metadata"]["RepetitionTime"]
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
@@ -665,6 +675,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 min_coverage=min_coverage,
+                exact_scans=exact_scans,
                 omp_nthreads=omp_nthreads,
                 layout=layout,
                 name=f"{'cifti' if cifti else 'nifti'}_postprocess_{run_counter}_wf",
