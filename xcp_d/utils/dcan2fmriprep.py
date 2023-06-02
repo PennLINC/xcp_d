@@ -99,12 +99,15 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     RES_ENT = "res-2"
 
     subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
+    os.makedirs(subject_dir_fmriprep, exist_ok=True)
 
     # get session ids
     session_folders = sorted(glob.glob(os.path.join(in_dir, sub_ent, "s*")))
     ses_entities = [
         os.path.basename(ses_dir) for ses_dir in session_folders if os.path.isdir(ses_dir)
     ]
+    if not ses_entities:
+        raise FileNotFoundError(f"No session volumes found in {os.path.join(in_dir, sub_ent)}")
 
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
