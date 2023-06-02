@@ -650,6 +650,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             exact_scans = None
             if exact_time:
                 exact_scans = exact_time // run_data["bold_metadata"]["RepetitionTime"]
+                LOGGER.warning(
+                    f"Only {exact_scans} volumes will be retained in time series and "
+                    f"correlation matrix derivatives for {bold_file}"
+                )
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
