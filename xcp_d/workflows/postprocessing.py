@@ -9,7 +9,12 @@ from num2words import num2words
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.censoring import Censor, GenerateConfounds, RandomCensor, RemoveDummyVolumes
+from xcp_d.interfaces.censoring import (
+    Censor,
+    GenerateConfounds,
+    RandomCensor,
+    RemoveDummyVolumes,
+)
 from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
 from xcp_d.interfaces.plotting import CensoringPlot
 from xcp_d.interfaces.restingstate import DespikePatch
