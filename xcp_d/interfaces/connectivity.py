@@ -28,6 +28,11 @@ LOGGER = logging.getLogger("nipype.interface")
 class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
     filtered_file = File(exists=True, mandatory=True, desc="filtered file")
     mask = File(exists=True, mandatory=True, desc="brain mask file")
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc="Temporal mask, after dummy scan removal",
+    )
     atlas = File(exists=True, mandatory=True, desc="atlas file")
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
     min_coverage = traits.Float(
@@ -227,6 +232,11 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=True,
         desc="Dense CIFTI time series file to parcellate.",
+    )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc="Temporal mask, after dummy scan removal",
     )
     atlas_file = File(
         exists=True,
