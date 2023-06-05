@@ -317,6 +317,7 @@ def init_postprocess_nifti_wf(
         TR=TR,
         params=params,
         dummy_scans=dummy_scans,
+        exact_scans=exact_scans,
         motion_filter_type=motion_filter_type,
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,

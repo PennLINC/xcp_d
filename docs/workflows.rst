@@ -351,6 +351,13 @@ After bandpass filtering, high motion volumes are removed from the
 This is the primary output of XCP-D.
 
 
+.. tip::
+
+   If you wish to limit the censored data to a specific duration,
+   you can use the ``--exact-time`` parameter.
+   This will randomly select
+
+
 Resting-state derivative generation
 ===================================
 

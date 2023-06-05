@@ -40,13 +40,6 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
             "Default is 0.5."
         ),
     )
-    exact_scans = traits.Either(
-        None,
-        traits.Int(),
-        default=None,
-        usedefault=True,
-        desc="Exact number of scans to retain in time series and correlation matrices.",
-    )
 
 
 class _NiftiConnectOutputSpec(TraitedSpec):
@@ -72,7 +65,6 @@ class NiftiConnect(SimpleInterface):
         atlas = self.inputs.atlas
         atlas_labels = self.inputs.atlas_labels
         min_coverage = self.inputs.min_coverage
-        exact_scans = self.inputs.exact_scans
 
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
         node_labels_df.sort_index(inplace=True)  # ensure index is in order
@@ -179,12 +171,6 @@ class NiftiConnect(SimpleInterface):
         # Apply the coverage mask
         timeseries_arr[:, coverage_thresholded] = np.nan
 
-        # Randomly select a subset of volumes if desired
-        if exact_scans:
-            rng = np.random.default_rng()
-            selected_vols = rng.choice(timeseries_arr.shape[0], exact_scans)
-            timeseries_arr = timeseries_arr[selected_vols, :]
-
         # Region indices in the atlas may not be sequential, so we map them to sequential ints.
         seq_mapper = {idx: i for i, idx in enumerate(node_labels_df.index.tolist())}
 
@@ -236,13 +222,6 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
             "Must be a value between zero and one. "
             "Default is 0.5."
         ),
-    )
-    exact_scans = traits.Either(
-        None,
-        traits.Int(),
-        default=None,
-        usedefault=True,
-        desc="Exact number of scans to retain in time series and correlation matrices.",
     )
     data_file = File(
         exists=True,
@@ -298,7 +277,6 @@ class CiftiConnect(SimpleInterface):
 
     def _run_interface(self, runtime):
         min_coverage = self.inputs.min_coverage
-        exact_scans = self.inputs.exact_scans
         data_file = self.inputs.data_file
         atlas_file = self.inputs.atlas_file
         pscalar_file = self.inputs.parcellated_atlas
@@ -326,12 +304,6 @@ class CiftiConnect(SimpleInterface):
             np.all(np.logical_or(data_arr == 0, np.isnan(data_arr)), axis=0)
         )[0]
         data_arr[:, bad_vertices_idx] = np.nan
-
-        # Randomly select a subset of volumes if desired
-        if exact_scans:
-            rng = np.random.default_rng()
-            selected_vols = rng.choice(data_arr.shape[0], exact_scans)
-            data_arr = data_arr[selected_vols, :]
 
         # Now we can work to parcellate the data
         label_axis = atlas_img.header.get_axis(0)

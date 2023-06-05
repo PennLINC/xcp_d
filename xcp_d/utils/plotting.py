@@ -1299,17 +1299,32 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
     design_matrix_df = pd.read_table(design_matrix)
     if temporal_mask:
         censoring_df = pd.read_table(temporal_mask)
-        n_outliers = censoring_df["framewise_displacement"].sum()
-        new_df = pd.DataFrame(
-            data=np.zeros((censoring_df.shape[0], n_outliers), dtype=np.int16),
-            columns=[f"outlier{i}" for i in range(1, n_outliers + 1)],
+        n_motion_outliers = censoring_df["framewise_displacement"].sum()
+        motion_outliers_df = pd.DataFrame(
+            data=np.zeros((censoring_df.shape[0], n_motion_outliers), dtype=np.int16),
+            columns=[f"outlier{i}" for i in range(1, n_motion_outliers + 1)],
         )
-        outlier_idx = np.where(censoring_df["framewise_displacement"])[0]
-        for i_outlier, outlier_col in enumerate(new_df.columns):
-            outlier_row = outlier_idx[i_outlier]
-            new_df.loc[outlier_row, outlier_col] = 1
+        motion_outlier_idx = np.where(censoring_df["framewise_displacement"])[0]
+        for i_outlier, outlier_col in enumerate(motion_outliers_df.columns):
+            outlier_row = motion_outlier_idx[i_outlier]
+            motion_outliers_df.loc[outlier_row, outlier_col] = 1
 
-        design_matrix_df = pd.concat((design_matrix_df, new_df), axis=1)
+        random_censor_df = pd.DataFrame()
+        if "random_censor" in censoring_df.columns:
+            n_random_censors = censoring_df["random_censor"].sum()
+            random_censor_df = pd.DataFrame(
+                data=np.zeros((censoring_df.shape[0], n_random_censors), dtype=np.int16),
+                columns=[f"outlier{i}" for i in range(1, n_random_censors + 1)],
+            )
+            random_censor_idx = np.where(censoring_df["random_censor"])[0]
+            for i_outlier, outlier_col in enumerate(random_censor_df.columns):
+                outlier_row = random_censor_idx[i_outlier]
+                random_censor_df.loc[outlier_row, outlier_col] = 1
+
+        design_matrix_df = pd.concat(
+            (design_matrix_df, motion_outliers_df, random_censor_df),
+            axis=1,
+        )
 
     design_matrix_figure = os.path.abspath("design_matrix.svg")
     plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
