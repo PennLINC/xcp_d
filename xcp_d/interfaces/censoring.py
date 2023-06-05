@@ -314,8 +314,7 @@ class RandomCensor(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Read in temporal mask
-        temporal_mask = pd.read_table(self.inputs.temporal_mask)
-        temporal_mask = temporal_mask["framewise_displacement"].to_numpy()
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
 
         if not self.inputs.exact_scans:
             self._results["temporal_mask"] = self.inputs.temporal_mask
@@ -328,12 +327,12 @@ class RandomCensor(SimpleInterface):
             use_ext=True,
         )
         rng = np.random.default_rng()
-        mask_idx = temporal_mask.loc[temporal_mask["framewise_displacement"] != 1].index.values
-        random_censor = rng.choice(mask_idx, self.inputs.exact_scans)
-        temporal_mask["random_censor"] = 0
-        temporal_mask.loc[random_censor, "random_censor"] = 1
+        outlier_idx = censoring_df.loc[censoring_df["framewise_displacement"] != 1].index.values
+        random_censor = rng.choice(outlier_idx, self.inputs.exact_scans)
+        censoring_df["random_censor"] = 0
+        censoring_df.loc[random_censor, "random_censor"] = 1
 
-        temporal_mask.to_csv(self._results["temporal_mask"], sep="\t", index=False)
+        censoring_df.to_csv(self._results["temporal_mask"], sep="\t", index=False)
 
         return runtime
 
