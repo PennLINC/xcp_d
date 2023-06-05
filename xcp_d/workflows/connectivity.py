@@ -88,6 +88,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "bold_mask",
                 "boldref",
                 "denoised_bold",
+                "temporal_mask",
                 "template_to_anat_xfm",
                 "anat_to_native_xfm",
             ],
@@ -191,6 +192,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     workflow.connect([
         (inputnode, nifti_connect, [
             ("denoised_bold", "filtered_file"),
+            ("temporal_mask", "temporal_mask"),
             ("bold_mask", "mask"),
         ]),
         (atlas_file_grabber, nifti_connect, [
@@ -330,7 +332,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["name_source", "denoised_bold"]),
+        niu.IdentityInterface(fields=["name_source", "denoised_bold", "temporal_mask"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -420,7 +422,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
     # fmt:off
     workflow.connect([
-        (inputnode, cifti_connect, [("denoised_bold", "data_file")]),
+        (inputnode, cifti_connect, [
+            ("denoised_bold", "data_file"),
+            ("temporal_mask", "temporal_mask"),
+        ]),
         (atlas_file_grabber, cifti_connect, [("atlas_labels_file", "atlas_labels")]),
         (resample_atlas_to_data, cifti_connect, [("cifti_out", "atlas_file")]),
         (parcellate_atlas, cifti_connect, [("out_file", "parcellated_atlas")]),
