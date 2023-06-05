@@ -285,6 +285,7 @@ def init_postprocess_cifti_wf(
         TR=TR,
         params=params,
         dummy_scans=dummy_scans,
+        exact_scans=exact_scans,
         motion_filter_type=motion_filter_type,
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
@@ -376,7 +377,6 @@ def init_postprocess_cifti_wf(
     connectivity_wf = init_functional_connectivity_cifti_wf(
         output_dir=output_dir,
         min_coverage=min_coverage,
-        exact_scans=exact_scans,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         name="connectivity_wf",

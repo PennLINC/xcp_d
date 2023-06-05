@@ -408,7 +408,6 @@ def init_postprocess_nifti_wf(
     connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=output_dir,
         min_coverage=min_coverage,
-        exact_scans=exact_scans,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         name="connectivity_wf",
