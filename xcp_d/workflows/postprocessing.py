@@ -297,7 +297,10 @@ def init_prepare_confounds_wf(
     ])
     # fmt:on
 
-    random_censor = RandomCensor(exact_scans=exact_scans)
+    random_censor = pe.Node(
+        RandomCensor(exact_scans=exact_scans),
+        name="random_censor",
+    )
 
     # fmt:off
     workflow.connect([
