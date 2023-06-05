@@ -92,7 +92,7 @@ class CensoringPlot(SimpleInterface):
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
         # Load temporal mask
-        tmask_df = pd.read_table(self.inputs.temporal_mask)
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
 
         dummy_scans = self.inputs.dummy_scans
         # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
@@ -109,11 +109,11 @@ class CensoringPlot(SimpleInterface):
                 color=palette[1],
             )
             # Prepend dummy scans to the temporal mask
-            dummy_df = pd.DataFrame(0, index=np.arange(dummy_scans), columns=tmask_df.columns)
-            tmask_df = pd.concat([dummy_df, tmask_df])
+            dummy_df = pd.DataFrame(0, index=np.arange(dummy_scans), columns=censoring_df.columns)
+            censoring_df = pd.concat([dummy_df, censoring_df])
 
         # Plot motion-censored volumes as vertical lines
-        tmask_arr = tmask_df["framewise_displacement"].values
+        tmask_arr = censoring_df["framewise_displacement"].values
         assert preproc_fd_timeseries.size == tmask_arr.size
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
@@ -126,8 +126,8 @@ class CensoringPlot(SimpleInterface):
             )
 
         # Plot randomly censored volumes as well
-        if "random_censor" in tmask_df.columns:
-            tmask_arr = tmask_df["random_censor"].values
+        if "random_censor" in censoring_df.columns:
+            tmask_arr = censoring_df["random_censor"].values
             tmask_idx = np.where(tmask_arr)[0]
             for i_idx, idx in enumerate(tmask_idx):
                 label = "Randomly Censored Volumes" if i_idx == 0 else ""
@@ -278,8 +278,8 @@ class QCPlots(SimpleInterface):
 
         # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans
-        tmask_df = pd.read_table(self.inputs.temporal_mask)
-        tmask_arr = tmask_df["framewise_displacement"].values
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        tmask_arr = censoring_df["framewise_displacement"].values
         num_censored_volumes = int(tmask_arr.sum())
 
         # Apply temporal mask to interpolated/full data

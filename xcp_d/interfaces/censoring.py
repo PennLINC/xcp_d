@@ -171,9 +171,9 @@ class RemoveDummyVolumes(SimpleInterface):
         )
 
         # Drop the first N rows from the temporal mask
-        tmask_df = pd.read_table(self.inputs.temporal_mask)
-        tmask_df_dropped = tmask_df.drop(np.arange(dummy_scans))
-        tmask_df_dropped.to_csv(
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        censoring_df_dropped = censoring_df.drop(np.arange(dummy_scans))
+        censoring_df_dropped.to_csv(
             self._results["temporal_mask_dropped_TR"],
             sep="\t",
             index=False,
@@ -227,10 +227,10 @@ class Censor(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Read in temporal mask
-        temporal_mask = pd.read_table(self.inputs.temporal_mask)
-        temporal_mask = temporal_mask["framewise_displacement"].to_numpy()
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        motion_outliers = censoring_df["framewise_displacement"].to_numpy()
 
-        if np.sum(temporal_mask) == 0:  # No censoring needed
+        if np.sum(motion_outliers) == 0:  # No censoring needed
             self._results["censored_denoised_bold"] = self.inputs.in_file
             return runtime
 
@@ -239,9 +239,9 @@ class Censor(SimpleInterface):
         bold_data_interp = bold_img_interp.get_fdata()
 
         if bold_img_interp.ndim > 2:  # If Nifti
-            bold_data_censored = bold_data_interp[:, :, :, temporal_mask == 0]
+            bold_data_censored = bold_data_interp[:, :, :, motion_outliers == 0]
         else:
-            bold_data_censored = bold_data_interp[temporal_mask == 0, :]
+            bold_data_censored = bold_data_interp[motion_outliers == 0, :]
 
         # Turn censored bold into image
         if nb.load(self.inputs.in_file).ndim > 2:

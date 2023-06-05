@@ -415,14 +415,17 @@ def init_postprocess_nifti_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, connectivity_wf, [("bold_file", "inputnode.name_source")]),
+        (inputnode, connectivity_wf, [
+            ("bold_file", "inputnode.name_source"),
+            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
+            ("anat_to_native_xfm", "inputnode.anat_to_native_xfm"),
+        ]),
         (downcast_data, connectivity_wf, [
             ("bold_mask", "inputnode.bold_mask"),
             ("boldref", "inputnode.boldref"),
         ]),
-        (inputnode, connectivity_wf, [
-            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("anat_to_native_xfm", "inputnode.anat_to_native_xfm"),
+        (prepare_confounds_wf, connectivity_wf, [
+            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
         ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),

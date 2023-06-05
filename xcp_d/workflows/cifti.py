@@ -385,6 +385,9 @@ def init_postprocess_cifti_wf(
     # fmt:off
     workflow.connect([
         (inputnode, connectivity_wf, [("bold_file", "inputnode.name_source")]),
+        (prepare_confounds_wf, connectivity_wf, [
+            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+        ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),

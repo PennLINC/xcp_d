@@ -444,6 +444,7 @@ def denoise_with_nilearn(
     assert confounds_df.columns[-1] == "intercept"
 
     censoring_df = pd.read_table(temporal_mask)
+    # Only remove high-motion outliers in this step (not the random volumes for trimming).
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
     # Orthogonalize full nuisance regressors w.r.t. any signal regressors
