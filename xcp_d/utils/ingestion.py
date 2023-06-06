@@ -47,34 +47,29 @@ def collect_anatomical_files(anat_dir_orig, anat_dir_fmriprep, base_anatomical_e
 def collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
     """Collect surface files from ABCD or HCP-YA derivatives."""
     SURFACE_DICT = {
-        "R.midthickness.32k_fs_LR.surf.gii": "hemi-R_desc-hcp_midthickness.surf.gii",
-        "L.midthickness.32k_fs_LR.surf.gii": "hemi-L_desc-hcp_midthickness.surf.gii",
-        "R.inflated.32k_fs_LR.surf.gii": "hemi-R_desc-hcp_inflated.surf.gii",
-        "L.inflated.32k_fs_LR.surf.gii": "hemi-L_desc-hcp_inflated.surf.gii",
-        "R.very_inflated.32k_fs_LR.surf.gii": "hemi-R_desc-hcp_vinflated.surf.gii",
-        "L.very_inflated.32k_fs_LR.surf.gii": "hemi-L_desc-hcp_vinflated.surf.gii",
-        "R.pial.32k_fs_LR.surf.gii": "hemi-R_pial.surf.gii",
-        "L.pial.32k_fs_LR.surf.gii": "hemi-L_pial.surf.gii",
-        "R.white.32k_fs_LR.surf.gii": "hemi-R_smoothwm.surf.gii",
-        "L.white.32k_fs_LR.surf.gii": "hemi-L_smoothwm.surf.gii",
-        "R.corrThickness.32k_fs_LR.shape.gii": "hemi-R_thickness.shape.gii",
-        "L.corrThickness.32k_fs_LR.shape.gii": "hemi-L_thickness.shape.gii",
-        "R.curvature.32k_fs_LR.shape.gii": "hemi-R_curv.shape.gii",
-        "L.curvature.32k_fs_LR.shape.gii": "hemi-L_curv.shape.gii",
-        "R.sulc.32k_fs_LR.shape.gii": "hemi-R_sulc.shape.gii",
-        "L.sulc.32k_fs_LR.shape.gii": "hemi-L_sulc.shape.gii",
+        "{hemi}.midthickness.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_midthickness.surf.gii",
+        "{hemi}.inflated.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_inflated.surf.gii",
+        "{hemi}.very_inflated.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_vinflated.surf.gii",
+        "{hemi}.pial.32k_fs_LR.surf.gii": "hemi-{hemi}_pial.surf.gii",
+        "{hemi}.white.32k_fs_LR.surf.gii": "hemi-{hemi}_smoothwm.surf.gii",
+        "{hemi}.corrThickness.32k_fs_LR.shape.gii": "hemi-{hemi}_thickness.shape.gii",
+        "{hemi}.curvature.32k_fs_LR.shape.gii": "hemi-{hemi}_curv.shape.gii",
+        "{hemi}.sulc.32k_fs_LR.shape.gii": "hemi-{hemi}_sulc.shape.gii",
     }
 
     fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
     copy_dictionary = {}
     for in_str, out_str in SURFACE_DICT.items():
-        surf_orig = os.path.join(fsaverage_dir_orig, f"{sub_id}.{in_str}")
-        surf_fmriprep = os.path.join(
-            anat_dir_fmriprep,
-            f"{subses_ents}_space-fsLR_den-32k_{out_str}",
-        )
-        if os.path.isfile(surf_orig):
-            copy_dictionary[surf_orig] = [surf_fmriprep]
+        for hemi in ["L", "R"]:
+            hemi_in_str = in_str.format(hemi=hemi)
+            hemi_out_str = out_str.format(hemi=hemi)
+            surf_orig = os.path.join(fsaverage_dir_orig, f"{sub_id}.{hemi_in_str}")
+            surf_fmriprep = os.path.join(
+                anat_dir_fmriprep,
+                f"{subses_ents}_space-fsLR_den-32k_{hemi_out_str}",
+            )
+            if os.path.isfile(surf_orig):
+                copy_dictionary[surf_orig] = [surf_fmriprep]
 
     return copy_dictionary
 

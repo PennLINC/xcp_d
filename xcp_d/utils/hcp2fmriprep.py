@@ -186,8 +186,9 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     # Collect functional files to copy
     task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "*")))
-    task_dirs_orig = [f for f in task_dirs_orig if f.endswith("RL") or f.endswith("LR")]
-    task_names = [os.path.basename(f) for f in task_dirs_orig]
+    task_names = [
+        os.path.basename(f) for f in task_dirs_orig if f.endswith("RL") or f.endswith("LR")
+    ]
 
     for base_task_name in task_names:
         LOGGER.info(f"Processing {base_task_name}")
@@ -240,42 +241,39 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         copy_dictionary[identity_xfm].append(t1w_to_native_fmriprep)
 
         # Extract metadata for JSON files
-        TR = nb.load(bold_nifti_orig).header.get_zooms()[-1]  # repetition time
-        bold_nifti_json_dict = {
-            "RepetitionTime": float(TR),
+        bold_metadata = {
+            "RepetitionTime": nb.load(bold_nifti_orig).header.get_zooms()[-1],
             "TaskName": task_id,
         }
         bold_nifti_json_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{subses_ents}_{task_ent}_{dir_ent}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.json",
         )
-        write_json(bold_nifti_json_dict, bold_nifti_json_fmriprep)
+        write_json(bold_metadata, bold_nifti_json_fmriprep)
 
-        bold_cifti_json_dict = {
-            "RepetitionTime": float(TR),
-            "TaskName": task_id,
-            "grayordinates": "91k",
-            "space": "HCP grayordinates",
-            "surface": "fsLR",
-            "surface_density": "32k",
-            "volume": "MNI152NLin6Asym",
-        }
+        bold_metadata.update(
+            {
+                "grayordinates": "91k",
+                "space": "HCP grayordinates",
+                "surface": "fsLR",
+                "surface_density": "32k",
+                "volume": "MNI152NLin6Asym",
+            },
+        )
         bold_cifti_json_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{subses_ents}_{task_ent}_{dir_ent}_space-fsLR_den-91k_bold.dtseries.json",
         )
-        write_json(bold_cifti_json_dict, bold_cifti_json_fmriprep)
+        write_json(bold_metadata, bold_cifti_json_fmriprep)
 
         # Create confound regressors
-        base_task_ents = f"{subses_ents}_{task_ent}_{dir_ent}"
-        brainmask_orig_temp = os.path.join(task_dir_orig, "brainmask_fs.2.nii.gz")
         collect_confounds(
             task_dir_orig,
             func_dir_fmriprep,
-            base_task_ents,
+            f"{subses_ents}_{task_ent}_{dir_ent}",
             work_dir=work_dir,
             bold_file=bold_nifti_orig,
-            brainmask_file=brainmask_orig_temp,
+            brainmask_file=os.path.join(task_dir_orig, "brainmask_fs.2.nii.gz"),
             csf_mask_file=csf_mask,
             wm_mask_file=wm_mask,
         )

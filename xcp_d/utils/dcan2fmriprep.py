@@ -134,10 +134,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         anat_dir_orig = os.path.join(in_dir, sub_ent, ses_ent, "files", "MNINonLinear")
         anat_dir_fmriprep = os.path.join(session_dir_fmriprep, "anat")
-
-        # NOTE: Why *was* this set to the *first* session only? (I fixed it)
-        # AFAICT, this would copy the first session's files from DCAN into *every*
-        # session of the output directory.
         func_dir_orig = os.path.join(anat_dir_orig, "Results")
         func_dir_fmriprep = os.path.join(session_dir_fmriprep, "func")
         work_dir = os.path.join(subject_dir_fmriprep, "work")
@@ -179,8 +175,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         # Collect functional files to copy
         task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, f"{ses_ent}_task-*")))
-        task_dirs_orig = [f for f in task_dirs_orig if os.path.isdir(f)]
-        task_names = [os.path.basename(f) for f in task_dirs_orig]
+        task_names = [os.path.basename(f) for f in task_dirs_orig if os.path.isdir(f)]
 
         for base_task_name in task_names:
             LOGGER.info(f"Processing {base_task_name}")
@@ -244,9 +239,8 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             copy_dictionary[identity_xfm].append(t1w_to_native_fmriprep)
 
             # Extract metadata for JSON files
-            TR = nb.load(bold_nifti_orig).header.get_zooms()[-1]  # repetition time
-            bold_nifti_json_dict = {
-                "RepetitionTime": float(TR),
+            bold_metadata = {
+                "RepetitionTime": nb.load(bold_nifti_orig).header.get_zooms()[-1],
                 "TaskName": task_id,
             }
             bold_nifti_json_fmriprep = os.path.join(
@@ -256,34 +250,32 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                     f"{RES_ENT}_desc-preproc_bold.json"
                 ),
             )
-            write_json(bold_nifti_json_dict, bold_nifti_json_fmriprep)
+            write_json(bold_metadata, bold_nifti_json_fmriprep)
 
-            bold_cifti_json_dict = {
-                "RepetitionTime": float(TR),
-                "TaskName": task_id,
-                "grayordinates": "91k",
-                "space": "HCP grayordinates",
-                "surface": "fsLR",
-                "surface_density": "32k",
-                "volume": "MNI152NLin6Asym",
-            }
+            bold_metadata.update(
+                {
+                    "grayordinates": "91k",
+                    "space": "HCP grayordinates",
+                    "surface": "fsLR",
+                    "surface_density": "32k",
+                    "volume": "MNI152NLin6Asym",
+                },
+            )
             bold_cifti_json_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 f"{subses_ents}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.json",
             )
-            write_json(bold_cifti_json_dict, bold_cifti_json_fmriprep)
+            write_json(bold_metadata, bold_cifti_json_fmriprep)
 
             # Create confound regressors
-            base_task_ents = f"{subses_ents}_task-{task_id}_{run_ent}"
-            # This file is the anatomical brain mask downsampled to 2 mm3.
-            brainmask_orig_temp = os.path.join(task_dir_orig, "brainmask_fs.2.0.nii.gz")
             collect_confounds(
                 task_dir_orig,
                 func_dir_fmriprep,
-                base_task_ents,
+                f"{subses_ents}_{task_ent}_{run_ent}",
                 work_dir=work_dir,
                 bold_file=bold_nifti_orig,
-                brainmask_file=brainmask_orig_temp,
+                # This file is the anatomical brain mask downsampled to 2 mm3.
+                brainmask_file=os.path.join(task_dir_orig, "brainmask_fs.2.0.nii.gz"),
                 csf_mask_file=csf_mask,
                 wm_mask_file=wm_mask,
             )
