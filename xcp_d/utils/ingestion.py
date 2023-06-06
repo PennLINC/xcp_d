@@ -5,7 +5,7 @@ import json
 import os
 
 import numpy as np
-from nilearn import maskers
+from nilearn import image, maskers
 from nipype import logging
 
 LOGGER = logging.getLogger("nipype.utils")
@@ -192,17 +192,16 @@ def write_json(data, outfile):
 def plot_bbreg(fixed_image, moving_image, contour, out_file="report.svg"):
     """Plot bbref_fig_fmriprep results."""
     import numpy as np
-    from nilearn.image import load_img, resample_img, threshold_img
     from niworkflows.viz.utils import compose_view, cuts_from_bbox, plot_registration
 
-    fixed_image_nii = load_img(fixed_image)
-    moving_image_nii = load_img(moving_image)
-    moving_image_nii = resample_img(
+    fixed_image_nii = image.load_img(fixed_image)
+    moving_image_nii = image.load_img(moving_image)
+    moving_image_nii = image.resample_img(
         moving_image_nii, target_affine=np.eye(3), interpolation="nearest"
     )
-    contour_nii = load_img(contour) if contour is not None else None
+    contour_nii = image.load_img(contour) if contour is not None else None
 
-    mask_nii = threshold_img(fixed_image_nii, 1e-3)
+    mask_nii = image.threshold_img(fixed_image_nii, 1e-3)
 
     n_cuts = 7
     if contour_nii:
