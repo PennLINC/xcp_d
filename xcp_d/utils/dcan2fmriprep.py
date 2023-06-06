@@ -2,12 +2,12 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting DCAN-format derivatives to fMRIPrep format."""
 import glob
-import logging
 import os
 import re
 
 import nibabel as nb
 import pandas as pd
+from nipype import logging
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.filemanip import ensure_list
@@ -15,7 +15,7 @@ from xcp_d.utils.ingestion import (
     collect_anatomical_files,
     collect_confounds,
     collect_surfaces,
-    copy_file,
+    copy_files_in_dict,
     plot_bbreg,
     write_json,
 )
@@ -165,19 +165,19 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary = {**copy_dictionary, **anat_dict}
 
-        # Grab surface morphometry files
+        # Collect surface files to copy
         surfaces_dict = collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
         copy_dictionary = {**copy_dictionary, **surfaces_dict}
         LOGGER.info("Finished collecting anatomical files")
 
-        # get masks and transforms
-        wmmask = os.path.join(anat_dir_orig, f"wm_2mm_{sub_id}_mask_eroded.nii.gz")
-        csfmask = os.path.join(anat_dir_orig, f"vent_2mm_{sub_id}_mask_eroded.nii.gz")
+        # Get masks to be used to extract confounds
+        wm_mask = os.path.join(anat_dir_orig, f"wm_2mm_{sub_id}_mask_eroded.nii.gz")
+        csf_mask = os.path.join(anat_dir_orig, f"vent_2mm_{sub_id}_mask_eroded.nii.gz")
 
         # Collect functional files to copy
         task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, f"{ses_ent}_task-*")))
-        task_dirs_orig = [task_dir for task_dir in task_dirs_orig if os.path.isdir(task_dir)]
-        task_names = [os.path.basename(task_dir) for task_dir in task_dirs_orig]
+        task_dirs_orig = [f for f in task_dirs_orig if os.path.isdir(f)]
+        task_names = [os.path.basename(f) for f in task_dirs_orig]
 
         for base_task_name in task_names:
             LOGGER.info(f"Processing {base_task_name}")
@@ -194,8 +194,8 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                 continue
 
             task_id, run_id = found_task_info[0]
-            run_ent = f"run-{run_id}"
             task_ent = f"task-{task_id}"
+            run_ent = f"run-{run_id}"
 
             task_dir_orig = os.path.join(func_dir_orig, base_task_name)
 
@@ -227,7 +227,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             )
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
-            # More transforms
+            # More identity transforms
             native_to_t1w_fmriprep = os.path.join(
                 func_dir_fmriprep,
                 f"{subses_ents}_{task_ent}_{run_ent}_from-scanner_to-T1w_mode-image_xfm.txt",
@@ -268,7 +268,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                 func_dir_fmriprep,
                 f"{subses_ents}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.json",
             )
-
             write_json(bold_cifti_json_dict, bold_cifti_json_fmriprep)
 
             # Create confound regressors
@@ -282,8 +281,8 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                 work_dir=work_dir,
                 bold_file=bold_nifti_orig,
                 brainmask_file=brainmask_orig_temp,
-                csf_mask_file=csfmask,
-                wm_mask_file=wmmask,
+                csf_mask_file=csf_mask,
+                wm_mask_file=wm_mask,
             )
 
             # Make figures
@@ -308,18 +307,10 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     # Copy ABCD files to fMRIPrep folder
     LOGGER.info("Copying files")
-    for file_orig, files_fmriprep in copy_dictionary.items():
-        if not isinstance(files_fmriprep, list):
-            raise ValueError(
-                f"Entry for {file_orig} should be a list, but is a {type(files_fmriprep)}"
-            )
+    copy_files_in_dict(copy_dictionary)
+    LOGGER.info("Finished copying files")
 
-        if len(files_fmriprep) > 1:
-            LOGGER.warning(f"File used for more than one output: {file_orig}")
-
-        for file_fmriprep in files_fmriprep:
-            copy_file(file_orig, file_fmriprep)
-
+    # Write the dataset description out last
     dataset_description_dict = {
         "Name": "ABCD-DCAN",
         "BIDSVersion": "1.4.0",
@@ -344,6 +335,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     scans_tuple = tuple(scans_dict.items())
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
-    scans_tsv = os.path.join(subject_dir_fmriprep, f"{sub_ent}_scans.tsv")
+    scans_tsv = os.path.join(subject_dir_fmriprep, f"{subses_ents}_scans.tsv")
     scans_df.to_csv(scans_tsv, sep="\t", index=False)
     LOGGER.info("Conversion completed")

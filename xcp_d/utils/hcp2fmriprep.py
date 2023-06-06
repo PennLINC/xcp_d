@@ -14,7 +14,7 @@ from xcp_d.utils.ingestion import (
     collect_anatomical_files,
     collect_confounds,
     collect_surfaces,
-    copy_file,
+    copy_files_in_dict,
     plot_bbreg,
     write_json,
 )
@@ -136,6 +136,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     RES_ENT = "res-2"
 
     anat_dir_orig = os.path.join(in_dir, sub_id, "MNINonLinear")
+    func_dir_orig = os.path.join(anat_dir_orig, "Results")
     subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
     anat_dir_fmriprep = os.path.join(subject_dir_fmriprep, "anat")
     func_dir_fmriprep = os.path.join(subject_dir_fmriprep, "func")
@@ -149,7 +150,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     os.makedirs(func_dir_fmriprep, exist_ok=True)
     os.makedirs(work_dir, exist_ok=True)
 
-    # Get necessary files
+    # Get masks to be used to extract confounds
     csf_mask = pkgrf("xcp_d", f"/data/masks/{volspace_ent}_{RES_ENT}_label-CSF_mask.nii.gz")
     wm_mask = pkgrf("xcp_d", f"/data/masks/{volspace_ent}_{RES_ENT}_label-WM_mask.nii.gz")
 
@@ -178,29 +179,34 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     anat_dict = collect_anatomical_files(anat_dir_orig, anat_dir_fmriprep, base_anatomical_ents)
     copy_dictionary = {**copy_dictionary, **anat_dict}
 
-    # Grab surface morphometry files
+    # Collect surface files to copy
     surfaces_dict = collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
     copy_dictionary = {**copy_dictionary, **surfaces_dict}
     LOGGER.info("Finished collecting anatomical files")
 
     # Collect functional files to copy
-    subject_task_folders = sorted(
-        glob.glob(os.path.join(in_dir, sub_id, "MNINonLinear", "Results", "*"))
-    )
-    subject_task_folders = [
-        task for task in subject_task_folders if task.endswith("RL") or task.endswith("LR")
-    ]
-    for subject_task_folder in subject_task_folders:
-        LOGGER.info(f"Processing {subject_task_folder}")
+    task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "*")))
+    task_dirs_orig = [f for f in task_dirs_orig if f.endswith("RL") or f.endswith("LR")]
+    task_names = [os.path.basename(f) for f in task_dirs_orig]
+
+    for base_task_name in task_names:
+        LOGGER.info(f"Processing {base_task_name}")
         # NOTE: What is the first element in the folder name?
-        _, task_id, dir_id = os.path.basename(subject_task_folder).split("_")
+        _, task_id, dir_id = base_task_name.split("_")
         task_ent = f"task-{task_id}"
         dir_ent = f"dir-{dir_id}"
-        # TODO: Rename variable
-        run_foldername = os.path.basename(subject_task_folder)
+
+        task_dir_orig = os.path.join(func_dir_orig, base_task_name)
 
         # Find original task files
-        bold_nifti_orig = os.path.join(subject_task_folder, f"{run_foldername}.nii.gz")
+        sbref_orig = os.path.join(task_dir_orig, "SBRef_dc.nii.gz")
+        boldref_fmriprep = os.path.join(
+            func_dir_fmriprep,
+            f"{subses_ents}_{task_ent}_{dir_ent}_{volspace_ent}_{RES_ENT}_boldref.nii.gz",
+        )
+        copy_dictionary[sbref_orig] = [boldref_fmriprep]
+
+        bold_nifti_orig = os.path.join(task_dir_orig, f"{base_task_name}.nii.gz")
         bold_nifti_fmriprep = os.path.join(
             func_dir_fmriprep,
             (
@@ -210,16 +216,9 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
-        sbref_orig = os.path.join(subject_task_folder, "SBRef_dc.nii.gz")
-        boldref_fmriprep = os.path.join(
-            func_dir_fmriprep,
-            f"{subses_ents}_{task_ent}_{dir_ent}_{volspace_ent}_{RES_ENT}_boldref.nii.gz",
-        )
-        copy_dictionary[sbref_orig] = [boldref_fmriprep]
-
         bold_cifti_orig = os.path.join(
-            subject_task_folder,
-            f"{run_foldername}_Atlas_MSMAll.dtseries.nii",
+            task_dir_orig,
+            f"{base_task_name}_Atlas_MSMAll.dtseries.nii",
         )
         bold_cifti_fmriprep = os.path.join(
             func_dir_fmriprep,
@@ -227,7 +226,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
-        # More transforms
+        # More identity transforms
         native_to_t1w_fmriprep = os.path.join(
             func_dir_fmriprep,
             f"{subses_ents}_{task_ent}_{dir_ent}_from-scanner_to-T1w_mode-image_xfm.txt",
@@ -269,9 +268,9 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         # Create confound regressors
         base_task_ents = f"{subses_ents}_{task_ent}_{dir_ent}"
-        brainmask_orig_temp = os.path.join(subject_task_folder, "brainmask_fs.2.nii.gz")
+        brainmask_orig_temp = os.path.join(task_dir_orig, "brainmask_fs.2.nii.gz")
         collect_confounds(
-            subject_task_folder,
+            task_dir_orig,
             func_dir_fmriprep,
             base_task_ents,
             work_dir=work_dir,
@@ -297,24 +296,13 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             contour=ribbon,
         )
 
-        LOGGER.info(f"Finished {subject_task_folder}")
+        LOGGER.info(f"Finished {base_task_name}")
 
     LOGGER.info("Finished collecting functional files")
 
     # Copy HCP files to fMRIPrep folder
     LOGGER.info("Copying files")
-    for file_orig, files_fmriprep in copy_dictionary.items():
-        if not isinstance(files_fmriprep, list):
-            raise ValueError(
-                f"Entry for {file_orig} should be a list, but is a {type(files_fmriprep)}"
-            )
-
-        if len(files_fmriprep) > 1:
-            LOGGER.warning(f"File used for more than one output: {file_orig}")
-
-        for file_fmriprep in files_fmriprep:
-            copy_file(file_orig, file_fmriprep)
-
+    copy_files_in_dict(copy_dictionary)
     LOGGER.info("Finished copying files")
 
     # Write the dataset description out last

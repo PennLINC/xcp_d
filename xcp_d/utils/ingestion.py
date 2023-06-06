@@ -6,6 +6,9 @@ import os
 
 import numpy as np
 from nilearn import maskers
+from nipype import logging
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def copy_file(src, dst):
@@ -229,3 +232,18 @@ def plot_bbreg(fixed_image, moving_image, contour, out_file="report.svg"):
         out_file=out_file,
     )
     return out_file
+
+
+def copy_files_in_dict(copy_dictionary):
+    """Copy files in dictionary."""
+    for file_orig, files_fmriprep in copy_dictionary.items():
+        if not isinstance(files_fmriprep, list):
+            raise ValueError(
+                f"Entry for {file_orig} should be a list, but is a {type(files_fmriprep)}"
+            )
+
+        if len(files_fmriprep) > 1:
+            LOGGER.warning(f"File used for more than one output: {file_orig}")
+
+        for file_fmriprep in files_fmriprep:
+            copy_file(file_orig, file_fmriprep)
