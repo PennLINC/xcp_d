@@ -39,6 +39,7 @@ jobs:
       - checkout
       - restore_cache:
           key: ds001419-fmriprep-05
+      - run: *runinstall
       - run:
           name: Download ds001419-fmriprep test data
           command: |
@@ -55,6 +56,7 @@ jobs:
       - checkout
       - restore_cache:
           key: fmriprepwithoutfreesurfer-01
+      - run: *runinstall
       - run:
           name: Download fmriprepwithoutfreesurfer test data
           command: |
@@ -71,6 +73,7 @@ jobs:
       - checkout
       - restore_cache:
           key: nibabies-01
+      - run: *runinstall
       - run:
           name: Download nibabies test data
           command: |
