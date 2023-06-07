@@ -447,8 +447,8 @@ anatomical data and the BOLD data before and after regression.
 The anatomical image viewer allows the user to see the segmentation overlaid on the anatomical
 image.
 Next, for each session, the user can see the segmentation registered onto the BOLD images.
-Beside the segmentations, users can see the pre-regression and post-regression "carpet" plot, as well as DVARS, FD, the global
-signal.
+Beside the segmentations, users can see the pre-regression and post-regression "carpet" plot,
+as well as DVARS, FD, the global signal.
 The number of volumes remaining at various FD thresholds are shown.
 
 Second, XCP-D generates an HTML "report" for each subject and session.

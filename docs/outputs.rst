@@ -33,7 +33,7 @@ Summary Reports
 ***************
 
 There are two summary reports - a Nipreps-style participant summary and an executive summary per
-session (if ``--dcan-qc`` is used).
+session.
 The executive summary is based on the DCAN lab's
 `ExecutiveSummary tool <https://github.com/DCAN-Labs/ExecutiveSummary>`_.
 
