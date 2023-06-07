@@ -92,7 +92,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     individual transforms available in the DCAN derivatives.
     """
     assert isinstance(in_dir, str)
-    assert os.path.isdir(in_dir)
+    assert os.path.isdir(in_dir), f"Folder DNE: {in_dir}"
     assert isinstance(out_dir, str)
     assert isinstance(sub_ent, str)
 
