@@ -17,5 +17,6 @@ Contents
    usage
    workflows
    outputs
+   contributing
    api
-   dev_guide
+   changes
