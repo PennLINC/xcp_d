@@ -64,7 +64,6 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
     )
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_outputs.txt")
@@ -136,7 +135,6 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
     )
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
@@ -224,7 +222,6 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
     )
 
     output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_outputs.txt")
@@ -337,7 +334,6 @@ def test_nibabies(datasets, output_dir, working_dir):
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
     )
 
     output_list_file = os.path.join(test_data_dir, "nibabies_outputs.txt")
