@@ -43,8 +43,7 @@ jobs:
           name: Download ds001419-fmriprep test data
           command: |
             cd /src/xcp_d/.circleci
-            source get_data.sh
-            get_bids_data $PWD ds001419-fmriprep
+            python get_data.py $PWD/data ds001419-fmriprep
       - save_cache:
           key: ds001419-fmriprep-05
           paths:
@@ -60,8 +59,7 @@ jobs:
           name: Download fmriprepwithoutfreesurfer test data
           command: |
             cd /src/xcp_d/.circleci
-            source get_data.sh
-            get_bids_data $PWD sub01
+            python get_data.py $PWD/data sub01
       - save_cache:
           key: fmriprepwithoutfreesurfer-01
           paths:
@@ -77,8 +75,7 @@ jobs:
           name: Download nibabies test data
           command: |
             cd /src/xcp_d/.circleci
-            source get_data.sh
-            get_bids_data $PWD nibabies
+            python get_data.py $PWD/data nibabies
       - save_cache:
           key: nibabies-01
           paths:
