@@ -40,6 +40,8 @@ def collect_anatomical_files(anat_dir_orig, anat_dir_fmriprep, base_anatomical_e
         anat_fmriprep = os.path.join(anat_dir_fmriprep, f"{base_anatomical_ents}_{out_str}")
         if os.path.isfile(anat_orig):
             copy_dictionary[anat_orig] = [anat_fmriprep]
+        else:
+            LOGGER.warning(f"File DNE: {anat_orig}")
 
     return copy_dictionary
 
@@ -70,6 +72,8 @@ def collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
             )
             if os.path.isfile(surf_orig):
                 copy_dictionary[surf_orig] = [surf_fmriprep]
+            else:
+                LOGGER.warning(f"File DNE: {surf_orig}")
 
     return copy_dictionary
 
