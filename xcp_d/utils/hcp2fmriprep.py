@@ -242,7 +242,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         # Extract metadata for JSON files
         bold_metadata = {
-            "RepetitionTime": nb.load(bold_nifti_orig).header.get_zooms()[-1],
+            "RepetitionTime": float(nb.load(bold_nifti_orig).header.get_zooms()[-1]),
             "TaskName": task_id,
         }
         bold_nifti_json_fmriprep = os.path.join(
