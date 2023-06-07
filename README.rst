@@ -56,10 +56,33 @@ XCP-D leverages the BIDS and NiPrep frameworks to automatically generate denoise
 parcellated time series, functional connectivity matrices, and quality assessment reports.
 XCP-D can also process outputs from: `NiBabies <https://nibabies.readthedocs.io>`_ and
 `Minimally preprocessed HCP data <https://www.humanconnectome.org/study/hcp-lifespan-development/\
-data-releases>`_. 
+data-releases>`_.
 
 *Please note that XCP is only compatible with HCP-YA versions downloaded c.a. Feb 2023 at the moment.*
 
 .. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/schematic_land-01.png
 
 See the `documentation <https://xcp-d.readthedocs.io/en/latest/>`_ for more details.
+
+
+Why you should use XCP-D
+````````````````````````
+XCP-D produces the following commonly-used outputs: matrices, parcellated time series,
+dense time series, and additional QC measures.
+
+XCP-D is designed for resting-state or pseudo-resting-state functional connectivity analyses.
+XCP-D derivatives may be useful for seed-to-voxel and ROI-to-ROI functional connectivity analyses,
+as well as decomposition-based methods, such as ICA or NMF.
+
+
+When you should not use XCP-D
+`````````````````````````````
+XCP-D is not designed as a general-purpose postprocessing pipeline.
+It is really only appropriate for certain analyses,
+and other postprocessing/analysis tools are better suited for many types of data/analysis.
+
+XCP-D derivatives are not particularly useful for task-dependent functional connectivity analyses,
+such as psychophysiological interactions (PPIs) or beta series analyses.
+It is also not suitable for general task-based analyses, such as standard task GLMs,
+as we recommend included nuisance regressors in the GLM step,
+rather than denoising data prior to the GLM.

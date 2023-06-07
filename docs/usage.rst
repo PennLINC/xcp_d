@@ -21,7 +21,7 @@ In these examples, we use an fmriprep output directory.
 
 The outputs are required to include at least anatomical and functional outputs with at least one
 preprocessed BOLD image.
-Additionally, each of theseshould be in directories that can be parsed by the BIDS online validator
+Additionally, each of these should be in directories that can be parsed by the BIDS online validator
 (even if it is not BIDS valid - we do not require BIDS valid directories).
 The directories must also include a valid `dataset_description.json`.
 

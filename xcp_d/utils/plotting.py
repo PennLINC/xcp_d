@@ -279,8 +279,9 @@ def plot_dvars_es(time_series, ax, run_index=None):
         maximum_values.append(max(time_series[c]))
         minimum_values.append(min(time_series[c]))
 
-    if run_index:
-        ax.axvline(run_index, color="yellow")
+    if run_index is not None:
+        for run_location in run_index:
+            ax.axvline(run_location, color="yellow")
 
     # Set limits and format
     minimum_x_value = [abs(x) for x in minimum_values]
@@ -351,8 +352,9 @@ def plot_global_signal_es(time_series, ax, run_index=None):
     line_labels = [line.get_label() for line in lines]
     ax.legend(lines, line_labels, fontsize=30)
 
-    if run_index:
-        ax.axvline(run_index, color="yellow")
+    if run_index is not None:
+        for run_location in run_index:
+            ax.axvline(run_location, color="yellow")
 
     ax.set_xlim((0, ntsteps - 1))
 
@@ -456,8 +458,10 @@ def plot_framewise_displacement_es(
         fontsize=20,
     )
 
-    if run_index:
-        ax.axvline([idx * TR for idx in run_index], color="yellow")
+    if run_index is not None:
+        run_index = run_index * TR
+        for run_location in run_index:
+            ax.axvline(run_location, color="yellow")
 
     ax.set_xlim((0, ntsteps - 1))
     ax.set_ylim(0, ymax)

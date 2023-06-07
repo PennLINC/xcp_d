@@ -233,7 +233,8 @@ def collect_data(
             "suffix": "xfm",
         },
     }
-    if input_type == "hcp":
+    if input_type in ("hcp", "dcan"):
+        # HCP/DCAN data have anats only in standard space
         queries["t1w"]["space"] = "MNI152NLin6Asym"
         queries["t2w"]["space"] = "MNI152NLin6Asym"
         queries["anat_dseg"]["desc"] = "aparcaseg"
