@@ -55,7 +55,7 @@ def download_test_data(dset, data_dir=None):
 
     os.makedirs(out_dir, exist_ok=True)
     with requests.get(URLS[dset], stream=True) as req:
-        with tarfile.open(fileobj=GzipFile(fileobj=BytesIO(req.content))) as t:
+        with tarfile.open(fileobj=BytesIO(req.content)) as t:
             t.extractall(out_dir)
 
     return out_dir
