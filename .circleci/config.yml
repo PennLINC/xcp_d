@@ -2,12 +2,14 @@ version: 2.1
 orbs:
   codecov: codecov/codecov@3.2.4
 
-.dockersetup: &dockersetup
+.dockersetup:
+  &dockersetup
   docker:
     - image: pennlinc/xcp_d_build:0.0.6rc15
   working_directory: /src/xcp_d
 
-runinstall: &runinstall
+runinstall:
+  &runinstall
   name: Install xcp_d
   command: |
     VERSION=0+build
@@ -48,7 +50,9 @@ jobs:
       - save_cache:
           key: ds001419-fmriprep-05
           paths:
-              - /src/xcp_d/.circleci/data/ds001419-fmriprep
+            - /src/xcp_d/.circleci/data/ds001419-fmriprep
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   download_data_fmriprepwithoutfreesurfer:
     <<: *dockersetup
@@ -65,7 +69,7 @@ jobs:
       - save_cache:
           key: fmriprepwithoutfreesurfer-01
           paths:
-              - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
+            - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
 
   download_data_nibabies:
     <<: *dockersetup
@@ -82,7 +86,7 @@ jobs:
       - save_cache:
           key: nibabies-01
           paths:
-              - /src/xcp_d/.circleci/data/nibabies_test_data
+            - /src/xcp_d/.circleci/data/nibabies_test_data
 
   nifti_without_freesurfer:
     <<: *dockersetup
@@ -111,7 +115,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage/
           paths:
-              - .coverage.fmriprep_without_freesurfer
+            - .coverage.fmriprep_without_freesurfer
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/xcp_d/
 
@@ -142,7 +146,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage/
           paths:
-              - .coverage.ds001419_nifti
+            - .coverage.ds001419_nifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_nifti/xcp_d/
 
@@ -173,7 +177,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage/
           paths:
-              - .coverage.nibabies
+            - .coverage.nibabies
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_nibabies/xcp_d/
 
@@ -204,7 +208,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage
           paths:
-              - .coverage.ds001419_cifti
+            - .coverage.ds001419_cifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
 
@@ -235,7 +239,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage
           paths:
-              - .coverage.ds001419_cifti_t2wonly
+            - .coverage.ds001419_cifti_t2wonly
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti_t2wonly/xcp_d/
 
@@ -268,7 +272,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage
           paths:
-              - .coverage.pytests
+            - .coverage.pytests
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/
 
@@ -305,8 +309,8 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-         version: 19.03.13
-         docker_layer_caching: true
+          version: 19.03.13
+          docker_layer_caching: true
       - run:
           name: Build Docker image
           no_output_timeout: 3h
