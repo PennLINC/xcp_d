@@ -24,10 +24,12 @@ def get_nodes(wf_results):
 def download_test_data(dset, data_dir=None):
     """Download test data."""
     URLS = {
-        "sub01": "https://upenn.box.com/shared/static/yuywkmlru36tgpy2va47uqudu0fdpgy7.xz",
-        "nibabies": "https://upenn.box.com/shared/static/a4evzxqynozyeyxl1l807kr17oqfufsq.xz",
+        "fmriprepwithoutfreesurfer": (
+            "https://upenn.box.com/shared/static/seyp1cu9w5v3ds6iink37hlsa217yge1.tar.gz"
+        ),
+        "nibabies": "https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz",
         "ds001419-fmriprep": (
-            "https://upenn.box.com/shared/static/mqedc972yp9f4gsuy2yq0fqbn1d4qum5.xz"
+            "https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz"
         ),
     }
     if dset == "*":
@@ -55,7 +57,7 @@ def download_test_data(dset, data_dir=None):
 
     os.makedirs(out_dir, exist_ok=True)
     with requests.get(URLS[dset], stream=True) as req:
-        with tarfile.open(fileobj=BytesIO(req.content)) as t:
+        with tarfile.open(fileobj=GzipFile(fileobj=BytesIO(req.content))) as t:
             t.extractall(out_dir)
 
     return out_dir
