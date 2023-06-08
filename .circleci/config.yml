@@ -38,7 +38,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Download ds001419-fmriprep test data
@@ -46,7 +46,7 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data ds001419-fmriprep
       - save_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
           paths:
               - /src/xcp_d/.circleci/data/ds001419-fmriprep
 
@@ -55,7 +55,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: fmriprepwithoutfreesurfer-02
+          key: fmriprepwithoutfreesurfer-03
       - run: *runinstall
       - run:
           name: Download fmriprepwithoutfreesurfer test data
@@ -63,7 +63,7 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data fmriprepwithoutfreesurfer
       - save_cache:
-          key: fmriprepwithoutfreesurfer-02
+          key: fmriprepwithoutfreesurfer-03
           paths:
               - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
 
@@ -72,7 +72,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: nibabies-02
+          key: nibabies-03
       - run: *runinstall
       - run:
           name: Download nibabies test data
@@ -80,7 +80,7 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data nibabies
       - save_cache:
-          key: nibabies-02
+          key: nibabies-03
           paths:
               - /src/xcp_d/.circleci/data/nibabies
 
@@ -97,7 +97,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: fmriprepwithoutfreesurfer-02
+          key: fmriprepwithoutfreesurfer-03
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti without freesurfer
@@ -128,7 +128,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -159,7 +159,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: nibabies-02
+          key: nibabies-03
       - run: *runinstall
       - run:
           name: Run full xcp_d on nibabies
@@ -190,7 +190,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -221,7 +221,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -252,11 +252,11 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-06
+          key: ds001419-fmriprep-07
       - restore_cache:
-          key: fmriprepwithoutfreesurfer-02
+          key: fmriprepwithoutfreesurfer-03
       - restore_cache:
-          key: nibabies-02
+          key: nibabies-03
       - run: *runinstall
       - run:
           name: Run pytest on the tests directory

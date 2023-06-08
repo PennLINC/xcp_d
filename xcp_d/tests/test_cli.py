@@ -301,6 +301,7 @@ def test_nibabies(data_dir, output_dir, working_dir):
     test_name = "test_nibabies"
 
     dataset_dir = download_test_data("nibabies", data_dir)
+    dataset_dir = os.path.join(dataset_dir, "derivatives", "nibabies")
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 

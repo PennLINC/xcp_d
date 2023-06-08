@@ -55,10 +55,10 @@ def download_test_data(dset, data_dir=None):
     else:
         LOGGER.info(f"Downloading {dset} to {out_dir}")
 
-    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
     with requests.get(URLS[dset], stream=True) as req:
         with tarfile.open(fileobj=GzipFile(fileobj=BytesIO(req.content))) as t:
-            t.extractall(data_dir)
+            t.extractall(out_dir)
 
     return out_dir
 
