@@ -2,12 +2,14 @@ version: 2.1
 orbs:
   codecov: codecov/codecov@3.2.4
 
-.dockersetup: &dockersetup
+.dockersetup:
+  &dockersetup
   docker:
     - image: pennlinc/xcp_d_build:0.0.6rc15
   working_directory: /src/xcp_d
 
-runinstall: &runinstall
+runinstall:
+  &runinstall
   name: Install xcp_d
   command: |
     VERSION=0+build
@@ -38,7 +40,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: ds001419-fmriprep-05
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Download ds001419-fmriprep test data
@@ -46,33 +48,35 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data ds001419-fmriprep
       - save_cache:
-          key: ds001419-fmriprep-05
+          key: ds001419-fmriprep-07
           paths:
-              - /src/xcp_d/.circleci/data/ds001419-fmriprep
+            - /src/xcp_d/.circleci/data/ds001419-fmriprep
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   download_data_fmriprepwithoutfreesurfer:
     <<: *dockersetup
     steps:
       - checkout
       - restore_cache:
-          key: fmriprepwithoutfreesurfer-01
+          key: fmriprepwithoutfreesurfer-03
       - run: *runinstall
       - run:
           name: Download fmriprepwithoutfreesurfer test data
           command: |
             cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data sub01
+            python get_data.py $PWD/data fmriprepwithoutfreesurfer
       - save_cache:
-          key: fmriprepwithoutfreesurfer-01
+          key: fmriprepwithoutfreesurfer-03
           paths:
-              - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
+            - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
 
   download_data_nibabies:
     <<: *dockersetup
     steps:
       - checkout
       - restore_cache:
-          key: nibabies-01
+          key: nibabies-03
       - run: *runinstall
       - run:
           name: Download nibabies test data
@@ -80,9 +84,9 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data nibabies
       - save_cache:
-          key: nibabies-01
+          key: nibabies-03
           paths:
-              - /src/xcp_d/.circleci/data/nibabies_test_data
+              - /src/xcp_d/.circleci/data/nibabies
 
   nifti_without_freesurfer:
     <<: *dockersetup
@@ -97,7 +101,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: fmriprepwithoutfreesurfer-01
+          key: fmriprepwithoutfreesurfer-03
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti without freesurfer
@@ -111,7 +115,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage/
           paths:
-              - .coverage.fmriprep_without_freesurfer
+            - .coverage.fmriprep_without_freesurfer
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/xcp_d/
 
@@ -128,7 +132,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-05
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -142,7 +146,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage/
           paths:
-              - .coverage.ds001419_nifti
+            - .coverage.ds001419_nifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_nifti/xcp_d/
 
@@ -159,7 +163,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: nibabies-01
+          key: nibabies-03
       - run: *runinstall
       - run:
           name: Run full xcp_d on nibabies
@@ -173,7 +177,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage/
           paths:
-              - .coverage.nibabies
+            - .coverage.nibabies
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_nibabies/xcp_d/
 
@@ -190,7 +194,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-05
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -204,7 +208,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage
           paths:
-              - .coverage.ds001419_cifti
+            - .coverage.ds001419_cifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
 
@@ -221,7 +225,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-05
+          key: ds001419-fmriprep-07
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -235,7 +239,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage
           paths:
-              - .coverage.ds001419_cifti_t2wonly
+            - .coverage.ds001419_cifti_t2wonly
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti_t2wonly/xcp_d/
 
@@ -252,11 +256,11 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-05
+          key: ds001419-fmriprep-07
       - restore_cache:
-          key: fmriprepwithoutfreesurfer-01
+          key: fmriprepwithoutfreesurfer-03
       - restore_cache:
-          key: nibabies-01
+          key: nibabies-03
       - run: *runinstall
       - run:
           name: Run pytest on the tests directory
@@ -268,7 +272,7 @@ jobs:
       - persist_to_workspace:
           root: /src/coverage
           paths:
-              - .coverage.pytests
+            - .coverage.pytests
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/
 
@@ -305,8 +309,8 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-         version: 19.03.13
-         docker_layer_caching: true
+          version: 19.03.13
+          docker_layer_caching: true
       - run:
           name: Build Docker image
           no_output_timeout: 3h
