@@ -1,6 +1,8 @@
 xcp_d/tests/data/test_data
 
 # local path for tests
+xcp_d/tests/pytests
+xcp_d/tests/test_data
 xcp_d/tests/data/test_data
 .circleci/local_xcpd_path.txt
 

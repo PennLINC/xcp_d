@@ -60,10 +60,10 @@ def datasets(data_dir):
     """Locate downloaded datasets."""
     dsets = {}
     dsets["ds001419"] = os.path.join(data_dir, "ds001419-fmriprep")
-    dsets["nibabies"] = os.path.join(data_dir, "nibabies_test_data/derivatives/nibabies")
+    dsets["nibabies"] = os.path.join(data_dir, "nibabies/derivatives/nibabies")
     dsets["fmriprep_without_freesurfer"] = os.path.join(
         data_dir,
-        "fmriprepwithoutfreesurfer/fmriprep",
+        "fmriprepwithoutfreesurfer",
     )
     return dsets
 

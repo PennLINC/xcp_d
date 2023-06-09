@@ -13,6 +13,7 @@ xcp_d/space-MNI152NLin2009cAsym_atlas-Schaefer817_res-2_dseg.nii.gz
 xcp_d/space-MNI152NLin2009cAsym_atlas-Schaefer917_res-2_dseg.nii.gz
 xcp_d/space-MNI152NLin2009cAsym_atlas-subcortical_res-2_dseg.nii.gz
 xcp_d/sub-01.html
+xcp_d/sub-01_executive_summary.html
 xcp_d/logs
 xcp_d/logs/CITATION.md
 xcp_d/sub-01

@@ -93,7 +93,6 @@ def generate_reports(
     run_uuid,
     config=None,
     packagename=None,
-    dcan_qc=False,
 ):
     """Execute run_reports on a list of subjects.
 
@@ -111,8 +110,6 @@ def generate_reports(
         Configuration file.
     packagename : None or :obj:`str`, optional
         The name of the package.
-    dcan_qc : :obj:`bool`, optional
-        Whether to perform DCAN QC steps or not. Default is False.
     """
     # reportlets_dir = None
     if work_dir is not None:
@@ -143,23 +140,22 @@ def generate_reports(
             error_list,
         )
     else:
-        if dcan_qc:
-            LOGGER.info("Generating executive summary.")
-            for subject_label in subject_list:
-                brainplotfile = glob.glob(
-                    os.path.join(
-                        output_dir,
-                        f"xcp_d/sub-{subject_label}",
-                        "figures/*_bold.svg",
-                    ),
-                )[0]
-                exsumm = ExecutiveSummary(
-                    xcpd_path=os.path.join(output_dir, "xcp_d"),
-                    subject_id=subject_label,
-                    session_id=get_entity(brainplotfile, "ses"),
-                )
-                exsumm.collect_inputs()
-                exsumm.generate_report()
+        LOGGER.info("Generating executive summary.")
+        for subject_label in subject_list:
+            brainplotfile = glob.glob(
+                os.path.join(
+                    output_dir,
+                    f"xcp_d/sub-{subject_label}",
+                    "figures/*_bold.svg",
+                ),
+            )[0]
+            exsumm = ExecutiveSummary(
+                xcpd_path=os.path.join(output_dir, "xcp_d"),
+                subject_id=subject_label,
+                session_id=get_entity(brainplotfile, "ses"),
+            )
+            exsumm.collect_inputs()
+            exsumm.generate_report()
 
         print("Reports generated successfully")
     return errno
