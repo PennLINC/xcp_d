@@ -702,13 +702,12 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
     orig_dset_description = os.path.join(fmri_dir, "dataset_description.json")
     if not os.path.isfile(orig_dset_description):
-        dset_desc = {}
+        raise FileNotFoundError(f"Dataset description DNE: {orig_dset_description}")
 
-    else:
-        with open(orig_dset_description, "r") as fo:
-            dset_desc = json.load(fo)
+    with open(orig_dset_description, "r") as fo:
+        dset_desc = json.load(fo)
 
-        assert dset_desc["DatasetType"] == "derivative"
+    assert dset_desc["DatasetType"] == "derivative"
 
     # Update dataset description
     dset_desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
@@ -723,6 +722,7 @@ def write_dataset_description(fmri_dir, xcpd_dir):
     )
     dset_desc["GeneratedBy"] = generated_by
     dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
+    dset_desc["DatasetType"] = "derivative"
 
     xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
