@@ -61,6 +61,7 @@ def collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
         "{hemi}.curvature.32k_fs_LR.shape.gii": "hemi-{hemi}_curv.shape.gii",
         "{hemi}.sulc.32k_fs_LR.shape.gii": "hemi-{hemi}_sulc.shape.gii",
         "{hemi}.MyelinMap.32k_fs_LR.func.gii": "hemi-{hemi}_myelin.func.gii",
+        "{hemi}.SmoothedMyelinMap.32k_fs_LR.func.gii": "hemi-{hemi}_desc-smoothed_myelin.func.gii",
     }
 
     fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
