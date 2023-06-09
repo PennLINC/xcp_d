@@ -32,7 +32,6 @@ class ExecutiveSummary(object):
             self.session_id = None
 
         self.layout = BIDSLayout(xcpd_path, validate=False, derivatives=True)
-        raise Exception(self.layout.config)
 
     def write_html(self, document, filename):
         """Write an html document to a filename.
