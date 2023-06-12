@@ -8,12 +8,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import (
-    CiftiConnect,
-    ConnectPlot,
-    GroupSurfaces,
-    NiftiConnect,
-)
+from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiCreateDenseScalar,
@@ -613,6 +608,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 def init_parcellate_surfaces_wf(
     output_dir,
     name_source,
+    files_to_parcellate,
     min_coverage,
     mem_gb,
     omp_nthreads,
@@ -620,6 +616,15 @@ def init_parcellate_surfaces_wf(
 ):
     """Parcellate surface files."""
     workflow = Workflow(name=name)
+
+    SURF_DESCS = {
+        "sulcal_depth": "sulc",
+        "sulcal_curv": "curv",
+        "cortical_thickness": "thickness",
+    }
+
+    # Determine cohort (if there is one) in the original data
+    cohort = get_entity(name_source, "cohort")
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -638,120 +643,98 @@ def init_parcellate_surfaces_wf(
         name="inputnode",
     )
 
-    # Group hemispheres and filter out missing data.
-    group_surfaces = pe.Node(
-        GroupSurfaces(),
-        name="group_surfaces",
-    )
+    for file_to_parcellate in files_to_parcellate:
+        # Convert giftis to ciftis
+        convert_giftis_to_cifti = pe.Node(
+            CiftiCreateDenseScalar(),
+            name=f"convert_{file_to_parcellate}_to_cifti",
+            n_procs=omp_nthreads,
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, group_surfaces, [
-            ("lh_sulcal_depth", "lh_sulcal_depth"),
-            ("rh_sulcal_depth", "rh_sulcal_depth"),
-            ("lh_sulcal_curv", "lh_sulcal_curv"),
-            ("rh_sulcal_curv", "rh_sulcal_curv"),
-            ("lh_cortical_thickness", "lh_cortical_thickness"),
-            ("rh_cortical_thickness", "rh_cortical_thickness"),
+        # fmt:off
+        workflow.connect([
+            (inputnode, convert_giftis_to_cifti, [
+                (f"lh_{file_to_parcellate}", "left_metric"),
+                (f"rh_{file_to_parcellate}", "right_metric"),
+            ]),
         ])
-    ])
-    # fmt:on
+        # fmt:on
 
-    # Determine cohort (if there is one) in the original data
-    cohort = get_entity(name_source, "cohort")
+        resample_atlas_to_surface = pe.MapNode(
+            CiftiCreateDenseFromTemplate(),
+            name=f"resample_atlas_to_{file_to_parcellate}",
+            n_procs=omp_nthreads,
+            iterfield=["label"],
+        )
 
-    # Convert giftis to ciftis
-    convert_giftis_to_cifti = pe.MapNode(
-        CiftiCreateDenseScalar(),
-        name="convert_giftis_to_cifti",
-        n_procs=omp_nthreads,
-        iterfield=["left_metric", "right_metric"],
-    )
+        # fmt:off
+        workflow.connect([
+            (inputnode, resample_atlas_to_surface, [("atlas_files", "label")]),
+            (convert_giftis_to_cifti, resample_atlas_to_surface, [("out_file", "template_cifti")]),
+        ])
+        # fmt:on
 
-    # fmt:off
-    workflow.connect([
-        (group_surfaces, convert_giftis_to_cifti, [
-            ("lh_files", "left_metric"),
-            ("rh_files", "right_metric"),
-        ]),
-    ])
-    # fmt:on
+        parcellate_atlas = pe.MapNode(
+            CiftiParcellate(
+                direction="COLUMN",
+                only_numeric=True,
+                out_file="parcellated_atlas.pscalar.nii",
+            ),
+            name=f"parcellate_atlas_for_{file_to_parcellate}",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+            iterfield=["in_file", "atlas_label"],
+        )
 
-    resample_atlas_to_surface = pe.MapNode(
-        CiftiCreateDenseFromTemplate(),
-        name="resample_atlas_to_surface",
-        n_procs=omp_nthreads,
-        iterfield=["label", "template_cifti"],
-    )
+        # fmt:off
+        workflow.connect([
+            (convert_giftis_to_cifti, parcellate_atlas, [("out_file", "in_file")]),
+            (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
+        ])
+        # fmt:on
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, resample_atlas_to_surface, [("atlas_files", "label")]),
-        (convert_giftis_to_cifti, resample_atlas_to_surface, [("out_file", "template_cifti")]),
-    ])
-    # fmt:on
+        # Parcellate the ciftis
+        parcellate_surface = pe.MapNode(
+            CiftiConnect(min_coverage=min_coverage, correlate=False),
+            mem_gb=mem_gb,
+            name=f"parcellate_{file_to_parcellate}",
+            n_procs=omp_nthreads,
+            iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+        )
 
-    parcellate_atlas = pe.MapNode(
-        CiftiParcellate(
-            direction="COLUMN",
-            only_numeric=True,
-            out_file="parcellated_atlas.pscalar.nii",
-        ),
-        name="parcellate_atlas",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=["in_file", "atlas_label"],
-    )
+        # fmt:off
+        workflow.connect([
+            (inputnode, parcellate_surface, [
+                ("atlas_files", "atlas_file"),
+                ("atlas_labels_files", "atlas_labels"),
+            ]),
+            (convert_giftis_to_cifti, parcellate_surface, [("out_file", "data_file")]),
+            (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
+        ])
+        # fmt:on
 
-    # fmt:off
-    workflow.connect([
-        (convert_giftis_to_cifti, parcellate_atlas, [("out_file", "in_file")]),
-        (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
-    ])
-    # fmt:on
+        # Write out the parcellated files
+        ds_parcellated_surface = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                desc=SURF_DESCS[file_to_parcellate],
+                suffix="timeseries",
+                extension=".tsv",
+            ),
+            name=f"ds_parcellated_{file_to_parcellate}",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas"],
+        )
 
-    # Parcellate the ciftis
-    parcellate_surface = pe.MapNode(
-        CiftiConnect(min_coverage=min_coverage, correlate=False),
-        mem_gb=mem_gb,
-        name="parcellate_surface",
-        n_procs=omp_nthreads,
-        iterfield=["atlas_labels", "atlas_file", "data_file", "parcellated_atlas"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, parcellate_surface, [
-            ("atlas_files", "atlas_file"),
-            ("atlas_labels_files", "atlas_labels"),
-        ]),
-        (convert_giftis_to_cifti, parcellate_surface, [("out_file", "data_file")]),
-        (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
-    ])
-    # fmt:on
-
-    # Write out the parcellated files
-    ds_parcellated_surface = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            dismiss_entities=["desc"],
-            cohort=cohort,
-            suffix="timeseries",
-            extension=".tsv",
-        ),
-        name="ds_parcellated_surface",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["atlas", "in_file", "desc"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_parcellated_surface, [("atlas_names", "atlas")]),
-        (group_surfaces, ds_parcellated_surface, [("descriptions", "desc")]),
-        (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_parcellated_surface, [("atlas_names", "atlas")]),
+            (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
+        ])
+        # fmt:on
 
     return workflow
