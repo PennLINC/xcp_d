@@ -352,7 +352,6 @@ def _run_and_generate(
         fmri_dir=data_dir,
         work_dir=work_dir,
         output_dir=out_dir,
-        input_type=input_type,
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
