@@ -366,7 +366,7 @@ def init_subject_wf(
     t2w_available = subj_data["t2w"] is not None
     primary_anat = "T1w" if subj_data["t1w"] else "T2w"
 
-    mesh_available, shape_available, standard_space_mesh, surface_data = collect_surface_data(
+    mesh_available, morphometry_files, standard_space_mesh, surface_data = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
     )
@@ -538,7 +538,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             dcan_qc=dcan_qc,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
-            shape_available=shape_available,
+            morphometry_files=morphometry_files,
             process_surfaces=process_surfaces,
             output_dir=output_dir,
             t1w_available=t1w_available,
@@ -589,27 +589,30 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])
             # fmt:on
 
-        if shape_available:
+        if morphometry_files:
             # TODO: Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 output_dir=output_dir,
                 name_source=preproc_files[0],
+                files_to_parcellate=morphometry_files,
                 min_coverage=min_coverage,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 name="parcellate_surfaces_wf",
             )
 
+            for morphometry_file in morphometry_files:
+                # fmt:off
+                workflow.connect([
+                    (inputnode, parcellate_surfaces_wf, [
+                        (f"lh_{morphometry_file}", f"inputnode.lh_{morphometry_file}"),
+                        (f"rh_{morphometry_file}", f"inputnode.rh_{morphometry_file}"),
+                    ]),
+                ])
+                # fmt:oon
+
             # fmt:off
             workflow.connect([
-                (inputnode, parcellate_surfaces_wf, [
-                    ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-                    ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-                    ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-                    ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-                    ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-                    ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
-                ]),
                 (load_atlases_wf, parcellate_surfaces_wf, [
                     ("outputnode.atlas_names", "inputnode.atlas_names"),
                     ("outputnode.atlas_files", "inputnode.atlas_files"),
