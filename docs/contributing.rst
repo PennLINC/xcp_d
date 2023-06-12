@@ -7,6 +7,11 @@ Contributing to *XCP-D*
 This guide describes the organization and preferred coding style for XCP-D,
 for prospective code contributors.
 
+.. important::
+
+   We ask all users and contributors to follow *XCP-D*'s
+   `Code of Conduct <https://github.com/PennLINC/xcp_d/blob/main/CODE_OF_CONDUCT.md>`_.
+
 Development in Docker is encouraged, for the sake of consistency and portability.
 By default, work should be built off of
 `pennlinc/xcp_d:unstable <https://hub.docker.com/r/pennlinc/xcp_d/>`_,
@@ -14,6 +19,82 @@ which tracks the ``main`` branch,
 or ``pennlinc/xcp_d:latest``,
 which tracks the latest release
 (see :doc:`installation` for the basic procedure for running).
+
+
+***********
+Style guide
+***********
+
+*XCP-D* is a Python library, primarily written as Nipype interfaces and workflows.
+As such, we follow a specific coding style adapted to both Python generally and Nipype
+specifically.
+
+*XCP-D* uses a number of ``flake8`` extensions to evaluate coding style,
+but the main ones are ``black`` and ``isort``.
+
+.. tip::
+
+   Please run ``isort`` and ``black`` on the ``XCP-D`` codebase before opening a pull request.
+
+   Also run ``flake8`` to check for any additional style issues.
+
+
+Workflow coding style
+=====================
+
+Workflows should largely be written just like other functions (which should go in ``xcp_d.utils``),
+except for a couple of elements.
+
+First, ``black`` tends to format workflow connections awkwardly, so contributors should add
+``# fmt:off`` before, and ``# fmt:on`` after, each workflow connection statement.
+
+Second, workflow connections should occur shortly after the associated nodes are defined,
+rather than all at once at the end of the function.
+
+Here is an example of a basic workflow, written in the preferred style for *XCP-D*.
+
+.. code-block:: python
+   from nipype.interfaces import utility as niu
+   from nipype.pipeline import engine as pe
+   from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+   def init_example_workflow_wf(name="example_workflow_wf"):
+      """Create an example workflow.
+
+      Parameters
+      ----------
+      name : str
+         Name of the workflow. Default is "example_workflow_wf".
+
+      Inputs
+      ------
+      a : str
+         Input a.
+      b : str
+         Input b.
+
+      Outputs
+      -------
+      a : str
+         Input a.
+      b : str
+         Input b.
+      """
+      workflow = LiterateWorkflow(name=name)
+
+      inputnode = pe.Node(niu.IdentityInterface(fields=["a", "b"]), name="inputnode")
+      outputnode = pe.Node(niu.IdentityInterface(fields=["a", "b"]), name="outputnode")
+
+      # fmt:off
+      workflow.connect([
+         (inputnode, outputnode, [
+            ("a", "a"),
+            ("b", "b"),
+         ]),
+      ])
+      # fmt:on
+
+      return workflow
 
 
 *************************************************
