@@ -1,5 +1,3 @@
-xcp_d/tests/data/test_data
-
 # local path for tests
 xcp_d/tests/pytests
 xcp_d/tests/test_data
