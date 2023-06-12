@@ -537,6 +537,11 @@ def collect_surface_data(layout, participant_label):
         shape_queries,
     )
     morphometry_files = [k for k, v in shape_files.items() if v is not None]
+    morphometry_files_reduced = [f for f in morphometry_files if f.startswith("lh_")]
+    morphometry_files_reduced = [
+        f for f in morphometry_files_reduced if f.replace("lh_", "rh_") in morphometry_files
+    ]
+    morphometry_files_reduced = [f.replace("lh_", "") for f in morphometry_files_reduced]
 
     surface_files = {**mesh_files, **shape_files}
 
@@ -548,7 +553,7 @@ def collect_surface_data(layout, participant_label):
         ),
     )
 
-    return mesh_available, morphometry_files, standard_space_mesh, surface_files
+    return mesh_available, morphometry_files_reduced, standard_space_mesh, surface_files
 
 
 @fill_doc
