@@ -61,6 +61,15 @@ Here is an example of a basic workflow, written in the preferred style for *XCP-
    def init_example_workflow_wf(name="example_workflow_wf"):
       """Create an example workflow.
 
+      Workflow Graph
+         .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.example import init_example_workflow_wf
+
+            wf = init_example_workflow_wf(name="example_workflow_wf")
+
       Parameters
       ----------
       name : str
