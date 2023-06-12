@@ -248,6 +248,8 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
     os.makedirs(custom_confounds_dir, exist_ok=True)
 
+    test_data_dir = get_test_data_path()
+
     # Create custom confounds folder
     for run in [1, 2]:
         out_file = f"sub-01_task-mixedgamblestask_run-{run}_desc-confounds_timeseries.tsv"
@@ -275,10 +277,11 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         f"--custom_confounds={custom_confounds_dir}"
     )
 
+    run_command(cmd)
+
     # Run combine-qc too
     xcpd_dir = os.path.join(out_dir, "xcp_d")
-    cmd = f"cd {xcpd_dir};xcp_d-combineqc {xcpd_dir} summary"
-    run_command(cmd)
+    combineqc.main([xcpd_dir, "summary"])
 
     output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
     check_generated_files(out_dir, output_list_file)
@@ -297,6 +300,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
 def test_nibabies(data_dir, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
     test_name = "test_nibabies"
+    input_type = "nibabies"
 
     dataset_dir = download_test_data("nibabies", data_dir)
     dataset_dir = os.path.join(dataset_dir, "derivatives", "nibabies")
@@ -344,10 +348,11 @@ def _run_and_generate(
 
     xcpd_wf.run()
     generate_reports(
-        subject_list=["01"],
-        fmri_dir=dataset_dir,
+        subject_list=participant_label,
+        fmri_dir=data_dir,
         work_dir=work_dir,
         output_dir=out_dir,
+        input_type=input_type,
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
@@ -356,4 +361,4 @@ def _run_and_generate(
     output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
-    check_affines(dataset_dir, out_dir, input_type="nibabies")
+    check_affines(data_dir, out_dir, input_type=input_type)
