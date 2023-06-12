@@ -54,6 +54,7 @@ rather than all at once at the end of the function.
 Here is an example of a basic workflow, written in the preferred style for *XCP-D*.
 
 .. code-block:: python
+
    from nipype.interfaces import utility as niu
    from nipype.pipeline import engine as pe
    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
