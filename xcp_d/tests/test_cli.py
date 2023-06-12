@@ -348,7 +348,7 @@ def _run_and_generate(
 
     xcpd_wf.run()
     generate_reports(
-        subject_list=participant_label,
+        subject_list=[participant_label],
         fmri_dir=data_dir,
         work_dir=work_dir,
         output_dir=out_dir,
