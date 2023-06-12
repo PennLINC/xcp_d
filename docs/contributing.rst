@@ -167,6 +167,11 @@ we strongly recommend running at least some tests locally, to make sure your pro
 run selected tests.
 Please use that script to run some tests locally before opening your PR.
 
+If all tests pass, this is a strong indication that your proposed changes do not introduce bugs.
+However, we strongly recommend reviewing the output files- especially the HTML reports-
+from the integration tests to see how your proposed changes affect the primary outputs from
+*XCP-D*.
+
 
 ********************************
 Adding or modifying dependencies
