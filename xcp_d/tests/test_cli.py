@@ -68,7 +68,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         packagename="xcp_d",
     )
 
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_ds001419_nifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     check_affines(dataset_dir, out_dir, input_type="nifti")
@@ -139,7 +139,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         packagename="xcp_d",
     )
 
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     check_affines(dataset_dir, out_dir, input_type="cifti")
@@ -226,7 +226,7 @@ def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
         packagename="xcp_d",
     )
 
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_t2wonly_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     check_affines(dataset_dir, out_dir, input_type="cifti")
@@ -283,7 +283,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     xcpd_dir = os.path.join(out_dir, "xcp_d")
     combineqc.main([xcpd_dir, "summary"])
 
-    output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_fmriprep_without_freesurfer_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     check_affines(dataset_dir, out_dir, input_type="nifti")
