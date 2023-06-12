@@ -536,7 +536,7 @@ def collect_surface_data(layout, participant_label):
         participant_label,
         shape_queries,
     )
-    morphometry_files = [k for k, v in shape_files if v is not None]
+    morphometry_files = [k for k, v in shape_files.items() if v is not None]
 
     surface_files = {**mesh_files, **shape_files}
 
