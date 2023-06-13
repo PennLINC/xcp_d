@@ -89,6 +89,68 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
 
+    # Perform the resampling and parcellation done by init_load_atlases_wf
+    warped_atlases = []
+    for atlas_file in atlas_files:
+        get_transforms_to_bold_space = pe.Node(
+            Function(
+                input_names=["bold_file"],
+                output_names=["transformfile"],
+                function=get_std2bold_xfms,
+            ),
+            name="get_transforms_to_bold_space",
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, get_transforms_to_bold_space, [("name_source", "bold_file")]),
+        ])
+        # fmt:on
+
+        # Using the generated transforms, apply them to get everything in the correct MNI form
+        warp_atlases_to_bold_space = pe.MapNode(
+            ApplyTransforms(
+                interpolation="GenericLabel",
+                input_image_type=0,
+                dimension=3,
+            ),
+            name="warp_atlases_to_bold_space",
+            iterfield=["input_image"],
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+        )
+
+        warped_atlases.append(parcellate_atlas_results.outputs.out_file)
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, warp_atlases_to_bold_space, [("bold_file", "reference_image")]),
+            (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
+            (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
+                ("transformfile", "transforms"),
+            ]),
+            (warp_atlases_to_bold_space, outputnode, [("output_image", "atlas_files")]),
+            (warp_atlases_to_bold_space, atlas_buffer, [("output_image", "atlas_file")]),
+        ])
+        # fmt:on
+
+        resample_atlas_to_data = CiftiCreateDenseFromTemplate(
+            template_cifti=bold_file,
+            label=atlas_file,
+        )
+        resample_results = resample_atlas_to_data.run(cwd=tmpdir)
+
+        parcellate_atlas = CiftiParcellate(
+            direction="COLUMN",
+            only_numeric=True,
+            out_file="parcellated_atlas.pscalar.nii",
+            atlas_label=atlas_file,
+            in_file=resample_results.outputs.cifti_out,
+        )
+        parcellate_atlas_results = parcellate_atlas.run(cwd=tmpdir)
+
+        parcellated_atlases.append(parcellate_atlas_results.outputs.out_file)
+
     # Let's define the inputs and create the workflow
     connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=tmpdir,
