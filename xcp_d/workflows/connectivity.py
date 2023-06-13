@@ -607,7 +607,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
 def init_parcellate_surfaces_wf(
     output_dir,
-    name_source,
     files_to_parcellate,
     min_coverage,
     mem_gb,
@@ -622,9 +621,6 @@ def init_parcellate_surfaces_wf(
         "sulcal_curv": "curv",
         "cortical_thickness": "thickness",
     }
-
-    # Determine cohort (if there is one) in the original data
-    cohort = get_entity(name_source, "cohort")
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -730,9 +726,7 @@ def init_parcellate_surfaces_wf(
         ds_parcellated_surface = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                source_file=name_source,
-                dismiss_entities=["desc"],
-                cohort=cohort,
+                dismiss_entities=["hemi", "desc"],
                 desc=SURF_DESCS[file_to_parcellate],
                 suffix="timeseries",
                 extension=".tsv",
@@ -745,6 +739,7 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
+            (inputnode, ds_parcellated_surface, [(f"lh_{file_to_parcellate}", "source_file")]),
             (atlas_name_grabber, ds_parcellated_surface, [("atlas_names", "atlas")]),
             (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
         ])
