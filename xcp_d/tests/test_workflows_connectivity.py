@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
@@ -149,6 +150,26 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
 
+    # Perform the resampling and parcellation done by init_load_atlases_wf
+    parcellated_atlases = []
+    for atlas_file in atlas_files:
+        resample_atlas_to_data = CiftiCreateDenseFromTemplate(
+            template_cifti=bold_file,
+            label=atlas_file,
+        )
+        resample_results = resample_atlas_to_data.run(cwd=tmpdir)
+
+        parcellate_atlas = CiftiParcellate(
+            direction="COLUMN",
+            only_numeric=True,
+            out_file="parcellated_atlas.pscalar.nii",
+            atlas_label=atlas_file,
+            in_file=resample_results.outputs.cifti_out,
+        )
+        parcellate_atlas_results = parcellate_atlas.run(cwd=tmpdir)
+
+        parcellated_atlases.append(parcellate_atlas_results.outputs.out_file)
+
     # Create the node and a tmpdir to write its results out to
     connectivity_wf = init_functional_connectivity_cifti_wf(
         output_dir=tmpdir,
@@ -164,6 +185,7 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.atlas_names = atlas_names
     connectivity_wf.inputs.inputnode.atlas_files = atlas_files
     connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
+    connectivity_wf.inputs.inputnode.parcellated_atlas_files = parcellated_atlases
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
