@@ -310,7 +310,8 @@ def init_qc_report_wf(
     ds_qc_metadata = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
+            allowed_entities=["desc"],
+            desc="linc",
             suffix="qc",
             extension=".json",
         ),
