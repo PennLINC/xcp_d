@@ -593,7 +593,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 output_dir=output_dir,
-                name_source=preproc_files[0],
+                name_source=subj_data["t1w"] if primary_anat == "T1w" else subj_data["t2w"],
                 files_to_parcellate=morphometry_files,
                 min_coverage=min_coverage,
                 mem_gb=1,
