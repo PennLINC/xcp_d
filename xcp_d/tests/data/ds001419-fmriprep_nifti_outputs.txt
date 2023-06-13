@@ -1,4 +1,5 @@
 xcp_d/dataset_description.json
+xcp_d/desc-linc_qc.json
 xcp_d/space-MNI152NLin2009cAsym_atlas-Glasser_res-2_dseg.nii.gz
 xcp_d/space-MNI152NLin2009cAsym_atlas-Gordon_res-2_dseg.nii.gz
 xcp_d/space-MNI152NLin2009cAsym_atlas-Schaefer1017_res-2_dseg.nii.gz
