@@ -28,7 +28,44 @@ def init_load_atlases_wf(
     omp_nthreads,
     name="load_atlases_wf",
 ):
-    """Load atlases and warp them to the same space as the BOLD file."""
+    """Load atlases and warp them to the same space as the BOLD file.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.connectivity import init_load_atlases_wf
+
+            wf = init_load_atlases_wf(
+                output_dir=".",
+                cifti=True,
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="load_atlases_wf",
+            )
+
+    Parameters
+    ----------
+    %(output_dir)s
+    %(cifti)s
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "load_atlases_wf".
+
+    Inputs
+    ------
+    %(name_source)s
+    bold_file
+
+    Outputs
+    -------
+    atlas_names
+    atlas_files
+    atlas_labels_files
+    parcellated_atlas_files
+    """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
@@ -229,7 +266,6 @@ def init_functional_connectivity_nifti_wf(
     alff_available
     %(min_coverage)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "connectivity_wf".
 
@@ -240,14 +276,15 @@ def init_functional_connectivity_nifti_wf(
         clean bold after filtered out nuisscance and filtering
     alff
     reho
+    %(atlas_names)s
+    atlas_files
+    atlas_labels_files
 
     Outputs
     -------
-    %(atlas_names)s
-        Used for indexing ``timeseries`` and ``correlations``.
+    %(coverage)s
     %(timeseries)s
     %(correlations)s
-    %(coverage)s
     parcellated_alff
     parcellated_reho
     """
@@ -284,9 +321,9 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
+                "coverage",
                 "timeseries",
                 "correlations",
-                "coverage",
                 "parcellated_alff",
                 "parcellated_reho",
             ],
@@ -438,17 +475,19 @@ def init_functional_connectivity_cifti_wf(
         so no transformations will be applied to the data before parcellation.
     alff
     reho
+    %(atlas_names)s
+    atlas_files
+    atlas_labels_files
+    parcellated_atlas_files
 
     Outputs
     -------
-    %(atlas_names)s
-        Used for indexing ``timeseries`` and ``correlations``.
-    %(timeseries)s
+    %(coverage_ciftis)s
     %(timeseries_ciftis)s
-    %(correlations)s
     %(correlation_ciftis)s
     %(coverage)s
-    %(coverage_ciftis)s
+    %(timeseries)s
+    %(correlations)s
     parcellated_reho
     parcellated_alff
     """
@@ -491,7 +530,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "coverage",
                 "timeseries",
                 "correlations",
-                "connectplot",
                 "parcellated_alff",
                 "parcellated_reho",
             ],
@@ -604,6 +642,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     return workflow
 
 
+@fill_doc
 def init_parcellate_surfaces_wf(
     output_dir,
     files_to_parcellate,
@@ -612,7 +651,44 @@ def init_parcellate_surfaces_wf(
     omp_nthreads,
     name="parcellate_surfaces_wf",
 ):
-    """Parcellate surface files."""
+    """Parcellate surface files and write them out to the output directory.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.connectivity import init_parcellate_surfaces_wf
+
+            wf = init_parcellate_surfaces_wf(
+                output_dir=".",
+                files_to_parcellate=["sulc", "curv", "thickness"],
+                min_coverage=0.5,
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="parcellate_surfaces_wf",
+            )
+
+    Parameters
+    ----------
+    %(output_dir)s
+    files_to_parcellate : :obj:`list` of :obj:`str`
+        List of surface file types to parcellate (e.g., "sulcal_depth", "sulcal_curv",
+        "cortical_thickness").
+    %(min_coverage)s
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+
+    Inputs
+    ------
+    lh_sulcal_depth
+    rh_sulcal_depth
+    lh_sulcal_curv
+    rh_sulcal_curv
+    lh_cortical_thickness
+    rh_cortical_thickness
+    """
     workflow = Workflow(name=name)
 
     SURF_DESCS = {

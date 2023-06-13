@@ -15,14 +15,37 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows.connectivity import (
     init_functional_connectivity_cifti_wf,
     init_functional_connectivity_nifti_wf,
+    init_load_atlases_wf,
 )
 
 np.set_printoptions(threshold=sys.maxsize)
 
 
-def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_load_atlases_wf_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test init_load_atlases_wf with a nifti input."""
+    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
+
+    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
+
+    load_atlases_wf = init_load_atlases_wf(
+        output_dir=tmpdir,
+        cifti=False,
+        mem_gb=1,
+        omp_nthreads=1,
+        name="load_atlases_wf",
+    )
+    load_atlases_wf.inputs.inputnode.name_source = bold_file
+    load_atlases_wf.inputs.inputnode.bold_file = bold_file
+    load_atlases_wf.base_dir = tmpdir
+    load_atlases_wf_res = load_atlases_wf.run()
+    nodes = get_nodes(load_atlases_wf_res)
+    atlas_names = nodes["load_atlases_wf.outputnode"].get_output("atlas_names")
+    assert len(atlas_names) == 13
+
+
+def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test the nifti workflow."""
-    tmpdir = tmp_path_factory.mktemp("test_nifti_conn")
+    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
@@ -125,9 +148,9 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
 
 
-def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
-    tmpdir = tmp_path_factory.mktemp("test_cifti_conn")
+    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_cifti_wf")
 
     bold_file = fmriprep_with_freesurfer_data["cifti_file"]
     TR = _get_tr(nb.load(bold_file))
