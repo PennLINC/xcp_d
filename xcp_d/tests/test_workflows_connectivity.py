@@ -43,6 +43,28 @@ def test_init_load_atlases_wf_nifti(fmriprep_with_freesurfer_data, tmp_path_fact
     assert len(atlas_names) == 13
 
 
+def test_init_load_atlases_wf_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test init_load_atlases_wf with a cifti input."""
+    tmpdir = tmp_path_factory.mktemp("test_init_load_atlases_wf_cifti")
+
+    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
+
+    load_atlases_wf = init_load_atlases_wf(
+        output_dir=tmpdir,
+        cifti=True,
+        mem_gb=1,
+        omp_nthreads=1,
+        name="load_atlases_wf",
+    )
+    load_atlases_wf.inputs.inputnode.name_source = bold_file
+    load_atlases_wf.inputs.inputnode.bold_file = bold_file
+    load_atlases_wf.base_dir = tmpdir
+    load_atlases_wf_res = load_atlases_wf.run()
+    nodes = get_nodes(load_atlases_wf_res)
+    atlas_names = nodes["load_atlases_wf.outputnode"].get_output("atlas_names")
+    assert len(atlas_names) == 13
+
+
 def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test the nifti workflow."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
