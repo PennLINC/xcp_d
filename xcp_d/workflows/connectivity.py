@@ -15,7 +15,6 @@ from xcp_d.interfaces.workbench import (
     CiftiParcellate,
 )
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
-from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import cast_cifti_to_int16
 from xcp_d.utils.utils import get_std2bold_xfms
