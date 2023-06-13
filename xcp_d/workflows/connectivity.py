@@ -136,7 +136,7 @@ def init_load_atlases_wf(
         warp_atlases_to_bold_space = pe.MapNode(
             ApplyTransforms(
                 interpolation="GenericLabel",
-                input_image_type=0,
+                input_image_type=3,
                 dimension=3,
             ),
             name="warp_atlases_to_bold_space",

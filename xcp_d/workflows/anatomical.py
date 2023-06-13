@@ -219,7 +219,7 @@ def init_postprocess_anat_wf(
             ApplyTransforms(
                 num_threads=2,
                 interpolation="GenericLabel",
-                input_image_type=0,
+                input_image_type=3,
                 dimension=3,
             ),
             name="warp_anat_dseg_to_template",
@@ -244,7 +244,7 @@ def init_postprocess_anat_wf(
                 ApplyTransforms(
                     num_threads=2,
                     interpolation="LanczosWindowedSinc",
-                    input_image_type=0,
+                    input_image_type=3,
                     dimension=3,
                 ),
                 name="warp_t1w_to_template",
@@ -268,7 +268,7 @@ def init_postprocess_anat_wf(
                 ApplyTransforms(
                     num_threads=2,
                     interpolation="LanczosWindowedSinc",
-                    input_image_type=0,
+                    input_image_type=3,
                     dimension=3,
                 ),
                 name="warp_t2w_to_template",

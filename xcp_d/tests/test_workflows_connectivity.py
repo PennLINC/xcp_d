@@ -102,7 +102,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
             transforms=transforms_from_MNI152NLin6Asym,
             input_image=atlas_file,
             interpolation="GenericLabel",
-            input_image_type=0,
+            input_image_type=3,
             dimension=3,
         )
         warp_atlases_to_bold_space_results = warp_atlases_to_bold_space.run(cwd=tmpdir)
