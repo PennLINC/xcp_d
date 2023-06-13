@@ -719,10 +719,8 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, parcellate_surface, [
-                ("atlas_files", "atlas_file"),
-                ("atlas_labels_files", "atlas_labels"),
-            ]),
+            (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas_file")]),
+            (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
             (convert_giftis_to_cifti, parcellate_surface, [("out_file", "data_file")]),
             (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
         ])
