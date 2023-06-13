@@ -590,7 +590,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # fmt:on
 
         if morphometry_files:
-            # TODO: Parcellate the morphometry files
+            # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 output_dir=output_dir,
                 name_source=preproc_files[0],
@@ -610,16 +610,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])
                 # fmt:oon
-
-            # fmt:off
-            workflow.connect([
-                (load_atlases_wf, parcellate_surfaces_wf, [
-                    ("outputnode.atlas_names", "inputnode.atlas_names"),
-                    ("outputnode.atlas_files", "inputnode.atlas_files"),
-                    ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
-                ]),
-            ])
-            # fmt:on
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(

@@ -629,9 +629,6 @@ def init_parcellate_surfaces_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "atlas_names",
-                "atlas_files",
-                "atlas_labels_files",
                 "lh_sulcal_depth",
                 "rh_sulcal_depth",
                 "lh_sulcal_curv",
@@ -642,6 +639,24 @@ def init_parcellate_surfaces_wf(
         ),
         name="inputnode",
     )
+
+    atlas_name_grabber = pe.Node(
+        Function(output_names=["atlas_names"], function=get_atlas_names),
+        name="atlas_name_grabber",
+    )
+
+    # get CIFTI atlases via pkgrf
+    atlas_file_grabber = pe.MapNode(
+        Function(
+            input_names=["atlas_name"],
+            output_names=["atlas_file", "atlas_labels_file"],
+            function=get_atlas_cifti,
+        ),
+        name="atlas_file_grabber",
+        iterfield=["atlas_name"],
+    )
+
+    workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
 
     for file_to_parcellate in files_to_parcellate:
         # Convert giftis to ciftis
@@ -669,7 +684,7 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_atlas_to_surface, [("atlas_files", "label")]),
+            (atlas_file_grabber, resample_atlas_to_surface, [("atlas_file", "label")]),
             (convert_giftis_to_cifti, resample_atlas_to_surface, [("out_file", "template_cifti")]),
         ])
         # fmt:on
@@ -732,7 +747,7 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_parcellated_surface, [("atlas_names", "atlas")]),
+            (atlas_name_grabber, ds_parcellated_surface, [("atlas_names", "atlas")]),
             (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
         ])
         # fmt:on
