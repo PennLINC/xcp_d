@@ -120,7 +120,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
             n_procs=omp_nthreads,
         )
 
-        warped_atlases.append(parcellate_atlas_results.outputs.out_file)
+        warped_atlases.append(warp_atlases_to_bold_space_results.outputs.output_image)
 
         # fmt:off
         workflow.connect([
