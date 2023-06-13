@@ -371,7 +371,8 @@ class QCPlots(SimpleInterface):
                 "LongName": "Mean Relative Root Mean Squared",
                 "Description": (
                     "Average relative root mean squared calculated from motion parameters, "
-                    "after removal of dummy volumes and high-motion outliers."
+                    "after removal of dummy volumes and high-motion outliers. "
+                    "Relative in this case means 'relative to the previous scan'."
                 ),
                 "Units": "arbitrary",
             },
@@ -379,7 +380,8 @@ class QCPlots(SimpleInterface):
                 "LongName": "Maximum Relative Root Mean Squared",
                 "Description": (
                     "Maximum relative root mean squared calculated from motion parameters, "
-                    "after removal of dummy volumes and high-motion outliers."
+                    "after removal of dummy volumes and high-motion outliers. "
+                    "Relative in this case means 'relative to the previous scan'."
                 ),
                 "Units": "arbitrary",
             },
