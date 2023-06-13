@@ -122,7 +122,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
     connectivity_wf.inputs.inputnode.atlas_names = atlas_names
-    connectivity_wf.inputs.inputnode.atlas_files = atlas_files
+    connectivity_wf.inputs.inputnode.atlas_files = warped_atlases
     connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
@@ -131,7 +131,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     n_parcels, n_parcels_in_atlas = 1000, 1000
 
     # Let's find the correct workflow outputs
-    atlas_file = nodes["connectivity_wf.warp_atlases_to_bold_space"].get_output("output_image")[0]
+    atlas_file = warped_atlases[0]
     assert os.path.isfile(atlas_file)
     coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[0]
     assert os.path.isfile(coverage)
