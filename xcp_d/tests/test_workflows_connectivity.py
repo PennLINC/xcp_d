@@ -217,7 +217,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
     parcellated_atlases = []
-    for atlas_file in atlas_files:
+    for i_file, atlas_file in enumerate(atlas_files):
         resample_atlas_to_data = CiftiCreateDenseFromTemplate(
             template_cifti=bold_file,
             label=atlas_file,
@@ -227,7 +227,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
         parcellate_atlas = CiftiParcellate(
             direction="COLUMN",
             only_numeric=True,
-            out_file="parcellated_atlas.pscalar.nii",
+            out_file=f"parcellated_atlas_{i_file}.pscalar.nii",
             atlas_label=atlas_file,
             in_file=resample_results.outputs.cifti_out,
         )
