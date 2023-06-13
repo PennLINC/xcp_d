@@ -299,6 +299,26 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
+    ds_qc_metadata = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=list(DerivativesDataSink._allowed_entities),
+            allowed_entities=["desc"],
+            desc="linc",
+            suffix="qc",
+            extension=".json",
+        ),
+        name="ds_qc_metadata",
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_qc_metadata, [("name_source", "source_file")]),
+        (qcreport, ds_qc_metadata, [("qc_metadata", "in_file")]),
+    ])
+    # fmt:on
+
     if dcan_qc:
         make_dcan_qc_file = pe.Node(
             Function(
