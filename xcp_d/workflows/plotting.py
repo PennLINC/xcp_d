@@ -310,7 +310,7 @@ def init_qc_report_wf(
     ds_qc_metadata = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=DerivativesDataSink._allowed_entities,
+            dismiss_entities=list(DerivativesDataSink._allowed_entities),
             allowed_entities=["desc"],
             desc="linc",
             suffix="qc",
