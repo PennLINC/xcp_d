@@ -740,7 +740,7 @@ def init_parcellate_surfaces_wf(
             name=f"ds_parcellated_{file_to_parcellate}",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas"],
+            iterfield=["atlas", "in_file"],
         )
 
         # fmt:off
