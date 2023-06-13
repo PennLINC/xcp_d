@@ -39,7 +39,7 @@ def test_init_load_atlases_wf_nifti(fmriprep_with_freesurfer_data, tmp_path_fact
     load_atlases_wf.base_dir = tmpdir
     load_atlases_wf_res = load_atlases_wf.run()
     nodes = get_nodes(load_atlases_wf_res)
-    atlas_names = nodes["load_atlases_wf.outputnode"].get_output("atlas_names")
+    atlas_names = nodes["load_atlases_wf.warp_atlases_to_bold_space"].get_output("output_image")
     assert len(atlas_names) == 13
 
 
@@ -61,7 +61,7 @@ def test_init_load_atlases_wf_cifti(fmriprep_with_freesurfer_data, tmp_path_fact
     load_atlases_wf.base_dir = tmpdir
     load_atlases_wf_res = load_atlases_wf.run()
     nodes = get_nodes(load_atlases_wf_res)
-    atlas_names = nodes["load_atlases_wf.outputnode"].get_output("atlas_names")
+    atlas_names = nodes["load_atlases_wf.cast_atlas_to_int16"].get_output("out_file")
     assert len(atlas_names) == 13
 
 
