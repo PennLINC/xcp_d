@@ -7,9 +7,29 @@ import pytest
 
 def pytest_addoption(parser):
     """Collect pytest parameters for running tests."""
-    parser.addoption("--working_dir", action="store", default="/tmp")
-    parser.addoption("--data_dir", action="store")
-    parser.addoption("--output_dir", action="store")
+    parser.addoption(
+        "--working_dir",
+        action="store",
+        default=(
+            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data/"
+            "run_pytests/work"
+        ),
+    )
+    parser.addoption(
+        "--data_dir",
+        action="store",
+        default=(
+            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data"
+        ),
+    )
+    parser.addoption(
+        "--output_dir",
+        action="store",
+        default=(
+            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data/"
+            "run_pytests/out"
+        ),
+    )
 
 
 # Set up the commandline options as fixtures
@@ -40,10 +60,10 @@ def datasets(data_dir):
     """Locate downloaded datasets."""
     dsets = {}
     dsets["ds001419"] = os.path.join(data_dir, "ds001419-fmriprep")
-    dsets["nibabies"] = os.path.join(data_dir, "nibabies_test_data/derivatives/nibabies")
+    dsets["nibabies"] = os.path.join(data_dir, "nibabies/derivatives/nibabies")
     dsets["fmriprep_without_freesurfer"] = os.path.join(
         data_dir,
-        "fmriprepwithoutfreesurfer/fmriprep",
+        "fmriprepwithoutfreesurfer",
     )
     return dsets
 

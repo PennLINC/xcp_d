@@ -466,7 +466,7 @@ By default, this workflow is disabled.
         action="store_true",
         dest="dcan_qc",
         default=False,
-        help="Run DCAN QC, including executive summary generation.",
+        help="Run DCAN QC.",
     )
 
     return parser
@@ -634,7 +634,6 @@ def main(args=None):
             run_uuid=run_uuid,
             config=pkgrf("xcp_d", "data/reports.yml"),
             packagename="xcp_d",
-            dcan_qc=opts.dcan_qc,
         )
 
         if failed_reports and not opts.notrack:
