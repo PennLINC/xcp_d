@@ -52,7 +52,6 @@ def test_filteroutfailedruns(fmriprep_with_freesurfer_data):
     anat_to_native_xfm = Undefined
 
     # Now the lists of lists
-    atlas_names = [["a", "b", "c"]] * n_runs
     timeseries = [[tsv_file, tsv_file, tsv_file]] * n_runs
     timeseries_ciftis = [[nifti_file, nifti_file, nifti_file]] * n_runs
 
@@ -68,7 +67,6 @@ def test_filteroutfailedruns(fmriprep_with_freesurfer_data):
         bold_mask=bold_mask,
         boldref=boldref,
         anat_to_native_xfm=anat_to_native_xfm,
-        atlas_names=atlas_names,
         timeseries=timeseries,
         timeseries_ciftis=timeseries_ciftis,
     )
@@ -85,7 +83,6 @@ def test_filteroutfailedruns(fmriprep_with_freesurfer_data):
     assert len(out.bold_mask) == n_good_runs
     assert len(out.boldref) == n_good_runs
     assert len(out.anat_to_native_xfm) == n_good_runs
-    assert len(out.atlas_names) == n_good_runs
     assert len(out.timeseries) == n_good_runs
     assert len(out.timeseries_ciftis) == n_good_runs
 

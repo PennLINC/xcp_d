@@ -59,6 +59,10 @@ Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation i
             <source_entities>_space-MNI152NLin6Asym_desc-preproc_T2w.nii.gz
             <source_entities>_space-MNI152NLin6Asym_dseg.nii.gz
 
+
+Surface mesh files
+==================
+
 If the ``--warp-surfaces-native2std`` option is selected, and reconstructed surfaces are available
 in the preprocessed dataset, then these surfaces will be warped to fsLR space at 32k density.
 
@@ -70,9 +74,37 @@ in the preprocessed dataset, then these surfaces will be warped to fsLR space at
             <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii
             <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii
             <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_midthickness.surf.gii
             <source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii
             <source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii
+
+
+Surface morphometric files
+==========================
+
+*XCP-D* will also pass along several morphometric files from the preprocessing derivatives,
+as long as the files are already in fsLR space at 32k density.
+
+.. code-block::
+
+   xcp_d/
+      sub-<label>/[ses-<label>/]
+         anat/
+            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_sulc.shape.gii
+            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_curv.shape.gii
+            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_thickness.shape.gii
+
+
+*XCP-D* will additionally parcellate each of these files, when they are present, using each of the
+atlases it uses to parcellate the functional outputs.
+
+.. code-block::
+
+   xcp_d/
+      sub-<label>/[ses-<label>/]
+         anat/
+            <source_entities>_space-fsLR_atlas-<atlas>_den-32k_desc-curv_morph.tsv
+            <source_entities>_space-fsLR_atlas-<atlas>_den-32k_desc-sulc_morph.tsv
+            <source_entities>_space-fsLR_atlas-<atlas>_den-32k_desc-thickness_morph.tsv
 
 
 ******************
@@ -95,6 +127,11 @@ functional connectivity matrices, and resting-state derivatives.
 
 Denoised or residual BOLD data
 ==============================
+
+.. important::
+
+   Smoothed denoised BOLD files will only be generated if smoothing is enabled with the
+   ``--smoothing`` parameter.
 
 .. code-block::
 
@@ -119,16 +156,11 @@ Denoised or residual BOLD data
 
 .. important::
 
-   The smoothed denoised BOLD files will only be generated if smoothing is enabled with the
-   ``--smoothing parameter``.
-
-.. important::
-
    The interpolated denoised BOLD files (``desc-interpolated``) should NOT be used for analyses.
-   These files are only generated if ``--dcan-qc`` is used, and primarily exist for
-   compatibility with DCAN-specific analysis tools.
+   These files are only generated if ``--dcan-qc`` is used,
+   and primarily exist for compatibility with DCAN-specific analysis tools.
 
-The json/sidecar contains parameters of the data and processing steps.
+The sidecar json files contains parameters of the data and processing steps.
 
    .. code-block:: json-object
 
@@ -171,8 +203,23 @@ This includes the atlases used to extract the timeseries.
             <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
 
 
-Resting-state metric derivatives (Regional Homogeneity and ALFF)
-================================================================
+Resting-state metric derivatives (ReHo and ALFF)
+================================================
+
+*XCP-D* calculates both regional homogeneity (ReHo) and amplitude of low-frequency fluctuations
+(ALFF), depending on the parameters.
+
+.. important::
+      Smoothed ALFF will only be generated if smoothing is enabled with the ``--smoothing``
+      parameter.
+
+.. important::
+      ALFF will not be generated if bandpass filtering is disabled with the
+      ``--disable-bandpass-filtering`` parameter,
+      or if high-motion outlier censoring is enabled ``--fd-thresh`` is greater than zero.
+
+*XCP-D* will also parcellate the ReHo and ALFF maps with each of the atlases used for the BOLD
+data.
 
 .. code-block::
 
@@ -183,21 +230,15 @@ Resting-state metric derivatives (Regional Homogeneity and ALFF)
             <source_entities>_space-<label>_reho.nii.gz
             <source_entities>_space-<label>_alff.nii.gz
             <source_entities>_space-<label>_desc-smooth_alff.nii.gz
+            <source_entities>_space-<label>_atlas-<atlas>_desc-alff_timeseries.tsv
+            <source_entities>_space-<label>_atlas-<atlas>_desc-reho_timeseries.tsv
 
             # Cifti
             <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
             <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
             <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
-
-.. important::
-      The smoothed ALFF image will only be generated if smoothing is enabled
-      (i.e., with the ``--smoothing parameter``).
-
-.. important::
-      ALFF images will not be generated if bandpass filtering is disabled
-      (i.e., with the ``--disable-bandpass-filtering`` parameter),
-      or if high-motion outlier censoring is enabled
-      (i.e., ``--fd-thresh`` is greater than zero).
+            <source_entities>_space-fsLR_atlas-<atlas>_desc-alff_timeseries.tsv
+            <source_entities>_space-fsLR_atlas-<atlas>_desc-reho_timeseries.tsv
 
 
 Other outputs include quality control, framewise displacement, and confounds files
@@ -206,6 +247,7 @@ Other outputs include quality control, framewise displacement, and confounds fil
 .. code-block::
 
    xcp_d/
+      desc-linc_qc.json
       sub-<label>/[ses-<label>/]
          func/
             # Nifti

@@ -446,8 +446,10 @@ def collect_surface_data(layout, participant_label):
     -------
     mesh_available : :obj:`bool`
         True if surface mesh files (pial and smoothwm) were found. False if they were not.
-    shape_available : :obj:`bool`
-        True if surface shape files (curv, sulc, and thickness) were found. False if they were not.
+    morphometry_files : :obj:`list` of :obj:`str`
+        List of surface morphometry files (e.g., cortical thickness) already in fsLR space.
+        These files will be (1) parcellated and (2) passed along, without modification, to the
+        XCP-D derivatives.
     standard_space_mesh : :obj:`bool`
         True if standard-space (fsLR) surface mesh files were found. False if they were not.
     surface_files : :obj:`dict`
@@ -529,11 +531,17 @@ def collect_surface_data(layout, participant_label):
         },
     }
 
-    shape_available, _, shape_files = _find_standard_space_surfaces(
+    _, _, shape_files = _find_standard_space_surfaces(
         layout,
         participant_label,
         shape_queries,
     )
+    morphometry_files = [k for k, v in shape_files.items() if v is not None]
+    morphometry_files_reduced = [f for f in morphometry_files if f.startswith("lh_")]
+    morphometry_files_reduced = [
+        f for f in morphometry_files_reduced if f.replace("lh_", "rh_") in morphometry_files
+    ]
+    morphometry_files_reduced = [f.replace("lh_", "") for f in morphometry_files_reduced]
 
     surface_files = {**mesh_files, **shape_files}
 
@@ -545,7 +553,7 @@ def collect_surface_data(layout, participant_label):
         ),
     )
 
-    return mesh_available, shape_available, standard_space_mesh, surface_files
+    return mesh_available, morphometry_files_reduced, standard_space_mesh, surface_files
 
 
 @fill_doc

@@ -229,6 +229,9 @@ def init_postprocess_nifti_wf(
                 "fmriprep_confounds_json",
                 "anat_to_native_xfm",
                 "dummy_scans",
+                "atlas_names",
+                "atlas_files",
+                "atlas_labels_files",
             ],
         ),
         name="inputnode",
@@ -275,7 +278,6 @@ def init_postprocess_nifti_wf(
                 "boldref",
                 "bold_mask",
                 "anat_to_native_xfm",
-                "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",  # will not be defined
             ],
@@ -405,29 +407,24 @@ def init_postprocess_nifti_wf(
     connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=output_dir,
         min_coverage=min_coverage,
+        alff_available=bandpass_filter and (fd_thresh <= 0),
         mem_gb=mem_gbx["timeseries"],
         name="connectivity_wf",
-        omp_nthreads=omp_nthreads,
     )
 
     # fmt:off
     workflow.connect([
-        (inputnode, connectivity_wf, [("bold_file", "inputnode.name_source")]),
-        (downcast_data, connectivity_wf, [
-            ("bold_mask", "inputnode.bold_mask"),
-            ("boldref", "inputnode.boldref"),
-        ]),
         (inputnode, connectivity_wf, [
-            ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("anat_to_native_xfm", "inputnode.anat_to_native_xfm"),
+            ("bold_file", "inputnode.name_source"),
+            ("atlas_names", "inputnode.atlas_names"),
+            ("atlas_files", "inputnode.atlas_files"),
+            ("atlas_labels_files", "inputnode.atlas_labels_files"),
         ]),
+        (downcast_data, connectivity_wf, [("bold_mask", "inputnode.bold_mask")]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
-        (connectivity_wf, outputnode, [
-            ("outputnode.atlas_names", "atlas_names"),
-            ("outputnode.timeseries", "timeseries"),
-        ]),
+        (connectivity_wf, outputnode, [("outputnode.timeseries", "timeseries")]),
     ])
     # fmt:on
 
@@ -451,6 +448,7 @@ def init_postprocess_nifti_wf(
             (denoise_bold_wf, alff_wf, [
                 ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
             ]),
+            (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])
         # fmt:on
 
@@ -468,6 +466,7 @@ def init_postprocess_nifti_wf(
         (denoise_bold_wf, reho_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
+        (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
     ])
     # fmt:on
 
@@ -525,6 +524,7 @@ def init_postprocess_nifti_wf(
 
     # fmt:off
     workflow.connect([
+        (inputnode, postproc_derivatives_wf, [("atlas_names", "inputnode.atlas_names")]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file"),
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
@@ -540,10 +540,10 @@ def init_postprocess_nifti_wf(
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
         (connectivity_wf, postproc_derivatives_wf, [
-            ("outputnode.atlas_names", "inputnode.atlas_names"),
             ("outputnode.correlations", "inputnode.correlations"),
             ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.coverage", "inputnode.coverage"),
+            ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
         ]),
     ])
     # fmt:on
@@ -554,6 +554,9 @@ def init_postprocess_nifti_wf(
             (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
+            ]),
+            (connectivity_wf, postproc_derivatives_wf, [
+                ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
             ]),
         ])
         # fmt:on

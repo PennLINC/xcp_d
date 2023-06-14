@@ -7,9 +7,29 @@ import pytest
 
 def pytest_addoption(parser):
     """Collect pytest parameters for running tests."""
-    parser.addoption("--working_dir", action="store", default="/tmp")
-    parser.addoption("--data_dir", action="store")
-    parser.addoption("--output_dir", action="store")
+    parser.addoption(
+        "--working_dir",
+        action="store",
+        default=(
+            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data/"
+            "run_pytests/work"
+        ),
+    )
+    parser.addoption(
+        "--data_dir",
+        action="store",
+        default=(
+            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data"
+        ),
+    )
+    parser.addoption(
+        "--output_dir",
+        action="store",
+        default=(
+            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data/"
+            "run_pytests/out"
+        ),
+    )
 
 
 # Set up the commandline options as fixtures
