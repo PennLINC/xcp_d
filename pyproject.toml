@@ -52,8 +52,6 @@ NiPreps = "https://www.nipreps.org/"
 [project.optional-dependencies]
 doc = [
     "doctest-ignore-unicode",
-    "m2r",
-    "mistune < 2",  # just temporary until m2r addresses this issue
     "nbsphinx",
     "pydot >=1.2.3",
     "pydotplus",

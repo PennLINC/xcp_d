@@ -19,4 +19,4 @@ Contents
    outputs
    contributing
    api
-   changes
+   ../CHANGES.md

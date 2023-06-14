@@ -25,8 +25,6 @@ import os
 import sys
 from datetime import datetime
 
-from m2r import MdInclude
-
 import xcp_d
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -418,4 +416,3 @@ def setup(app):
     app.add_css_file("theme_overrides.css")
     # We need this for the boilerplate script
     app.add_js_file("https://cdn.rawgit.com/chrisfilo/zenodo.js/v0.1/zenodo.js")
-    app.add_directive("mdinclude", MdInclude)
