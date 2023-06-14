@@ -72,6 +72,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
+    boldref = fmriprep_with_freesurfer_data["boldref"]
     bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Generate fake signal
@@ -98,7 +99,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     for atlas_file in atlas_files:
         # Using the generated transforms, apply them to get everything in the correct MNI form
         warp_atlases_to_bold_space = ApplyTransforms(
-            reference_image=bold_file,
+            reference_image=boldref,
             transforms=transforms_from_MNI152NLin6Asym,
             input_image=atlas_file,
             interpolation="GenericLabel",
