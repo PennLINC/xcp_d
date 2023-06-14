@@ -66,6 +66,16 @@ doc = [
 ]
 test = [
     "coverage",
+    "flake8",
+    "flake8-absolute-import",
+    "flake8-black",
+    "flake8-docstrings",
+    "flake8-isort",
+    "flake8-pyproject",
+    "flake8-unused-arguments",
+    "flake8-use-fstring",
+    "flake8-warnings",
+    "pep8-naming",
     "pytest",
     "pytest-cov",
 ]
@@ -142,10 +152,12 @@ max-line-length = "99"
 doctests = "False"
 exclude = [
     "*build/",
+    "xcp_d/_version.py",
     "xcp_d/_warnings.py",
     "xcp_d/config.py",
     "xcp_d/data/",
     "xcp_d/tests/",
+    "xcp_d/utils/sentry.py",
 ]
 ignore = ["D107", "E203", "E402", "E722", "W503", "N803", "N806", "N815"]
 per-file-ignores = [
