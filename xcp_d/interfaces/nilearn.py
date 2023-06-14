@@ -16,6 +16,48 @@ from xcp_d.utils.utils import denoise_with_nilearn
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
+class _IndexImageInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="A 4D image to index.",
+    )
+    index = traits.Int(
+        default=0,
+        usedefault=True,
+        desc="Volume index to select from in_file.",
+    )
+    out_file = File(
+        default="img_3d.nii.gz",
+        usedefault=True,
+        exists=False,
+        desc="The name of the indexed file.",
+    )
+
+
+class _IndexImageOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc="Concatenated output file.",
+    )
+
+
+class IndexImage(NilearnBaseInterface, SimpleInterface):
+    """Select a specific volume from a 4D image."""
+
+    input_spec = _IndexImageInputSpec
+    output_spec = _IndexImageOutputSpec
+
+    def _run_interface(self, runtime):
+        from nilearn.image import index_img
+
+        img_3d = index_img(self.inputs.in_file, self.inputs.index)
+        self._results["out_file"] = os.path.join(runtime.cwd, self.inputs.out_file)
+        img_3d.to_filename(self._results["out_file"])
+
+        return runtime
+
+
 class _MergeInputSpec(BaseInterfaceInputSpec):
     in_files = InputMultiPath(
         File(exists=True),

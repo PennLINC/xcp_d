@@ -9,6 +9,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
+from xcp_d.interfaces.nilearn import IndexImage
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiCreateDenseScalar,
@@ -132,6 +133,14 @@ def init_load_atlases_wf(
         ])
         # fmt:on
 
+        # ApplyTransforms needs a 3D image for the reference image.
+        grab_first_volume = pe.Node(
+            IndexImage(index=0),
+            name="grab_first_volume",
+        )
+
+        workflow.connect([(inputnode, grab_first_volume, [("bold_file", "in_file")])])
+
         # Using the generated transforms, apply them to get everything in the correct MNI form
         warp_atlases_to_bold_space = pe.MapNode(
             ApplyTransforms(
@@ -147,7 +156,7 @@ def init_load_atlases_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, warp_atlases_to_bold_space, [("bold_file", "reference_image")]),
+            (grab_first_volume, warp_atlases_to_bold_space, [("out_file", "reference_image")]),
             (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
             (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
                 ("transformfile", "transforms"),
