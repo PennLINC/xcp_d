@@ -64,7 +64,7 @@ doc = [
     "sphinxcontrib-bibtex",
     "svgutils",
 ]
-test = [
+tests = [
     "coverage",
     "flake8",
     "flake8-absolute-import",
@@ -85,7 +85,7 @@ maint = [
 ]
 
 # Aliases
-all = ["xcp_d[doc,maint,test]"]
+all = ["xcp_d[doc,maint,tests]"]
 
 [project.scripts]
 xcp_d = "xcp_d.cli.run:main"
