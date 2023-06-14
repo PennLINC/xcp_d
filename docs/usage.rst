@@ -298,13 +298,13 @@ Including Signal Regressors
 ===========================
 
 Let's say you have some nuisance regressors that are not necessarily orthogonal to some associated
-regressors that are ostensibly noise.
+regressors that are ostensibly signal.
 For example, if you ran `tedana <https://tedana.readthedocs.io/en/stable/>`_ on multi-echo data,
 you would have a series of "rejected" (noise) and "accepted" (signal) ICA components.
 Because tedana uses a spatial ICA, these components' time series are not necessarily independent,
 and there can be shared variance between them.
 If you want to properly denoise your data using the noise components,
-you need to account for the shared variance.
+you need to account for the variance they share with the signal components.
 
 XCP-D allows users to include the signal regressors in their custom confounds file,
 so that the noise regressors can be orthogonalized with respect to the signal regressors.
