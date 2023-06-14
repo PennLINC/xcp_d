@@ -10,6 +10,16 @@ message: >-
   metadata from this file.
 type: software
 authors:
+  - given-names: Taylor
+    family-names: Salo
+    email: salot@pennmedicine.upenn.edu
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-9813-3167'
+  - given-names: Kahini
+    family-names: Mehta
+    email: kahini.mehta@pennmedicine.upenn.edu
+    affiliation: University of Pennsylvania
+    orcid: 'https://orcid.org/0000-0001-9466-100X'
   - given-names: Azeez
     family-names: Adebimpe
     affiliation: University of Pennsylvania
@@ -18,16 +28,6 @@ authors:
     family-names: Bertolero
     orcid: 'https://orcid.org/0000-0002-2691-3698'
     affiliation: University of Pennsylvania
-  - given-names: Kahini
-    family-names: Mehta
-    email: kahini.mehta@pennmedicine.upenn.edu
-    affiliation: University of Pennsylvania
-    orcid: 'https://orcid.org/0000-0001-9466-100X'
-  - given-names: Taylor
-    family-names: Salo
-    email: salot@pennmedicine.upenn.edu
-    affiliation: University of Pennsylvania
-    orcid: 'https://orcid.org/0000-0001-9813-3167'
   - given-names: Kristin
     family-names: Murtha
     affiliation: University of Pennsylvania
@@ -86,5 +86,5 @@ keywords:
   - BIDS-App
   - Neuroimaging
 license: BSD-3-Clause
-version: 0.3.2
-date-released: '2023-01-06'
+version: 0.4.0
+date-released: '2023-06-12'
