@@ -319,6 +319,11 @@ class nipype(_Config):
 class execution(_Config):
     """Configure run-level settings."""
 
+    fmri_dir = None
+    bids_filters = None
+
+
+
     anat_derivatives = None
     """A path where anatomical derivatives are found to fast-track *sMRIPrep*."""
     bids_dir = None
@@ -370,8 +375,7 @@ class execution(_Config):
     _layout = None
 
     _paths = (
-        "anat_derivatives",
-        "bids_dir",
+        "fmri_dir",
         "fs_license_file",
         "fs_subjects_dir",
         "layout",
@@ -423,54 +427,54 @@ del _oc_policy
 
 class workflow(_Config):
     """Configure the particular execution graph of this workflow."""
-
-    anat_only = False
-    """Execute the anatomical preprocessing only."""
-    asl2t1w_dof = 6
-    """Degrees of freedom of the ASL-to-T1w registration steps."""
-    asl2t1w_init = "register"
-    """Whether to use standard coregistration ('register') or to initialize coregistration from the
-    ASL image-header ('header')."""
-    m0_scale = float(1)
-    """Relative scale between ASL (delta-M) and M0."""
-    fmap_bspline = None
-    """Regularize fieldmaps with a field of B-Spline basis."""
-    fmap_demean = None
-    """Remove the mean from fieldmaps."""
-    force_syn = None
-    """Run *fieldmap-less* susceptibility-derived distortions estimation."""
-    hires = None
-    """Run with the ``--hires`` flag."""
-    ignore = None
-    """Ignore particular steps for *xcp_d*, such as sbref and fieldmap."""
-    longitudinal = False
-    """Run with the ``--longitudinal`` flag."""
-    random_seed = None
-    """Master random seed to initialize the Pseudorandom Number Generator (PRNG)"""
-    skull_strip_fixed_seed = False
-    """Fix a seed for skull-stripping."""
-    skull_strip_template = "OASIS30ANTs"
-    """Change default brain extraction template."""
-    skull_strip_t1w = "force"
-    """Skip brain extraction of the T1w image (default is ``force``, meaning that
-    *xcp_d* will run brain extraction of the T1w)."""
-    spaces = None
-    """Keeps the :py:class:`~niworkflows.utils.spaces.SpatialReferences`
-    instance keeping standard and nonstandard spaces."""
-    use_bbr = None
-    """Run boundary-based registration for ASL-to-T1w registration."""
-    use_syn_sdc = None
-    """Run *fieldmap-less* susceptibility-derived distortions estimation
-    in the absence of any alternatives."""
-    dummy_vols = 0
-    """Number of label-control volume pairs to delete before CBF computation."""
-    smooth_kernel = 5.0
-    """Kernel size for smoothing M0."""
-    scorescrub = False
-    """Run SCORE/SCRUB, Sudipto's algorithms for denoising CBF."""
-    basil = False
-    """Run BASIL, FSL utils to compute CBF with spatial regularization and
-       partial volume correction."""
+    input_type = "fmriprep"
+    # The pipeline used to generate the preprocessed derivatives.
+    smoothing = 6
+    # FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD data.
+    # This may be set to 0.
+    despike = False
+    # Despike the BOLD data before postprocessing.
+    nuisance_regressors = "36P"
+    # Nuisance parameters to be selected.
+    # Descriptions of each of the options are included in xcp_d’s documentation.
+    custom_confounds = None
+    # Custom confounds to be added to the nuisance regressors.
+    # Must be a folder containing confounds files,
+    # in which the file with the name matching the preprocessing confounds file will be selected.
+    min_coverage = 0.5
+    # Coverage threshold to apply to parcels in each atlas.
+    min_time = 100
+    # Post-scrubbing threshold to apply to individual runs in the dataset.
+    dummy_scans = 0
+    # Number of volumes to remove from the beginning of each run.
+    disable_bandpass_filter = True
+    # Disable bandpass filtering.
+    lower_bpf = 0.01
+    # Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to the
+    # denoised BOLD data.
+    upper_bpf = 0.08
+    # Upper cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to the
+    # denoised BOLD data.
+    bpf_order = 2
+    # Number of filter coefficients for the Butterworth bandpass filter.
+    motion_filter_type = None
+    # Type of filter to use for removing respiratory artifact from motion regressors.
+    # If not set, no filter will be applied.
+    band_stop_min = None
+    # Lower frequency for the motion parameter filter, in breaths-per-minute (bpm).
+    band_stop_max = None
+    # Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).
+    motion_filter_order = 4
+    # Number of filter coeffecients for the motion parameter filter.
+    head_radius = 50
+    # Head radius used to calculate framewise displacement, in mm.
+    fd_thresh = 0.3
+    # Framewise displacement threshold for censoring.
+    warp_surfaces_native2std = False
+    # If used, a workflow will be run to warp native-space (fsnative) reconstructed cortical
+    # surfaces (surf.gii files) produced by Freesurfer into standard (fsLR) space.
+    dcan_qc = False
+    # Run DCAN QC.
 
 
 class loggers:
