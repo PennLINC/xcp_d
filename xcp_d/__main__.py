@@ -9,4 +9,5 @@ if __name__ == "__main__":
     # `python -m <module>` typically displays the command as __main__.py
     if "__main__.py" in sys.argv[0]:
         sys.argv[0] = f"{sys.executable} -m {module}"
+
     main()
