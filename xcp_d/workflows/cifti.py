@@ -398,6 +398,7 @@ def init_postprocess_cifti_wf(
         ]),
         (prepare_confounds_wf, connectivity_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+        ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),

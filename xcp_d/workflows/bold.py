@@ -412,7 +412,6 @@ def init_postprocess_nifti_wf(
         min_coverage=min_coverage,
         alff_available=bandpass_filter and (fd_thresh <= 0),
         mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
         name="connectivity_wf",
     )
 
@@ -427,6 +426,7 @@ def init_postprocess_nifti_wf(
         (downcast_data, connectivity_wf, [("bold_mask", "inputnode.bold_mask")]),
         (prepare_confounds_wf, connectivity_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+        ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
