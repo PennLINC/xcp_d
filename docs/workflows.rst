@@ -119,7 +119,7 @@ Framewise displacement calculation and thresholding
 :class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
 :func:`~xcp_d.utils.modified_data.compute_fd`
 
-Framewise displacement is then calculated according to the formula from Power et al. (CITE).
+Framewise displacement is then calculated according to the formula from :footcite:t:`power_fd_dvars`.
 Two parameters that impact FD calculation and thresholding are
 (1) the head radius used to convert rotation degrees to millimeters and
 (2) the framewise displacement threshold.
@@ -454,8 +454,8 @@ anatomical data and the BOLD data before and after regression.
 The anatomical image viewer allows the user to see the segmentation overlaid on the anatomical
 image.
 Next, for each session, the user can see the segmentation registered onto the BOLD images.
-Alongside this image, pre and post regression "carpet" plot is alongside DVARS, FD, the global
-signal.
+Beside the segmentations, users can see the pre-regression and post-regression "carpet" plot,
+as well as DVARS, FD, the global signal.
 The number of volumes remaining at various FD thresholds are shown.
 
 Second, XCP-D generates an HTML "report" for each subject and session.

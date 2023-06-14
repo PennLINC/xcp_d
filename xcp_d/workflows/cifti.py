@@ -212,6 +212,10 @@ def init_postprocess_cifti_wf(
                 "fmriprep_confounds_file",
                 "fmriprep_confounds_json",
                 "dummy_scans",
+                "atlas_names",
+                "atlas_files",
+                "atlas_labels_files",
+                "parcellated_atlas_files",
             ],
         ),
         name="inputnode",
@@ -375,8 +379,9 @@ def init_postprocess_cifti_wf(
         # fmt:on
 
     connectivity_wf = init_functional_connectivity_cifti_wf(
-        output_dir=output_dir,
         min_coverage=min_coverage,
+        alff_available=bandpass_filter and (fd_thresh <= 0),
+        output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         name="connectivity_wf",
@@ -384,15 +389,19 @@ def init_postprocess_cifti_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, connectivity_wf, [("bold_file", "inputnode.name_source")]),
+        (inputnode, connectivity_wf, [
+            ("bold_file", "inputnode.name_source"),
+            ("atlas_names", "inputnode.atlas_names"),
+            ("atlas_files", "inputnode.atlas_files"),
+            ("atlas_labels_files", "inputnode.atlas_labels_files"),
+            ("parcellated_atlas_files", "inputnode.parcellated_atlas_files"),
+        ]),
         (prepare_confounds_wf, connectivity_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-        ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
         (connectivity_wf, outputnode, [
-            ("outputnode.atlas_names", "atlas_names"),
             ("outputnode.timeseries", "timeseries"),
             ("outputnode.timeseries_ciftis", "timeseries_ciftis"),
         ]),
@@ -418,6 +427,7 @@ def init_postprocess_cifti_wf(
             (denoise_bold_wf, alff_wf, [
                 ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
             ]),
+            (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])
         # fmt:on
 
@@ -434,6 +444,7 @@ def init_postprocess_cifti_wf(
         (denoise_bold_wf, reho_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
+        (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
     ])
     # fmt:on
 
@@ -484,6 +495,7 @@ def init_postprocess_cifti_wf(
 
     # fmt:off
     workflow.connect([
+        (inputnode, postproc_derivatives_wf, [("atlas_names", "inputnode.atlas_names")]),
         (denoise_bold_wf, postproc_derivatives_wf, [
             ("outputnode.interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
             ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
@@ -499,13 +511,13 @@ def init_postprocess_cifti_wf(
         ]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
         (connectivity_wf, postproc_derivatives_wf, [
-            ("outputnode.atlas_names", "inputnode.atlas_names"),
             ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
             ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
             ("outputnode.correlation_ciftis", "inputnode.correlation_ciftis"),
             ("outputnode.coverage", "inputnode.coverage"),
             ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
         ]),
     ])
 
@@ -514,6 +526,9 @@ def init_postprocess_cifti_wf(
             (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
+            ]),
+            (connectivity_wf, postproc_derivatives_wf, [
+                ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
             ]),
         ])
     # fmt:on

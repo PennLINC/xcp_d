@@ -7,22 +7,24 @@ import pandas as pd
 import pytest
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.cli import combineqc
 from xcp_d.cli.run import build_workflow, get_parser
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.tests.utils import (
     check_affines,
     check_generated_files,
+    download_test_data,
     get_test_data_path,
     run_command,
 )
 
 
 @pytest.mark.ds001419_nifti
-def test_ds001419_nifti(datasets, output_dir, working_dir):
+def test_ds001419_nifti(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
     test_name = "test_ds001419_nifti"
 
-    data_dir = datasets["ds001419"]
+    dataset_dir = download_test_data("ds001419-fmriprep", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
@@ -30,7 +32,7 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_filter.json")
 
     parameters = [
-        data_dir,
+        dataset_dir,
         out_dir,
         "participant",
         f"-w={work_dir}",
@@ -59,32 +61,31 @@ def test_ds001419_nifti(datasets, output_dir, working_dir):
 
     generate_reports(
         subject_list=["01"],
-        fmri_dir=data_dir,
+        fmri_dir=dataset_dir,
         work_dir=work_dir,
         output_dir=out_dir,
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
     )
 
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_ds001419_nifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
-    check_affines(data_dir, out_dir, input_type="nifti")
+    check_affines(dataset_dir, out_dir, input_type="nifti")
 
 
 @pytest.mark.ds001419_cifti
-def test_ds001419_cifti(datasets, output_dir, working_dir):
+def test_ds001419_cifti(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
     test_name = "test_ds001419_cifti"
 
-    data_dir = datasets["ds001419"]
+    dataset_dir = download_test_data("ds001419-fmriprep", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     # Copy shape files to test ability to transfer them to XCP-D derivatives.
-    anat_dir = os.path.join(data_dir, "sub-01/anat")
+    anat_dir = os.path.join(dataset_dir, "sub-01/anat")
     for hemi in ["L", "R"]:
         base_file = os.path.join(anat_dir, f"sub-01_hemi-{hemi}_smoothwm.surf.gii")
         for shape in ["curv", "sulc", "thickness"]:
@@ -99,7 +100,7 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
 
     parameters = [
-        data_dir,
+        dataset_dir,
         out_dir,
         "participant",
         f"-w={work_dir}",
@@ -131,32 +132,31 @@ def test_ds001419_cifti(datasets, output_dir, working_dir):
 
     generate_reports(
         subject_list=["01"],
-        fmri_dir=data_dir,
+        fmri_dir=dataset_dir,
         work_dir=work_dir,
         output_dir=out_dir,
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
     )
 
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
-    check_affines(data_dir, out_dir, input_type="cifti")
+    check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.ds001419_cifti_t2wonly
-def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
+def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options and a simulated T2w image."""
     test_name = "test_ds001419_cifti_t2wonly"
 
-    data_dir = datasets["ds001419"]
+    dataset_dir = download_test_data("ds001419-fmriprep", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     # Copy shape files to test ability to transfer them to XCP-D derivatives.
-    anat_dir = os.path.join(data_dir, "sub-01/anat")
+    anat_dir = os.path.join(dataset_dir, "sub-01/anat")
     for hemi in ["L", "R"]:
         base_file = os.path.join(anat_dir, f"sub-01_hemi-{hemi}_smoothwm.surf.gii")
         for shape in ["curv", "sulc", "thickness"]:
@@ -187,7 +187,7 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
     filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_filter.json")
 
     parameters = [
-        data_dir,
+        dataset_dir,
         out_dir,
         "participant",
         f"-w={work_dir}",
@@ -219,23 +219,22 @@ def test_ds001419_cifti_t2wonly(datasets, output_dir, working_dir):
 
     generate_reports(
         subject_list=["01"],
-        fmri_dir=data_dir,
+        fmri_dir=dataset_dir,
         work_dir=work_dir,
         output_dir=out_dir,
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
     )
 
-    output_list_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_t2wonly_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
-    check_affines(data_dir, out_dir, input_type="cifti")
+    check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.fmriprep_without_freesurfer
-def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
+def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
 
     Notes
@@ -244,7 +243,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
     """
     test_name = "test_fmriprep_without_freesurfer"
 
-    data_dir = datasets["fmriprep_without_freesurfer"]
+    dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
     custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
@@ -263,7 +262,7 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         confounds_df.to_csv(out_file, sep="\t", index=False)
 
     cmd = (
-        f"xcp_d {data_dir} {out_dir} participant "
+        f"xcp_d {dataset_dir} {out_dir} participant "
         f"-w {work_dir} "
         "--nthreads 2 "
         "--omp-nthreads 2 "
@@ -278,17 +277,17 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
         "--dummy-scans 1 "
         f"--custom_confounds={custom_confounds_dir}"
     )
+
     run_command(cmd)
 
     # Run combine-qc too
     xcpd_dir = os.path.join(out_dir, "xcp_d")
-    cmd = f"cd {xcpd_dir};xcp_d-combineqc {xcpd_dir} summary"
-    run_command(cmd)
+    combineqc.main([xcpd_dir, "summary"])
 
-    output_list_file = os.path.join(test_data_dir, "nifti_without_freesurfer_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_fmriprep_without_freesurfer_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
-    check_affines(data_dir, out_dir, input_type="nifti")
+    check_affines(dataset_dir, out_dir, input_type="nifti")
 
     dm_file = os.path.join(
         xcpd_dir,
@@ -299,22 +298,22 @@ def test_fmriprep_without_freesurfer(datasets, output_dir, working_dir):
 
 
 @pytest.mark.nibabies
-def test_nibabies(datasets, output_dir, working_dir):
+def test_nibabies(data_dir, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
     test_name = "test_nibabies"
+    input_type = "nibabies"
 
-    data_dir = datasets["nibabies"]
+    dataset_dir = download_test_data("nibabies", data_dir)
+    dataset_dir = os.path.join(dataset_dir, "derivatives", "nibabies")
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    test_data_dir = get_test_data_path()
-
     parameters = [
-        data_dir,
+        dataset_dir,
         out_dir,
         "participant",
         f"-w={work_dir}",
-        "--input-type=nibabies",
+        f"--input-type={input_type}",
         "--nuisance-regressors=27P",
         "--despike",
         "--head_radius=auto",
@@ -322,26 +321,44 @@ def test_nibabies(datasets, output_dir, working_dir):
         "--fd-thresh=0",
         "--dcan-qc",
     ]
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
+        work_dir=work_dir,
+        out_dir=out_dir,
+        input_type=input_type,
+    )
+
+
+def _run_and_generate(
+    test_name,
+    participant_label,
+    parameters,
+    data_dir,
+    work_dir,
+    out_dir,
+    input_type,
+):
     opts = get_parser().parse_args(parameters)
     retval = {}
     retval = build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
+    xcpd_wf = retval["workflow"]
 
+    xcpd_wf.run()
     generate_reports(
-        subject_list=["01"],
+        subject_list=[participant_label],
         fmri_dir=data_dir,
         work_dir=work_dir,
         output_dir=out_dir,
         run_uuid=run_uuid,
         config=pkgrf("xcp_d", "data/reports.yml"),
         packagename="xcp_d",
-        dcan_qc=opts.dcan_qc,
     )
 
-    output_list_file = os.path.join(test_data_dir, "nibabies_outputs.txt")
+    output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
-    check_affines(data_dir, out_dir, input_type="nibabies")
+    check_affines(data_dir, out_dir, input_type=input_type)

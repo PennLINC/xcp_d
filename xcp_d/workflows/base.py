@@ -41,6 +41,10 @@ from xcp_d.workflows.anatomical import (
 from xcp_d.workflows.bold import init_postprocess_nifti_wf
 from xcp_d.workflows.cifti import init_postprocess_cifti_wf
 from xcp_d.workflows.concatenation import init_concatenate_data_wf
+from xcp_d.workflows.connectivity import (
+    init_load_atlases_wf,
+    init_parcellate_surfaces_wf,
+)
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -367,7 +371,7 @@ def init_subject_wf(
     t2w_available = subj_data["t2w"] is not None
     primary_anat = "T1w" if subj_data["t1w"] else "T2w"
 
-    mesh_available, shape_available, standard_space_mesh, surface_data = collect_surface_data(
+    mesh_available, morphometry_files, standard_space_mesh, surface_data = collect_surface_data(
         layout=layout,
         participant_label=subject_id,
     )
@@ -519,6 +523,17 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])
     # fmt:on
 
+    # Load the atlases, warping to the same space as the BOLD data if necessary.
+    load_atlases_wf = init_load_atlases_wf(
+        output_dir=output_dir,
+        cifti=cifti,
+        mem_gb=1,
+        omp_nthreads=omp_nthreads,
+        name="load_atlases_wf",
+    )
+    load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
+    load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
+
     if process_surfaces or (dcan_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
@@ -528,7 +543,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             dcan_qc=dcan_qc,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
-            shape_available=shape_available,
+            morphometry_files=morphometry_files,
             process_surfaces=process_surfaces,
             output_dir=output_dir,
             t1w_available=t1w_available,
@@ -567,6 +582,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])
             # fmt:on
+
         else:
             # Use native-space structurals
             # fmt:off
@@ -577,6 +593,27 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])
             # fmt:on
+
+        if morphometry_files:
+            # Parcellate the morphometry files
+            parcellate_surfaces_wf = init_parcellate_surfaces_wf(
+                output_dir=output_dir,
+                files_to_parcellate=morphometry_files,
+                min_coverage=min_coverage,
+                mem_gb=1,
+                omp_nthreads=omp_nthreads,
+                name="parcellate_surfaces_wf",
+            )
+
+            for morphometry_file in morphometry_files:
+                # fmt:off
+                workflow.connect([
+                    (inputnode, parcellate_surfaces_wf, [
+                        (f"lh_{morphometry_file}", f"inputnode.lh_{morphometry_file}"),
+                        (f"rh_{morphometry_file}", f"inputnode.rh_{morphometry_file}"),
+                    ]),
+                ])
+                # fmt:oon
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(
@@ -606,7 +643,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "anat_to_native_xfm",
                 "bold_mask",
                 "boldref",
-                "atlas_names",  # this will be exactly the same across runs
                 "timeseries",
                 "timeseries_ciftis",
             ]
@@ -692,10 +728,26 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
                 ]),
+                (load_atlases_wf, postprocess_bold_wf, [
+                    ("outputnode.atlas_names", "inputnode.atlas_names"),
+                    ("outputnode.atlas_files", "inputnode.atlas_files"),
+                    ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
+                ]),
             ])
             # fmt:on
 
-            if not cifti:
+            if cifti:
+                # fmt:off
+                workflow.connect([
+                    (load_atlases_wf, postprocess_bold_wf, [
+                        (
+                            "outputnode.parcellated_atlas_files",
+                            "inputnode.parcellated_atlas_files",
+                        ),
+                    ]),
+                ])
+                # fmt:on
+            else:
                 # fmt:off
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
@@ -732,6 +784,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, concatenate_data_wf, [
                     ("anat_brainmask", "inputnode.anat_brainmask"),
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
+                ]),
+                (load_atlases_wf, concatenate_data_wf, [
+                    ("outputnode.atlas_names", "inputnode.atlas_names"),
                 ]),
             ])
             # fmt:on
