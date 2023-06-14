@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting interfaces."""
+import json
 import os
 
 import matplotlib.pyplot as plt
@@ -207,9 +208,10 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
 
 
 class _QCPlotsOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, mandatory=True, desc="qc file in tsv")
-    raw_qcplot = File(exists=True, mandatory=True, desc="qc plot before regression")
-    clean_qcplot = File(exists=True, mandatory=True, desc="qc plot after regression")
+    qc_file = File(exists=True, desc="QC TSV file.")
+    qc_metadata = File(exists=True, desc="Sidecar JSON for QC TSV file.")
+    raw_qcplot = File(exists=True, desc="qc plot before regression")
+    clean_qcplot = File(exists=True, desc="qc plot after regression")
 
 
 class QCPlots(SimpleInterface):
@@ -354,6 +356,84 @@ class QCPlots(SimpleInterface):
             "motionDVCorrFinal": [motionDVCorrFinal],
         }
 
+        QC_METADATA = {
+            "meanFD": {
+                "LongName": "Mean Framewise Displacement",
+                "Description": (
+                    "Average framewise displacement without any motion parameter filtering. "
+                    "This value includes high-motion outliers, but not dummy volumes. "
+                    "FD is calculated according to the Power definition."
+                ),
+                "Units": "mm",
+                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
+            },
+            "relMeansRMSMotion": {
+                "LongName": "Mean Relative Root Mean Squared",
+                "Description": (
+                    "Average relative root mean squared calculated from motion parameters, "
+                    "after removal of dummy volumes and high-motion outliers. "
+                    "Relative in this case means 'relative to the previous scan'."
+                ),
+                "Units": "arbitrary",
+            },
+            "relMaxRMSMotion": {
+                "LongName": "Maximum Relative Root Mean Squared",
+                "Description": (
+                    "Maximum relative root mean squared calculated from motion parameters, "
+                    "after removal of dummy volumes and high-motion outliers. "
+                    "Relative in this case means 'relative to the previous scan'."
+                ),
+                "Units": "arbitrary",
+            },
+            "meanDVInit": {
+                "LongName": "Mean DVARS Before Postprocessing",
+                "Description": (
+                    "Average DVARS (temporal derivative of root mean squared variance over "
+                    "voxels) calculated from the preprocessed BOLD file, after dummy scan removal."
+                ),
+                "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
+            },
+            "meanDVFinal": {
+                "LongName": "Mean DVARS After Postprocessing",
+                "Description": (
+                    "Average DVARS (temporal derivative of root mean squared variance over "
+                    "voxels) calculated from the denoised BOLD file."
+                ),
+                "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
+            },
+            "num_censored_volumes": {
+                "LongName": "Number of Censored Volumes",
+                "Description": (
+                    "The number of high-motion outlier volumes censored by XCP-D. "
+                    "This does not include dummy volumes."
+                ),
+            },
+            "nVolsRemoved": {
+                "LongName": "Number of Dummy Volumes",
+                "Description": (
+                    "The number of non-steady state volumes removed from the time series by XCP-D."
+                ),
+            },
+            "motionDVCorrInit": {
+                "LongName": "FD-DVARS Correlation Before Postprocessing",
+                "Description": (
+                    "The Pearson correlation coefficient between framewise displacement and DVARS "
+                    "(temporal derivative of root mean squared variance over voxels), "
+                    "after removal of dummy volumes, but before removal of high-motion outliers."
+                ),
+            },
+            "motionDVCorrFinal": {
+                "LongName": "FD-DVARS Correlation After Postprocessing",
+                "Description": (
+                    "The Pearson correlation coefficient between framewise displacement and DVARS "
+                    "(temporal derivative of root mean squared variance over voxels), "
+                    "after postprocessing. "
+                    "The FD time series is unfiltered, but censored. "
+                    "The DVARS time series is calculated from the denoised BOLD data."
+                ),
+            },
+        }
+
         # Get the different components in the bold file name
         # eg: ['sub-colornest001', 'ses-1'], etc.
         _, bold_file_name = os.path.split(self.inputs.name_source)
@@ -384,6 +464,16 @@ class QCPlots(SimpleInterface):
             use_ext=False,
         )
         df.to_csv(self._results["qc_file"], index=False, header=True)
+
+        # Write out the metadata file
+        self._results["qc_metadata"] = fname_presuffix(
+            self.inputs.cleaned_file,
+            suffix="qc_bold.json",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        with open(self._results["qc_metadata"], "w") as fo:
+            json.dump(QC_METADATA, fo, indent=4, sort_keys=True)
 
         return runtime
 
