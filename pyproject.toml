@@ -1,11 +1,114 @@
 [build-system]
-requires = ["setuptools==58.2.0", "wheel"]
+requires = ["hatchling", "hatch-vcs", "nipreps-versions"]
+build-backend = "hatchling.build"
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-src_paths = ["isort", "test"]
-known_local_folder = ["xcp_d"]
+[project]
+name = "xcp_d"
+description = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
+authors = [{name = "PennLINC and DCAN labs"}]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3.8",
+]
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+dependencies = [
+    'importlib_resources; python_version < "3.9"',
+    "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
+    "h5py",  # for DCAN motion file
+    "indexed_gzip ~= 1.6.4",  # for loading imgs in nibabel
+    "jinja2 ~= 3.0.0",  # for executive summary
+    "matplotlib ~= 3.4.2",
+    "networkx ~= 2.8.8",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
+    "nibabel >= 3.2.1",
+    "nilearn ~= 0.10.0",
+    "nipype ~= 1.8.5",
+    "niworkflows == 1.7.3",
+    "num2words",  # for boilerplates
+    "numpy ~= 1.19",
+    "packaging",  # for version string parsing
+    "pandas",
+    "psutil >= 5.4",  # for sentry
+    "pybids ~= 0.15.1",
+    "pyyaml",
+    "scikit-learn ~= 1.1",
+    "scipy >= 1.8.0",  # nipype needs networkx, which needs scipy > 1.8.0
+    "seaborn",  # for plots
+    "sentry-sdk ~= 1.4.3",  # for usage reports
+    "templateflow ~= 0.8.1",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/PennLINC/xcp_d"
+Documentation = "https://www.xcp-d.readthedocs.io"
+Paper = "https://doi.org/10.1038/s41592-022-01458-7"
+"Docker Images" = "https://hub.docker.com/r/pennlinc/xcp_d/tags/"
+NiPreps = "https://www.nipreps.org/"
+
+[project.optional-dependencies]
+doc = [
+    "doctest-ignore-unicode",
+    "nbsphinx",
+    "pydot >=1.2.3",
+    "pydotplus",
+    "recommonmark",
+    "sphinx >= 4.2.0",
+    "sphinx-argparse",
+    "sphinx-markdown-tables",
+    "sphinx_rtd_theme",
+    "sphinxcontrib-apidoc",
+    "sphinxcontrib-bibtex",
+    "svgutils",
+]
+test = [
+    "coverage",
+    "pytest",
+    "pytest-cov",
+]
+maint = [
+    "fuzzywuzzy",
+    "python-Levenshtein",
+]
+
+# Aliases
+all = ["xcp_d[doc,maint,test]"]
+
+[project.scripts]
+xcp_d = "xcp_d.cli.run:main"
+xcp_d-combineqc = "xcp_d.cli.aggregate_qc:main"
+
+#
+# Hatch configurations
+#
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+exclude = [".git_archival.txt"]  # No longer needed in sdist
+
+[tool.hatch.build.targets.wheel]
+packages = ["xcp_d"]
+exclude = [
+    "xcp_d/tests/data",  # Large test data directory
+]
+
+##  The following two sections configure setuptools_scm in the hatch way
+
+[tool.hatch.version]
+source = "vcs"
+# raw-options = { version_scheme = "nipreps-calver" }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "xcp_d/_version.py"
+
+#
+# Developer tool configurations
+#
 
 [tool.black]
 line-length = 99
@@ -28,6 +131,28 @@ exclude = '''
 )
 '''
 
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+src_paths = ["isort", "test"]
+known_local_folder = ["xcp_d"]
+
+[tool.flake8]
+max-line-length = "99"
+doctests = "False"
+exclude = [
+    "*build/",
+    "xcp_d/_warnings.py",
+    "xcp_d/config.py",
+    "xcp_d/data/",
+    "xcp_d/tests/",
+]
+ignore = ["D107", "E203", "E402", "E722", "W503", "N803", "N806", "N815"]
+per-file-ignores = [
+    "**/__init__.py : F401",
+    "docs/conf.py : E265",
+]
+
 [tool.pytest.ini_options]
 addopts = '-m "not ds001419_nifti and not ds001419_cifti and not ds001419_cifti_t2wonly and not fmriprep_without_freesurfer and not nibabies"'
 markers = [
@@ -36,4 +161,20 @@ markers = [
     "ds001419_cifti_t2wonly: mark integration test for fMRIPrep derivatives with CIFTI settings and a simulated T2w file",
     "fmriprep_without_freesurfer: mark integration test for fMRIPrep derivatives without FreeSurfer",
     "nibabies: mark integration test for nibabies derivatives",
+]
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
+    "*/conftest.py",
+    "xcp_d/_version.py"
+]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    'raise NotImplementedError',
+    'warnings\.warn',
 ]

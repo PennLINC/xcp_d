@@ -316,13 +316,7 @@ jobs:
           no_output_timeout: 3h
           command: |
             # Get version, update files.
-            THISVERSION=$( python3 get_version.py )
-            if [[ ${THISVERSION:0:1} == "0" ]] ; then
-              echo "WARNING: latest git tag could not be found"
-              echo "Please, make sure you fetch all tags from upstream with"
-              echo "the command ``git fetch --tags --verbose`` and push"
-              echo "them to your fork with ``git push origin --tags``"
-            fi
+            THISVERSION=$(python -c "from aslprep import __version__; print(__version__)")
             sed -i "s/title = {xcp_d}/title = {xcp_d ${CIRCLE_TAG:-$THISVERSION}}/" xcp_d/data/boilerplate.bib
             # Build docker image
             e=1 && for i in {1..5}; do
