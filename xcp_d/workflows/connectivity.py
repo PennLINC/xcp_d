@@ -245,6 +245,187 @@ def init_load_atlases_wf(
 
 
 @fill_doc
+def init_parcellate_surfaces_wf(
+    output_dir,
+    files_to_parcellate,
+    min_coverage,
+    mem_gb,
+    omp_nthreads,
+    name="parcellate_surfaces_wf",
+):
+    """Parcellate surface files and write them out to the output directory.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.connectivity import init_parcellate_surfaces_wf
+
+            wf = init_parcellate_surfaces_wf(
+                output_dir=".",
+                files_to_parcellate=["sulc", "curv", "thickness"],
+                min_coverage=0.5,
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="parcellate_surfaces_wf",
+            )
+
+    Parameters
+    ----------
+    %(output_dir)s
+    files_to_parcellate : :obj:`list` of :obj:`str`
+        List of surface file types to parcellate
+        (e.g., "sulcal_depth", "sulcal_curv", "cortical_thickness").
+    %(min_coverage)s
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+
+    Inputs
+    ------
+    lh_sulcal_depth
+    rh_sulcal_depth
+    lh_sulcal_curv
+    rh_sulcal_curv
+    lh_cortical_thickness
+    rh_cortical_thickness
+    """
+    workflow = Workflow(name=name)
+
+    SURF_DESCS = {
+        "sulcal_depth": "sulc",
+        "sulcal_curv": "curv",
+        "cortical_thickness": "thickness",
+    }
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "lh_sulcal_depth",
+                "rh_sulcal_depth",
+                "lh_sulcal_curv",
+                "rh_sulcal_curv",
+                "lh_cortical_thickness",
+                "rh_cortical_thickness",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    atlas_name_grabber = pe.Node(
+        Function(output_names=["atlas_names"], function=get_atlas_names),
+        name="atlas_name_grabber",
+    )
+
+    # Get CIFTI atlases via pkgrf
+    atlas_file_grabber = pe.MapNode(
+        Function(
+            input_names=["atlas_name"],
+            output_names=["atlas_file", "atlas_labels_file"],
+            function=get_atlas_cifti,
+        ),
+        name="atlas_file_grabber",
+        iterfield=["atlas_name"],
+    )
+
+    workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
+
+    for file_to_parcellate in files_to_parcellate:
+        # Convert giftis to ciftis
+        convert_giftis_to_cifti = pe.Node(
+            CiftiCreateDenseScalar(),
+            name=f"convert_{file_to_parcellate}_to_cifti",
+            n_procs=omp_nthreads,
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, convert_giftis_to_cifti, [
+                (f"lh_{file_to_parcellate}", "left_metric"),
+                (f"rh_{file_to_parcellate}", "right_metric"),
+            ]),
+        ])
+        # fmt:on
+
+        resample_atlas_to_surface = pe.MapNode(
+            CiftiCreateDenseFromTemplate(),
+            name=f"resample_atlas_to_{file_to_parcellate}",
+            n_procs=omp_nthreads,
+            iterfield=["label"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (atlas_file_grabber, resample_atlas_to_surface, [("atlas_file", "label")]),
+            (convert_giftis_to_cifti, resample_atlas_to_surface, [("out_file", "template_cifti")]),
+        ])
+        # fmt:on
+
+        parcellate_atlas = pe.MapNode(
+            CiftiParcellate(
+                direction="COLUMN",
+                only_numeric=True,
+                out_file="parcellated_atlas.pscalar.nii",
+            ),
+            name=f"parcellate_atlas_for_{file_to_parcellate}",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+            iterfield=["atlas_label"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (convert_giftis_to_cifti, parcellate_atlas, [("out_file", "in_file")]),
+            (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
+        ])
+        # fmt:on
+
+        # Parcellate the ciftis
+        parcellate_surface = pe.MapNode(
+            CiftiConnect(min_coverage=min_coverage, correlate=False),
+            mem_gb=mem_gb,
+            name=f"parcellate_{file_to_parcellate}",
+            n_procs=omp_nthreads,
+            iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas_file")]),
+            (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
+            (convert_giftis_to_cifti, parcellate_surface, [("out_file", "data_file")]),
+            (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
+        ])
+        # fmt:on
+
+        # Write out the parcellated files
+        ds_parcellated_surface = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["hemi", "desc"],
+                desc=SURF_DESCS[file_to_parcellate],
+                suffix="morph",
+                extension=".tsv",
+            ),
+            name=f"ds_parcellated_{file_to_parcellate}",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_parcellated_surface, [(f"lh_{file_to_parcellate}", "source_file")]),
+            (atlas_name_grabber, ds_parcellated_surface, [("atlas_names", "atlas")]),
+            (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
+        ])
+        # fmt:on
+
+    return workflow
+
+
+@fill_doc
 def init_functional_connectivity_nifti_wf(
     output_dir,
     alff_available,
@@ -647,186 +828,5 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
     ])
     # fmt:on
-
-    return workflow
-
-
-@fill_doc
-def init_parcellate_surfaces_wf(
-    output_dir,
-    files_to_parcellate,
-    min_coverage,
-    mem_gb,
-    omp_nthreads,
-    name="parcellate_surfaces_wf",
-):
-    """Parcellate surface files and write them out to the output directory.
-
-    Workflow Graph
-        .. workflow::
-            :graph2use: orig
-            :simple_form: yes
-
-            from xcp_d.workflows.connectivity import init_parcellate_surfaces_wf
-
-            wf = init_parcellate_surfaces_wf(
-                output_dir=".",
-                files_to_parcellate=["sulc", "curv", "thickness"],
-                min_coverage=0.5,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="parcellate_surfaces_wf",
-            )
-
-    Parameters
-    ----------
-    %(output_dir)s
-    files_to_parcellate : :obj:`list` of :obj:`str`
-        List of surface file types to parcellate (e.g., "sulcal_depth", "sulcal_curv",
-        "cortical_thickness").
-    %(min_coverage)s
-    %(mem_gb)s
-    %(omp_nthreads)s
-    %(name)s
-
-    Inputs
-    ------
-    lh_sulcal_depth
-    rh_sulcal_depth
-    lh_sulcal_curv
-    rh_sulcal_curv
-    lh_cortical_thickness
-    rh_cortical_thickness
-    """
-    workflow = Workflow(name=name)
-
-    SURF_DESCS = {
-        "sulcal_depth": "sulc",
-        "sulcal_curv": "curv",
-        "cortical_thickness": "thickness",
-    }
-
-    inputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
-            ],
-        ),
-        name="inputnode",
-    )
-
-    atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
-        name="atlas_name_grabber",
-    )
-
-    # get CIFTI atlases via pkgrf
-    atlas_file_grabber = pe.MapNode(
-        Function(
-            input_names=["atlas_name"],
-            output_names=["atlas_file", "atlas_labels_file"],
-            function=get_atlas_cifti,
-        ),
-        name="atlas_file_grabber",
-        iterfield=["atlas_name"],
-    )
-
-    workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
-
-    for file_to_parcellate in files_to_parcellate:
-        # Convert giftis to ciftis
-        convert_giftis_to_cifti = pe.Node(
-            CiftiCreateDenseScalar(),
-            name=f"convert_{file_to_parcellate}_to_cifti",
-            n_procs=omp_nthreads,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, convert_giftis_to_cifti, [
-                (f"lh_{file_to_parcellate}", "left_metric"),
-                (f"rh_{file_to_parcellate}", "right_metric"),
-            ]),
-        ])
-        # fmt:on
-
-        resample_atlas_to_surface = pe.MapNode(
-            CiftiCreateDenseFromTemplate(),
-            name=f"resample_atlas_to_{file_to_parcellate}",
-            n_procs=omp_nthreads,
-            iterfield=["label"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (atlas_file_grabber, resample_atlas_to_surface, [("atlas_file", "label")]),
-            (convert_giftis_to_cifti, resample_atlas_to_surface, [("out_file", "template_cifti")]),
-        ])
-        # fmt:on
-
-        parcellate_atlas = pe.MapNode(
-            CiftiParcellate(
-                direction="COLUMN",
-                only_numeric=True,
-                out_file="parcellated_atlas.pscalar.nii",
-            ),
-            name=f"parcellate_atlas_for_{file_to_parcellate}",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-            iterfield=["atlas_label"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (convert_giftis_to_cifti, parcellate_atlas, [("out_file", "in_file")]),
-            (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
-        ])
-        # fmt:on
-
-        # Parcellate the ciftis
-        parcellate_surface = pe.MapNode(
-            CiftiConnect(min_coverage=min_coverage, correlate=False),
-            mem_gb=mem_gb,
-            name=f"parcellate_{file_to_parcellate}",
-            n_procs=omp_nthreads,
-            iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas_file")]),
-            (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
-            (convert_giftis_to_cifti, parcellate_surface, [("out_file", "data_file")]),
-            (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
-        ])
-        # fmt:on
-
-        # Write out the parcellated files
-        ds_parcellated_surface = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                dismiss_entities=["hemi", "desc"],
-                desc=SURF_DESCS[file_to_parcellate],
-                suffix="morph",
-                extension=".tsv",
-            ),
-            name=f"ds_parcellated_{file_to_parcellate}",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_parcellated_surface, [(f"lh_{file_to_parcellate}", "source_file")]),
-            (atlas_name_grabber, ds_parcellated_surface, [("atlas_names", "atlas")]),
-            (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
-        ])
-        # fmt:on
 
     return workflow
