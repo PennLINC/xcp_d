@@ -307,7 +307,7 @@ There is a full list of the changes made between 0.1.3 and 0.2.0 below. However,
 * [TEST] Add tests for outstanding modules by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/529
 * [FIX] Fcon workflow tests are incompatible with changes from main by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/584
 
-## New Contributors
+### New Contributors
 * @tsalo made their first contribution in https://github.com/PennLINC/xcp_d/pull/457
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.1.3...0.2.0
