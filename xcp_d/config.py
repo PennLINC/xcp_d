@@ -192,8 +192,6 @@ class _Config:
     @classmethod
     def get(cls):
         """Return defined settings."""
-        from xcp_d.utils.spaces import Reference, SpatialReferences
-
         out = {}
         for k, v in cls.__dict__.items():
             if k.startswith("_") or v is None:
@@ -202,10 +200,7 @@ class _Config:
                 continue
             if k in cls._paths:
                 v = str(v)
-            if isinstance(v, SpatialReferences):
-                v = " ".join([str(s) for s in v.references]) or None
-            if isinstance(v, Reference):
-                v = str(v) or None
+
             out[k] = v
         return out
 
@@ -320,47 +315,25 @@ class execution(_Config):
     """Configure run-level settings."""
 
     fmri_dir = None
-    bids_filters = None
-
-
-
-    anat_derivatives = None
-    """A path where anatomical derivatives are found to fast-track *sMRIPrep*."""
-    bids_dir = None
-    """An existing path to the dataset, which must be BIDS-compliant."""
-    bids_description_hash = None
-    """Checksum (SHA256) of the ``dataset_description.json`` of the BIDS dataset."""
+    """The root folder of fMRI preprocessing derivatives."""
     bids_filters = None
     """A dictionary of BIDS selection filters."""
     boilerplate_only = False
     """Only generate a boilerplate."""
-    debug = False
-    """Run in sloppy mode (meaning, suboptimal parameters that minimize run-time)."""
     fs_license_file = _fs_license
     """An existing file containing a FreeSurfer license."""
-    fs_subjects_dir = None
-    """FreeSurfer's subjects directory."""
     layout = None
     """A :py:class:`~bids.layout.BIDSLayout` object, see :py:func:`init`."""
     log_dir = None
     """The path to a directory that contains execution logs."""
     log_level = 25
     """Output verbosity."""
-    low_mem = None
-    """Utilize uncompressed NIfTIs and other tricks to minimize memory allocation."""
     md_only_boilerplate = False
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
     notrack = False
     """Do not monitor *xcp_d* using Sentry.io."""
     output_dir = None
     """Folder where derivatives will be stored."""
-    output_spaces = None
-    """List of (non)standard spaces designated (with the ``--output-spaces`` flag of
-    the command line) as spatial references for outputs."""
-    reports_only = False
-    """Only build the reports, based on the reportlets found in a cached working directory."""
-    run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
-    """Unique identifier of this particular run."""
     participant_label = None
     """List of participant identifiers that are to be preprocessed."""
     task_id = None
@@ -370,14 +343,13 @@ class execution(_Config):
     work_dir = Path("work").absolute()
     """Path to a working directory where intermediate results will be available."""
     write_graph = False
-    """Write out the computational graph corresponding to the planned preprocessing."""
+    """Write out the computational graph corresponding to the planned postprocessing."""
 
     _layout = None
 
     _paths = (
         "fmri_dir",
         "fs_license_file",
-        "fs_subjects_dir",
         "layout",
         "log_dir",
         "output_dir",
