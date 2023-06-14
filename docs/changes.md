@@ -165,7 +165,8 @@ Two big breaking changes are (1) there is a new `--dcan-qc` flag that determines
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.2.0...0.3.0
 
 
-# 0.2.2
+## 0.2.2
+
 This is a patch release for the 0.2 series. The main bug being fixed is that using `--dummytime` was causing crashes in the executive summary workflow.
 
 ### 🎉 Exciting New Features
