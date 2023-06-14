@@ -9,7 +9,14 @@ This pipeline is developed by Ted Satterthwaite's lab (https://pennlinc.io/).
 
 import warnings
 
-from .__about__ import __copyright__, __credits__, __packagename__, __version__  # noqa
+from xcp_d.__about__ import __copyright__, __credits__, __packagename__, __version__
+
+__all__ = [
+    "__copyright__",
+    "__credits__",
+    "__packagename__",
+    "__version__",
+]
 
 # cmp is not used by fmriprep, so ignore nipype-generated warnings
 warnings.filterwarnings("ignore", r"cmp not installed")
