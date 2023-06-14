@@ -23,12 +23,12 @@ class _IndexImageInputSpec(BaseInterfaceInputSpec):
         desc="A 4D image to index.",
     )
     index = traits.Int(
-        default_value=0,
+        0,
         usedefault=True,
         desc="Volume index to select from in_file.",
     )
     out_file = File(
-        default_value="img_3d.nii.gz",
+        "img_3d.nii.gz",
         usedefault=True,
         exists=False,
         desc="The name of the indexed file.",
