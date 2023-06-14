@@ -9,6 +9,7 @@ from nipype.interfaces.base import (
     File,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
 from nipype.interfaces.workbench.base import WBCommand
@@ -809,37 +810,37 @@ class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiSeparateVolumeAll command."""
 
     out_file = File(
-        name_source=["volume_data"],
-        name_template="%s_combined.dscalar.nii",
-        keep_extension=False,
+        exists=False,
+        mandatory=False,
+        genfile=True,
         argstr="%s",
         position=0,
         desc="The CIFTI output.",
     )
     left_metric = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="-left-metric %s",
         position=1,
         desc="The input surface data from the left hemisphere.",
     )
     right_metric = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="-right-metric %s",
         position=2,
         desc="The input surface data from the right hemisphere.",
     )
     volume_data = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="-volume %s",
         position=3,
         desc="The input volumetric data.",
     )
     structure_label_volume = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="%s",
         position=4,
         desc="A label file indicating the structure of each voxel in volume_data.",
@@ -849,7 +850,7 @@ class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
 class _CiftiCreateDenseScalarOutputSpec(TraitedSpec):
     """Output specification for the CiftiCreateDenseScalar command."""
 
-    out_file = File(exists=True, desc="output CIFTI file")
+    out_file = File(exists=True, genfile=True, desc="output CIFTI file")
 
 
 class CiftiCreateDenseScalar(WBCommand):
@@ -877,6 +878,22 @@ class CiftiCreateDenseScalar(WBCommand):
     input_spec = _CiftiCreateDenseScalarInputSpec
     output_spec = _CiftiCreateDenseScalarOutputSpec
     _cmd = "wb_command -cifti-create-dense-scalar"
+
+    def _gen_filename(self, name):
+        if name != "out_file":
+            return None
+
+        if isdefined(self.inputs.volume_data):
+            _, fname, _ = split_filename(self.inputs.volume_data)
+        else:
+            _, fname, _ = split_filename(self.inputs.left_metric)
+
+        return f"{fname}_converted.dscalar.nii"
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
+        return outputs
 
 
 class _ShowSceneInputSpec(CommandLineInputSpec):
@@ -992,20 +1009,15 @@ class ShowScene(WBCommand):
         return outputs
 
     def _gen_filename(self, name):
-        if name == "out_file":
-            return self._gen_outfilename()
-        else:
-            return None
+        return self._gen_outfilename() if name == "out_file" else None
 
     def _gen_outfilename(self):
         frame_number = self.inputs.scene_name_or_number
-        if isinstance(frame_number, int):
-            # Add a bunch of leading zeros for easy sorting
-            out_file = f"frame_{frame_number:06g}.png"
-        else:
-            out_file = f"frame_{frame_number}.png"
-
-        return out_file
+        return (
+            f"frame_{frame_number:06g}.png"
+            if isinstance(frame_number, int)
+            else f"frame_{frame_number}.png"
+        )
 
 
 class _CiftiConvertInputSpec(CommandLineInputSpec):
@@ -1076,14 +1088,13 @@ class CiftiConvert(WBCommand):
     _cmd = "wb_command -cifti-convert"
 
     def _gen_filename(self, name):
-        if name == "out_file":
-            _, fname, ext = split_filename(self.inputs.in_file)
-            # if we want to support other cifti outputs, we'll need to change this.
-            ext = ".dtseries.nii" if self.inputs.target == "from" else ".nii.gz"
-            output = fname + "_converted" + ext
-            return output
-        else:
+        if name != "out_file":
             return None
+
+        _, fname, ext = split_filename(self.inputs.in_file)
+        # if we want to support other cifti outputs, we'll need to change this.
+        ext = ".dtseries.nii" if self.inputs.target == "from" else ".nii.gz"
+        return f"{fname}_converted{ext}"
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
