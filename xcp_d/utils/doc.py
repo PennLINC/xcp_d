@@ -55,7 +55,8 @@ docdict[
     "analysis_level"
 ] = """
 analysis_level : {"participant"}
-    The analysis level for ``xcp_d``. Must be specified as "participant".
+    The analysis level for ``xcp_d``. Must be specified as "participant" since xcp_d
+    performs analyses at the participant level.
 """
 
 docdict[

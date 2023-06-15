@@ -1,17 +1,66 @@
 """Utility functions for tests."""
 import os
 import subprocess
+import tarfile
 from contextlib import contextmanager
 from glob import glob
+from gzip import GzipFile
+from io import BytesIO
 
 import nibabel as nb
 import numpy as np
+import requests
 from bids.layout import BIDSLayout
+from nipype import logging
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def get_nodes(wf_results):
     """Load nodes from a Nipype workflow's results."""
     return {node.fullname: node for node in wf_results.nodes}
+
+
+def download_test_data(dset, data_dir=None):
+    """Download test data."""
+    URLS = {
+        "fmriprepwithoutfreesurfer": (
+            "https://upenn.box.com/shared/static/seyp1cu9w5v3ds6iink37hlsa217yge1.tar.gz"
+        ),
+        "nibabies": "https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz",
+        "ds001419-fmriprep": (
+            "https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz"
+        ),
+    }
+    if dset == "*":
+        for k in URLS:
+            download_test_data(k, data_dir=data_dir)
+
+        return
+
+    if dset not in URLS:
+        raise ValueError(f"dset ({dset}) must be one of: {', '.join(URLS.keys())}")
+
+    if not data_dir:
+        data_dir = os.path.join(os.path.dirname(get_test_data_path()), "test_data")
+
+    out_dir = os.path.join(data_dir, dset)
+
+    if os.path.isdir(out_dir):
+        LOGGER.info(
+            f"Dataset {dset} already exists. "
+            "If you need to re-download the data, please delete the folder."
+        )
+        return out_dir
+    else:
+        LOGGER.info(f"Downloading {dset} to {out_dir}")
+
+    os.makedirs(out_dir, exist_ok=True)
+    with requests.get(URLS[dset], stream=True) as req:
+        with tarfile.open(fileobj=GzipFile(fileobj=BytesIO(req.content))) as t:
+            t.extractall(out_dir)
+
+    return out_dir
 
 
 def get_test_data_path():

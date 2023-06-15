@@ -412,6 +412,7 @@ bibtex_footbibliography_header = ""
 
 
 def setup(app):
+    """Add extra formatting files."""
     app.add_css_file("theme_overrides.css")
     # We need this for the boilerplate script
     app.add_js_file("https://cdn.rawgit.com/chrisfilo/zenodo.js/v0.1/zenodo.js")

@@ -7,26 +7,73 @@ import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
+from xcp_d.interfaces.ants import ApplyTransforms
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.tests.utils import get_nodes
+from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
+from xcp_d.utils.utils import get_std2bold_xfms
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows.connectivity import (
     init_functional_connectivity_cifti_wf,
     init_functional_connectivity_nifti_wf,
+    init_load_atlases_wf,
 )
 
 np.set_printoptions(threshold=sys.maxsize)
 
 
-def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
-    """Test the nifti workflow."""
-    tmpdir = tmp_path_factory.mktemp("test_nifti_conn")
+def test_init_load_atlases_wf_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test init_load_atlases_wf with a nifti input."""
+    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
     bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
-    template_to_anat_xfm = fmriprep_with_freesurfer_data["template_to_anat_xfm"]
+
+    load_atlases_wf = init_load_atlases_wf(
+        output_dir=tmpdir,
+        cifti=False,
+        mem_gb=1,
+        omp_nthreads=1,
+        name="load_atlases_wf",
+    )
+    load_atlases_wf.inputs.inputnode.name_source = bold_file
+    load_atlases_wf.inputs.inputnode.bold_file = bold_file
+    load_atlases_wf.base_dir = tmpdir
+    load_atlases_wf_res = load_atlases_wf.run()
+    nodes = get_nodes(load_atlases_wf_res)
+    atlas_names = nodes["load_atlases_wf.warp_atlases_to_bold_space"].get_output("output_image")
+    assert len(atlas_names) == 13
+
+
+def test_init_load_atlases_wf_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test init_load_atlases_wf with a cifti input."""
+    tmpdir = tmp_path_factory.mktemp("test_init_load_atlases_wf_cifti")
+
+    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
+
+    load_atlases_wf = init_load_atlases_wf(
+        output_dir=tmpdir,
+        cifti=True,
+        mem_gb=1,
+        omp_nthreads=1,
+        name="load_atlases_wf",
+    )
+    load_atlases_wf.inputs.inputnode.name_source = bold_file
+    load_atlases_wf.inputs.inputnode.bold_file = bold_file
+    load_atlases_wf.base_dir = tmpdir
+    load_atlases_wf_res = load_atlases_wf.run()
+    nodes = get_nodes(load_atlases_wf_res)
+    atlas_names = nodes["load_atlases_wf.cast_atlas_to_int16"].get_output("out_file")
+    assert len(atlas_names) == 13
+
+
+def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test the nifti workflow."""
+    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
+
+    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
     boldref = fmriprep_with_freesurfer_data["boldref"]
-    anat_to_native_xfm = fmriprep_with_freesurfer_data["anat_to_native_xfm"]
+    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -41,20 +88,43 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     assert os.path.isfile(fake_bold_file)
 
+    atlas_names = ["Schaefer1017", "Schaefer217", "Schaefer417", "Gordon", "Glasser"]
+    atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
+    atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
+
+    # Perform the resampling and parcellation done by init_load_atlases_wf
+    warped_atlases = []
+    # Get transform(s) from MNI152NLin6Asym to BOLD file's space
+    transforms_from_MNI152NLin6Asym = get_std2bold_xfms(bold_file)
+    for atlas_file in atlas_files:
+        # Using the generated transforms, apply them to get everything in the correct MNI form
+        warp_atlases_to_bold_space = ApplyTransforms(
+            reference_image=boldref,
+            transforms=transforms_from_MNI152NLin6Asym,
+            input_image=atlas_file,
+            interpolation="GenericLabel",
+            input_image_type=3,
+            dimension=3,
+        )
+        warp_atlases_to_bold_space_results = warp_atlases_to_bold_space.run(cwd=tmpdir)
+
+        warped_atlases.append(warp_atlases_to_bold_space_results.outputs.output_image)
+
     # Let's define the inputs and create the workflow
     connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=tmpdir,
         min_coverage=0.5,
+        alff_available=False,
         mem_gb=4,
         name="connectivity_wf",
-        omp_nthreads=2,
     )
-    connectivity_wf.inputs.inputnode.template_to_anat_xfm = template_to_anat_xfm
-    connectivity_wf.inputs.inputnode.anat_to_native_xfm = anat_to_native_xfm
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
-    connectivity_wf.inputs.inputnode.boldref = boldref
+    connectivity_wf.inputs.inputnode.reho = fake_bold_file
+    connectivity_wf.inputs.inputnode.atlas_names = atlas_names
+    connectivity_wf.inputs.inputnode.atlas_files = warped_atlases
+    connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
@@ -62,13 +132,13 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     n_parcels, n_parcels_in_atlas = 1000, 1000
 
     # Let's find the correct workflow outputs
-    atlas_file = nodes["connectivity_wf.warp_atlases_to_bold_space"].get_output("output_image")[9]
+    atlas_file = warped_atlases[0]
     assert os.path.isfile(atlas_file)
-    coverage = nodes["connectivity_wf.nifti_connect"].get_output("coverage")[9]
+    coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[0]
     assert os.path.isfile(coverage)
-    timeseries = nodes["connectivity_wf.nifti_connect"].get_output("timeseries")[9]
+    timeseries = nodes["connectivity_wf.functional_connectivity"].get_output("timeseries")[0]
     assert os.path.isfile(timeseries)
-    correlations = nodes["connectivity_wf.nifti_connect"].get_output("correlations")[9]
+    correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[0]
     assert os.path.isfile(correlations)
 
     # Read that into a df
@@ -121,9 +191,9 @@ def test_nifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
 
 
-def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
-    tmpdir = tmp_path_factory.mktemp("test_cifti_conn")
+    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_cifti_wf")
 
     bold_file = fmriprep_with_freesurfer_data["cifti_file"]
     TR = _get_tr(nb.load(bold_file))
@@ -142,34 +212,68 @@ def test_cifti_conn(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     assert os.path.isfile(fake_bold_file)
 
+    atlas_names = ["Schaefer1017", "Schaefer217", "Schaefer417", "Gordon", "Glasser"]
+    atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
+    atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
+
+    # Perform the resampling and parcellation done by init_load_atlases_wf
+    parcellated_atlases = []
+    for i_file, atlas_file in enumerate(atlas_files):
+        resample_atlas_to_data = CiftiCreateDenseFromTemplate(
+            template_cifti=bold_file,
+            label=atlas_file,
+        )
+        resample_results = resample_atlas_to_data.run(cwd=tmpdir)
+
+        parcellate_atlas = CiftiParcellate(
+            direction="COLUMN",
+            only_numeric=True,
+            out_file=f"parcellated_atlas_{i_file}.pscalar.nii",
+            atlas_label=atlas_file,
+            in_file=resample_results.outputs.cifti_out,
+        )
+        parcellate_atlas_results = parcellate_atlas.run(cwd=tmpdir)
+
+        parcellated_atlases.append(parcellate_atlas_results.outputs.out_file)
+
     # Create the node and a tmpdir to write its results out to
     connectivity_wf = init_functional_connectivity_cifti_wf(
         output_dir=tmpdir,
         min_coverage=0.5,
+        alff_available=False,
         mem_gb=4,
         omp_nthreads=2,
         name="connectivity_wf",
     )
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
     connectivity_wf.inputs.inputnode.name_source = bold_file
+    connectivity_wf.inputs.inputnode.reho = fake_bold_file
+    connectivity_wf.inputs.inputnode.atlas_names = atlas_names
+    connectivity_wf.inputs.inputnode.atlas_files = atlas_files
+    connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
+    connectivity_wf.inputs.inputnode.parcellated_atlas_files = parcellated_atlases
     connectivity_wf.base_dir = tmpdir
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the cifti files
-    pscalar = nodes["connectivity_wf.cifti_connect"].get_output("coverage_ciftis")[9]
+    pscalar = nodes["connectivity_wf.functional_connectivity"].get_output("coverage_ciftis")[0]
     assert os.path.isfile(pscalar)
-    timeseries_ciftis = nodes["connectivity_wf.cifti_connect"].get_output("timeseries_ciftis")[9]
+    timeseries_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
+        "timeseries_ciftis"
+    )[0]
     assert os.path.isfile(timeseries_ciftis)
-    correlation_ciftis = nodes["connectivity_wf.cifti_connect"].get_output("correlation_ciftis")[9]
+    correlation_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
+        "correlation_ciftis"
+    )[0]
     assert os.path.isfile(correlation_ciftis)
 
     # Let's find the tsv files
-    coverage = nodes["connectivity_wf.cifti_connect"].get_output("coverage")[9]
+    coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[0]
     assert os.path.isfile(coverage)
-    timeseries = nodes["connectivity_wf.cifti_connect"].get_output("timeseries")[9]
+    timeseries = nodes["connectivity_wf.functional_connectivity"].get_output("timeseries")[0]
     assert os.path.isfile(timeseries)
-    correlations = nodes["connectivity_wf.cifti_connect"].get_output("correlations")[9]
+    correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[0]
     assert os.path.isfile(correlations)
 
     # Let's read in the ciftis' data

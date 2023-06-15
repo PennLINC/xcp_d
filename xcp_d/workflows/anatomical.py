@@ -326,7 +326,7 @@ def init_postprocess_surfaces_wf(
     process_surfaces,
     mesh_available,
     standard_space_mesh,
-    shape_available,
+    morphometry_files,
     output_dir,
     t1w_available,
     t2w_available,
@@ -350,7 +350,7 @@ def init_postprocess_surfaces_wf(
                 process_surfaces=True,
                 mesh_available=True,
                 standard_space_mesh=False,
-                shape_available=True,
+                morphometry_files=[],
                 output_dir=".",
                 t1w_available=True,
                 t2w_available=True,
@@ -367,7 +367,7 @@ def init_postprocess_surfaces_wf(
     process_surfaces : bool
     mesh_available : bool
     standard_space_mesh : bool
-    shape_available : bool
+    morphometry_files : list of str
     %(output_dir)s
     t1w_available : bool
         True if a T1w image is available.
@@ -453,7 +453,7 @@ def init_postprocess_surfaces_wf(
         # Return early, as all other steps require process_surfaces.
         return workflow
 
-    if shape_available or (mesh_available and standard_space_mesh):
+    if morphometry_files or (mesh_available and standard_space_mesh):
         # At least some surfaces are already in fsLR space and must be copied,
         # without modification, to the output directory.
         copy_std_surfaces_to_datasink = init_copy_inputs_to_outputs_wf(
@@ -461,19 +461,16 @@ def init_postprocess_surfaces_wf(
             name="copy_std_surfaces_to_datasink",
         )
 
-    if shape_available:
-        # fmt:off
-        workflow.connect([
-            (inputnode, copy_std_surfaces_to_datasink, [
-                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
-            ]),
-        ])
-        # fmt:on
+    if morphometry_files:
+        for morphometry_file in morphometry_files:
+            # fmt:off
+            workflow.connect([
+                (inputnode, copy_std_surfaces_to_datasink, [
+                    (f"lh_{morphometry_file}", f"inputnode.lh_{morphometry_file}"),
+                    (f"rh_{morphometry_file}", f"inputnode.rh_{morphometry_file}"),
+                ]),
+            ])
+            # fmt:on
 
     if mesh_available:
         # Generate and output HCP-style surface files.
@@ -563,7 +560,7 @@ def init_postprocess_surfaces_wf(
             ])
             # fmt:on
 
-    elif not shape_available:
+    elif not morphometry_files:
         raise ValueError(
             "No surfaces found. "
             "Surfaces are required if `--warp-surfaces-native2std` is enabled."
