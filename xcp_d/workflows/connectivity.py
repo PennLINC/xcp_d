@@ -264,7 +264,7 @@ def init_parcellate_surfaces_wf(
 
             wf = init_parcellate_surfaces_wf(
                 output_dir=".",
-                files_to_parcellate=["sulc", "curv", "thickness"],
+                files_to_parcellate=["sulcal_depth", "sulcal_curv", "cortical_thickness"],
                 min_coverage=0.5,
                 mem_gb=0.1,
                 omp_nthreads=1,
