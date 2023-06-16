@@ -548,25 +548,25 @@ def collect_surface_data(layout, participant_label):
         "lh_myelin": {
             "hemi": "L",
             "desc": None,
-            "suffix": "myelin",
+            "suffix": "myelinw",
             "extension": ".func.gii",
         },
         "rh_myelin": {
             "hemi": "R",
             "desc": None,
-            "suffix": "myelin",
+            "suffix": "myelinw",
             "extension": ".func.gii",
         },
         "lh_myelin_smoothed": {
             "hemi": "L",
             "desc": "smoothed",
-            "suffix": "myelin",
+            "suffix": "myelinw",
             "extension": ".func.gii",
         },
         "rh_myelin_smoothed": {
             "hemi": "R",
             "desc": "smoothed",
-            "suffix": "myelin",
+            "suffix": "myelinw",
             "extension": ".func.gii",
         },
     }
