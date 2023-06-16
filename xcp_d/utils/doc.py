@@ -393,6 +393,15 @@ dummy_scans : :obj:`int` or "auto"
 """
 
 docdict[
+    "random_seed"
+] = """
+random_seed : :obj:`int` or None
+    Random seed for the workflow.
+    This is currently only used with the ``--exact-time`` parameter,
+    when randomly selecting volumes to censor for correlation matrices.
+"""
+
+docdict[
     "min_coverage"
 ] = """
 min_coverage : :obj:`float`
