@@ -1309,20 +1309,8 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
             outlier_row = motion_outlier_idx[i_outlier]
             motion_outliers_df.loc[outlier_row, outlier_col] = 1
 
-        random_censor_df = pd.DataFrame()
-        if "random_censor" in censoring_df.columns:
-            n_random_censors = censoring_df["random_censor"].sum()
-            random_censor_df = pd.DataFrame(
-                data=np.zeros((censoring_df.shape[0], n_random_censors), dtype=np.int16),
-                columns=[f"random{i}" for i in range(1, n_random_censors + 1)],
-            )
-            random_censor_idx = np.where(censoring_df["random_censor"])[0]
-            for i_outlier, outlier_col in enumerate(random_censor_df.columns):
-                outlier_row = random_censor_idx[i_outlier]
-                random_censor_df.loc[outlier_row, outlier_col] = 1
-
         design_matrix_df = pd.concat(
-            (design_matrix_df, motion_outliers_df, random_censor_df),
+            (design_matrix_df, motion_outliers_df),
             axis=1,
         )
 

@@ -343,7 +343,7 @@ class RandomCensor(SimpleInterface):
         rng = np.random.default_rng(self.inputs.random_seed)
         outlier_idx = censoring_df.loc[censoring_df["framewise_displacement"] != 1].index.values
         for exact_scan in self.inputs.exact_scans:
-            random_censor = rng.choice(outlier_idx, self.inputs.exact_scans)
+            random_censor = rng.choice(outlier_idx, size=exact_scan, replace=False)
             column_name = f"exact_{exact_scan}"
             censoring_df[column_name] = 0
             censoring_df.loc[random_censor, column_name] = 1
