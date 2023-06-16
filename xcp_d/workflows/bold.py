@@ -518,6 +518,7 @@ def init_postprocess_nifti_wf(
         name_source=bold_file,
         bandpass_filter=bandpass_filter,
         params=params,
+        exact_scans=exact_scans,
         cifti=False,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
