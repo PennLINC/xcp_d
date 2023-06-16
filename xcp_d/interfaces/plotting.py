@@ -356,6 +356,16 @@ class QCPlots(SimpleInterface):
             bbox_inches="tight",
         )
 
+        # Get the different components in the bold file name
+        # eg: ['sub-colornest001', 'ses-1'], etc.
+        _, bold_file_name = os.path.split(self.inputs.name_source)
+        bold_file_name_components = bold_file_name.split("_")
+
+        # Fill out dictionary with entities from filename
+        qc_values_dict = {}
+        for entity in bold_file_name_components[:-1]:
+            qc_values_dict[entity.split("-")[0]] = entity.split("-")[1]
+
         # Calculate QC measures
         mean_fd = np.mean(preproc_fd_timeseries)
         mean_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
@@ -366,19 +376,21 @@ class QCPlots(SimpleInterface):
         rmsd_max_value = np.nanmax(rmsd_censored)
 
         # A summary of all the values
-        qc_values = {
-            "meanFD": [mean_fd],
-            "relMeansRMSMotion": [mean_rms],
-            "relMaxRMSMotion": [rmsd_max_value],
-            "meanDVInit": [mean_dvars_before_processing],
-            "meanDVFinal": [mean_dvars_after_processing],
-            "num_censored_volumes": [num_censored_volumes],
-            "nVolsRemoved": [dummy_scans],
-            "motionDVCorrInit": [motionDVCorrInit],
-            "motionDVCorrFinal": [motionDVCorrFinal],
-        }
+        qc_values_dict.update(
+            {
+                "meanFD": [mean_fd],
+                "relMeansRMSMotion": [mean_rms],
+                "relMaxRMSMotion": [rmsd_max_value],
+                "meanDVInit": [mean_dvars_before_processing],
+                "meanDVFinal": [mean_dvars_after_processing],
+                "num_censored_volumes": [num_censored_volumes],
+                "nVolsRemoved": [dummy_scans],
+                "motionDVCorrInit": [motionDVCorrInit],
+                "motionDVCorrFinal": [motionDVCorrFinal],
+            }
+        )
 
-        QC_METADATA = {
+        qc_metadata = {
             "meanFD": {
                 "LongName": "Mean Framewise Displacement",
                 "Description": (
@@ -456,29 +468,19 @@ class QCPlots(SimpleInterface):
             },
         }
 
-        # Get the different components in the bold file name
-        # eg: ['sub-colornest001', 'ses-1'], etc.
-        _, bold_file_name = os.path.split(self.inputs.name_source)
-        bold_file_name_components = bold_file_name.split("_")
-
-        # Fill out dictionary with entities from filename
-        qc_dictionary = {}
-        for entity in bold_file_name_components[:-1]:
-            qc_dictionary.update({entity.split("-")[0]: entity.split("-")[1]})
-
-        qc_dictionary.update(qc_values)
         if self.inputs.bold2T1w_mask:  # If a bold mask in T1w is provided
             # Compute quality of registration
-            registration_qc = compute_registration_qc(
+            registration_qc, registration_metadata = compute_registration_qc(
                 bold2t1w_mask=self.inputs.bold2T1w_mask,
                 anat_brainmask=self.inputs.anat_brainmask,
                 bold2template_mask=self.inputs.bold2temp_mask,
                 template_mask=self.inputs.template_mask,
             )
-            qc_dictionary.update(registration_qc)  # Add values to dictionary
+            qc_values_dict.update(registration_qc)  # Add values to dictionary
+            qc_metadata.update(registration_metadata)
 
         # Convert dictionary to df and write out the qc file
-        df = pd.DataFrame(qc_dictionary)
+        df = pd.DataFrame(qc_values_dict)
         self._results["qc_file"] = fname_presuffix(
             self.inputs.cleaned_file,
             suffix="qc_bold.csv",
@@ -495,7 +497,7 @@ class QCPlots(SimpleInterface):
             use_ext=False,
         )
         with open(self._results["qc_metadata"], "w") as fo:
-            json.dump(QC_METADATA, fo, indent=4, sort_keys=True)
+            json.dump(qc_metadata, fo, indent=4, sort_keys=True)
 
         return runtime
 
