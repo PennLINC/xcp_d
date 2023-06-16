@@ -476,3 +476,17 @@ def denoise_with_nilearn(
 def _select_first(lst):
     """Select the first element in a list."""
     return lst[0]
+
+
+def list_to_str(lst):
+    """Convert a list to a pretty string."""
+    if not lst:
+        raise ValueError("Zero-length list provided.")
+
+    lst_str = [str(item) for item in lst]
+    if len(lst_str) == 1:
+        return lst_str[0]
+    elif len(lst_str) == 2:
+        return " and ".join(lst_str)
+    else:
+        return f"{', '.join(lst_str[:-1])}, and {lst_str[-1]}"

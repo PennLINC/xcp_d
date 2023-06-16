@@ -155,6 +155,7 @@ def init_postprocess_nifti_wf(
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
+    %(exact_scans)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -546,9 +547,10 @@ def init_postprocess_nifti_wf(
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
         (connectivity_wf, postproc_derivatives_wf, [
-            ("outputnode.correlations", "inputnode.correlations"),
-            ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.coverage", "inputnode.coverage"),
+            ("outputnode.timeseries", "inputnode.timeseries"),
+            ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.correlations_exact", "inputnode.correlations_exact"),
             ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
         ]),
     ])

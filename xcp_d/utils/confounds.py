@@ -11,6 +11,7 @@ from nipype import logging
 from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import list_to_str
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -268,6 +269,7 @@ def describe_censoring(
     %(band_stop_max)s
     %(head_radius)s
     %(fd_thresh)s
+    %(exact_scans)s
 
     Returns
     -------
@@ -310,13 +312,13 @@ def describe_censoring(
     exact_str = ""
     if exact_scans and (fd_thresh > 0):
         exact_str = (
-            " An additional set of censoring volumes was randomly selected to reduce the final "
-            f"censored dataset to a total of {exact_scans} volumes."
+            " Additional sets of censoring volumes were randomly selected to produce additional "
+            f"correlation matrices limited to {list_to_str(exact_scans)} volumes."
         )
     elif exact_scans:
         exact_str = (
-            "A set of volumes was randomly selected for censoring, to reduce the final "
-            f"censored dataset to a total of {exact_scans} volumes."
+            "Volumes were randomly selected for censoring, to produce additional correlation "
+            f"matrices limited to {list_to_str(exact_scans)} volumes."
         )
 
     return outlier_str + exact_str

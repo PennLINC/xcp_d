@@ -272,16 +272,18 @@ def get_parser():
         ),
     )
     group_data_retainment.add_argument(
-        "--exact_time",
         "--exact-time",
+        "--exact_time",
         required=False,
         default=None,
+        nargs="+",
         type=float,
         help=(
-            "Amount of data (in seconds) to retain from each run after scrubbing. "
+            "If used, this parameter will produce correlation matrices limited to each requested "
+            "amount of time. "
             "If there is more than the required amount of low-motion data, "
             "then volumes will be randomly selected to produce denoised outputs with the exact "
-            "amount of time requested. "
+            "amounts of time requested. "
             "If there is less than the required amount of 'good' data, "
             "then the run will not be post-processed."
         ),

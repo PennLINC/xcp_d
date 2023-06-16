@@ -132,6 +132,7 @@ def init_postproc_derivatives_wf(
     motion_filter_type,
     smoothing,
     params,
+    exact_scans,
     cifti,
     dcan_qc,
     output_dir,
@@ -156,6 +157,7 @@ def init_postproc_derivatives_wf(
                 motion_filter_type=None,
                 smoothing=6,
                 params="36P",
+                exact_scans=None,
                 cifti=False,
                 dcan_qc=True,
                 output_dir=".",
@@ -175,6 +177,7 @@ def init_postproc_derivatives_wf(
     %(motion_filter_type)s
     %(smoothing)s
     %(params)s
+    %(exact_scans)s
     %(cifti)s
     %(dcan_qc)s
     output_dir : :obj:`str`
@@ -222,6 +225,7 @@ def init_postproc_derivatives_wf(
                 "coverage",
                 "timeseries",
                 "correlations",
+                "correlations_exact",
                 "qc_file",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
@@ -240,6 +244,7 @@ def init_postproc_derivatives_wf(
                 "coverage_ciftis",
                 "timeseries_ciftis",
                 "correlation_ciftis",
+                "correlation_ciftis_exact",
             ],
         ),
         name="inputnode",
@@ -368,6 +373,41 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
         iterfield=["atlas", "in_file"],
     )
+
+    for i_exact_scan, exact_scan in enumerate(exact_scans):
+        select_exact_scan_files = pe.MapNode(
+            niu.Select(index=i_exact_scan),
+            name=f"select_exact_scan_files_{i_exact_scan}",
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, select_exact_scan_files, [("correlations_exact", "inlist")]),
+        ])
+        # fmt:on
+
+        ds_correlations_exact = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                measure="pearsoncorrelation",
+                desc=f"{exact_scan}volumes",
+                suffix="conmat",
+                extension=".tsv",
+            ),
+            name=f"ds_correlations_exact_{i_exact_scan}",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_correlations_exact, [("atlas_names", "atlas")]),
+            (select_exact_scan_files, ds_correlations_exact, [("out", "in_file")]),
+        ])
+        # fmt:on
+
     ds_parcellated_reho = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,

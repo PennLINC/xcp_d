@@ -291,11 +291,22 @@ class _RandomCensorInputSpec(BaseInterfaceInputSpec):
             "This is a TSV file with one column: 'framewise_displacement'."
         ),
     )
+    temporal_mask_metadata = traits.Dict(
+        desc="Metadata associated with the temporal_mask output.",
+    )
     exact_scans = traits.Either(
         None,
-        traits.Int,
+        traits.List(
+            traits.Int,
+        ),
         mandatory=True,
-        desc="Number of scans to retain. If None, no additional censoring will be performed.",
+        desc="Numbers of scans to retain. If None, no additional censoring will be performed.",
+    )
+    random_seed = traits.Int(
+        None,
+        usedefault=True,
+        mandatory=False,
+        desc="Random seed.",
     )
 
 
@@ -303,6 +314,9 @@ class _RandomCensorOutputSpec(TraitedSpec):
     temporal_mask = File(
         exists=True,
         desc="Temporal mask file.",
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc="Metadata associated with the temporal_mask output.",
     )
 
 
@@ -315,6 +329,7 @@ class RandomCensor(SimpleInterface):
     def _run_interface(self, runtime):
         # Read in temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
+        temporal_mask_metadata = self.inputs.temporal_mask_metadata
 
         if not self.inputs.exact_scans:
             self._results["temporal_mask"] = self.inputs.temporal_mask
@@ -326,13 +341,26 @@ class RandomCensor(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=True,
         )
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(self.inputs.random_seed)
         outlier_idx = censoring_df.loc[censoring_df["framewise_displacement"] != 1].index.values
-        random_censor = rng.choice(outlier_idx, self.inputs.exact_scans)
-        censoring_df["random_censor"] = 0
-        censoring_df.loc[random_censor, "random_censor"] = 1
+        for exact_scan in self.inputs.exact_scans:
+            random_censor = rng.choice(outlier_idx, self.inputs.exact_scans)
+            column_name = f"exact_{exact_scan}"
+            censoring_df[column_name] = 0
+            censoring_df.loc[random_censor, column_name] = 1
+            temporal_mask_metadata[column_name] = {
+                "Description": (
+                    f"Randomly selected low-motion volumes to retain exactly {exact_scan} "
+                    "volumes."
+                ),
+                "Levels": {
+                    "0": "Retained volume",
+                    "1": "Randomly censored volume",
+                },
+            }
 
         censoring_df.to_csv(self._results["temporal_mask"], sep="\t", index=False)
+        self._results["temporal_mask_metadata"] = temporal_mask_metadata
 
         return runtime
 

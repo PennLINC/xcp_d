@@ -177,6 +177,7 @@ def init_xcpd_wf(
     %(input_type)s
     %(min_coverage)s
     %(min_time)s
+    %(exact_time)s
     combineruns
     %(name)s
 
@@ -349,6 +350,7 @@ def init_subject_wf(
     %(dcan_qc)s
     %(min_coverage)s
     %(min_time)s
+    %(exact_time)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -674,22 +676,30 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 head_radius=head_radius,
                 fd_thresh=fd_thresh,
             )
-            temp_min_time = exact_time or min_time
-            if (temp_min_time >= 0) and (post_scrubbing_duration < temp_min_time):
+            # Reduce exact_times to only include values greater than the post-scrubbing duration.
+            if (min_time >= 0) and (post_scrubbing_duration < min_time):
                 LOGGER.warning(
-                    f"Less than {temp_min_time} seconds in {bold_file} survive high-motion "
-                    f"outlier scrubbing ({post_scrubbing_duration}). "
+                    f"Less than {min_time} seconds in {os.path.basename(bold_file)} survive "
+                    f"high-motion outlier scrubbing ({post_scrubbing_duration}). "
                     "This run will not be processed."
                 )
                 continue
 
             exact_scans = None
             if exact_time:
-                exact_scans = int(exact_time // run_data["bold_metadata"]["RepetitionTime"])
-                LOGGER.warning(
-                    f"Only {exact_scans} volumes will be retained in time series and "
-                    f"correlation matrix derivatives for {bold_file}"
-                )
+                retained_exact_times = [t for t in exact_time if t >= post_scrubbing_duration]
+                dropped_exact_times = [t for t in exact_time if t < post_scrubbing_duration]
+                if dropped_exact_times:
+                    LOGGER.warning(
+                        f"{post_scrubbing_duration} seconds in {os.path.basename(bold_file)} "
+                        "survive high-motion outlier scrubbing. "
+                        "Only retaining exact-time values greater than this."
+                    )
+
+                exact_scans = [
+                    int(t // run_data["bold_metadata"]["RepetitionTime"])
+                    for t in retained_exact_times
+                ]
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
@@ -792,9 +802,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # fmt:on
 
             for io_name, node in merge_dict.items():
-                # fmt:off
                 workflow.connect([(node, concatenate_data_wf, [("out", f"inputnode.{io_name}")])])
-                # fmt:on
 
     # fmt:off
     workflow.connect([

@@ -318,6 +318,32 @@ band_stop_max : :obj:`float` or None
 """
 
 docdict[
+    "exact_time"
+] = """
+exact_time : None or :obj:`list` of :obj:`float`, optional
+    If used, this parameter will produce correlation matrices limited to each requested
+    amount of time.
+    If there is more than the required amount of low-motion data,
+    then volumes will be randomly selected to produce denoised outputs with the exact
+    amounts of time requested.
+    If there is less than the required amount of 'good' data,
+    then the run will not be post-processed.
+"""
+
+docdict[
+    "exact_scans"
+] = """
+exact_scans : None or :obj:`list` of :obj:`int`, optional
+    If used, this parameter will produce correlation matrices limited to each requested
+    amount of time.
+    If there is more than the required amount of low-motion data,
+    then volumes will be randomly selected to produce denoised outputs with the exact
+    amounts of time requested.
+    If there is less than the required amount of 'good' data,
+    then the run will not be post-processed.
+"""
+
+docdict[
     "name"
 ] = """
 name : :obj:`str`, optional

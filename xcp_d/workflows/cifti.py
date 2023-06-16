@@ -150,6 +150,7 @@ def init_postprocess_cifti_wf(
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
+    %(exact_scans)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -515,9 +516,11 @@ def init_postprocess_cifti_wf(
             ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
             ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
             ("outputnode.correlation_ciftis", "inputnode.correlation_ciftis"),
+            ("outputnode.correlation_ciftis_exact", "inputnode.correlation_ciftis_exact"),
             ("outputnode.coverage", "inputnode.coverage"),
             ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.correlations_exact", "inputnode.correlations_exact"),
             ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
         ]),
     ])

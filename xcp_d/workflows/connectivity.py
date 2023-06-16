@@ -464,6 +464,7 @@ def init_functional_connectivity_nifti_wf(
     %(name_source)s
     denoised_bold
         clean bold after filtered out nuisscance and filtering
+    %(temporal_mask)s
     alff
     reho
     %(atlas_names)s
@@ -475,6 +476,7 @@ def init_functional_connectivity_nifti_wf(
     %(coverage)s
     %(timeseries)s
     %(correlations)s
+    %(correlations_exact)s
     parcellated_alff
     parcellated_reho
     """
@@ -515,6 +517,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "coverage",
                 "timeseries",
                 "correlations",
+                "correlations_exact",
                 "parcellated_alff",
                 "parcellated_reho",
             ],
@@ -539,9 +542,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("atlas_labels_files", "atlas_labels"),
         ]),
         (functional_connectivity, outputnode, [
+            ("coverage", "coverage"),
             ("timeseries", "timeseries"),
             ("correlations", "correlations"),
-            ("coverage", "coverage"),
+            ("correlations_exact", "correlations_exact"),
         ]),
     ])
     # fmt:on
@@ -665,6 +669,7 @@ def init_functional_connectivity_cifti_wf(
         Clean CIFTI after filtering and nuisance regression.
         The CIFTI file is in the same standard space as the atlases,
         so no transformations will be applied to the data before parcellation.
+    %(temporal_mask)s
     alff
     reho
     %(atlas_names)s
@@ -677,9 +682,11 @@ def init_functional_connectivity_cifti_wf(
     %(coverage_ciftis)s
     %(timeseries_ciftis)s
     %(correlation_ciftis)s
+    correlation_ciftis_exact
     %(coverage)s
     %(timeseries)s
     %(correlations)s
+    correlations_exact
     parcellated_reho
     parcellated_alff
     """
@@ -720,9 +727,11 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "coverage_ciftis",
                 "timeseries_ciftis",
                 "correlation_ciftis",
+                "correlation_ciftis_exact",
                 "coverage",
                 "timeseries",
                 "correlations",
+                "correlations_exact",
                 "parcellated_alff",
                 "parcellated_reho",
             ],
@@ -751,9 +760,11 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("coverage_ciftis", "coverage_ciftis"),
             ("timeseries_ciftis", "timeseries_ciftis"),
             ("correlation_ciftis", "correlation_ciftis"),
+            ("correlation_ciftis_exact", "correlation_ciftis_exact"),
             ("coverage", "coverage"),
             ("timeseries", "timeseries"),
             ("correlations", "correlations"),
+            ("correlations_exact", "correlations_exact"),
         ]),
     ])
     # fmt:on

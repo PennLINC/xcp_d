@@ -213,10 +213,7 @@ def init_prepare_confounds_wf(
             ("fmriprep_confounds_json", "fmriprep_confounds_json"),
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
-        (generate_confounds, outputnode, [
-            ("motion_metadata", "motion_metadata"),
-            ("temporal_mask_metadata", "temporal_mask_metadata"),
-        ]),
+        (generate_confounds, outputnode, [("motion_metadata", "motion_metadata")]),
     ])
     # fmt:on
 
@@ -304,6 +301,9 @@ def init_prepare_confounds_wf(
 
     # fmt:off
     workflow.connect([
+        (generate_confounds, random_censor, [
+            ("temporal_mask_metadata", "temporal_mask_metadata"),
+        ]),
         (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
         (random_censor, outputnode, [("temporal_mask", "temporal_mask")]),
     ])
