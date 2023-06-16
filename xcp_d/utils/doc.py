@@ -552,6 +552,25 @@ correlation_ciftis : :obj:`list` of :obj:`str`
     These correlations are produced from the ``timeseries_cifti`` outputs.
 """
 
+docdict[
+    "correlations_exact"
+] = """
+correlations_exact : :obj:`list` of :obj:`list` of :obj:`str`
+    Exact-scan-wise list of lists of paths to atlas-specific ROI-to-ROI correlation TSV files.
+    These correlations are produced from the ``timeseries`` outputs and the ``temporal_mask``
+    input.
+"""
+
+docdict[
+    "correlation_ciftis_exact"
+] = """
+correlation_ciftis : :obj:`list` of :obj:`list` of :obj:`str`
+    Exact-scan-wise list of lists of paths to atlas-specific ROI-to-ROI correlation CIFTI (pconn)
+    files.
+    These correlations are produced from the ``timeseries`` outputs and the ``temporal_mask``
+    input.
+"""
+
 docdict_indented = {}
 
 
