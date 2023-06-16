@@ -37,6 +37,8 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
     -------
     reg_qc : dict
         Quality control measures between different inputs.
+    qc_metadata : dict
+        Metadata describing the QC measures.
     """
     bold2t1w_mask_arr = nb.load(bold2t1w_mask).get_fdata()
     t1w_mask_arr = nb.load(anat_brainmask).get_fdata()
@@ -51,7 +53,67 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
         "normPearson": [pearson(bold2template_mask_arr, template_mask_arr)],
         "normCoverage": [coverage(bold2template_mask_arr, template_mask_arr)],
     }
-    return reg_qc
+    qc_metadata = {
+        "coregDice": {
+            "LongName": "Coregistration Sørensen-Dice Coefficient",
+            "Description": (
+                "The Sørensen-Dice coefficient calculated between the binary brain masks from the "
+                "coregistered anatomical and functional images. "
+                "Values are bounded between 0 and 1, "
+                "with higher values indicating better coregistration."
+            ),
+            "Term URL": "https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient",
+        },
+        "coregPearson": {
+            "LongName": "Coregistration Pearson Correlation",
+            "Description": (
+                "The Pearson correlation coefficient calculated between the binary brain masks "
+                "from the coregistered anatomical and functional images. "
+                "Values are bounded between 0 and 1, "
+                "with higher values indicating better coregistration."
+            ),
+            "Term URL": "https://en.wikipedia.org/wiki/Pearson_correlation_coefficient",
+        },
+        "coregCoverage": {
+            "LongName": "Coregistration Coverage Metric",
+            "Description": (
+                "The Szymkiewicz-Simpson overlap coefficient calculated between the binary brain "
+                "masks from the normalized functional image and the associated template. "
+                "Higher values indicate better normalization."
+            ),
+            "Term URL": "https://en.wikipedia.org/wiki/Overlap_coefficient",
+        },
+        "normDice": {
+            "LongName": "Normalization Sørensen-Dice Coefficient",
+            "Description": (
+                "The Sørensen-Dice coefficient calculated between the binary brain masks from the "
+                "normalized functional image and the associated template. "
+                "Values are bounded between 0 and 1, "
+                "with higher values indicating better normalization."
+            ),
+            "Term URL": "https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient",
+        },
+        "normPearson": {
+            "LongName": "Normalization Pearson Correlation",
+            "Description": (
+                "The Pearson correlation coefficient calculated between the binary brain masks "
+                "from the normalized functional image and the associated template. "
+                "Values are bounded between 0 and 1, "
+                "with higher values indicating better normalization."
+            ),
+            "Term URL": "https://en.wikipedia.org/wiki/Pearson_correlation_coefficient",
+        },
+        "normCoverage": {
+            "LongName": "Normalization Overlap Coefficient",
+            "Description": (
+                "The Szymkiewicz-Simpson overlap coefficient calculated between the binary brain "
+                "masks from the normalized functional image and the associated template. "
+                "Higher values indicate better normalization."
+            ),
+            "Term URL": "https://en.wikipedia.org/wiki/Overlap_coefficient",
+        },
+    }
+    return reg_qc, qc_metadata
 
 
 def dice(input1, input2):
@@ -120,13 +182,16 @@ def pearson(input1, input2):
     input1 = np.atleast_1d(input1.astype(bool)).flatten()
     input2 = np.atleast_1d(input2.astype(bool)).flatten()
 
-    corr = np.corrcoef(input1, input2)[0][1]
+    corr = np.corrcoef(input1, input2)[0, 1]
 
     return corr
 
 
 def coverage(input1, input2):
-    """Estimate the coverage between two masks.
+    """Calculate the Szymkiewicz-Simpson overlap coefficient between two inputs.
+
+    The overlap coefficient is calculated by dividing the size of the intersection by the
+    minimum size of the two sets :footcite:p:`vijaymeena2016survey`.
 
     Parameters
     ----------
@@ -139,6 +204,10 @@ def coverage(input1, input2):
     -------
     cov : :obj:`float`
         Coverage between two images.
+
+    References
+    ----------
+    .. footbibliography::
     """
     input1 = np.atleast_1d(input1.astype(bool))
     input2 = np.atleast_1d(input2.astype(bool))
