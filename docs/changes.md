@@ -1,3 +1,5 @@
+# What's New
+
 ## 0.4.0
 
 ### 🛠 Breaking Changes
@@ -163,7 +165,8 @@ Two big breaking changes are (1) there is a new `--dcan-qc` flag that determines
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.2.0...0.3.0
 
 
-# 0.2.2
+## 0.2.2
+
 This is a patch release for the 0.2 series. The main bug being fixed is that using `--dummytime` was causing crashes in the executive summary workflow.
 
 ### 🎉 Exciting New Features
@@ -304,7 +307,7 @@ There is a full list of the changes made between 0.1.3 and 0.2.0 below. However,
 * [TEST] Add tests for outstanding modules by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/529
 * [FIX] Fcon workflow tests are incompatible with changes from main by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/584
 
-## New Contributors
+### New Contributors
 * @tsalo made their first contribution in https://github.com/PennLINC/xcp_d/pull/457
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.1.3...0.2.0
