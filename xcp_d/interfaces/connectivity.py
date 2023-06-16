@@ -30,8 +30,8 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
     mask = File(exists=True, mandatory=True, desc="brain mask file")
     temporal_mask = File(
         exists=True,
-        mandatory=True,
-        desc="Temporal mask, after dummy scan removal",
+        mandatory=False,
+        desc="Temporal mask, after dummy scan removal. Only necessary if correlate is True.",
     )
     atlas = File(exists=True, mandatory=True, desc="atlas file")
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
@@ -274,8 +274,8 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
     )
     temporal_mask = File(
         exists=True,
-        mandatory=True,
-        desc="Temporal mask, after dummy scan removal",
+        mandatory=False,
+        desc="Temporal mask, after dummy scan removal. Only necessary if correlate is True.",
     )
     atlas_file = File(
         exists=True,
