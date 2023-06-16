@@ -331,6 +331,7 @@ class RandomCensor(SimpleInterface):
 
         if not self.inputs.exact_scans:
             self._results["temporal_mask"] = self.inputs.temporal_mask
+            self._results["temporal_mask_metadata"] = temporal_mask_metadata
             return runtime
 
         self._results["temporal_mask"] = fname_presuffix(
