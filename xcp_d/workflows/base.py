@@ -73,6 +73,7 @@ def init_xcpd_wf(
     smoothing,
     custom_confounds_folder,
     dummy_scans,
+    exact_time,
     cifti,
     omp_nthreads,
     layout=None,
@@ -81,7 +82,6 @@ def init_xcpd_wf(
     input_type="fmriprep",
     min_coverage=0.5,
     min_time=100,
-    exact_time=[],
     combineruns=False,
     name="xcpd_wf",
 ):

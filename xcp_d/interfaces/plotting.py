@@ -127,11 +127,12 @@ class CensoringPlot(SimpleInterface):
             )
 
         # Plot randomly censored volumes as well
-        if "random_censor" in censoring_df.columns:
-            tmask_arr = censoring_df["random_censor"].values
+        exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
+        for exact_col in exact_columns:
+            tmask_arr = censoring_df[exact_col].values
             tmask_idx = np.where(tmask_arr)[0]
             for i_idx, idx in enumerate(tmask_idx):
-                label = "Randomly Censored Volumes" if i_idx == 0 else ""
+                label = f"Randomly Censored Volumes {exact_col}" if i_idx == 0 else ""
                 ax.axvline(
                     idx * self.inputs.TR,
                     label=label,
