@@ -81,7 +81,7 @@ def init_xcpd_wf(
     input_type="fmriprep",
     min_coverage=0.5,
     min_time=100,
-    exact_time=None,
+    exact_time=[],
     combineruns=False,
     name="xcpd_wf",
 ):
@@ -137,7 +137,7 @@ def init_xcpd_wf(
                 input_type="fmriprep",
                 min_coverage=0.5,
                 min_time=100,
-                exact_time=None,
+                exact_time=[],
                 combineruns=False,
                 name="xcpd_wf",
             )
@@ -314,7 +314,7 @@ def init_subject_wf(
                 dcan_qc=False,
                 min_coverage=0.5,
                 min_time=100,
-                exact_time=None,
+                exact_time=[],
                 omp_nthreads=1,
                 layout=None,
                 name="single_subject_sub-01_wf",

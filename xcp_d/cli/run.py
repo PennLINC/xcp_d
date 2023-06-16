@@ -275,7 +275,7 @@ def get_parser():
         "--exact-time",
         "--exact_time",
         required=False,
-        default=None,
+        default=[],
         nargs="+",
         type=float,
         help=(

@@ -398,7 +398,7 @@ series and correlation matrices are written out.
 Functional connectivity estimates from specified amounts of data
 ----------------------------------------------------------------
 
-Use ``--exact-time`` for this.
+Use ``--exact-time`` for this :footcite:p:`eggebrecht2017joint,feczko2021adolescent`.
 
 
 Smoothing [OPTIONAL]
