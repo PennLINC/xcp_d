@@ -48,7 +48,8 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--min-coverage=1",
-        "--exact-time=80",
+        "--exact-time",
+        "80",
         "100",
         "200",
     ]

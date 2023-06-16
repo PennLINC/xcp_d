@@ -378,6 +378,7 @@ def init_postproc_derivatives_wf(
         select_exact_scan_files = pe.MapNode(
             niu.Select(index=i_exact_scan),
             name=f"select_exact_scan_files_{i_exact_scan}",
+            iterfield=["inlist"],
         )
         # fmt:off
         workflow.connect([
