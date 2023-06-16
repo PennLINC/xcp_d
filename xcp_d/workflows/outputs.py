@@ -157,7 +157,7 @@ def init_postproc_derivatives_wf(
                 motion_filter_type=None,
                 smoothing=6,
                 params="36P",
-                exact_scans=None,
+                exact_scans=[],
                 cifti=False,
                 dcan_qc=True,
                 output_dir=".",

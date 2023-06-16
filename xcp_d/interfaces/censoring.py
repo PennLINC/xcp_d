@@ -294,11 +294,8 @@ class _RandomCensorInputSpec(BaseInterfaceInputSpec):
     temporal_mask_metadata = traits.Dict(
         desc="Metadata associated with the temporal_mask output.",
     )
-    exact_scans = traits.Either(
-        None,
-        traits.List(
-            traits.Int,
-        ),
+    exact_scans = traits.List(
+        traits.Int,
         mandatory=True,
         desc="Numbers of scans to retain. If None, no additional censoring will be performed.",
     )

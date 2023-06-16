@@ -118,7 +118,7 @@ def init_postprocess_nifti_wf(
                 t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
-                exact_scans=None,
+                exact_scans=[],
                 omp_nthreads=1,
                 layout=layout,
                 name="nifti_postprocess_wf",

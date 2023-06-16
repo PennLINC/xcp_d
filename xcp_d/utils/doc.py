@@ -320,7 +320,7 @@ band_stop_max : :obj:`float` or None
 docdict[
     "exact_time"
 ] = """
-exact_time : None or :obj:`list` of :obj:`float`, optional
+exact_time : :obj:`list` of :obj:`float`, optional
     If used, this parameter will produce correlation matrices limited to each requested
     amount of time.
     If there is more than the required amount of low-motion data,
@@ -333,7 +333,7 @@ exact_time : None or :obj:`list` of :obj:`float`, optional
 docdict[
     "exact_scans"
 ] = """
-exact_scans : None or :obj:`list` of :obj:`int`, optional
+exact_scans : :obj:`list` of :obj:`int`, optional
     If used, this parameter will produce correlation matrices limited to each requested
     amount of time.
     If there is more than the required amount of low-motion data,

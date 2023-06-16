@@ -685,7 +685,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 )
                 continue
 
-            exact_scans = None
+            exact_scans = []
             if exact_time:
                 retained_exact_times = [t for t in exact_time if t >= post_scrubbing_duration]
                 dropped_exact_times = [t for t in exact_time if t < post_scrubbing_duration]

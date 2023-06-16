@@ -351,13 +351,6 @@ After bandpass filtering, high motion volumes are removed from the
 This is the primary output of XCP-D.
 
 
-.. tip::
-
-   If you wish to limit the censored data to a specific duration,
-   you can use the ``--exact-time`` parameter.
-   This will randomly select
-
-
 Resting-state derivative generation
 ===================================
 
@@ -400,6 +393,12 @@ connectivity matrices, as measured with Pearson correlation coefficients.
 
 For CIFTI data, both tab-delimited text file (TSV) and CIFTI versions of the parcellated time
 series and correlation matrices are written out.
+
+
+Functional connectivity estimates from specified amounts of data
+----------------------------------------------------------------
+
+Use ``--exact-time`` for this.
 
 
 Smoothing [OPTIONAL]

@@ -60,7 +60,7 @@ def init_prepare_confounds_wf(
                 TR=0.8,
                 params="27P",
                 dummy_scans="auto",
-                exact_scans=None,
+                exact_scans=[],
                 motion_filter_type="notch",
                 band_stop_min=12,
                 band_stop_max=20,
@@ -135,7 +135,7 @@ def init_prepare_confounds_wf(
             "regressors were discarded as non-steady-state volumes, or 'dummy scans'. "
         )
 
-    if (fd_thresh > 0) or (exact_scans is not None):
+    if (fd_thresh > 0) or exact_scans:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
