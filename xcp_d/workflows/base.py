@@ -73,6 +73,7 @@ def init_xcpd_wf(
     smoothing,
     custom_confounds_folder,
     dummy_scans,
+    random_seed,
     exact_time,
     cifti,
     omp_nthreads,
@@ -129,6 +130,8 @@ def init_xcpd_wf(
                 smoothing=6,
                 custom_confounds_folder=None,
                 dummy_scans=0,
+                random_seed=None,
+                exact_time=[],
                 cifti=False,
                 omp_nthreads=1,
                 layout=None,
@@ -137,7 +140,6 @@ def init_xcpd_wf(
                 input_type="fmriprep",
                 min_coverage=0.5,
                 min_time=100,
-                exact_time=[],
                 combineruns=False,
                 name="xcpd_wf",
             )
@@ -172,6 +174,7 @@ def init_xcpd_wf(
     %(smoothing)s
     %(custom_confounds_folder)s
     %(dummy_scans)s
+    %(random_seed)s
     %(process_surfaces)s
     %(dcan_qc)s
     %(input_type)s
@@ -214,6 +217,7 @@ def init_xcpd_wf(
             smoothing=smoothing,
             output_dir=output_dir,
             dummy_scans=dummy_scans,
+            random_seed=random_seed,
             custom_confounds_folder=custom_confounds_folder,
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
@@ -264,6 +268,7 @@ def init_subject_wf(
     output_dir,
     custom_confounds_folder,
     dummy_scans,
+    random_seed,
     fd_thresh,
     despike,
     dcan_qc,
@@ -309,6 +314,7 @@ def init_subject_wf(
                 output_dir=".",
                 custom_confounds_folder=None,
                 dummy_scans=0,
+                random_seed=None,
                 fd_thresh=0.3,
                 despike=True,
                 dcan_qc=False,
@@ -345,6 +351,7 @@ def init_subject_wf(
     %(output_dir)s
     %(custom_confounds_folder)s
     %(dummy_scans)s
+    %(random_seed)s
     %(fd_thresh)s
     %(despike)s
     %(dcan_qc)s
@@ -548,6 +555,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             morphometry_files=morphometry_files,
             process_surfaces=process_surfaces,
             output_dir=output_dir,
+            random_seed=random_seed,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
             mem_gb=1,

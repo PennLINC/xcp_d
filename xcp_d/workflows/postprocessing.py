@@ -31,6 +31,7 @@ def init_prepare_confounds_wf(
     TR,
     params,
     dummy_scans,
+    random_seed,
     exact_scans,
     motion_filter_type,
     band_stop_min,
@@ -60,6 +61,7 @@ def init_prepare_confounds_wf(
                 TR=0.8,
                 params="27P",
                 dummy_scans="auto",
+                random_seed=None,
                 exact_scans=[],
                 motion_filter_type="notch",
                 band_stop_min=12,
@@ -79,6 +81,7 @@ def init_prepare_confounds_wf(
     %(TR)s
     %(params)s
     %(dummy_scans)s
+    %(random_seed)s
     %(motion_filter_type)s
     %(band_stop_min)s
     %(band_stop_max)s
@@ -295,7 +298,7 @@ def init_prepare_confounds_wf(
     # fmt:on
 
     random_censor = pe.Node(
-        RandomCensor(exact_scans=exact_scans),
+        RandomCensor(exact_scans=exact_scans, random_seed=random_seed),
         name="random_censor",
     )
 

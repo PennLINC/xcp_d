@@ -54,6 +54,7 @@ def init_postprocess_nifti_wf(
     n_runs,
     min_coverage,
     exact_scans,
+    random_seed,
     omp_nthreads,
     layout=None,
     name="bold_postprocess_wf",
@@ -119,6 +120,7 @@ def init_postprocess_nifti_wf(
                 n_runs=1,
                 min_coverage=0.5,
                 exact_scans=[],
+                random_seed=None,
                 omp_nthreads=1,
                 layout=layout,
                 name="nifti_postprocess_wf",
@@ -156,6 +158,7 @@ def init_postprocess_nifti_wf(
         This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
     %(exact_scans)s
+    %(random_seed)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -320,6 +323,7 @@ def init_postprocess_nifti_wf(
         TR=TR,
         params=params,
         dummy_scans=dummy_scans,
+        random_seed=random_seed,
         exact_scans=exact_scans,
         motion_filter_type=motion_filter_type,
         band_stop_min=band_stop_min,

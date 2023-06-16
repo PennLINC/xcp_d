@@ -53,6 +53,7 @@ def init_postprocess_cifti_wf(
     n_runs,
     min_coverage,
     exact_scans,
+    random_seed,
     omp_nthreads,
     layout=None,
     name="cifti_postprocess_wf",
@@ -116,6 +117,7 @@ def init_postprocess_cifti_wf(
                 n_runs=1,
                 min_coverage=0.5,
                 exact_scans=[],
+                random_seed=None,
                 omp_nthreads=1,
                 layout=layout,
                 name="cifti_postprocess_wf",
@@ -150,6 +152,7 @@ def init_postprocess_cifti_wf(
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
+    %(random_seed)s
     %(exact_scans)s
     %(omp_nthreads)s
     %(layout)s
@@ -290,6 +293,7 @@ def init_postprocess_cifti_wf(
         TR=TR,
         params=params,
         dummy_scans=dummy_scans,
+        random_seed=random_seed,
         exact_scans=exact_scans,
         motion_filter_type=motion_filter_type,
         band_stop_min=band_stop_min,

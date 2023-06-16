@@ -253,9 +253,7 @@ def get_parser():
             "Default is 0.5."
         ),
     )
-
-    group_data_retainment = g_param.add_mutually_exclusive_group()
-    group_data_retainment.add_argument(
+    g_param.add_argument(
         "--min_time",
         "--min-time",
         required=False,
@@ -267,28 +265,9 @@ def get_parser():
             "needed to post-process a given run, once high-motion outlier volumes are removed. "
             "This will have no impact if scrubbing is disabled "
             "(i.e., if the FD threshold is zero or negative). "
-            "This parameter can be disabled by providing a zero or a negative value, "
-            "or by using '--exact-time'."
+            "This parameter can be disabled by providing a zero or a negative value."
         ),
     )
-    group_data_retainment.add_argument(
-        "--exact-time",
-        "--exact_time",
-        required=False,
-        default=[],
-        nargs="+",
-        type=float,
-        help=(
-            "If used, this parameter will produce correlation matrices limited to each requested "
-            "amount of time. "
-            "If there is more than the required amount of low-motion data, "
-            "then volumes will be randomly selected to produce denoised outputs with the exact "
-            "amounts of time requested. "
-            "If there is less than the required amount of 'good' data, "
-            "then the run will not be post-processed."
-        ),
-    )
-
     g_param.add_argument(
         "--dummy-scans",
         "--dummy_scans",
@@ -301,6 +280,16 @@ def get_parser():
             "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
             "preprocessing derivatives' confounds file."
         ),
+    )
+
+    g_param.add_argument(
+        "--random-seed",
+        "--random_seed",
+        dest="random_seed",
+        default=None,
+        type=float,
+        metavar="_RANDOM_SEED",
+        help="Initialize the random seed for the workflow.",
     )
 
     g_filter = parser.add_argument_group("Filtering parameters")
@@ -427,6 +416,23 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
             "Any volumes with an FD value greater than the threshold will be removed from the "
             "denoised BOLD data. "
             "A threshold of <=0 will disable censoring completely."
+        ),
+    )
+    g_censor.add_argument(
+        "--exact-time",
+        "--exact_time",
+        required=False,
+        default=[],
+        nargs="+",
+        type=float,
+        help=(
+            "If used, this parameter will produce correlation matrices limited to each requested "
+            "amount of time. "
+            "If there is more than the required amount of low-motion data, "
+            "then volumes will be randomly selected to produce denoised outputs with the exact "
+            "amounts of time requested. "
+            "If there is less than the required amount of 'good' data, "
+            "then the corresponding correlation matrix will not be produced."
         ),
     )
 
@@ -980,6 +986,7 @@ Running xcp_d version {__version__}:
         head_radius=opts.head_radius,
         custom_confounds_folder=opts.custom_confounds,
         dummy_scans=opts.dummy_scans,
+        random_seed=opts.random_seed,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
         dcan_qc=opts.dcan_qc,
