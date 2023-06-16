@@ -299,8 +299,9 @@ class _RandomCensorInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Numbers of scans to retain. If None, no additional censoring will be performed.",
     )
-    random_seed = traits.Int(
+    random_seed = traits.Either(
         None,
+        traits.Int,
         usedefault=True,
         mandatory=False,
         desc="Random seed.",
