@@ -305,7 +305,10 @@ def init_prepare_confounds_wf(
             ("temporal_mask_metadata", "temporal_mask_metadata"),
         ]),
         (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
-        (random_censor, outputnode, [("temporal_mask", "temporal_mask")]),
+        (random_censor, outputnode, [
+            ("temporal_mask", "temporal_mask"),
+            ("temporal_mask_metadata", "temporal_mask_metadata"),
+        ]),
     ])
     # fmt:on
 

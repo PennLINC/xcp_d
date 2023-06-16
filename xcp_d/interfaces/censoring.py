@@ -327,7 +327,7 @@ class RandomCensor(SimpleInterface):
     def _run_interface(self, runtime):
         # Read in temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
-        temporal_mask_metadata = self.inputs.temporal_mask_metadata
+        temporal_mask_metadata = self.inputs.temporal_mask_metadata.copy()
 
         if not self.inputs.exact_scans:
             self._results["temporal_mask"] = self.inputs.temporal_mask
@@ -345,8 +345,8 @@ class RandomCensor(SimpleInterface):
         for exact_scan in self.inputs.exact_scans:
             random_censor = rng.choice(outlier_idx, size=exact_scan, replace=False)
             column_name = f"exact_{exact_scan}"
-            censoring_df[column_name] = 0
-            censoring_df.loc[random_censor, column_name] = 1
+            censoring_df[column_name] = 1
+            censoring_df.loc[random_censor, column_name] = 0
             temporal_mask_metadata[column_name] = {
                 "Description": (
                     f"Randomly selected low-motion volumes to retain exactly {exact_scan} "
