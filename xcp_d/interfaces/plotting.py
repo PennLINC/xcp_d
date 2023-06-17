@@ -129,6 +129,22 @@ class CensoringPlot(SimpleInterface):
         else:
             filtered_fd_timeseries = preproc_fd_timeseries.copy()
 
+        # Set axis limits
+        ax.set_xlim(0, max(time_array))
+        y_max = (
+            np.max(
+                np.hstack(
+                    (
+                        preproc_fd_timeseries,
+                        filtered_fd_timeseries,
+                        [self.inputs.fd_thresh],
+                    )
+                )
+            )
+            * 1.5
+        )
+        ax.set_ylim(0, y_max)
+
         # Plot motion-censored volumes as vertical lines
         tmask_arr = censoring_df["framewise_displacement"].values
         assert preproc_fd_timeseries.size == tmask_arr.size
@@ -146,40 +162,26 @@ class CensoringPlot(SimpleInterface):
         # These vertical lines start at the top and only go down to the halfway point.
         # They are plotted in non-overlapping segments.
         exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
-        yspan = 0.5 / len(exact_columns)
-        ymax = 1
+        vline_yspan = (y_max / 2) / len(exact_columns)
+        vline_ymax = y_max
         for i_col, exact_col in enumerate(exact_columns):
             tmask_arr = censoring_df[exact_col].values
             tmask_idx = np.where(tmask_arr)[0]
-            ymin = ymax - yspan
+            vline_ymin = vline_ymax - vline_yspan
 
             for j_idx, idx in enumerate(tmask_idx):
                 label = f"Randomly Censored Volumes {exact_col}" if j_idx == 0 else ""
                 ax.axvline(
                     idx * self.inputs.TR,
-                    ymin=ymin,
-                    ymax=ymax,
+                    ymin=vline_ymin,
+                    ymax=vline_ymax,
                     label=label,
                     color=palette[4 + i_col],
                     alpha=0.5,
                 )
 
-            ymax = ymin
+            vline_ymax = vline_ymin
 
-        ax.set_xlim(0, max(time_array))
-        y_max = (
-            np.max(
-                np.hstack(
-                    (
-                        preproc_fd_timeseries,
-                        filtered_fd_timeseries,
-                        [self.inputs.fd_thresh],
-                    )
-                )
-            )
-            * 1.5
-        )
-        ax.set_ylim(0, y_max)
         ax.set_xlabel("Time (seconds)", fontsize=20)
         ax.set_ylabel("Movement (millimeters)", fontsize=20)
         ax.legend(fontsize=20)
