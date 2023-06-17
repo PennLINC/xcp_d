@@ -153,8 +153,8 @@ class CensoringPlot(SimpleInterface):
             tmask_idx = np.where(tmask_arr)[0]
             ymin = ymax - yspan
 
-            for i_idx, idx in enumerate(tmask_idx):
-                label = f"Randomly Censored Volumes {exact_col}" if i_idx == 0 else ""
+            for j_idx, idx in enumerate(tmask_idx):
+                label = f"Randomly Censored Volumes {exact_col}" if j_idx == 0 else ""
                 ax.axvline(
                     idx * self.inputs.TR,
                     ymin=ymin,
