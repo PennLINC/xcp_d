@@ -424,7 +424,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         required=False,
         default=[],
         nargs="+",
-        type=int,
+        type=float,
         help=(
             "If used, this parameter will produce correlation matrices limited to each requested "
             "amount of time. "
