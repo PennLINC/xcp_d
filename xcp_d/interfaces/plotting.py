@@ -66,8 +66,6 @@ class CensoringPlot(SimpleInterface):
     output_spec = _CensoringPlotOutputSpec
 
     def _run_interface(self, runtime):
-        palette = sns.color_palette("colorblind", 5)
-
         # Load confound matrix and load motion with motion filtering
         confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         preproc_motion_df = load_motion(
@@ -80,6 +78,12 @@ class CensoringPlot(SimpleInterface):
             head_radius=self.inputs.head_radius,
         )
 
+        # Load temporal mask
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+
+        # The number of colors in the palette depends on whether there are random censors or not
+        palette = sns.color_palette("colorblind", 4 + censoring_df.shape[1])
+
         fig, ax = plt.subplots(figsize=(16, 8))
 
         time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
@@ -91,9 +95,6 @@ class CensoringPlot(SimpleInterface):
             color=palette[0],
         )
         ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
-
-        # Load temporal mask
-        censoring_df = pd.read_table(self.inputs.temporal_mask)
 
         dummy_scans = self.inputs.dummy_scans
         # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
@@ -113,6 +114,21 @@ class CensoringPlot(SimpleInterface):
             dummy_df = pd.DataFrame(0, index=np.arange(dummy_scans), columns=censoring_df.columns)
             censoring_df = pd.concat([dummy_df, censoring_df])
 
+        # Compute filtered framewise displacement to plot censoring
+        if self.inputs.motion_filter_type:
+            filtered_fd_timeseries = pd.read_table(self.inputs.filtered_motion)[
+                "framewise_displacement"
+            ]
+
+            ax.plot(
+                time_array,
+                filtered_fd_timeseries,
+                label="Filtered Framewise Displacement",
+                color=palette[2],
+            )
+        else:
+            filtered_fd_timeseries = preproc_fd_timeseries.copy()
+
         # Plot motion-censored volumes as vertical lines
         tmask_arr = censoring_df["framewise_displacement"].values
         assert preproc_fd_timeseries.size == tmask_arr.size
@@ -128,32 +144,25 @@ class CensoringPlot(SimpleInterface):
 
         # Plot randomly censored volumes as well
         exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
-        for exact_col in exact_columns:
+        yspan = 0.5 / len(exact_columns)
+        ymax = 1
+        for i_col, exact_col in enumerate(exact_columns):
             tmask_arr = censoring_df[exact_col].values
             tmask_idx = np.where(tmask_arr)[0]
+            ymin = ymax - yspan
+
             for i_idx, idx in enumerate(tmask_idx):
                 label = f"Randomly Censored Volumes {exact_col}" if i_idx == 0 else ""
                 ax.axvline(
                     idx * self.inputs.TR,
+                    ymin=ymin,
+                    ymax=ymax,
                     label=label,
-                    color=palette[4],
+                    color=palette[4 + i_col],
                     alpha=0.5,
                 )
 
-        # Compute filtered framewise displacement to plot censoring
-        if self.inputs.motion_filter_type:
-            filtered_fd_timeseries = pd.read_table(self.inputs.filtered_motion)[
-                "framewise_displacement"
-            ]
-
-            ax.plot(
-                time_array,
-                filtered_fd_timeseries,
-                label="Filtered Framewise Displacement",
-                color=palette[2],
-            )
-        else:
-            filtered_fd_timeseries = preproc_fd_timeseries.copy()
+            ymax = ymin
 
         ax.set_xlim(0, max(time_array))
         y_max = (
