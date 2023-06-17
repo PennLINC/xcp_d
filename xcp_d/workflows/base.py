@@ -708,7 +708,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     int(t // run_data["bold_metadata"]["RepetitionTime"])
                     for t in retained_exact_times
                 ]
-                raise Exception(exact_scans)
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,

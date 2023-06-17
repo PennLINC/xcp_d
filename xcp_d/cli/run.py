@@ -287,7 +287,7 @@ def get_parser():
         "--random_seed",
         dest="random_seed",
         default=None,
-        type=float,
+        type=int,
         metavar="_RANDOM_SEED",
         help="Initialize the random seed for the workflow.",
     )
