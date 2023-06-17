@@ -143,6 +143,8 @@ class CensoringPlot(SimpleInterface):
             )
 
         # Plot randomly censored volumes as well
+        # These vertical lines start at the top and only go down to the halfway point.
+        # They are plotted in non-overlapping segments.
         exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
         yspan = 0.5 / len(exact_columns)
         ymax = 1
