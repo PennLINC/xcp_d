@@ -150,8 +150,7 @@ class CensoringPlot(SimpleInterface):
         # These vertical lines start at the top and only go down to the halfway point.
         # They are plotted in non-overlapping segments.
         exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
-        exact_vline_min = 0.8
-        vline_yspan = (1 - exact_vline_min) / len(exact_columns)
+        vline_yspan = 0.2 / len(exact_columns)
         vline_ymax = 1
         for i_col, exact_col in enumerate(exact_columns):
             tmask_arr = censoring_df[exact_col].values
@@ -180,8 +179,6 @@ class CensoringPlot(SimpleInterface):
             label = "Motion-Censored Volumes" if i_idx == 0 else ""
             ax.axvline(
                 idx * self.inputs.TR,
-                ymin=0,
-                ymax=exact_vline_min if exact_columns else 1,
                 label=label,
                 color=palette[3],
                 alpha=0.5,
