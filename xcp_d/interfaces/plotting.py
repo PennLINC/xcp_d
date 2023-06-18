@@ -146,25 +146,13 @@ class CensoringPlot(SimpleInterface):
         ax.set_ylim(0, y_max)
         LOGGER.warning(f"Y-max set to {y_max}")
 
-        # Plot motion-censored volumes as vertical lines
-        tmask_arr = censoring_df["framewise_displacement"].values
-        assert preproc_fd_timeseries.size == tmask_arr.size
-        tmask_idx = np.where(tmask_arr)[0]
-        for i_idx, idx in enumerate(tmask_idx):
-            label = "Motion-Censored Volumes" if i_idx == 0 else ""
-            ax.axvline(
-                idx * self.inputs.TR,
-                label=label,
-                color=palette[3],
-                alpha=0.5,
-            )
-
         # Plot randomly censored volumes as well
         # These vertical lines start at the top and only go down to the halfway point.
         # They are plotted in non-overlapping segments.
         exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
-        vline_yspan = (y_max / 2) / len(exact_columns)
-        vline_ymax = y_max
+        exact_vline_min = 0.8
+        vline_yspan = (1 - exact_vline_min) / len(exact_columns)
+        vline_ymax = 1
         for i_col, exact_col in enumerate(exact_columns):
             tmask_arr = censoring_df[exact_col].values
             tmask_idx = np.where(tmask_arr)[0]
@@ -179,10 +167,25 @@ class CensoringPlot(SimpleInterface):
                     ymax=vline_ymax,
                     label=label,
                     color=palette[4 + i_col],
-                    alpha=0.5,
+                    alpha=0.8,
                 )
 
             vline_ymax = vline_ymin
+
+        # Plot motion-censored volumes as vertical lines
+        tmask_arr = censoring_df["framewise_displacement"].values
+        assert preproc_fd_timeseries.size == tmask_arr.size
+        tmask_idx = np.where(tmask_arr)[0]
+        for i_idx, idx in enumerate(tmask_idx):
+            label = "Motion-Censored Volumes" if i_idx == 0 else ""
+            ax.axvline(
+                idx * self.inputs.TR,
+                ymin=0,
+                ymax=exact_vline_min if exact_columns else 1,
+                label=label,
+                color=palette[3],
+                alpha=0.5,
+            )
 
         ax.set_xlabel("Time (seconds)", fontsize=20)
         ax.set_ylabel("Movement (millimeters)", fontsize=20)
