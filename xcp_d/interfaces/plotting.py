@@ -188,6 +188,8 @@ class CensoringPlot(SimpleInterface):
         ax.set_ylabel("Movement (millimeters)", fontsize=20)
         ax.legend(fontsize=20)
         fig.tight_layout()
+        ylims = ax.get_ylim()
+        LOGGER.warning(f"Final ylim set to {ylims}")
 
         self._results["out_file"] = fname_presuffix(
             "censoring",
