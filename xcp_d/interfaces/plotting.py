@@ -144,6 +144,7 @@ class CensoringPlot(SimpleInterface):
             * 1.5
         )
         ax.set_ylim(0, y_max)
+        LOGGER.warning(f"Y-max set to {y_max}")
 
         # Plot motion-censored volumes as vertical lines
         tmask_arr = censoring_df["framewise_displacement"].values
@@ -168,6 +169,7 @@ class CensoringPlot(SimpleInterface):
             tmask_arr = censoring_df[exact_col].values
             tmask_idx = np.where(tmask_arr)[0]
             vline_ymin = vline_ymax - vline_yspan
+            LOGGER.warning(f"Setting {exact_col} range to {vline_ymin}-{vline_ymax}")
 
             for j_idx, idx in enumerate(tmask_idx):
                 label = f"Randomly Censored Volumes {exact_col}" if j_idx == 0 else ""
