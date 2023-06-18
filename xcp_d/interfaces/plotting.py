@@ -150,11 +150,11 @@ class CensoringPlot(SimpleInterface):
         # These vertical lines start at the top and only go down to the halfway point.
         # They are plotted in non-overlapping segments.
         exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
-        vline_yspan = 0.2 / len(exact_columns)
         vline_ymax = 1
         for i_col, exact_col in enumerate(exact_columns):
             tmask_arr = censoring_df[exact_col].values
             tmask_idx = np.where(tmask_arr)[0]
+            vline_yspan = 0.2 / len(exact_columns)
             vline_ymin = vline_ymax - vline_yspan
             LOGGER.warning(f"Setting {exact_col} range to {vline_ymin}-{vline_ymax}")
 
