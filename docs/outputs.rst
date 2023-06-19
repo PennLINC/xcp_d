@@ -192,15 +192,15 @@ This includes the atlases used to extract the timeseries.
             # Nifti
             <source_entities>_space-<label>_atlas-<label>_coverage.tsv
             <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
-            <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
+            <source_entities>_space-<label>_atlas-<label>_measure-fishercorrelation_conmat.tsv
 
             # Cifti
             <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.tsv
             <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.pscalar.nii
             <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.tsv
             <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.tsv
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-fishercorrelation_conmat.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-fishercorrelation_conmat.pconn.nii
 
 
 Resting-state metric derivatives (ReHo and ALFF)
