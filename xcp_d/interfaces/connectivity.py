@@ -217,7 +217,7 @@ class NiftiConnect(SimpleInterface):
                 na_rep="n/a",
                 index_label="Node",
             )
-            coverage_z_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
+            coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
 
         return runtime
 
@@ -460,7 +460,7 @@ class CiftiConnect(SimpleInterface):
                 newpath=runtime.cwd,
                 use_ext=True,
             )
-            coverage_z_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
+            coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
 
             # Save out the correlation matrix tsv
             self._results["correlations"] = fname_presuffix(
