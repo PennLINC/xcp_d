@@ -94,6 +94,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
         columns=["framwise_displacement", "exact_10"],
         data=np.stack(
             (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            axis=1,
         ),
     )
     temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
@@ -231,6 +232,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
         columns=["framwise_displacement", "exact_10"],
         data=np.stack(
             (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            axis=1,
         ),
     )
     temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
