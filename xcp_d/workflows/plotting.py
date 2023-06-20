@@ -10,7 +10,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.qcmetrics import _make_dcan_qc_file
+from xcp_d.utils.qcmetrics import make_dcan_qc_file
 from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
 
 
@@ -320,19 +320,19 @@ def init_qc_report_wf(
     # fmt:on
 
     if dcan_qc:
-        make_dcan_qc_file = pe.Node(
+        make_dcan_qc_file_node = pe.Node(
             Function(
                 input_names=["filtered_motion", "TR"],
                 output_names=["dcan_df_file"],
-                function=_make_dcan_qc_file,
+                function=make_dcan_qc_file,
             ),
-            name="make_dcan_qc_file",
+            name="make_dcan_qc_file_node",
         )
-        make_dcan_qc_file.inputs.TR = TR
+        make_dcan_qc_file_node.inputs.TR = TR
 
         # fmt:off
         workflow.connect([
-            (inputnode, make_dcan_qc_file, [("filtered_motion", "filtered_motion")]),
+            (inputnode, make_dcan_qc_file_node, [("filtered_motion", "filtered_motion")]),
         ])
         # fmt:on
 
@@ -351,7 +351,7 @@ def init_qc_report_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_dcan_qc, [("name_source", "source_file")]),
-            (make_dcan_qc_file, ds_dcan_qc, [("dcan_df_file", "in_file")]),
+            (make_dcan_qc_file_node, ds_dcan_qc, [("dcan_df_file", "in_file")]),
         ])
         # fmt:on
 

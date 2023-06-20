@@ -349,7 +349,7 @@ def collect_data(
     return layout, subj_data
 
 
-def _find_standard_space_surfaces(layout, participant_label, queries):
+def _find_standard_space_surfaces(layout, participant_label, queries, require_all):
     """Find standard-space surfaces for a given set of queries.
 
     Parameters
@@ -364,7 +364,7 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
     standard_space_surfaces : bool
     out_surface_files : dict
     """
-    standard_space_surfaces = True
+    standard_space_surfaces = require_all
     for name, query in queries.items():
         # First, try to grab the first base surface file in standard space.
         # If it's not available, switch to native T1w-space data.
@@ -378,9 +378,11 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
         )
         if len(temp_files) == 0:
             LOGGER.info("No standard-space surfaces found.")
-            standard_space_surfaces = False
-        elif len(temp_files) > 1:
-            LOGGER.warning(f"{name}: More than one standard-space surface found.")
+            standard_space_surfaces = False if require_all else standard_space_surfaces
+        elif temp_files:
+            standard_space_surfaces = True if not require_all else standard_space_surfaces
+            if len(temp_files) > 1:
+                LOGGER.warning(f"{name}: More than one standard-space surface found.")
 
     # Now that we know if there are standard-space surfaces available, we can grab the files.
     if standard_space_surfaces:
@@ -407,17 +409,18 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
     }
 
     out_surface_files = {}
-    surface_files_found = True
+    surface_files_found = require_all
     for dtype, surface_files_ in surface_files.items():
         if len(surface_files_) == 1:
+            surface_files_found = True if not require_all else surface_files_found
             out_surface_files[dtype] = surface_files_[0]
 
         elif len(surface_files_) == 0:
-            surface_files_found = False
+            surface_files_found = False if require_all else surface_files_found
             out_surface_files[dtype] = None
 
         else:
-            surface_files_found = False
+            surface_files_found = False if require_all else surface_files_found
             surface_str = "\n\t".join(surface_files_)
             raise ValueError(
                 "More than one surface found.\n"
@@ -490,6 +493,7 @@ def collect_surface_data(layout, participant_label):
         layout,
         participant_label,
         mesh_queries,
+        require_all=True,
     )
 
     shape_queries = {
@@ -529,12 +533,49 @@ def collect_surface_data(layout, participant_label):
             "suffix": "thickness",
             "extension": ".shape.gii",
         },
+        "lh_cortical_thickness_corr": {
+            "hemi": "L",
+            "desc": "corrected",
+            "suffix": "thickness",
+            "extension": ".shape.gii",
+        },
+        "rh_cortical_thickness_corr": {
+            "hemi": "R",
+            "desc": "corrected",
+            "suffix": "thickness",
+            "extension": ".shape.gii",
+        },
+        "lh_myelin": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "myelinw",
+            "extension": ".func.gii",
+        },
+        "rh_myelin": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "myelinw",
+            "extension": ".func.gii",
+        },
+        "lh_myelin_smoothed": {
+            "hemi": "L",
+            "desc": "smoothed",
+            "suffix": "myelinw",
+            "extension": ".func.gii",
+        },
+        "rh_myelin_smoothed": {
+            "hemi": "R",
+            "desc": "smoothed",
+            "suffix": "myelinw",
+            "extension": ".func.gii",
+        },
     }
 
     _, _, shape_files = _find_standard_space_surfaces(
         layout,
         participant_label,
         shape_queries,
+        require_all=False,
     )
     morphometry_files = [k for k, v in shape_files.items() if v is not None]
     morphometry_files_reduced = [f for f in morphometry_files if f.startswith("lh_")]
@@ -666,13 +707,12 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
     orig_dset_description = os.path.join(fmri_dir, "dataset_description.json")
     if not os.path.isfile(orig_dset_description):
-        dset_desc = {}
+        raise FileNotFoundError(f"Dataset description DNE: {orig_dset_description}")
 
-    else:
-        with open(orig_dset_description, "r") as fo:
-            dset_desc = json.load(fo)
+    with open(orig_dset_description, "r") as fo:
+        dset_desc = json.load(fo)
 
-        assert dset_desc["DatasetType"] == "derivative"
+    assert dset_desc["DatasetType"] == "derivative"
 
     # Update dataset description
     dset_desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
