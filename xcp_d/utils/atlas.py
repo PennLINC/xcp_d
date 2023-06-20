@@ -1,33 +1,45 @@
 """Functions for working with atlases."""
 
 
-def get_atlas_names():
+def get_atlas_names(subset):
     """Get a list of atlases to be used for parcellation and functional connectivity analyses.
 
     The actual list of files for the atlases is loaded from a different function.
 
     NOTE: This is a Node function.
 
+    Parameters
+    ----------
+    subset = {"all", "subcortical", "cortical"}
+        Description of the subset of atlases to collect.
+
     Returns
     -------
     :obj:`list` of :obj:`str`
         List of atlases.
     """
-    return [
-        "Schaefer117",
-        "Schaefer217",
-        "Schaefer317",
-        "Schaefer417",
-        "Schaefer517",
-        "Schaefer617",
-        "Schaefer717",
-        "Schaefer817",
-        "Schaefer917",
-        "Schaefer1017",
-        "Glasser",
-        "Gordon",
-        "subcortical",
-    ]
+    atlases = {
+        "cortical": [
+            "Schaefer117",
+            "Schaefer217",
+            "Schaefer317",
+            "Schaefer417",
+            "Schaefer517",
+            "Schaefer617",
+            "Schaefer717",
+            "Schaefer817",
+            "Schaefer917",
+            "Schaefer1017",
+            "Glasser",
+            "Gordon",
+        ],
+        "subcortical": [
+            "Tian",
+            "ciftiSubcortical",
+        ],
+    }
+    atlases["all"] = sorted(list(set(atlases["cortical"] + atlases["subcortical"])))
+    return atlases[subset]
 
 
 def get_atlas_nifti(atlas_name):
@@ -42,7 +54,7 @@ def get_atlas_nifti(atlas_name):
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
                   "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
                   "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
-                  "subcortical"}
+                  "Tian", "ciftiSubcortical"}
         The name of the NIFTI atlas to fetch.
 
     Returns
@@ -50,38 +62,34 @@ def get_atlas_nifti(atlas_name):
     atlas_file : :obj:`str`
         Path to the atlas file.
     """
+    import os
+
     from pkg_resources import resource_filename as pkgrf
 
-    if atlas_name[:8] == "Schaefer":
-        if atlas_name[8:12] == "1017":
-            atlas_file = pkgrf(
-                "xcp_d",
-                "data/niftiatlas/Schaefer2018_1000Parcels_17Networks_order_FSLMNI152_2mm.nii",
-            )
-        else:
-            atlas_file = pkgrf(
-                "xcp_d",
-                (
-                    "data/niftiatlas/"
-                    f"Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order_FSLMNI152_2mm.nii"
-                ),
-            )
-        atlas_labels_file = atlas_file.replace("_FSLMNI152_2mm.nii", "_info.tsv")
-
-    elif atlas_name == "Glasser":
-        atlas_file = pkgrf("xcp_d", "data/niftiatlas/glasser360/glasser360MNI.nii.gz")
-        atlas_labels_file = pkgrf("xcp_d", "data/niftiatlas/Glasser_360Parcels_info.tsv")
-    elif atlas_name == "Gordon":
-        atlas_file = pkgrf("xcp_d", "data/niftiatlas/gordon333/gordon333MNI.nii.gz")
-        atlas_labels_file = pkgrf("xcp_d", "data/niftiatlas/Gordon_333Parcels_info.tsv")
-    elif atlas_name == "subcortical":
-        atlas_file = pkgrf(
-            "xcp_d",
-            "data/niftiatlas/TianSubcortical/Tian_Subcortex_S3_3T.nii.gz",
+    if "Schaefer" in atlas_name:
+        n_parcels = int(atlas_name[8:]) - 17
+        atlas_fname = (
+            "tpl-MNI152NLin6Asym_atlas-Schaefer2018v0143_res-02_"
+            f"desc-{n_parcels}Parcels17Networks_dseg.nii.gz"
         )
-        atlas_labels_file = pkgrf("xcp_d", "data/niftiatlas/Tian_info.tsv")
+        tsv_fname = f"atlas-Schaefer2018v0143_desc-{n_parcels}Parcels17Networks_dseg.tsv"
+    elif atlas_name in ("Glasser", "Gordon"):
+        # 1 mm3 atlases
+        atlas_fname = f"tpl-MNI152NLin6Asym_atlas-{atlas_name}_res-01_dseg.nii.gz"
+        tsv_fname = f"atlas-{atlas_name}_dseg.tsv"
     else:
-        raise RuntimeError(f'Atlas "{atlas_name}" not available')
+        # 2 mm3 atlases
+        atlas_fname = f"tpl-MNI152NLin6Asym_atlas-{atlas_name}_res-02_dseg.nii.gz"
+        tsv_fname = f"atlas-{atlas_name}_dseg.tsv"
+
+    atlas_file = pkgrf("xcp_d", f"data/atlases/{atlas_fname}")
+    atlas_labels_file = pkgrf("xcp_d", f"data/atlases/{tsv_fname}")
+
+    if not os.path.isfile(atlas_file):
+        raise FileNotFoundError(f"File DNE: {atlas_file}")
+
+    if not os.path.isfile(atlas_labels_file):
+        raise FileNotFoundError(f"File DNE: {atlas_labels_file}")
 
     return atlas_file, atlas_labels_file
 
@@ -98,7 +106,7 @@ def get_atlas_cifti(atlas_name):
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
                   "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
                   "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
-                  "subcortical"}
+                  "Tian", "ciftiSubcortical"}
         The name of the CIFTI atlas to fetch.
 
     Returns
@@ -106,39 +114,28 @@ def get_atlas_cifti(atlas_name):
     atlas_file : :obj:`str`
         Path to the atlas file.
     """
+    import os
+
     from pkg_resources import resource_filename as pkgrf
 
-    if atlas_name[:8] == "Schaefer":
-        if atlas_name[8:12] == "1017":
-            atlas_file = pkgrf(
-                "xcp_d",
-                "data/ciftiatlas/Schaefer2018_1000Parcels_17Networks_order.dlabel.nii",
-            )
-        else:
-            atlas_file = pkgrf(
-                "xcp_d",
-                (
-                    "data/ciftiatlas/"
-                    f"Schaefer2018_{atlas_name[8]}00Parcels_17Networks_order.dlabel.nii"
-                ),
-            )
-        atlas_labels_file = atlas_file.replace(".dlabel.nii", "_info.tsv")
-    elif atlas_name == "Glasser":
-        atlas_file = pkgrf(
-            "xcp_d",
-            "data/ciftiatlas/glasser_space-fsLR_den-32k_desc-atlas.dlabel.nii",
+    if "Schaefer" in atlas_name:
+        n_parcels = int(atlas_name[8:]) - 17
+        atlas_fname = (
+            "tpl-fsLR_atlas-Schaefer2018v0143_den-32k_"
+            f"desc-{n_parcels}Parcels17Networks_dseg.dlabel.nii"
         )
-        atlas_labels_file = pkgrf("xcp_d", "data/ciftiatlas/Glasser_360Parcels_info.tsv")
-    elif atlas_name == "Gordon":
-        atlas_file = pkgrf(
-            "xcp_d",
-            "data/ciftiatlas/gordon_space-fsLR_den-32k_desc-atlas.dlabel.nii",
-        )
-        atlas_labels_file = pkgrf("xcp_d", "data/ciftiatlas/Gordon_333Parcels_info.tsv")
-    elif atlas_name == "subcortical":
-        atlas_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_Subcortex_S3_3T_32k.dlabel.nii")
-        atlas_labels_file = pkgrf("xcp_d", "data/ciftiatlas/Tian_info.tsv")
+        tsv_fname = f"atlas-Schaefer2018v0143_desc-{n_parcels}Parcels17Networks_dseg.tsv"
     else:
-        raise RuntimeError(f'Atlas "{atlas_name}" not available')
+        atlas_fname = f"tpl-fsLR_atlas-{atlas_name}_den-32k_dseg.dlabel.nii"
+        tsv_fname = f"atlas-{atlas_name}_dseg.tsv"
+
+    atlas_file = pkgrf("xcp_d", f"data/atlases/{atlas_fname}")
+    atlas_labels_file = pkgrf("xcp_d", f"data/atlases/{tsv_fname}")
+
+    if not os.path.isfile(atlas_file):
+        raise FileNotFoundError(f"File DNE: {atlas_file}")
+
+    if not os.path.isfile(atlas_labels_file):
+        raise FileNotFoundError(f"File DNE: {atlas_labels_file}")
 
     return atlas_file, atlas_labels_file
