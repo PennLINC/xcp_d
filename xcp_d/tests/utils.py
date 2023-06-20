@@ -205,3 +205,19 @@ def chdir(path):
         yield
     finally:
         os.chdir(oldpwd)
+
+
+def reorder_expected_outputs():
+    """Load each of the expected output files and sort the lines alphabetically."""
+    test_data_path = get_test_data_path()
+    expected_output_files = sorted(glob(os.path.join(test_data_path, "test_*_outputs.txt")))
+    for expected_output_file in expected_output_files:
+        LOGGER.info(f"Sorting {expected_output_file}")
+
+        with open(expected_output_file, "r") as fo:
+            file_contents = fo.readlines()
+
+        file_contents = sorted(file_contents)
+
+        with open(expected_output_file, "w") as fo:
+            fo.writelines(file_contents)
