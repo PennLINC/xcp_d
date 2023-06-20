@@ -395,8 +395,8 @@ For CIFTI data, both tab-delimited text file (TSV) and CIFTI versions of the par
 series and correlation matrices are written out.
 
 
-Functional connectivity estimates from specified amounts of data
-----------------------------------------------------------------
+Functional connectivity estimates from specified amounts of data [OPTIONAL]
+---------------------------------------------------------------------------
 
 Functional connectivity estimates may exhibit non-linear relationships with the number of data
 points,
