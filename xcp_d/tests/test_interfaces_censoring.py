@@ -66,7 +66,6 @@ def test_random_censor(tmp_path_factory):
     interface = censoring.RandomCensor(
         temporal_mask_metadata={},
         temporal_mask=original_temporal_mask,
-        exact_scans=None,
         random_seed=0,
     )
     results = interface.run(cwd=tmpdir)
