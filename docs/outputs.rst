@@ -230,15 +230,15 @@ data.
             <source_entities>_space-<label>_reho.nii.gz
             <source_entities>_space-<label>_alff.nii.gz
             <source_entities>_space-<label>_desc-smooth_alff.nii.gz
-            <source_entities>_space-<label>_atlas-<atlas>_desc-alff_timeseries.tsv
-            <source_entities>_space-<label>_atlas-<atlas>_desc-reho_timeseries.tsv
+            <source_entities>_space-<label>_atlas-<atlas>_alff.tsv
+            <source_entities>_space-<label>_atlas-<atlas>_reho.tsv
 
             # Cifti
             <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
             <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
             <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
-            <source_entities>_space-fsLR_atlas-<atlas>_desc-alff_timeseries.tsv
-            <source_entities>_space-fsLR_atlas-<atlas>_desc-reho_timeseries.tsv
+            <source_entities>_space-fsLR_atlas-<atlas>_alff.tsv
+            <source_entities>_space-fsLR_atlas-<atlas>_reho.tsv
 
 
 Other outputs include quality control, framewise displacement, and confounds files
