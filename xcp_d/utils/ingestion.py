@@ -5,7 +5,10 @@ import json
 import os
 
 import numpy as np
-from nilearn import maskers
+from nilearn import image, maskers
+from nipype import logging
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def copy_file(src, dst):
@@ -19,6 +22,161 @@ def copy_file(src, dst):
 
     if not os.path.exists(dst) or not filecmp.cmp(src, dst):
         shutil.copyfile(src, dst)
+
+
+def collect_anatomical_files(anat_dir_orig, anat_dir_fmriprep, base_anatomical_ents):
+    """Collect anatomical files from ABCD or HCP-YA derivatives."""
+    ANAT_DICT = {
+        # XXX: Why have T1w here and T1w_restore for HCP?
+        "T1w.nii.gz": "desc-preproc_T1w.nii.gz",
+        "brainmask_fs.nii.gz": "desc-brain_mask.nii.gz",
+        "ribbon.nii.gz": "desc-ribbon_T1w.nii.gz",
+        "aparc+aseg.nii.gz": "desc-aparcaseg_dseg.nii.gz",
+    }
+    copy_dictionary = {}
+
+    for in_str, out_str in ANAT_DICT.items():
+        anat_orig = os.path.join(anat_dir_orig, in_str)
+        anat_fmriprep = os.path.join(anat_dir_fmriprep, f"{base_anatomical_ents}_{out_str}")
+        if os.path.isfile(anat_orig):
+            copy_dictionary[anat_orig] = [anat_fmriprep]
+        else:
+            LOGGER.warning(f"File DNE: {anat_orig}")
+
+    return copy_dictionary
+
+
+def collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
+    """Collect surface files from ABCD or HCP-YA derivatives."""
+    SURFACE_DICT = {
+        "{hemi}.midthickness.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_midthickness.surf.gii",
+        "{hemi}.inflated.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_inflated.surf.gii",
+        "{hemi}.very_inflated.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_vinflated.surf.gii",
+        "{hemi}.pial.32k_fs_LR.surf.gii": "hemi-{hemi}_pial.surf.gii",
+        "{hemi}.white.32k_fs_LR.surf.gii": "hemi-{hemi}_smoothwm.surf.gii",
+        "{hemi}.thickness.32k_fs_LR.shape.gii": "hemi-{hemi}_thickness.shape.gii",
+        "{hemi}.corrThickness.32k_fs_LR.shape.gii": (
+            "hemi-{hemi}_desc-corrected_thickness.shape.gii"
+        ),
+        "{hemi}.curvature.32k_fs_LR.shape.gii": "hemi-{hemi}_curv.shape.gii",
+        "{hemi}.sulc.32k_fs_LR.shape.gii": "hemi-{hemi}_sulc.shape.gii",
+        "{hemi}.MyelinMap.32k_fs_LR.func.gii": "hemi-{hemi}_myelinw.func.gii",
+        "{hemi}.SmoothedMyelinMap.32k_fs_LR.func.gii": (
+            "hemi-{hemi}_desc-smoothed_myelinw.func.gii"
+        ),
+    }
+
+    fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
+    copy_dictionary = {}
+    for in_str, out_str in SURFACE_DICT.items():
+        for hemi in ["L", "R"]:
+            hemi_in_str = in_str.format(hemi=hemi)
+            hemi_out_str = out_str.format(hemi=hemi)
+            surf_orig = os.path.join(fsaverage_dir_orig, f"{sub_id}.{hemi_in_str}")
+            surf_fmriprep = os.path.join(
+                anat_dir_fmriprep,
+                f"{subses_ents}_space-fsLR_den-32k_{hemi_out_str}",
+            )
+            if os.path.isfile(surf_orig):
+                copy_dictionary[surf_orig] = [surf_fmriprep]
+            else:
+                LOGGER.warning(f"File DNE: {surf_orig}")
+
+    return copy_dictionary
+
+
+def collect_confounds(
+    task_dir_orig,
+    func_dir_fmriprep,
+    base_task_ents,
+    work_dir,
+    bold_file,
+    brainmask_file,
+    csf_mask_file,
+    wm_mask_file,
+):
+    """Create confound regressors."""
+    import pandas as pd
+
+    mvreg_file = os.path.join(task_dir_orig, "Movement_Regressors.txt")
+    rmsd_file = os.path.join(task_dir_orig, "Movement_AbsoluteRMS.txt")
+
+    mvreg = pd.read_csv(mvreg_file, header=None, delimiter=r"\s+")
+
+    # Only use the first six columns
+    mvreg = mvreg.iloc[:, 0:6]
+    mvreg.columns = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
+
+    # convert rotations from degrees to radians
+    rot_columns = [c for c in mvreg.columns if c.startswith("rot")]
+    for col in rot_columns:
+        mvreg[col] = mvreg[col] * np.pi / 180
+
+    # get derivatives of motion columns
+    columns = mvreg.columns.tolist()
+    for col in columns:
+        mvreg[f"{col}_derivative1"] = mvreg[col].diff()
+
+    # get powers
+    columns = mvreg.columns.tolist()
+    for col in columns:
+        mvreg[f"{col}_power2"] = mvreg[col] ** 2
+
+    # Use dummy column for framewise displacement, which will be recalculated by XCP-D.
+    mvreg["framewise_displacement"] = 0
+
+    # use masks: brain, csf, and wm mask to extract timeseries
+    mean_gs = extract_mean_signal(
+        mask=brainmask_file,
+        nifti=bold_file,
+        work_dir=work_dir,
+    )
+    mean_csf = extract_mean_signal(
+        mask=csf_mask_file,
+        nifti=bold_file,
+        work_dir=work_dir,
+    )
+    mean_wm = extract_mean_signal(
+        mask=wm_mask_file,
+        nifti=bold_file,
+        work_dir=work_dir,
+    )
+    rsmd = np.loadtxt(rmsd_file)
+
+    brainreg = pd.DataFrame(
+        {"global_signal": mean_gs, "white_matter": mean_wm, "csf": mean_csf, "rmsd": rsmd}
+    )
+
+    # get derivatives and powers
+    brainreg["global_signal_derivative1"] = brainreg["global_signal"].diff()
+    brainreg["white_matter_derivative1"] = brainreg["white_matter"].diff()
+    brainreg["csf_derivative1"] = brainreg["csf"].diff()
+
+    brainreg["global_signal_derivative1_power2"] = brainreg["global_signal_derivative1"] ** 2
+    brainreg["global_signal_power2"] = brainreg["global_signal"] ** 2
+
+    brainreg["white_matter_derivative1_power2"] = brainreg["white_matter_derivative1"] ** 2
+    brainreg["white_matter_power2"] = brainreg["white_matter"] ** 2
+
+    brainreg["csf_derivative1_power2"] = brainreg["csf_derivative1"] ** 2
+    brainreg["csf_power2"] = brainreg["csf"] ** 2
+
+    # Merge the two DataFrames
+    confounds_df = pd.concat([mvreg, brainreg], axis=1)
+
+    # write out the confounds
+    regressors_tsv_fmriprep = os.path.join(
+        func_dir_fmriprep,
+        f"{base_task_ents}_desc-confounds_timeseries.tsv",
+    )
+    confounds_df.to_csv(regressors_tsv_fmriprep, sep="\t", index=False)
+
+    # NOTE: Is this JSON any good?
+    regressors_json_fmriprep = os.path.join(
+        func_dir_fmriprep,
+        f"{base_task_ents}_desc-confounds_timeseries.json",
+    )
+    confounds_df.to_json(regressors_json_fmriprep)
 
 
 def extract_mean_signal(mask, nifti, work_dir):
@@ -40,17 +198,16 @@ def write_json(data, outfile):
 def plot_bbreg(fixed_image, moving_image, contour, out_file="report.svg"):
     """Plot bbref_fig_fmriprep results."""
     import numpy as np
-    from nilearn.image import load_img, resample_img, threshold_img
     from niworkflows.viz.utils import compose_view, cuts_from_bbox, plot_registration
 
-    fixed_image_nii = load_img(fixed_image)
-    moving_image_nii = load_img(moving_image)
-    moving_image_nii = resample_img(
+    fixed_image_nii = image.load_img(fixed_image)
+    moving_image_nii = image.load_img(moving_image)
+    moving_image_nii = image.resample_img(
         moving_image_nii, target_affine=np.eye(3), interpolation="nearest"
     )
-    contour_nii = load_img(contour) if contour is not None else None
+    contour_nii = image.load_img(contour) if contour is not None else None
 
-    mask_nii = threshold_img(fixed_image_nii, 1e-3)
+    mask_nii = image.threshold_img(fixed_image_nii, 1e-3)
 
     n_cuts = 7
     if contour_nii:
@@ -80,3 +237,18 @@ def plot_bbreg(fixed_image, moving_image, contour, out_file="report.svg"):
         out_file=out_file,
     )
     return out_file
+
+
+def copy_files_in_dict(copy_dictionary):
+    """Copy files in dictionary."""
+    for file_orig, files_fmriprep in copy_dictionary.items():
+        if not isinstance(files_fmriprep, list):
+            raise ValueError(
+                f"Entry for {file_orig} should be a list, but is a {type(files_fmriprep)}"
+            )
+
+        if len(files_fmriprep) > 1:
+            LOGGER.warning(f"File used for more than one output: {file_orig}")
+
+        for file_fmriprep in files_fmriprep:
+            copy_file(file_orig, file_fmriprep)
