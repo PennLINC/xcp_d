@@ -204,13 +204,14 @@ class NiftiConnect(SimpleInterface):
 
         # The time series file is tab-delimited, with node labels included in the first row.
         timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels)
-        correlations_df = timeseries_df.corr()
+        correlations_r_df = timeseries_df.corr()
+        correlations_z_df = np.arctanh(correlations_r_df)
         coverage_df = pd.DataFrame(data=parcel_coverage, index=node_labels, columns=["coverage"])
 
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
 
         if correlate:
-            correlations_df.to_csv(
+            correlations_z_df.to_csv(
                 self._results["correlations"],
                 sep="\t",
                 na_rep="n/a",
@@ -450,7 +451,8 @@ class CiftiConnect(SimpleInterface):
             )
             timeseries_img.to_filename(self._results["timeseries_ciftis"])
 
-            correlations_df = timeseries_df.corr()
+            correlations_r_df = timeseries_df.corr()
+            correlations_z_df = np.arctanh(correlations_r_df)
 
             # Save out the coverage tsv
             self._results["coverage"] = fname_presuffix(
@@ -466,7 +468,7 @@ class CiftiConnect(SimpleInterface):
                 newpath=runtime.cwd,
                 use_ext=True,
             )
-            correlations_df.to_csv(
+            correlations_z_df.to_csv(
                 self._results["correlations"],
                 sep="\t",
                 na_rep="n/a",
@@ -491,7 +493,7 @@ class CiftiConnect(SimpleInterface):
             nifti_header = nifti_header.copy()
             nifti_header.set_intent(cifti_intents[".pconn.nii"])
             conn_img = nb.Cifti2Image(
-                correlations_df.to_numpy(),
+                correlations_z_df.to_numpy(),
                 new_header,
                 nifti_header=nifti_header,
             )
