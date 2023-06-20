@@ -91,7 +91,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
-        columns=["framwise_displacement", "exact_10"],
+        columns=["framewise_displacement", "exact_10"],
         data=np.stack(
             (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
             axis=1,
@@ -229,7 +229,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
-        columns=["framwise_displacement", "exact_10"],
+        columns=["framewise_displacement", "exact_10"],
         data=np.stack(
             (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
             axis=1,
