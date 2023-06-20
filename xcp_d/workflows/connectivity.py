@@ -91,9 +91,10 @@ def init_load_atlases_wf(
     )
 
     atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
+        Function(input_names=["subset"], output_names=["atlas_names"], function=get_atlas_names),
         name="atlas_name_grabber",
     )
+    atlas_name_grabber.inputs.subset = "all"
 
     workflow.connect([(atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")])])
 
@@ -314,9 +315,10 @@ def init_parcellate_surfaces_wf(
     )
 
     atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
+        Function(input_names=["subset"], output_names=["atlas_names"], function=get_atlas_names),
         name="atlas_name_grabber",
     )
+    atlas_name_grabber.inputs.subset = "cortical"
 
     # Get CIFTI atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
