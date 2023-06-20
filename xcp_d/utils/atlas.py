@@ -1,34 +1,45 @@
 """Functions for working with atlases."""
 
 
-def get_atlas_names():
+def get_atlas_names(subset):
     """Get a list of atlases to be used for parcellation and functional connectivity analyses.
 
     The actual list of files for the atlases is loaded from a different function.
 
     NOTE: This is a Node function.
 
+    Parameters
+    ----------
+    subset = {"all", "subcortical", "cortical"}
+        Description of the subset of atlases to collect.
+
     Returns
     -------
     :obj:`list` of :obj:`str`
         List of atlases.
     """
-    return [
-        "Schaefer117",
-        "Schaefer217",
-        "Schaefer317",
-        "Schaefer417",
-        "Schaefer517",
-        "Schaefer617",
-        "Schaefer717",
-        "Schaefer817",
-        "Schaefer917",
-        "Schaefer1017",
-        "Glasser",
-        "Gordon",
-        "Tian",
-        "ciftiSubcortical",
-    ]
+    atlases = {
+        "cortical": [
+            "Schaefer117",
+            "Schaefer217",
+            "Schaefer317",
+            "Schaefer417",
+            "Schaefer517",
+            "Schaefer617",
+            "Schaefer717",
+            "Schaefer817",
+            "Schaefer917",
+            "Schaefer1017",
+            "Glasser",
+            "Gordon",
+        ],
+        "subcortical": [
+            "Tian",
+            "ciftiSubcortical",
+        ],
+    }
+    atlases["all"] = sorted(list(set(atlases["cortical"] + atlases["subcortical"])))
+    return atlases[subset]
 
 
 def get_atlas_nifti(atlas_name):
