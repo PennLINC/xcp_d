@@ -442,6 +442,9 @@ def load_confound_matrix(
         custom_confounds_df = pd.read_table(custom_confounds, sep="\t")
         confounds_df = pd.concat([custom_confounds_df, confounds_df], axis=1)
 
+    confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
+    confounds_df["intercept"] = np.ones(confounds_df.shape[0])
+
     return confounds_df
 
 

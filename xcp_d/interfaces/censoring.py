@@ -339,15 +339,14 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
 class _GenerateConfoundsOutputSpec(TraitedSpec):
     filtered_confounds_file = File(
         exists=True,
-        mandatory=True,
         desc=(
             "The original fMRIPrep confounds, with the motion parameters and their Volterra "
             "expansion regressors replaced with filtered versions."
         ),
     )
-    confounds_file = File(
-        exists=True,
-        mandatory=True,
+    confounds_file = traits.Either(
+        File(exists=True),
+        None,
         desc=(
             "The selected confounds. This may include custom confounds as well. "
             "It will also always have the linear trend and a constant column."
@@ -355,13 +354,11 @@ class _GenerateConfoundsOutputSpec(TraitedSpec):
     )
     motion_file = File(
         exists=True,
-        mandatory=True,
         desc="The filtered motion parameters.",
     )
     motion_metadata = traits.Dict(desc="Metadata associated with the filtered_motion output.")
     temporal_mask = File(
         exists=True,
-        mandatory=True,
         desc=(
             "Temporal mask; all values above fd_thresh set to 1. "
             "This is a TSV file with one column: 'framewise_displacement'."
@@ -434,24 +431,26 @@ class GenerateConfounds(SimpleInterface):
             confounds_json_file=self.inputs.fmriprep_confounds_json,
             custom_confounds=self.inputs.custom_confounds_file,
         )
-        confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
-        confounds_df["intercept"] = np.ones(confounds_df.shape[0])
 
         # get the output
-        self._results["confounds_file"] = fname_presuffix(
-            self.inputs.fmriprep_confounds_file,
-            suffix="_confounds",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
         self._results["motion_file"] = fname_presuffix(
             self.inputs.fmriprep_confounds_file,
             suffix="_motion",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        confounds_df.to_csv(self._results["confounds_file"], sep="\t", index=False)
         motion_df.to_csv(self._results["motion_file"], sep="\t", index=False)
+
+        if confounds_df:
+            self._results["confounds_file"] = fname_presuffix(
+                self.inputs.fmriprep_confounds_file,
+                suffix="_confounds",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            confounds_df.to_csv(self._results["confounds_file"], sep="\t", index=False)
+        else:
+            self._results["confounds_file"] = None
 
         # Generate temporal mask with all timepoints have FD over threshold set to 1.
         outlier_mask = np.zeros(len(fd_timeseries), dtype=int)
