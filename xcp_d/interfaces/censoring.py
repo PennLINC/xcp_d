@@ -31,10 +31,14 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
             "calculated in an earlier workflow from dummy_scans."
         ),
     )
-    confounds_file = File(
-        exists=True,
+    confounds_file = traits.Either(
+        File(exists=True),
+        None,
         mandatory=True,
-        desc="TSV file with selected confounds for denoising.",
+        desc=(
+            "TSV file with selected confounds for denoising. "
+            "May be None if denoising is disabled."
+        ),
     )
     fmriprep_confounds_file = File(
         exists=True,
@@ -54,8 +58,9 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
 
 
 class _RemoveDummyVolumesOutputSpec(TraitedSpec):
-    confounds_file_dropped_TR = File(
-        exists=True,
+    confounds_file_dropped_TR = traits.Either(
+        File(exists=True),
+        None,
         desc="TSV file with selected confounds for denoising, after removing TRs.",
     )
     fmriprep_confounds_file_dropped_TR = File(
@@ -120,12 +125,6 @@ class RemoveDummyVolumes(SimpleInterface):
             suffix="_fmriprep_dropped",
             use_ext=True,
         )
-        self._results["confounds_file_dropped_TR"] = fname_presuffix(
-            self.inputs.bold_file,
-            suffix="_selected_confounds_dropped.tsv",
-            newpath=os.getcwd(),
-            use_ext=False,
-        )
         self._results["motion_file_dropped_TR"] = fname_presuffix(
             self.inputs.bold_file,
             suffix="_motion_dropped.tsv",
@@ -153,13 +152,21 @@ class RemoveDummyVolumes(SimpleInterface):
         )
 
         # Drop the first N rows from the confounds file
-        confounds_df = pd.read_table(self.inputs.confounds_file)
-        confounds_df_dropped = confounds_df.drop(np.arange(dummy_scans))
-        confounds_df_dropped.to_csv(
-            self._results["confounds_file_dropped_TR"],
-            sep="\t",
-            index=False,
-        )
+        self._results["confounds_file_dropped_TR"] = None
+        if self.inputs.confounds_file:
+            self._results["confounds_file_dropped_TR"] = fname_presuffix(
+                self.inputs.bold_file,
+                suffix="_selected_confounds_dropped.tsv",
+                newpath=os.getcwd(),
+                use_ext=False,
+            )
+            confounds_df = pd.read_table(self.inputs.confounds_file)
+            confounds_df_dropped = confounds_df.drop(np.arange(dummy_scans))
+            confounds_df_dropped.to_csv(
+                self._results["confounds_file_dropped_TR"],
+                sep="\t",
+                index=False,
+            )
 
         # Drop the first N rows from the motion file
         motion_df = pd.read_table(self.inputs.motion_file)
