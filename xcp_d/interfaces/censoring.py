@@ -441,6 +441,7 @@ class GenerateConfounds(SimpleInterface):
         )
         motion_df.to_csv(self._results["motion_file"], sep="\t", index=False)
 
+        self._results["confounds_file"] = None
         if confounds_df:
             self._results["confounds_file"] = fname_presuffix(
                 self.inputs.fmriprep_confounds_file,
@@ -449,8 +450,6 @@ class GenerateConfounds(SimpleInterface):
                 use_ext=True,
             )
             confounds_df.to_csv(self._results["confounds_file"], sep="\t", index=False)
-        else:
-            self._results["confounds_file"] = None
 
         # Generate temporal mask with all timepoints have FD over threshold set to 1.
         outlier_mask = np.zeros(len(fd_timeseries), dtype=int)

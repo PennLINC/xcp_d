@@ -371,9 +371,10 @@ def denoise_with_nilearn(
     preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
         Preprocessed BOLD data, after dummy volume removal,
         but without any additional censoring.
-    confounds_file : :obj:`str`
+    confounds_file : :obj:`str` or None
         Path to TSV file containing selected confounds, after dummy volume removal,
         but without any additional censoring.
+        May be None, if no denoising should be performed.
     %(temporal_mask)s
     low_pass, high_pass : float or None
         Lowpass and high_pass thresholds, in Hertz.
@@ -393,11 +394,12 @@ def denoise_with_nilearn(
     from nilearn import signal
 
     n_volumes, n_voxels = preprocessed_bold.shape
-    confounds_df = pd.read_table(confounds_file)
+    if confounds_file:
+        confounds_df = pd.read_table(confounds_file)
 
-    assert "intercept" in confounds_df.columns
-    assert "linear_trend" in confounds_df.columns
-    assert confounds_df.columns[-1] == "intercept"
+        assert "intercept" in confounds_df.columns
+        assert "linear_trend" in confounds_df.columns
+        assert confounds_df.columns[-1] == "intercept"
 
     censoring_df = pd.read_table(temporal_mask)
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
