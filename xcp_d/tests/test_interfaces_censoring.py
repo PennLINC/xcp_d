@@ -87,4 +87,10 @@ def test_random_censor(tmp_path_factory):
     for exact_scan in exact_scans:
         exact_scan_col = f"exact_{exact_scan}"
         assert exact_scan_col in new_temporal_mask_df.columns
-        assert new_temporal_mask_df[exact_scan_col].sum() == n_volumes - (n_outliers + exact_scan)
+        # The column's values should sum to the number of volumes minus the number of retained.
+        # Outliers don't show up here.
+        assert new_temporal_mask_df[exact_scan_col].sum() == n_volumes - exact_scan
+        # The outlier volumes and exact-scan censored volumes shouldn't overlap.
+        assert new_temporal_mask_df.loc[
+            new_temporal_mask_df["framewise_displacement"] == 0, exact_scan_col
+        ].sum() == n_volumes - (exact_scan + n_outliers)
