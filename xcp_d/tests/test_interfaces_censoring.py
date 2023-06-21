@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from nipype.interfaces.base import Undefined
 
 from xcp_d.interfaces import censoring
 
@@ -66,6 +67,7 @@ def test_random_censor(tmp_path_factory):
     interface = censoring.RandomCensor(
         temporal_mask_metadata={},
         temporal_mask=original_temporal_mask,
+        exact_scans=Undefined,
         random_seed=0,
     )
     results = interface.run(cwd=tmpdir)
