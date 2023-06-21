@@ -76,7 +76,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: nibabies-03
+          key: nibabies-04
       - run: *runinstall
       - run:
           name: Download nibabies test data
@@ -84,7 +84,7 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data nibabies
       - save_cache:
-          key: nibabies-03
+          key: nibabies-04
           paths:
               - /src/xcp_d/.circleci/data/nibabies
 
@@ -163,7 +163,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: nibabies-03
+          key: nibabies-04
       - run: *runinstall
       - run:
           name: Run full xcp_d on nibabies
@@ -260,7 +260,7 @@ jobs:
       - restore_cache:
           key: fmriprepwithoutfreesurfer-03
       - restore_cache:
-          key: nibabies-03
+          key: nibabies-04
       - run: *runinstall
       - run:
           name: Run pytest on the tests directory
