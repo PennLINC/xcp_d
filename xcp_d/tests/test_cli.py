@@ -269,7 +269,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--head_radius 40 "
         "--smoothing 6 "
         "-f 100 "
-        "--nuisance-regressors 27P "
+        "--nuisance-regressors none "
         "--disable-bandpass-filter "
         "--min-time 20 "
         "--dcan-qc "
