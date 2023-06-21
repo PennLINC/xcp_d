@@ -177,18 +177,20 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     assert idx_in_atlas.size == n_parcels_in_atlas
 
     # The "ground truth" matrix
-    calculated_correlations = np.corrcoef(signals.T)
-    assert calculated_correlations.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
+    calculated_correlations_r = np.corrcoef(signals.T)
+    calculated_correlations_z = np.arctanh(calculated_correlations_r)
+    np.fill_diagonal(calculated_correlations_z, 0)
+    assert calculated_correlations_z.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
 
     # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
     # the resulting matrix should match the workflow-generated one.
     bad_parcel_idx = np.where(np.isnan(np.diag(correlations_arr)))[0]
     assert bad_parcel_idx.size == n_parcels_in_atlas - n_partial_parcels
-    calculated_correlations[bad_parcel_idx, :] = np.nan
-    calculated_correlations[:, bad_parcel_idx] = np.nan
+    calculated_correlations_z[bad_parcel_idx, :] = np.nan
+    calculated_correlations_z[:, bad_parcel_idx] = np.nan
 
     # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
-    assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
+    assert np.allclose(correlations_arr, calculated_correlations_z, atol=0.01, equal_nan=True)
 
 
 def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
@@ -298,10 +300,13 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
     assert np.allclose(correlations_arr, pconn_arr, equal_nan=True)
 
     # Calculate correlations from timeseries data
-    calculated_correlations = np.corrcoef(ptseries_arr.T)
-    assert calculated_correlations.shape == (1000, 1000)
-    bad_parcels_idx = np.where(np.isnan(np.diag(calculated_correlations)))[0]
-    good_parcels_idx = np.where(~np.isnan(np.diag(calculated_correlations)))[0]
+    calculated_correlations_r = np.corrcoef(ptseries_arr.T)
+    calculated_correlations_z = np.arctanh(calculated_correlations_r)
+    np.fill_diagonal(calculated_correlations_z, 0)
+    
+    assert calculated_correlations_z.shape == (1000, 1000)
+    bad_parcels_idx = np.where(np.isnan(np.diag(calculated_correlations_z)))[0]
+    good_parcels_idx = np.where(~np.isnan(np.diag(calculated_correlations_z)))[0]
 
     # Parcels with <50% coverage should have NaNs
     first_good_parcel_corrs = pconn_arr[good_parcels_idx[0], :]
@@ -310,12 +315,12 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
     assert np.sum(np.isnan(first_good_parcel_corrs)) == bad_parcels_idx.size
 
     # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
-    if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations)):
+    if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations_z)):
         mismatch_idx = np.vstack(
-            np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
+            np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations_z))
         ).T
         raise ValueError(f"{mismatch_idx}\n\n{np.where(np.isnan(pconn_arr))}")
 
-    if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):
-        diff = pconn_arr - calculated_correlations
+    if not np.allclose(pconn_arr, calculated_correlations_z, atol=0.01, equal_nan=True):
+        diff = pconn_arr - calculated_correlations_z
         raise ValueError(np.nanmax(np.abs(diff)))
