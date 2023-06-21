@@ -205,6 +205,7 @@ class NiftiConnect(SimpleInterface):
         # The time series file is tab-delimited, with node labels included in the first row.
         timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels)
         correlations_r_df = timeseries_df.corr()
+        np.fill_diagonal(correlations_r_df.values, 0)
         correlations_z_df = np.arctanh(correlations_r_df)
         coverage_df = pd.DataFrame(data=parcel_coverage, index=node_labels, columns=["coverage"])
 
@@ -452,6 +453,7 @@ class CiftiConnect(SimpleInterface):
             timeseries_img.to_filename(self._results["timeseries_ciftis"])
 
             correlations_r_df = timeseries_df.corr()
+            np.fill_diagonal(correlations_r_df.values, 0)
             correlations_z_df = np.arctanh(correlations_r_df)
 
             # Save out the coverage tsv
