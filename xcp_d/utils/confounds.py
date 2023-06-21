@@ -347,10 +347,11 @@ def load_confound_matrix(
 
     Returns
     -------
-    confounds_df : pandas.DataFrame
+    confounds_df : :obj:`pandas.DataFrame` or None
         The loaded and selected confounds.
         If "AROMA" is requested, then this DataFrame will include signal components as well.
         These will be named something like "signal_[XX]".
+        If ``params`` is "none", ``confounds_df`` will be None.
     """
     PARAM_KWARGS = {
         # Get rot and trans values, as well as derivatives and square

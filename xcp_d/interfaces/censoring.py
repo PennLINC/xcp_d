@@ -442,7 +442,7 @@ class GenerateConfounds(SimpleInterface):
         motion_df.to_csv(self._results["motion_file"], sep="\t", index=False)
 
         self._results["confounds_file"] = None
-        if confounds_df:
+        if confounds_df is not None:
             self._results["confounds_file"] = fname_presuffix(
                 self.inputs.fmriprep_confounds_file,
                 suffix="_confounds",
