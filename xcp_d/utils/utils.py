@@ -279,7 +279,7 @@ def butter_bandpass(
         btype = "lowpass"
         filt_input = low_pass
     else:
-        raise Exception("Filter parameters are not valid.")
+        raise ValueError("Filter parameters are not valid.")
 
     b, a = butter(
         order,
