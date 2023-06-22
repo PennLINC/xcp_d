@@ -196,11 +196,7 @@ def init_brainsprite_figures_wf(
             omp_nthreads=omp_nthreads,
         )
 
-        # fmt:off
-        workflow.connect([
-            (create_framewise_pngs, make_mosaic_node, [("out_file", "png_files")]),
-        ])
-        # fmt:on
+        workflow.connect([(create_framewise_pngs, make_mosaic_node, [("out_file", "png_files")])])
 
         ds_mosaic_file = pe.Node(
             DerivativesDataSink(
@@ -387,6 +383,7 @@ def init_execsummary_functional_plots_wf(
         bold_t1w_registration_file = fnmatch.filter(
             all_files, f"*{bb_register_prefix}{registration_file[0]}"
         )[0]
+        raise ValueError(bold_t1w_registration_file)
 
         ds_registration_figure = pe.Node(
             DerivativesDataSink(
@@ -400,9 +397,7 @@ def init_execsummary_functional_plots_wf(
             run_without_submitting=True,
         )
 
-        # fmt:off
         workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
-        # fmt:on
     else:
         LOGGER.warning(
             "Preprocessed NIFTI file not provided as a parameter, "
