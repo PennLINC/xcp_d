@@ -448,7 +448,7 @@ def denoise_with_nilearn(
         # Also denoise the censored BOLD data
         censored_denoised_bold = preprocessed_bold_censored - np.dot(nuisance_censored, betas)
     else:
-        uncensored_denoised_bold = preprocessed_bold_censored
+        uncensored_denoised_bold = preprocessed_bold.copy()
         censored_denoised_bold = preprocessed_bold_censored.copy()
 
     # Now interpolate the censored, denoised data with cubic spline interpolation
