@@ -1,15 +1,31 @@
 """Test functions in xcp_d.utils.execsummary."""
 import os
 
+import matplotlib.pyplot as plt
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.tests.utils import chdir
 from xcp_d.utils import execsummary
 
 
-def test_make_mosaic():
+def test_make_mosaic(tmp_path_factory):
     """Test make_mosaic."""
-    ...
+    tmpdir = tmp_path_factory.mktemp("test_make_mosaic")
+
+    # Make a simple PNG file
+    png_file = os.path.join(tmpdir, "temp.png")
+    fig, ax = plt.subplots(figsize=(1, 1))
+    ax.set_facecolor("yellow")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    plt.close(fig)
+    fig.savefig(png_file)
+
+    png_files = [png_file] * 10
+    with chdir(tmpdir):
+        mosaic_file = execsummary.make_mosaic(png_files)
+
+    assert os.path.isfile(mosaic_file)
 
 
 def test_modify_brainsprite_scene_template(tmp_path_factory):
@@ -22,7 +38,7 @@ def test_modify_brainsprite_scene_template(tmp_path_factory):
     )
 
     with chdir(tmpdir):
-        execsummary.modify_brainsprite_scene_template(
+        scene_file = execsummary.modify_brainsprite_scene_template(
             slice_number=10,
             anat_file="anat.nii.gz",
             rh_pial_surf="rh_pial.surf.gii",
@@ -32,7 +48,7 @@ def test_modify_brainsprite_scene_template(tmp_path_factory):
             scene_template=brainsprite_scene_template,
         )
 
-    assert os.path.isfile(os.path.join(tmpdir, "modified_scene.scene"))
+    assert os.path.isfile(scene_file)
 
 
 def test_modify_pngs_scene_template(tmp_path_factory):
@@ -42,7 +58,7 @@ def test_modify_pngs_scene_template(tmp_path_factory):
     pngs_scene_template = pkgrf("xcp_d", "data/executive_summary_scenes/pngs_template.scene.gz")
 
     with chdir(tmpdir):
-        execsummary.modify_pngs_scene_template(
+        scene_file = execsummary.modify_pngs_scene_template(
             anat_file="anat.nii.gz",
             rh_pial_surf="rh_pial.surf.gii",
             lh_pial_surf="lh_pial.surf.gii",
@@ -51,7 +67,7 @@ def test_modify_pngs_scene_template(tmp_path_factory):
             scene_template=pngs_scene_template,
         )
 
-    assert os.path.isfile(os.path.join(tmpdir, "modified_scene.scene"))
+    assert os.path.isfile(scene_file)
 
 
 def test_get_n_frames(fmriprep_with_freesurfer_data):
