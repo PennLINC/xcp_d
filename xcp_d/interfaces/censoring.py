@@ -231,21 +231,18 @@ class Censor(SimpleInterface):
         bold_img_interp = nb.load(self.inputs.in_file)
         bold_data_interp = bold_img_interp.get_fdata()
 
-        if bold_img_interp.ndim > 2:  # If Nifti
+        is_nifti = bold_img_interp.ndim > 2
+        if is_nifti:
             bold_data_censored = bold_data_interp[:, :, :, temporal_mask == 0]
-        else:
-            bold_data_censored = bold_data_interp[temporal_mask == 0, :]
 
-        # Turn censored bold into image
-        if nb.load(self.inputs.in_file).ndim > 2:
-            # If it's a Nifti image
             bold_img_censored = nb.Nifti1Image(
                 bold_data_censored,
                 affine=bold_img_interp.affine,
                 header=bold_img_interp.header,
             )
         else:
-            # If it's a Cifti image
+            bold_data_censored = bold_data_interp[temporal_mask == 0, :]
+
             time_axis, brain_model_axis = [
                 bold_img_interp.header.get_axis(i) for i in range(bold_img_interp.ndim)
             ]
