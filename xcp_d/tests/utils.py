@@ -208,7 +208,10 @@ def chdir(path):
 
 
 def reorder_expected_outputs():
-    """Load each of the expected output files and sort the lines alphabetically."""
+    """Load each of the expected output files and sort the lines alphabetically.
+
+    This function is called manually by devs when they modify the test outputs.
+    """
     test_data_path = get_test_data_path()
     expected_output_files = sorted(glob(os.path.join(test_data_path, "test_*_outputs.txt")))
     for expected_output_file in expected_output_files:
