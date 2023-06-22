@@ -772,22 +772,6 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     return info_dict
 
 
-def _add_subject_prefix(subid):
-    """Extract or compile subject entity from subject ID.
-
-    Parameters
-    ----------
-    subid : :obj:`str`
-        A subject ID (e.g., 'sub-XX' or just 'XX').
-
-    Returns
-    -------
-    str
-        Subject entity (e.g., 'sub-XX').
-    """
-    return subid if subid.startswith("sub-") else "-".join(("sub", subid))
-
-
 def _get_tr(img):
     """Attempt to extract repetition time from NIfTI/CIFTI header.
 
