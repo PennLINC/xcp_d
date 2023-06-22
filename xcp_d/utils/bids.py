@@ -80,7 +80,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     Parameters
     ----------
     bids_dir : :obj:`str` or pybids.layout.BIDSLayout
-    participant_label : None or str, optional
+    participant_label : None, str, or list, optional
     strict : bool, optional
     bids_validate : bool, optional
 

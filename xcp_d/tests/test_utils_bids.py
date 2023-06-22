@@ -7,6 +7,22 @@ from bids.layout import BIDSLayout
 import xcp_d.utils.bids as xbids
 
 
+def test_collect_participants(datasets):
+    """Test collect_participants."""
+    bids_dir = datasets["ds001419"]
+    with pytest.raises(xbids.BIDSError, match="Could not find participants"):
+        xbids.collect_participants(bids_dir, participant_label="fail")
+
+    with pytest.warns(xbids.BIDSWarning, match="Some participants were not found"):
+        xbids.collect_participants(bids_dir, participant_label=["01", "fail"])
+
+    found_labels = xbids.collect_participants(bids_dir, participant_label=None)
+    assert found_labels == ["01"]
+
+    found_labels = xbids.collect_participants(bids_dir, participant_label="01")
+    assert found_labels == ["01"]
+
+
 def test_collect_data_ds001419(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["ds001419"]
