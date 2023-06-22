@@ -146,7 +146,7 @@ def init_prepare_confounds_wf(
         motion_filter_type=motion_filter_type,
     )
 
-    workflow.__desc__ = f" {dummy_scans_str}{censoring_description}{confounds_description}"
+    workflow.__desc__ = f" {dummy_scans_str}{censoring_description} {confounds_description}"
 
     inputnode = pe.Node(
         niu.IdentityInterface(
