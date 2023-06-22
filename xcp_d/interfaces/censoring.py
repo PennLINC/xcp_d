@@ -208,21 +208,7 @@ class _CensorInputSpec(BaseInterfaceInputSpec):
 class _CensorOutputSpec(TraitedSpec):
     censored_denoised_bold = File(
         exists=True,
-        mandatory=True,
-        desc="Censored bold file",
-    )
-    censored_confounds = File(
-        exists=True,
-        mandatory=True,
-        desc="confounds_file censored",
-    )
-    censored_motion = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Framewise displacement timeseries. "
-            "This is a TSV file with one column: 'framewise_displacement'."
-        ),
+        desc="Censored BOLD file",
     )
 
 
