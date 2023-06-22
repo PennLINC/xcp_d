@@ -369,21 +369,22 @@ def init_execsummary_functional_plots_wf(
         # Only grab the bb_registration_file if the preprocessed BOLD file is a parameter.
         # Get bb_registration_file prefix from fmriprep
         # TODO: Replace with interfaces.
-        all_files = list(layout.get_files())
         current_bold_file = os.path.basename(preproc_nifti)
         if "_space" in current_bold_file:
             bb_register_prefix = current_bold_file.split("_space")[0]
         else:
             bb_register_prefix = current_bold_file.split("_desc")[0]
 
-        # check if there is a bb_registration_file or coregister file
-        patterns = ("*bbregister_bold.svg", "*coreg_bold.svg", "*bbr_bold.svg")
-        registration_file = [pat for pat in patterns if fnmatch.filter(all_files, pat)]
-        # Get the T1w registration file
+        bold_t1w_registration_files = layout.get(
+            desc=["bbregister", "coreg", "bbr"],
+            extension=".svg",
+            suffix="bold",
+            return_type="file",
+        )
         bold_t1w_registration_file = fnmatch.filter(
-            all_files, f"*{bb_register_prefix}{registration_file[0]}"
+            bold_t1w_registration_files,
+            f"*/{bb_register_prefix}*",
         )[0]
-        raise ValueError(bold_t1w_registration_file)
 
         ds_registration_figure = pe.Node(
             DerivativesDataSink(
