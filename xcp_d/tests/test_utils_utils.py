@@ -20,6 +20,33 @@ def test_estimate_brain_radius(fmriprep_with_freesurfer_data):
     assert radius == 50
 
 
+def test_butter_bandpass():
+    """Test butter_bandpass."""
+    n_volumes, n_voxels = 100, 1000
+    data = np.random.random((n_volumes, n_voxels))
+    sampling_rate = 0.5  # TR of 2 seconds
+    filters = [
+        {"low_pass": 0.1, "high_pass": 0.01},
+        {"low_pass": 0.1, "high_pass": 0},
+        {"low_pass": 0, "high_pass": 0.01},
+    ]
+    for filter in filters:
+        filtered_data = utils.butter_bandpass(
+            data=data,
+            sampling_rate=sampling_rate,
+            **filter,
+        )
+        assert filtered_data.shape == (n_volumes, n_voxels)
+
+    with pytest.raises(ValueError, match="Filter parameters are not valid."):
+        utils.butter_bandpass(
+            data=data,
+            sampling_rate=sampling_rate,
+            low_pass=0,
+            high_pass=0,
+        )
+
+
 def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
     tmpdir = tmp_path_factory.mktemp("test_denoise_with_nilearn")
