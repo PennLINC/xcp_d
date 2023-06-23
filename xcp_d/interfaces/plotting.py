@@ -144,10 +144,9 @@ class CensoringPlot(SimpleInterface):
             * 1.5
         )
         ax.set_ylim(0, y_max)
-        LOGGER.warning(f"Y-max set to {y_max}")
 
         # Plot randomly censored volumes as well
-        # These vertical lines start at the top and only go down to the halfway point.
+        # These vertical lines start at the top and only go 20% of the way down the plot.
         # They are plotted in non-overlapping segments.
         exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
         vline_ymax = 1
@@ -156,7 +155,6 @@ class CensoringPlot(SimpleInterface):
             tmask_idx = np.where(tmask_arr)[0]
             vline_yspan = 0.2 / len(exact_columns)
             vline_ymin = vline_ymax - vline_yspan
-            LOGGER.warning(f"Setting {exact_col} range to {vline_ymin}-{vline_ymax}")
 
             for j_idx, idx in enumerate(tmask_idx):
                 label = f"Randomly Censored Volumes {exact_col}" if j_idx == 0 else ""
@@ -188,8 +186,6 @@ class CensoringPlot(SimpleInterface):
         ax.set_ylabel("Movement (millimeters)", fontsize=20)
         ax.legend(fontsize=20)
         fig.tight_layout()
-        ylims = ax.get_ylim()
-        LOGGER.warning(f"Final ylim set to {ylims}")
 
         self._results["out_file"] = fname_presuffix(
             "censoring",
