@@ -42,7 +42,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--nuisance-regressors=aroma_gsr",
         "--despike",
         "--dummy-scans=4",
-        "--fd-thresh=0.3",
+        "--fd-thresh=0.2",
         "--head_radius=40",
         "--smoothing=6",
         "--motion-filter-type=lp",
