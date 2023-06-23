@@ -748,9 +748,11 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     import os
 
     dataset_description = os.path.join(fmri_dir, "dataset_description.json")
-    if os.path.isfile(dataset_description):
-        with open(dataset_description) as f:
-            dataset_dict = json.load(f)
+    if not os.path.isfile(dataset_description):
+        raise FileNotFoundError(f"Dataset description DNE: {dataset_description}")
+
+    with open(dataset_description) as f:
+        dataset_dict = json.load(f)
 
     info_dict = {
         "name": dataset_dict["GeneratedBy"][0]["Name"],
@@ -791,7 +793,6 @@ def _get_tr(img):
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
-    raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
 def get_freesurfer_dir(fmri_dir):
