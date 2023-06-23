@@ -751,6 +751,9 @@ def init_plot_custom_slices_wf(
 ):
     """Plot a custom selection of slices with Slicer.
 
+    This workflow is used to produce subcortical registration plots specifically for
+    infant data.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -771,6 +774,12 @@ def init_plot_custom_slices_wf(
         String to be used as ``desc`` entity in output filename.
     %(name)s
         Default is "plot_custom_slices_wf".
+
+    Inputs
+    ------
+    underlay_file
+    overlay_file
+    name_source
     """
     # NOTE: These slices are almost certainly specific to a given MNI template and resolution.
     SINGLE_SLICES = ["x", "x", "x", "y", "y", "y", "z", "z", "z"]
@@ -799,7 +808,7 @@ def init_plot_custom_slices_wf(
     workflow.connect([(inputnode, binarize_edges, [("overlay_file", "in_file")])])
 
     make_image = pe.MapNode(
-        fsl.Slicer(args="-u -L"),
+        fsl.Slicer(show_orientation=True, label_slices=True),
         name="make_image",
         iterfield=["single_slice", "slice_number"],
     )
@@ -814,15 +823,11 @@ def init_plot_custom_slices_wf(
     # fmt:on
 
     combine_images = pe.Node(
-        PNGAppend(),
+        PNGAppend(out_file="out.png"),
         name="combine_images",
     )
 
-    # fmt:off
-    workflow.connect([
-        (make_image, combine_images, [("out_file", "in_files")]),
-    ])
-    # fmt:on
+    workflow.connect([(make_image, combine_images, [("out_file", "in_files")])])
 
     ds_overlay_figure = pe.Node(
         DerivativesDataSink(
