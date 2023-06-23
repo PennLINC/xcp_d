@@ -172,7 +172,7 @@ def test_get_tr(fmriprep_with_freesurfer_data):
 def test_get_freesurfer_dir(datasets):
     """Test get_freesurfer_dir and get_freesurfer_sphere."""
     with pytest.raises(NotADirectoryError, match="No FreeSurfer derivatives found."):
-        xbids.get_freesurfer_dir(datasets["fmriprep_without_freesurfer"])
+        xbids.get_freesurfer_dir(".")
 
     fs_dir = xbids.get_freesurfer_dir(datasets["nibabies"])
     assert os.path.isdir(fs_dir)
