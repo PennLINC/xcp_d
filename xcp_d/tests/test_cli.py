@@ -192,7 +192,7 @@ def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=acompcor_gsr",
+        "--nuisance-regressors=none",
         "--despike",
         "--head_radius=40",
         "--smoothing=6",
