@@ -157,7 +157,7 @@ def init_prepare_confounds_wf(
         motion_filter_type=motion_filter_type,
     )
 
-    workflow.__desc__ = f" {dummy_scans_str}{censoring_description}{confounds_description}"
+    workflow.__desc__ = f" {dummy_scans_str}{censoring_description} {confounds_description}"
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -315,40 +315,41 @@ def init_prepare_confounds_wf(
     ])
     # fmt:on
 
-    plot_design_matrix = pe.Node(
-        niu.Function(
-            input_names=["design_matrix", "temporal_mask"],
-            output_names=["design_matrix_figure"],
-            function=_plot_design_matrix,
-        ),
-        name="plot_design_matrix",
-    )
+    if params != "none":
+        plot_design_matrix = pe.Node(
+            niu.Function(
+                input_names=["design_matrix", "temporal_mask"],
+                output_names=["design_matrix_figure"],
+                function=_plot_design_matrix,
+            ),
+            name="plot_design_matrix",
+        )
 
-    # fmt:off
-    workflow.connect([
-        (dummy_scan_buffer, plot_design_matrix, [("confounds_file", "design_matrix")]),
-        (random_censor, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (dummy_scan_buffer, plot_design_matrix, [("confounds_file", "design_matrix")]),
+            (random_censor, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
+        ])
+        # fmt:on
 
-    ds_design_matrix_plot = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["space", "res", "den", "desc"],
-            datatype="figures",
-            suffix="design",
-            extension=".svg",
-        ),
-        name="ds_design_matrix_plot",
-        run_without_submitting=False,
-    )
+        ds_design_matrix_plot = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["space", "res", "den", "desc"],
+                datatype="figures",
+                suffix="design",
+                extension=".svg",
+            ),
+            name="ds_design_matrix_plot",
+            run_without_submitting=False,
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_design_matrix_plot, [("name_source", "source_file")]),
-        (plot_design_matrix, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_design_matrix_plot, [("name_source", "source_file")]),
+            (plot_design_matrix, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
+        ])
+        # fmt:on
 
     censor_report = pe.Node(
         CensoringPlot(

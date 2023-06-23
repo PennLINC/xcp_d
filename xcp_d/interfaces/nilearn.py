@@ -243,8 +243,9 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
             "but without any additional censoring."
         ),
     )
-    confounds_file = File(
-        exists=True,
+    confounds_file = traits.Either(
+        File(exists=True),
+        None,
         mandatory=True,
         desc="A tab-delimited file containing the confounds to remove from the BOLD data.",
     )

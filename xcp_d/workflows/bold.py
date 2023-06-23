@@ -13,7 +13,6 @@ from num2words import num2words
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
@@ -245,16 +244,11 @@ def init_postprocess_nifti_wf(
 
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
+    inputnode.inputs.bold_mask = run_data["boldmask"]
     inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
     inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
     inputnode.inputs.anat_to_native_xfm = run_data["anat_to_native_xfm"]
     inputnode.inputs.dummy_scans = dummy_scans
-
-    # TODO: This is a workaround for a bug in nibabies.
-    # Once https://github.com/nipreps/nibabies/issues/245 is resolved
-    # and a new release is made, remove this.
-    mask_file = check_binary_mask(run_data["boldmask"])
-    inputnode.inputs.bold_mask = mask_file
 
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is

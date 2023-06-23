@@ -286,7 +286,12 @@ def init_postproc_derivatives_wf(
     )
 
     # fmt:off
-    workflow.connect([(inputnode, ds_temporal_mask, [("temporal_mask_metadata", "meta_dict")])])
+    workflow.connect([
+        (inputnode, ds_temporal_mask, [
+            ("temporal_mask_metadata", "meta_dict"),
+            ("temporal_mask", "in_file"),
+        ]),
+    ])
     # fmt:on
 
     ds_filtered_motion = pe.Node(
@@ -305,30 +310,27 @@ def init_postproc_derivatives_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_filtered_motion, [("motion_metadata", "meta_dict")]),
+        (inputnode, ds_filtered_motion, [
+            ("motion_metadata", "meta_dict"),
+            ("filtered_motion", "in_file"),
+        ]),
     ])
     # fmt:on
 
-    ds_confounds = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            dismiss_entities=["space", "cohort", "den", "res"],
-            datatype="func",
-            suffix="design",
-            extension=".tsv",
-        ),
-        name="ds_confounds",
-        run_without_submitting=False,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_temporal_mask, [("temporal_mask", "in_file")]),
-        (inputnode, ds_filtered_motion, [("filtered_motion", "in_file")]),
-        (inputnode, ds_confounds, [("confounds_file", "in_file")])
-    ])
-    # fmt:on
+    if params != "none":
+        ds_confounds = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["space", "cohort", "den", "res"],
+                datatype="func",
+                suffix="design",
+                extension=".tsv",
+            ),
+            name="ds_confounds",
+            run_without_submitting=False,
+        )
+        workflow.connect([(inputnode, ds_confounds, [("confounds_file", "in_file")])])
 
     ds_coverage_files = pe.MapNode(
         DerivativesDataSink(

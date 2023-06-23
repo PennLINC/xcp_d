@@ -146,6 +146,8 @@ custom confounds can be added as described in :ref:`usage_custom_confounds`.
 If you want to use custom confounds, without any of the nuisance regressors described here,
 use ``--nuisance-regressors custom``.
 
+If you want to skip the denoising step completely, you can use ``--nuisance-regressors none``.
+
 .. important::
    Starting in version 0.4.0, if motion parameters were filtered earlier in the workflow,
    the filtered motion parameters (including FD, and any squared or derivative regressors)
@@ -225,6 +227,15 @@ use ``--nuisance-regressors custom``.
       - X
       - X
       - X
+   *  - none
+      -
+      -
+      -
+      -
+      -
+      -
+      -
+      -
 
 For more information about confound regressor selection, please refer to :footcite:t:`benchmarkp`.
 

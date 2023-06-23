@@ -149,6 +149,7 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
 
     BASE_DESCRIPTIONS = {
         "custom": "A custom set of regressors was used, with no other regressors from XCP-D.",
+        "none": "No nuisance regression was performed.",
         "24P": (
             "In total, 24 nuisance regressors were selected from the preprocessing confounds, "
             "according to the '24P' strategy. "
@@ -241,10 +242,11 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
             "from the BOLD data in the later regression."
         )
 
-    desc += (
-        " Finally, linear trend and intercept terms were added to the regressors prior to "
-        "denoising."
-    )
+    if params != "none":
+        desc += (
+            " Finally, linear trend and intercept terms were added to the regressors prior to "
+            "denoising."
+        )
 
     return desc
 
@@ -364,10 +366,11 @@ def load_confound_matrix(
 
     Returns
     -------
-    confounds_df : pandas.DataFrame
+    confounds_df : :obj:`pandas.DataFrame` or None
         The loaded and selected confounds.
         If "AROMA" is requested, then this DataFrame will include signal components as well.
         These will be named something like "signal_[XX]".
+        If ``params`` is "none", ``confounds_df`` will be None.
     """
     PARAM_KWARGS = {
         # Get rot and trans values, as well as derivatives and square
@@ -423,7 +426,10 @@ def load_confound_matrix(
         },
     }
 
-    if params in PARAM_KWARGS.keys():
+    if params == "none":
+        return None
+
+    if params in PARAM_KWARGS:
         kwargs = PARAM_KWARGS[params]
 
         confounds_df = _load_single_confounds_file(
@@ -455,6 +461,9 @@ def load_confound_matrix(
         # For both custom and fMRIPrep confounds
         custom_confounds_df = pd.read_table(custom_confounds, sep="\t")
         confounds_df = pd.concat([custom_confounds_df, confounds_df], axis=1)
+
+    confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
+    confounds_df["intercept"] = np.ones(confounds_df.shape[0])
 
     return confounds_df
 

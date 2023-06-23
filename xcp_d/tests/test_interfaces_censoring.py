@@ -1,6 +1,7 @@
 """Tests for framewise displacement calculation."""
 import os
 
+import nibabel as nb
 import numpy as np
 import pandas as pd
 
@@ -94,3 +95,63 @@ def test_random_censor(tmp_path_factory):
         assert new_temporal_mask_df.loc[
             new_temporal_mask_df["framewise_displacement"] == 0, exact_scan_col
         ].sum() == n_volumes - (exact_scan + n_outliers)
+
+
+def test_censor(fmriprep_with_freesurfer_data, tmp_path_factory):
+    """Test Censor interface."""
+    tmpdir = tmp_path_factory.mktemp("test_generate_confounds")
+    nifti_file = fmriprep_with_freesurfer_data["nifti_file"]
+    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+    in_img = nb.load(nifti_file)
+    n_volumes = in_img.shape[3]
+    censoring_df = pd.DataFrame(columns=["framewise_displacement"], data=np.zeros(n_volumes))
+    temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+
+    # Test with a NIfTI file, with no censored volumes
+    interface = censoring.Censor(
+        in_file=nifti_file,
+        temporal_mask=temporal_mask,
+    )
+    results = interface.run(cwd=tmpdir)
+    out_file = results.outputs.censored_denoised_bold
+    assert os.path.isfile(out_file)
+    out_img = nb.load(out_file)
+    assert out_img.shape[3] == n_volumes
+
+    # Test with a CIFTI file, with no censored volumes
+    interface = censoring.Censor(
+        in_file=cifti_file,
+        temporal_mask=temporal_mask,
+    )
+    results = interface.run(cwd=tmpdir)
+    out_file = results.outputs.censored_denoised_bold
+    assert os.path.isfile(out_file)
+    out_img = nb.load(out_file)
+    assert out_img.shape[0] == n_volumes
+
+    # Test with a NIfTI file, with some censored volumes
+    n_censored_volumes = 10
+    n_retained_volumes = n_volumes - n_censored_volumes
+    censoring_df.loc[range(10), "framewise_displacement"] = 1
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    interface = censoring.Censor(
+        in_file=nifti_file,
+        temporal_mask=temporal_mask,
+    )
+    results = interface.run(cwd=tmpdir)
+    out_file = results.outputs.censored_denoised_bold
+    assert os.path.isfile(out_file)
+    out_img = nb.load(out_file)
+    assert out_img.shape[3] == n_retained_volumes
+
+    # Test with a CIFTI file, with some censored volumes
+    interface = censoring.Censor(
+        in_file=cifti_file,
+        temporal_mask=temporal_mask,
+    )
+    results = interface.run(cwd=tmpdir)
+    out_file = results.outputs.censored_denoised_bold
+    assert os.path.isfile(out_file)
+    out_img = nb.load(out_file)
+    assert out_img.shape[0] == n_retained_volumes
