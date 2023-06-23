@@ -207,7 +207,23 @@ def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
     ]
-    run.main(parameters)
+    opts = run.get_parser().parse_args(parameters)
+    retval = {}
+    retval = run.build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
+    xcpd_wf = retval.get("workflow", None)
+    plugin_settings = retval["plugin_settings"]
+    xcpd_wf.run(**plugin_settings)
+
+    generate_reports(
+        subject_list=["01"],
+        fmri_dir=dataset_dir,
+        work_dir=work_dir,
+        output_dir=out_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+    )
 
     output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_t2wonly_outputs.txt")
     check_generated_files(out_dir, output_list_file)
