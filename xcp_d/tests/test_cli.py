@@ -41,12 +41,17 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--nuisance-regressors=aroma_gsr",
         "--despike",
         "--dummy-scans=4",
-        "--fd-thresh=0.3",
+        "--fd-thresh=0.2",
         "--head_radius=40",
         "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--min-coverage=1",
+        "--exact-time",
+        "80",
+        "100",
+        "200",
+        "--random-seed=8675309",
     ]
     opts = run.get_parser().parse_args(parameters)
 

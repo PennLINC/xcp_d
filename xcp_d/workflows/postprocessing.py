@@ -9,7 +9,12 @@ from num2words import num2words
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.censoring import Censor, GenerateConfounds, RemoveDummyVolumes
+from xcp_d.interfaces.censoring import (
+    Censor,
+    GenerateConfounds,
+    RandomCensor,
+    RemoveDummyVolumes,
+)
 from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
 from xcp_d.interfaces.plotting import CensoringPlot
 from xcp_d.interfaces.restingstate import DespikePatch
@@ -26,6 +31,8 @@ def init_prepare_confounds_wf(
     TR,
     params,
     dummy_scans,
+    random_seed,
+    exact_scans,
     motion_filter_type,
     band_stop_min,
     band_stop_max,
@@ -54,6 +61,8 @@ def init_prepare_confounds_wf(
                 TR=0.8,
                 params="27P",
                 dummy_scans="auto",
+                random_seed=None,
+                exact_scans=[],
                 motion_filter_type="notch",
                 band_stop_min=12,
                 band_stop_max=20,
@@ -72,6 +81,7 @@ def init_prepare_confounds_wf(
     %(TR)s
     %(params)s
     %(dummy_scans)s
+    %(random_seed)s
     %(motion_filter_type)s
     %(band_stop_min)s
     %(band_stop_max)s
@@ -128,7 +138,7 @@ def init_prepare_confounds_wf(
             "regressors were discarded as non-steady-state volumes, or 'dummy scans'. "
         )
 
-    if fd_thresh > 0:
+    if (fd_thresh > 0) or exact_scans:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
@@ -136,6 +146,7 @@ def init_prepare_confounds_wf(
             band_stop_max=band_stop_max,
             head_radius=head_radius,
             fd_thresh=fd_thresh,
+            exact_scans=exact_scans,
         )
     else:
         censoring_description = ""
@@ -205,10 +216,7 @@ def init_prepare_confounds_wf(
             ("fmriprep_confounds_json", "fmriprep_confounds_json"),
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
-        (generate_confounds, outputnode, [
-            ("motion_metadata", "motion_metadata"),
-            ("temporal_mask_metadata", "temporal_mask_metadata"),
-        ]),
+        (generate_confounds, outputnode, [("motion_metadata", "motion_metadata")]),
     ])
     # fmt:on
 
@@ -284,8 +292,25 @@ def init_prepare_confounds_wf(
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("confounds_file", "confounds_file"),
             ("motion_file", "filtered_motion"),
-            ("temporal_mask", "temporal_mask"),
             ("dummy_scans", "dummy_scans"),
+        ]),
+    ])
+    # fmt:on
+
+    random_censor = pe.Node(
+        RandomCensor(exact_scans=exact_scans, random_seed=random_seed),
+        name="random_censor",
+    )
+
+    # fmt:off
+    workflow.connect([
+        (generate_confounds, random_censor, [
+            ("temporal_mask_metadata", "temporal_mask_metadata"),
+        ]),
+        (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
+        (random_censor, outputnode, [
+            ("temporal_mask", "temporal_mask"),
+            ("temporal_mask_metadata", "temporal_mask_metadata"),
         ]),
     ])
     # fmt:on
@@ -302,10 +327,8 @@ def init_prepare_confounds_wf(
 
         # fmt:off
         workflow.connect([
-            (dummy_scan_buffer, plot_design_matrix, [
-                ("confounds_file", "design_matrix"),
-                ("temporal_mask", "temporal_mask"),
-            ]),
+            (dummy_scan_buffer, plot_design_matrix, [("confounds_file", "design_matrix")]),
+            (random_censor, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
         ])
         # fmt:on
 
@@ -342,11 +365,9 @@ def init_prepare_confounds_wf(
 
     # fmt:off
     workflow.connect([
+        (generate_confounds, censor_report, [("motion_file", "filtered_motion")]),
         (dummy_scan_buffer, censor_report, [("dummy_scans", "dummy_scans")]),
-        (generate_confounds, censor_report, [
-            ("motion_file", "filtered_motion"),
-            ("temporal_mask", "temporal_mask"),
-        ]),
+        (random_censor, censor_report, [("temporal_mask", "temporal_mask")]),
         # use the undropped version
         (inputnode, censor_report, [("fmriprep_confounds_file", "fmriprep_confounds_file")]),
     ])

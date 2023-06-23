@@ -178,9 +178,9 @@ class RemoveDummyVolumes(SimpleInterface):
         )
 
         # Drop the first N rows from the temporal mask
-        tmask_df = pd.read_table(self.inputs.temporal_mask)
-        tmask_df_dropped = tmask_df.drop(np.arange(dummy_scans))
-        tmask_df_dropped.to_csv(
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        censoring_df_dropped = censoring_df.drop(np.arange(dummy_scans))
+        censoring_df_dropped.to_csv(
             self._results["temporal_mask_dropped_TR"],
             sep="\t",
             index=False,
@@ -220,10 +220,10 @@ class Censor(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Read in temporal mask
-        temporal_mask = pd.read_table(self.inputs.temporal_mask)
-        temporal_mask = temporal_mask["framewise_displacement"].to_numpy()
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        motion_outliers = censoring_df["framewise_displacement"].to_numpy()
 
-        if np.sum(temporal_mask) == 0:  # No censoring needed
+        if np.sum(motion_outliers) == 0:  # No censoring needed
             self._results["censored_denoised_bold"] = self.inputs.in_file
             return runtime
 
@@ -233,7 +233,7 @@ class Censor(SimpleInterface):
 
         is_nifti = bold_img_interp.ndim > 2
         if is_nifti:
-            bold_data_censored = bold_data_interp[:, :, :, temporal_mask == 0]
+            bold_data_censored = bold_data_interp[:, :, :, motion_outliers == 0]
 
             bold_img_censored = nb.Nifti1Image(
                 bold_data_censored,
@@ -241,7 +241,7 @@ class Censor(SimpleInterface):
                 header=bold_img_interp.header,
             )
         else:
-            bold_data_censored = bold_data_interp[temporal_mask == 0, :]
+            bold_data_censored = bold_data_interp[motion_outliers == 0, :]
 
             time_axis, brain_model_axis = [
                 bold_img_interp.header.get_axis(i) for i in range(bold_img_interp.ndim)
@@ -269,6 +269,89 @@ class Censor(SimpleInterface):
         )
 
         bold_img_censored.to_filename(self._results["censored_denoised_bold"])
+        return runtime
+
+
+class _RandomCensorInputSpec(BaseInterfaceInputSpec):
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Temporal mask; all motion outlier volumes set to 1. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc="Metadata associated with the temporal_mask output.",
+    )
+    exact_scans = traits.List(
+        traits.Int,
+        mandatory=True,
+        desc="Numbers of scans to retain. If None, no additional censoring will be performed.",
+    )
+    random_seed = traits.Either(
+        None,
+        traits.Int,
+        usedefault=True,
+        mandatory=False,
+        desc="Random seed.",
+    )
+
+
+class _RandomCensorOutputSpec(TraitedSpec):
+    temporal_mask = File(
+        exists=True,
+        desc="Temporal mask file.",
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc="Metadata associated with the temporal_mask output.",
+    )
+
+
+class RandomCensor(SimpleInterface):
+    """Randomly flag volumes to censor."""
+
+    input_spec = _RandomCensorInputSpec
+    output_spec = _RandomCensorOutputSpec
+
+    def _run_interface(self, runtime):
+        # Read in temporal mask
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        temporal_mask_metadata = self.inputs.temporal_mask_metadata.copy()
+
+        if not self.inputs.exact_scans:
+            self._results["temporal_mask"] = self.inputs.temporal_mask
+            self._results["temporal_mask_metadata"] = temporal_mask_metadata
+            return runtime
+
+        self._results["temporal_mask"] = fname_presuffix(
+            self.inputs.temporal_mask,
+            suffix="_random",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        rng = np.random.default_rng(self.inputs.random_seed)
+        low_motion_idx = censoring_df.loc[censoring_df["framewise_displacement"] != 1].index.values
+        for exact_scan in self.inputs.exact_scans:
+            random_censor = rng.choice(low_motion_idx, size=exact_scan, replace=False)
+            column_name = f"exact_{exact_scan}"
+            censoring_df[column_name] = 0
+            censoring_df.loc[low_motion_idx, column_name] = 1
+            censoring_df.loc[random_censor, column_name] = 0
+            temporal_mask_metadata[column_name] = {
+                "Description": (
+                    f"Randomly selected low-motion volumes to retain exactly {exact_scan} "
+                    "volumes."
+                ),
+                "Levels": {
+                    "0": "Retained or high-motion volume",
+                    "1": "Randomly censored volume",
+                },
+            }
+
+        censoring_df.to_csv(self._results["temporal_mask"], sep="\t", index=False)
+        self._results["temporal_mask_metadata"] = temporal_mask_metadata
+
         return runtime
 
 
