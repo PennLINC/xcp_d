@@ -8,7 +8,10 @@ import xcp_d.utils.bids as xbids
 
 
 def test_collect_participants(datasets):
-    """Test collect_participants."""
+    """Test collect_participants.
+
+    This also covers BIDSError and BIDSWarning.
+    """
     bids_dir = datasets["ds001419"]
     with pytest.raises(xbids.BIDSError, match="Could not find participants"):
         xbids.collect_participants(bids_dir, participant_label="fail")
@@ -26,15 +29,9 @@ def test_collect_participants(datasets):
 def test_collect_data_ds001419(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["ds001419"]
-    layout = BIDSLayout(
-        bids_dir,
-        validate=False,
-        derivatives=True,
-        config=["bids", "derivatives"],
-    )
 
-    # NIFTI workflow
-    _, subj_data = xbids.collect_data(
+    # NIFTI workflow, but also get a BIDSLayout
+    layout, subj_data = xbids.collect_data(
         bids_dir=bids_dir,
         input_type="fmriprep",
         participant_label="01",
@@ -42,7 +39,7 @@ def test_collect_data_ds001419(datasets):
         bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=layout,
+        layout=None,
     )
 
     assert len(subj_data["bold"]) == 5
@@ -114,3 +111,21 @@ def test_collect_data_nibabies(datasets):
             cifti=True,
             layout=layout,
         )
+
+
+def test_get_freesurfer_dir(datasets):
+    """Test get_freesurfer_dir and get_freesurfer_sphere."""
+    with pytest.raises(NotADirectoryError, match="No FreeSurfer derivatives found."):
+        xbids.get_freesurfer_dir(datasets["fmriprep_without_freesurfer"])
+
+    fs_dir = xbids.get_freesurfer_dir(datasets["nibabies"])
+    assert os.path.isdir(fs_dir)
+
+    fs_dir = xbids.get_freesurfer_dir(datasets["ds001419"])
+    assert os.path.isdir(fs_dir)
+
+    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "01", "L")
+    assert os.path.isfile(sphere_file)
+
+    with pytest.raises(FileNotFoundError, match="Sphere file not found at"):
+        sphere_file = xbids.get_freesurfer_sphere(fs_dir, "fail", "L")

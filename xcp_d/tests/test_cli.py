@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.cli import combineqc, run
+from xcp_d.cli import combineqc, parser_utils, run
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.tests.utils import (
     check_affines,
@@ -347,6 +347,8 @@ def _run_and_generate(
     retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval["workflow"]
+    missing = parser_utils.check_deps(xcpd_wf)
+    assert not missing
 
     xcpd_wf.run()
     generate_reports(
