@@ -52,6 +52,8 @@ def init_postprocess_nifti_wf(
     t2w_available,
     n_runs,
     min_coverage,
+    exact_scans,
+    random_seed,
     omp_nthreads,
     layout=None,
     name="bold_postprocess_wf",
@@ -116,6 +118,8 @@ def init_postprocess_nifti_wf(
                 t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
+                exact_scans=[],
+                random_seed=None,
                 omp_nthreads=1,
                 layout=layout,
                 name="nifti_postprocess_wf",
@@ -152,6 +156,8 @@ def init_postprocess_nifti_wf(
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
+    %(exact_scans)s
+    %(random_seed)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -311,6 +317,8 @@ def init_postprocess_nifti_wf(
         TR=TR,
         params=params,
         dummy_scans=dummy_scans,
+        random_seed=random_seed,
+        exact_scans=exact_scans,
         motion_filter_type=motion_filter_type,
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
@@ -415,6 +423,9 @@ def init_postprocess_nifti_wf(
             ("atlas_labels_files", "inputnode.atlas_labels_files"),
         ]),
         (downcast_data, connectivity_wf, [("bold_mask", "inputnode.bold_mask")]),
+        (prepare_confounds_wf, connectivity_wf, [
+            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+        ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
@@ -505,6 +516,7 @@ def init_postprocess_nifti_wf(
         name_source=bold_file,
         bandpass_filter=bandpass_filter,
         params=params,
+        exact_scans=exact_scans,
         cifti=False,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
@@ -534,9 +546,10 @@ def init_postprocess_nifti_wf(
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
         (connectivity_wf, postproc_derivatives_wf, [
-            ("outputnode.correlations", "inputnode.correlations"),
-            ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.coverage", "inputnode.coverage"),
+            ("outputnode.timeseries", "inputnode.timeseries"),
+            ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.correlations_exact", "inputnode.correlations_exact"),
             ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
         ]),
     ])

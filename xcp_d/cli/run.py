@@ -283,6 +283,16 @@ def get_parser():
         ),
     )
 
+    g_param.add_argument(
+        "--random-seed",
+        "--random_seed",
+        dest="random_seed",
+        default=None,
+        type=int,
+        metavar="_RANDOM_SEED",
+        help="Initialize the random seed for the workflow.",
+    )
+
     g_filter = parser.add_argument_group("Filtering parameters")
 
     g_filter.add_argument(
@@ -407,6 +417,23 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
             "Any volumes with an FD value greater than the threshold will be removed from the "
             "denoised BOLD data. "
             "A threshold of <=0 will disable censoring completely."
+        ),
+    )
+    g_censor.add_argument(
+        "--exact-time",
+        "--exact_time",
+        required=False,
+        default=[],
+        nargs="+",
+        type=float,
+        help=(
+            "If used, this parameter will produce correlation matrices limited to each requested "
+            "amount of time. "
+            "If there is more than the required amount of low-motion data, "
+            "then volumes will be randomly selected to produce denoised outputs with the exact "
+            "amounts of time requested. "
+            "If there is less than the required amount of 'good' data, "
+            "then the corresponding correlation matrix will not be produced."
         ),
     )
 
@@ -960,12 +987,14 @@ Running xcp_d version {__version__}:
         head_radius=opts.head_radius,
         custom_confounds_folder=opts.custom_confounds,
         dummy_scans=opts.dummy_scans,
+        random_seed=opts.random_seed,
         fd_thresh=opts.fd_thresh,
         process_surfaces=opts.process_surfaces,
         dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
         min_coverage=opts.min_coverage,
         min_time=opts.min_time,
+        exact_time=opts.exact_time,
         combineruns=opts.combineruns,
         name="xcpd_wf",
     )

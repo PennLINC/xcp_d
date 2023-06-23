@@ -73,6 +73,8 @@ def init_xcpd_wf(
     smoothing,
     custom_confounds_folder,
     dummy_scans,
+    random_seed,
+    exact_time,
     cifti,
     omp_nthreads,
     layout=None,
@@ -128,6 +130,8 @@ def init_xcpd_wf(
                 smoothing=6,
                 custom_confounds_folder=None,
                 dummy_scans=0,
+                random_seed=None,
+                exact_time=[],
                 cifti=False,
                 omp_nthreads=1,
                 layout=None,
@@ -170,11 +174,13 @@ def init_xcpd_wf(
     %(smoothing)s
     %(custom_confounds_folder)s
     %(dummy_scans)s
+    %(random_seed)s
     %(process_surfaces)s
     %(dcan_qc)s
     %(input_type)s
     %(min_coverage)s
     %(min_time)s
+    %(exact_time)s
     combineruns
     %(name)s
 
@@ -211,6 +217,7 @@ def init_xcpd_wf(
             smoothing=smoothing,
             output_dir=output_dir,
             dummy_scans=dummy_scans,
+            random_seed=random_seed,
             custom_confounds_folder=custom_confounds_folder,
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
@@ -218,6 +225,7 @@ def init_xcpd_wf(
             input_type=input_type,
             min_coverage=min_coverage,
             min_time=min_time,
+            exact_time=exact_time,
             combineruns=combineruns,
             name=f"single_subject_{subject_id}_wf",
         )
@@ -260,11 +268,13 @@ def init_subject_wf(
     output_dir,
     custom_confounds_folder,
     dummy_scans,
+    random_seed,
     fd_thresh,
     despike,
     dcan_qc,
     min_coverage,
     min_time,
+    exact_time,
     omp_nthreads,
     layout,
     name,
@@ -304,11 +314,13 @@ def init_subject_wf(
                 output_dir=".",
                 custom_confounds_folder=None,
                 dummy_scans=0,
+                random_seed=None,
                 fd_thresh=0.3,
                 despike=True,
                 dcan_qc=False,
                 min_coverage=0.5,
                 min_time=100,
+                exact_time=[],
                 omp_nthreads=1,
                 layout=None,
                 name="single_subject_sub-01_wf",
@@ -339,11 +351,13 @@ def init_subject_wf(
     %(output_dir)s
     %(custom_confounds_folder)s
     %(dummy_scans)s
+    %(random_seed)s
     %(fd_thresh)s
     %(despike)s
     %(dcan_qc)s
     %(min_coverage)s
     %(min_time)s
+    %(exact_time)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -669,13 +683,31 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 head_radius=head_radius,
                 fd_thresh=fd_thresh,
             )
+            # Reduce exact_times to only include values greater than the post-scrubbing duration.
             if (min_time >= 0) and (post_scrubbing_duration < min_time):
                 LOGGER.warning(
-                    f"Less than {min_time} seconds in {bold_file} survive high-motion outlier "
-                    f"scrubbing ({post_scrubbing_duration}). "
+                    f"Less than {min_time} seconds in {os.path.basename(bold_file)} survive "
+                    f"high-motion outlier scrubbing ({post_scrubbing_duration}). "
                     "This run will not be processed."
                 )
                 continue
+
+            exact_scans = []
+            if exact_time:
+                retained_exact_times = [t for t in exact_time if t <= post_scrubbing_duration]
+                dropped_exact_times = [t for t in exact_time if t > post_scrubbing_duration]
+                if dropped_exact_times:
+                    LOGGER.warning(
+                        f"{post_scrubbing_duration} seconds in {os.path.basename(bold_file)} "
+                        "survive high-motion outlier scrubbing. "
+                        "Only retaining exact-time values greater than this "
+                        f"({retained_exact_times})."
+                    )
+
+                exact_scans = [
+                    int(t // run_data["bold_metadata"]["RepetitionTime"])
+                    for t in retained_exact_times
+                ]
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
@@ -693,6 +725,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 output_dir=output_dir,
                 custom_confounds_folder=custom_confounds_folder,
                 dummy_scans=dummy_scans,
+                random_seed=random_seed,
                 fd_thresh=fd_thresh,
                 despike=despike,
                 dcan_qc=dcan_qc,
@@ -701,6 +734,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 min_coverage=min_coverage,
+                exact_scans=exact_scans,
                 omp_nthreads=omp_nthreads,
                 layout=layout,
                 name=f"{'cifti' if cifti else 'nifti'}_postprocess_{run_counter}_wf",
@@ -777,9 +811,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # fmt:on
 
             for io_name, node in merge_dict.items():
-                # fmt:off
                 workflow.connect([(node, concatenate_data_wf, [("out", f"inputnode.{io_name}")])])
-                # fmt:on
 
     # fmt:off
     workflow.connect([

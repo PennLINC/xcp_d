@@ -88,6 +88,19 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     )
     assert os.path.isfile(fake_bold_file)
 
+    # Create a fake temporal mask to satisfy the workflow
+    n_volumes = bold_data.shape[1]
+    censoring_df = pd.DataFrame(
+        columns=["framewise_displacement", "exact_10"],
+        data=np.stack(
+            (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            axis=1,
+        ),
+    )
+    temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+
+    # Load atlases
     atlas_names = ["Schaefer1017", "Schaefer217", "Schaefer417", "Gordon", "Glasser"]
     atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
@@ -119,6 +132,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
         name="connectivity_wf",
     )
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
@@ -212,6 +226,19 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
     )
     assert os.path.isfile(fake_bold_file)
 
+    # Create a fake temporal mask to satisfy the workflow
+    n_volumes = bold_data.shape[1]
+    censoring_df = pd.DataFrame(
+        columns=["framewise_displacement", "exact_10"],
+        data=np.stack(
+            (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            axis=1,
+        ),
+    )
+    temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+
+    # Load atlases
     atlas_names = ["Schaefer1017", "Schaefer217", "Schaefer417", "Gordon", "Glasser"]
     atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
@@ -246,6 +273,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
         name="connectivity_wf",
     )
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
     connectivity_wf.inputs.inputnode.atlas_names = atlas_names

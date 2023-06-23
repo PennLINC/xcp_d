@@ -11,6 +11,7 @@ from nipype import logging
 from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import list_to_str
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -258,6 +259,7 @@ def describe_censoring(
     band_stop_max,
     head_radius,
     fd_thresh,
+    exact_scans,
 ):
     """Build a text description of the motion parameter filtering and FD censoring process.
 
@@ -269,6 +271,7 @@ def describe_censoring(
     %(band_stop_max)s
     %(head_radius)s
     %(fd_thresh)s
+    %(exact_scans)s
 
     Returns
     -------
@@ -297,14 +300,30 @@ def describe_censoring(
             f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
         )
 
-    return (
-        f"In order to identify high-motion outlier volumes, {filter_str}"
-        "framewise displacement was calculated using the formula from @power_fd_dvars, "
-        f"with a head radius of {head_radius} mm. "
-        f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
-        f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of later "
-        f"censoring [@power_fd_dvars]."
-    )
+    outlier_str = ""
+    if fd_thresh > 0:
+        outlier_str = (
+            f"In order to identify high-motion outlier volumes, {filter_str}"
+            "framewise displacement was calculated using the formula from @power_fd_dvars, "
+            f"with a head radius of {head_radius} mm. "
+            f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
+            f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of "
+            "later censoring [@power_fd_dvars]."
+        )
+
+    exact_str = ""
+    if exact_scans and (fd_thresh > 0):
+        exact_str = (
+            " Additional sets of censoring volumes were randomly selected to produce additional "
+            f"correlation matrices limited to {list_to_str(exact_scans)} volumes."
+        )
+    elif exact_scans:
+        exact_str = (
+            "Volumes were randomly selected for censoring, to produce additional correlation "
+            f"matrices limited to {list_to_str(exact_scans)} volumes."
+        )
+
+    return outlier_str + exact_str
 
 
 def _get_acompcor_confounds(confounds_file):

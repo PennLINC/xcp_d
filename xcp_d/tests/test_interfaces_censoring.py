@@ -49,6 +49,62 @@ def test_generate_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert os.path.isfile(results.outputs.temporal_mask)
 
 
+def test_random_censor(tmp_path_factory):
+    """Test RandomCensor."""
+    tmpdir = tmp_path_factory.mktemp("test_random_censor")
+    n_volumes, n_outliers = 500, 100
+    exact_scans = [100, 200, 300, 400]
+
+    outliers_arr = np.zeros(n_volumes, dtype=int)
+    rng = np.random.default_rng(0)
+    outlier_idx = rng.choice(np.arange(n_volumes, dtype=int), size=n_outliers, replace=False)
+    outliers_arr[outlier_idx] = 1
+    temporal_mask_df = pd.DataFrame(data=outliers_arr, columns=["framewise_displacement"])
+    original_temporal_mask = os.path.join(tmpdir, "orig_tmask.tsv")
+    temporal_mask_df.to_csv(original_temporal_mask, index=False, sep="\t")
+
+    # Run the RandomCensor interface without any exact_scans.
+    interface = censoring.RandomCensor(
+        temporal_mask_metadata={},
+        temporal_mask=original_temporal_mask,
+        exact_scans=[],
+        random_seed=0,
+    )
+    results = interface.run(cwd=tmpdir)
+    assert results.outputs.temporal_mask == original_temporal_mask  # same file as input
+    assert isinstance(results.outputs.temporal_mask_metadata, dict)
+
+    # Run the interface with exact_scans
+    interface = censoring.RandomCensor(
+        temporal_mask_metadata={},
+        temporal_mask=original_temporal_mask,
+        exact_scans=exact_scans,
+        random_seed=0,
+    )
+    results = interface.run(cwd=tmpdir)
+    assert os.path.isfile(results.outputs.temporal_mask)
+    assert isinstance(results.outputs.temporal_mask_metadata, dict)
+    new_temporal_mask_df = pd.read_table(results.outputs.temporal_mask)
+    new_temporal_mask_df_no_outliers = new_temporal_mask_df.loc[
+        new_temporal_mask_df["framewise_displacement"] == 0
+    ]
+    for exact_scan in exact_scans:
+        exact_scan_col = f"exact_{exact_scan}"
+        assert exact_scan_col in new_temporal_mask_df_no_outliers.columns
+        # The column's values should sum to the number of volumes minus the number of retained.
+        # Outliers don't show up here.
+        assert new_temporal_mask_df_no_outliers[exact_scan_col].sum() == n_volumes - (
+            exact_scan + n_outliers
+        )
+        # The outlier volumes and exact-scan censored volumes shouldn't overlap.
+        assert all(
+            new_temporal_mask_df_no_outliers[[exact_scan_col, "framewise_displacement"]].sum(
+                axis=1
+            )
+            <= 1
+        )
+
+
 def test_censor(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test Censor interface."""
     tmpdir = tmp_path_factory.mktemp("test_generate_confounds")
