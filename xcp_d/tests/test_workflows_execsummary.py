@@ -7,11 +7,9 @@ from xcp_d.tests.utils import get_nodes
 from xcp_d.workflows import execsummary
 
 
-def test_init_plot_custom_slices_wf(fmriprep_with_freesurfer_data, working_dir):
+def test_init_plot_custom_slices_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
     """Test init_plot_custom_slices_wf."""
-    tmpdir = os.path.join(working_dir, "test_init_plot_custom_slices_wf")
-    os.makedirs(tmpdir, exist_ok=True)
-    # tmpdir = tmp_path_factory.mktemp("test_init_plot_custom_slices_wf")
+    tmpdir = tmp_path_factory.mktemp("test_init_plot_custom_slices_wf")
 
     nifti_file = fmriprep_with_freesurfer_data["nifti_file"]
     nifti_3d = os.path.join(tmpdir, "img3d.nii.gz")
