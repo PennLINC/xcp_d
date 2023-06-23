@@ -331,11 +331,12 @@ class RandomCensor(SimpleInterface):
             use_ext=True,
         )
         rng = np.random.default_rng(self.inputs.random_seed)
-        outlier_idx = censoring_df.loc[censoring_df["framewise_displacement"] != 1].index.values
+        low_motion_idx = censoring_df.loc[censoring_df["framewise_displacement"] != 1].index.values
         for exact_scan in self.inputs.exact_scans:
-            random_censor = rng.choice(outlier_idx, size=exact_scan, replace=False)
+            random_censor = rng.choice(low_motion_idx, size=exact_scan, replace=False)
             column_name = f"exact_{exact_scan}"
-            censoring_df[column_name] = 1
+            censoring_df[column_name] = 0
+            censoring_df.loc[low_motion_idx, column_name] = 1
             censoring_df.loc[random_censor, column_name] = 0
             temporal_mask_metadata[column_name] = {
                 "Description": (
@@ -343,7 +344,7 @@ class RandomCensor(SimpleInterface):
                     "volumes."
                 ),
                 "Levels": {
-                    "0": "Retained volume",
+                    "0": "Retained or high-motion volume",
                     "1": "Randomly censored volume",
                 },
             }

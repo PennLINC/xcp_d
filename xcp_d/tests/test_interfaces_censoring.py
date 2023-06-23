@@ -92,9 +92,9 @@ def test_random_censor(tmp_path_factory):
         # Outliers don't show up here.
         assert new_temporal_mask_df[exact_scan_col].sum() == n_volumes - exact_scan
         # The outlier volumes and exact-scan censored volumes shouldn't overlap.
-        assert new_temporal_mask_df.loc[
-            new_temporal_mask_df["framewise_displacement"] == 0, exact_scan_col
-        ].sum() == n_volumes - (exact_scan + n_outliers)
+        assert all(
+            new_temporal_mask_df[[exact_scan_col, "framewise_displacement"]].sum(axis=1) <= 1
+        )
 
 
 def test_censor(fmriprep_with_freesurfer_data, tmp_path_factory):
