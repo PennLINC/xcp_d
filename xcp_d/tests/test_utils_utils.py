@@ -133,7 +133,22 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
+    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
+    # Finally, run without denoising
+    (
+        uncensored_denoised_bold,
+        interpolated_filtered_bold,
+    ) = utils.denoise_with_nilearn(
+        preprocessed_bold=preprocessed_bold_arr,
+        confounds_file=None,
+        temporal_mask=temporal_mask,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        filter_order=filter_order,
+        TR=TR,
+    )
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
