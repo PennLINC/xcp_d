@@ -762,10 +762,11 @@ class _PNGAppendInputSpec(FSLCommandInputSpec):
     in_files = InputMultiPath(
         File(exists=True),
         mandatory=True,
+        argstr="%s",
         position=0,
         desc="List of files to process.",
     )
-    out_file = File(exists=False, mandatory=True, position=1, desc="Output file.")
+    out_file = File(exists=False, mandatory=True, argstr="%s", position=1, desc="Output file.")
 
 
 class _PNGAppendOutputSpec(TraitedSpec):
@@ -799,3 +800,8 @@ class PNGAppend(FSLCommand):
             return " + ".join(value)
 
         return super(PNGAppend, self)._format_arg(name, spec, value)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["out_file"] = os.path.abspath(self.inputs.out_file)
+        return outputs

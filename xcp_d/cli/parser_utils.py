@@ -27,10 +27,6 @@ def json_file(file_):
         raise ValueError(f"Not supported: {file_}")
 
 
-def _warn_redirect(message, category):
-    logger.warning("Captured warning (%s): %s", category, message)
-
-
 def check_deps(workflow):
     """Check the dependencies for the workflow."""
     from nipype.utils.filemanip import which
@@ -104,7 +100,3 @@ class _DeprecatedStoreAction(Action):
             f"{self.__version__}. "
         )
         setattr(namespace, self.dest, values)
-
-
-class _DeprecatedStoreAction040(_DeprecatedStoreAction):
-    __version__ = "0.4.0"

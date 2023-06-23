@@ -7,8 +7,7 @@ import pandas as pd
 import pytest
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.cli import combineqc
-from xcp_d.cli.run import build_workflow, get_parser
+from xcp_d.cli import combineqc, parser_utils, run
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.tests.utils import (
     check_affines,
@@ -54,10 +53,10 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "200",
         "--random-seed=8675309",
     ]
-    opts = get_parser().parse_args(parameters)
+    opts = run.get_parser().parse_args(parameters)
 
     retval = {}
-    retval = build_workflow(opts, retval=retval)
+    retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
@@ -126,9 +125,9 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
     ]
-    opts = get_parser().parse_args(parameters)
+    opts = run.get_parser().parse_args(parameters)
     retval = {}
-    retval = build_workflow(opts, retval=retval)
+    retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
@@ -213,9 +212,9 @@ def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
     ]
-    opts = get_parser().parse_args(parameters)
+    opts = run.get_parser().parse_args(parameters)
     retval = {}
-    retval = build_workflow(opts, retval=retval)
+    retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval.get("workflow", None)
     plugin_settings = retval["plugin_settings"]
@@ -244,6 +243,9 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     Notes
     -----
     This test also mocks up custom confounds.
+
+    This test uses a bash call to run XCP-D.
+    This won't count toward coverage, but will help test the command-line interface.
     """
     test_name = "test_fmriprep_without_freesurfer"
 
@@ -256,8 +258,8 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     test_data_dir = get_test_data_path()
 
     # Create custom confounds folder
-    for run in [1, 2]:
-        out_file = f"sub-01_task-mixedgamblestask_run-{run}_desc-confounds_timeseries.tsv"
+    for run_number in [1, 2]:
+        out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
         out_file = os.path.join(custom_confounds_dir, out_file)
         confounds_df = pd.DataFrame(
             columns=["a", "b"],
@@ -345,11 +347,13 @@ def _run_and_generate(
     out_dir,
     input_type,
 ):
-    opts = get_parser().parse_args(parameters)
+    opts = run.get_parser().parse_args(parameters)
     retval = {}
-    retval = build_workflow(opts, retval=retval)
+    retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
     xcpd_wf = retval["workflow"]
+    missing = parser_utils.check_deps(xcpd_wf)
+    assert not missing
 
     xcpd_wf.run()
     generate_reports(
