@@ -406,6 +406,30 @@ For CIFTI data, both tab-delimited text file (TSV) and CIFTI versions of the par
 series and correlation matrices are written out.
 
 
+Functional connectivity estimates from specified amounts of data [OPTIONAL]
+---------------------------------------------------------------------------
+
+Functional connectivity estimates may exhibit non-linear relationships with the number of data
+points,
+such that including a regressor controlling for the number of post-censoring volumes per run in
+group-level models may not adequately address the issue.
+
+In :footcite:t:`eggebrecht2017joint` and :footcite:t:`feczko2021adolescent`,
+the authors' solution was to randomly select a subset of volumes from each run before calculating
+correlations, so that every run had the same number of data points contributing to its functional
+connectivity estimate.
+
+We have implemented this behavior via the optional ``--exact-time`` parameter, which allows the
+user to provide a list of durations, in seconds, to be used for functional connectivity estimates.
+These subsampled correlation matrices will be written out with ``desc-<numberOfVolumes>volumes``
+in the filenames.
+The correlation matrices *without* the ``desc`` entity still include all of the post-censoring
+volumes.
+
+The ``--random-seed`` parameter can control the random seed used to select the reduced set of \
+volumes, which improves reproducibility.
+
+
 Smoothing [OPTIONAL]
 ====================
 :func:`~xcp_d.workflows.postprocessing.init_resd_smoothing_wf`

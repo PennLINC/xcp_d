@@ -153,6 +153,21 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
 
+def test_list_to_str():
+    """Test the list_to_str function."""
+    lst = ["a"]
+    string = utils.list_to_str(lst)
+    assert string == "a"
+
+    lst = ["a", "b"]
+    string = utils.list_to_str(lst)
+    assert string == "a and b"
+
+    lst = ["a", "b", "c"]
+    string = utils.list_to_str(lst)
+    assert string == "a, b, and c"
+
+
 def test_get_bold2std_and_t1w_xfms(fmriprep_with_freesurfer_data):
     """Test get_bold2std_and_t1w_xfms."""
     bold_file_nlin2009c = fmriprep_with_freesurfer_data["nifti_file"]

@@ -38,7 +38,11 @@ LOGGER = logging.getLogger("nipype.interface")
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
     fmriprep_confounds_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
     filtered_motion = File(exists=True, mandatory=True, desc="Filtered motion file.")
-    temporal_mask = File(exists=True, mandatory=True, desc="Temporal mask.")
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc="Temporal mask after dummy scan removal.",
+    )
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
@@ -62,8 +66,6 @@ class CensoringPlot(SimpleInterface):
     output_spec = _CensoringPlotOutputSpec
 
     def _run_interface(self, runtime):
-        palette = sns.color_palette("colorblind", 4)
-
         # Load confound matrix and load motion with motion filtering
         confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         preproc_motion_df = load_motion(
@@ -75,6 +77,12 @@ class CensoringPlot(SimpleInterface):
             confound=preproc_motion_df,
             head_radius=self.inputs.head_radius,
         )
+
+        # Load temporal mask
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+
+        # The number of colors in the palette depends on whether there are random censors or not
+        palette = sns.color_palette("colorblind", 4 + censoring_df.shape[1])
 
         fig, ax = plt.subplots(figsize=(16, 8))
 
@@ -102,20 +110,9 @@ class CensoringPlot(SimpleInterface):
                 alpha=0.5,
                 color=palette[1],
             )
-
-        # Plot censored volumes as vertical lines
-        tmask_df = pd.read_table(self.inputs.temporal_mask)
-        tmask_arr = tmask_df["framewise_displacement"].values
-        assert preproc_fd_timeseries.size == tmask_arr.size
-        tmask_idx = np.where(tmask_arr)[0]
-        for i_idx, idx in enumerate(tmask_idx):
-            label = "Censored Volumes" if i_idx == 0 else ""
-            ax.axvline(
-                idx * self.inputs.TR,
-                label=label,
-                color=palette[3],
-                alpha=0.5,
-            )
+            # Prepend dummy scans to the temporal mask
+            dummy_df = pd.DataFrame(0, index=np.arange(dummy_scans), columns=censoring_df.columns)
+            censoring_df = pd.concat([dummy_df, censoring_df])
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
@@ -132,6 +129,7 @@ class CensoringPlot(SimpleInterface):
         else:
             filtered_fd_timeseries = preproc_fd_timeseries.copy()
 
+        # Set axis limits
         ax.set_xlim(0, max(time_array))
         y_max = (
             np.max(
@@ -146,6 +144,44 @@ class CensoringPlot(SimpleInterface):
             * 1.5
         )
         ax.set_ylim(0, y_max)
+
+        # Plot randomly censored volumes as well
+        # These vertical lines start at the top and only go 20% of the way down the plot.
+        # They are plotted in non-overlapping segments.
+        exact_columns = [col for col in censoring_df.columns if col.startswith("exact_")]
+        vline_ymax = 1
+        for i_col, exact_col in enumerate(exact_columns):
+            tmask_arr = censoring_df[exact_col].values
+            tmask_idx = np.where(tmask_arr)[0]
+            vline_yspan = 0.2 / len(exact_columns)
+            vline_ymin = vline_ymax - vline_yspan
+
+            for j_idx, idx in enumerate(tmask_idx):
+                label = f"Randomly Censored Volumes {exact_col}" if j_idx == 0 else ""
+                ax.axvline(
+                    idx * self.inputs.TR,
+                    ymin=vline_ymin,
+                    ymax=vline_ymax,
+                    label=label,
+                    color=palette[4 + i_col],
+                    alpha=0.8,
+                )
+
+            vline_ymax = vline_ymin
+
+        # Plot motion-censored volumes as vertical lines
+        tmask_arr = censoring_df["framewise_displacement"].values
+        assert preproc_fd_timeseries.size == tmask_arr.size
+        tmask_idx = np.where(tmask_arr)[0]
+        for i_idx, idx in enumerate(tmask_idx):
+            label = "Motion-Censored Volumes" if i_idx == 0 else ""
+            ax.axvline(
+                idx * self.inputs.TR,
+                label=label,
+                color=palette[3],
+                alpha=0.5,
+            )
+
         ax.set_xlabel("Time (seconds)", fontsize=20)
         ax.set_ylabel("Movement (millimeters)", fontsize=20)
         ax.legend(fontsize=20)
@@ -258,8 +294,8 @@ class QCPlots(SimpleInterface):
 
         # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans
-        tmask_df = pd.read_table(self.inputs.temporal_mask)
-        tmask_arr = tmask_df["framewise_displacement"].values
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        tmask_arr = censoring_df["framewise_displacement"].values
         num_censored_volumes = int(tmask_arr.sum())
 
         # Apply temporal mask to interpolated/full data
@@ -726,10 +762,11 @@ class _PNGAppendInputSpec(FSLCommandInputSpec):
     in_files = InputMultiPath(
         File(exists=True),
         mandatory=True,
+        argstr="%s",
         position=0,
         desc="List of files to process.",
     )
-    out_file = File(exists=False, mandatory=True, position=1, desc="Output file.")
+    out_file = File(exists=False, mandatory=True, argstr="%s", position=1, desc="Output file.")
 
 
 class _PNGAppendOutputSpec(TraitedSpec):
@@ -763,3 +800,8 @@ class PNGAppend(FSLCommand):
             return " + ".join(value)
 
         return super(PNGAppend, self)._format_arg(name, spec, value)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["out_file"] = os.path.abspath(self.inputs.out_file)
+        return outputs

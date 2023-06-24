@@ -178,6 +178,10 @@ Functional timeseries and connectivity matrices
 
 This includes the atlases used to extract the timeseries.
 
+.. important::
+   Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the ``--exact-time``
+   parameter is used.
+
 .. code-block::
 
    xcp_d/
@@ -193,6 +197,7 @@ This includes the atlases used to extract the timeseries.
             <source_entities>_space-<label>_atlas-<label>_coverage.tsv
             <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
             <source_entities>_space-<label>_atlas-<label>_measure-fishercorrelation_conmat.tsv
+            <source_entities>_space-<label>_atlas-<label>_measure-fishercorrelation_desc-<INT>volumes_conmat.tsv
 
             # Cifti
             <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.tsv
@@ -201,6 +206,7 @@ This includes the atlases used to extract the timeseries.
             <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
             <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-fishercorrelation_conmat.tsv
             <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-fishercorrelation_conmat.pconn.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-fishercorrelation_desc-<INT>volumes_conmat.tsv
 
 
 Resting-state metric derivatives (ReHo and ALFF)
@@ -248,6 +254,7 @@ Other outputs include quality control, framewise displacement, and confounds fil
 
    xcp_d/
       desc-linc_qc.json
+
       sub-<label>/[ses-<label>/]
          func/
             # Nifti

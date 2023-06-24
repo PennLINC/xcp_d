@@ -80,7 +80,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     Parameters
     ----------
     bids_dir : :obj:`str` or pybids.layout.BIDSLayout
-    participant_label : None or str, optional
+    participant_label : None, str, or list, optional
     strict : bool, optional
     bids_validate : bool, optional
 
@@ -748,9 +748,11 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     import os
 
     dataset_description = os.path.join(fmri_dir, "dataset_description.json")
-    if os.path.isfile(dataset_description):
-        with open(dataset_description) as f:
-            dataset_dict = json.load(f)
+    if not os.path.isfile(dataset_description):
+        raise FileNotFoundError(f"Dataset description DNE: {dataset_description}")
+
+    with open(dataset_description) as f:
+        dataset_dict = json.load(f)
 
     info_dict = {
         "name": dataset_dict["GeneratedBy"][0]["Name"],
@@ -772,22 +774,6 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     return info_dict
 
 
-def _add_subject_prefix(subid):
-    """Extract or compile subject entity from subject ID.
-
-    Parameters
-    ----------
-    subid : :obj:`str`
-        A subject ID (e.g., 'sub-XX' or just 'XX').
-
-    Returns
-    -------
-    str
-        Subject entity (e.g., 'sub-XX').
-    """
-    return subid if subid.startswith("sub-") else "-".join(("sub", subid))
-
-
 def _get_tr(img):
     """Attempt to extract repetition time from NIfTI/CIFTI header.
 
@@ -807,7 +793,6 @@ def _get_tr(img):
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
-    raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
 def get_freesurfer_dir(fmri_dir):

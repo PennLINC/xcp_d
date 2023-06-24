@@ -196,11 +196,7 @@ def init_brainsprite_figures_wf(
             omp_nthreads=omp_nthreads,
         )
 
-        # fmt:off
-        workflow.connect([
-            (create_framewise_pngs, make_mosaic_node, [("out_file", "png_files")]),
-        ])
-        # fmt:on
+        workflow.connect([(create_framewise_pngs, make_mosaic_node, [("out_file", "png_files")])])
 
         ds_mosaic_file = pe.Node(
             DerivativesDataSink(
@@ -373,19 +369,21 @@ def init_execsummary_functional_plots_wf(
         # Only grab the bb_registration_file if the preprocessed BOLD file is a parameter.
         # Get bb_registration_file prefix from fmriprep
         # TODO: Replace with interfaces.
-        all_files = list(layout.get_files())
         current_bold_file = os.path.basename(preproc_nifti)
         if "_space" in current_bold_file:
             bb_register_prefix = current_bold_file.split("_space")[0]
         else:
             bb_register_prefix = current_bold_file.split("_desc")[0]
 
-        # check if there is a bb_registration_file or coregister file
-        patterns = ("*bbregister_bold.svg", "*coreg_bold.svg", "*bbr_bold.svg")
-        registration_file = [pat for pat in patterns if fnmatch.filter(all_files, pat)]
-        # Get the T1w registration file
+        bold_t1w_registration_files = layout.get(
+            desc=["bbregister", "coreg", "bbr"],
+            extension=".svg",
+            suffix="bold",
+            return_type="file",
+        )
         bold_t1w_registration_file = fnmatch.filter(
-            all_files, f"*{bb_register_prefix}{registration_file[0]}"
+            bold_t1w_registration_files,
+            f"*/{bb_register_prefix}*",
         )[0]
 
         ds_registration_figure = pe.Node(
@@ -400,9 +398,7 @@ def init_execsummary_functional_plots_wf(
             run_without_submitting=True,
         )
 
-        # fmt:off
         workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
-        # fmt:on
     else:
         LOGGER.warning(
             "Preprocessed NIFTI file not provided as a parameter, "
@@ -755,6 +751,9 @@ def init_plot_custom_slices_wf(
 ):
     """Plot a custom selection of slices with Slicer.
 
+    This workflow is used to produce subcortical registration plots specifically for
+    infant data.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -775,6 +774,12 @@ def init_plot_custom_slices_wf(
         String to be used as ``desc`` entity in output filename.
     %(name)s
         Default is "plot_custom_slices_wf".
+
+    Inputs
+    ------
+    underlay_file
+    overlay_file
+    name_source
     """
     # NOTE: These slices are almost certainly specific to a given MNI template and resolution.
     SINGLE_SLICES = ["x", "x", "x", "y", "y", "y", "z", "z", "z"]
@@ -803,7 +808,7 @@ def init_plot_custom_slices_wf(
     workflow.connect([(inputnode, binarize_edges, [("overlay_file", "in_file")])])
 
     make_image = pe.MapNode(
-        fsl.Slicer(args="-u -L"),
+        fsl.Slicer(show_orientation=True, label_slices=True),
         name="make_image",
         iterfield=["single_slice", "slice_number"],
     )
@@ -818,15 +823,11 @@ def init_plot_custom_slices_wf(
     # fmt:on
 
     combine_images = pe.Node(
-        PNGAppend(),
+        PNGAppend(out_file="out.png"),
         name="combine_images",
     )
 
-    # fmt:off
-    workflow.connect([
-        (make_image, combine_images, [("out_file", "in_files")]),
-    ])
-    # fmt:on
+    workflow.connect([(make_image, combine_images, [("out_file", "in_files")])])
 
     ds_overlay_figure = pe.Node(
         DerivativesDataSink(
