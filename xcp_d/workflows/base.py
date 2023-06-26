@@ -788,13 +788,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             concatenate_data_wf = init_concatenate_data_wf(
                 output_dir=output_dir,
                 motion_filter_type=motion_filter_type,
-                mem_gb=1,
-                omp_nthreads=omp_nthreads,
                 TR=TR,
                 head_radius=head_radius,
+                params=params,
                 smoothing=smoothing,
                 cifti=cifti,
                 dcan_qc=dcan_qc,
+                mem_gb=1,
+                omp_nthreads=omp_nthreads,
                 name=f"concatenate_entity_set_{ent_set}_wf",
             )
 
