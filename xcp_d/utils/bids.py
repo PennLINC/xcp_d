@@ -349,7 +349,7 @@ def collect_data(
     return layout, subj_data
 
 
-def _find_standard_space_surfaces(layout, participant_label, queries, require_all):
+def _find_standard_space_surfaces(layout, participant_label, queries):
     """Find standard-space surfaces for a given set of queries.
 
     Parameters
@@ -364,7 +364,12 @@ def _find_standard_space_surfaces(layout, participant_label, queries, require_al
     standard_space_surfaces : bool
     out_surface_files : dict
     """
-    standard_space_surfaces = require_all
+    query_extras = {
+        "space": "fsLR",
+        "den": "32k",
+    }
+
+    standard_space_surfaces = True
     for name, query in queries.items():
         # First, try to grab the first base surface file in standard space.
         # If it's not available, switch to native T1w-space data.
@@ -372,25 +377,18 @@ def _find_standard_space_surfaces(layout, participant_label, queries, require_al
             return_type="file",
             subject=participant_label,
             datatype="anat",
-            space="fsLR",
-            den="32k",
             **query,
+            **query_extras,
         )
         if len(temp_files) == 0:
             LOGGER.info("No standard-space surfaces found.")
-            standard_space_surfaces = False if require_all else standard_space_surfaces
+            standard_space_surfaces = False
         elif temp_files:
-            standard_space_surfaces = True if not require_all else standard_space_surfaces
             if len(temp_files) > 1:
                 LOGGER.warning(f"{name}: More than one standard-space surface found.")
 
     # Now that we know if there are standard-space surfaces available, we can grab the files.
-    if standard_space_surfaces:
-        query_extras = {
-            "space": "fsLR",
-            "den": "32k",
-        }
-    else:
+    if not standard_space_surfaces:
         query_extras = {
             "space": None,
         }
@@ -409,18 +407,16 @@ def _find_standard_space_surfaces(layout, participant_label, queries, require_al
     }
 
     out_surface_files = {}
-    surface_files_found = require_all
     for dtype, surface_files_ in surface_files.items():
         if len(surface_files_) == 1:
-            surface_files_found = True if not require_all else surface_files_found
             out_surface_files[dtype] = surface_files_[0]
 
         elif len(surface_files_) == 0:
-            surface_files_found = False if require_all else surface_files_found
+            surface_files_found = False
             out_surface_files[dtype] = None
 
         else:
-            surface_files_found = False if require_all else surface_files_found
+            surface_files_found = False
             surface_str = "\n\t".join(surface_files_)
             raise ValueError(
                 "More than one surface found.\n"
@@ -453,87 +449,65 @@ def collect_morphometry_data(layout, participant_label):
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
     """
-    morphometry_queries = {
-        "lh_sulcal_depth": {
-            "hemi": "L",
+    queries = {
+        "sulcal_depth": {
             "desc": None,
             "suffix": "sulc",
             "extension": ".shape.gii",
         },
-        "rh_sulcal_depth": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "sulc",
-            "extension": ".shape.gii",
-        },
-        "lh_sulcal_curv": {
-            "hemi": "L",
+        "sulcal_curv": {
             "desc": None,
             "suffix": "curv",
             "extension": ".shape.gii",
         },
-        "rh_sulcal_curv": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "curv",
-            "extension": ".shape.gii",
-        },
-        "lh_cortical_thickness": {
-            "hemi": "L",
+        "cortical_thickness": {
             "desc": None,
             "suffix": "thickness",
             "extension": ".shape.gii",
         },
-        "rh_cortical_thickness": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "thickness",
-            "extension": ".shape.gii",
-        },
-        "lh_cortical_thickness_corr": {
-            "hemi": "L",
+        "cortical_thickness_corr": {
             "desc": "corrected",
             "suffix": "thickness",
             "extension": ".shape.gii",
         },
-        "rh_cortical_thickness_corr": {
-            "hemi": "R",
-            "desc": "corrected",
-            "suffix": "thickness",
-            "extension": ".shape.gii",
-        },
-        "lh_myelin": {
-            "hemi": "L",
+        "myelin": {
             "desc": None,
             "suffix": "myelinw",
             "extension": ".func.gii",
         },
-        "rh_myelin": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "myelinw",
-            "extension": ".func.gii",
-        },
-        "lh_myelin_smoothed": {
-            "hemi": "L",
-            "desc": "smoothed",
-            "suffix": "myelinw",
-            "extension": ".func.gii",
-        },
-        "rh_myelin_smoothed": {
-            "hemi": "R",
+        "myelin_smoothed": {
             "desc": "smoothed",
             "suffix": "myelinw",
             "extension": ".func.gii",
         },
     }
 
-    _, _, morphometry_files = _find_standard_space_surfaces(
-        layout,
-        participant_label,
-        morphometry_queries,
-        require_all=False,
-    )
+    morphometry_files = {}
+    for name, query in queries.items():
+        for hemisphere in ["L", "R"]:
+            # First, try to grab the first base surface file in standard space.
+            # If it's not available, switch to native T1w-space data.
+            files = layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                space="fsLR",
+                den="32k",
+                hemi=hemisphere,
+                **query,
+            )
+            if len(files) == 1:
+                morphometry_files[f"{hemisphere.lower()}h_{name}"] = files[0]
+            elif len(files) > 1:
+                surface_str = "\n\t".join(files)
+                raise ValueError(
+                    f"More than one {hemisphere.lower()}h_{name} found.\n"
+                    f"Surfaces found:\n\t{surface_str}\n"
+                    f"Query: {query}"
+                )
+            else:
+                morphometry_files[f"{hemisphere.lower()}h_{name}"] = None
+
     # Identify the base filetypes (e.g., myelin_smoothed) of the found morphometry files.
     mf_list = [k for k, v in morphometry_files.items() if v is not None]
     morph_file_types = [f for f in mf_list if f.startswith("lh_")]
