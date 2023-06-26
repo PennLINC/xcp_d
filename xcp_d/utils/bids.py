@@ -486,7 +486,6 @@ def collect_mesh_data(layout, participant_label):
         layout,
         participant_label,
         mesh_queries,
-        require_all=True,
     )
 
     LOGGER.log(
