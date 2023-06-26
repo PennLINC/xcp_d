@@ -557,7 +557,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             dcan_qc=dcan_qc,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
-            morph_file_types=morph_file_types,
+            morphometry_files=morph_file_types,
             process_surfaces=process_surfaces,
             output_dir=output_dir,
             t1w_available=t1w_available,
