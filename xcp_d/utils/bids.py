@@ -472,13 +472,13 @@ def collect_mesh_data(layout, participant_label):
         "lh_wm_surf": {
             "hemi": "L",
             "desc": None,
-            "suffix": "smoothwm",
+            "suffix": ["smoothwm", "white"],
             "extension": ".surf.gii",
         },
         "rh_wm_surf": {
             "hemi": "R",
             "desc": None,
-            "suffix": "smoothwm",
+            "suffix": ["smoothwm", "white"],
             "extension": ".surf.gii",
         },
     }
