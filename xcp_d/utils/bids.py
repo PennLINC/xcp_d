@@ -428,6 +428,75 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
 
 
 @fill_doc
+def collect_mesh_data(layout, participant_label):
+    """Collect surface files from preprocessed derivatives.
+
+    This function will try to collect fsLR-space, 32k-resolution surface files first.
+    If these standard-space surface files aren't available, it will default to native T1w-space
+    files.
+
+    Parameters
+    ----------
+    %(layout)s
+    participant_label : :obj:`str`
+        Subject ID.
+
+    Returns
+    -------
+    mesh_available : :obj:`bool`
+        True if surface mesh files (pial and smoothwm) were found. False if they were not.
+    standard_space_mesh : :obj:`bool`
+        True if standard-space (fsLR) surface mesh files were found. False if they were not.
+    surface_files : :obj:`dict`
+        Dictionary of surface file identifiers and their paths.
+        If the surface files weren't found, then the paths will be Nones.
+    """
+    # Surfaces to use for brainsprite and anatomical workflow
+    # The base surfaces can be used to generate the derived surfaces.
+    # The base surfaces may be in native or standard space.
+    mesh_queries = {
+        "lh_pial_surf": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "pial",
+            "extension": ".surf.gii",
+        },
+        "rh_pial_surf": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "pial",
+            "extension": ".surf.gii",
+        },
+        "lh_wm_surf": {
+            "hemi": "L",
+            "desc": None,
+            "suffix": "smoothwm",
+            "extension": ".surf.gii",
+        },
+        "rh_wm_surf": {
+            "hemi": "R",
+            "desc": None,
+            "suffix": "smoothwm",
+            "extension": ".surf.gii",
+        },
+    }
+
+    mesh_available, standard_space_mesh, mesh_files = _find_standard_space_surfaces(
+        layout,
+        participant_label,
+        mesh_queries,
+        require_all=True,
+    )
+
+    LOGGER.log(
+        25,
+        f"Collected mesh files:\n{yaml.dump(mesh_files, default_flow_style=False, indent=4)}",
+    )
+
+    return mesh_available, standard_space_mesh, mesh_files
+
+
+@fill_doc
 def collect_morphometry_data(layout, participant_label):
     """Collect morphometry surface files from preprocessed derivatives.
 
@@ -523,75 +592,6 @@ def collect_morphometry_data(layout, participant_label):
     )
 
     return morph_file_types, morphometry_files
-
-
-@fill_doc
-def collect_mesh_data(layout, participant_label):
-    """Collect surface files from preprocessed derivatives.
-
-    This function will try to collect fsLR-space, 32k-resolution surface files first.
-    If these standard-space surface files aren't available, it will default to native T1w-space
-    files.
-
-    Parameters
-    ----------
-    %(layout)s
-    participant_label : :obj:`str`
-        Subject ID.
-
-    Returns
-    -------
-    mesh_available : :obj:`bool`
-        True if surface mesh files (pial and smoothwm) were found. False if they were not.
-    standard_space_mesh : :obj:`bool`
-        True if standard-space (fsLR) surface mesh files were found. False if they were not.
-    surface_files : :obj:`dict`
-        Dictionary of surface file identifiers and their paths.
-        If the surface files weren't found, then the paths will be Nones.
-    """
-    # Surfaces to use for brainsprite and anatomical workflow
-    # The base surfaces can be used to generate the derived surfaces.
-    # The base surfaces may be in native or standard space.
-    mesh_queries = {
-        "lh_pial_surf": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
-        },
-        "rh_pial_surf": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
-        },
-        "lh_wm_surf": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "smoothwm",
-            "extension": ".surf.gii",
-        },
-        "rh_wm_surf": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "smoothwm",
-            "extension": ".surf.gii",
-        },
-    }
-
-    mesh_available, standard_space_mesh, mesh_files = _find_standard_space_surfaces(
-        layout,
-        participant_label,
-        mesh_queries,
-        require_all=True,
-    )
-
-    LOGGER.log(
-        25,
-        f"Collected mesh files:\n{yaml.dump(mesh_files, default_flow_style=False, indent=4)}",
-    )
-
-    return mesh_available, standard_space_mesh, mesh_files
 
 
 @fill_doc
