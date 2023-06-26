@@ -5,6 +5,7 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+import os
 import warnings
 
 import nibabel as nb
@@ -671,7 +672,7 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
     LOGGER.log(
         25,
         (
-            f"Collected run data for {bold_file}:\n"
+            f"Collected run data for {os.path.basename(bold_file)}:\n"
             f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
         ),
     )
