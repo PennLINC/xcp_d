@@ -408,6 +408,7 @@ def _find_standard_space_surfaces(layout, participant_label, queries):
     }
 
     out_surface_files = {}
+    surface_files_found = True
     for dtype, surface_files_ in surface_files.items():
         if len(surface_files_) == 1:
             out_surface_files[dtype] = surface_files_[0]
