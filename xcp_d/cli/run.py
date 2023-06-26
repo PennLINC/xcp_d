@@ -17,6 +17,7 @@ from time import strftime
 
 from niworkflows import NIWORKFLOWS_LOG
 
+from xcp_d.__about__ import __version__
 from xcp_d.cli.parser_utils import (
     _float_or_auto,
     _int_or_auto,
@@ -34,8 +35,6 @@ logger = logging.getLogger("cli")
 
 def get_parser():
     """Build parser object."""
-    from xcp_d.__about__ import __version__
-
     verstr = f"xcp_d v{__version__}"
 
     parser = ArgumentParser(
@@ -670,49 +669,30 @@ def main(args=None):
         sys.exit(int((errno + failed_reports) > 0))
 
 
-def build_workflow(opts, retval):
-    """Create the Nipype workflow that supports the whole execution graph, given the inputs.
+def _validate_parameters(opts, build_log):
+    """Validate parameters.
 
-    All the checks and the construction of the workflow are done
-    inside this function that has pickleable inputs and output
-    dictionary (``retval``) to allow isolation using a
-    ``multiprocessing.Process`` that allows fmriprep to enforce
-    a hard-limited memory-scope.
+    This function was abstracted out of build_workflow to make testing easier.
     """
-    from bids import BIDSLayout
-    from nipype import config as ncfg
-    from nipype import logging as nlogging
+    opts.fmri_dir = opts.fmri_dir.resolve()
+    opts.output_dir = opts.output_dir.resolve()
+    opts.work_dir = opts.work_dir.resolve()
 
-    from xcp_d.__about__ import __version__
-    from xcp_d.utils.bids import collect_participants
-    from xcp_d.workflows.base import init_xcpd_wf
-
-    log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
-
-    build_log = nlogging.getLogger("nipype.workflow")
-    build_log.setLevel(log_level)
-    nlogging.getLogger("nipype.interface").setLevel(log_level)
-    nlogging.getLogger("nipype.utils").setLevel(log_level)
-
-    fmri_dir = opts.fmri_dir.resolve()
-    output_dir = opts.output_dir.resolve()
-    work_dir = opts.work_dir.resolve()
-
-    retval["return_code"] = 0
+    return_code = 0
 
     # Check the validity of inputs
-    if output_dir == fmri_dir:
-        rec_path = fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
+    if opts.output_dir == opts.fmri_dir:
+        rec_path = opts.fmri_dir / "derivatives" / f"xcp_d-{__version__.split('+')[0]}"
         build_log.error(
             "The selected output folder is the same as the input fmri input. "
             "Please modify the output path "
             f"(suggestion: {rec_path})."
         )
-        retval["return_code"] = 1
+        return_code = 1
 
     if opts.analysis_level != "participant":
         build_log.error('Please select analysis level "participant"')
-        retval["return_code"] = 1
+        return_code = 1
 
     # Bandpass filter parameters
     if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
@@ -727,7 +707,7 @@ def build_workflow(opts, retval):
             f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
             f"'--upper-bpf' ({opts.upper_bpf})."
         )
-        retval["return_code"] = 1
+        return_code = 1
     elif not opts.bandpass_filter:
         build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
 
@@ -760,13 +740,13 @@ def build_workflow(opts, retval):
                 "Please set both '--band-stop-min' and '--band-stop-max' if you want to apply "
                 "the 'notch' motion filter."
             )
-            retval["return_code"] = 1
+            return_code = 1
         elif opts.band_stop_min >= opts.band_stop_max:
             build_log.error(
                 f"'--band-stop-min' ({opts.band_stop_min}) must be lower than "
                 f"'--band-stop-max' ({opts.band_stop_max})."
             )
-            retval["return_code"] = 1
+            return_code = 1
         elif opts.band_stop_min < 1 or opts.band_stop_max < 1:
             build_log.warning(
                 f"Either '--band-stop-min' ({opts.band_stop_min}) or "
@@ -779,7 +759,7 @@ def build_workflow(opts, retval):
             build_log.error(
                 "Please set '--band-stop-min' if you want to apply the 'lp' motion filter."
             )
-            retval["return_code"] = 1
+            return_code = 1
         elif opts.band_stop_min < 1:
             build_log.warning(
                 f"'--band-stop-min' ({opts.band_stop_max}) is suspiciously low. "
@@ -817,7 +797,35 @@ def build_workflow(opts, retval):
             "In order to perform surface normalization (--warp-surfaces-native2std), "
             "you must enable cifti processing (--cifti)."
         )
-        retval["return_code"] = 1
+        return_code = 1
+
+    return opts, return_code
+
+
+def build_workflow(opts, retval):
+    """Create the Nipype workflow that supports the whole execution graph, given the inputs.
+
+    All the checks and the construction of the workflow are done
+    inside this function that has pickleable inputs and output
+    dictionary (``retval``) to allow isolation using a
+    ``multiprocessing.Process`` that allows fmriprep to enforce
+    a hard-limited memory-scope.
+    """
+    from bids import BIDSLayout
+    from nipype import config as ncfg
+    from nipype import logging as nlogging
+
+    from xcp_d.utils.bids import collect_participants
+    from xcp_d.workflows.base import init_xcpd_wf
+
+    log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
+
+    build_log = nlogging.getLogger("nipype.workflow")
+    build_log.setLevel(log_level)
+    nlogging.getLogger("nipype.interface").setLevel(log_level)
+    nlogging.getLogger("nipype.utils").setLevel(log_level)
+
+    opts, retval["return_code"] = _validate_parameters(opts, build_log)
 
     if retval["return_code"] == 1:
         return retval
@@ -825,15 +833,17 @@ def build_workflow(opts, retval):
     if opts.clean_workdir:
         from niworkflows.utils.misc import clean_directory
 
-        build_log.info(f"Clearing previous xcp_d working directory: {work_dir}")
-        if not clean_directory(work_dir):
-            build_log.warning(f"Could not clear all contents of working directory: {work_dir}")
+        build_log.info(f"Clearing previous xcp_d working directory: {opts.work_dir}")
+        if not clean_directory(opts.work_dir):
+            build_log.warning(
+                f"Could not clear all contents of working directory: {opts.work_dir}"
+            )
 
     retval["return_code"] = 1
     retval["workflow"] = None
-    retval["fmri_dir"] = str(fmri_dir)
-    retval["output_dir"] = str(output_dir)
-    retval["work_dir"] = str(work_dir)
+    retval["fmri_dir"] = str(opts.fmri_dir)
+    retval["output_dir"] = str(opts.output_dir)
+    retval["work_dir"] = str(opts.work_dir)
 
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp"):
@@ -843,18 +853,21 @@ def build_workflow(opts, retval):
             from xcp_d.utils.hcp2fmriprep import convert_hcp2bids as convert_to_bids
 
         NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
-        converted_fmri_dir = os.path.join(work_dir, f"dset_bids/derivatives/{opts.input_type}")
+        converted_fmri_dir = os.path.join(
+            opts.work_dir,
+            f"dset_bids/derivatives/{opts.input_type}",
+        )
         os.makedirs(converted_fmri_dir, exist_ok=True)
 
         convert_to_bids(
-            fmri_dir,
+            opts.fmri_dir,
             out_dir=converted_fmri_dir,
             participant_ids=opts.participant_label,
         )
 
-        fmri_dir = converted_fmri_dir
+        opts.fmri_dir = Path(converted_fmri_dir)
 
-    if not os.path.isfile((os.path.join(fmri_dir, "dataset_description.json"))):
+    if not os.path.isfile((os.path.join(opts.fmri_dir, "dataset_description.json"))):
         build_log.error(
             "No dataset_description.json file found in input directory. "
             "Make sure to point to the specific pipeline's derivatives folder. "
@@ -866,7 +879,7 @@ def build_workflow(opts, retval):
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
     retval["run_uuid"] = run_uuid
 
-    layout = BIDSLayout(str(fmri_dir), validate=False, derivatives=True)
+    layout = BIDSLayout(str(opts.fmri_dir), validate=False, derivatives=True)
     subject_list = collect_participants(layout, participant_label=opts.participant_label)
     retval["subject_list"] = subject_list
 
@@ -889,20 +902,10 @@ def build_workflow(opts, retval):
             },
         }
 
-    # nthreads = plugin_settings['plugin_args'].get('n_procs')
     # Permit overriding plugin config with specific CLI options
-    # if nthreads is None or opts.nthreads is not None:
     nthreads = opts.nthreads
-    # if nthreads is None or nthreads < 1:
-    # nthreads = cpu_count()
-    # plugin_settings['plugin_args']['n_procs'] = nthreads
-
-    if opts.mem_gb:
-        plugin_settings["plugin_args"]["memory_gb"] = opts.mem_gb
-
     omp_nthreads = opts.omp_nthreads
-    # if omp_nthreads == 0:
-    # omp_nthreads = min(nthreads - 1 if nthreads > 1 else cpu_count(), 8)
+
     if (nthreads == 1) or (omp_nthreads > nthreads):
         omp_nthreads = 1
 
@@ -914,15 +917,18 @@ def build_workflow(opts, retval):
             f"threads (--nthreads/--n_cpus={nthreads})"
         )
 
+    if opts.mem_gb:
+        plugin_settings["plugin_args"]["memory_gb"] = opts.mem_gb
+
     retval["plugin_settings"] = plugin_settings
 
     # Set up directories
-    log_dir = output_dir / "xcp_d" / "logs"
+    log_dir = opts.output_dir / "xcp_d" / "logs"
 
     # Check and create output and working directories
-    output_dir.mkdir(exist_ok=True, parents=True)
+    opts.output_dir.mkdir(exist_ok=True, parents=True)
+    opts.work_dir.mkdir(exist_ok=True, parents=True)
     log_dir.mkdir(exist_ok=True, parents=True)
-    work_dir.mkdir(exist_ok=True, parents=True)
 
     # Nipype config (logs and execution)
     ncfg.update_config(
@@ -955,7 +961,7 @@ def build_workflow(opts, retval):
         25,
         f"""\
 Running xcp_d version {__version__}:
-    * fMRI directory path: {fmri_dir}.
+    * fMRI directory path: {opts.fmri_dir}.
     * Participant list: {subject_list}.
     * Run identifier: {run_uuid}.
 
@@ -965,7 +971,7 @@ Running xcp_d version {__version__}:
     retval["workflow"] = init_xcpd_wf(
         layout=layout,
         omp_nthreads=omp_nthreads,
-        fmri_dir=str(fmri_dir),
+        fmri_dir=str(opts.fmri_dir),
         high_pass=opts.lower_bpf,
         low_pass=opts.upper_bpf,
         bpf_order=opts.bpf_order,
@@ -975,7 +981,7 @@ Running xcp_d version {__version__}:
         band_stop_min=opts.band_stop_min,
         band_stop_max=opts.band_stop_max,
         subject_list=subject_list,
-        work_dir=str(work_dir),
+        work_dir=str(opts.work_dir),
         task_id=opts.task_id,
         bids_filters=opts.bids_filters,
         despike=opts.despike,
@@ -983,7 +989,7 @@ Running xcp_d version {__version__}:
         params=opts.nuisance_regressors,
         cifti=opts.cifti,
         analysis_level=opts.analysis_level,
-        output_dir=str(output_dir),
+        output_dir=str(opts.output_dir),
         head_radius=opts.head_radius,
         custom_confounds_folder=opts.custom_confounds,
         dummy_scans=opts.dummy_scans,
@@ -999,16 +1005,12 @@ Running xcp_d version {__version__}:
         name="xcpd_wf",
     )
 
-    logs_path = Path(output_dir) / "xcp_d" / "logs"
     boilerplate = retval["workflow"].visit_desc()
 
     if boilerplate:
-        citation_files = {
-            ext: logs_path / f"CITATION.{ext}" for ext in ("bib", "tex", "md", "html")
-        }
-        # To please git-annex users and also to guarantee consistency
-        # among different renderings of the same file, first remove any
-        # existing one
+        citation_files = {ext: log_dir / f"CITATION.{ext}" for ext in ("bib", "tex", "md", "html")}
+        # To please git-annex users and also to guarantee consistency among different renderings
+        # of the same file, first remove any existing ones
         for citation_file in citation_files.values():
             try:
                 citation_file.unlink()
@@ -1020,8 +1022,8 @@ Running xcp_d version {__version__}:
     build_log.log(
         25,
         (
-            "Works derived from this xcp_d execution should "
-            f"include the following boilerplate:\n\n{boilerplate}"
+            "Works derived from this xcp_d execution should include the following boilerplate:\n\n"
+            f"{boilerplate}"
         ),
     )
 
