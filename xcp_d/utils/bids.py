@@ -434,7 +434,7 @@ def collect_mesh_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
-    If these standard-space surface files aren't available, it will default to native T1w-space
+    If these standard-space surface files aren't available, it will default to fsnative-space
     files.
 
     Parameters
@@ -512,7 +512,7 @@ def collect_morphometry_data(layout, participant_label):
     Returns
     -------
     morph_file_types : :obj:`list` of :obj:`str`
-        List of surface morphometry files (e.g., cortical thickness) already in fsLR space.
+        List of surface morphometry file types (e.g., cortical thickness) already in fsLR space.
         These files will be (1) parcellated and (2) passed along, without modification, to the
         XCP-D derivatives.
     morphometry_files : :obj:`dict`
