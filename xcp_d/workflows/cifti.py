@@ -52,6 +52,8 @@ def init_postprocess_cifti_wf(
     t2w_available,
     n_runs,
     min_coverage,
+    exact_scans,
+    random_seed,
     omp_nthreads,
     layout=None,
     name="cifti_postprocess_wf",
@@ -114,6 +116,8 @@ def init_postprocess_cifti_wf(
                 t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
+                exact_scans=[],
+                random_seed=None,
                 omp_nthreads=1,
                 layout=layout,
                 name="cifti_postprocess_wf",
@@ -148,6 +152,8 @@ def init_postprocess_cifti_wf(
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
+    %(random_seed)s
+    %(exact_scans)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -287,6 +293,8 @@ def init_postprocess_cifti_wf(
         TR=TR,
         params=params,
         dummy_scans=dummy_scans,
+        random_seed=random_seed,
+        exact_scans=exact_scans,
         motion_filter_type=motion_filter_type,
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
@@ -380,8 +388,8 @@ def init_postprocess_cifti_wf(
         alff_available=bandpass_filter and (fd_thresh <= 0),
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
-        name="connectivity_wf",
         omp_nthreads=omp_nthreads,
+        name="connectivity_wf",
     )
 
     # fmt:off
@@ -392,6 +400,9 @@ def init_postprocess_cifti_wf(
             ("atlas_files", "inputnode.atlas_files"),
             ("atlas_labels_files", "inputnode.atlas_labels_files"),
             ("parcellated_atlas_files", "inputnode.parcellated_atlas_files"),
+        ]),
+        (prepare_confounds_wf, connectivity_wf, [
+            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
         ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
@@ -477,6 +488,7 @@ def init_postprocess_cifti_wf(
         name_source=bold_file,
         bandpass_filter=bandpass_filter,
         params=params,
+        exact_scans=exact_scans,
         cifti=True,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
@@ -509,9 +521,11 @@ def init_postprocess_cifti_wf(
             ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
             ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
             ("outputnode.correlation_ciftis", "inputnode.correlation_ciftis"),
+            ("outputnode.correlation_ciftis_exact", "inputnode.correlation_ciftis_exact"),
             ("outputnode.coverage", "inputnode.coverage"),
             ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.correlations_exact", "inputnode.correlations_exact"),
             ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
         ]),
     ])

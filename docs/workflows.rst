@@ -146,6 +146,8 @@ custom confounds can be added as described in :ref:`usage_custom_confounds`.
 If you want to use custom confounds, without any of the nuisance regressors described here,
 use ``--nuisance-regressors custom``.
 
+If you want to skip the denoising step completely, you can use ``--nuisance-regressors none``.
+
 .. important::
    Starting in version 0.4.0, if motion parameters were filtered earlier in the workflow,
    the filtered motion parameters (including FD, and any squared or derivative regressors)
@@ -225,6 +227,15 @@ use ``--nuisance-regressors custom``.
       - X
       - X
       - X
+   *  - none
+      -
+      -
+      -
+      -
+      -
+      -
+      -
+      -
 
 For more information about confound regressor selection, please refer to :footcite:t:`benchmarkp`.
 
@@ -393,6 +404,30 @@ connectivity matrices, as measured with Pearson correlation coefficients.
 
 For CIFTI data, both tab-delimited text file (TSV) and CIFTI versions of the parcellated time
 series and correlation matrices are written out.
+
+
+Functional connectivity estimates from specified amounts of data [OPTIONAL]
+---------------------------------------------------------------------------
+
+Functional connectivity estimates may exhibit non-linear relationships with the number of data
+points,
+such that including a regressor controlling for the number of post-censoring volumes per run in
+group-level models may not adequately address the issue.
+
+In :footcite:t:`eggebrecht2017joint` and :footcite:t:`feczko2021adolescent`,
+the authors' solution was to randomly select a subset of volumes from each run before calculating
+correlations, so that every run had the same number of data points contributing to its functional
+connectivity estimate.
+
+We have implemented this behavior via the optional ``--exact-time`` parameter, which allows the
+user to provide a list of durations, in seconds, to be used for functional connectivity estimates.
+These subsampled correlation matrices will be written out with ``desc-<numberOfVolumes>volumes``
+in the filenames.
+The correlation matrices *without* the ``desc`` entity still include all of the post-censoring
+volumes.
+
+The ``--random-seed`` parameter can control the random seed used to select the reduced set of \
+volumes, which improves reproducibility.
 
 
 Smoothing [OPTIONAL]

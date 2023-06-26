@@ -118,6 +118,10 @@ def fmriprep_with_freesurfer_data(datasets):
     )
     files["boldref_t1w"] = os.path.join(func_dir, "sub-01_task-rest_space-T1w_boldref.nii.gz")
     files["t1w"] = os.path.join(anat_dir, "sub-01_desc-preproc_T1w.nii.gz")
+    files["t1w_mni"] = os.path.join(
+        anat_dir,
+        "sub-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.nii.gz",
+    )
     files["anat_dseg"] = os.path.join(anat_dir, "sub-01_desc-aseg_dseg.nii.gz")
 
     return files
