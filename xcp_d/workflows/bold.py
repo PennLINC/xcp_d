@@ -479,10 +479,11 @@ def init_postprocess_nifti_wf(
         output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
+        params=params,
         dcan_qc=dcan_qc,
         cifti=False,
+        mem_gb=mem_gbx["timeseries"],
+        omp_nthreads=omp_nthreads,
         name="qc_report_wf",
     )
 

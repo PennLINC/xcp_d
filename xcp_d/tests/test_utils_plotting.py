@@ -30,3 +30,19 @@ def test_plot_fmri_es(fmriprep_with_freesurfer_data, tmp_path_factory):
     )
     assert os.path.isfile(out_file1)
     assert os.path.isfile(out_file2)
+
+    os.remove(out_file1)
+    os.remove(out_file2)
+
+    out_file1, out_file2 = plotting.plot_fmri_es(
+        preprocessed_bold=preprocessed_bold,
+        uncensored_denoised_bold=uncensored_denoised_bold,
+        interpolated_filtered_bold=interpolated_filtered_bold,
+        filtered_motion=filtered_motion,
+        preprocessed_bold_figure=preprocessed_bold_figure,
+        denoised_bold_figure=denoised_bold_figure,
+        TR=t_r,
+        standardize=True,
+    )
+    assert os.path.isfile(out_file1)
+    assert os.path.isfile(out_file2)
