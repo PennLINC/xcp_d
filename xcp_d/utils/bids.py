@@ -481,67 +481,56 @@ def collect_morphometry_data(layout, participant_label):
         "sulcal_depth": {
             "desc": None,
             "suffix": "sulc",
-            "extension": ".shape.gii",
         },
         "sulcal_curv": {
             "desc": None,
             "suffix": "curv",
-            "extension": ".shape.gii",
         },
         "cortical_thickness": {
             "desc": None,
             "suffix": "thickness",
-            "extension": ".shape.gii",
         },
         "cortical_thickness_corr": {
             "desc": "corrected",
             "suffix": "thickness",
-            "extension": ".shape.gii",
         },
         "myelin": {
             "desc": None,
             "suffix": "myelinw",
-            "extension": ".func.gii",
         },
         "myelin_smoothed": {
             "desc": "smoothed",
             "suffix": "myelinw",
-            "extension": ".func.gii",
         },
     }
 
     morphometry_files = {}
     for name, query in queries.items():
-        for hemisphere in ["L", "R"]:
-            # First, try to grab the first base surface file in standard space.
-            # If it's not available, switch to native T1w-space data.
-            files = layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                space="fsLR",
-                den="32k",
-                hemi=hemisphere,
-                **query,
+        # First, try to grab the first base surface file in standard space.
+        # If it's not available, switch to native T1w-space data.
+        files = layout.get(
+            return_type="file",
+            subject=participant_label,
+            datatype="anat",
+            space="fsLR",
+            den="91k",
+            extension=".dscalar.nii",
+            **query,
+        )
+        if len(files) == 1:
+            morphometry_files[name] = files[0]
+        elif len(files) > 1:
+            surface_str = "\n\t".join(files)
+            raise ValueError(
+                f"More than one {name} found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {query}"
             )
-            key = f"{hemisphere.lower()}h_{name}"
-            if len(files) == 1:
-                morphometry_files[key] = files[0]
-            elif len(files) > 1:
-                surface_str = "\n\t".join(files)
-                raise ValueError(
-                    f"More than one {key} found.\n"
-                    f"Surfaces found:\n\t{surface_str}\n"
-                    f"Query: {query}"
-                )
-            else:
-                morphometry_files[key] = None
+        else:
+            morphometry_files[name] = None
 
-    # Identify the base filetypes (e.g., myelin_smoothed) of the found morphometry files.
-    mf_list = [k for k, v in morphometry_files.items() if v is not None]
-    morph_file_types = [f for f in mf_list if f.startswith("lh_")]
-    morph_file_types = [f for f in morph_file_types if f.replace("lh_", "rh_") in mf_list]
-    morph_file_types = [f.replace("lh_", "") for f in morph_file_types]
+    # Identify the found morphometry files.
+    morph_file_types = [k for k, v in morphometry_files.items() if v is not None]
 
     LOGGER.log(
         25,

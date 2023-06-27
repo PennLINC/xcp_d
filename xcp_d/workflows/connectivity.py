@@ -10,11 +10,7 @@ from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.nilearn import IndexImage
-from xcp_d.interfaces.workbench import (
-    CiftiCreateDenseFromTemplate,
-    CiftiCreateDenseScalar,
-    CiftiParcellate,
-)
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import cast_cifti_to_int16
@@ -285,12 +281,12 @@ def init_parcellate_surfaces_wf(
 
     Inputs
     ------
-    lh_sulcal_depth
-    rh_sulcal_depth
-    lh_sulcal_curv
-    rh_sulcal_curv
-    lh_cortical_thickness
-    rh_cortical_thickness
+    sulcal_depth
+    sulcal_curv
+    cortical_thickness
+    cortical_thickness_corr
+    myelin
+    myelin_smoothed
     """
     workflow = Workflow(name=name)
 
@@ -303,12 +299,12 @@ def init_parcellate_surfaces_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
@@ -334,22 +330,6 @@ def init_parcellate_surfaces_wf(
     workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
 
     for file_to_parcellate in files_to_parcellate:
-        # Convert giftis to ciftis
-        convert_giftis_to_cifti = pe.Node(
-            CiftiCreateDenseScalar(),
-            name=f"convert_{file_to_parcellate}_to_cifti",
-            n_procs=omp_nthreads,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, convert_giftis_to_cifti, [
-                (f"lh_{file_to_parcellate}", "left_metric"),
-                (f"rh_{file_to_parcellate}", "right_metric"),
-            ]),
-        ])
-        # fmt:on
-
         resample_atlas_to_surface = pe.MapNode(
             CiftiCreateDenseFromTemplate(),
             name=f"resample_atlas_to_{file_to_parcellate}",
@@ -359,8 +339,8 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
+            (inputnode, resample_atlas_to_surface, [(file_to_parcellate, "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_surface, [("atlas_file", "label")]),
-            (convert_giftis_to_cifti, resample_atlas_to_surface, [("out_file", "template_cifti")]),
         ])
         # fmt:on
 
@@ -378,7 +358,7 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
-            (convert_giftis_to_cifti, parcellate_atlas, [("out_file", "in_file")]),
+            (inputnode, parcellate_atlas, [(file_to_parcellate, "in_file")]),
             (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
         ])
         # fmt:on
@@ -394,9 +374,9 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
+            (inputnode, parcellate_surface, [(file_to_parcellate, "data_file")]),
             (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas_file")]),
             (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
-            (convert_giftis_to_cifti, parcellate_surface, [("out_file", "data_file")]),
             (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
         ])
         # fmt:on
@@ -418,7 +398,7 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_parcellated_surface, [(f"lh_{file_to_parcellate}", "source_file")]),
+            (inputnode, ds_parcellated_surface, [(file_to_parcellate, "source_file")]),
             (atlas_name_grabber, ds_parcellated_surface, [("atlas_names", "atlas")]),
             (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
         ])

@@ -388,9 +388,12 @@ def init_postprocess_surfaces_wf(
     %(template_to_anat_xfm)s
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
-    lh_sulcal_depth, rh_sulcal_depth
-    lh_sulcal_curv, rh_sulcal_curv
-    lh_cortical_thickness, rh_cortical_thickness
+    sulcal_depth
+    sulcal_curv
+    cortical_thickness
+    cortical_thickness_corr
+    myelin
+    myelin_smoothed
     """
     workflow = Workflow(name=name)
 
@@ -405,12 +408,12 @@ def init_postprocess_surfaces_wf(
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
@@ -466,8 +469,7 @@ def init_postprocess_surfaces_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, copy_std_surfaces_to_datasink, [
-                    (f"lh_{morphometry_file}", f"inputnode.lh_{morphometry_file}"),
-                    (f"rh_{morphometry_file}", f"inputnode.rh_{morphometry_file}"),
+                    (morphometry_file, f"inputnode.{morphometry_file}"),
                 ]),
             ])
             # fmt:on
