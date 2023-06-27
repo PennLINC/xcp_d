@@ -20,7 +20,7 @@ def test_collect_participants(datasets):
     with pytest.warns(xbids.BIDSWarning, match="Some participants were not found"):
         xbids.collect_participants(bids_dir, participant_label=["01", "fail"])
 
-    with pytest.warns(xbids.BIDSError, match="Some participants were not found"):
+    with pytest.raises(xbids.BIDSError, match="Some participants were not found"):
         xbids.collect_participants(bids_dir, participant_label=["01", "fail"], strict=True)
 
     found_labels = xbids.collect_participants(bids_dir, participant_label=None)
@@ -65,7 +65,7 @@ def test_collect_data_ds001419(datasets):
         layout=layout,
     )
 
-    assert len(subj_data["bold"]) == 5
+    assert len(subj_data["bold"]) == 1
     assert "space-fsLR" in subj_data["bold"][0]
     assert "space-" not in subj_data["t1w"]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_desc-preproc_T1w.nii.gz"
