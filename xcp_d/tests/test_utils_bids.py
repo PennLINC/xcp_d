@@ -20,6 +20,9 @@ def test_collect_participants(datasets):
     with pytest.warns(xbids.BIDSWarning, match="Some participants were not found"):
         xbids.collect_participants(bids_dir, participant_label=["01", "fail"])
 
+    with pytest.warns(xbids.BIDSError, match="Some participants were not found"):
+        xbids.collect_participants(bids_dir, participant_label=["01", "fail"], strict=True)
+
     found_labels = xbids.collect_participants(bids_dir, participant_label=None)
     assert found_labels == ["01"]
 
@@ -55,7 +58,7 @@ def test_collect_data_ds001419(datasets):
         bids_dir=bids_dir,
         input_type="fmriprep",
         participant_label="01",
-        task=None,
+        task="rest",
         bids_validate=False,
         bids_filters=None,
         cifti=True,
@@ -177,11 +180,50 @@ def test_get_freesurfer_dir(datasets):
     fs_dir = xbids.get_freesurfer_dir(datasets["nibabies"])
     assert os.path.isdir(fs_dir)
 
+    # Create fake FreeSurfer folder so there are two possible folders
+    tmp_fs_dir = os.path.join(os.path.dirname(fs_dir), "freesurfer-fail")
+    os.mkdir(tmp_fs_dir)
+    with pytest.raises(ValueError, match="More than one candidate"):
+        xbids.get_freesurfer_dir(datasets["nibabies"])
+    os.rmdir(tmp_fs_dir)
+
     fs_dir = xbids.get_freesurfer_dir(datasets["ds001419"])
     assert os.path.isdir(fs_dir)
 
     sphere_file = xbids.get_freesurfer_sphere(fs_dir, "01", "L")
     assert os.path.isfile(sphere_file)
 
+    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "sub-01", "L")
+    assert os.path.isfile(sphere_file)
+
     with pytest.raises(FileNotFoundError, match="Sphere file not found at"):
         sphere_file = xbids.get_freesurfer_sphere(fs_dir, "fail", "L")
+
+
+def test_get_entity(datasets):
+    """Test get_entity."""
+    fname = os.path.join(datasets["ds001419"], "sub-01", "anat", "sub-01_desc-preproc_T1w.nii.gz")
+    entity = xbids.get_entity(fname, "space")
+    assert entity == "T1w"
+
+    fname = os.path.join(
+        datasets["ds001419"],
+        "sub-01",
+        "func",
+        "sub-01_task-rest_desc-preproc_bold.nii.gz",
+    )
+    entity = xbids.get_entity(fname, "space")
+    assert entity == "native"
+    entity = xbids.get_entity(fname, "desc")
+    assert entity == "preproc"
+    entity = xbids.get_entity(fname, "fail")
+    assert entity is None
+
+    fname = os.path.join(
+        datasets["ds001419"],
+        "sub-01",
+        "fmap",
+        "sub-01_fmapid-auto00001_desc-coeff1_fieldmap.nii.gz",
+    )
+    with pytest.raises(ValueError, match="Unknown space"):
+        xbids.get_entity(fname, "space")
