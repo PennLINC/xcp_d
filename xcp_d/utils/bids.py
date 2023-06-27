@@ -350,85 +350,6 @@ def collect_data(
     return layout, subj_data
 
 
-def _find_standard_space_surfaces(layout, participant_label, queries):
-    """Find standard-space surfaces for a given set of queries.
-
-    Parameters
-    ----------
-    layout : BIDSLayout
-    participant_label : str
-    queries : dict of dict
-
-    Returns
-    -------
-    surface_files_found : bool
-    standard_space_surfaces : bool
-    out_surface_files : dict
-    """
-    query_extras = {
-        "space": "fsLR",
-        "den": "32k",
-    }
-
-    standard_space_surfaces = True
-    for name, query in queries.items():
-        # First, try to grab the first base surface file in standard space.
-        # If it's not available, switch to native T1w-space data.
-        temp_files = layout.get(
-            return_type="file",
-            subject=participant_label,
-            datatype="anat",
-            **query,
-            **query_extras,
-        )
-        if len(temp_files) == 0:
-            LOGGER.info("No standard-space surfaces found.")
-            standard_space_surfaces = False
-        elif temp_files:
-            if len(temp_files) > 1:
-                LOGGER.warning(f"{name}: More than one standard-space surface found.")
-
-    # Now that we know if there are standard-space surfaces available, we can grab the files.
-    if not standard_space_surfaces:
-        query_extras = {
-            "space": None,
-        }
-
-    surface_files = {
-        dtype: sorted(
-            layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                **query,
-                **query_extras,
-            )
-        )
-        for dtype, query in queries.items()
-    }
-
-    out_surface_files = {}
-    surface_files_found = True
-    for dtype, surface_files_ in surface_files.items():
-        if len(surface_files_) == 1:
-            out_surface_files[dtype] = surface_files_[0]
-
-        elif len(surface_files_) == 0:
-            surface_files_found = False
-            out_surface_files[dtype] = None
-
-        else:
-            surface_files_found = False
-            surface_str = "\n\t".join(surface_files_)
-            raise ValueError(
-                "More than one surface found.\n"
-                f"Surfaces found:\n\t{surface_str}\n"
-                f"Query: {queries[dtype]}"
-            )
-
-    return surface_files_found, standard_space_surfaces, out_surface_files
-
-
 @fill_doc
 def collect_mesh_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
@@ -449,45 +370,82 @@ def collect_mesh_data(layout, participant_label):
         True if surface mesh files (pial and smoothwm) were found. False if they were not.
     standard_space_mesh : :obj:`bool`
         True if standard-space (fsLR) surface mesh files were found. False if they were not.
-    surface_files : :obj:`dict`
+    mesh_files : :obj:`dict`
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
     """
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    mesh_queries = {
-        "lh_pial_surf": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
-        },
-        "rh_pial_surf": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
-        },
-        "lh_wm_surf": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": ["smoothwm", "white"],
-            "extension": ".surf.gii",
-        },
-        "rh_wm_surf": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": ["smoothwm", "white"],
-            "extension": ".surf.gii",
-        },
+    queries = {
+        "pial_surf": "pial",
+        "wm_surf": ["smoothwm", "white"],
+    }
+    query_extras = {
+        "space": "fsLR",
+        "den": "32k",
     }
 
-    mesh_available, standard_space_mesh, mesh_files = _find_standard_space_surfaces(
-        layout,
-        participant_label,
-        mesh_queries,
-    )
+    standard_space_mesh = True
+    for name, suffixes in queries.items():
+        # First, try to grab the first base surface file in standard space.
+        # If it's not available, switch to native T1w-space data.
+        for hemisphere in ["L", "R"]:
+            temp_files = layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                hemi=hemisphere,
+                desc=None,
+                suffix=suffixes,
+                extension=".surf.gii",
+                **query_extras,
+            )
+            if len(temp_files) == 0:
+                LOGGER.info("No standard-space surfaces found.")
+                standard_space_mesh = False
+            elif len(temp_files) > 1:
+                LOGGER.warning(f"{name}: More than one standard-space surface found.")
+
+    # Now that we know if there are standard-space surfaces available, we can grab the files.
+    if not standard_space_mesh:
+        query_extras = {
+            "space": None,
+        }
+
+    initial_mesh_files = {}
+    for name, suffixes in queries.items():
+        for hemisphere in ["L", "R"]:
+            key = f"{hemisphere.lower()}h_{name}"
+            initial_mesh_files[key] = layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                hemi=hemisphere,
+                desc=None,
+                suffix=suffixes,
+                extension=".surf.gii",
+                **query_extras,
+            )
+
+    mesh_files = {}
+    mesh_available = True
+    for dtype, surface_files_ in initial_mesh_files.items():
+        if len(surface_files_) == 1:
+            mesh_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            mesh_available = False
+            mesh_files[dtype] = None
+
+        else:
+            mesh_available = False
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {queries[dtype]}"
+            )
 
     LOGGER.log(
         25,
@@ -566,17 +524,18 @@ def collect_morphometry_data(layout, participant_label):
                 hemi=hemisphere,
                 **query,
             )
+            key = f"{hemisphere.lower()}h_{name}"
             if len(files) == 1:
-                morphometry_files[f"{hemisphere.lower()}h_{name}"] = files[0]
+                morphometry_files[key] = files[0]
             elif len(files) > 1:
                 surface_str = "\n\t".join(files)
                 raise ValueError(
-                    f"More than one {hemisphere.lower()}h_{name} found.\n"
+                    f"More than one {key} found.\n"
                     f"Surfaces found:\n\t{surface_str}\n"
                     f"Query: {query}"
                 )
             else:
-                morphometry_files[f"{hemisphere.lower()}h_{name}"] = None
+                morphometry_files[key] = None
 
     # Identify the base filetypes (e.g., myelin_smoothed) of the found morphometry files.
     mf_list = [k for k, v in morphometry_files.items() if v is not None]
@@ -820,11 +779,13 @@ def get_freesurfer_dir(fmri_dir):
 
     # for fMRIPrep/Nibabies versions >=20.2.1
     freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
+    print(freesurfer_paths)
     if len(freesurfer_paths) == 0:
         # for fMRIPrep/Nibabies versions <20.2.1
         freesurfer_paths = sorted(
             glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
         )
+        print(freesurfer_paths)
 
     if len(freesurfer_paths) == 1:
         freesurfer_path = freesurfer_paths[0]
