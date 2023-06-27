@@ -24,8 +24,9 @@ from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     _get_tr,
     collect_data,
+    collect_mesh_data,
+    collect_morphometry_data,
     collect_run_data,
-    collect_surface_data,
     get_entity,
     get_preproc_pipeline_info,
     group_across_runs,
@@ -380,7 +381,11 @@ def init_subject_wf(
     t2w_available = subj_data["t2w"] is not None
     primary_anat = "T1w" if subj_data["t1w"] else "T2w"
 
-    mesh_available, morphometry_files, standard_space_mesh, surface_data = collect_surface_data(
+    mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
+        layout=layout,
+        participant_label=subject_id,
+    )
+    morph_file_types, morphometry_files = collect_morphometry_data(
         layout=layout,
         participant_label=subject_id,
     )
@@ -424,18 +429,18 @@ def init_subject_wf(
     inputnode.inputs.anat_to_template_xfm = subj_data["anat_to_template_xfm"]
 
     # surface mesh files (required for brainsprite/warp workflows)
-    inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
-    inputnode.inputs.rh_pial_surf = surface_data["rh_pial_surf"]
-    inputnode.inputs.lh_wm_surf = surface_data["lh_wm_surf"]
-    inputnode.inputs.rh_wm_surf = surface_data["rh_wm_surf"]
+    inputnode.inputs.lh_pial_surf = mesh_files["lh_pial_surf"]
+    inputnode.inputs.rh_pial_surf = mesh_files["rh_pial_surf"]
+    inputnode.inputs.lh_wm_surf = mesh_files["lh_wm_surf"]
+    inputnode.inputs.rh_wm_surf = mesh_files["rh_wm_surf"]
 
     # optional surface shape files (used by surface-warping workflow)
-    inputnode.inputs.lh_sulcal_depth = surface_data["lh_sulcal_depth"]
-    inputnode.inputs.rh_sulcal_depth = surface_data["rh_sulcal_depth"]
-    inputnode.inputs.lh_sulcal_curv = surface_data["lh_sulcal_curv"]
-    inputnode.inputs.rh_sulcal_curv = surface_data["rh_sulcal_curv"]
-    inputnode.inputs.lh_cortical_thickness = surface_data["lh_cortical_thickness"]
-    inputnode.inputs.rh_cortical_thickness = surface_data["rh_cortical_thickness"]
+    inputnode.inputs.lh_sulcal_depth = morphometry_files["lh_sulcal_depth"]
+    inputnode.inputs.rh_sulcal_depth = morphometry_files["rh_sulcal_depth"]
+    inputnode.inputs.lh_sulcal_curv = morphometry_files["lh_sulcal_curv"]
+    inputnode.inputs.rh_sulcal_curv = morphometry_files["rh_sulcal_curv"]
+    inputnode.inputs.lh_cortical_thickness = morphometry_files["lh_cortical_thickness"]
+    inputnode.inputs.rh_cortical_thickness = morphometry_files["rh_cortical_thickness"]
 
     workflow = Workflow(name=name)
 
@@ -552,7 +557,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             dcan_qc=dcan_qc,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
-            morphometry_files=morphometry_files,
+            morphometry_files=morph_file_types,
             process_surfaces=process_surfaces,
             output_dir=output_dir,
             t1w_available=t1w_available,
@@ -603,23 +608,23 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])
             # fmt:on
 
-        if morphometry_files:
+        if morph_file_types:
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 output_dir=output_dir,
-                files_to_parcellate=morphometry_files,
+                files_to_parcellate=morph_file_types,
                 min_coverage=min_coverage,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 name="parcellate_surfaces_wf",
             )
 
-            for morphometry_file in morphometry_files:
+            for morph_file_type in morph_file_types:
                 # fmt:off
                 workflow.connect([
                     (inputnode, parcellate_surfaces_wf, [
-                        (f"lh_{morphometry_file}", f"inputnode.lh_{morphometry_file}"),
-                        (f"rh_{morphometry_file}", f"inputnode.rh_{morphometry_file}"),
+                        (f"lh_{morph_file_type}", f"inputnode.lh_{morph_file_type}"),
+                        (f"rh_{morph_file_type}", f"inputnode.rh_{morph_file_type}"),
                     ]),
                 ])
                 # fmt:oon

@@ -5,6 +5,7 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+import os
 import warnings
 
 import nibabel as nb
@@ -349,94 +350,12 @@ def collect_data(
     return layout, subj_data
 
 
-def _find_standard_space_surfaces(layout, participant_label, queries, require_all):
-    """Find standard-space surfaces for a given set of queries.
-
-    Parameters
-    ----------
-    layout : BIDSLayout
-    participant_label : str
-    queries : dict of dict
-
-    Returns
-    -------
-    surface_files_found : bool
-    standard_space_surfaces : bool
-    out_surface_files : dict
-    """
-    standard_space_surfaces = require_all
-    for name, query in queries.items():
-        # First, try to grab the first base surface file in standard space.
-        # If it's not available, switch to native T1w-space data.
-        temp_files = layout.get(
-            return_type="file",
-            subject=participant_label,
-            datatype="anat",
-            space="fsLR",
-            den="32k",
-            **query,
-        )
-        if len(temp_files) == 0:
-            LOGGER.info("No standard-space surfaces found.")
-            standard_space_surfaces = False if require_all else standard_space_surfaces
-        elif temp_files:
-            standard_space_surfaces = True if not require_all else standard_space_surfaces
-            if len(temp_files) > 1:
-                LOGGER.warning(f"{name}: More than one standard-space surface found.")
-
-    # Now that we know if there are standard-space surfaces available, we can grab the files.
-    if standard_space_surfaces:
-        query_extras = {
-            "space": "fsLR",
-            "den": "32k",
-        }
-    else:
-        query_extras = {
-            "space": None,
-        }
-
-    surface_files = {
-        dtype: sorted(
-            layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                **query,
-                **query_extras,
-            )
-        )
-        for dtype, query in queries.items()
-    }
-
-    out_surface_files = {}
-    surface_files_found = require_all
-    for dtype, surface_files_ in surface_files.items():
-        if len(surface_files_) == 1:
-            surface_files_found = True if not require_all else surface_files_found
-            out_surface_files[dtype] = surface_files_[0]
-
-        elif len(surface_files_) == 0:
-            surface_files_found = False if require_all else surface_files_found
-            out_surface_files[dtype] = None
-
-        else:
-            surface_files_found = False if require_all else surface_files_found
-            surface_str = "\n\t".join(surface_files_)
-            raise ValueError(
-                "More than one surface found.\n"
-                f"Surfaces found:\n\t{surface_str}\n"
-                f"Query: {queries[dtype]}"
-            )
-
-    return surface_files_found, standard_space_surfaces, out_surface_files
-
-
 @fill_doc
-def collect_surface_data(layout, participant_label):
+def collect_mesh_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
-    If these standard-space surface files aren't available, it will default to native T1w-space
+    If these standard-space surface files aren't available, it will default to fsnative-space
     files.
 
     Parameters
@@ -449,152 +368,190 @@ def collect_surface_data(layout, participant_label):
     -------
     mesh_available : :obj:`bool`
         True if surface mesh files (pial and smoothwm) were found. False if they were not.
-    morphometry_files : :obj:`list` of :obj:`str`
-        List of surface morphometry files (e.g., cortical thickness) already in fsLR space.
-        These files will be (1) parcellated and (2) passed along, without modification, to the
-        XCP-D derivatives.
     standard_space_mesh : :obj:`bool`
         True if standard-space (fsLR) surface mesh files were found. False if they were not.
-    surface_files : :obj:`dict`
+    mesh_files : :obj:`dict`
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
     """
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    mesh_queries = {
-        "lh_pial_surf": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
-        },
-        "rh_pial_surf": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
-        },
-        "lh_wm_surf": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": ["smoothwm", "white"],
-            "extension": ".surf.gii",
-        },
-        "rh_wm_surf": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": ["smoothwm", "white"],
-            "extension": ".surf.gii",
-        },
+    queries = {
+        "pial_surf": "pial",
+        "wm_surf": ["smoothwm", "white"],
+    }
+    query_extras = {
+        "space": "fsLR",
+        "den": "32k",
     }
 
-    mesh_available, standard_space_mesh, mesh_files = _find_standard_space_surfaces(
-        layout,
-        participant_label,
-        mesh_queries,
-        require_all=True,
+    standard_space_mesh = True
+    for name, suffixes in queries.items():
+        # First, try to grab the first base surface file in standard space.
+        # If it's not available, switch to native T1w-space data.
+        for hemisphere in ["L", "R"]:
+            temp_files = layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                hemi=hemisphere,
+                desc=None,
+                suffix=suffixes,
+                extension=".surf.gii",
+                **query_extras,
+            )
+            if len(temp_files) == 0:
+                LOGGER.info("No standard-space surfaces found.")
+                standard_space_mesh = False
+            elif len(temp_files) > 1:
+                LOGGER.warning(f"{name}: More than one standard-space surface found.")
+
+    # Now that we know if there are standard-space surfaces available, we can grab the files.
+    if not standard_space_mesh:
+        query_extras = {
+            "space": None,
+        }
+
+    initial_mesh_files = {}
+    for name, suffixes in queries.items():
+        for hemisphere in ["L", "R"]:
+            key = f"{hemisphere.lower()}h_{name}"
+            initial_mesh_files[key] = layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                hemi=hemisphere,
+                desc=None,
+                suffix=suffixes,
+                extension=".surf.gii",
+                **query_extras,
+            )
+
+    mesh_files = {}
+    mesh_available = True
+    for dtype, surface_files_ in initial_mesh_files.items():
+        if len(surface_files_) == 1:
+            mesh_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            mesh_available = False
+            mesh_files[dtype] = None
+
+        else:
+            mesh_available = False
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {queries[dtype]}"
+            )
+
+    LOGGER.log(
+        25,
+        f"Collected mesh files:\n{yaml.dump(mesh_files, default_flow_style=False, indent=4)}",
     )
 
-    shape_queries = {
-        "lh_sulcal_depth": {
-            "hemi": "L",
+    return mesh_available, standard_space_mesh, mesh_files
+
+
+@fill_doc
+def collect_morphometry_data(layout, participant_label):
+    """Collect morphometry surface files from preprocessed derivatives.
+
+    This function will look for fsLR-space, 32k-resolution morphometry files.
+
+    Parameters
+    ----------
+    %(layout)s
+    participant_label : :obj:`str`
+        Subject ID.
+
+    Returns
+    -------
+    morph_file_types : :obj:`list` of :obj:`str`
+        List of surface morphometry file types (e.g., cortical thickness) already in fsLR space.
+        These files will be (1) parcellated and (2) passed along, without modification, to the
+        XCP-D derivatives.
+    morphometry_files : :obj:`dict`
+        Dictionary of surface file identifiers and their paths.
+        If the surface files weren't found, then the paths will be Nones.
+    """
+    queries = {
+        "sulcal_depth": {
             "desc": None,
             "suffix": "sulc",
             "extension": ".shape.gii",
         },
-        "rh_sulcal_depth": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "sulc",
-            "extension": ".shape.gii",
-        },
-        "lh_sulcal_curv": {
-            "hemi": "L",
+        "sulcal_curv": {
             "desc": None,
             "suffix": "curv",
             "extension": ".shape.gii",
         },
-        "rh_sulcal_curv": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "curv",
-            "extension": ".shape.gii",
-        },
-        "lh_cortical_thickness": {
-            "hemi": "L",
+        "cortical_thickness": {
             "desc": None,
             "suffix": "thickness",
             "extension": ".shape.gii",
         },
-        "rh_cortical_thickness": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "thickness",
-            "extension": ".shape.gii",
-        },
-        "lh_cortical_thickness_corr": {
-            "hemi": "L",
+        "cortical_thickness_corr": {
             "desc": "corrected",
             "suffix": "thickness",
             "extension": ".shape.gii",
         },
-        "rh_cortical_thickness_corr": {
-            "hemi": "R",
-            "desc": "corrected",
-            "suffix": "thickness",
-            "extension": ".shape.gii",
-        },
-        "lh_myelin": {
-            "hemi": "L",
+        "myelin": {
             "desc": None,
             "suffix": "myelinw",
             "extension": ".func.gii",
         },
-        "rh_myelin": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "myelinw",
-            "extension": ".func.gii",
-        },
-        "lh_myelin_smoothed": {
-            "hemi": "L",
-            "desc": "smoothed",
-            "suffix": "myelinw",
-            "extension": ".func.gii",
-        },
-        "rh_myelin_smoothed": {
-            "hemi": "R",
+        "myelin_smoothed": {
             "desc": "smoothed",
             "suffix": "myelinw",
             "extension": ".func.gii",
         },
     }
 
-    _, _, shape_files = _find_standard_space_surfaces(
-        layout,
-        participant_label,
-        shape_queries,
-        require_all=False,
-    )
-    morphometry_files = [k for k, v in shape_files.items() if v is not None]
-    morphometry_files_reduced = [f for f in morphometry_files if f.startswith("lh_")]
-    morphometry_files_reduced = [
-        f for f in morphometry_files_reduced if f.replace("lh_", "rh_") in morphometry_files
-    ]
-    morphometry_files_reduced = [f.replace("lh_", "") for f in morphometry_files_reduced]
+    morphometry_files = {}
+    for name, query in queries.items():
+        for hemisphere in ["L", "R"]:
+            # First, try to grab the first base surface file in standard space.
+            # If it's not available, switch to native T1w-space data.
+            files = layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                space="fsLR",
+                den="32k",
+                hemi=hemisphere,
+                **query,
+            )
+            key = f"{hemisphere.lower()}h_{name}"
+            if len(files) == 1:
+                morphometry_files[key] = files[0]
+            elif len(files) > 1:
+                surface_str = "\n\t".join(files)
+                raise ValueError(
+                    f"More than one {key} found.\n"
+                    f"Surfaces found:\n\t{surface_str}\n"
+                    f"Query: {query}"
+                )
+            else:
+                morphometry_files[key] = None
 
-    surface_files = {**mesh_files, **shape_files}
+    # Identify the base filetypes (e.g., myelin_smoothed) of the found morphometry files.
+    mf_list = [k for k, v in morphometry_files.items() if v is not None]
+    morph_file_types = [f for f in mf_list if f.startswith("lh_")]
+    morph_file_types = [f for f in morph_file_types if f.replace("lh_", "rh_") in mf_list]
+    morph_file_types = [f.replace("lh_", "") for f in morph_file_types]
 
     LOGGER.log(
         25,
         (
-            f"Collected surface data:\n"
-            f"{yaml.dump(surface_files, default_flow_style=False, indent=4)}"
+            f"Collected morphometry files:\n"
+            f"{yaml.dump(morphometry_files, default_flow_style=False, indent=4)}"
         ),
     )
 
-    return mesh_available, morphometry_files_reduced, standard_space_mesh, surface_files
+    return morph_file_types, morphometry_files
 
 
 @fill_doc
@@ -674,7 +631,7 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
     LOGGER.log(
         25,
         (
-            f"Collected run data for {bold_file}:\n"
+            f"Collected run data for {os.path.basename(bold_file)}:\n"
             f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
         ),
     )
@@ -822,11 +779,13 @@ def get_freesurfer_dir(fmri_dir):
 
     # for fMRIPrep/Nibabies versions >=20.2.1
     freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
+    print(freesurfer_paths)
     if len(freesurfer_paths) == 0:
         # for fMRIPrep/Nibabies versions <20.2.1
         freesurfer_paths = sorted(
             glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
         )
+        print(freesurfer_paths)
 
     if len(freesurfer_paths) == 1:
         freesurfer_path = freesurfer_paths[0]
