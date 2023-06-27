@@ -594,12 +594,14 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
             bids_file.path,
             strict=False,
             suffix="boldref",
+            extension=[".nii", ".nii.gz"],
         )
         run_data["boldmask"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             desc="brain",
             suffix="mask",
+            extension=[".nii", ".nii.gz"],
         )
         run_data["anat_to_native_xfm"] = layout.get_nearest(
             bids_file.path,
@@ -618,6 +620,7 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
             strict=False,
             space=allowed_nifti_spaces,
             suffix="boldref",
+            extension=[".nii", ".nii.gz"],
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
