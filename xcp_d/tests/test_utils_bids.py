@@ -117,6 +117,19 @@ def test_collect_data_nibabies(datasets):
         )
 
 
+def test_collect_mesh_data(datasets):
+    """Test collect_mesh_data."""
+    layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False, derivatives=True)
+    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    assert mesh_available is False
+    assert standard_space_mesh is False
+
+    layout = BIDSLayout(datasets["ds001419"], validate=False, derivatives=True)
+    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    assert mesh_available is True
+    assert standard_space_mesh is False
+
+
 def test_write_dataset_description(datasets, tmp_path_factory, caplog):
     """Test write_dataset_description."""
     tmpdir = tmp_path_factory.mktemp("test_write_dataset_description")
