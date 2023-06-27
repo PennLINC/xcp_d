@@ -88,7 +88,7 @@ maint = [
 all = ["xcp_d[doc,maint,tests]"]
 
 [project.scripts]
-xcp_d = "xcp_d.cli.run:main"
+xcp_d = "xcp_d.cli.run:_main"
 xcp_d-combineqc = "xcp_d.cli.aggregate_qc:main"
 
 #

@@ -503,7 +503,8 @@ def _main(args=None):
 
     set_start_method("forkserver")
 
-    main(args=args)
+    errno, failed_reports = main(args=args)
+    sys.exit(int((errno + failed_reports) > 0))
 
 
 def main(args=None):
@@ -666,7 +667,7 @@ def main(args=None):
             sentry_sdk.capture_message(
                 f"Report generation failed for {failed_reports} subjects", level="error"
             )
-        sys.exit(int((errno + failed_reports) > 0))
+        return errno, failed_reports
 
 
 def _validate_parameters(opts, build_log):
