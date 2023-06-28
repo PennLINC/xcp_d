@@ -40,7 +40,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: pnc-01
+          key: pnc-02
       - run: *runinstall
       - run:
           name: Download pnc test data
@@ -48,7 +48,7 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data pnc
       - save_cache:
-          key: pnc-01
+          key: pnc-02
           paths:
             - /src/xcp_d/.circleci/data/pnc
     # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
@@ -132,7 +132,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: pnc-01
+          key: pnc-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -194,7 +194,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: pnc-01
+          key: pnc-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -225,7 +225,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: pnc-01
+          key: pnc-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -256,7 +256,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: pnc-01
+          key: pnc-02
       - restore_cache:
           key: fmriprepwithoutfreesurfer-03
       - restore_cache:

@@ -152,16 +152,16 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.nii.gz",
         "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.json",
         (
-            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin2009cAsym_res-2_desc-preproc_"
+            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_res-2_desc-preproc_"
             "T1w.nii.gz"
         ),
         (
-            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin2009cAsym_res-2_desc-preproc_"
+            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_res-2_desc-preproc_"
             "T1w.json"
         ),
-        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5",
         "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
-        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
+        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
+        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
         "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
     ]
     for file_to_copy in files_to_copy:
