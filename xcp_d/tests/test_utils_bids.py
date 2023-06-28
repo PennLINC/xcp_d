@@ -13,7 +13,7 @@ def test_collect_participants(datasets):
 
     This also covers BIDSError and BIDSWarning.
     """
-    bids_dir = datasets["ds001419"]
+    bids_dir = datasets["pnc"]
     with pytest.raises(xbids.BIDSError, match="Could not find participants"):
         xbids.collect_participants(bids_dir, participant_label="fail")
 
@@ -30,9 +30,9 @@ def test_collect_participants(datasets):
     assert found_labels == ["01"]
 
 
-def test_collect_data_ds001419(datasets):
+def test_collect_data_pnc(datasets):
     """Test the collect_data function."""
-    bids_dir = datasets["ds001419"]
+    bids_dir = datasets["pnc"]
 
     # NIFTI workflow, but also get a BIDSLayout
     layout, subj_data = xbids.collect_data(
@@ -124,7 +124,7 @@ def test_collect_mesh_data(datasets):
     assert mesh_available is False
     assert standard_space_mesh is False
 
-    layout = BIDSLayout(datasets["ds001419"], validate=False, derivatives=True)
+    layout = BIDSLayout(datasets["pnc"], validate=False, derivatives=True)
     mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
     assert mesh_available is True
     assert standard_space_mesh is False
@@ -141,7 +141,7 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
     assert not os.path.isfile(dset_description)
 
     # It will work when we give it a real fmri_dir.
-    fmri_dir = datasets["ds001419"]
+    fmri_dir = datasets["pnc"]
     xbids.write_dataset_description(fmri_dir, tmpdir)
     assert os.path.isfile(dset_description)
 
@@ -166,11 +166,11 @@ def test_get_preproc_pipeline_info(datasets):
     """Test get_preproc_pipeline_info."""
     input_types = ["fmriprep", "nibabies", "hcp", "dcan"]
     for input_type in input_types:
-        info_dict = xbids.get_preproc_pipeline_info(input_type, datasets["ds001419"])
+        info_dict = xbids.get_preproc_pipeline_info(input_type, datasets["pnc"])
         assert "references" in info_dict.keys()
 
     with pytest.raises(ValueError, match="Unsupported input_type"):
-        xbids.get_preproc_pipeline_info("fail", datasets["ds001419"])
+        xbids.get_preproc_pipeline_info("fail", datasets["pnc"])
 
     with pytest.raises(FileNotFoundError, match="Dataset description DNE"):
         xbids.get_preproc_pipeline_info("fmriprep", ".")
@@ -200,7 +200,7 @@ def test_get_freesurfer_dir(datasets):
         xbids.get_freesurfer_dir(datasets["nibabies"])
     os.rmdir(tmp_fs_dir)
 
-    fs_dir = xbids.get_freesurfer_dir(datasets["ds001419"])
+    fs_dir = xbids.get_freesurfer_dir(datasets["pnc"])
     assert os.path.isdir(fs_dir)
 
     sphere_file = xbids.get_freesurfer_sphere(fs_dir, "01", "L")
@@ -215,12 +215,12 @@ def test_get_freesurfer_dir(datasets):
 
 def test_get_entity(datasets):
     """Test get_entity."""
-    fname = os.path.join(datasets["ds001419"], "sub-01", "anat", "sub-01_desc-preproc_T1w.nii.gz")
+    fname = os.path.join(datasets["pnc"], "sub-01", "anat", "sub-01_desc-preproc_T1w.nii.gz")
     entity = xbids.get_entity(fname, "space")
     assert entity == "T1w"
 
     fname = os.path.join(
-        datasets["ds001419"],
+        datasets["pnc"],
         "sub-01",
         "func",
         "sub-01_task-rest_desc-preproc_bold.nii.gz",
@@ -233,7 +233,7 @@ def test_get_entity(datasets):
     assert entity is None
 
     fname = os.path.join(
-        datasets["ds001419"],
+        datasets["pnc"],
         "sub-01",
         "fmap",
         "sub-01_fmapid-auto00001_desc-coeff1_fieldmap.nii.gz",

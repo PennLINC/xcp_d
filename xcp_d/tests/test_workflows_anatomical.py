@@ -12,7 +12,7 @@ from xcp_d.workflows import anatomical
 def surface_files(datasets, tmp_path_factory):
     """Collect real and fake surface files to test the anatomical workflow."""
     tmpdir = tmp_path_factory.mktemp("surface_files")
-    anat_dir = os.path.join(datasets["ds001419"], "sub-01", "anat")
+    anat_dir = os.path.join(datasets["pnc"], "sub-01", "anat")
 
     files = {
         "native_lh_pial": os.path.join(anat_dir, "sub-01_hemi-L_pial.surf.gii"),
@@ -47,7 +47,7 @@ def test_warp_surfaces_to_template_wf(
     subject_id = "01"
 
     wf = anatomical.init_warp_surfaces_to_template_wf(
-        fmri_dir=datasets["ds001419"],
+        fmri_dir=datasets["pnc"],
         subject_id=subject_id,
         output_dir=tmpdir,
         omp_nthreads=1,

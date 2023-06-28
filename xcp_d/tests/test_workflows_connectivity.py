@@ -201,7 +201,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     calculated_correlations[bad_parcel_idx, :] = np.nan
     calculated_correlations[:, bad_parcel_idx] = np.nan
 
-    # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
+    # pnc data doesn't have complete coverage, so we must allow NaNs here.
     assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
 
 
@@ -337,7 +337,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
     # The number of NaNs for a good parcel's correlations should match the number of bad parcels.
     assert np.sum(np.isnan(first_good_parcel_corrs)) == bad_parcels_idx.size
 
-    # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
+    # pnc data doesn't have complete coverage, so we must allow NaNs here.
     if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations)):
         mismatch_idx = np.vstack(
             np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
