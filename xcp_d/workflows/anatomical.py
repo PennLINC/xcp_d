@@ -153,9 +153,7 @@ def init_postprocess_anat_wf(
         run_without_submitting=False,
     )
 
-    # fmt:off
     workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "source_file")])])
-    # fmt:on
 
     if t1w_available:
         ds_t1w_std = pe.Node(
@@ -200,19 +198,13 @@ def init_postprocess_anat_wf(
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
         # workaround in place.
-        # fmt:off
         workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "in_file")])])
-        # fmt:on
 
         if t1w_available:
-            # fmt:off
             workflow.connect([(inputnode, ds_t1w_std, [("t1w", "in_file")])])
-            # fmt:on
 
         if t2w_available:
-            # fmt:off
             workflow.connect([(inputnode, ds_t2w_std, [("t2w", "in_file")])])
-            # fmt:on
 
     else:
         warp_anat_dseg_to_template = pe.Node(

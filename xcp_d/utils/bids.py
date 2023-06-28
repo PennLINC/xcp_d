@@ -459,7 +459,7 @@ def collect_mesh_data(layout, participant_label):
 def collect_morphometry_data(layout, participant_label):
     """Collect morphometry surface files from preprocessed derivatives.
 
-    This function will look for fsLR-space, 32k-resolution morphometry files.
+    This function will look for fsLR-space, 91k-resolution morphometry CIFTI files.
 
     Parameters
     ----------
@@ -506,8 +506,6 @@ def collect_morphometry_data(layout, participant_label):
 
     morphometry_files = {}
     for name, query in queries.items():
-        # First, try to grab the first base surface file in standard space.
-        # If it's not available, switch to native T1w-space data.
         files = layout.get(
             return_type="file",
             subject=participant_label,
