@@ -23,12 +23,12 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with nifti options."""
     test_name = "test_pnc_nifti"
 
-    dataset_dir = download_test_data("pnc-fmriprep", data_dir)
+    dataset_dir = download_test_data("pnc", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "pnc-fmriprep_nifti_filter.json")
+    filter_file = os.path.join(test_data_dir, "pnc_nifti_filter.json")
 
     parameters = [
         dataset_dir,
@@ -83,12 +83,12 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with cifti options."""
     test_name = "test_pnc_cifti"
 
-    dataset_dir = download_test_data("pnc-fmriprep", data_dir)
+    dataset_dir = download_test_data("pnc", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "pnc-fmriprep_cifti_filter.json")
+    filter_file = os.path.join(test_data_dir, "pnc_cifti_filter.json")
 
     parameters = [
         dataset_dir,
@@ -142,7 +142,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with cifti options and a simulated T2w image."""
     test_name = "test_pnc_cifti_t2wonly"
 
-    dataset_dir = download_test_data("pnc-fmriprep", data_dir)
+    dataset_dir = download_test_data("pnc", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
@@ -164,7 +164,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
             shutil.copyfile(os.path.join(anat_dir, file_to_copy), t2w_file)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "pnc-fmriprep_cifti_t2wonly_filter.json")
+    filter_file = os.path.join(test_data_dir, "pnc_cifti_t2wonly_filter.json")
 
     parameters = [
         dataset_dir,
