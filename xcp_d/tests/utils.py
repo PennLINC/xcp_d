@@ -43,7 +43,11 @@ def download_test_data(dset, data_dir=None):
     if not data_dir:
         data_dir = os.path.join(os.path.dirname(get_test_data_path()), "test_data")
 
-    out_dir = os.path.join(data_dir, dset)
+    dset_name = dset
+    if dset == "ds001419":
+        dset_name = "ds001419-fmriprep"
+
+    out_dir = os.path.join(data_dir, dset_name)
 
     if os.path.isdir(out_dir):
         LOGGER.info(
