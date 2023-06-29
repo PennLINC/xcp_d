@@ -9,11 +9,11 @@ from xcp_d.tests.utils import chdir
 from xcp_d.utils import modified_data
 
 
-def test_cast_cifti_to_int16(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_cast_cifti_to_int16(pnc_data, tmp_path_factory):
     """Ensure that cast_cifti_to_int16 writes out an int16 file."""
     tmpdir = tmp_path_factory.mktemp("test_cast_cifti_to_int16")
 
-    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+    cifti_file = pnc_data["cifti_file"]
     orig_cifti_img = nb.load(cifti_file)
     assert isinstance(orig_cifti_img, nb.Cifti2Image)
     assert orig_cifti_img.nifti_header.get_data_dtype() != np.int16

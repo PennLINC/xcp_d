@@ -70,9 +70,9 @@ def test_modify_pngs_scene_template(tmp_path_factory):
     assert os.path.isfile(scene_file)
 
 
-def test_get_n_frames(fmriprep_with_freesurfer_data):
+def test_get_n_frames(pnc_data):
     """Test get_n_frames."""
-    anat_file = fmriprep_with_freesurfer_data["brain_mask_file"]
+    anat_file = pnc_data["brain_mask_file"]
     frame_numbers = execsummary.get_n_frames(anat_file)
     assert len(frame_numbers) == 194
 

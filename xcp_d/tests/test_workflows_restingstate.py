@@ -11,7 +11,7 @@ from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows import restingstate
 
 
-def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_nifti_alff(pnc_data, tmp_path_factory):
     """Test ALFF computations as done for Niftis.
 
     Get the FFT of a Nifti, add to the amplitude of its lower frequencies
@@ -21,8 +21,8 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     tempdir = tmp_path_factory.mktemp("test_nifti_alff_01")
 
     # Get the file names
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    bold_file = pnc_data["nifti_file"]
+    bold_mask = pnc_data["brain_mask_file"]
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
@@ -89,15 +89,15 @@ def test_nifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert new_alff_data_mean > original_alff_data_mean
 
 
-def test_cifti_alff(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_cifti_alff(pnc_data, tmp_path_factory):
     """Test ALFF computations as done for Ciftis.
 
     Get the FFT of a Cifti, add to the amplitude of its lower frequencies
     and confirm the ALFF after addition to lower frequencies
     has changed in the expected direction.
     """
-    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    bold_file = pnc_data["cifti_file"]
+    bold_mask = pnc_data["brain_mask_file"]
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
@@ -177,7 +177,7 @@ def _add_noise(image):
     return noisy_img
 
 
-def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_nifti_reho(pnc_data, tmp_path_factory):
     """Test Nifti ReHo Computation.
 
     Confirm that ReHo decreases after adding noise to a
@@ -186,8 +186,8 @@ def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     tempdir = tmp_path_factory.mktemp("test_nifti_reho")
 
     # Get the names of the files
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    bold_file = pnc_data["nifti_file"]
+    bold_mask = pnc_data["brain_mask_file"]
 
     # Set up and run the ReHo wf in a tempdir
     reho_wf = restingstate.init_reho_nifti_wf(
@@ -229,7 +229,7 @@ def test_nifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert new_reho_mean < original_reho_mean
 
 
-def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_cifti_reho(pnc_data, tmp_path_factory):
     """Test Cifti ReHo Computation.
 
     Confirm that ReHo decreases after adding noise to a
@@ -237,7 +237,7 @@ def test_cifti_reho(fmriprep_with_freesurfer_data, tmp_path_factory):
     """
     # Get the names of the files
     tempdir = tmp_path_factory.mktemp("test_cifti_reho")
-    source_file = fmriprep_with_freesurfer_data["cifti_file"]
+    source_file = pnc_data["cifti_file"]
 
     # Create a copy of the BOLD file to control the filename
     orig_bold_file = os.path.join(tempdir, "original.dtseries.nii")

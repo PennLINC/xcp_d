@@ -9,12 +9,12 @@ from nilearn.glm.first_level import make_first_level_design_matrix
 from xcp_d.utils.confounds import describe_regression, load_confound_matrix
 
 
-def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_custom_confounds(pnc_data, tmp_path_factory):
     """Ensure that custom confounds can be loaded without issue."""
     tempdir = tmp_path_factory.mktemp("test_custom_confounds")
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
-    confounds_json = fmriprep_with_freesurfer_data["confounds_json"]
+    bold_file = pnc_data["nifti_file"]
+    confounds_file = pnc_data["confounds_file"]
+    confounds_json = pnc_data["confounds_json"]
 
     N_VOLUMES = 60
     TR = 2.5
@@ -118,11 +118,11 @@ def _check_describe_regression_result(params, match):
     return result
 
 
-def test_load_confounds(fmriprep_with_freesurfer_data):
+def test_load_confounds(pnc_data):
     """Ensure that xcp_d loads the right confounds."""
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
-    confounds_json = fmriprep_with_freesurfer_data["confounds_json"]
+    bold_file = pnc_data["nifti_file"]
+    confounds_file = pnc_data["confounds_file"]
+    confounds_json = pnc_data["confounds_json"]
 
     N_VOLUMES = 60
 

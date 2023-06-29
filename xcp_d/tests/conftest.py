@@ -80,7 +80,7 @@ def ds001419_data(datasets):
 
 
 @pytest.fixture(scope="session")
-def fmriprep_with_freesurfer_data(datasets):
+def pnc_data(datasets):
     """Collect a list of files from pnc that will be used by misc. tests."""
     subj_dir = os.path.join(datasets["pnc"], "sub-1648798153", "ses-PNC1")
     func_dir = os.path.join(subj_dir, "func")
