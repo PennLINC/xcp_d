@@ -96,15 +96,15 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
         name="filter_out_undefined",
     )
 
-    # fmt:off
     workflow.connect([(collect_files, filter_out_undefined, [("out", "inlist")])])
-    # fmt:on
 
-    ds_outputs = pe.MapNode(
+    ds_copied_outputs = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
+            check_hdr=False,
+            data_dtype=None,
         ),
-        name="ds_outputs",
+        name="ds_copied_outputs",
         run_without_submitting=True,
         mem_gb=1,
         iterfield=["in_file", "source_file"],
@@ -112,7 +112,7 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
 
     # fmt:off
     workflow.connect([
-        (filter_out_undefined, ds_outputs, [
+        (filter_out_undefined, ds_copied_outputs, [
             ("outlist", "in_file"),
             ("outlist", "source_file"),
         ]),
