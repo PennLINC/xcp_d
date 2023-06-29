@@ -2,7 +2,7 @@
     "bold": {
         "task": ["rest"],
         "run": [null],
-        "space": "MNI152NLin6Asym",
-        "res": "2"
+        "space": "fsLR",
+        "den": "91k"
     }
 }

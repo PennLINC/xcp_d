@@ -68,6 +68,17 @@ def datasets(data_dir):
     return dsets
 
 
+def ds001419_data(datasets):
+    """Collect a list of files from ds001419 that will be used by misc. tests."""
+    subj_dir = os.path.join(datasets["pnc"], "sub-01")
+    func_dir = os.path.join(subj_dir, "func")
+    anat_dir = os.path.join(subj_dir, "anat")
+    files["gifti_file"] = os.path.join(
+        func_dir,
+        "sub-1648798153_task-rest_hemi-L_space-fsaverage5_bold.func.gii",
+    )
+
+
 @pytest.fixture(scope="session")
 def fmriprep_with_freesurfer_data(datasets):
     """Collect a list of files from pnc that will be used by misc. tests."""
@@ -78,15 +89,14 @@ def fmriprep_with_freesurfer_data(datasets):
     files = {}
     files["nifti_file"] = os.path.join(
         func_dir,
-        "sub-1648798153_task-rest_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz",
+        (
+            "sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_"
+            "desc-preproc_bold.nii.gz"
+        ),
     )
     files["cifti_file"] = os.path.join(
         func_dir,
-        "sub-1648798153_task-rest_space-fsLR_den-91k_bold.dtseries.nii",
-    )
-    files["gifti_file"] = os.path.join(
-        func_dir,
-        "sub-1648798153_task-rest_hemi-L_space-fsaverage5_bold.func.gii",
+        "sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_bold.dtseries.nii",
     )
     files["brain_mask_file"] = os.path.join(
         func_dir,
