@@ -98,7 +98,7 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=gsr",
+        "--nuisance-regressors=36P",
         "--despike",
         "--dummy-scans=4",
         "--fd-thresh=0.2",

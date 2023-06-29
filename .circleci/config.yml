@@ -35,7 +35,7 @@ jobs:
       - checkout
       - run: *runinstall
 
-  download_data_ds001419-fmriprep:
+  download_data_ds001419:
     <<: *dockersetup
     steps:
       - checkout
@@ -169,7 +169,7 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_nifti/xcp_d/
 
-  nifti_with_freesurfer:
+  pnc_nifti:
     <<: *dockersetup
     steps:
       - checkout
@@ -177,8 +177,8 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_with_freesurfer\]' )" != "" ]]; then
-              echo "Skipping nifti_with_freesurfer build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_nifti\]' )" != "" ]]; then
+              echo "Skipping pnc_nifti build"
               circleci step halt
             fi
       - restore_cache:
@@ -231,7 +231,7 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_nibabies/xcp_d/
 
-  cifti_with_freesurfer:
+  pnc_cifti:
     <<: *dockersetup
     steps:
       - checkout
@@ -239,8 +239,8 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
-              echo "Skipping cifti_with_freesurfer build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_cifti\]' )" != "" ]]; then
+              echo "Skipping pnc_cifti build"
               circleci step halt
             fi
       - restore_cache:
@@ -262,7 +262,7 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_pnc_cifti/xcp_d/
 
-  cifti_with_freesurfer_t2wonly:
+  pnc_cifti_t2wonly:
     <<: *dockersetup
     steps:
       - checkout
@@ -270,8 +270,8 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer_t2wonly\]' )" != "" ]]; then
-              echo "Skipping cifti_with_freesurfer_t2wonly build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_cifti_t2wonly\]' )" != "" ]]; then
+              echo "Skipping pnc_cifti_t2wonly build"
               circleci step halt
             fi
       - restore_cache:
@@ -403,7 +403,7 @@ workflows:
             tags:
               only: /.*/
 
-      - download_data_ds001419-fmriprep:
+      - download_data_ds001419:
           requires:
             - build
           filters:
@@ -431,7 +431,7 @@ workflows:
             tags:
               only: /.*/
 
-      - cifti_with_freesurfer:
+      - pnc_cifti:
           requires:
             - download_data_pnc
           filters:
@@ -442,7 +442,7 @@ workflows:
             tags:
               only: /.*/
 
-      - cifti_with_freesurfer_t2wonly:
+      - pnc_cifti_t2wonly:
           requires:
             - download_data_pnc
           filters:
@@ -453,7 +453,7 @@ workflows:
             tags:
               only: /.*/
 
-      - nifti_with_freesurfer:
+      - pnc_nifti:
           requires:
             - download_data_pnc
           filters:
@@ -466,7 +466,7 @@ workflows:
 
       - ds001419_nifti:
           requires:
-            - download_data_ds001419-fmriprep
+            - download_data_ds001419
           filters:
             branches:
               ignore:
@@ -501,7 +501,7 @@ workflows:
           requires:
             - download_data_pnc
             - download_data_fmriprepwithoutfreesurfer
-            - ds001419_nifti
+            - download_data_ds001419
           filters:
             branches:
               ignore:
@@ -512,10 +512,10 @@ workflows:
 
       - merge_coverage:
           requires:
-            - cifti_with_freesurfer
-            - cifti_with_freesurfer_t2wonly
+            - pnc_cifti
+            - pnc_cifti_t2wonly
             - ds001419_nifti
-            - nifti_with_freesurfer
+            - pnc_nifti
             - nibabies
             - nifti_without_freesurfer
             - pytests
@@ -530,11 +530,11 @@ workflows:
       - deployable:
           requires:
             - ds001419_nifti
-            - nifti_with_freesurfer
+            - pnc_nifti
             - nifti_without_freesurfer
             - nibabies
-            - cifti_with_freesurfer
-            - cifti_with_freesurfer_t2wonly
+            - pnc_cifti
+            - pnc_cifti_t2wonly
             - pytests
           filters:
             branches:
