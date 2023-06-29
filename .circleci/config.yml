@@ -138,7 +138,7 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/xcp_d/
 
-  ds001419_nifti_with_freesurfer:
+  ds001419_nifti:
     <<: *dockersetup
     steps:
       - checkout
@@ -146,8 +146,8 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ds001419_nifti_with_freesurfer\]' )" != "" ]]; then
-              echo "Skipping ds001419_nifti_with_freesurfer build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ds001419_nifti\]' )" != "" ]]; then
+              echo "Skipping ds001419_nifti build"
               circleci step halt
             fi
       - restore_cache:
@@ -464,7 +464,7 @@ workflows:
             tags:
               only: /.*/
 
-      - ds001419_nifti_with_freesurfer:
+      - ds001419_nifti:
           requires:
             - download_data_ds001419-fmriprep
           filters:
@@ -501,7 +501,7 @@ workflows:
           requires:
             - download_data_pnc
             - download_data_fmriprepwithoutfreesurfer
-            - ds001419_nifti_with_freesurfer
+            - ds001419_nifti
           filters:
             branches:
               ignore:
@@ -514,7 +514,7 @@ workflows:
           requires:
             - cifti_with_freesurfer
             - cifti_with_freesurfer_t2wonly
-            - ds001419_nifti_with_freesurfer
+            - ds001419_nifti
             - nifti_with_freesurfer
             - nibabies
             - nifti_without_freesurfer
@@ -529,7 +529,7 @@ workflows:
 
       - deployable:
           requires:
-            - ds001419_nifti_with_freesurfer
+            - ds001419_nifti
             - nifti_with_freesurfer
             - nifti_without_freesurfer
             - nibabies
