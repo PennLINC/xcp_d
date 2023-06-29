@@ -102,7 +102,6 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
         DerivativesDataSink(
             base_directory=output_dir,
             check_hdr=False,
-            data_dtype=None,
         ),
         name="ds_copied_outputs",
         run_without_submitting=True,
