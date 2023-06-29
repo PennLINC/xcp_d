@@ -46,7 +46,7 @@ jobs:
           name: Download ds001419-fmriprep test data
           command: |
             cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data ds001419-fmriprep
+            python get_data.py $PWD/data ds001419
       - save_cache:
           key: ds001419-fmriprep-07
           paths:
