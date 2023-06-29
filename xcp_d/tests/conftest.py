@@ -59,6 +59,7 @@ def output_dir(request):
 def datasets(data_dir):
     """Locate downloaded datasets."""
     dsets = {}
+    dsets["ds001419"] = os.path.join(data_dir, "ds001419")
     dsets["pnc"] = os.path.join(data_dir, "pnc_fmriprep")
     dsets["nibabies"] = os.path.join(data_dir, "nibabies/derivatives/nibabies")
     dsets["fmriprep_without_freesurfer"] = os.path.join(
@@ -68,15 +69,63 @@ def datasets(data_dir):
     return dsets
 
 
+@pytest.fixture(scope="session")
 def ds001419_data(datasets):
     """Collect a list of files from ds001419 that will be used by misc. tests."""
-    subj_dir = os.path.join(datasets["pnc"], "sub-01")
+    subj_dir = os.path.join(datasets["ds001419"], "sub-01")
     func_dir = os.path.join(subj_dir, "func")
     anat_dir = os.path.join(subj_dir, "anat")
+
+    files = {}
+    files["nifti_file"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz",
+    )
+    files["cifti_file"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_space-fsLR_den-91k_bold.dtseries.nii",
+    )
     files["gifti_file"] = os.path.join(
         func_dir,
-        "sub-1648798153_task-rest_hemi-L_space-fsaverage5_bold.func.gii",
+        "sub-01_task-rest_hemi-L_space-fsaverage5_bold.func.gii",
     )
+    files["brain_mask_file"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz",
+    )
+    files["confounds_file"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_desc-confounds_timeseries.tsv",
+    )
+    files["confounds_json"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_desc-confounds_timeseries.json",
+    )
+    files["anat_to_template_xfm"] = os.path.join(
+        anat_dir,
+        "sub-01_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5",
+    )
+    files["template_to_anat_xfm"] = os.path.join(
+        anat_dir,
+        "sub-01_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
+    )
+    files["anat_to_native_xfm"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_from-T1w_to-scanner_mode-image_xfm.txt",
+    )
+    files["boldref"] = os.path.join(
+        func_dir,
+        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_boldref.nii.gz",
+    )
+    files["boldref_t1w"] = os.path.join(func_dir, "sub-01_task-rest_space-T1w_boldref.nii.gz")
+    files["t1w"] = os.path.join(anat_dir, "sub-01_desc-preproc_T1w.nii.gz")
+    files["t1w_mni"] = os.path.join(
+        anat_dir,
+        "sub-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.nii.gz",
+    )
+    files["anat_dseg"] = os.path.join(anat_dir, "sub-01_desc-aseg_dseg.nii.gz")
+
+    return files
 
 
 @pytest.fixture(scope="session")
