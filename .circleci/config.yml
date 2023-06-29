@@ -35,6 +35,25 @@ jobs:
       - checkout
       - run: *runinstall
 
+  download_data_ds001419-fmriprep:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: ds001419-fmriprep-07
+      - run: *runinstall
+      - run:
+          name: Download ds001419-fmriprep test data
+          command: |
+            cd /src/xcp_d/.circleci
+            python get_data.py $PWD/data ds001419-fmriprep
+      - save_cache:
+          key: ds001419-fmriprep-07
+          paths:
+            - /src/xcp_d/.circleci/data/ds001419-fmriprep
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
+
   download_data_pnc:
     <<: *dockersetup
     steps:
@@ -118,6 +137,37 @@ jobs:
             - .coverage.fmriprep_without_freesurfer
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/xcp_d/
+
+  ds001419_nifti_with_freesurfer:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ds001419_nifti_with_freesurfer\]' )" != "" ]]; then
+              echo "Skipping ds001419_nifti_with_freesurfer build"
+              circleci step halt
+            fi
+      - restore_cache:
+          key: ds001419-fmriprep-07
+      - run: *runinstall
+      - run:
+          name: Run full xcp_d on nifti with freesurfer
+          no_output_timeout: 1h
+          command: |
+            pytest -rP -o log_cli=true -m "ds001419_nifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc
+            # remove nifti files before uploading artifacts
+            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
+      - persist_to_workspace:
+          root: /src/coverage/
+          paths:
+            - .coverage.test_ds001419_nifti
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/out/test_ds001419_nifti/xcp_d/
 
   nifti_with_freesurfer:
     <<: *dockersetup
@@ -353,6 +403,13 @@ workflows:
             tags:
               only: /.*/
 
+      - download_data_ds001419-fmriprep:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+
       - download_data_pnc:
           requires:
             - build
@@ -407,6 +464,17 @@ workflows:
             tags:
               only: /.*/
 
+      - ds001419_nifti_with_freesurfer:
+          requires:
+            - download_data_ds001419-fmriprep
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
       - nibabies:
           requires:
             - download_data_nibabies
@@ -433,6 +501,7 @@ workflows:
           requires:
             - download_data_pnc
             - download_data_fmriprepwithoutfreesurfer
+            - ds001419_nifti_with_freesurfer
           filters:
             branches:
               ignore:
@@ -445,6 +514,7 @@ workflows:
           requires:
             - cifti_with_freesurfer
             - cifti_with_freesurfer_t2wonly
+            - ds001419_nifti_with_freesurfer
             - nifti_with_freesurfer
             - nibabies
             - nifti_without_freesurfer
@@ -459,6 +529,7 @@ workflows:
 
       - deployable:
           requires:
+            - ds001419_nifti_with_freesurfer
             - nifti_with_freesurfer
             - nifti_without_freesurfer
             - nibabies
