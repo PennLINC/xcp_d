@@ -59,7 +59,7 @@ def output_dir(request):
 def datasets(data_dir):
     """Locate downloaded datasets."""
     dsets = {}
-    dsets["ds001419"] = os.path.join(data_dir, "ds001419")
+    dsets["ds001419"] = os.path.join(data_dir, "ds001419-fmriprep")
     dsets["pnc"] = os.path.join(data_dir, "pnc_fmriprep")
     dsets["nibabies"] = os.path.join(data_dir, "nibabies/derivatives/nibabies")
     dsets["fmriprep_without_freesurfer"] = os.path.join(
