@@ -111,14 +111,12 @@ def check_affines(data_dir, out_dir, input_type):
         denoised_files = xcp_layout.get(
             invalid_filters="allow",
             datatype="func",
-            run=1,
             extension=".dtseries.nii",
         )
         space = denoised_files[0].get_entities()["space"]
         bold_files = fmri_layout.get(
             invalid_filters="allow",
             datatype="func",
-            run=1,
             space=space,
             extension=".dtseries.nii",
         )
@@ -127,7 +125,6 @@ def check_affines(data_dir, out_dir, input_type):
         # Problem: it's collecting native-space data
         denoised_files = xcp_layout.get(
             datatype="func",
-            run=1,
             suffix="bold",
             extension=".nii.gz",
         )
@@ -135,7 +132,6 @@ def check_affines(data_dir, out_dir, input_type):
         bold_files = fmri_layout.get(
             invalid_filters="allow",
             datatype="func",
-            run=1,
             space=space,
             suffix="bold",
             extension=".nii.gz",
