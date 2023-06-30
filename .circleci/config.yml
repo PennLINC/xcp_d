@@ -308,6 +308,8 @@ jobs:
       - restore_cache:
           key: pnc-02
       - restore_cache:
+          key: ds001419-fmriprep-08
+      - restore_cache:
           key: fmriprepwithoutfreesurfer-03
       - restore_cache:
           key: nibabies-04
@@ -502,6 +504,7 @@ workflows:
             - download_data_pnc
             - download_data_fmriprepwithoutfreesurfer
             - download_data_ds001419
+            - download_data_nibabies
           filters:
             branches:
               ignore:
