@@ -769,13 +769,13 @@ def get_freesurfer_dir(fmri_dir):
 
     # for fMRIPrep/Nibabies versions >=20.2.1
     freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
-    print(freesurfer_paths)
+    LOGGER.warning(fmri_dir)
+    LOGGER.warning(freesurfer_paths)
     if len(freesurfer_paths) == 0:
         # for fMRIPrep/Nibabies versions <20.2.1
         freesurfer_paths = sorted(
             glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
         )
-        print(freesurfer_paths)
 
     if len(freesurfer_paths) == 1:
         freesurfer_path = freesurfer_paths[0]

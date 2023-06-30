@@ -9,9 +9,8 @@ from xcp_d.interfaces import concatenation
 def test_cleannamesource(datasets):
     """Test xcp_d.interfaces.concatenation.CleanNameSource."""
     nifti_file = os.path.join(
-        datasets["pnc"],
+        datasets["ds001419"],
         "sub-01",
-        "ses-PNC1",
         "func",
         "sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz",
     )
@@ -23,9 +22,8 @@ def test_cleannamesource(datasets):
     name_source = results.outputs.name_source
 
     expected_name_source = os.path.join(
-        datasets["pnc"],
+        datasets["ds001419"],
         "sub-01",
-        "ses-PNC1",
         "func",
         "sub-01_task-imagery_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz",
     )
