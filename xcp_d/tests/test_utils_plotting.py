@@ -4,16 +4,16 @@ import os
 from xcp_d.utils import plotting
 
 
-def test_plot_fmri_es(pnc_data, tmp_path_factory):
+def test_plot_fmri_es(ds001419_data, tmp_path_factory):
     """Run smoke test on xcp_d.utils.plotting.plot_fmri_es."""
     tmpdir = tmp_path_factory.mktemp("test_plot_fmri_es")
 
-    preprocessed_bold = pnc_data["cifti_file"]
-    uncensored_denoised_bold = pnc_data["cifti_file"]
-    interpolated_filtered_bold = pnc_data["cifti_file"]
+    preprocessed_bold = ds001419_data["cifti_file"]
+    uncensored_denoised_bold = ds001419_data["cifti_file"]
+    interpolated_filtered_bold = ds001419_data["cifti_file"]
 
     # Using unfiltered FD instead of calculating filtered version.
-    filtered_motion = pnc_data["confounds_file"]
+    filtered_motion = ds001419_data["confounds_file"]
     preprocessed_bold_figure = os.path.join(tmpdir, "unprocessed.svg")
     denoised_bold_figure = os.path.join(tmpdir, "processed.svg")
     t_r = 2

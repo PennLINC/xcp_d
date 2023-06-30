@@ -13,13 +13,13 @@ import pandas as pd
 from xcp_d.interfaces.censoring import RemoveDummyVolumes
 
 
-def test_removedummyvolumes_nifti(pnc_data, tmp_path_factory):
+def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
     """Test RemoveDummyVolumes() for NIFTI input data."""
     # Define inputs
     temp_dir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_nifti")
 
-    boldfile = pnc_data["nifti_file"]
-    confounds_file = pnc_data["confounds_file"]
+    boldfile = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
 
     # Find the original number of volumes acc. to nifti & confounds timeseries
     original_confounds = pd.read_table(confounds_file)
@@ -75,13 +75,13 @@ def test_removedummyvolumes_nifti(pnc_data, tmp_path_factory):
             raise Exception(f"Number of volumes in dropped nifti is {exc}.")
 
 
-def test_removedummyvolumes_cifti(pnc_data, tmp_path_factory):
+def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
     """Test RemoveDummyVolumes() for CIFTI input data."""
     # Define inputs
     temp_dir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_cifti")
 
-    boldfile = pnc_data["cifti_file"]
-    confounds_file = pnc_data["confounds_file"]
+    boldfile = ds001419_data["cifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
 
     # Find the original number of volumes acc. to cifti & confounds timeseries
     original_confounds = pd.read_table(confounds_file)
@@ -141,9 +141,9 @@ def test_removedummyvolumes_cifti(pnc_data, tmp_path_factory):
 # Testing with CUSTOM CONFOUNDS
 # Note: I had to test this locally as I don't have the permissions to share the
 # data I used here at the moment.
-# def test_fd_interface_cifti_custom(pnc_data):  # Checking results
-#     boldfile = pnc_data["cifti_file"]
-#     confounds_file = pnc_data["confounds_file"]
+# def test_fd_interface_cifti_custom(ds001419_data):  # Checking results
+#     boldfile = ds001419_data["cifti_file"]
+#     confounds_file = ds001419_data["confounds_file"]
 #     custom_confounds_tsv = data_dir + "/fmriprep/sub-colornest001/ses-1/func/customcifti.tsv"
 
 #     # Run workflow

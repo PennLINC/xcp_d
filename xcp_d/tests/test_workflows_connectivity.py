@@ -23,11 +23,11 @@ from xcp_d.workflows.connectivity import (
 np.set_printoptions(threshold=sys.maxsize)
 
 
-def test_init_load_atlases_wf_nifti(pnc_data, tmp_path_factory):
+def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a nifti input."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
-    bold_file = pnc_data["nifti_file"]
+    bold_file = ds001419_data["nifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
         output_dir=tmpdir,
@@ -45,11 +45,11 @@ def test_init_load_atlases_wf_nifti(pnc_data, tmp_path_factory):
     assert len(atlas_names) == 14
 
 
-def test_init_load_atlases_wf_cifti(pnc_data, tmp_path_factory):
+def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a cifti input."""
     tmpdir = tmp_path_factory.mktemp("test_init_load_atlases_wf_cifti")
 
-    bold_file = pnc_data["cifti_file"]
+    bold_file = ds001419_data["cifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
         output_dir=tmpdir,
@@ -67,13 +67,13 @@ def test_init_load_atlases_wf_cifti(pnc_data, tmp_path_factory):
     assert len(atlas_names) == 14
 
 
-def test_init_functional_connectivity_nifti_wf(pnc_data, tmp_path_factory):
+def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     """Test the nifti workflow."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
-    bold_file = pnc_data["nifti_file"]
-    boldref = pnc_data["boldref"]
-    bold_mask = pnc_data["brain_mask_file"]
+    bold_file = ds001419_data["nifti_file"]
+    boldref = ds001419_data["boldref"]
+    bold_mask = ds001419_data["brain_mask_file"]
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -205,11 +205,11 @@ def test_init_functional_connectivity_nifti_wf(pnc_data, tmp_path_factory):
     assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
 
 
-def test_init_functional_connectivity_cifti_wf(pnc_data, tmp_path_factory):
+def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_cifti_wf")
 
-    bold_file = pnc_data["cifti_file"]
+    bold_file = ds001419_data["cifti_file"]
     TR = _get_tr(nb.load(bold_file))
 
     # Generate fake signal

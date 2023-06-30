@@ -8,12 +8,12 @@ import pandas as pd
 from xcp_d.interfaces import censoring
 
 
-def test_generate_confounds(pnc_data, tmp_path_factory):
+def test_generate_confounds(ds001419_data, tmp_path_factory):
     """Check results."""
     tmpdir = tmp_path_factory.mktemp("test_generate_confounds")
-    in_file = pnc_data["nifti_file"]
-    confounds_file = pnc_data["confounds_file"]
-    confounds_json = pnc_data["confounds_json"]
+    in_file = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+    confounds_json = ds001419_data["confounds_json"]
 
     df = pd.read_table(confounds_file)
 
@@ -105,11 +105,11 @@ def test_random_censor(tmp_path_factory):
         )
 
 
-def test_censor(pnc_data, tmp_path_factory):
+def test_censor(ds001419_data, tmp_path_factory):
     """Test Censor interface."""
     tmpdir = tmp_path_factory.mktemp("test_generate_confounds")
-    nifti_file = pnc_data["nifti_file"]
-    cifti_file = pnc_data["cifti_file"]
+    nifti_file = ds001419_data["nifti_file"]
+    cifti_file = ds001419_data["cifti_file"]
     in_img = nb.load(nifti_file)
     n_volumes = in_img.shape[3]
     censoring_df = pd.DataFrame(columns=["framewise_displacement"], data=np.zeros(n_volumes))

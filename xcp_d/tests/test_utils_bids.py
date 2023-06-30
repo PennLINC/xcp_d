@@ -176,12 +176,12 @@ def test_get_preproc_pipeline_info(datasets):
         xbids.get_preproc_pipeline_info("fmriprep", ".")
 
 
-def test_get_tr(pnc_data):
+def test_get_tr(ds001419_data):
     """Test _get_tr."""
-    t_r = xbids._get_tr(pnc_data["nifti_file"])
+    t_r = xbids._get_tr(ds001419_data["nifti_file"])
     assert t_r == 3.0
 
-    t_r = xbids._get_tr(pnc_data["cifti_file"])
+    t_r = xbids._get_tr(ds001419_data["cifti_file"])
     assert t_r == 3.0
 
 
