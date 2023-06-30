@@ -75,6 +75,8 @@ def ds001419_data(datasets):
     subj_dir = os.path.join(datasets["ds001419"], "sub-01")
     func_dir = os.path.join(subj_dir, "func")
     anat_dir = os.path.join(subj_dir, "anat")
+    if not os.path.isdir(subj_dir):
+        raise Exception(os.listdir(datasets["ds001419"]))
 
     files = {}
     files["nifti_file"] = os.path.join(
