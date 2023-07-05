@@ -88,7 +88,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
+    filter_file = os.path.join(test_data_dir, "ds001419_cifti_filter.json")
 
     parameters = [
         dataset_dir,
@@ -105,7 +105,6 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--motion-filter-type=notch",
         "--band-stop-min=12",
         "--band-stop-max=18",
-        "--warp-surfaces-native2std",
         "--cifti",
         "--combineruns",
         "--dcan-qc",
