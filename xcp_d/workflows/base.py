@@ -409,13 +409,13 @@ def init_subject_wf(
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                # shape files
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                # morphometry files
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
@@ -435,12 +435,12 @@ def init_subject_wf(
     inputnode.inputs.rh_wm_surf = mesh_files["rh_wm_surf"]
 
     # optional surface shape files (used by surface-warping workflow)
-    inputnode.inputs.lh_sulcal_depth = morphometry_files["lh_sulcal_depth"]
-    inputnode.inputs.rh_sulcal_depth = morphometry_files["rh_sulcal_depth"]
-    inputnode.inputs.lh_sulcal_curv = morphometry_files["lh_sulcal_curv"]
-    inputnode.inputs.rh_sulcal_curv = morphometry_files["rh_sulcal_curv"]
-    inputnode.inputs.lh_cortical_thickness = morphometry_files["lh_cortical_thickness"]
-    inputnode.inputs.rh_cortical_thickness = morphometry_files["rh_cortical_thickness"]
+    inputnode.inputs.sulcal_depth = morphometry_files["sulcal_depth"]
+    inputnode.inputs.sulcal_curv = morphometry_files["sulcal_curv"]
+    inputnode.inputs.cortical_thickness = morphometry_files["cortical_thickness"]
+    inputnode.inputs.cortical_thickness_corr = morphometry_files["cortical_thickness_corr"]
+    inputnode.inputs.myelin = morphometry_files["myelin"]
+    inputnode.inputs.myelin_smoothed = morphometry_files["myelin_smoothed"]
 
     workflow = Workflow(name=name)
 
@@ -576,15 +576,16 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
                 ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
                 ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
             ]),
         ])
         # fmt:on
+
+        for morph_file in morph_file_types:
+            # fmt:off
+            workflow.connect([
+                (inputnode, postprocess_surfaces_wf, [(morph_file, f"inputnode.{morph_file}")]),
+            ])
+            # fmt:on
 
         if process_surfaces or standard_space_mesh:
             # Use standard-space structurals
@@ -623,11 +624,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 # fmt:off
                 workflow.connect([
                     (inputnode, parcellate_surfaces_wf, [
-                        (f"lh_{morph_file_type}", f"inputnode.lh_{morph_file_type}"),
-                        (f"rh_{morph_file_type}", f"inputnode.rh_{morph_file_type}"),
+                        (morph_file_type, f"inputnode.{morph_file_type}"),
                     ]),
                 ])
-                # fmt:oon
+                # fmt:on
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(

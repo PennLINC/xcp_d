@@ -23,12 +23,12 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
     test_name = "test_ds001419_nifti"
 
-    dataset_dir = download_test_data("ds001419-fmriprep", data_dir)
+    dataset_dir = download_test_data("ds001419", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_nifti_filter.json")
+    filter_file = os.path.join(test_data_dir, "ds001419_nifti_filter.json")
 
     parameters = [
         dataset_dir,
@@ -38,8 +38,8 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
+        "--combineruns",
         "--nuisance-regressors=aroma_gsr",
-        "--despike",
         "--dummy-scans=4",
         "--fd-thresh=0.2",
         "--head_radius=40",
@@ -83,24 +83,130 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
     test_name = "test_ds001419_cifti"
 
-    dataset_dir = download_test_data("ds001419-fmriprep", data_dir)
+    dataset_dir = download_test_data("ds001419", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    # Copy shape files to test ability to transfer them to XCP-D derivatives.
-    anat_dir = os.path.join(dataset_dir, "sub-01/anat")
-    for hemi in ["L", "R"]:
-        base_file = os.path.join(anat_dir, f"sub-01_hemi-{hemi}_smoothwm.surf.gii")
-        for shape in ["curv", "sulc", "thickness"]:
-            out_file = os.path.join(
-                anat_dir,
-                f"sub-01_space-fsLR_den-32k_hemi-{hemi}_{shape}.shape.gii",
-            )
-            if not os.path.isfile(out_file):
-                shutil.copyfile(base_file, out_file)
+    test_data_dir = get_test_data_path()
+    filter_file = os.path.join(test_data_dir, "ds001419_cifti_filter.json")
+
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        f"--bids-filter-file={filter_file}",
+        "--nuisance-regressors=acompcor_gsr",
+        "--despike",
+        "--head_radius=40",
+        "--smoothing=6",
+        "--motion-filter-type=notch",
+        "--band-stop-min=12",
+        "--band-stop-max=18",
+        "--cifti",
+        "--combineruns",
+        "--dcan-qc",
+        "--dummy-scans=auto",
+        "--fd-thresh=0.3",
+        "--upper-bpf=0.0",
+    ]
+    opts = run.get_parser().parse_args(parameters)
+    retval = {}
+    retval = run.build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
+    xcpd_wf = retval.get("workflow", None)
+    plugin_settings = retval["plugin_settings"]
+    xcpd_wf.run(**plugin_settings)
+
+    generate_reports(
+        subject_list=["01"],
+        fmri_dir=dataset_dir,
+        work_dir=work_dir,
+        output_dir=out_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+    )
+
+    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
+
+    check_affines(dataset_dir, out_dir, input_type="cifti")
+
+
+@pytest.mark.pnc_nifti
+def test_pnc_nifti(data_dir, output_dir, working_dir):
+    """Run xcp_d on pnc fMRIPrep derivatives, with nifti options."""
+    test_name = "test_pnc_nifti"
+
+    dataset_dir = download_test_data("pnc", data_dir)
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
+    filter_file = os.path.join(test_data_dir, "pnc_nifti_filter.json")
+
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        f"--bids-filter-file={filter_file}",
+        "--nuisance-regressors=36P",
+        "--despike",
+        "--dummy-scans=4",
+        "--fd-thresh=0.2",
+        "--head_radius=40",
+        "--smoothing=6",
+        "--motion-filter-type=lp",
+        "--band-stop-min=6",
+        "--min-coverage=1",
+        "--exact-time",
+        "80",
+        "100",
+        "200",
+        "--random-seed=8675309",
+    ]
+    opts = run.get_parser().parse_args(parameters)
+
+    retval = {}
+    retval = run.build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
+    xcpd_wf = retval.get("workflow", None)
+    plugin_settings = retval["plugin_settings"]
+    xcpd_wf.run(**plugin_settings)
+
+    generate_reports(
+        subject_list=["1648798153"],
+        fmri_dir=dataset_dir,
+        work_dir=work_dir,
+        output_dir=out_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+    )
+
+    output_list_file = os.path.join(test_data_dir, "test_pnc_nifti_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
+
+    check_affines(dataset_dir, out_dir, input_type="nifti")
+
+
+@pytest.mark.pnc_cifti
+def test_pnc_cifti(data_dir, output_dir, working_dir):
+    """Run xcp_d on pnc fMRIPrep derivatives, with cifti options."""
+    test_name = "test_pnc_cifti"
+
+    dataset_dir = download_test_data("pnc", data_dir)
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
+
+    test_data_dir = get_test_data_path()
+    filter_file = os.path.join(test_data_dir, "pnc_cifti_filter.json")
 
     parameters = [
         dataset_dir,
@@ -134,7 +240,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
     xcpd_wf.run(**plugin_settings)
 
     generate_reports(
-        subject_list=["01"],
+        subject_list=["1648798153"],
         fmri_dir=dataset_dir,
         work_dir=work_dir,
         output_dir=out_dir,
@@ -143,43 +249,38 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         packagename="xcp_d",
     )
 
-    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_pnc_cifti_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
-@pytest.mark.ds001419_cifti_t2wonly
-def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
-    """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options and a simulated T2w image."""
-    test_name = "test_ds001419_cifti_t2wonly"
+@pytest.mark.pnc_cifti_t2wonly
+def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
+    """Run xcp_d on pnc fMRIPrep derivatives, with cifti options and a simulated T2w image."""
+    test_name = "test_pnc_cifti_t2wonly"
 
-    dataset_dir = download_test_data("ds001419-fmriprep", data_dir)
+    dataset_dir = download_test_data("pnc", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    # Copy shape files to test ability to transfer them to XCP-D derivatives.
-    anat_dir = os.path.join(dataset_dir, "sub-01/anat")
-    for hemi in ["L", "R"]:
-        base_file = os.path.join(anat_dir, f"sub-01_hemi-{hemi}_smoothwm.surf.gii")
-        for shape in ["curv", "sulc", "thickness"]:
-            out_file = os.path.join(
-                anat_dir,
-                f"sub-01_space-fsLR_den-32k_hemi-{hemi}_{shape}.shape.gii",
-            )
-            if not os.path.isfile(out_file):
-                shutil.copyfile(base_file, out_file)
-
     # Simulate a T2w image
+    anat_dir = os.path.join(dataset_dir, "sub-1648798153/ses-PNC1/anat")
     files_to_copy = [
-        "sub-01_desc-preproc_T1w.nii.gz",
-        "sub-01_desc-preproc_T1w.json",
-        "sub-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.nii.gz",
-        "sub-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.json",
-        "sub-01_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5",
-        "sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
-        "sub-01_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
-        "sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
+        "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.nii.gz",
+        "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.json",
+        (
+            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_res-2_desc-preproc_"
+            "T1w.nii.gz"
+        ),
+        (
+            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_res-2_desc-preproc_"
+            "T1w.json"
+        ),
+        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
+        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
+        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
+        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
     ]
     for file_to_copy in files_to_copy:
         t2w_file = os.path.join(anat_dir, file_to_copy.replace("T1w", "T2w"))
@@ -187,7 +288,7 @@ def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
             shutil.copyfile(os.path.join(anat_dir, file_to_copy), t2w_file)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_t2wonly_filter.json")
+    filter_file = os.path.join(test_data_dir, "pnc_cifti_t2wonly_filter.json")
 
     parameters = [
         dataset_dir,
@@ -221,7 +322,7 @@ def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
     xcpd_wf.run(**plugin_settings)
 
     generate_reports(
-        subject_list=["01"],
+        subject_list=["1648798153"],
         fmri_dir=dataset_dir,
         work_dir=work_dir,
         output_dir=out_dir,
@@ -230,7 +331,7 @@ def test_ds001419_cifti_t2wonly(data_dir, output_dir, working_dir):
         packagename="xcp_d",
     )
 
-    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_t2wonly_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_pnc_cifti_t2wonly_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     check_affines(dataset_dir, out_dir, input_type="cifti")

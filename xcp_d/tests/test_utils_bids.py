@@ -30,7 +30,7 @@ def test_collect_participants(datasets):
     assert found_labels == ["01"]
 
 
-def test_collect_data_ds001419(datasets):
+def test_collect_data_pnc(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["ds001419"]
 
@@ -176,12 +176,12 @@ def test_get_preproc_pipeline_info(datasets):
         xbids.get_preproc_pipeline_info("fmriprep", ".")
 
 
-def test_get_tr(fmriprep_with_freesurfer_data):
+def test_get_tr(ds001419_data):
     """Test _get_tr."""
-    t_r = xbids._get_tr(fmriprep_with_freesurfer_data["nifti_file"])
+    t_r = xbids._get_tr(ds001419_data["nifti_file"])
     assert t_r == 3.0
 
-    t_r = xbids._get_tr(fmriprep_with_freesurfer_data["cifti_file"])
+    t_r = xbids._get_tr(ds001419_data["cifti_file"])
     assert t_r == 3.0
 
 
@@ -200,13 +200,13 @@ def test_get_freesurfer_dir(datasets):
         xbids.get_freesurfer_dir(datasets["nibabies"])
     os.rmdir(tmp_fs_dir)
 
-    fs_dir = xbids.get_freesurfer_dir(datasets["ds001419"])
+    fs_dir = xbids.get_freesurfer_dir(datasets["pnc"])
     assert os.path.isdir(fs_dir)
 
-    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "01", "L")
+    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "1648798153", "L")
     assert os.path.isfile(sphere_file)
 
-    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "sub-01", "L")
+    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "sub-1648798153", "L")
     assert os.path.isfile(sphere_file)
 
     with pytest.raises(FileNotFoundError, match="Sphere file not found at"):

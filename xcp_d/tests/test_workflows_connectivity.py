@@ -23,11 +23,11 @@ from xcp_d.workflows.connectivity import (
 np.set_printoptions(threshold=sys.maxsize)
 
 
-def test_init_load_atlases_wf_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a nifti input."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
+    bold_file = ds001419_data["nifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
         output_dir=tmpdir,
@@ -45,11 +45,11 @@ def test_init_load_atlases_wf_nifti(fmriprep_with_freesurfer_data, tmp_path_fact
     assert len(atlas_names) == 14
 
 
-def test_init_load_atlases_wf_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a cifti input."""
     tmpdir = tmp_path_factory.mktemp("test_init_load_atlases_wf_cifti")
 
-    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
+    bold_file = ds001419_data["cifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
         output_dir=tmpdir,
@@ -67,13 +67,13 @@ def test_init_load_atlases_wf_cifti(fmriprep_with_freesurfer_data, tmp_path_fact
     assert len(atlas_names) == 14
 
 
-def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     """Test the nifti workflow."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    boldref = fmriprep_with_freesurfer_data["boldref"]
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    bold_file = ds001419_data["nifti_file"]
+    boldref = ds001419_data["boldref"]
+    bold_mask = ds001419_data["brain_mask_file"]
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -201,15 +201,15 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     calculated_correlations[bad_parcel_idx, :] = np.nan
     calculated_correlations[:, bad_parcel_idx] = np.nan
 
-    # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
+    # pnc data doesn't have complete coverage, so we must allow NaNs here.
     assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
 
 
-def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_cifti_wf")
 
-    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
+    bold_file = ds001419_data["cifti_file"]
     TR = _get_tr(nb.load(bold_file))
 
     # Generate fake signal
@@ -337,7 +337,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
     # The number of NaNs for a good parcel's correlations should match the number of bad parcels.
     assert np.sum(np.isnan(first_good_parcel_corrs)) == bad_parcels_idx.size
 
-    # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
+    # pnc data doesn't have complete coverage, so we must allow NaNs here.
     if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations)):
         mismatch_idx = np.vstack(
             np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))

@@ -8,14 +8,14 @@ import pandas as pd
 from xcp_d.utils import concatenation
 
 
-def test_concatenate_tsvs(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_concatenate_tsvs(ds001419_data, tmp_path_factory):
     """Test xcp_d.utils.concatenation.concatenate_tsvs."""
     tmpdir = tmp_path_factory.mktemp("test_concatenate_tsvs")
 
     n_repeats = 3
 
     # First, concatenate TSVs with headers
-    tsv_file_with_header = fmriprep_with_freesurfer_data["confounds_file"]
+    tsv_file_with_header = ds001419_data["confounds_file"]
     concat_tsv_file_with_header = os.path.join(tmpdir, "concat_with_header.tsv")
     concatenation.concatenate_tsvs(
         [tsv_file_with_header] * n_repeats,
@@ -44,7 +44,7 @@ def test_concatenate_tsvs(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert concat_tsv_arr.shape[1] == tsv_arr.shape[1]
 
 
-def test_concatenate_niimgs(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_concatenate_niimgs(ds001419_data, tmp_path_factory):
     """Test xcp_d.utils.concatenation.concatenate_niimgs.
 
     We don't have non-dtseries CIFTIs to test, so this test is a little limited.
@@ -54,7 +54,7 @@ def test_concatenate_niimgs(fmriprep_with_freesurfer_data, tmp_path_factory):
     n_repeats = 3
 
     # First, concatenate niftis
-    nifti_file = fmriprep_with_freesurfer_data["nifti_file"]
+    nifti_file = ds001419_data["nifti_file"]
     concat_nifti_file = os.path.join(tmpdir, "concat_nifti.nii.gz")
     concatenation.concatenate_niimgs(
         [nifti_file] * n_repeats,
@@ -67,7 +67,7 @@ def test_concatenate_niimgs(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert concat_nifti_img.shape[3] == nifti_img.shape[3] * n_repeats
 
     # Now, concatenate dtseries ciftis
-    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+    cifti_file = ds001419_data["cifti_file"]
     concat_cifti_file = os.path.join(tmpdir, "concat_cifti.dtseries.nii")
     concatenation.concatenate_niimgs(
         [cifti_file] * n_repeats,

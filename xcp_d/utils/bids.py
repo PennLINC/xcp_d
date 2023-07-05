@@ -459,7 +459,7 @@ def collect_mesh_data(layout, participant_label):
 def collect_morphometry_data(layout, participant_label):
     """Collect morphometry surface files from preprocessed derivatives.
 
-    This function will look for fsLR-space, 32k-resolution morphometry files.
+    This function will look for fsLR-space, 91k-resolution morphometry CIFTI files.
 
     Parameters
     ----------
@@ -481,67 +481,54 @@ def collect_morphometry_data(layout, participant_label):
         "sulcal_depth": {
             "desc": None,
             "suffix": "sulc",
-            "extension": ".shape.gii",
         },
         "sulcal_curv": {
             "desc": None,
             "suffix": "curv",
-            "extension": ".shape.gii",
         },
         "cortical_thickness": {
             "desc": None,
             "suffix": "thickness",
-            "extension": ".shape.gii",
         },
         "cortical_thickness_corr": {
             "desc": "corrected",
             "suffix": "thickness",
-            "extension": ".shape.gii",
         },
         "myelin": {
             "desc": None,
             "suffix": "myelinw",
-            "extension": ".func.gii",
         },
         "myelin_smoothed": {
             "desc": "smoothed",
             "suffix": "myelinw",
-            "extension": ".func.gii",
         },
     }
 
     morphometry_files = {}
     for name, query in queries.items():
-        for hemisphere in ["L", "R"]:
-            # First, try to grab the first base surface file in standard space.
-            # If it's not available, switch to native T1w-space data.
-            files = layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                space="fsLR",
-                den="32k",
-                hemi=hemisphere,
-                **query,
+        files = layout.get(
+            return_type="file",
+            subject=participant_label,
+            datatype="anat",
+            space="fsLR",
+            den="91k",
+            extension=".dscalar.nii",
+            **query,
+        )
+        if len(files) == 1:
+            morphometry_files[name] = files[0]
+        elif len(files) > 1:
+            surface_str = "\n\t".join(files)
+            raise ValueError(
+                f"More than one {name} found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {query}"
             )
-            key = f"{hemisphere.lower()}h_{name}"
-            if len(files) == 1:
-                morphometry_files[key] = files[0]
-            elif len(files) > 1:
-                surface_str = "\n\t".join(files)
-                raise ValueError(
-                    f"More than one {key} found.\n"
-                    f"Surfaces found:\n\t{surface_str}\n"
-                    f"Query: {query}"
-                )
-            else:
-                morphometry_files[key] = None
+        else:
+            morphometry_files[name] = None
 
-    # Identify the base filetypes (e.g., myelin_smoothed) of the found morphometry files.
-    mf_list = [k for k, v in morphometry_files.items() if v is not None]
-    morph_file_types = [f for f in mf_list if f.startswith("lh_")]
-    morph_file_types = [f for f in morph_file_types if f.replace("lh_", "rh_") in mf_list]
-    morph_file_types = [f.replace("lh_", "") for f in morph_file_types]
+    # Identify the found morphometry files.
+    morph_file_types = [k for k, v in morphometry_files.items() if v is not None]
 
     LOGGER.log(
         25,
@@ -594,12 +581,14 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
             bids_file.path,
             strict=False,
             suffix="boldref",
+            extension=[".nii", ".nii.gz"],
         )
         run_data["boldmask"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             desc="brain",
             suffix="mask",
+            extension=[".nii", ".nii.gz"],
         )
         run_data["anat_to_native_xfm"] = layout.get_nearest(
             bids_file.path,
@@ -618,6 +607,7 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
             strict=False,
             space=allowed_nifti_spaces,
             suffix="boldref",
+            extension=[".nii", ".nii.gz"],
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
@@ -779,13 +769,11 @@ def get_freesurfer_dir(fmri_dir):
 
     # for fMRIPrep/Nibabies versions >=20.2.1
     freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
-    print(freesurfer_paths)
     if len(freesurfer_paths) == 0:
         # for fMRIPrep/Nibabies versions <20.2.1
         freesurfer_paths = sorted(
             glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
         )
-        print(freesurfer_paths)
 
     if len(freesurfer_paths) == 1:
         freesurfer_path = freesurfer_paths[0]

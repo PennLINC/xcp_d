@@ -9,9 +9,9 @@ from nilearn import masking
 from xcp_d.utils import utils
 
 
-def test_estimate_brain_radius(fmriprep_with_freesurfer_data):
+def test_estimate_brain_radius(ds001419_data):
     """Ensure that the brain radius estimation function returns the right value."""
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    bold_mask = ds001419_data["brain_mask_file"]
 
     radius = utils.estimate_brain_radius(bold_mask, head_radius="auto")
     assert radius == 78.12350298308195
@@ -47,15 +47,15 @@ def test_butter_bandpass():
         )
 
 
-def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
     tmpdir = tmp_path_factory.mktemp("test_denoise_with_nilearn")
 
     high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
-    preprocessed_bold = fmriprep_with_freesurfer_data["nifti_file"]
-    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    preprocessed_bold = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+    bold_mask = ds001419_data["brain_mask_file"]
 
     preprocessed_bold_arr = masking.apply_mask(preprocessed_bold, bold_mask)
     # Reduce the size of the data for the test
@@ -168,11 +168,11 @@ def test_list_to_str():
     assert string == "a, b, and c"
 
 
-def test_get_bold2std_and_t1w_xfms(fmriprep_with_freesurfer_data):
+def test_get_bold2std_and_t1w_xfms(ds001419_data):
     """Test get_bold2std_and_t1w_xfms."""
-    bold_file_nlin2009c = fmriprep_with_freesurfer_data["nifti_file"]
-    nlin2009c_to_anat_xfm = fmriprep_with_freesurfer_data["template_to_anat_xfm"]
-    anat_to_native_xfm = fmriprep_with_freesurfer_data["anat_to_native_xfm"]
+    bold_file_nlin2009c = ds001419_data["nifti_file"]
+    nlin2009c_to_anat_xfm = ds001419_data["template_to_anat_xfm"]
+    anat_to_native_xfm = ds001419_data["anat_to_native_xfm"]
 
     # MNI152NLin2009cAsym --> MNI152NLin2009cAsym/T1w
     (
@@ -324,12 +324,12 @@ def test_get_bold2std_and_t1w_xfms(fmriprep_with_freesurfer_data):
         )
 
 
-def test_get_std2bold_xfms(fmriprep_with_freesurfer_data):
+def test_get_std2bold_xfms(ds001419_data):
     """Test get_std2bold_xfms.
 
     get_std2bold_xfms finds transforms to go from the input file's space to MNI152NLin6Asym.
     """
-    bold_file_nlin2009c = fmriprep_with_freesurfer_data["nifti_file"]
+    bold_file_nlin2009c = ds001419_data["nifti_file"]
 
     # MNI152NLin2009cAsym --> MNI152NLin6Asym
     xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin2009c)

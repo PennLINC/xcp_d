@@ -75,13 +75,13 @@ def test_nifti_despike(fmriprep_without_freesurfer_data, tmp_path_factory):
     assert np.array_equal(nb.load(despiked_file).affine, nb.load(boldfile).affine)
 
 
-def test_cifti_despike(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_cifti_despike(ds001419_data, tmp_path_factory):
     """Test Cifti despiking.
 
     Confirm that the maximum and minimum voxel values decrease
     after despiking.
     """
-    boldfile = fmriprep_with_freesurfer_data["cifti_file"]
+    boldfile = ds001419_data["cifti_file"]
     TR = 0.8
 
     # Let's add some noise

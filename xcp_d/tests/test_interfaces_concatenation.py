@@ -30,10 +30,10 @@ def test_cleannamesource(datasets):
     assert name_source == expected_name_source
 
 
-def test_filteroutfailedruns(fmriprep_with_freesurfer_data):
+def test_filteroutfailedruns(ds001419_data):
     """Test xcp_d.interfaces.concatenation.FilterOutFailedRuns."""
-    nifti_file = fmriprep_with_freesurfer_data["nifti_file"]
-    tsv_file = fmriprep_with_freesurfer_data["confounds_file"]
+    nifti_file = ds001419_data["nifti_file"]
+    tsv_file = ds001419_data["confounds_file"]
 
     censored_denoised_bold = [Undefined, nifti_file, Undefined, Undefined, nifti_file]
     n_runs = len(censored_denoised_bold)
@@ -87,13 +87,13 @@ def test_filteroutfailedruns(fmriprep_with_freesurfer_data):
     assert len(out.timeseries_ciftis) == n_good_runs
 
 
-def test_concatenateinputs(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_concatenateinputs(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.concatenation.ConcatenateInputs."""
     tmpdir = tmp_path_factory.mktemp("test_concatenateinputs")
 
-    nifti_file = fmriprep_with_freesurfer_data["nifti_file"]
-    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
-    tsv_file = fmriprep_with_freesurfer_data["confounds_file"]
+    nifti_file = ds001419_data["nifti_file"]
+    cifti_file = ds001419_data["cifti_file"]
+    tsv_file = ds001419_data["confounds_file"]
 
     n_runs = 2
     n_atlases = 3

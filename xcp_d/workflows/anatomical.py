@@ -153,9 +153,7 @@ def init_postprocess_anat_wf(
         run_without_submitting=False,
     )
 
-    # fmt:off
     workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "source_file")])])
-    # fmt:on
 
     if t1w_available:
         ds_t1w_std = pe.Node(
@@ -200,19 +198,13 @@ def init_postprocess_anat_wf(
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
         # workaround in place.
-        # fmt:off
         workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "in_file")])])
-        # fmt:on
 
         if t1w_available:
-            # fmt:off
             workflow.connect([(inputnode, ds_t1w_std, [("t1w", "in_file")])])
-            # fmt:on
 
         if t2w_available:
-            # fmt:off
             workflow.connect([(inputnode, ds_t2w_std, [("t2w", "in_file")])])
-            # fmt:on
 
     else:
         warp_anat_dseg_to_template = pe.Node(
@@ -388,9 +380,12 @@ def init_postprocess_surfaces_wf(
     %(template_to_anat_xfm)s
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
-    lh_sulcal_depth, rh_sulcal_depth
-    lh_sulcal_curv, rh_sulcal_curv
-    lh_cortical_thickness, rh_cortical_thickness
+    sulcal_depth
+    sulcal_curv
+    cortical_thickness
+    cortical_thickness_corr
+    myelin
+    myelin_smoothed
     """
     workflow = Workflow(name=name)
 
@@ -405,12 +400,12 @@ def init_postprocess_surfaces_wf(
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
@@ -466,8 +461,7 @@ def init_postprocess_surfaces_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, copy_std_surfaces_to_datasink, [
-                    (f"lh_{morphometry_file}", f"inputnode.lh_{morphometry_file}"),
-                    (f"rh_{morphometry_file}", f"inputnode.rh_{morphometry_file}"),
+                    (morphometry_file, f"inputnode.{morphometry_file}"),
                 ]),
             ])
             # fmt:on
@@ -485,12 +479,8 @@ def init_postprocess_surfaces_wf(
         }
         # fmt:off
         workflow.connect([
-            (inputnode, hcp_surface_wfs["lh"], [
-                ("lh_pial_surf", "inputnode.name_source"),
-            ]),
-            (inputnode, hcp_surface_wfs["rh"], [
-                ("rh_pial_surf", "inputnode.name_source"),
-            ]),
+            (inputnode, hcp_surface_wfs["lh"], [("lh_pial_surf", "inputnode.name_source")]),
+            (inputnode, hcp_surface_wfs["rh"], [("rh_pial_surf", "inputnode.name_source")]),
         ])
         # fmt:on
 

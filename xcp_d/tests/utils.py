@@ -28,9 +28,8 @@ def download_test_data(dset, data_dir=None):
             "https://upenn.box.com/shared/static/seyp1cu9w5v3ds6iink37hlsa217yge1.tar.gz"
         ),
         "nibabies": "https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz",
-        "ds001419-fmriprep": (
-            "https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz"
-        ),
+        "ds001419": "https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz",
+        "pnc": "https://upenn.box.com/shared/static/ui2847ys49d82pgn5ewai1mowcmsv2br.tar.gz",
     }
     if dset == "*":
         for k in URLS:
@@ -44,7 +43,11 @@ def download_test_data(dset, data_dir=None):
     if not data_dir:
         data_dir = os.path.join(os.path.dirname(get_test_data_path()), "test_data")
 
-    out_dir = os.path.join(data_dir, dset)
+    dset_name = dset
+    if dset == "ds001419":
+        dset_name = "ds001419-fmriprep"
+
+    out_dir = os.path.join(data_dir, dset_name)
 
     if os.path.isdir(out_dir):
         LOGGER.info(
@@ -108,14 +111,12 @@ def check_affines(data_dir, out_dir, input_type):
         denoised_files = xcp_layout.get(
             invalid_filters="allow",
             datatype="func",
-            run=1,
             extension=".dtseries.nii",
         )
         space = denoised_files[0].get_entities()["space"]
         bold_files = fmri_layout.get(
             invalid_filters="allow",
             datatype="func",
-            run=1,
             space=space,
             extension=".dtseries.nii",
         )
@@ -124,7 +125,6 @@ def check_affines(data_dir, out_dir, input_type):
         # Problem: it's collecting native-space data
         denoised_files = xcp_layout.get(
             datatype="func",
-            run=1,
             suffix="bold",
             extension=".nii.gz",
         )
@@ -132,7 +132,6 @@ def check_affines(data_dir, out_dir, input_type):
         bold_files = fmri_layout.get(
             invalid_filters="allow",
             datatype="func",
-            run=1,
             space=space,
             suffix="bold",
             extension=".nii.gz",

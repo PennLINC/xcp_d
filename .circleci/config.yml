@@ -35,22 +35,41 @@ jobs:
       - checkout
       - run: *runinstall
 
-  download_data_ds001419-fmriprep:
+  download_data_ds001419:
     <<: *dockersetup
     steps:
       - checkout
       - restore_cache:
-          key: ds001419-fmriprep-07
+          key: ds001419-fmriprep-08
       - run: *runinstall
       - run:
           name: Download ds001419-fmriprep test data
           command: |
             cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data ds001419-fmriprep
+            python get_data.py $PWD/data ds001419
       - save_cache:
-          key: ds001419-fmriprep-07
+          key: ds001419-fmriprep-08
           paths:
             - /src/xcp_d/.circleci/data/ds001419-fmriprep
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
+
+  download_data_pnc:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: pnc-02
+      - run: *runinstall
+      - run:
+          name: Download pnc test data
+          command: |
+            cd /src/xcp_d/.circleci
+            python get_data.py $PWD/data pnc
+      - save_cache:
+          key: pnc-02
+          paths:
+            - /src/xcp_d/.circleci/data/pnc
     # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
     resource_class: large
 
@@ -119,7 +138,7 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/xcp_d/
 
-  nifti_with_freesurfer:
+  ds001419_nifti:
     <<: *dockersetup
     steps:
       - checkout
@@ -127,12 +146,12 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_with_freesurfer\]' )" != "" ]]; then
-              echo "Skipping nifti_with_freesurfer build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ds001419_nifti\]' )" != "" ]]; then
+              echo "Skipping ds001419_nifti build"
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-07
+          key: ds001419-fmriprep-08
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -149,6 +168,68 @@ jobs:
             - .coverage.ds001419_nifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_nifti/xcp_d/
+
+  ds001419_cifti:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ds001419_cifti\]' )" != "" ]]; then
+              echo "Skipping ds001419_cifti build"
+              circleci step halt
+            fi
+      - restore_cache:
+          key: ds001419-fmriprep-08
+      - run: *runinstall
+      - run:
+          name: Run full xcp_d on cifti with freesurfer
+          no_output_timeout: 1h
+          command: |
+            pytest -rP -o log_cli=true -m "ds001419_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
+            # remove nifti files before uploading artifacts
+            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
+      - persist_to_workspace:
+          root: /src/coverage/
+          paths:
+            - .coverage.ds001419_cifti
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
+
+  pnc_nifti:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            cd /src/xcp_d
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_nifti\]' )" != "" ]]; then
+              echo "Skipping pnc_nifti build"
+              circleci step halt
+            fi
+      - restore_cache:
+          key: pnc-02
+      - run: *runinstall
+      - run:
+          name: Run full xcp_d on nifti with freesurfer
+          no_output_timeout: 1h
+          command: |
+            pytest -rP -o log_cli=true -m "pnc_nifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            mkdir /src/coverage
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_nifti
+            # remove nifti files before uploading artifacts
+            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
+      - persist_to_workspace:
+          root: /src/coverage/
+          paths:
+            - .coverage.pnc_nifti
+      - store_artifacts:
+          path: /src/xcp_d/.circleci/out/test_pnc_nifti/xcp_d/
 
   nibabies:
     <<: *dockersetup
@@ -181,7 +262,7 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_nibabies/xcp_d/
 
-  cifti_with_freesurfer:
+  pnc_cifti:
     <<: *dockersetup
     steps:
       - checkout
@@ -189,30 +270,30 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer\]' )" != "" ]]; then
-              echo "Skipping cifti_with_freesurfer build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_cifti\]' )" != "" ]]; then
+              echo "Skipping pnc_cifti build"
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-07
+          key: pnc-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
           command: |
-            pytest -rP -o log_cli=true -m "ds001419_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "pnc_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
             mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_cifti
             # remove nifti files before uploading artifacts
             find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage
           paths:
-            - .coverage.ds001419_cifti
+            - .coverage.pnc_cifti
       - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
+          path: /src/xcp_d/.circleci/out/test_pnc_cifti/xcp_d/
 
-  cifti_with_freesurfer_t2wonly:
+  pnc_cifti_t2wonly:
     <<: *dockersetup
     steps:
       - checkout
@@ -220,28 +301,28 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?cifti_with_freesurfer_t2wonly\]' )" != "" ]]; then
-              echo "Skipping cifti_with_freesurfer_t2wonly build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_cifti_t2wonly\]' )" != "" ]]; then
+              echo "Skipping pnc_cifti_t2wonly build"
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-07
+          key: pnc-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
           command: |
-            pytest -rP -o log_cli=true -m "ds001419_cifti_t2wonly" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "pnc_cifti_t2wonly" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
             mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti_t2wonly
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_cifti_t2wonly
             # remove nifti files before uploading artifacts
             find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage
           paths:
-            - .coverage.ds001419_cifti_t2wonly
+            - .coverage.pnc_cifti_t2wonly
       - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_ds001419_cifti_t2wonly/xcp_d/
+          path: /src/xcp_d/.circleci/out/test_pnc_cifti_t2wonly/xcp_d/
 
   pytests:
     <<: *dockersetup
@@ -256,7 +337,9 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-07
+          key: pnc-02
+      - restore_cache:
+          key: ds001419-fmriprep-08
       - restore_cache:
           key: fmriprepwithoutfreesurfer-03
       - restore_cache:
@@ -353,7 +436,14 @@ workflows:
             tags:
               only: /.*/
 
-      - download_data_ds001419-fmriprep:
+      - download_data_ds001419:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+
+      - download_data_pnc:
           requires:
             - build
           filters:
@@ -374,9 +464,9 @@ workflows:
             tags:
               only: /.*/
 
-      - cifti_with_freesurfer:
+      - pnc_cifti:
           requires:
-            - download_data_ds001419-fmriprep
+            - download_data_pnc
           filters:
             branches:
               ignore:
@@ -385,9 +475,9 @@ workflows:
             tags:
               only: /.*/
 
-      - cifti_with_freesurfer_t2wonly:
+      - pnc_cifti_t2wonly:
           requires:
-            - download_data_ds001419-fmriprep
+            - download_data_pnc
           filters:
             branches:
               ignore:
@@ -396,9 +486,31 @@ workflows:
             tags:
               only: /.*/
 
-      - nifti_with_freesurfer:
+      - pnc_nifti:
           requires:
-            - download_data_ds001419-fmriprep
+            - download_data_pnc
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - ds001419_nifti:
+          requires:
+            - download_data_ds001419
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - ds001419_cifti:
+          requires:
+            - download_data_ds001419
           filters:
             branches:
               ignore:
@@ -431,8 +543,10 @@ workflows:
 
       - pytests:
           requires:
-            - download_data_ds001419-fmriprep
+            - download_data_pnc
             - download_data_fmriprepwithoutfreesurfer
+            - download_data_ds001419
+            - download_data_nibabies
           filters:
             branches:
               ignore:
@@ -443,9 +557,11 @@ workflows:
 
       - merge_coverage:
           requires:
-            - cifti_with_freesurfer
-            - cifti_with_freesurfer_t2wonly
-            - nifti_with_freesurfer
+            - pnc_cifti
+            - pnc_cifti_t2wonly
+            - ds001419_nifti
+            - ds001419_cifti
+            - pnc_nifti
             - nibabies
             - nifti_without_freesurfer
             - pytests
@@ -459,11 +575,13 @@ workflows:
 
       - deployable:
           requires:
-            - nifti_with_freesurfer
+            - ds001419_nifti
+            - ds001419_cifti
+            - pnc_nifti
             - nifti_without_freesurfer
             - nibabies
-            - cifti_with_freesurfer
-            - cifti_with_freesurfer_t2wonly
+            - pnc_cifti
+            - pnc_cifti_t2wonly
             - pytests
           filters:
             branches:

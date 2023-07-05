@@ -39,12 +39,12 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
     rh_pial_surf
     lh_wm_surf
     rh_wm_surf
-    lh_sulcal_depth
-    rh_sulcal_depth
-    lh_sulcal_curv
-    rh_sulcal_curv
-    lh_cortical_thickness
-    rh_cortical_thickness
+    sulcal_depth
+    sulcal_curv
+    cortical_thickness
+    cortical_thickness_corr
+    myelin
+    myelin_smoothed
     """
     workflow = Workflow(name=name)
 
@@ -55,12 +55,12 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
@@ -81,12 +81,12 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
             ("lh_wm_surf", "in3"),
             ("rh_wm_surf", "in4"),
             # fsLR-space surface shape files
-            ("lh_sulcal_depth", "in5"),
-            ("rh_sulcal_depth", "in6"),
-            ("lh_sulcal_curv", "in7"),
-            ("rh_sulcal_curv", "in8"),
-            ("lh_cortical_thickness", "in9"),
-            ("rh_cortical_thickness", "in10"),
+            ("sulcal_depth", "in5"),
+            ("sulcal_curv", "in6"),
+            ("cortical_thickness", "in7"),
+            ("cortical_thickness_corr", "in8"),
+            ("myelin", "in9"),
+            ("myelin_smoothed", "in10"),
         ]),
     ])
     # fmt:on
@@ -96,15 +96,14 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
         name="filter_out_undefined",
     )
 
-    # fmt:off
     workflow.connect([(collect_files, filter_out_undefined, [("out", "inlist")])])
-    # fmt:on
 
-    ds_outputs = pe.MapNode(
+    ds_copied_outputs = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
+            check_hdr=False,
         ),
-        name="ds_outputs",
+        name="ds_copied_outputs",
         run_without_submitting=True,
         mem_gb=1,
         iterfield=["in_file", "source_file"],
@@ -112,7 +111,7 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
 
     # fmt:off
     workflow.connect([
-        (filter_out_undefined, ds_outputs, [
+        (filter_out_undefined, ds_copied_outputs, [
             ("outlist", "in_file"),
             ("outlist", "source_file"),
         ]),

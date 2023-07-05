@@ -34,7 +34,7 @@ def surface_files(datasets, tmp_path_factory):
 
 def test_warp_surfaces_to_template_wf(
     datasets,
-    fmriprep_with_freesurfer_data,
+    ds001419_data,
     surface_files,
     tmp_path_factory,
 ):
@@ -59,12 +59,8 @@ def test_warp_surfaces_to_template_wf(
     wf.inputs.inputnode.lh_wm_surf = surface_files["native_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["native_rh_wm"]
     # transforms (only used if warp_to_standard is True)
-    wf.inputs.inputnode.anat_to_template_xfm = fmriprep_with_freesurfer_data[
-        "anat_to_template_xfm"
-    ]
-    wf.inputs.inputnode.template_to_anat_xfm = fmriprep_with_freesurfer_data[
-        "template_to_anat_xfm"
-    ]
+    wf.inputs.inputnode.anat_to_template_xfm = ds001419_data["anat_to_template_xfm"]
+    wf.inputs.inputnode.template_to_anat_xfm = ds001419_data["template_to_anat_xfm"]
 
     wf.base_dir = tmpdir
     wf.run()
@@ -78,13 +74,13 @@ def test_warp_surfaces_to_template_wf(
             assert os.path.isfile(out_file), "\n".join(sorted(os.listdir(out_anat_dir)))
 
 
-def test_postprocess_anat_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
     """Test xcp_d.workflows.anatomical.init_postprocess_anat_wf."""
     tmpdir = tmp_path_factory.mktemp("test_postprocess_anat_wf")
 
-    anat_to_template_xfm = fmriprep_with_freesurfer_data["anat_to_template_xfm"]
-    t1w = fmriprep_with_freesurfer_data["t1w"]
-    anat_dseg = fmriprep_with_freesurfer_data["anat_dseg"]
+    anat_to_template_xfm = ds001419_data["anat_to_template_xfm"]
+    t1w = ds001419_data["t1w"]
+    anat_dseg = ds001419_data["anat_dseg"]
     t2w = os.path.join(tmpdir, "sub-01_desc-preproc_T2w.nii.gz")  # pretend t1w is t2w
     shutil.copyfile(t1w, t2w)
 
