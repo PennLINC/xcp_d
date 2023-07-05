@@ -78,6 +78,65 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     check_affines(dataset_dir, out_dir, input_type="nifti")
 
 
+@pytest.mark.ds001419_cifti
+def test_ds001419_cifti(data_dir, output_dir, working_dir):
+    """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
+    test_name = "test_ds001419_cifti"
+
+    dataset_dir = download_test_data("ds001419", data_dir)
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
+
+    test_data_dir = get_test_data_path()
+    filter_file = os.path.join(test_data_dir, "ds001419-fmriprep_cifti_filter.json")
+
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        f"--bids-filter-file={filter_file}",
+        "--nuisance-regressors=acompcor_gsr",
+        "--despike",
+        "--head_radius=40",
+        "--smoothing=6",
+        "--motion-filter-type=notch",
+        "--band-stop-min=12",
+        "--band-stop-max=18",
+        "--warp-surfaces-native2std",
+        "--cifti",
+        "--combineruns",
+        "--dcan-qc",
+        "--dummy-scans=auto",
+        "--fd-thresh=0.3",
+        "--upper-bpf=0.0",
+    ]
+    opts = run.get_parser().parse_args(parameters)
+    retval = {}
+    retval = run.build_workflow(opts, retval=retval)
+    run_uuid = retval.get("run_uuid", None)
+    xcpd_wf = retval.get("workflow", None)
+    plugin_settings = retval["plugin_settings"]
+    xcpd_wf.run(**plugin_settings)
+
+    generate_reports(
+        subject_list=["01"],
+        fmri_dir=dataset_dir,
+        work_dir=work_dir,
+        output_dir=out_dir,
+        run_uuid=run_uuid,
+        config=pkgrf("xcp_d", "data/reports.yml"),
+        packagename="xcp_d",
+    )
+
+    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
+
+    check_affines(dataset_dir, out_dir, input_type="cifti")
+
+
 @pytest.mark.pnc_nifti
 def test_pnc_nifti(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with nifti options."""
