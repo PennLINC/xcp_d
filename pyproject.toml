@@ -166,9 +166,10 @@ per-file-ignores = [
 ]
 
 [tool.pytest.ini_options]
-addopts = '-m "not ds001419_nifti and not pnc_nifti and not pnc_cifti and not pnc_cifti_t2wonly and not fmriprep_without_freesurfer and not nibabies"'
+addopts = '-m "not ds001419_nifti and not ds001419_cifti and not pnc_nifti and not pnc_cifti and not pnc_cifti_t2wonly and not fmriprep_without_freesurfer and not nibabies"'
 markers = [
-    "ds001419_nifti: mark integration test for fMRIPrep derivatives from ds001419",
+    "ds001419_nifti: mark NIfTI integration test for fMRIPrep derivatives from ds001419",
+    "ds001419_cifti: mark CIFTI integration test for fMRIPrep derivatives from ds001419",
     "pnc_nifti: mark integration test for fMRIPrep derivatives with NIFTI settings",
     "pnc_cifti: mark integration test for fMRIPrep derivatives with CIFTI settings",
     "pnc_cifti_t2wonly: mark integration test for fMRIPrep derivatives with CIFTI settings and a simulated T2w file",
