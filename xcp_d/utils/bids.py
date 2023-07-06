@@ -824,17 +824,26 @@ def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
     if not subject_id.startswith("sub-"):
         subject_id = f"sub-{subject_id}"
 
-    sphere_raw = os.path.join(
+    # Nibabies + MCRIBS will have a sphere.reg2 file instead of sphere.reg.
+    sphere_file = os.path.join(
         freesurfer_path,
         subject_id,
         "surf",
-        f"{hemisphere.lower()}h.sphere.reg",
+        f"{hemisphere.lower()}h.sphere.reg2",
     )
+    if not os.path.isfile(sphere_file):
+        # Go with FreeSurfer file if MCRIBS file doesn't exist.
+        sphere_file = os.path.join(
+            freesurfer_path,
+            subject_id,
+            "surf",
+            f"{hemisphere.lower()}h.sphere.reg",
+        )
 
-    if not os.path.isfile(sphere_raw):
-        raise FileNotFoundError(f"Sphere file not found at '{sphere_raw}'")
+    if not os.path.isfile(sphere_file):
+        raise FileNotFoundError(f"Sphere file not found at '{sphere_file}'")
 
-    return sphere_raw
+    return sphere_file
 
 
 def get_entity(filename, entity):

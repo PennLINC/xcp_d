@@ -1,6 +1,7 @@
 """Tests for the xcp_d.utils.bids module."""
 import json
 import os
+from pathlib import Path
 
 import pytest
 from bids.layout import BIDSLayout
@@ -210,7 +211,14 @@ def test_get_freesurfer_dir(datasets):
     assert os.path.isfile(sphere_file)
 
     with pytest.raises(FileNotFoundError, match="Sphere file not found at"):
-        sphere_file = xbids.get_freesurfer_sphere(fs_dir, "fail", "L")
+        xbids.get_freesurfer_sphere(fs_dir, "fail", "L")
+
+    mcribs_sphere_file = sphere_file + "2"
+    Path(mcribs_sphere_file).touch()
+    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "sub-1648798153", "L")
+    assert os.path.isfile(sphere_file)
+    assert sphere_file == mcribs_sphere_file
+    os.remove(mcribs_sphere_file)
 
 
 def test_get_entity(datasets):
