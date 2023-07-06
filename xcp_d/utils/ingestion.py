@@ -49,9 +49,6 @@ def collect_anatomical_files(anat_dir_orig, anat_dir_fmriprep, base_anatomical_e
 def collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
     """Collect surface files from ABCD or HCP-YA derivatives."""
     SURFACE_DICT = {
-        "{hemi}.midthickness.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_midthickness.surf.gii",
-        "{hemi}.inflated.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_inflated.surf.gii",
-        "{hemi}.very_inflated.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_vinflated.surf.gii",
         "{hemi}.pial.32k_fs_LR.surf.gii": "hemi-{hemi}_pial.surf.gii",
         "{hemi}.white.32k_fs_LR.surf.gii": "hemi-{hemi}_smoothwm.surf.gii",
         "{hemi}.thickness.32k_fs_LR.shape.gii": "hemi-{hemi}_thickness.shape.gii",
