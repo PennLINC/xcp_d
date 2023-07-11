@@ -13,7 +13,8 @@ from xcp_d.utils.filemanip import ensure_list
 from xcp_d.utils.ingestion import (
     collect_anatomical_files,
     collect_confounds,
-    collect_surfaces,
+    collect_meshes,
+    collect_morphs,
     copy_files_in_dict,
     plot_bbreg,
     write_json,
@@ -179,8 +180,12 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     anat_dict = collect_anatomical_files(anat_dir_orig, anat_dir_fmriprep, base_anatomical_ents)
     copy_dictionary = {**copy_dictionary, **anat_dict}
 
-    # Collect surface files to copy
-    surfaces_dict = collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
+    # Collect mesh files to copy
+    mesh_dict = collect_meshes(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
+    copy_dictionary = {**copy_dictionary, **mesh_dict}
+
+    # Convert morphometry files
+    morphometry_dict = collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
     LOGGER.info("Finished collecting anatomical files")
 
     # Collect functional files to copy
@@ -319,7 +324,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         write_json(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from HCP to fMRIPrep
-    copy_dictionary = {**copy_dictionary, **surfaces_dict}
+    copy_dictionary = {**copy_dictionary, **morphometry_dict}
     scans_dict = {}
     for key, values in copy_dictionary.items():
         for item in values:
