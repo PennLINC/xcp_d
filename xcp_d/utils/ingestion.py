@@ -95,6 +95,10 @@ def collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
             f"{subses_ents}_space-fsLR_den-32k_{out_str}.dscalar.nii",
         )
 
+        if not os.path.isfile(lh_file) or not os.path.isfile(rh_file):
+            LOGGER.warning(f"File(s) DNE: {in_str}")
+            continue
+
         interface = CiftiCreateDenseScalar(
             left_metric=lh_file,
             right_metric=rh_file,
