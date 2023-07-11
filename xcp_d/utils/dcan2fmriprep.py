@@ -166,7 +166,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         # Collect surface files to copy
         surfaces_dict = collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
-        copy_dictionary = {**copy_dictionary, **surfaces_dict}
         LOGGER.info("Finished collecting anatomical files")
 
         # Get masks to be used to extract confounds
@@ -323,6 +322,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         write_json(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from DCAN to fMRIPrep
+    copy_dictionary = {**copy_dictionary, **surfaces_dict}
     scans_dict = {}
     for key, values in copy_dictionary.items():
         for item in values:
