@@ -48,11 +48,35 @@ def collect_anatomical_files(anat_dir_orig, anat_dir_fmriprep, base_anatomical_e
     return copy_dictionary
 
 
-def collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
-    """Collect surface files from ABCD or HCP-YA derivatives an convert to CIFTIs."""
+def collect_meshes(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
+    """Collect mesh files from ABCD or HCP-YA derivatives."""
     SURFACE_DICT = {
-        ".pial.32k_fs_LR.surf.gii": "pial",
-        ".white.32k_fs_LR.surf.gii": "white",
+        "{hemi}.pial.32k_fs_LR.surf.gii": "hemi-{hemi}_pial.surf.gii",
+        "{hemi}.white.32k_fs_LR.surf.gii": "hemi-{hemi}_smoothwm.surf.gii",
+    }
+
+    fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
+    copy_dictionary = {}
+    for in_str, out_str in SURFACE_DICT.items():
+        for hemi in ["L", "R"]:
+            hemi_in_str = in_str.format(hemi=hemi)
+            hemi_out_str = out_str.format(hemi=hemi)
+            surf_orig = os.path.join(fsaverage_dir_orig, f"{sub_id}.{hemi_in_str}")
+            surf_fmriprep = os.path.join(
+                anat_dir_fmriprep,
+                f"{subses_ents}_space-fsLR_den-32k_{hemi_out_str}",
+            )
+            if os.path.isfile(surf_orig):
+                copy_dictionary[surf_orig] = [surf_fmriprep]
+            else:
+                LOGGER.warning(f"File DNE: {surf_orig}")
+
+    return copy_dictionary
+
+
+def collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
+    """Collect and convert morphometry files to CIFTIs."""
+    SURFACE_DICT = {
         ".thickness.32k_fs_LR.shape.gii": "thickness",
         ".corrThickness.32k_fs_LR.shape.gii": "desc-corrected_thickness",
         ".curvature.32k_fs_LR.shape.gii": "curv",
