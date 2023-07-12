@@ -123,6 +123,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     # The identity xform is used in place of any actual ones.
     identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
     copy_dictionary[identity_xfm] = []
+    morph_dict_all_ses = {}
 
     for ses_ent in ses_entities:
         LOGGER.info(f"Processing {ses_ent}")
@@ -171,6 +172,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         # Convert morphometry files
         morphometry_dict = collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
+        morph_dict_all_ses = {**morph_dict_all_ses, **morphometry_dict}
         LOGGER.info("Finished collecting anatomical files")
 
         # Get masks to be used to extract confounds
@@ -327,7 +329,8 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         write_json(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from DCAN to fMRIPrep
-    copy_dictionary = {**copy_dictionary, **morphometry_dict}
+    raise Exception(morph_dict_all_ses)
+    copy_dictionary = {**copy_dictionary, **morph_dict_all_ses}
     scans_dict = {}
     for key, values in copy_dictionary.items():
         for item in values:
