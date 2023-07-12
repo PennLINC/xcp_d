@@ -23,6 +23,7 @@ from xcp_d.utils.execsummary import (
     modify_brainsprite_scene_template,
     modify_pngs_scene_template,
 )
+from xcp_d.utils.utils import get_std2bold_xfms
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -405,19 +406,28 @@ def init_execsummary_functional_plots_wf(
             "so the BBReg figure will not be extracted."
         )
 
-    # Plot the mean bold image
+    # Calculate the mean bold image
     calculate_mean_bold = pe.Node(
         BinaryMath(expression="np.mean(img, axis=3)"),
         name="calculate_mean_bold",
     )
-    plot_meanbold = pe.Node(AnatomicalPlot(), name="plot_meanbold")
+    workflow.connect([(inputnode, calculate_mean_bold, [("preproc_nifti", "in_file")])])
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, calculate_mean_bold, [("preproc_nifti", "in_file")]),
-        (calculate_mean_bold, plot_meanbold, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    # Warp reference bold image to MNI152NLin6Asym
+    get_transforms_to_mni = pe.Node(
+        Function(
+            input_names=["bold_file", "inverted"],
+            output_names=["transformfile"],
+            function=get_std2bold_xfms,
+        ),
+        name="get_transforms_to_mni",
+    )
+    get_transforms_to_mni.inputs.inverted = True
+    workflow.connect([(inputnode, get_transforms_to_mni, [("preproc_nifti", "bold_file")])])
+
+    # Plot the mean bold image
+    plot_meanbold = pe.Node(AnatomicalPlot(), name="plot_meanbold")
+    workflow.connect([(calculate_mean_bold, plot_meanbold, [("out_file", "in_file")])])
 
     # Write out the figures.
     ds_meanbold_figure = pe.Node(
@@ -437,6 +447,8 @@ def init_execsummary_functional_plots_wf(
         (plot_meanbold, ds_meanbold_figure, [("out_file", "in_file")]),
     ])
     # fmt:on
+
+    # Warp reference bold image to MNI152NLin6Asym
 
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name="plot_boldref")
@@ -464,61 +476,46 @@ def init_execsummary_functional_plots_wf(
 
     # Start plotting the overlay figures
     # T1 in Task, Task in T1, Task in T2, T2 in Task
-    if t1w_available:
-        # Resample T1w to match resolution of task data
-        resample_t1w = pe.Node(
+    anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
+    for anat in anatomicals:
+        # Resample T1w/T2w to match resolution of task data
+        resample_anat = pe.Node(
             ResampleToImage(),
-            name="resample_t1w",
+            name=f"resample_{anat}",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_t1w, [
-                ("t1w", "in_file"),
-            ]),
-            (calculate_mean_bold, resample_t1w, [
-                ("out_file", "target_file"),
-            ]),
+            (inputnode, resample_anat, [(anat, "in_file")]),
+            (calculate_mean_bold, resample_anat, [("out_file", "target_file")]),
         ])
         # fmt:on
 
-        plot_t1w_on_task_wf = init_plot_overlay_wf(
+        plot_anat_on_task_wf = init_plot_overlay_wf(
             output_dir=output_dir,
-            desc="T1wOnTask",
-            name="plot_t1w_on_task_wf",
+            desc=f"{anat[0].upper()}{anat[1:]}OnTask",
+            name=f"plot_{anat}_on_task_wf",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, plot_t1w_on_task_wf, [
-                ("preproc_nifti", "inputnode.name_source"),
-            ]),
-            (calculate_mean_bold, plot_t1w_on_task_wf, [
-                ("out_file", "inputnode.underlay_file"),
-            ]),
-            (resample_t1w, plot_t1w_on_task_wf, [
-                ("out_file", "inputnode.overlay_file"),
-            ]),
+            (inputnode, plot_anat_on_task_wf, [("preproc_nifti", "inputnode.name_source")]),
+            (calculate_mean_bold, plot_anat_on_task_wf, [("out_file", "inputnode.underlay_file")]),
+            (resample_anat, plot_anat_on_task_wf, [("out_file", "inputnode.overlay_file")]),
         ])
         # fmt:on
 
-        plot_task_on_t1w_wf = init_plot_overlay_wf(
+        plot_task_on_anat_wf = init_plot_overlay_wf(
             output_dir=output_dir,
-            desc="TaskOnT1w",
-            name="plot_task_on_t1w_wf",
+            desc=f"TaskOn{anat[0].upper()}{anat[1:]}",
+            name=f"plot_task_on_{anat}_wf",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, plot_task_on_t1w_wf, [
-                ("preproc_nifti", "inputnode.name_source"),
-            ]),
-            (calculate_mean_bold, plot_task_on_t1w_wf, [
-                ("out_file", "inputnode.overlay_file"),
-            ]),
-            (resample_t1w, plot_task_on_t1w_wf, [
-                ("out_file", "inputnode.underlay_file"),
-            ]),
+            (inputnode, plot_task_on_anat_wf, [("preproc_nifti", "inputnode.name_source")]),
+            (calculate_mean_bold, plot_task_on_anat_wf, [("out_file", "inputnode.overlay_file")]),
+            (resample_anat, plot_task_on_anat_wf, [("out_file", "inputnode.underlay_file")]),
         ])
         # fmt:on
 
@@ -531,12 +528,8 @@ def init_execsummary_functional_plots_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_t2w, [
-                ("t2w", "in_file"),
-            ]),
-            (calculate_mean_bold, resample_t2w, [
-                ("out_file", "target_file"),
-            ]),
+            (inputnode, resample_t2w, [("t2w", "in_file")]),
+            (calculate_mean_bold, resample_t2w, [("out_file", "target_file")]),
         ])
         # fmt:on
 
@@ -552,9 +545,7 @@ def init_execsummary_functional_plots_wf(
                 ("preproc_nifti", "inputnode.underlay_file"),
                 ("preproc_nifti", "inputnode.name_source"),
             ]),
-            (resample_t2w, plot_t2w_on_task_wf, [
-                ("out_file", "inputnode.overlay_file"),
-            ]),
+            (resample_t2w, plot_t2w_on_task_wf, [("out_file", "inputnode.overlay_file")]),
         ])
         # fmt:on
 
@@ -570,9 +561,7 @@ def init_execsummary_functional_plots_wf(
                 ("preproc_nifti", "inputnode.overlay_file"),
                 ("preproc_nifti", "inputnode.name_source"),
             ]),
-            (resample_t2w, plot_task_on_t2w_wf, [
-                ("out_file", "inputnode.underlay_file"),
-            ]),
+            (resample_t2w, plot_task_on_t2w_wf, [("out_file", "inputnode.underlay_file")]),
         ])
         # fmt:on
 
@@ -631,109 +620,53 @@ def init_execsummary_anatomical_plots_wf(
     )
 
     # Start plotting the overlay figures
-    # Atlas in T1w, T1w in Atlas
-    if t1w_available:
-        # Resample T1w to match resolution of template data
-        resample_t1w = pe.Node(
+    # Atlas in T1w/T2w, T1w/T2w in Atlas
+    anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
+    for anat in anatomicals:
+        # Resample anatomical to match resolution of template data
+        resample_anat = pe.Node(
             ResampleToImage(),
-            name="resample_t1w",
+            name=f"resample_{anat}",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_t1w, [
-                ("t1w", "in_file"),
+            (inputnode, resample_anat, [
+                (anat, "in_file"),
                 ("template", "target_file"),
-            ])
+            ]),
         ])
         # fmt:on
 
-        plot_t1w_on_atlas_wf = init_plot_overlay_wf(
+        plot_anat_on_atlas_wf = init_plot_overlay_wf(
             output_dir=output_dir,
             desc="AnatOnAtlas",
-            name="plot_t1w_on_atlas_wf",
+            name=f"plot_{anat}_on_atlas_wf",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, plot_t1w_on_atlas_wf, [
+            (inputnode, plot_anat_on_atlas_wf, [
                 ("template", "inputnode.underlay_file"),
-                ("t1w", "inputnode.name_source"),
+                (anat, "inputnode.name_source"),
             ]),
-            (resample_t1w, plot_t1w_on_atlas_wf, [
-                ("out_file", "inputnode.overlay_file"),
-            ]),
+            (resample_anat, plot_anat_on_atlas_wf, [("out_file", "inputnode.overlay_file")]),
         ])
         # fmt:on
 
-        plot_atlas_on_t1w_wf = init_plot_overlay_wf(
+        plot_atlas_on_anat_wf = init_plot_overlay_wf(
             output_dir=output_dir,
             desc="AtlasOnAnat",
-            name="plot_atlas_on_t1w_wf",
+            name=f"plot_atlas_on_{anat}_wf",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, plot_atlas_on_t1w_wf, [
+            (inputnode, plot_atlas_on_anat_wf, [
                 ("template", "inputnode.overlay_file"),
                 ("t1w", "inputnode.name_source"),
             ]),
-            (resample_t1w, plot_atlas_on_t1w_wf, [
-                ("out_file", "inputnode.underlay_file"),
-            ]),
-        ])
-        # fmt:on
-
-    # Atlas in T2w, T2w in Atlas
-    if t2w_available:
-        # Resample T2w to match resolution of template data
-        resample_t2w = pe.Node(
-            ResampleToImage(),
-            name="resample_t2w",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, resample_t2w, [
-                ("t2w", "in_file"),
-                ("template", "target_file"),
-            ])
-        ])
-        # fmt:on
-
-        plot_t2w_on_atlas_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
-            desc="AnatOnAtlas",
-            name="plot_t2w_on_atlas_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, plot_t2w_on_atlas_wf, [
-                ("template", "inputnode.underlay_file"),
-                ("t2w", "inputnode.name_source"),
-            ]),
-            (resample_t2w, plot_t2w_on_atlas_wf, [
-                ("out_file", "inputnode.overlay_file"),
-            ]),
-        ])
-        # fmt:on
-
-        plot_atlas_on_t2w_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
-            desc="AtlasOnAnat",
-            name="plot_atlas_on_t2w_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, plot_atlas_on_t2w_wf, [
-                ("template", "inputnode.overlay_file"),
-                ("t2w", "inputnode.name_source"),
-            ]),
-            (resample_t2w, plot_atlas_on_t2w_wf, [
-                ("out_file", "inputnode.underlay_file"),
-            ]),
+            (resample_anat, plot_atlas_on_anat_wf, [("out_file", "inputnode.underlay_file")]),
         ])
         # fmt:on
 
