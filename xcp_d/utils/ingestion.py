@@ -77,12 +77,12 @@ def collect_meshes(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
 def collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
     """Collect and convert morphometry files to CIFTIs."""
     SURFACE_DICT = {
-        ".thickness.32k_fs_LR.shape.gii": "thickness",
-        ".corrThickness.32k_fs_LR.shape.gii": "desc-corrected_thickness",
-        ".curvature.32k_fs_LR.shape.gii": "curv",
-        ".sulc.32k_fs_LR.shape.gii": "sulc",
-        ".MyelinMap.32k_fs_LR.func.gii": "myelinw",
-        ".SmoothedMyelinMap.32k_fs_LR.func.gii": "desc-smoothed_myelinw",
+        "thickness.32k_fs_LR.shape.gii": "thickness",
+        "corrThickness.32k_fs_LR.shape.gii": "desc-corrected_thickness",
+        "curvature.32k_fs_LR.shape.gii": "curv",
+        "sulc.32k_fs_LR.shape.gii": "sulc",
+        "MyelinMap.32k_fs_LR.func.gii": "myelinw",
+        "SmoothedMyelinMap.32k_fs_LR.func.gii": "desc-smoothed_myelinw",
     }
 
     fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
@@ -92,11 +92,11 @@ def collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
         rh_file = os.path.join(fsaverage_dir_orig, f"{sub_id}.R.{in_str}")
         out_file = os.path.join(
             anat_dir_fmriprep,
-            f"{subses_ents}_space-fsLR_den-32k_{out_str}.dscalar.nii",
+            f"{subses_ents}_space-fsLR_den-91k_{out_str}.dscalar.nii",
         )
 
         if not os.path.isfile(lh_file) or not os.path.isfile(rh_file):
-            LOGGER.warning(f"File(s) DNE: {in_str}")
+            LOGGER.warning(f"File(s) DNE:\n\t{lh_file}\n\t{rh_file}")
             continue
 
         interface = CiftiCreateDenseScalar(
@@ -105,7 +105,6 @@ def collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
             out_file=out_file,
         )
         interface.run()
-        assert os.path.isfile(out_file), f"File DNE: {out_file}"
         mapping_dictionary[lh_file] = out_file
         mapping_dictionary[rh_file] = out_file
 
