@@ -543,7 +543,7 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, resample_anat, [(anat, "in_file")]),
-            (calculate_mean_bold, resample_anat, [("out_file", "target_file")]),
+            (warp_mean_bold_to_mni, resample_anat, [("output_image", "target_file")]),
         ])
         # fmt:on
 
@@ -556,7 +556,9 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_anat_on_task_wf, [("preproc_nifti", "inputnode.name_source")]),
-            (calculate_mean_bold, plot_anat_on_task_wf, [("out_file", "inputnode.underlay_file")]),
+            (warp_mean_bold_to_mni, plot_anat_on_task_wf, [
+                ("output_image", "inputnode.underlay_file"),
+            ]),
             (resample_anat, plot_anat_on_task_wf, [("out_file", "inputnode.overlay_file")]),
         ])
         # fmt:on
@@ -570,7 +572,9 @@ def init_execsummary_functional_plots_wf(
         # fmt:off
         workflow.connect([
             (inputnode, plot_task_on_anat_wf, [("preproc_nifti", "inputnode.name_source")]),
-            (calculate_mean_bold, plot_task_on_anat_wf, [("out_file", "inputnode.overlay_file")]),
+            (warp_mean_bold_to_mni, plot_task_on_anat_wf, [
+                ("output_image", "inputnode.overlay_file"),
+            ]),
             (resample_anat, plot_task_on_anat_wf, [("out_file", "inputnode.underlay_file")]),
         ])
         # fmt:on
