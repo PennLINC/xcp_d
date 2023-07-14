@@ -155,17 +155,17 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
 
 def test_list_to_str():
     """Test the list_to_str function."""
-    lst = ["a"]
-    string = utils.list_to_str(lst)
+    string = utils.list_to_str(["a"])
     assert string == "a"
 
-    lst = ["a", "b"]
-    string = utils.list_to_str(lst)
+    string = utils.list_to_str(["a", "b"])
     assert string == "a and b"
 
-    lst = ["a", "b", "c"]
-    string = utils.list_to_str(lst)
+    string = utils.list_to_str(["a", "b", "c"])
     assert string == "a, b, and c"
+
+    with pytest.raises(ValueError, match="Zero-length list provided."):
+        utils.list_to_str([])
 
 
 def test_get_bold2std_and_t1w_xfms(ds001419_data):
