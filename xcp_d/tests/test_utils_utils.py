@@ -331,8 +331,8 @@ def test_get_std2bold_xfms(ds001419_data):
     """
     bold_file_nlin2009c = ds001419_data["nifti_file"]
 
-    # MNI152NLin2009cAsym --> MNI152NLin6Asym
-    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin2009c)
+    # MNI152NLin6Asym --> MNI152NLin2009cAsym
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin2009c, invert=False)
     assert len(xforms_to_mni) == 1
 
     # MNI152NLin6Asym --> MNI152NLin6Asym
@@ -340,7 +340,33 @@ def test_get_std2bold_xfms(ds001419_data):
         "space-MNI152NLin2009cAsym_",
         "space-MNI152NLin6Asym_",
     )
-    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin6asym)
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin6asym, invert=False)
+    assert len(xforms_to_mni) == 1
+
+    # MNI152NLin6Asym --> MNIInfant
+    bold_file_infant = bold_file_nlin2009c.replace(
+        "space-MNI152NLin2009cAsym_",
+        "space-MNIInfant_cohort-1_",
+    )
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_infant, invert=False)
+    assert len(xforms_to_mni) == 2
+
+    # MNI152NLin6Asym --> tofail
+    bold_file_tofail = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-tofail_")
+    with pytest.raises(ValueError, match="Space 'tofail'"):
+        utils.get_std2bold_xfms(bold_file_tofail, invert=False)
+
+    # Inverted version
+    # MNI152NLin2009cAsym --> MNI152NLin6Asym
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin2009c, invert=True)
+    assert len(xforms_to_mni) == 1
+
+    # MNI152NLin6Asym --> MNI152NLin6Asym
+    bold_file_nlin6asym = bold_file_nlin2009c.replace(
+        "space-MNI152NLin2009cAsym_",
+        "space-MNI152NLin6Asym_",
+    )
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin6asym, invert=True)
     assert len(xforms_to_mni) == 1
 
     # MNIInfant --> MNI152NLin6Asym
@@ -348,13 +374,13 @@ def test_get_std2bold_xfms(ds001419_data):
         "space-MNI152NLin2009cAsym_",
         "space-MNIInfant_cohort-1_",
     )
-    xforms_to_mni = utils.get_std2bold_xfms(bold_file_infant)
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_infant, invert=True)
     assert len(xforms_to_mni) == 2
 
     # tofail --> MNI152NLin6Asym
     bold_file_tofail = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-tofail_")
     with pytest.raises(ValueError, match="Space 'tofail'"):
-        utils.get_std2bold_xfms(bold_file_tofail)
+        utils.get_std2bold_xfms(bold_file_tofail, invert=True)
 
 
 def test_fwhm2sigma():
