@@ -678,7 +678,7 @@ def init_execsummary_anatomical_plots_wf(
         workflow.connect([
             (inputnode, plot_atlas_on_anat_wf, [
                 ("template", "inputnode.overlay_file"),
-                ("t1w", "inputnode.name_source"),
+                (anat, "inputnode.name_source"),
             ]),
             (resample_anat, plot_atlas_on_anat_wf, [("out_file", "inputnode.underlay_file")]),
         ])
