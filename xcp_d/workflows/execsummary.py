@@ -10,7 +10,9 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
+from templateflow.api import get as get_template
 
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
@@ -308,6 +310,8 @@ def init_execsummary_functional_plots_wf(
     t2w_available,
     output_dir,
     layout,
+    omp_nthreads,
+    mem_gb,
     name="execsummary_functional_plots_wf",
 ):
     """Generate the functional figures for an executive summary.
@@ -325,6 +329,8 @@ def init_execsummary_functional_plots_wf(
                 t2w_available=True,
                 output_dir=".",
                 layout=None,
+                omp_nthreads=1,
+                mem_gb=0.1,
                 name="execsummary_functional_plots_wf",
             )
 
@@ -339,6 +345,8 @@ def init_execsummary_functional_plots_wf(
         Generally False.
     %(output_dir)s
     %(layout)s
+    %(omp_nthreads)s
+    %(mem_gb)s
     %(name)s
 
     Inputs
@@ -417,7 +425,7 @@ def init_execsummary_functional_plots_wf(
     get_transforms_to_mni = pe.Node(
         Function(
             input_names=["bold_file", "inverted"],
-            output_names=["transformfile"],
+            output_names=["transforms"],
             function=get_std2bold_xfms,
         ),
         name="get_transforms_to_mni",
@@ -425,9 +433,39 @@ def init_execsummary_functional_plots_wf(
     get_transforms_to_mni.inputs.inverted = True
     workflow.connect([(inputnode, get_transforms_to_mni, [("preproc_nifti", "bold_file")])])
 
+    reference_image = str(
+        get_template(
+            template="MNI152NLin6Asym",
+            resolution=1,
+            desc=None,
+            suffix="T1w",
+        ),
+    )
+
+    # Now apply the transforms
+    warp_mean_bold_to_mni = pe.Node(
+        ApplyTransforms(
+            num_threads=2,
+            interpolation="LanczosWindowedSinc",
+            input_image_type=3,
+            dimension=3,
+            reference_image=reference_image,
+        ),
+        name="warp_mean_bold_to_mni",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (get_transforms_to_mni, warp_mean_bold_to_mni, [("transforms", "transforms")]),
+        (calculate_mean_bold, warp_mean_bold_to_mni, [("out_file", "input_image")]),
+    ])
+    # fmt:on
+
     # Plot the mean bold image
     plot_meanbold = pe.Node(AnatomicalPlot(), name="plot_meanbold")
-    workflow.connect([(calculate_mean_bold, plot_meanbold, [("out_file", "in_file")])])
+    workflow.connect([(warp_mean_bold_to_mni, plot_meanbold, [("output_image", "in_file")])])
 
     # Write out the figures.
     ds_meanbold_figure = pe.Node(
@@ -449,11 +487,29 @@ def init_execsummary_functional_plots_wf(
     # fmt:on
 
     # Warp reference bold image to MNI152NLin6Asym
+    warp_boldref_to_mni = pe.Node(
+        ApplyTransforms(
+            num_threads=2,
+            interpolation="LanczosWindowedSinc",
+            input_image_type=3,
+            dimension=3,
+            reference_image=reference_image,
+        ),
+        name="warp_boldref_to_mni",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, warp_boldref_to_mni, [("boldref", "input_image")]),
+        (get_transforms_to_mni, warp_boldref_to_mni, [("transforms", "transforms")]),
+    ])
+    # fmt:on
 
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name="plot_boldref")
-
-    workflow.connect([(inputnode, plot_boldref, [("boldref", "in_file")])])
+    workflow.connect([(warp_boldref_to_mni, plot_boldref, [("output_image", "in_file")])])
 
     # Write out the figures.
     ds_boldref_figure = pe.Node(

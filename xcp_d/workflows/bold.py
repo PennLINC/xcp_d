@@ -576,6 +576,8 @@ def init_postprocess_nifti_wf(
             t2w_available=t2w_available,
             output_dir=output_dir,
             layout=layout,
+            omp_nthreads=omp_nthreads,
+            mem_gb=mem_gbx["timeseries"],
             name="execsummary_functional_plots_wf",
         )
 
