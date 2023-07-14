@@ -575,52 +575,6 @@ def init_execsummary_functional_plots_wf(
         ])
         # fmt:on
 
-    if t2w_available:
-        # Resample T2w to match resolution of task data
-        resample_t2w = pe.Node(
-            ResampleToImage(),
-            name="resample_t2w",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, resample_t2w, [("t2w", "in_file")]),
-            (calculate_mean_bold, resample_t2w, [("out_file", "target_file")]),
-        ])
-        # fmt:on
-
-        plot_t2w_on_task_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
-            desc="T2wOnTask",
-            name="plot_t2w_on_task_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, plot_t2w_on_task_wf, [
-                ("preproc_nifti", "inputnode.underlay_file"),
-                ("preproc_nifti", "inputnode.name_source"),
-            ]),
-            (resample_t2w, plot_t2w_on_task_wf, [("out_file", "inputnode.overlay_file")]),
-        ])
-        # fmt:on
-
-        plot_task_on_t2w_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
-            desc="TaskOnT2w",
-            name="plot_task_on_t2w_wf",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, plot_task_on_t2w_wf, [
-                ("preproc_nifti", "inputnode.overlay_file"),
-                ("preproc_nifti", "inputnode.name_source"),
-            ]),
-            (resample_t2w, plot_task_on_t2w_wf, [("out_file", "inputnode.underlay_file")]),
-        ])
-        # fmt:on
-
     return workflow
 
 
