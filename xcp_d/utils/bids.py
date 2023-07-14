@@ -542,12 +542,13 @@ def collect_morphometry_data(layout, participant_label):
 
 
 @fill_doc
-def collect_run_data(layout, bold_file, cifti, primary_anat):
+def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
     %(layout)s
+    %(input_type)s
     bold_file : :obj:`str`
         Path to the BOLD file.
     %(cifti)s
@@ -597,19 +598,21 @@ def collect_run_data(layout, bold_file, cifti, primary_anat):
             suffix="xfm",
         )
     else:
-        space = bids_file.get_entities()["space"]
-        allowed_nifti_space = ASSOCIATED_TEMPLATES[space]
+        allowed_nifti_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )["nifti"]
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            space=allowed_nifti_space,
+            space=allowed_nifti_spaces,
             suffix="boldref",
             extension=[".nii", ".nii.gz"],
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            space=allowed_nifti_space,
+            space=allowed_nifti_spaces,
             desc="preproc",
             suffix="bold",
             extension=[".nii", ".nii.gz"],

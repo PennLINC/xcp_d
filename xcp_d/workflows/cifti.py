@@ -86,6 +86,7 @@ def init_postprocess_cifti_wf(
             custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
             run_data = collect_run_data(
                 layout=layout,
+                input_type="fmriprep",
                 bold_file=bold_file,
                 cifti=True,
                 primary_anat="T1w",

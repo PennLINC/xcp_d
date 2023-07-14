@@ -86,6 +86,7 @@ def init_postprocess_nifti_wf(
 
             run_data = collect_run_data(
                 layout=layout,
+                input_type="fmriprep",
                 bold_file=bold_file,
                 cifti=False,
                 primary_anat="T1w",
