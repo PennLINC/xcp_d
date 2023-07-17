@@ -143,7 +143,9 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     func_dir_fmriprep = os.path.join(subject_dir_fmriprep, "func")
     work_dir = os.path.join(subject_dir_fmriprep, "work")
 
-    if os.path.isdir(func_dir_fmriprep):
+    dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
+
+    if os.path.isfile(dataset_description_fmriprep):
         LOGGER.info("Converted dataset already exists. Skipping conversion.")
         return
 
@@ -319,7 +321,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             },
         ],
     }
-    dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
+
     if not os.path.isfile(dataset_description_fmriprep):
         write_json(dataset_description_dict, dataset_description_fmriprep)
 

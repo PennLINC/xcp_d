@@ -116,6 +116,11 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     if not ses_entities:
         raise FileNotFoundError(f"No session volumes found in {os.path.join(in_dir, sub_ent)}")
 
+    dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
+    if os.path.isfile(dataset_description_fmriprep):
+        LOGGER.info("Converted dataset folder already exists. Skipping conversion.")
+        return
+
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
@@ -129,11 +134,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         LOGGER.info(f"Processing {ses_ent}")
         subses_ents = f"{sub_ent}_{ses_ent}"
         session_dir_fmriprep = os.path.join(subject_dir_fmriprep, ses_ent)
-
-        if os.path.isdir(session_dir_fmriprep):
-            LOGGER.info("Converted session folder already exists. Skipping conversion.")
-            continue
-
         anat_dir_orig = os.path.join(in_dir, sub_ent, ses_ent, "files", "MNINonLinear")
         anat_dir_fmriprep = os.path.join(session_dir_fmriprep, "anat")
         func_dir_orig = os.path.join(anat_dir_orig, "Results")
@@ -324,12 +324,11 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             },
         ],
     }
-    dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
+
     if not os.path.isfile(dataset_description_fmriprep):
         write_json(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from DCAN to fMRIPrep
-    raise Exception(morph_dict_all_ses)
     copy_dictionary = {**copy_dictionary, **morph_dict_all_ses}
     scans_dict = {}
     for key, values in copy_dictionary.items():

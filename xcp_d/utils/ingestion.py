@@ -217,7 +217,8 @@ def extract_mean_signal(mask, nifti, work_dir):
 def write_json(data, outfile):
     """Write dictionary to JSON file."""
     with open(outfile, "w") as f:
-        json.dump(data, f)
+        json.dump(data, f, sortkeys=True, indent=4)
+
     return outfile
 
 
