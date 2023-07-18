@@ -381,8 +381,12 @@ class CiftiConnect(SimpleInterface):
             )
             node_labels_df = node_labels_df.drop(index=[0])
 
-        expected_cifti_node_labels = node_labels_df["cifti_label"].tolist()
-        parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
+        if "cifti_label" in node_labels_df.columns:
+            expected_cifti_node_labels = node_labels_df["cifti_label"].tolist()
+            parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
+        else:
+            expected_cifti_node_labels = node_labels_df["label"].tolist()
+            parcel_label_mapper = dict(zip(node_labels_df["label"], node_labels_df["label"]))
 
         # Load node labels from CIFTI file.
         # First axis should be time, second should be parcels
