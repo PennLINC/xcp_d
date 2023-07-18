@@ -181,7 +181,10 @@ class NiftiConnect(SimpleInterface):
                 dtype=timeseries_arr.dtype,
             )
             for col in range(timeseries_arr.shape[1]):
-                label_col = seq_mapper[masker.labels_[col]]
+                try:
+                    label_col = seq_mapper[masker.labels_[col]]
+                except:
+                    raise ValueError(masker.labels_)
                 new_timeseries_arr[:, label_col] = timeseries_arr[:, col]
 
             timeseries_arr = new_timeseries_arr
