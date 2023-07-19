@@ -404,6 +404,7 @@ class CiftiConnect(SimpleInterface):
         )
         error_msg = ""
         if found_but_not_expected:
+            raise Exception(detected_node_labels)
             error_msg += (
                 "Mismatch found between atlas nodes and node labels file: "
                 f"{', '.join(found_but_not_expected)}\n"
