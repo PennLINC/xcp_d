@@ -385,7 +385,9 @@ class CiftiConnect(SimpleInterface):
             expected_cifti_node_labels = node_labels_df["cifti_label"].tolist()
             parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
         elif "label_7network" in node_labels_df.columns:
-            node_labels_df = node_labels_df.label_7network.fillna(node_labels_df.label)
+            node_labels_df["label_7network"] = node_labels_df["label_7network"].fillna(
+                node_labels_df["label"]
+            )
             expected_cifti_node_labels = node_labels_df["label_7network"].tolist()
             parcel_label_mapper = dict(
                 zip(node_labels_df["label_7network"], node_labels_df["label"])
