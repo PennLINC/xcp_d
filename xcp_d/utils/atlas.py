@@ -78,9 +78,14 @@ def get_atlas_nifti(atlas_name):
     if "4S" in atlas_name:
         atlas_file = os.path.join("/AtlasPack", atlas_fname)
         atlas_labels_file = os.path.join("/AtlasPack", tsv_fname)
+        atlas_metadata_file = f"/AtlasPack/tpl-MNI152NLin6Asym_atlas-{atlas_name}_dseg.json"
     else:
         atlas_file = pkgrf("xcp_d", f"data/atlases/{atlas_fname}")
         atlas_labels_file = pkgrf("xcp_d", f"data/atlases/{tsv_fname}")
+        atlas_metadata_file = pkgrf(
+            "xcp_d",
+            f"data/atlases/tpl-MNI152NLin6Asym_atlas-{atlas_name}_dseg.json",
+        )
 
     if not os.path.isfile(atlas_file):
         raise FileNotFoundError(f"File DNE: {atlas_file}")
@@ -88,7 +93,10 @@ def get_atlas_nifti(atlas_name):
     if not os.path.isfile(atlas_labels_file):
         raise FileNotFoundError(f"File DNE: {atlas_labels_file}")
 
-    return atlas_file, atlas_labels_file
+    if not os.path.isfile(atlas_metadata_file):
+        raise FileNotFoundError(f"File DNE: {atlas_metadata_file}")
+
+    return atlas_file, atlas_labels_file, atlas_metadata_file
 
 
 def get_atlas_cifti(atlas_name):
@@ -110,6 +118,10 @@ def get_atlas_cifti(atlas_name):
     -------
     atlas_file : :obj:`str`
         Path to the atlas file.
+    atlas_labels_file : :obj:`str`
+        The labels TSV file associated with the atlas.
+    atlas_metadata_file : :obj:`str`
+        The metadata JSON file associated with the atlas.
     """
     import os
 
@@ -118,12 +130,14 @@ def get_atlas_cifti(atlas_name):
     if "4S" in atlas_name:
         atlas_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas_name}_den-91k_dseg.dlabel.nii"
         atlas_labels_file = f"/AtlasPack/atlas-{atlas_name}_dseg.tsv"
+        atlas_metadata_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas_name}_dseg.json"
     else:
         atlas_file = pkgrf(
             "xcp_d",
             f"data/atlases/tpl-fsLR_atlas-{atlas_name}_den-32k_dseg.dlabel.nii",
         )
         atlas_labels_file = pkgrf("xcp_d", f"data/atlases/atlas-{atlas_name}_dseg.tsv")
+        atlas_metadata_file = pkgrf("xcp_d", f"data/atlases/tpl-fsLR_atlas-{atlas_name}_dseg.json")
 
     if not os.path.isfile(atlas_file):
         raise FileNotFoundError(f"File DNE: {atlas_file}")
@@ -131,4 +145,7 @@ def get_atlas_cifti(atlas_name):
     if not os.path.isfile(atlas_labels_file):
         raise FileNotFoundError(f"File DNE: {atlas_labels_file}")
 
-    return atlas_file, atlas_labels_file
+    if not os.path.isfile(atlas_metadata_file):
+        raise FileNotFoundError(f"File DNE: {atlas_metadata_file}")
+
+    return atlas_file, atlas_labels_file, atlas_metadata_file

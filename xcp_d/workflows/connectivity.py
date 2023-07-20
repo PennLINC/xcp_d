@@ -98,7 +98,7 @@ def init_load_atlases_wf(
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file", "atlas_labels_file"],
+            output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
             function=get_atlas_cifti if cifti else get_atlas_nifti,
         ),
         name="atlas_file_grabber",
@@ -235,6 +235,50 @@ def init_load_atlases_wf(
         (inputnode, ds_atlas, [("name_source", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (atlas_buffer, ds_atlas, [("atlas_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_atlas_labels_file = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
+            allowed_entities=["atlas"],
+            suffix="dseg",
+            extension=".tsv",
+        ),
+        name="ds_atlas_labels_file",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_atlas_labels_file, [("name_source", "source_file")]),
+        (atlas_name_grabber, ds_atlas_labels_file, [("atlas_names", "atlas")]),
+        (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_atlas_metadata = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
+            allowed_entities=["atlas"],
+            suffix="dseg",
+            extension=".json",
+        ),
+        name="ds_atlas_metadata",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_atlas_metadata, [("name_source", "source_file")]),
+        (atlas_name_grabber, ds_atlas_metadata, [("atlas_names", "atlas")]),
+        (atlas_file_grabber, ds_atlas_metadata, [("atlas_metadata_file", "in_file")]),
     ])
     # fmt:on
 
