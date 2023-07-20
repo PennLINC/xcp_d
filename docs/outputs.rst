@@ -5,16 +5,16 @@
 Outputs of *XCP-D*
 ##################
 
-The  ``xcp_d`` outputs are written out in BIDS format and consist of three main parts.
+The  *XCP-D* outputs are written out in BIDS format and consist of three main parts.
 
 .. admonition:: A note on BIDS compliance
 
-   ``xcp_d`` attempts to follow the BIDS specification as best as possible.
-   However, many ``xcp_d`` derivatives are not currently covered by the specification.
+   *XCP-D* attempts to follow the BIDS specification as best as possible.
+   However, many *XCP-D* derivatives are not currently covered by the specification.
    In those instances, we attempt to follow recommendations from existing BIDS Extension Proposals
    (BEPs), which are in-progress proposals to add new features to BIDS.
 
-   Three BEPs that are of particular use in ``xcp_d`` are
+   Three BEPs that are of particular use in *XCP-D* are
    `BEP012: Functional preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/519>`_,
    `BEP017: BIDS connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_,
    and
@@ -24,8 +24,8 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
    In cases where a derivative type is not covered by an existing BEP,
    we have simply attempted to follow the general principles of BIDS.
 
-   If you discover a problem with the BIDS compliance of ``xcp_d``'s derivatives, please open an
-   issue in the ``xcp_d`` repository.
+   If you discover a problem with the BIDS compliance of *XCP-D*'s derivatives, please open an
+   issue in the *XCP-D* repository.
 
 
 ***************
@@ -67,7 +67,7 @@ the CIT168 subcortical atlas :footcite:p:`pauli2018high`,
 the Diedrichson cerebellar atlas :footcite:p:`king2019functional`,
 and the HCP thalamic atlas :footcite:p:`najdenovska2018vivo`.
 The 4S atlas is used in the same manner across three PennLINC BIDS Apps:
-*XCP-D*, *QSIPrep*, and *ASLPrep*, to produce synchronized outputs across modalities.
+XCP-D, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
 For more information about the 4S atlas, please see https://github.com/PennLINC/AtlasPack.
 
 
@@ -143,7 +143,7 @@ functional connectivity matrices, and resting-state derivatives.
 
 .. important::
 
-   Prior to version 0.4.0, the denoised data outputted by ``xcp_d`` was interpolated,
+   Prior to version 0.4.0, the denoised data outputted by *XCP-D* was interpolated,
    meaning that high-motion volumes were replaced with interpolated data prior to temporal
    filtering.
    **This was a bug.**
