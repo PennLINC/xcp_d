@@ -364,7 +364,7 @@ def init_parcellate_surfaces_wf(
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file", "atlas_labels_file"],
+            output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
             function=get_atlas_cifti,
         ),
         name="atlas_file_grabber",
