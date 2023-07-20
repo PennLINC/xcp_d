@@ -44,6 +44,33 @@ The executive summary is based on the DCAN lab's
       sub-<label>[_ses-<label>]_executive_summary.html
 
 
+*************************
+Parcellations and Atlases
+*************************
+
+*XCP-D* produces parcellated anatomical and functional outputs using a series of atlases.
+The individual outputs are documented in the relevant sections of this document,
+with this section describing the atlases themselves.
+
+The atlases currently used in *XCP-D* can be separated into three groups: subcortical, cortical,
+and combined cortical/subcortical.
+The two subcortical atlases are the Tian atlas :footcite:p:`tian2020topographic` and the
+CIFTI subcortical parcellation.
+The cortical atlases are the Glasser :footcite:p:`Glasser_2016` and the
+Gordon :footcite:p:`Gordon_2014`.
+The combined cortical/subcortical atlases are 10 different resolutions of the
+4S (Schaefer Supplemented with Subcortical Structures) atlas.
+
+The 4S atlas combines the Schaefer 2018 cortical atlas (version v0143) :footcite:p:`Schaefer_2017`
+at 10 different resolutions (100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcels) with
+the CIT168 subcortical atlas :footcite:p:`pauli2018high`,
+the Diedrichson cerebellar atlas :footcite:p:`king2019functional`,
+and the HCP thalamic atlas :footcite:p:`najdenovska2018vivo`.
+The 4S atlas is used in the same manner across three PennLINC BIDS Apps:
+*XCP-D*, *QSIPrep*, and *ASLPrep*, to produce synchronized outputs across modalities.
+For more information about the 4S atlas, please see https://github.com/PennLINC/AtlasPack.
+
+
 ******************
 Anatomical Outputs
 ******************
