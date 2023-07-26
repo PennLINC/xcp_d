@@ -686,19 +686,17 @@ def _validate_parameters(opts, build_log):
     opts.fmri_dir = opts.fmri_dir.resolve()
     opts.output_dir = opts.output_dir.resolve()
     opts.work_dir = opts.work_dir.resolve()
-    opts.fs_license_file = (
-        opts.fs_license_file.resolve() if opts.fs_license_file is not None else None
-    )
+
+    return_code = 0
 
     # Set the FreeSurfer license
     if opts.fs_license_file is not None:
+        opts.fs_license_file = opts.fs_license_file.resolve()
         if not opts.fs_license_file.is_file():
             build_log.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
             return_code = 1
 
         os.environ["FS_LICENSE"] = str(opts.fs_license_file)
-
-    return_code = 0
 
     # Check the validity of inputs
     if opts.output_dir == opts.fmri_dir:
