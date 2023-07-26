@@ -39,7 +39,7 @@ def base_opts():
         "input_type": "fmriprep",
         "cifti": True,
         "process_surfaces": True,
-        "fs_license_file": Path(os.env["FS_LICENSE"]),
+        "fs_license_file": Path(os.environ["FS_LICENSE"]),
     }
     opts = FakeOptions(**opts_dict)
     return opts
