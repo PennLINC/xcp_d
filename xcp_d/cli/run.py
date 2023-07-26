@@ -692,7 +692,7 @@ def _validate_parameters(opts, build_log):
 
     # Set the FreeSurfer license
     if opts.fs_license_file is not None:
-        if not opts.fs_license_file.isfile():
+        if not opts.fs_license_file.is_file():
             build_log.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
             return_code = 1
 
