@@ -469,6 +469,15 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         default=False,
         help="Opt out of sending tracking information.",
     )
+    g_other.add_argument(
+        "--fs-license-file",
+        metavar="FILE",
+        type=Path,
+        help=(
+            "Path to FreeSurfer license key file. Get it (for free) by registering "
+            "at https://surfer.nmr.mgh.harvard.edu/registration.html."
+        ),
+    )
 
     g_experimental = parser.add_argument_group("Experimental options")
     g_experimental.add_argument(
@@ -525,6 +534,13 @@ def main(args=None):
     # Retrieve and set logging level
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     logger.setLevel(log_level)
+
+    # Set the FreeSurfer license
+    if opts.fs_license_file is not None:
+        if not opts.fs_license_file.isfile():
+            raise FileNotFoundError(f"Freesurfer license DNE: {opts.fs_license_file}.")
+
+        os.environ["FS_LICENSE"] = str(opts.fs_license_file)
 
     # Call build_workflow(opts, retval)
     with Manager() as mgr:
