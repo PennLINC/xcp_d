@@ -535,13 +535,6 @@ def main(args=None):
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     logger.setLevel(log_level)
 
-    # Set the FreeSurfer license
-    if opts.fs_license_file is not None:
-        if not opts.fs_license_file.isfile():
-            raise FileNotFoundError(f"Freesurfer license DNE: {opts.fs_license_file}.")
-
-        os.environ["FS_LICENSE"] = str(opts.fs_license_file)
-
     # Call build_workflow(opts, retval)
     with Manager() as mgr:
         retval = mgr.dict()
@@ -693,6 +686,17 @@ def _validate_parameters(opts, build_log):
     opts.fmri_dir = opts.fmri_dir.resolve()
     opts.output_dir = opts.output_dir.resolve()
     opts.work_dir = opts.work_dir.resolve()
+    opts.fs_license_file = (
+        opts.fs_license_file.resolve() if opts.fs_license_file is not None else None
+    )
+
+    # Set the FreeSurfer license
+    if opts.fs_license_file is not None:
+        if not opts.fs_license_file.isfile():
+            build_log.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
+            return_code = 1
+
+        os.environ["FS_LICENSE"] = str(opts.fs_license_file)
 
     return_code = 0
 
