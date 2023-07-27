@@ -1,5 +1,6 @@
 """Tests for functions in the cli.run module."""
 import logging
+import os
 from copy import deepcopy
 from pathlib import Path
 
@@ -38,6 +39,7 @@ def base_opts():
         "input_type": "fmriprep",
         "cifti": True,
         "process_surfaces": True,
+        "fs_license_file": Path(os.environ["FS_LICENSE"]),
     }
     opts = FakeOptions(**opts_dict)
     return opts
@@ -283,4 +285,25 @@ def test_validate_parameters_17(base_opts, caplog):
     _, return_code = run._validate_parameters(deepcopy(opts), build_log)
 
     assert "you must enable cifti processing" in caplog.text
+    assert return_code == 1
+
+
+def test_validate_parameters_18(base_opts):
+    """Test run._validate_parameters."""
+    opts = deepcopy(base_opts)
+    opts.fs_license_file = None
+
+    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+
+    assert return_code == 0
+
+
+def test_validate_parameters_19(base_opts, caplog):
+    """Test run._validate_parameters."""
+    opts = deepcopy(base_opts)
+    opts.fs_license_file = Path("/path/to/missing/folder")
+
+    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+
+    assert "Freesurfer license DNE" in caplog.text
     assert return_code == 1
