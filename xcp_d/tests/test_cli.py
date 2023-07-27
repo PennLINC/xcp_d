@@ -89,6 +89,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "ds001419_cifti_filter.json")
+    fs_license_file = os.environ["FS_LICENSE"]
 
     parameters = [
         dataset_dir,
@@ -111,6 +112,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
+        f"--fs-license-file={fs_license_file}",
     ]
     opts = run.get_parser().parse_args(parameters)
     retval = {}
