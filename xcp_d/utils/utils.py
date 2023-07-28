@@ -222,7 +222,7 @@ def get_std2bold_xfms(bold_file, inverted=False):
             # MNIInfant --> NLin2009c --> NLin6
             MNI152Infant_to_MNI152NLin2009cAsym = pkgrf(
                 "xcp_d",
-                "data/transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
+                "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
             )
             transform_list = [
                 MNI152NLin2009cAsym_to_MNI152NLin6Asym,
@@ -233,7 +233,7 @@ def get_std2bold_xfms(bold_file, inverted=False):
             # NLin6 --> NLin2009c --> MNIInfant
             MNI152NLin2009cAsym_to_MNI152Infant = pkgrf(
                 "xcp_d",
-                "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+                "data/transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
             )
             transform_list = [
                 MNI152NLin2009cAsym_to_MNI152Infant,
