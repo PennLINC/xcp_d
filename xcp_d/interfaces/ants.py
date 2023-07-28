@@ -10,6 +10,7 @@ from nipype.interfaces.base import (
     InputMultiPath,
     Str,
     TraitedSpec,
+    isdefined,
     traits,
 )
 from niworkflows.interfaces.fixes import (
@@ -186,12 +187,13 @@ class ApplyTransforms(FixHeaderApplyTransforms):
     input_spec = _ApplyTransformsInputSpec
 
     def _run_interface(self, runtime):
-        # Run normally
-        self.inputs.output_image = fname_presuffix(
-            self.inputs.input_image,
-            suffix="_trans.nii.gz",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
+        if not isdefined(self.inputs.output_image):
+            self.inputs.output_image = fname_presuffix(
+                self.inputs.input_image,
+                suffix="_trans.nii.gz",
+                newpath=runtime.cwd,
+                use_ext=False,
+            )
+
         runtime = super(ApplyTransforms, self)._run_interface(runtime)
         return runtime
