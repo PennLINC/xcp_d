@@ -294,6 +294,9 @@ def init_parcellate_surfaces_wf(
         "sulcal_depth": "sulc",
         "sulcal_curv": "curv",
         "cortical_thickness": "thickness",
+        "cortical_thickness_corr": "thicknessCorrected",
+        "myelin": "myelin",
+        "myelin_smoothed": "myelinSmoothed",
     }
 
     inputnode = pe.Node(
