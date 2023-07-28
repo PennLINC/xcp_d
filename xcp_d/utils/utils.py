@@ -228,6 +228,7 @@ def get_std2bold_xfms(bold_file, inverted=False):
                 MNI152NLin2009cAsym_to_MNI152NLin6Asym,
                 MNI152Infant_to_MNI152NLin2009cAsym,
             ]
+            transform_list = ["identity"]
 
         else:
             # NLin6 --> NLin2009c --> MNIInfant
