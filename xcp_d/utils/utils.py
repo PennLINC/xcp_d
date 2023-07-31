@@ -224,6 +224,7 @@ def get_std2bold_xfms(bold_file, inverted=False):
                 "xcp_d",
                 "data/transform/tpl-MNI152NLin6Asym_from-MNIInfant_mode-image_xfm.mat",
             )
+            assert os.path.isfile(MNI152Infant_to_MNI152NLin6Asym)
             transform_list = [MNI152Infant_to_MNI152NLin6Asym]
 
         else:
