@@ -14,7 +14,8 @@ from xcp_d.utils.filemanip import ensure_list
 from xcp_d.utils.ingestion import (
     collect_anatomical_files,
     collect_confounds,
-    collect_surfaces,
+    collect_meshes,
+    collect_morphs,
     copy_files_in_dict,
     plot_bbreg,
     write_json,
@@ -115,6 +116,11 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     if not ses_entities:
         raise FileNotFoundError(f"No session volumes found in {os.path.join(in_dir, sub_ent)}")
 
+    dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
+    if os.path.isfile(dataset_description_fmriprep):
+        LOGGER.info("Converted dataset folder already exists. Skipping conversion.")
+        return
+
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
@@ -122,16 +128,12 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     # The identity xform is used in place of any actual ones.
     identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
     copy_dictionary[identity_xfm] = []
+    morph_dict_all_ses = {}
 
     for ses_ent in ses_entities:
         LOGGER.info(f"Processing {ses_ent}")
         subses_ents = f"{sub_ent}_{ses_ent}"
         session_dir_fmriprep = os.path.join(subject_dir_fmriprep, ses_ent)
-
-        if os.path.isdir(session_dir_fmriprep):
-            LOGGER.info("Converted session folder already exists. Skipping conversion.")
-            continue
-
         anat_dir_orig = os.path.join(in_dir, sub_ent, ses_ent, "files", "MNINonLinear")
         anat_dir_fmriprep = os.path.join(session_dir_fmriprep, "anat")
         func_dir_orig = os.path.join(anat_dir_orig, "Results")
@@ -165,8 +167,12 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         copy_dictionary = {**copy_dictionary, **anat_dict}
 
         # Collect surface files to copy
-        surfaces_dict = collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
-        copy_dictionary = {**copy_dictionary, **surfaces_dict}
+        mesh_dict = collect_meshes(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
+        copy_dictionary = {**copy_dictionary, **mesh_dict}
+
+        # Convert morphometry files
+        morphometry_dict = collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
+        morph_dict_all_ses = {**morph_dict_all_ses, **morphometry_dict}
         LOGGER.info("Finished collecting anatomical files")
 
         # Get masks to be used to extract confounds
@@ -318,11 +324,12 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             },
         ],
     }
-    dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
+
     if not os.path.isfile(dataset_description_fmriprep):
         write_json(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from DCAN to fMRIPrep
+    copy_dictionary = {**copy_dictionary, **morph_dict_all_ses}
     scans_dict = {}
     for key, values in copy_dictionary.items():
         for item in values:
