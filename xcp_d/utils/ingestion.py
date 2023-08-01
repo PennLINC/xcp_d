@@ -8,6 +8,8 @@ import numpy as np
 from nilearn import image, maskers
 from nipype import logging
 
+from xcp_d.interfaces.workbench import CiftiCreateDenseScalar
+
 LOGGER = logging.getLogger("nipype.utils")
 
 
@@ -46,24 +48,11 @@ def collect_anatomical_files(anat_dir_orig, anat_dir_fmriprep, base_anatomical_e
     return copy_dictionary
 
 
-def collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
-    """Collect surface files from ABCD or HCP-YA derivatives."""
+def collect_meshes(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
+    """Collect mesh files from ABCD or HCP-YA derivatives."""
     SURFACE_DICT = {
-        "{hemi}.midthickness.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_midthickness.surf.gii",
-        "{hemi}.inflated.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_inflated.surf.gii",
-        "{hemi}.very_inflated.32k_fs_LR.surf.gii": "hemi-{hemi}_desc-hcp_vinflated.surf.gii",
         "{hemi}.pial.32k_fs_LR.surf.gii": "hemi-{hemi}_pial.surf.gii",
         "{hemi}.white.32k_fs_LR.surf.gii": "hemi-{hemi}_smoothwm.surf.gii",
-        "{hemi}.thickness.32k_fs_LR.shape.gii": "hemi-{hemi}_thickness.shape.gii",
-        "{hemi}.corrThickness.32k_fs_LR.shape.gii": (
-            "hemi-{hemi}_desc-corrected_thickness.shape.gii"
-        ),
-        "{hemi}.curvature.32k_fs_LR.shape.gii": "hemi-{hemi}_curv.shape.gii",
-        "{hemi}.sulc.32k_fs_LR.shape.gii": "hemi-{hemi}_sulc.shape.gii",
-        "{hemi}.MyelinMap.32k_fs_LR.func.gii": "hemi-{hemi}_myelinw.func.gii",
-        "{hemi}.SmoothedMyelinMap.32k_fs_LR.func.gii": (
-            "hemi-{hemi}_desc-smoothed_myelinw.func.gii"
-        ),
     }
 
     fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
@@ -83,6 +72,43 @@ def collect_surfaces(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
                 LOGGER.warning(f"File DNE: {surf_orig}")
 
     return copy_dictionary
+
+
+def collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents):
+    """Collect and convert morphometry files to CIFTIs."""
+    SURFACE_DICT = {
+        "thickness.32k_fs_LR.shape.gii": "thickness",
+        "corrThickness.32k_fs_LR.shape.gii": "desc-corrected_thickness",
+        "curvature.32k_fs_LR.shape.gii": "curv",
+        "sulc.32k_fs_LR.shape.gii": "sulc",
+        "MyelinMap.32k_fs_LR.func.gii": "myelinw",
+        "SmoothedMyelinMap.32k_fs_LR.func.gii": "desc-smoothed_myelinw",
+    }
+
+    fsaverage_dir_orig = os.path.join(anat_dir_orig, "fsaverage_LR32k")
+    mapping_dictionary = {}
+    for in_str, out_str in SURFACE_DICT.items():
+        lh_file = os.path.join(fsaverage_dir_orig, f"{sub_id}.L.{in_str}")
+        rh_file = os.path.join(fsaverage_dir_orig, f"{sub_id}.R.{in_str}")
+        out_file = os.path.join(
+            anat_dir_fmriprep,
+            f"{subses_ents}_space-fsLR_den-91k_{out_str}.dscalar.nii",
+        )
+
+        if not os.path.isfile(lh_file) or not os.path.isfile(rh_file):
+            LOGGER.warning(f"File(s) DNE:\n\t{lh_file}\n\t{rh_file}")
+            continue
+
+        interface = CiftiCreateDenseScalar(
+            left_metric=lh_file,
+            right_metric=rh_file,
+            out_file=out_file,
+        )
+        interface.run()
+        mapping_dictionary[lh_file] = out_file
+        mapping_dictionary[rh_file] = out_file
+
+    return mapping_dictionary
 
 
 def collect_confounds(
@@ -191,7 +217,8 @@ def extract_mean_signal(mask, nifti, work_dir):
 def write_json(data, outfile):
     """Write dictionary to JSON file."""
     with open(outfile, "w") as f:
-        json.dump(data, f)
+        json.dump(data, f, sort_keys=True, indent=4)
+
     return outfile
 
 

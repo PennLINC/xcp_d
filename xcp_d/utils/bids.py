@@ -712,7 +712,7 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     elif input_type == "dcan":
         info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]"
     elif input_type == "hcp":
-        info_dict["references"] = "[@hcppipelines]"
+        info_dict["references"] = "[@glasser2013minimal]"
     elif input_type == "nibabies":
         info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
     else:

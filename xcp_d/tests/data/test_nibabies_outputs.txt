@@ -43,7 +43,7 @@ xcp_d/space-MNIInfant_atlas-4S952Parcels_cohort-1_dseg.nii.gz
 xcp_d/space-MNIInfant_atlas-Glasser_cohort-1_dseg.nii.gz
 xcp_d/space-MNIInfant_atlas-Gordon_cohort-1_dseg.nii.gz
 xcp_d/space-MNIInfant_atlas-Tian_cohort-1_dseg.nii.gz
-xcp_d/space-MNIInfant_atlas-ciftiSubcortical_cohort-1_dseg.nii.gz
+xcp_d/space-MNIInfant_atlas-HCP_cohort-1_dseg.nii.gz
 xcp_d/sub-01
 xcp_d/sub-01.html
 xcp_d/sub-01/ses-1mo
@@ -122,11 +122,11 @@ xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfan
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-Tian_cohort-1_measure-pearsoncorrelation_conmat.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-Tian_cohort-1_reho.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-Tian_cohort-1_timeseries.tsv
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-ciftiSubcortical_cohort-1_alff.tsv
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-ciftiSubcortical_cohort-1_coverage.tsv
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-ciftiSubcortical_cohort-1_measure-pearsoncorrelation_conmat.tsv
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-ciftiSubcortical_cohort-1_reho.tsv
-xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-ciftiSubcortical_cohort-1_timeseries.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-HCP_cohort-1_alff.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-HCP_cohort-1_coverage.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-HCP_cohort-1_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-HCP_cohort-1_reho.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-HCP_cohort-1_timeseries.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_alff.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_alff.nii.gz
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoised_bold.json
