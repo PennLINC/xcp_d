@@ -3,9 +3,10 @@
     "Density": {
         "32k": "2 mm3 subcortical data."
     },
-    "Description": "The subcortical labels from the CIFTI template.",
-    "Name": "CIFTI Subcortical",
+    "Description": "The subcortical labels from the HCP CIFTI template.",
+    "Name": "HCP CIFTI Subcortical",
     "ReferencesAndLinks": [
+        "https://doi.org/10.1016/j.neuroimage.2013.04.127",
         "https://github.com/DCAN-Labs/dcan_bold_processing/blob/6a4739bfa4580fd4593f6c786c539ba9c582779b/templates/parcellations/subcortical/fsLR/subcortical.subcortical.32k_fs_LR.dlabel.nii"
     ],
     "SpatialReference": {
