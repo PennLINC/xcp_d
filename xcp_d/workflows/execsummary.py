@@ -271,9 +271,7 @@ def init_brainsprite_figures_wf(
 
         # fmt:off
         workflow.connect([
-            (modify_pngs_template_scene, create_scenewise_pngs, [
-                ("out_file", "scene_file"),
-            ]),
+            (modify_pngs_template_scene, create_scenewise_pngs, [("out_file", "scene_file")]),
             (get_png_scene_names, create_scenewise_pngs, [
                 ("scene_index", "scene_name_or_number"),
             ]),
