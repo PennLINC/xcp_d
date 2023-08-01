@@ -143,7 +143,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
 
-    n_parcels, n_parcels_in_atlas = 1000, 1000
+    n_parcels, n_parcels_in_atlas = 1052, 1052
 
     # Let's find the correct workflow outputs
     atlas_file = warped_atlases[0]
@@ -306,11 +306,11 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
     # Let's read in the ciftis' data
     pscalar_arr = nb.load(pscalar).get_fdata().T
-    assert pscalar_arr.shape == (1000, 1)
+    assert pscalar_arr.shape == (1052, 1)
     ptseries_arr = nb.load(timeseries_ciftis).get_fdata()
-    assert ptseries_arr.shape == (60, 1000)
+    assert ptseries_arr.shape == (60, 1052)
     pconn_arr = nb.load(correlation_ciftis).get_fdata()
-    assert pconn_arr.shape == (1000, 1000)
+    assert pconn_arr.shape == (1052, 1052)
 
     # Read in the tsvs' data
     coverage_arr = pd.read_table(coverage, index_col="Node").to_numpy()
@@ -327,7 +327,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
     # Calculate correlations from timeseries data
     calculated_correlations = np.corrcoef(ptseries_arr.T)
-    assert calculated_correlations.shape == (1000, 1000)
+    assert calculated_correlations.shape == (1052, 1052)
     bad_parcels_idx = np.where(np.isnan(np.diag(calculated_correlations)))[0]
     good_parcels_idx = np.where(~np.isnan(np.diag(calculated_correlations)))[0]
 

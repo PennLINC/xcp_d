@@ -61,6 +61,10 @@ def get_atlas_nifti(atlas_name):
     -------
     atlas_file : :obj:`str`
         Path to the atlas file.
+    atlas_labels_file : :obj:`str`
+        Path to the atlas labels file.
+    atlas_metadata_file : :obj:`str`
+        Path to the atlas metadata file.
     """
     import os
 
