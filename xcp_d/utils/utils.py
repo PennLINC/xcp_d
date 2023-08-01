@@ -219,13 +219,16 @@ def get_std2bold_xfms(bold_file, inverted=False):
 
     elif bold_space == "MNIInfant":
         if inverted:
-            # MNIInfant --> NLin6
-            MNI152Infant_to_MNI152NLin6Asym = pkgrf(
+            # MNIInfant --> NLin2009c --> NLin6
+            # The available MNIInfant --> MNI152* transforms seem to be of poor quality
+            MNI152Infant_to_MNI152NLin2009cAsym = pkgrf(
                 "xcp_d",
-                "data/transform/tpl-MNI152NLin6Asym_from-MNIInfant_mode-image_xfm.txt",
+                "data/transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
             )
-            assert os.path.isfile(MNI152Infant_to_MNI152NLin6Asym)
-            transform_list = [MNI152Infant_to_MNI152NLin6Asym]
+            transform_list = [
+                MNI152NLin2009cAsym_to_MNI152NLin6Asym,
+                MNI152Infant_to_MNI152NLin2009cAsym,
+            ]
 
         else:
             # NLin6 --> NLin2009c --> MNIInfant

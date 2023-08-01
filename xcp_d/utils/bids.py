@@ -32,8 +32,8 @@ INPUT_TYPE_ALLOWED_SPACES = {
     "nibabies": {
         "cifti": ["fsLR"],
         "nifti": [
-            "MNIInfant",
             "MNI152NLin6Asym",
+            "MNIInfant",
             "MNI152NLin2009cAsym",
         ],
     },

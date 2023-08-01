@@ -355,7 +355,13 @@ def init_execsummary_functional_plots_wf(
         Set from the parameter.
     %(boldref)s
     t1w
+        T1w image in a standard space, taken from the output of init_postprocess_anat_wf.
+        Additional transforms may need to be applied to get the image into the same space as the
+        BOLD data.
     t2w
+        T2w image in a standard space, taken from the output of init_postprocess_anat_wf.
+        Additional transforms may need to be applied to get the image into the same space as the
+        BOLD data.
     """
     workflow = Workflow(name=name)
 
@@ -363,11 +369,11 @@ def init_execsummary_functional_plots_wf(
         niu.IdentityInterface(
             fields=[
                 "preproc_nifti",
-                "boldref",
+                "boldref",  # a nifti boldref
                 "t1w",
                 "t2w",  # optional
-            ]
-        ),  # a nifti boldref
+            ],
+        ),
         name="inputnode",
     )
     if preproc_nifti:
@@ -532,6 +538,7 @@ def init_execsummary_functional_plots_wf(
     # T1 in Task, Task in T1, Task in T2, T2 in Task
     anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
     for anat in anatomicals:
+        # Warp T1w/T2w to same space as BOLD data
         # Resample T1w/T2w to match resolution of task data
         resample_anat = pe.Node(
             ResampleToImage(),
