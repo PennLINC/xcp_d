@@ -35,7 +35,7 @@ def get_atlas_names(subset):
         ],
         "subcortical": [
             "Tian",
-            "ciftiSubcortical",
+            "HCP",
         ],
     }
     atlases["all"] = sorted(list(set(atlases["cortical"] + atlases["subcortical"])))
@@ -54,7 +54,7 @@ def get_atlas_nifti(atlas_name):
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
                   "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
                   "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
-                  "Tian", "ciftiSubcortical"}
+                  "Tian", "HCP"}
         The name of the NIFTI atlas to fetch.
 
     Returns
@@ -106,7 +106,7 @@ def get_atlas_cifti(atlas_name):
     atlas_name : {"Schaefer117", "Schaefer217", "Schaefer317", "Schaefer417", \
                   "Schaefer517", "Schaefer617", "Schaefer717", "Schaefer817", \
                   "Schaefer917", "Schaefer1017", "Glasser", "Gordon", \
-                  "Tian", "ciftiSubcortical"}
+                  "Tian", "HCP"}
         The name of the CIFTI atlas to fetch.
 
     Returns
