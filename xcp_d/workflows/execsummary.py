@@ -490,7 +490,7 @@ def init_execsummary_functional_plots_wf(
                 (anat, "inputnode.overlay_file"),
             ]),
             (resample_bold_to_anat, plot_anat_on_task_wf, [
-                ("output_image", "inputnode.underlay_file"),
+                ("out_file", "inputnode.underlay_file"),
             ]),
         ])
         # fmt:on
@@ -508,7 +508,7 @@ def init_execsummary_functional_plots_wf(
                 (anat, "inputnode.underlay_file"),
             ]),
             (resample_bold_to_anat, plot_task_on_anat_wf, [
-                ("output_image", "inputnode.overlay_file"),
+                ("out_file", "inputnode.overlay_file"),
             ]),
         ])
         # fmt:on
