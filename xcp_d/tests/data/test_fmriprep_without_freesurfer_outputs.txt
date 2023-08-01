@@ -24,8 +24,8 @@ xcp_d/atlas-Gordon_dseg.json
 xcp_d/atlas-Gordon_dseg.tsv
 xcp_d/atlas-Tian_dseg.json
 xcp_d/atlas-Tian_dseg.tsv
-xcp_d/atlas-ciftiSubcortical_dseg.json
-xcp_d/atlas-ciftiSubcortical_dseg.tsv
+xcp_d/atlas-HCP_dseg.json
+xcp_d/atlas-HCP_dseg.tsv
 xcp_d/dataset_description.json
 xcp_d/desc-linc_qc.json
 xcp_d/logs
