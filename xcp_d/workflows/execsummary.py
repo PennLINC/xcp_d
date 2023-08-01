@@ -10,9 +10,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
-from templateflow.api import get as get_template
 
-from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
@@ -25,7 +23,6 @@ from xcp_d.utils.execsummary import (
     modify_brainsprite_scene_template,
     modify_pngs_scene_template,
 )
-from xcp_d.utils.utils import get_std2bold_xfms
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -308,8 +305,6 @@ def init_execsummary_functional_plots_wf(
     t2w_available,
     output_dir,
     layout,
-    omp_nthreads,
-    mem_gb,
     name="execsummary_functional_plots_wf",
 ):
     """Generate the functional figures for an executive summary.
@@ -327,8 +322,6 @@ def init_execsummary_functional_plots_wf(
                 t2w_available=True,
                 output_dir=".",
                 layout=None,
-                omp_nthreads=1,
-                mem_gb=0.1,
                 name="execsummary_functional_plots_wf",
             )
 
@@ -356,12 +349,8 @@ def init_execsummary_functional_plots_wf(
     %(boldref)s
     t1w
         T1w image in a standard space, taken from the output of init_postprocess_anat_wf.
-        Additional transforms may need to be applied to get the image into the same space as the
-        BOLD data.
     t2w
         T2w image in a standard space, taken from the output of init_postprocess_anat_wf.
-        Additional transforms may need to be applied to get the image into the same space as the
-        BOLD data.
     """
     workflow = Workflow(name=name)
 
@@ -425,51 +414,9 @@ def init_execsummary_functional_plots_wf(
     )
     workflow.connect([(inputnode, calculate_mean_bold, [("preproc_nifti", "in_file")])])
 
-    # Warp reference bold image to MNI152NLin6Asym
-    get_transforms_to_mni = pe.Node(
-        Function(
-            input_names=["bold_file", "inverted"],
-            output_names=["transforms"],
-            function=get_std2bold_xfms,
-        ),
-        name="get_transforms_to_mni",
-    )
-    get_transforms_to_mni.inputs.inverted = True
-    workflow.connect([(inputnode, get_transforms_to_mni, [("preproc_nifti", "bold_file")])])
-
-    reference_image = str(
-        get_template(
-            template="MNI152NLin6Asym",
-            resolution=1,
-            desc=None,
-            suffix="T1w",
-        ),
-    )
-
-    # Now apply the transforms
-    warp_mean_bold_to_mni = pe.Node(
-        ApplyTransforms(
-            num_threads=2,
-            interpolation="LanczosWindowedSinc",
-            input_image_type=3,
-            dimension=3,
-            reference_image=reference_image,
-        ),
-        name="warp_mean_bold_to_mni",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (get_transforms_to_mni, warp_mean_bold_to_mni, [("transforms", "transforms")]),
-        (calculate_mean_bold, warp_mean_bold_to_mni, [("out_file", "input_image")]),
-    ])
-    # fmt:on
-
     # Plot the mean bold image
     plot_meanbold = pe.Node(AnatomicalPlot(), name="plot_meanbold")
-    workflow.connect([(warp_mean_bold_to_mni, plot_meanbold, [("output_image", "in_file")])])
+    workflow.connect([(calculate_mean_bold, plot_meanbold, [("out_file", "in_file")])])
 
     # Write out the figures.
     ds_meanbold_figure = pe.Node(
@@ -490,30 +437,9 @@ def init_execsummary_functional_plots_wf(
     ])
     # fmt:on
 
-    # Warp reference bold image to MNI152NLin6Asym
-    warp_boldref_to_mni = pe.Node(
-        ApplyTransforms(
-            num_threads=2,
-            interpolation="LanczosWindowedSinc",
-            input_image_type=3,
-            dimension=3,
-            reference_image=reference_image,
-        ),
-        name="warp_boldref_to_mni",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, warp_boldref_to_mni, [("boldref", "input_image")]),
-        (get_transforms_to_mni, warp_boldref_to_mni, [("transforms", "transforms")]),
-    ])
-    # fmt:on
-
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name="plot_boldref")
-    workflow.connect([(warp_boldref_to_mni, plot_boldref, [("output_image", "in_file")])])
+    workflow.connect([(inputnode, plot_boldref, [("boldref", "in_file")])])
 
     # Write out the figures.
     ds_boldref_figure = pe.Node(
@@ -538,17 +464,16 @@ def init_execsummary_functional_plots_wf(
     # T1 in Task, Task in T1, Task in T2, T2 in Task
     anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
     for anat in anatomicals:
-        # Warp T1w/T2w to same space as BOLD data
-        # Resample T1w/T2w to match resolution of task data
-        resample_anat = pe.Node(
+        # Resample BOLD to match resolution of T1w/T2w data
+        resample_bold_to_anat = pe.Node(
             ResampleToImage(),
-            name=f"resample_{anat}",
+            name=f"resample_bold_to_{anat}",
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, resample_anat, [(anat, "in_file")]),
-            (warp_mean_bold_to_mni, resample_anat, [("output_image", "target_file")]),
+            (inputnode, resample_bold_to_anat, [(anat, "target_file")]),
+            (calculate_mean_bold, resample_bold_to_anat, [("out_file", "in_file")]),
         ])
         # fmt:on
 
@@ -560,11 +485,13 @@ def init_execsummary_functional_plots_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, plot_anat_on_task_wf, [("preproc_nifti", "inputnode.name_source")]),
-            (warp_mean_bold_to_mni, plot_anat_on_task_wf, [
+            (inputnode, plot_anat_on_task_wf, [
+                ("preproc_nifti", "inputnode.name_source"),
+                (anat, "inputnode.overlay_file"),
+            ]),
+            (resample_bold_to_anat, plot_anat_on_task_wf, [
                 ("output_image", "inputnode.underlay_file"),
             ]),
-            (resample_anat, plot_anat_on_task_wf, [("out_file", "inputnode.overlay_file")]),
         ])
         # fmt:on
 
@@ -576,11 +503,13 @@ def init_execsummary_functional_plots_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, plot_task_on_anat_wf, [("preproc_nifti", "inputnode.name_source")]),
-            (warp_mean_bold_to_mni, plot_task_on_anat_wf, [
+            (inputnode, plot_task_on_anat_wf, [
+                ("preproc_nifti", "inputnode.name_source"),
+                (anat, "inputnode.underlay_file"),
+            ]),
+            (resample_bold_to_anat, plot_task_on_anat_wf, [
                 ("output_image", "inputnode.overlay_file"),
             ]),
-            (resample_anat, plot_task_on_anat_wf, [("out_file", "inputnode.underlay_file")]),
         ])
         # fmt:on
 
@@ -622,7 +551,9 @@ def init_execsummary_anatomical_plots_wf(
     Inputs
     ------
     t1w
+        T1w image, after warping to standard space.
     t2w
+        T2w image, after warping to standard space.
     template
     """
     workflow = Workflow(name=name)
