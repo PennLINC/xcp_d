@@ -66,7 +66,7 @@ def get_atlas_nifti(atlas_name):
     atlas_metadata_file : :obj:`str`
         Path to the atlas metadata file.
     """
-    import os
+    from os.path import isfile, join
 
     from pkg_resources import resource_filename as pkgrf
 
@@ -80,8 +80,8 @@ def get_atlas_nifti(atlas_name):
         tsv_fname = f"atlas-{atlas_name}_dseg.tsv"
 
     if "4S" in atlas_name:
-        atlas_file = os.path.join("/AtlasPack", atlas_fname)
-        atlas_labels_file = os.path.join("/AtlasPack", tsv_fname)
+        atlas_file = join("/AtlasPack", atlas_fname)
+        atlas_labels_file = join("/AtlasPack", tsv_fname)
         atlas_metadata_file = f"/AtlasPack/tpl-MNI152NLin6Asym_atlas-{atlas_name}_dseg.json"
     else:
         atlas_file = pkgrf("xcp_d", f"data/atlases/{atlas_fname}")
@@ -91,11 +91,7 @@ def get_atlas_nifti(atlas_name):
             f"data/atlases/tpl-MNI152NLin6Asym_atlas-{atlas_name}_dseg.json",
         )
 
-    if not all(
-        os.path.isfile(atlas_file)
-        and os.path.isfile(atlas_labels_file)
-        and os.path.isfile(atlas_metadata_file)
-    ):
+    if not all(isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
         raise FileNotFoundError(
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
@@ -127,7 +123,7 @@ def get_atlas_cifti(atlas_name):
     atlas_metadata_file : :obj:`str`
         The metadata JSON file associated with the atlas.
     """
-    import os
+    from os.path import isfile
 
     from pkg_resources import resource_filename as pkgrf
 
@@ -143,11 +139,7 @@ def get_atlas_cifti(atlas_name):
         atlas_labels_file = pkgrf("xcp_d", f"data/atlases/atlas-{atlas_name}_dseg.tsv")
         atlas_metadata_file = pkgrf("xcp_d", f"data/atlases/tpl-fsLR_atlas-{atlas_name}_dseg.json")
 
-    if not all(
-        os.path.isfile(atlas_file)
-        and os.path.isfile(atlas_labels_file)
-        and os.path.isfile(atlas_metadata_file)
-    ):
+    if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
         raise FileNotFoundError(
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
