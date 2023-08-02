@@ -91,7 +91,7 @@ def get_atlas_nifti(atlas_name):
             f"data/atlases/tpl-MNI152NLin6Asym_atlas-{atlas_name}_dseg.json",
         )
 
-    if not all(isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
+    if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
         raise FileNotFoundError(
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
