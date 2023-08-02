@@ -25,7 +25,7 @@ def test_get_atlas_nifti():
         assert os.path.isfile(atlas_labels_file)
         assert os.path.isfile(metadata_file)
 
-    with pytest.raises(FileNotFoundError, match="File(s) DNE"):
+    with pytest.raises(FileNotFoundError, match="DNE"):
         atlas.get_atlas_nifti("tofail")
 
 
@@ -41,5 +41,5 @@ def test_get_atlas_cifti():
         assert os.path.isfile(atlas_labels_file)
         assert os.path.isfile(metadata_file)
 
-    with pytest.raises(FileNotFoundError, match="File(s) DNE"):
+    with pytest.raises(FileNotFoundError, match="DNE"):
         atlas.get_atlas_cifti("tofail")
