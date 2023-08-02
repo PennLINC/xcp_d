@@ -91,14 +91,14 @@ def get_atlas_nifti(atlas_name):
             f"data/atlases/tpl-MNI152NLin6Asym_atlas-{atlas_name}_dseg.json",
         )
 
-    if not os.path.isfile(atlas_file):
-        raise FileNotFoundError(f"File DNE: {atlas_file}")
-
-    if not os.path.isfile(atlas_labels_file):
-        raise FileNotFoundError(f"File DNE: {atlas_labels_file}")
-
-    if not os.path.isfile(atlas_metadata_file):
-        raise FileNotFoundError(f"File DNE: {atlas_metadata_file}")
+    if not all(
+        os.path.isfile(atlas_file)
+        and os.path.isfile(atlas_labels_file)
+        and os.path.isfile(atlas_metadata_file)
+    ):
+        raise FileNotFoundError(
+            f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
+        )
 
     return atlas_file, atlas_labels_file, atlas_metadata_file
 
@@ -143,13 +143,13 @@ def get_atlas_cifti(atlas_name):
         atlas_labels_file = pkgrf("xcp_d", f"data/atlases/atlas-{atlas_name}_dseg.tsv")
         atlas_metadata_file = pkgrf("xcp_d", f"data/atlases/tpl-fsLR_atlas-{atlas_name}_dseg.json")
 
-    if not os.path.isfile(atlas_file):
-        raise FileNotFoundError(f"File DNE: {atlas_file}")
-
-    if not os.path.isfile(atlas_labels_file):
-        raise FileNotFoundError(f"File DNE: {atlas_labels_file}")
-
-    if not os.path.isfile(atlas_metadata_file):
-        raise FileNotFoundError(f"File DNE: {atlas_metadata_file}")
+    if not all(
+        os.path.isfile(atlas_file)
+        and os.path.isfile(atlas_labels_file)
+        and os.path.isfile(atlas_metadata_file)
+    ):
+        raise FileNotFoundError(
+            f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
+        )
 
     return atlas_file, atlas_labels_file, atlas_metadata_file
