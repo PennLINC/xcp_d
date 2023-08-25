@@ -143,7 +143,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, anat_to_native_xf
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
 
-def get_std2bold_xfms(bold_file, inverted=False):
+def get_std2bold_xfms(bold_file):
     """Obtain transforms to warp atlases from MNI152NLin6Asym to the same template as the BOLD.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
@@ -155,9 +155,6 @@ def get_std2bold_xfms(bold_file, inverted=False):
     ----------
     bold_file : :obj:`str`
         The preprocessed BOLD file.
-    inverted : :obj:`bool`, optional
-        If False (default), transforms from MNI152NLin6Asym will be returned.
-        If True, transforms *to* MNI152NLin6Asym will be returned.
 
     Returns
     -------
@@ -171,7 +168,9 @@ def get_std2bold_xfms(bold_file, inverted=False):
     - to resample dseg in init_postprocess_nifti_wf for QCReport
     - to warp atlases to the same space as the BOLD data in init_functional_connectivity_nifti_wf
     - to resample dseg to BOLD space for the executive summary plots
-    - to warp any BOLD images that will be overlaid on anatomical images to MNI152NLin6Asym
+
+    Does not include inversion flag output because there is no need (yet).
+    Can easily be added in the future.
     """
     import os
 
@@ -193,15 +192,6 @@ def get_std2bold_xfms(bold_file, inverted=False):
             **{"from": "MNI152NLin6Asym"},
         ),
     )
-    MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
-        get_template(
-            template="MNI152NLin6Asym",
-            mode="image",
-            suffix="xfm",
-            extension=".h5",
-            **{"from": "MNI152NLin2009cAsym"},
-        ),
-    )
 
     # Find the appropriate transform(s)
     if bold_space == "MNI152NLin6Asym":
@@ -209,40 +199,23 @@ def get_std2bold_xfms(bold_file, inverted=False):
         transform_list = ["identity"]
 
     elif bold_space == "MNI152NLin2009cAsym":
-        if inverted:
-            # NLin2009c --> NLin6
-            transform_list = [MNI152NLin2009cAsym_to_MNI152NLin6Asym]
-
-        else:
-            # NLin6 --> NLin2009c
-            transform_list = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
+        # NLin6 --> NLin2009c
+        transform_list = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
 
     elif bold_space == "MNIInfant":
-        if inverted:
-            # MNIInfant --> NLin2009c --> NLin6
-            # The available MNIInfant --> MNI152* transforms seem to be of poor quality
-            MNI152Infant_to_MNI152NLin2009cAsym = pkgrf(
-                "xcp_d",
-                "data/transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
-            )
-            transform_list = [
-                MNI152NLin2009cAsym_to_MNI152NLin6Asym,
-                MNI152Infant_to_MNI152NLin2009cAsym,
-            ]
-
-        else:
-            # NLin6 --> NLin2009c --> MNIInfant
-            MNI152NLin2009cAsym_to_MNI152Infant = pkgrf(
-                "xcp_d",
-                "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
-            )
-            transform_list = [
-                MNI152NLin2009cAsym_to_MNI152Infant,
-                MNI152NLin6Asym_to_MNI152NLin2009cAsym,
-            ]
+        # NLin6 --> NLin2009c --> MNIInfant
+        MNI152NLin2009cAsym_to_MNI152Infant = pkgrf(
+            "xcp_d",
+            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        )
+        transform_list = [
+            MNI152NLin2009cAsym_to_MNI152Infant,
+            MNI152NLin6Asym_to_MNI152NLin2009cAsym,
+        ]
 
     else:
-        raise ValueError(f"Space '{bold_space}' in {os.path.basename(bold_file)} not supported.")
+        file_base = os.path.basename(bold_file)
+        raise ValueError(f"Space '{bold_space}' in {file_base} not supported.")
 
     return transform_list
 
