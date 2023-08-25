@@ -279,18 +279,28 @@ def collect_data(
     if cifti:
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        temp_query = queries["anat_to_template_xfm"].copy()
-        volumetric_space = ASSOCIATED_TEMPLATES[space]
+        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )["nifti"]
 
-        temp_query["to"] = volumetric_space
-        transform_files = layout.get(**temp_query)
+        temp_bold_query = queries["bold"].copy()
+        temp_bold_query["extension"] = ".nii.gz"
+        for volspace in allowed_spaces:
+            temp_bold_query["space"] = volspace
+            bold_data = layout.get(**temp_bold_query)
+            if bold_data:
+                # will leave the best available space in the query
+                break
+
+        temp_xfm_query = queries["anat_to_template_xfm"].copy()
+        temp_xfm_query["to"] = volspace
+        transform_files = layout.get(**temp_xfm_query)
         if not transform_files:
-            raise FileNotFoundError(
-                f"No nifti transforms found to allowed space ({volumetric_space})"
-            )
+            raise FileNotFoundError(f"No nifti transforms found to allowed space ({volspace})")
 
-        queries["anat_to_template_xfm"]["to"] = volumetric_space
-        queries["template_to_anat_xfm"]["from"] = volumetric_space
+        queries["anat_to_template_xfm"]["to"] = volspace
+        queries["template_to_anat_xfm"]["from"] = volspace
     else:
         # use the BOLD file's space if the BOLD file is a nifti.
         queries["anat_to_template_xfm"]["to"] = queries["bold"]["space"]
