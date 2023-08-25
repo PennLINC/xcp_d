@@ -611,7 +611,7 @@ def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
             cohort=cohort,
             suffix="boldref",
             extension=[".nii", ".nii.gz"],
-            allow_invalid=True,
+            invalid_filters="allow",
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
@@ -621,7 +621,7 @@ def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
             desc="preproc",
             suffix="bold",
             extension=[".nii", ".nii.gz"],
-            allow_invalid=True,
+            invalid_filters="allow",
         )
 
     LOGGER.log(
