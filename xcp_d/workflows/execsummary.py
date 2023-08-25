@@ -336,8 +336,6 @@ def init_execsummary_functional_plots_wf(
         Generally False.
     %(output_dir)s
     %(layout)s
-    %(omp_nthreads)s
-    %(mem_gb)s
     %(name)s
 
     Inputs
@@ -372,7 +370,6 @@ def init_execsummary_functional_plots_wf(
 
     inputnode.inputs.preproc_nifti = preproc_nifti
 
-    # Only grab the bb_registration_file if the preprocessed BOLD file is a parameter.
     # Get bb_registration_file prefix from fmriprep
     # TODO: Replace with interfaces.
     current_bold_file = os.path.basename(preproc_nifti)

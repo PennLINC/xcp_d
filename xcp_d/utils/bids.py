@@ -599,20 +599,29 @@ def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
             suffix="xfm",
         )
     else:
+        # Split cohort out of the space for MNIInfant templates.
+        cohort = None
+        if "+" in target_space:
+            target_space, cohort = target_space.split("+")
+
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             space=target_space,
+            cohort=cohort,
             suffix="boldref",
             extension=[".nii", ".nii.gz"],
+            allow_invalid=True,
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             space=target_space,
+            cohort=cohort,
             desc="preproc",
             suffix="bold",
             extension=[".nii", ".nii.gz"],
+            allow_invalid=True,
         )
 
     LOGGER.log(
