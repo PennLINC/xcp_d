@@ -671,10 +671,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(
                 layout=layout,
-                input_type=input_type,
                 bold_file=bold_file,
                 cifti=cifti,
                 primary_anat=primary_anat,
+                target_space=target_space,
             )
 
             post_scrubbing_duration = flag_bad_run(

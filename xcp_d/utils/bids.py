@@ -542,19 +542,20 @@ def collect_morphometry_data(layout, participant_label):
 
 
 @fill_doc
-def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
+def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
     %(layout)s
-    %(input_type)s
     bold_file : :obj:`str`
         Path to the BOLD file.
     %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
     primary_anat : {"T1w", "T2w"}
         The anatomical modality to use for the anat-to-native transform.
+    target_space
+        Used to find NIfTIs in the appropriate space if ``cifti`` is ``True``.
 
     Returns
     -------
@@ -598,21 +599,24 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
             suffix="xfm",
         )
     else:
-        allowed_nifti_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["nifti"]
+        # Split cohort out of the space for MNIInfant templates.
+        cohort = None
+        if "+" in target_space:
+            target_space, cohort = target_space.split("+")
+
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            space=allowed_nifti_spaces,
+            space=target_space,
+            cohort=cohort,
             suffix="boldref",
             extension=[".nii", ".nii.gz"],
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            space=allowed_nifti_spaces,
+            space=target_space,
+            cohort=cohort,
             desc="preproc",
             suffix="bold",
             extension=[".nii", ".nii.gz"],
