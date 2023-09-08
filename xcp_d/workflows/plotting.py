@@ -358,75 +358,75 @@ def init_qc_report_wf(
         ])
         # fmt:on
 
-        # Generate preprocessing and postprocessing carpet plots.
-        plot_execsummary_carpets_dcan = pe.Node(
-            QCPlotsES(TR=TR, standardize=params == "none"),
-            name="plot_execsummary_carpets_dcan",
-            mem_gb=mem_gb,
-            n_procs=omp_nthreads,
-        )
+    # Generate preprocessing and postprocessing carpet plots.
+    plot_execsummary_carpets_dcan = pe.Node(
+        QCPlotsES(TR=TR, standardize=params == "none"),
+        name="plot_execsummary_carpets_dcan",
+        mem_gb=mem_gb,
+        n_procs=omp_nthreads,
+    )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, plot_execsummary_carpets_dcan, [
+            ("preprocessed_bold", "preprocessed_bold"),
+            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
+            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("filtered_motion", "filtered_motion"),
+            ("run_index", "run_index"),
+        ]),
+    ])
+    # fmt:on
+
+    if not cifti:
         # fmt:off
         workflow.connect([
-            (inputnode, plot_execsummary_carpets_dcan, [
-                ("preprocessed_bold", "preprocessed_bold"),
-                ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-                ("interpolated_filtered_bold", "interpolated_filtered_bold"),
-                ("filtered_motion", "filtered_motion"),
-                ("run_index", "run_index"),
+            (inputnode, plot_execsummary_carpets_dcan, [("bold_mask", "mask")]),
+            (warp_dseg_to_bold, plot_execsummary_carpets_dcan, [
+                ("output_image", "seg_data"),
             ]),
         ])
         # fmt:on
 
-        if not cifti:
-            # fmt:off
-            workflow.connect([
-                (inputnode, plot_execsummary_carpets_dcan, [("bold_mask", "mask")]),
-                (warp_dseg_to_bold, plot_execsummary_carpets_dcan, [
-                    ("output_image", "seg_data"),
-                ]),
-            ])
-            # fmt:on
+    ds_preproc_execsummary_carpet_dcan = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["den"],
+            datatype="figures",
+            desc="preprocESQC",
+        ),
+        name="ds_preproc_execsummary_carpet_dcan",
+        run_without_submitting=True,
+    )
 
-        ds_preproc_execsummary_carpet_dcan = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                dismiss_entities=["den"],
-                datatype="figures",
-                desc="preprocESQC",
-            ),
-            name="ds_preproc_execsummary_carpet_dcan",
-            run_without_submitting=True,
-        )
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_preproc_execsummary_carpet_dcan, [("name_source", "source_file")]),
+        (plot_execsummary_carpets_dcan, ds_preproc_execsummary_carpet_dcan, [
+            ("before_process", "in_file"),
+        ]),
+    ])
+    # fmt:on
 
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_preproc_execsummary_carpet_dcan, [("name_source", "source_file")]),
-            (plot_execsummary_carpets_dcan, ds_preproc_execsummary_carpet_dcan, [
-                ("before_process", "in_file"),
-            ]),
-        ])
-        # fmt:on
+    ds_postproc_execsummary_carpet_dcan = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["den"],
+            datatype="figures",
+            desc="postprocESQC",
+        ),
+        name="ds_postproc_execsummary_carpet_dcan",
+        run_without_submitting=True,
+    )
 
-        ds_postproc_execsummary_carpet_dcan = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                dismiss_entities=["den"],
-                datatype="figures",
-                desc="postprocESQC",
-            ),
-            name="ds_postproc_execsummary_carpet_dcan",
-            run_without_submitting=True,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_postproc_execsummary_carpet_dcan, [("name_source", "source_file")]),
-            (plot_execsummary_carpets_dcan, ds_postproc_execsummary_carpet_dcan, [
-                ("after_process", "in_file"),
-            ]),
-        ])
-        # fmt:on
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_postproc_execsummary_carpet_dcan, [("name_source", "source_file")]),
+        (plot_execsummary_carpets_dcan, ds_postproc_execsummary_carpet_dcan, [
+            ("after_process", "in_file"),
+        ]),
+    ])
+    # fmt:on
 
     if not cifti:
         # fmt:off
