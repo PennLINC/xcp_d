@@ -286,18 +286,23 @@ def collect_data(
 
         temp_bold_query = queries["bold"].copy()
         temp_bold_query["extension"] = ".nii.gz"
+
+        temp_xfm_query = queries["anat_to_template_xfm"].copy()
+
         for volspace in allowed_spaces:
             temp_bold_query["space"] = volspace
             bold_data = layout.get(**temp_bold_query)
-            if bold_data:
+            temp_xfm_query["to"] = volspace
+            transform_files = layout.get(**temp_xfm_query)
+
+            if bold_data and transform_files:
                 # will leave the best available space in the query
                 break
 
-        temp_xfm_query = queries["anat_to_template_xfm"].copy()
-        temp_xfm_query["to"] = volspace
-        transform_files = layout.get(**temp_xfm_query)
-        if not transform_files:
-            raise FileNotFoundError(f"No nifti transforms found to allowed space ({volspace})")
+        if not bold_data or not transform_files:
+            raise FileNotFoundError(
+                f"No BOLD NIfTI or transforms found to allowed space ({volspace})"
+            )
 
         queries["anat_to_template_xfm"]["to"] = volspace
         queries["template_to_anat_xfm"]["from"] = volspace
