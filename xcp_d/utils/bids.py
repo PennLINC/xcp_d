@@ -743,7 +743,7 @@ def _get_tr(img):
 
 
 def get_freesurfer_dir(fmri_dir):
-    """Find FreeSurfer derivatives associated with preprocessing pipeline.
+    """Find FreeSurfer/MCRIBS derivatives associated with preprocessing pipeline.
 
     NOTE: This is a Node function.
 
@@ -755,42 +755,47 @@ def get_freesurfer_dir(fmri_dir):
     Returns
     -------
     freesurfer_path : :obj:`str`
-        Path to FreeSurfer derivatives.
+        Path to FreeSurfer or MCRIBS derivatives.
 
     Raises
     ------
     ValueError
-        If more than one potential FreeSurfer derivative folder is found.
+        If more than one potential FreeSurfer/MCRIBS derivative folder is found.
     NotADirectoryError
-        If no FreeSurfer derivatives are found.
+        If no FreeSurfer or MCRIBS derivatives are found.
     """
     import glob
     import os
 
-    # for fMRIPrep/Nibabies versions >=20.2.1
-    freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
-    if len(freesurfer_paths) == 0:
-        # for fMRIPrep/Nibabies versions <20.2.1
-        freesurfer_paths = sorted(
-            glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
-        )
+    from nipype import logging
 
-    if len(freesurfer_paths) == 1:
-        freesurfer_path = freesurfer_paths[0]
+    LOGGER = logging.getLogger("nipype.utils")
 
-    elif len(freesurfer_paths) > 1:
-        freesurfer_paths_str = "\n\t".join(freesurfer_paths)
-        raise ValueError(
-            "More than one candidate for FreeSurfer derivatives found. "
-            "We recommend mounting only one FreeSurfer directory in your Docker/Singularity "
-            "image. "
-            f"Detected candidates:\n\t{freesurfer_paths_str}"
-        )
+    targets = {
+        "MCRIBS BIDS-format": os.path.join(fmri_dir, "sourcedata/mcribs"),
+        "MCRIBS legacy-format": os.path.join(os.path.dirname(fmri_dir), "mcribs"),
+        "FreeSurfer BIDS-format": os.path.join(fmri_dir, "sourcedata/*freesurfer*"),
+        "FreeSurfer legacy-format": os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"),
+    }
 
-    else:
-        raise NotADirectoryError("No FreeSurfer derivatives found.")
+    for key, value in targets.items():
+        path_candidates = sorted(glob.glob(value))
+        if len(path_candidates) == 1:
+            path = path_candidates[0]
+            LOGGER.debug(f"{key} derivatives found at {path}")
+            return path
+        elif len(path_candidates) > 1:
+            path_candidates_str = "\n\t".join(path_candidates)
+            raise ValueError(
+                f"More than one candidate for {key} derivatives found. "
+                "We recommend mounting only one directory in your Docker/Singularity image. "
+                f"Detected candidates:\n\t{path_candidates_str}"
+            )
 
-    return freesurfer_path
+    searches_str = "\n\t".join(targets.values())
+    raise NotADirectoryError(
+        f"No FreeSurfer or MCRIBS derivatives found with the following searches:\n\t{searches_str}"
+    )
 
 
 def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
