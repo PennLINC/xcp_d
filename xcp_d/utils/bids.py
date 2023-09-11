@@ -300,6 +300,7 @@ def collect_data(
                 break
             else:
                 LOGGER.warning(f"{volspace}\n\t{bold_data}\n\t{transform_files}")
+                LOGGER.warning(temp_bold_query)
                 LOGGER.warning("")
 
         if not bold_data or not transform_files:
