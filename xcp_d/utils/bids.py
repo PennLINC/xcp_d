@@ -285,7 +285,7 @@ def collect_data(
         )["nifti"]
 
         temp_bold_query = queries["bold"].copy()
-        temp_bold_query.pop("den")
+        temp_bold_query.pop("den", None)
         temp_bold_query["extension"] = ".nii.gz"
 
         temp_xfm_query = queries["anat_to_template_xfm"].copy()
