@@ -30,7 +30,7 @@ def test_collect_participants(datasets):
     assert found_labels == ["01"]
 
 
-def test_collect_data_pnc(datasets):
+def test_collect_data_ds001419(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["ds001419"]
 
@@ -69,8 +69,8 @@ def test_collect_data_pnc(datasets):
     assert "space-fsLR" in subj_data["bold"][0]
     assert "space-" not in subj_data["t1w"]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_desc-preproc_T1w.nii.gz"
-    assert "to-MNI152NLin6Asym" in subj_data["anat_to_template_xfm"]
-    assert "from-MNI152NLin6Asym" in subj_data["template_to_anat_xfm"]
+    assert "to-MNI152NLin2009cAsym" in subj_data["anat_to_template_xfm"]
+    assert "from-MNI152NLin2009cAsym" in subj_data["template_to_anat_xfm"]
 
 
 def test_collect_data_nibabies(datasets):
