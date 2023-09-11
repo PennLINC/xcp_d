@@ -469,6 +469,15 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         default=False,
         help="Opt out of sending tracking information.",
     )
+    g_other.add_argument(
+        "--fs-license-file",
+        metavar="FILE",
+        type=Path,
+        help=(
+            "Path to FreeSurfer license key file. Get it (for free) by registering "
+            "at https://surfer.nmr.mgh.harvard.edu/registration.html."
+        ),
+    )
 
     g_experimental = parser.add_argument_group("Experimental options")
     g_experimental.add_argument(
@@ -679,6 +688,16 @@ def _validate_parameters(opts, build_log):
     opts.work_dir = opts.work_dir.resolve()
 
     return_code = 0
+
+    # Set the FreeSurfer license
+    if opts.fs_license_file is not None:
+        opts.fs_license_file = opts.fs_license_file.resolve()
+        if opts.fs_license_file.is_file():
+            os.environ["FS_LICENSE"] = str(opts.fs_license_file)
+
+        else:
+            build_log.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
+            return_code = 1
 
     # Check the validity of inputs
     if opts.output_dir == opts.fmri_dir:

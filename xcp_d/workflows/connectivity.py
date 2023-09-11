@@ -294,6 +294,9 @@ def init_parcellate_surfaces_wf(
         "sulcal_depth": "sulc",
         "sulcal_curv": "curv",
         "cortical_thickness": "thickness",
+        "cortical_thickness_corr": "thicknessCorrected",
+        "myelin": "myelin",
+        "myelin_smoothed": "myelinSmoothed",
     }
 
     inputnode = pe.Node(
@@ -675,7 +678,7 @@ def init_functional_connectivity_cifti_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
-Connectome Workbench [@hcppipelines] for the following atlases:
+Connectome Workbench [@glasser2013minimal] for the following atlases:
 the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
 atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
 the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].

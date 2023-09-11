@@ -544,29 +544,28 @@ def init_postprocess_cifti_wf(
     # fmt:on
 
     # executive summary workflow
-    if dcan_qc:
-        execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
-            preproc_nifti=run_data["nifti_file"],
-            t1w_available=t1w_available,
-            t2w_available=t2w_available,
-            output_dir=output_dir,
-            layout=layout,
-            name="execsummary_functional_plots_wf",
-        )
+    execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
+        preproc_nifti=run_data["nifti_file"],
+        t1w_available=t1w_available,
+        t2w_available=t2w_available,
+        output_dir=output_dir,
+        layout=layout,
+        name="execsummary_functional_plots_wf",
+    )
 
+    # Use inputnode for executive summary instead of downcast_data
+    # because T1w is used as name source.
+    # fmt:off
+    workflow.connect([
         # Use inputnode for executive summary instead of downcast_data
         # because T1w is used as name source.
-        # fmt:off
-        workflow.connect([
-            # Use inputnode for executive summary instead of downcast_data
-            # because T1w is used as name source.
-            (inputnode, execsummary_functional_plots_wf, [
-                ("boldref", "inputnode.boldref"),
-                ("t1w", "inputnode.t1w"),
-                ("t2w", "inputnode.t2w"),
-            ]),
-        ])
-        # fmt:on
+        (inputnode, execsummary_functional_plots_wf, [
+            ("boldref", "inputnode.boldref"),
+            ("t1w", "inputnode.t1w"),
+            ("t2w", "inputnode.t2w"),
+        ]),
+    ])
+    # fmt:on
 
     return workflow
 

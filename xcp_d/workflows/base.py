@@ -520,7 +520,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         t1w_available=t1w_available,
         t2w_available=t2w_available,
         target_space=target_space,
-        dcan_qc=dcan_qc,
         omp_nthreads=omp_nthreads,
         mem_gb=1,
         name="postprocess_anat_wf",

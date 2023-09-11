@@ -850,7 +850,7 @@ class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
 class _CiftiCreateDenseScalarOutputSpec(TraitedSpec):
     """Output specification for the CiftiCreateDenseScalar command."""
 
-    out_file = File(exists=True, genfile=True, desc="output CIFTI file")
+    out_file = File(exists=True, desc="output CIFTI file")
 
 
 class CiftiCreateDenseScalar(WBCommand):
@@ -883,7 +883,9 @@ class CiftiCreateDenseScalar(WBCommand):
         if name != "out_file":
             return None
 
-        if isdefined(self.inputs.volume_data):
+        if isdefined(self.inputs.out_file):
+            return self.inputs.out_file
+        elif isdefined(self.inputs.volume_data):
             _, fname, _ = split_filename(self.inputs.volume_data)
         else:
             _, fname, _ = split_filename(self.inputs.left_metric)
