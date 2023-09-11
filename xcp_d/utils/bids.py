@@ -298,6 +298,9 @@ def collect_data(
             if bold_data and transform_files:
                 # will leave the best available space in the query
                 break
+            else:
+                LOGGER.warning(f"{volspace}\n\t{bold_data}\n\t{transform_files}")
+                LOGGER.warning("")
 
         if not bold_data or not transform_files:
             raise FileNotFoundError(
