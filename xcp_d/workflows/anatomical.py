@@ -1258,28 +1258,40 @@ def init_warp_one_hemisphere_wf(
     )
     inputnode.inputs.participant_id = participant_id
 
-    # Load the fsaverage-164k sphere
-    # NOTE: Why do we need the fsaverage mesh?
-    fsaverage_mesh = str(
-        get_template(
-            template="fsaverage",
-            space=None,
-            hemi=hemisphere,
-            density="164k",
-            desc=None,
-            suffix="sphere",
+    source_space = "fsaverage"
+    if source_space == "fsaverage":
+        # Load the fsaverage-164k sphere
+        # This links triangles to locations in fsaverage space
+        source_sphere = str(
+            get_template(
+                template="fsaverage",
+                space=None,
+                hemi=hemisphere,
+                density="164k",
+                desc=None,
+                suffix="sphere",
+            )
         )
-    )
 
-    # NOTE: Can we upload these to templateflow?
-    fs_hemisphere_to_fsLR = pkgrf(
-        "xcp_d",
-        (
-            f"data/standard_mesh_atlases/fs_{hemisphere}/"
-            f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
-            f"164k_fs_{hemisphere}.surf.gii"
-        ),
-    )
+        # Load the fsaverage sphere deformed to fsLR space.
+        # The triangles are the same as source_sphere, but the vertices point to locations in fsLR.
+        # NOTE: Can we upload these to templateflow?
+        source_sphere_deformed_to_target = pkgrf(
+            "xcp_d",
+            (
+                f"data/standard_mesh_atlases/fs_{hemisphere}/"
+                f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
+                f"164k_fs_{hemisphere}.surf.gii"
+            ),
+        )
+
+    elif source_space == "dhcp":
+        ...
+
+    elif source_space == "mcribs":
+        ...
+
+    # Load the subject's fsaverage-space sphere file
     get_freesurfer_sphere_node = pe.Node(
         Function(
             function=get_freesurfer_sphere,
@@ -1299,34 +1311,25 @@ def init_warp_one_hemisphere_wf(
     ])
     # fmt:on
 
-    # NOTE: What does this step do?
-    sphere_to_surf_gii = pe.Node(
+    # Convert the Freesurfer sphere.reg file to gifti format
+    sphere_to_gii = pe.Node(
         MRIsConvert(out_datatype="gii"),
-        name="sphere_to_surf_gii",
+        name="sphere_to_gii",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
+    workflow.connect([(get_freesurfer_sphere_node, sphere_to_gii, [("sphere_raw", "in_file")])])
 
-    # fmt:off
-    workflow.connect([
-        (get_freesurfer_sphere_node, sphere_to_surf_gii, [("sphere_raw", "in_file")]),
-    ])
-    # fmt:on
-
-    # NOTE: What does this step do?
-    surface_sphere_project_unproject = pe.Node(
+    # Project the fsaverage-space Freesurfer file to fsLR space.
+    # It will retain the same triangles as before, but the vertices will be updated.
+    project_sphere_to_fslr = pe.Node(
         SurfaceSphereProjectUnproject(
-            sphere_project_to=fsaverage_mesh,
-            sphere_unproject_from=fs_hemisphere_to_fsLR,
+            sphere_project_to=source_sphere,
+            sphere_unproject_from=source_sphere_deformed_to_target,
         ),
-        name="surface_sphere_project_unproject",
+        name="project_sphere_to_fslr",
     )
-
-    # fmt:off
-    workflow.connect([
-        (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
-    ])
-    # fmt:on
+    workflow.connect([(sphere_to_gii, project_sphere_to_fslr, [("converted", "in_file")])])
 
     fsLR_sphere = str(
         get_template(
@@ -1355,7 +1358,7 @@ def init_warp_one_hemisphere_wf(
     # fmt:off
     workflow.connect([
         (inputnode, resample_to_fsLR32k, [("hemi_files", "in_file")]),
-        (surface_sphere_project_unproject, resample_to_fsLR32k, [("out_file", "current_sphere")]),
+        (project_sphere_to_fslr, resample_to_fsLR32k, [("out_file", "current_sphere")]),
     ])
     # fmt:on
 
