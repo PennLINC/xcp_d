@@ -14,6 +14,11 @@ def test_collect_participants(datasets):
     This also covers BIDSError and BIDSWarning.
     """
     bids_dir = datasets["ds001419"]
+
+    # Pass in non-BIDS folder to get BIDSError.
+    with pytest.raises(xbids.BIDSError, match="Could not find participants"):
+        xbids.collect_participants(os.path.dirname(bids_dir), participant_label="fail")
+
     with pytest.raises(xbids.BIDSError, match="Could not find participants"):
         xbids.collect_participants(bids_dir, participant_label="fail")
 
