@@ -1,5 +1,45 @@
 # What's New
 
+## 0.5.0
+
+The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce any backwards-incompatible changes between this release and 1.0.0 (the official paper release).
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+### 🛠 Breaking Changes
+* Add CIFTI subcortical atlas to XCP-D by @tsalo in https://github.com/PennLINC/xcp_d/pull/864
+* Change "ciftiSubcortical" atlas name to "HCP" by @tsalo in https://github.com/PennLINC/xcp_d/pull/932
+### 🎉 Exciting New Features
+* Write out top-level sidecar for PennLINC QC file by @tsalo in https://github.com/PennLINC/xcp_d/pull/894
+* Parcellate ReHo, ALFF, and surface morphometric maps by @tsalo in https://github.com/PennLINC/xcp_d/pull/839
+* Refactor dcan/hcp ingestion and add more surface files by @tsalo in https://github.com/PennLINC/xcp_d/pull/887
+* Add "none" option for denoising by @tsalo in https://github.com/PennLINC/xcp_d/pull/879
+* Add `--exact-time` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/885
+* Allow white matter surface suffix to be either "_smoothwm" or "_white" by @tsalo in https://github.com/PennLINC/xcp_d/pull/899
+* Add `--fs-license-file` parameter to command line interface by @tsalo in https://github.com/PennLINC/xcp_d/pull/930
+* Generate executive summary figures without `--dcan-qc` by @tsalo in https://github.com/PennLINC/xcp_d/pull/936
+### 🐛 Bug Fixes
+* Standardize executive summary carpet if params is "none" by @tsalo in https://github.com/PennLINC/xcp_d/pull/916
+* Support CIFTI morphometry files and add PNC test data by @tsalo in https://github.com/PennLINC/xcp_d/pull/922
+* Correct ABCD/HCP surface ingression by @tsalo in https://github.com/PennLINC/xcp_d/pull/927
+### Other Changes
+* Add contributing documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/893
+* Update changelog and CFF file for 0.4.0 by @tsalo in https://github.com/PennLINC/xcp_d/pull/896
+* Change packaging to use hatch-vcs and pyproject.toml by @tsalo in https://github.com/PennLINC/xcp_d/pull/897
+* Fix description of signal denoising method in docs by @tsalo in https://github.com/PennLINC/xcp_d/pull/898
+* Improve QC sidecar contents by @tsalo in https://github.com/PennLINC/xcp_d/pull/900
+* Rename the parcellated ALFF/ReHo outputs by @tsalo in https://github.com/PennLINC/xcp_d/pull/902
+* Remove workaround for nonbinary Nibabies brain masks by @tsalo in https://github.com/PennLINC/xcp_d/pull/905
+* Update Landing Page Figure by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/908
+* Remove unused functions in filemanip module by @tsalo in https://github.com/PennLINC/xcp_d/pull/911
+* Add tests for xcp_d.utils.utils module by @tsalo in https://github.com/PennLINC/xcp_d/pull/910
+* Add tests for xcp_d.utils.execsummary module by @tsalo in https://github.com/PennLINC/xcp_d/pull/912
+* Expand tests by @tsalo in https://github.com/PennLINC/xcp_d/pull/913
+* Test CLI parameter validation by @tsalo in https://github.com/PennLINC/xcp_d/pull/918
+* Refactor collection functions by @tsalo in https://github.com/PennLINC/xcp_d/pull/917
+
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/04.0...0.5.0
+
 ## 0.4.0
 
 ### 🛠 Breaking Changes
