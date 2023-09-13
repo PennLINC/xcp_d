@@ -392,13 +392,8 @@ Parcellation and functional connectivity estimation
 :func:`~xcp_d.workflows.connectivity.init_functional_connectivity_cifti_wf`
 
 The ``filtered, denoised BOLD`` is fed into a functional connectivity workflow,
-which extracts parcel-wise time series from the BOLD using several atlases:
-
-   a. Schaefer 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel resolutions
-   b. Glasser 360
-   c. Gordon 333
-   d. Tian Subcortical Atlas :footcite:p:`tian2020topographic`
-   e. HCP Subcortical Atlas :footcite:p:`glasser2013minimal`
+which extracts parcel-wise time series from the BOLD using several atlases.
+These atlases are documented in :doc:`outputs`.
 
 The resulting parcellated time series for each atlas is then used to generate static functional
 connectivity matrices, as measured with Pearson correlation coefficients.

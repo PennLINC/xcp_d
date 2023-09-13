@@ -1,0 +1,18 @@
+{
+    "BIDSVersion": "1.8.0",
+    "Density": {
+        "32k": "2 mm3 subcortical data."
+    },
+    "Description": "The 50-node Tian subcortical atlas.",
+    "Name": "Tian Subcortical",
+    "ReferencesAndLinks": [
+        "https://doi.org/10.1038/s41593-020-00711-6"
+    ],
+    "SpatialReference": {
+        "VolumeReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-02_T1w.nii.gz"
+    },
+    "cifti_label": {
+        "Description": "The region label present in the CIFTI file.",
+        "LongName": "CIFTI Label"
+    }
+}
