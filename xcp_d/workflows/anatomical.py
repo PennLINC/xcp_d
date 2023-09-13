@@ -46,7 +46,6 @@ def init_postprocess_anat_wf(
     t1w_available,
     t2w_available,
     target_space,
-    dcan_qc,
     omp_nthreads,
     mem_gb,
     name="postprocess_anat_wf",
@@ -68,7 +67,6 @@ def init_postprocess_anat_wf(
                 t1w_available=True,
                 t2w_available=True,
                 target_space="MNI152NLin6Asym",
-                dcan_qc=True,
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="postprocess_anat_wf",
@@ -84,7 +82,6 @@ def init_postprocess_anat_wf(
         True if a preprocessed T2w is available, False if not.
     target_space : :obj:`str`
         Target NIFTI template for T1w.
-    %(dcan_qc)s
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
@@ -279,33 +276,32 @@ def init_postprocess_anat_wf(
             ])
             # fmt:on
 
-    if dcan_qc:
-        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
-            t1w_available=t1w_available,
-            t2w_available=t2w_available,
-            output_dir=output_dir,
-            name="execsummary_anatomical_plots_wf",
-        )
+    execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+        t1w_available=t1w_available,
+        t2w_available=t2w_available,
+        output_dir=output_dir,
+        name="execsummary_anatomical_plots_wf",
+    )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
+    ])
+    # fmt:on
+
+    if t1w_available:
         # fmt:off
         workflow.connect([
-            (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
+            (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
         ])
         # fmt:on
 
-        if t1w_available:
-            # fmt:off
-            workflow.connect([
-                (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
-            ])
-            # fmt:on
-
-        if t2w_available:
-            # fmt:off
-            workflow.connect([
-                (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
-            ])
-            # fmt:on
+    if t2w_available:
+        # fmt:off
+        workflow.connect([
+            (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
+        ])
+        # fmt:on
 
     return workflow
 

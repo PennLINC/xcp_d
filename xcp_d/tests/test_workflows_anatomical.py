@@ -90,7 +90,6 @@ def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
         t1w_available=True,
         t2w_available=True,
         target_space="MNI152NLin2009cAsym",
-        dcan_qc=False,
         omp_nthreads=1,
         mem_gb=0.1,
         name="postprocess_anat_wf",
