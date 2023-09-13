@@ -1321,7 +1321,8 @@ def init_warp_one_hemisphere_wf(
     workflow.connect([(get_freesurfer_sphere_node, sphere_to_gii, [("sphere_raw", "in_file")])])
 
     # Project the fsaverage-space Freesurfer file to fsLR space.
-    # It will retain the same triangles as before, but the vertices will be updated.
+    # It will retain the same triangles (topology) as before,
+    # but the vertices (coordinates) will be updated.
     project_sphere_to_fslr = pe.Node(
         SurfaceSphereProjectUnproject(
             sphere_project_to=source_sphere,
@@ -1342,8 +1343,7 @@ def init_warp_one_hemisphere_wf(
         )
     )
 
-    # resample the surfaces to fsLR-32k
-    # NOTE: Does that mean the data are in fsLR-164k before this?
+    # Resample the surfaces to fsLR-32k, using the subject's new fsLR-32k-deformed sphere.
     resample_to_fsLR32k = pe.MapNode(
         CiftiSurfaceResample(
             new_sphere=fsLR_sphere,
