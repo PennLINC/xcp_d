@@ -1,0 +1,25 @@
+{
+    "BIDSVersion": "1.8.0",
+    "Description": "The 50-node Tian subcortical atlas.",
+    "Name": "Tian",
+    "ReferencesAndLinks": [
+        "https://doi.org/10.1038/s41593-020-00711-6"
+    ],
+    "Resolution": {
+        "01": {
+            "zooms": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "02": {
+            "zooms": [
+                2.0,
+                2.0,
+                2.0
+            ]
+        }
+    },
+    "SpatialReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-02_T1w.nii.gz"
+}
