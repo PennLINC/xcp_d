@@ -2,6 +2,8 @@
     Start the tasks section and  put in the column headings for the task-specific data.
 
     Inputs:
+    - concatenated_rest_files{"preproc_carpet"}
+    - concatenated_rest_files{"postproc_carpet"}
     - task_files[]{"task"}
     - task_files[]{"run"}
     - task_files[]{"registration_files"}
@@ -22,6 +24,10 @@
     <div class="w3-container">
         <div class="w3-row-padding">
             <div class="w3-center"><h2>Functional Data</h2></div>
+
+            {# Carpet/line plot for pre- and post-regression, concatenate across runs. #}
+            {% include "concatenated_task_static_plots.html.jinja" %}
+
             <div>
                 {% for run_dict in task_files %}
 

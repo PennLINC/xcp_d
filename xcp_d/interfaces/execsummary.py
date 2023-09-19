@@ -146,6 +146,24 @@ class ExecutiveSummary(object):
 
         self.structural_files_ = structural_files
 
+        # Collect figures for concatenated resting-state data (if any)
+        concatenated_rest_files = {}
+
+        query = {
+            "subject": self.subject_id,
+            "task": "rest",
+            "run": Query.NONE,
+            "desc": "preprocESQC",
+            "suffix": "bold",
+            "extension": ".svg",
+        }
+        concatenated_rest_files["preproc_carpet"] = self._get_bids_file(query)
+
+        query["desc"] = "postprocESQC"
+        concatenated_rest_files["postproc_carpet"] = self._get_bids_file(query)
+
+        self.concatenated_rest_files_ = concatenated_rest_files
+
         # Determine the unique entity-sets for the task data.
         postproc_files = self.layout.get(
             subject=self.subject_id,
@@ -188,24 +206,6 @@ class ExecutiveSummary(object):
         # Convert back to dictionary
         task_entity_sets = task_entity_sets.to_dict(orient="records")
         task_entity_namer = task_entity_namer.to_dict(orient="records")
-
-        # Collect figures for concatenated resting-state data (if any)
-        concatenated_rest_files = {}
-
-        query = {
-            "subject": self.subject_id,
-            "task": "rest",
-            "run": Query.NONE,
-            "desc": "preprocESQC",
-            "suffix": "bold",
-            "extension": ".svg",
-        }
-        concatenated_rest_files["preproc_carpet"] = self._get_bids_file(query)
-
-        query["desc"] = "postprocESQC"
-        concatenated_rest_files["postproc_carpet"] = self._get_bids_file(query)
-
-        self.concatenated_rest_files_ = concatenated_rest_files
 
         task_files = []
 
