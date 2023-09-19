@@ -176,7 +176,18 @@ class ExecutiveSummary(object):
         task_entity_sets = pd.DataFrame(task_entity_sets)
         task_entity_sets = task_entity_sets.sort_values(by=task_entity_sets.columns.tolist())
         task_entity_sets = task_entity_sets.fillna(Query.NONE)
+
+        # Extract entities with variability
+        # This lets us name the sections based on multiple entities (not just task and run)
+        nunique = task_entity_sets.nunique()
+        nunique.loc["task"] = 2  # ensure we keep task
+        nunique.loc["run"] = 2  # ensure we keep run
+        cols_to_drop = nunique[nunique == 1].index
+        task_entity_namer = task_entity_sets.drop(cols_to_drop, axis=1)
+
+        # Convert back to dictionary
         task_entity_sets = task_entity_sets.to_dict(orient="records")
+        task_entity_namer = task_entity_namer.to_dict(orient="records")
 
         # Collect figures for concatenated resting-state data (if any)
         concatenated_rest_files = {}
@@ -198,11 +209,11 @@ class ExecutiveSummary(object):
 
         task_files = []
 
-        for task_entity_set in task_entity_sets:
+        for i_set, task_entity_set in enumerate(task_entity_sets):
             task_file_figures = task_entity_set.copy()
-            task_file_figures[
-                "key"
-            ] = f"task-{task_entity_set['task']}_run-{task_entity_set.get('run', 0)}"
+            task_file_figures["key"] = "_".join(
+                [f"{k}-{v}" for k, v in task_entity_namer[i_set].items()]
+            )
 
             query = {
                 "subject": self.subject_id,
