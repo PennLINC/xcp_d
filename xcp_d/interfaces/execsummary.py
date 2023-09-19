@@ -182,7 +182,7 @@ class ExecutiveSummary(object):
         }
         concatenated_rest_files["preproc_carpet"] = self._get_bids_file(query)
 
-        query["desc"] = "postcarpetplot"
+        query["desc"] = "postprocESQC"
         concatenated_rest_files["postproc_carpet"] = self._get_bids_file(query)
 
         self.concatenated_rest_files_ = concatenated_rest_files
