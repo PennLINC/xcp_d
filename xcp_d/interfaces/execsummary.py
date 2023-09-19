@@ -217,7 +217,7 @@ class ExecutiveSummary(object):
             for k, v in task_entity_namer[i_set].items():
                 try:
                     temp_dict[k] = int(v)
-                except ValueError:
+                except (ValueError, TypeError):
                     temp_dict[k] = v
 
             task_file_figures["key"] = "_".join([f"{k}-{v}" for k, v in temp_dict.items()])
