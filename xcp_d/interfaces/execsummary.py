@@ -215,7 +215,7 @@ class ExecutiveSummary(object):
             # Convert any floats in the name to ints
             temp_dict = task_entity_namer[i_set]
             temp_dict = {
-                key: int(value) if np.isscalar(value) and value.is_integer() else value
+                key: int(value) if np.isscalar(value) and float(value).is_integer() else value
                 for key, value in temp_dict.items()
             }
             task_file_figures["key"] = "_".join([f"{k}-{v}" for k, v in temp_dict.items()])
