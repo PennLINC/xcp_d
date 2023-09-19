@@ -242,6 +242,12 @@ class ExecutiveSummary(object):
 
                 task_file_figures["registration_files"].append(found_file)
 
+            # If there are no registration files, then this "run" was produced by the
+            # concatenation workflow.
+            # Skip the concatenated resting-state scan, since it has its own section.
+            if query["task"] == "rest" and not task_file_figures["registration_files"]:
+                continue
+
             task_files.append(task_file_figures)
 
         # Sort the files by the desired key
