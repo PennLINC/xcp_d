@@ -211,9 +211,14 @@ class ExecutiveSummary(object):
 
         for i_set, task_entity_set in enumerate(task_entity_sets):
             task_file_figures = task_entity_set.copy()
-            task_file_figures["key"] = "_".join(
-                [f"{k}-{v}" for k, v in task_entity_namer[i_set].items()]
-            )
+
+            # Convert any floats in the name to ints
+            temp_dict = task_entity_namer[i_set]
+            temp_dict = {
+                key: int(value) if isinstance(value, float) and value.is_integer() else value
+                for key, value in temp_dict.items()
+            }
+            task_file_figures["key"] = "_".join([f"{k}-{v}" for k, v in temp_dict.items()])
 
             query = {
                 "subject": self.subject_id,
