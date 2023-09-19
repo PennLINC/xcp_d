@@ -4,6 +4,8 @@ import os
 import re
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from bids.layout import BIDSLayout, Query
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader, Markup
@@ -166,10 +168,17 @@ class ExecutiveSummary(object):
         task_entity_sets = []
         for entity_set in unique_entity_sets:
             for entity in ORDERING:
-                entity_set[entity] = entity_set.get(entity, Query.NONE)
+                entity_set[entity] = entity_set.get(entity, np.nan)
 
             task_entity_sets.append(entity_set)
 
+        # Now sort the entity sets by each entity
+        task_entity_sets = pd.DataFrame(task_entity_sets)
+        task_entity_sets = task_entity_sets.sort_values(by=task_entity_sets.columns.tolist())
+        task_entity_sets = task_entity_sets.fillna(Query.NONE)
+        task_entity_sets = task_entity_sets.to_dict(orient="records")
+
+        # Collect figures for concatenated resting-state data (if any)
         concatenated_rest_files = {}
 
         query = {
