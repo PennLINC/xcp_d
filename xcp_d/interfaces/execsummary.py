@@ -242,10 +242,9 @@ class ExecutiveSummary(object):
 
                 task_file_figures["registration_files"].append(found_file)
 
-            # If there are no registration files, then this "run" was produced by the
-            # concatenation workflow.
+            # If there no mean BOLD figure, then the "run" was made by the concatenation workflow.
             # Skip the concatenated resting-state scan, since it has its own section.
-            if query["task"] == "rest" and not task_file_figures["registration_files"]:
+            if query["task"] == "rest" and not task_file_figures["bold"]:
                 continue
 
             task_files.append(task_file_figures)
