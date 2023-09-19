@@ -218,6 +218,7 @@ class ExecutiveSummary(object):
                 key: int(value) if isinstance(value, float) and value.is_integer() else value
                 for key, value in temp_dict.items()
             }
+            raise Exception(temp_dict)
             task_file_figures["key"] = "_".join([f"{k}-{v}" for k, v in temp_dict.items()])
 
             query = {
