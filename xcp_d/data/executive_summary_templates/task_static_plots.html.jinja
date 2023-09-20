@@ -4,8 +4,7 @@
     Inputs:
     - concatenated_rest_files{"preproc_carpet"}
     - concatenated_rest_files{"postproc_carpet"}
-    - task_files[]{"task"}
-    - task_files[]{"run"}
+    - task_files[]{"key"}
     - task_files[]{"registration_files"}
     - task_files[]{"registration_titles"}
     - task_files[]{"bold"}
@@ -31,8 +30,7 @@
             <div>
                 {% for run_dict in task_files %}
 
-                    {% set task = run_dict["task"] %}
-                    {% set run = run_dict["run"] %}
+                    {% set key = run_dict["key"] %}
                     {% set registration_files = run_dict["registration_files"] %}
                     {% set registration_titles = run_dict["registration_titles"] %}
                     {% set bold = run_dict["bold"] %}
@@ -44,7 +42,7 @@
                         Add the task name for the next few rows.
                     #}
                     <div class="w3-row"></div>
-                        <div class="w3-left label2">task-{{ task }} run-{{ run }}:</div>
+                        <div class="w3-left label2">{{ key }}:</div>
                     <div class="w3-row"></div>
 
                     {# Full rows for registration files #}

@@ -210,7 +210,7 @@ class ExecutiveSummary(object):
         task_files = []
 
         for i_set, task_entity_set in enumerate(task_entity_sets):
-            task_file_figures = task_entity_set.copy()
+            task_file_figures = {}
 
             # Convert any floats in the name to ints
             temp_dict = {}
@@ -220,7 +220,8 @@ class ExecutiveSummary(object):
                 except (ValueError, TypeError):
                     temp_dict[k] = v
 
-            task_file_figures["key"] = "_".join([f"{k}-{v}" for k, v in temp_dict.items()])
+            # String used for subsection headers
+            task_file_figures["key"] = " ".join([f"{k}-{v}" for k, v in temp_dict.items()])
 
             query = {
                 "subject": self.subject_id,
@@ -255,9 +256,6 @@ class ExecutiveSummary(object):
                 continue
 
             task_files.append(task_file_figures)
-
-        # Sort the files by the desired key
-        task_files = sorted(task_files, key=lambda d: d["key"])
 
         self.task_files_ = task_files
 
