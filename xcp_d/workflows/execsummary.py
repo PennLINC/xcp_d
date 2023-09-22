@@ -690,7 +690,7 @@ def init_execsummary_anatomical_plots_wf(
         if input_type == "nibabies":
             plot_subcort_on_atlas_wf = init_plot_custom_slices_wf(
                 output_dir=output_dir,
-                desc="SubcorticalOnAtlas",
+                desc="SubcorticalsOnAtlas",
                 name="plot_subcort_on_atlas_wf",
             )
 
@@ -706,19 +706,19 @@ def init_execsummary_anatomical_plots_wf(
             ])
             # fmt:on
 
-            plot_t1w_on_subcort_wf = init_plot_custom_slices_wf(
+            plot_atlas_on_subcort_wf = init_plot_custom_slices_wf(
                 output_dir=output_dir,
-                desc="T1wOnSubcortical",
+                desc="AtlasOnSubcorticals",
                 name="plot_t1w_on_subcort_wf",
             )
 
             # fmt:off
             workflow.connect([
-                (inputnode, plot_t1w_on_subcort_wf, [
+                (inputnode, plot_atlas_on_subcort_wf, [
                     ("t1w", "inputnode.name_source"),
                     ("template", "inputnode.underlay_file"),
                 ]),
-                (resample_t1w, plot_t1w_on_subcort_wf, [("out_file", "inputnode.overlay_file")]),
+                (resample_t1w, plot_atlas_on_subcort_wf, [("out_file", "inputnode.overlay_file")]),
             ])
             # fmt:on
 
