@@ -581,6 +581,7 @@ def init_execsummary_functional_plots_wf(
 
 @fill_doc
 def init_execsummary_anatomical_plots_wf(
+    input_type,
     t1w_available,
     t2w_available,
     output_dir,
@@ -596,6 +597,7 @@ def init_execsummary_anatomical_plots_wf(
             from xcp_d.workflows.execsummary import init_execsummary_anatomical_plots_wf
 
             wf = init_execsummary_anatomical_plots_wf(
+                input_type="nibabies",
                 t1w_available=True,
                 t2w_available=True,
                 output_dir=".",
@@ -604,6 +606,7 @@ def init_execsummary_anatomical_plots_wf(
 
     Parameters
     ----------
+    %(input_type)s
     t1w_available : bool
         Generally True.
     t2w_available : bool
@@ -684,6 +687,41 @@ def init_execsummary_anatomical_plots_wf(
         ])
         # fmt:on
 
+        if input_type == "nibabies":
+            plot_subcort_on_atlas_wf = init_plot_custom_slices_wf(
+                output_dir=output_dir,
+                desc="SubcorticalOnAtlas",
+                name="plot_subcort_on_atlas_wf",
+            )
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, plot_subcort_on_atlas_wf, [
+                    ("t1w", "inputnode.name_source"),
+                    ("template", "inputnode.overlay_file"),
+                ]),
+                (resample_t1w, plot_subcort_on_atlas_wf, [
+                    ("out_file", "inputnode.underlay_file"),
+                ]),
+            ])
+            # fmt:on
+
+            plot_t1w_on_subcort_wf = init_plot_custom_slices_wf(
+                output_dir=output_dir,
+                desc="T1wOnSubcortical",
+                name="plot_t1w_on_subcort_wf",
+            )
+
+            # fmt:off
+            workflow.connect([
+                (inputnode, plot_t1w_on_subcort_wf, [
+                    ("t1w", "inputnode.name_source"),
+                    ("template", "inputnode.underlay_file"),
+                ]),
+                (resample_t1w, plot_t1w_on_subcort_wf, [("out_file", "inputnode.overlay_file")]),
+            ])
+            # fmt:on
+
     # Atlas in T2w, T2w in Atlas
     if t2w_available:
         # Resample T2w to match resolution of template data
@@ -751,8 +789,7 @@ def init_plot_custom_slices_wf(
 ):
     """Plot a custom selection of slices with Slicer.
 
-    This workflow is used to produce subcortical registration plots specifically for
-    infant data.
+    This workflow is used to produce subcortical registration plots specifically for infant data.
 
     Workflow Graph
         .. workflow::

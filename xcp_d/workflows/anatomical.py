@@ -277,6 +277,7 @@ def init_postprocess_anat_wf(
             # fmt:on
 
     execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+        input_type=input_type,
         t1w_available=t1w_available,
         t2w_available=t2w_available,
         output_dir=output_dir,
