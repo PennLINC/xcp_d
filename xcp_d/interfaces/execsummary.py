@@ -4,6 +4,8 @@ import os
 import re
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from bids.layout import BIDSLayout, Query
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader, Markup
@@ -144,6 +146,24 @@ class ExecutiveSummary(object):
 
         self.structural_files_ = structural_files
 
+        # Collect figures for concatenated resting-state data (if any)
+        concatenated_rest_files = {}
+
+        query = {
+            "subject": self.subject_id,
+            "task": "rest",
+            "run": Query.NONE,
+            "desc": "preprocESQC",
+            "suffix": "bold",
+            "extension": ".svg",
+        }
+        concatenated_rest_files["preproc_carpet"] = self._get_bids_file(query)
+
+        query["desc"] = "postprocESQC"
+        concatenated_rest_files["postproc_carpet"] = self._get_bids_file(query)
+
+        self.concatenated_rest_files_ = concatenated_rest_files
+
         # Determine the unique entity-sets for the task data.
         postproc_files = self.layout.get(
             subject=self.subject_id,
@@ -166,34 +186,42 @@ class ExecutiveSummary(object):
         task_entity_sets = []
         for entity_set in unique_entity_sets:
             for entity in ORDERING:
-                entity_set[entity] = entity_set.get(entity, Query.NONE)
+                entity_set[entity] = entity_set.get(entity, np.nan)
 
             task_entity_sets.append(entity_set)
 
-        concatenated_rest_files = {}
+        # Now sort the entity sets by each entity
+        task_entity_sets = pd.DataFrame(task_entity_sets)
+        task_entity_sets = task_entity_sets.sort_values(by=task_entity_sets.columns.tolist())
+        task_entity_sets = task_entity_sets.fillna(Query.NONE)
 
-        query = {
-            "subject": self.subject_id,
-            "task": "rest",
-            "run": Query.NONE,
-            "desc": "preprocESQC",
-            "suffix": "bold",
-            "extension": ".svg",
-        }
-        concatenated_rest_files["preproc_carpet"] = self._get_bids_file(query)
+        # Extract entities with variability
+        # This lets us name the sections based on multiple entities (not just task and run)
+        nunique = task_entity_sets.nunique()
+        nunique.loc["task"] = 2  # ensure we keep task
+        nunique.loc["run"] = 2  # ensure we keep run
+        cols_to_drop = nunique[nunique == 1].index
+        task_entity_namer = task_entity_sets.drop(cols_to_drop, axis=1)
 
-        query["desc"] = "postcarpetplot"
-        concatenated_rest_files["postproc_carpet"] = self._get_bids_file(query)
-
-        self.concatenated_rest_files_ = concatenated_rest_files
+        # Convert back to dictionary
+        task_entity_sets = task_entity_sets.to_dict(orient="records")
+        task_entity_namer = task_entity_namer.to_dict(orient="records")
 
         task_files = []
 
-        for task_entity_set in task_entity_sets:
-            task_file_figures = task_entity_set.copy()
-            task_file_figures[
-                "key"
-            ] = f"task-{task_entity_set['task']}_run-{task_entity_set.get('run', 0)}"
+        for i_set, task_entity_set in enumerate(task_entity_sets):
+            task_file_figures = {}
+
+            # Convert any floats in the name to ints
+            temp_dict = {}
+            for k, v in task_entity_namer[i_set].items():
+                try:
+                    temp_dict[k] = int(v)
+                except (ValueError, TypeError):
+                    temp_dict[k] = v
+
+            # String used for subsection headers
+            task_file_figures["key"] = " ".join([f"{k}-{v}" for k, v in temp_dict.items()])
 
             query = {
                 "subject": self.subject_id,
@@ -222,10 +250,12 @@ class ExecutiveSummary(object):
 
                 task_file_figures["registration_files"].append(found_file)
 
-            task_files.append(task_file_figures)
+            # If there no mean BOLD figure, then the "run" was made by the concatenation workflow.
+            # Skip the concatenated resting-state scan, since it has its own section.
+            if query["task"] == "rest" and not task_file_figures["bold"]:
+                continue
 
-        # Sort the files by the desired key
-        task_files = sorted(task_files, key=lambda d: d["key"])
+            task_files.append(task_file_figures)
 
         self.task_files_ = task_files
 

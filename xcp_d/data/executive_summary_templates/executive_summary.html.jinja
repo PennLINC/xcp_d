@@ -138,16 +138,15 @@
     #}
     {% include "anatomical_registration_plots.html.jinja" %}
 
-    {# Carpet/line plot for pre- and post-regression, concatenate across runs. #}
-    {% include "concatenated_task_static_plots.html.jinja" %}
-
     {#
-        Task static plots. One section per run of each task.
-        1. Task in T1
-        2. T1 in Task
-        3. BOLD mean(?) image on the left
-        4. BOLD reference image on the left
-        3/4. Pre and post regression carpet/line plots on right.
+        "Functional Data" section, with BOLD figures.
+        1. Concatenated resting-state carpet plots.
+        2. One section per run of each task.
+            1. Task in T1
+            2. T1 in Task
+            3. BOLD mean(?) image on the left
+            4. BOLD reference image on the left
+            3/4. Pre and post regression carpet/line plots on right.
     #}
     {% include "task_static_plots.html.jinja" %}
 
