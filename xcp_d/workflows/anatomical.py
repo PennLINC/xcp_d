@@ -30,6 +30,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
 )
 from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_sphere
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import list_to_str
 from xcp_d.workflows.execsummary import (
     init_brainsprite_figures_wf,
     init_execsummary_anatomical_plots_wf,
@@ -204,6 +205,13 @@ def init_postprocess_anat_wf(
             workflow.connect([(inputnode, ds_t2w_std, [("t2w", "in_file")])])
 
     else:
+        out = (
+            ["T1w"] if t1w_available else [] + ["T2w"] if t2w_available else [] + ["segmentation"]
+        )
+        workflow.__desc__ = f"""\
+Native-space {list_to_str(out)} images were transformed to {target_space} space at 1 mm3
+resolution.
+"""
         warp_anat_dseg_to_template = pe.Node(
             ApplyTransforms(
                 num_threads=2,
