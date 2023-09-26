@@ -698,6 +698,21 @@ def init_plot_custom_slices_wf(
     underlay_file
     overlay_file
     name_source
+
+    Notes
+    -----
+    1.  Grab sub2atl_ROI.2.nii.gz from DCAN infant pipeline derivatives.
+        -   TODO: Find the equivalent file from nibabies.
+    2.  Grab Atlas_ROIs.2.nii.gz from DCAN infant pipeline derivatives.
+        -   TODO: Find the equivalent file from nibabies.
+    3.  Binarize Atlas_ROIs.2.nii.gz.
+    4.  Use slicer to overlay sub2atl_ROI.2.nii.gz onto the binarized Atlas_ROIs.2.nii.gz for
+        3 x slices, 3 y slices, and 3 z slices.
+    5.  Combine the 9 slice images into a single gif with pngappend.
+    6.  Binarize sub2atl_ROI.2.nii.gz.
+    7.  Use slicer to overlay Atlas_ROIs.2.nii.gz onto the binarized sub2atl_ROI.2.nii.gz for
+        3 x slices, 3 y slices, and 3 z slices.
+    8.  Combine the 9 slice images into a single gif with pngappend.
     """
     # NOTE: These slices are almost certainly specific to a given MNI template and resolution.
     SINGLE_SLICES = ["x", "x", "x", "y", "y", "y", "z", "z", "z"]
