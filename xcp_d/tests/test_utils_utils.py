@@ -155,17 +155,17 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
 
 def test_list_to_str():
     """Test the list_to_str function."""
-    lst = ["a"]
-    string = utils.list_to_str(lst)
+    string = utils.list_to_str(["a"])
     assert string == "a"
 
-    lst = ["a", "b"]
-    string = utils.list_to_str(lst)
+    string = utils.list_to_str(["a", "b"])
     assert string == "a and b"
 
-    lst = ["a", "b", "c"]
-    string = utils.list_to_str(lst)
+    string = utils.list_to_str(["a", "b", "c"])
     assert string == "a, b, and c"
+
+    with pytest.raises(ValueError, match="Zero-length list provided."):
+        utils.list_to_str([])
 
 
 def test_get_bold2std_and_t1w_xfms(ds001419_data):
@@ -331,7 +331,7 @@ def test_get_std2bold_xfms(ds001419_data):
     """
     bold_file_nlin2009c = ds001419_data["nifti_file"]
 
-    # MNI152NLin2009cAsym --> MNI152NLin6Asym
+    # MNI152NLin6Asym --> MNI152NLin2009cAsym
     xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin2009c)
     assert len(xforms_to_mni) == 1
 
@@ -343,7 +343,7 @@ def test_get_std2bold_xfms(ds001419_data):
     xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin6asym)
     assert len(xforms_to_mni) == 1
 
-    # MNIInfant --> MNI152NLin6Asym
+    # MNI152NLin6Asym --> MNIInfant
     bold_file_infant = bold_file_nlin2009c.replace(
         "space-MNI152NLin2009cAsym_",
         "space-MNIInfant_cohort-1_",
@@ -351,7 +351,7 @@ def test_get_std2bold_xfms(ds001419_data):
     xforms_to_mni = utils.get_std2bold_xfms(bold_file_infant)
     assert len(xforms_to_mni) == 2
 
-    # tofail --> MNI152NLin6Asym
+    # MNI152NLin6Asym --> tofail
     bold_file_tofail = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-tofail_")
     with pytest.raises(ValueError, match="Space 'tofail'"):
         utils.get_std2bold_xfms(bold_file_tofail)
