@@ -10,3 +10,5 @@
 .. _`Docker installation`: https://docs.docker.com/install/
 .. _`Docker Hub`: https://hub.docker.com/r/pennlinc/xcp_d/tags
 .. _`Singularity`: https://sylabs.io/guides/3.5/user-guide/introduction.html
+.. _`QSIPrep`: https://qsiprep.readthedocs.io
+.. _`ASLPrep`: https://aslprep.readthedocs.io

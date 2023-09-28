@@ -1,0 +1,25 @@
+{
+    "BIDSVersion": "1.8.0",
+    "Description": "The 360-node Glasser cortical atlas.",
+    "Name": "Glasser",
+    "ReferencesAndLinks": [
+        "https://www.nature.com/articles/nature18933"
+    ],
+    "Resolution": {
+        "01": {
+            "zooms": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "02": {
+            "zooms": [
+                2.0,
+                2.0,
+                2.0
+            ]
+        }
+    },
+    "SpatialReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-01_T1w.nii.gz"
+}

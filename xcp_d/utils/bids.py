@@ -32,8 +32,8 @@ INPUT_TYPE_ALLOWED_SPACES = {
     "nibabies": {
         "cifti": ["fsLR"],
         "nifti": [
-            "MNIInfant",
             "MNI152NLin6Asym",
+            "MNIInfant",
             "MNI152NLin2009cAsym",
         ],
     },
@@ -279,18 +279,34 @@ def collect_data(
     if cifti:
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        temp_query = queries["anat_to_template_xfm"].copy()
-        volumetric_space = ASSOCIATED_TEMPLATES[space]
+        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )["nifti"]
 
-        temp_query["to"] = volumetric_space
-        transform_files = layout.get(**temp_query)
-        if not transform_files:
+        temp_bold_query = queries["bold"].copy()
+        temp_bold_query.pop("den", None)
+        temp_bold_query["extension"] = ".nii.gz"
+
+        temp_xfm_query = queries["anat_to_template_xfm"].copy()
+
+        for volspace in allowed_spaces:
+            temp_bold_query["space"] = volspace
+            bold_data = layout.get(**temp_bold_query)
+            temp_xfm_query["to"] = volspace
+            transform_files = layout.get(**temp_xfm_query)
+
+            if bold_data and transform_files:
+                # will leave the best available space in the query
+                break
+
+        if not bold_data or not transform_files:
             raise FileNotFoundError(
-                f"No nifti transforms found to allowed space ({volumetric_space})"
+                f"No BOLD NIfTI or transforms found to allowed space ({volspace})"
             )
 
-        queries["anat_to_template_xfm"]["to"] = volumetric_space
-        queries["template_to_anat_xfm"]["from"] = volumetric_space
+        queries["anat_to_template_xfm"]["to"] = volspace
+        queries["template_to_anat_xfm"]["from"] = volspace
     else:
         # use the BOLD file's space if the BOLD file is a nifti.
         queries["anat_to_template_xfm"]["to"] = queries["bold"]["space"]
@@ -542,19 +558,20 @@ def collect_morphometry_data(layout, participant_label):
 
 
 @fill_doc
-def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
+def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
     %(layout)s
-    %(input_type)s
     bold_file : :obj:`str`
         Path to the BOLD file.
     %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
     primary_anat : {"T1w", "T2w"}
         The anatomical modality to use for the anat-to-native transform.
+    target_space
+        Used to find NIfTIs in the appropriate space if ``cifti`` is ``True``.
 
     Returns
     -------
@@ -598,24 +615,29 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
             suffix="xfm",
         )
     else:
-        allowed_nifti_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["nifti"]
+        # Split cohort out of the space for MNIInfant templates.
+        cohort = None
+        if "+" in target_space:
+            target_space, cohort = target_space.split("+")
+
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            space=allowed_nifti_spaces,
+            space=target_space,
+            cohort=cohort,
             suffix="boldref",
             extension=[".nii", ".nii.gz"],
+            invalid_filters="allow",
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            space=allowed_nifti_spaces,
+            space=target_space,
+            cohort=cohort,
             desc="preproc",
             suffix="bold",
             extension=[".nii", ".nii.gz"],
+            invalid_filters="allow",
         )
 
     LOGGER.log(
