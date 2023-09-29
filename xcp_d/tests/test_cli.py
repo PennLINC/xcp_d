@@ -212,8 +212,8 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
 
     motion_file = os.path.join(
         dataset_dir,
-        "sub-1648798153/ses-PNC1/func",
-        "sub-1648798153_ses-PNC1_task-rest_desc-confounds_timeseries.tsv",
+        "sub-1648798153/ses-PNC1/func/"
+        "sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-confounds_timeseries.tsv",
     )
     motion_df = pd.read_table(motion_file)
     motion_df.loc[-5:, "trans_x"] = 100
