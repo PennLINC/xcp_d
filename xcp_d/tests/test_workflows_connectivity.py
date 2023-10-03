@@ -23,11 +23,11 @@ from xcp_d.workflows.connectivity import (
 np.set_printoptions(threshold=sys.maxsize)
 
 
-def test_init_load_atlases_wf_nifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a nifti input."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
+    bold_file = ds001419_data["nifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
         output_dir=tmpdir,
@@ -42,14 +42,14 @@ def test_init_load_atlases_wf_nifti(fmriprep_with_freesurfer_data, tmp_path_fact
     load_atlases_wf_res = load_atlases_wf.run()
     nodes = get_nodes(load_atlases_wf_res)
     atlas_names = nodes["load_atlases_wf.warp_atlases_to_bold_space"].get_output("output_image")
-    assert len(atlas_names) == 13
+    assert len(atlas_names) == 14
 
 
-def test_init_load_atlases_wf_cifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a cifti input."""
     tmpdir = tmp_path_factory.mktemp("test_init_load_atlases_wf_cifti")
 
-    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
+    bold_file = ds001419_data["cifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
         output_dir=tmpdir,
@@ -64,16 +64,16 @@ def test_init_load_atlases_wf_cifti(fmriprep_with_freesurfer_data, tmp_path_fact
     load_atlases_wf_res = load_atlases_wf.run()
     nodes = get_nodes(load_atlases_wf_res)
     atlas_names = nodes["load_atlases_wf.cast_atlas_to_int16"].get_output("out_file")
-    assert len(atlas_names) == 13
+    assert len(atlas_names) == 14
 
 
-def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     """Test the nifti workflow."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
 
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    boldref = fmriprep_with_freesurfer_data["boldref"]
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    bold_file = ds001419_data["nifti_file"]
+    boldref = ds001419_data["boldref"]
+    bold_mask = ds001419_data["brain_mask_file"]
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
@@ -88,7 +88,20 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     )
     assert os.path.isfile(fake_bold_file)
 
-    atlas_names = ["Schaefer1017", "Schaefer217", "Schaefer417", "Gordon", "Glasser"]
+    # Create a fake temporal mask to satisfy the workflow
+    n_volumes = bold_data.shape[1]
+    censoring_df = pd.DataFrame(
+        columns=["framewise_displacement", "exact_10"],
+        data=np.stack(
+            (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            axis=1,
+        ),
+    )
+    temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+
+    # Load atlases
+    atlas_names = ["4S1052Parcels", "4S252Parcels", "4S452Parcels", "Gordon", "Glasser"]
     atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
 
@@ -119,6 +132,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
         name="connectivity_wf",
     )
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
@@ -129,7 +143,7 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
 
-    n_parcels, n_parcels_in_atlas = 1000, 1000
+    n_parcels, n_parcels_in_atlas = 1052, 1052
 
     # Let's find the correct workflow outputs
     atlas_file = warped_atlases[0]
@@ -187,15 +201,15 @@ def test_init_functional_connectivity_nifti_wf(fmriprep_with_freesurfer_data, tm
     calculated_correlations[bad_parcel_idx, :] = np.nan
     calculated_correlations[:, bad_parcel_idx] = np.nan
 
-    # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
+    # pnc data doesn't have complete coverage, so we must allow NaNs here.
     assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
 
 
-def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
     tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_cifti_wf")
 
-    bold_file = fmriprep_with_freesurfer_data["cifti_file"]
+    bold_file = ds001419_data["cifti_file"]
     TR = _get_tr(nb.load(bold_file))
 
     # Generate fake signal
@@ -212,7 +226,20 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
     )
     assert os.path.isfile(fake_bold_file)
 
-    atlas_names = ["Schaefer1017", "Schaefer217", "Schaefer417", "Gordon", "Glasser"]
+    # Create a fake temporal mask to satisfy the workflow
+    n_volumes = bold_data.shape[1]
+    censoring_df = pd.DataFrame(
+        columns=["framewise_displacement", "exact_10"],
+        data=np.stack(
+            (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            axis=1,
+        ),
+    )
+    temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+
+    # Load atlases
+    atlas_names = ["4S1052Parcels", "4S252Parcels", "4S452Parcels", "Gordon", "Glasser"]
     atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
 
@@ -246,6 +273,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
         name="connectivity_wf",
     )
     connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
+    connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
     connectivity_wf.inputs.inputnode.atlas_names = atlas_names
@@ -278,11 +306,11 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
 
     # Let's read in the ciftis' data
     pscalar_arr = nb.load(pscalar).get_fdata().T
-    assert pscalar_arr.shape == (1000, 1)
+    assert pscalar_arr.shape == (1052, 1)
     ptseries_arr = nb.load(timeseries_ciftis).get_fdata()
-    assert ptseries_arr.shape == (60, 1000)
+    assert ptseries_arr.shape == (60, 1052)
     pconn_arr = nb.load(correlation_ciftis).get_fdata()
-    assert pconn_arr.shape == (1000, 1000)
+    assert pconn_arr.shape == (1052, 1052)
 
     # Read in the tsvs' data
     coverage_arr = pd.read_table(coverage, index_col="Node").to_numpy()
@@ -299,7 +327,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
 
     # Calculate correlations from timeseries data
     calculated_correlations = np.corrcoef(ptseries_arr.T)
-    assert calculated_correlations.shape == (1000, 1000)
+    assert calculated_correlations.shape == (1052, 1052)
     bad_parcels_idx = np.where(np.isnan(np.diag(calculated_correlations)))[0]
     good_parcels_idx = np.where(~np.isnan(np.diag(calculated_correlations)))[0]
 
@@ -309,7 +337,7 @@ def test_init_functional_connectivity_cifti_wf(fmriprep_with_freesurfer_data, tm
     # The number of NaNs for a good parcel's correlations should match the number of bad parcels.
     assert np.sum(np.isnan(first_good_parcel_corrs)) == bad_parcels_idx.size
 
-    # ds001419 data doesn't have complete coverage, so we must allow NaNs here.
+    # pnc data doesn't have complete coverage, so we must allow NaNs here.
     if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations)):
         mismatch_idx = np.vstack(
             np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))

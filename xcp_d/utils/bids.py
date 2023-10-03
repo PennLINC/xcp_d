@@ -5,6 +5,7 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+import os
 import warnings
 
 import nibabel as nb
@@ -31,8 +32,8 @@ INPUT_TYPE_ALLOWED_SPACES = {
     "nibabies": {
         "cifti": ["fsLR"],
         "nifti": [
-            "MNIInfant",
             "MNI152NLin6Asym",
+            "MNIInfant",
             "MNI152NLin2009cAsym",
         ],
     },
@@ -80,7 +81,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     Parameters
     ----------
     bids_dir : :obj:`str` or pybids.layout.BIDSLayout
-    participant_label : None or str, optional
+    participant_label : None, str, or list, optional
     strict : bool, optional
     bids_validate : bool, optional
 
@@ -278,18 +279,34 @@ def collect_data(
     if cifti:
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        temp_query = queries["anat_to_template_xfm"].copy()
-        volumetric_space = ASSOCIATED_TEMPLATES[space]
+        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )["nifti"]
 
-        temp_query["to"] = volumetric_space
-        transform_files = layout.get(**temp_query)
-        if not transform_files:
+        temp_bold_query = queries["bold"].copy()
+        temp_bold_query.pop("den", None)
+        temp_bold_query["extension"] = ".nii.gz"
+
+        temp_xfm_query = queries["anat_to_template_xfm"].copy()
+
+        for volspace in allowed_spaces:
+            temp_bold_query["space"] = volspace
+            bold_data = layout.get(**temp_bold_query)
+            temp_xfm_query["to"] = volspace
+            transform_files = layout.get(**temp_xfm_query)
+
+            if bold_data and transform_files:
+                # will leave the best available space in the query
+                break
+
+        if not bold_data or not transform_files:
             raise FileNotFoundError(
-                f"No nifti transforms found to allowed space ({volumetric_space})"
+                f"No BOLD NIfTI or transforms found to allowed space ({volspace})"
             )
 
-        queries["anat_to_template_xfm"]["to"] = volumetric_space
-        queries["template_to_anat_xfm"]["from"] = volumetric_space
+        queries["anat_to_template_xfm"]["to"] = volspace
+        queries["template_to_anat_xfm"]["from"] = volspace
     else:
         # use the BOLD file's space if the BOLD file is a nifti.
         queries["anat_to_template_xfm"]["to"] = queries["bold"]["space"]
@@ -349,91 +366,12 @@ def collect_data(
     return layout, subj_data
 
 
-def _find_standard_space_surfaces(layout, participant_label, queries):
-    """Find standard-space surfaces for a given set of queries.
-
-    Parameters
-    ----------
-    layout : BIDSLayout
-    participant_label : str
-    queries : dict of dict
-
-    Returns
-    -------
-    surface_files_found : bool
-    standard_space_surfaces : bool
-    out_surface_files : dict
-    """
-    standard_space_surfaces = True
-    for name, query in queries.items():
-        # First, try to grab the first base surface file in standard space.
-        # If it's not available, switch to native T1w-space data.
-        temp_files = layout.get(
-            return_type="file",
-            subject=participant_label,
-            datatype="anat",
-            space="fsLR",
-            den="32k",
-            **query,
-        )
-        if len(temp_files) == 0:
-            LOGGER.info("No standard-space surfaces found.")
-            standard_space_surfaces = False
-        elif len(temp_files) > 1:
-            LOGGER.warning(f"{name}: More than one standard-space surface found.")
-
-    # Now that we know if there are standard-space surfaces available, we can grab the files.
-    if standard_space_surfaces:
-        query_extras = {
-            "space": "fsLR",
-            "den": "32k",
-        }
-    else:
-        query_extras = {
-            "space": None,
-        }
-
-    surface_files = {
-        dtype: sorted(
-            layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                **query,
-                **query_extras,
-            )
-        )
-        for dtype, query in queries.items()
-    }
-
-    out_surface_files = {}
-    surface_files_found = True
-    for dtype, surface_files_ in surface_files.items():
-        if len(surface_files_) == 1:
-            out_surface_files[dtype] = surface_files_[0]
-
-        elif len(surface_files_) == 0:
-            surface_files_found = False
-            out_surface_files[dtype] = None
-
-        else:
-            surface_files_found = False
-            surface_str = "\n\t".join(surface_files_)
-            raise ValueError(
-                "More than one surface found.\n"
-                f"Surfaces found:\n\t{surface_str}\n"
-                f"Query: {queries[dtype]}"
-            )
-
-    return surface_files_found, standard_space_surfaces, out_surface_files
-
-
 @fill_doc
-def collect_surface_data(layout, participant_label):
+def collect_mesh_data(layout, participant_label):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
-    If these standard-space surface files aren't available, it will default to native T1w-space
+    If these standard-space surface files aren't available, it will default to fsnative-space
     files.
 
     Parameters
@@ -446,130 +384,194 @@ def collect_surface_data(layout, participant_label):
     -------
     mesh_available : :obj:`bool`
         True if surface mesh files (pial and smoothwm) were found. False if they were not.
-    morphometry_files : :obj:`list` of :obj:`str`
-        List of surface morphometry files (e.g., cortical thickness) already in fsLR space.
-        These files will be (1) parcellated and (2) passed along, without modification, to the
-        XCP-D derivatives.
     standard_space_mesh : :obj:`bool`
         True if standard-space (fsLR) surface mesh files were found. False if they were not.
-    surface_files : :obj:`dict`
+    mesh_files : :obj:`dict`
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
     """
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    mesh_queries = {
-        "lh_pial_surf": {
-            "hemi": "L",
+    queries = {
+        "pial_surf": "pial",
+        "wm_surf": ["smoothwm", "white"],
+    }
+    query_extras = {
+        "space": "fsLR",
+        "den": "32k",
+    }
+
+    standard_space_mesh = True
+    for name, suffixes in queries.items():
+        # First, try to grab the first base surface file in standard space.
+        # If it's not available, switch to native T1w-space data.
+        for hemisphere in ["L", "R"]:
+            temp_files = layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                hemi=hemisphere,
+                desc=None,
+                suffix=suffixes,
+                extension=".surf.gii",
+                **query_extras,
+            )
+            if len(temp_files) == 0:
+                LOGGER.info("No standard-space surfaces found.")
+                standard_space_mesh = False
+            elif len(temp_files) > 1:
+                LOGGER.warning(f"{name}: More than one standard-space surface found.")
+
+    # Now that we know if there are standard-space surfaces available, we can grab the files.
+    if not standard_space_mesh:
+        query_extras = {
+            "space": None,
+        }
+
+    initial_mesh_files = {}
+    for name, suffixes in queries.items():
+        for hemisphere in ["L", "R"]:
+            key = f"{hemisphere.lower()}h_{name}"
+            initial_mesh_files[key] = layout.get(
+                return_type="file",
+                subject=participant_label,
+                datatype="anat",
+                hemi=hemisphere,
+                desc=None,
+                suffix=suffixes,
+                extension=".surf.gii",
+                **query_extras,
+            )
+
+    mesh_files = {}
+    mesh_available = True
+    for dtype, surface_files_ in initial_mesh_files.items():
+        if len(surface_files_) == 1:
+            mesh_files[dtype] = surface_files_[0]
+
+        elif len(surface_files_) == 0:
+            mesh_available = False
+            mesh_files[dtype] = None
+
+        else:
+            mesh_available = False
+            surface_str = "\n\t".join(surface_files_)
+            raise ValueError(
+                "More than one surface found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {queries[dtype]}"
+            )
+
+    LOGGER.log(
+        25,
+        f"Collected mesh files:\n{yaml.dump(mesh_files, default_flow_style=False, indent=4)}",
+    )
+
+    return mesh_available, standard_space_mesh, mesh_files
+
+
+@fill_doc
+def collect_morphometry_data(layout, participant_label):
+    """Collect morphometry surface files from preprocessed derivatives.
+
+    This function will look for fsLR-space, 91k-resolution morphometry CIFTI files.
+
+    Parameters
+    ----------
+    %(layout)s
+    participant_label : :obj:`str`
+        Subject ID.
+
+    Returns
+    -------
+    morph_file_types : :obj:`list` of :obj:`str`
+        List of surface morphometry file types (e.g., cortical thickness) already in fsLR space.
+        These files will be (1) parcellated and (2) passed along, without modification, to the
+        XCP-D derivatives.
+    morphometry_files : :obj:`dict`
+        Dictionary of surface file identifiers and their paths.
+        If the surface files weren't found, then the paths will be Nones.
+    """
+    queries = {
+        "sulcal_depth": {
             "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
+            "suffix": "sulc",
         },
-        "rh_pial_surf": {
-            "hemi": "R",
+        "sulcal_curv": {
             "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
+            "suffix": "curv",
         },
-        "lh_wm_surf": {
-            "hemi": "L",
+        "cortical_thickness": {
             "desc": None,
-            "suffix": "smoothwm",
-            "extension": ".surf.gii",
+            "suffix": "thickness",
         },
-        "rh_wm_surf": {
-            "hemi": "R",
+        "cortical_thickness_corr": {
+            "desc": "corrected",
+            "suffix": "thickness",
+        },
+        "myelin": {
             "desc": None,
-            "suffix": "smoothwm",
-            "extension": ".surf.gii",
+            "suffix": "myelinw",
+        },
+        "myelin_smoothed": {
+            "desc": "smoothed",
+            "suffix": "myelinw",
         },
     }
 
-    mesh_available, standard_space_mesh, mesh_files = _find_standard_space_surfaces(
-        layout,
-        participant_label,
-        mesh_queries,
-    )
+    morphometry_files = {}
+    for name, query in queries.items():
+        files = layout.get(
+            return_type="file",
+            subject=participant_label,
+            datatype="anat",
+            space="fsLR",
+            den="91k",
+            extension=".dscalar.nii",
+            **query,
+        )
+        if len(files) == 1:
+            morphometry_files[name] = files[0]
+        elif len(files) > 1:
+            surface_str = "\n\t".join(files)
+            raise ValueError(
+                f"More than one {name} found.\n"
+                f"Surfaces found:\n\t{surface_str}\n"
+                f"Query: {query}"
+            )
+        else:
+            morphometry_files[name] = None
 
-    shape_queries = {
-        "lh_sulcal_depth": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "sulc",
-            "extension": ".shape.gii",
-        },
-        "rh_sulcal_depth": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "sulc",
-            "extension": ".shape.gii",
-        },
-        "lh_sulcal_curv": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "curv",
-            "extension": ".shape.gii",
-        },
-        "rh_sulcal_curv": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "curv",
-            "extension": ".shape.gii",
-        },
-        "lh_cortical_thickness": {
-            "hemi": "L",
-            "desc": None,
-            "suffix": "thickness",
-            "extension": ".shape.gii",
-        },
-        "rh_cortical_thickness": {
-            "hemi": "R",
-            "desc": None,
-            "suffix": "thickness",
-            "extension": ".shape.gii",
-        },
-    }
-
-    _, _, shape_files = _find_standard_space_surfaces(
-        layout,
-        participant_label,
-        shape_queries,
-    )
-    morphometry_files = [k for k, v in shape_files.items() if v is not None]
-    morphometry_files_reduced = [f for f in morphometry_files if f.startswith("lh_")]
-    morphometry_files_reduced = [
-        f for f in morphometry_files_reduced if f.replace("lh_", "rh_") in morphometry_files
-    ]
-    morphometry_files_reduced = [f.replace("lh_", "") for f in morphometry_files_reduced]
-
-    surface_files = {**mesh_files, **shape_files}
+    # Identify the found morphometry files.
+    morph_file_types = [k for k, v in morphometry_files.items() if v is not None]
 
     LOGGER.log(
         25,
         (
-            f"Collected surface data:\n"
-            f"{yaml.dump(surface_files, default_flow_style=False, indent=4)}"
+            f"Collected morphometry files:\n"
+            f"{yaml.dump(morphometry_files, default_flow_style=False, indent=4)}"
         ),
     )
 
-    return mesh_available, morphometry_files_reduced, standard_space_mesh, surface_files
+    return morph_file_types, morphometry_files
 
 
 @fill_doc
-def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
+def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
     """Collect data associated with a given BOLD file.
 
     Parameters
     ----------
     %(layout)s
-    %(input_type)s
     bold_file : :obj:`str`
         Path to the BOLD file.
     %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
     primary_anat : {"T1w", "T2w"}
         The anatomical modality to use for the anat-to-native transform.
+    target_space
+        Used to find NIfTIs in the appropriate space if ``cifti`` is ``True``.
 
     Returns
     -------
@@ -596,12 +598,14 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
             bids_file.path,
             strict=False,
             suffix="boldref",
+            extension=[".nii", ".nii.gz"],
         )
         run_data["boldmask"] = layout.get_nearest(
             bids_file.path,
             strict=False,
             desc="brain",
             suffix="mask",
+            extension=[".nii", ".nii.gz"],
         )
         run_data["anat_to_native_xfm"] = layout.get_nearest(
             bids_file.path,
@@ -611,29 +615,35 @@ def collect_run_data(layout, input_type, bold_file, cifti, primary_anat):
             suffix="xfm",
         )
     else:
-        allowed_nifti_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )["nifti"]
+        # Split cohort out of the space for MNIInfant templates.
+        cohort = None
+        if "+" in target_space:
+            target_space, cohort = target_space.split("+")
+
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            space=allowed_nifti_spaces,
+            space=target_space,
+            cohort=cohort,
             suffix="boldref",
+            extension=[".nii", ".nii.gz"],
+            invalid_filters="allow",
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
             strict=False,
-            space=allowed_nifti_spaces,
+            space=target_space,
+            cohort=cohort,
             desc="preproc",
             suffix="bold",
             extension=[".nii", ".nii.gz"],
+            invalid_filters="allow",
         )
 
     LOGGER.log(
         25,
         (
-            f"Collected run data for {bold_file}:\n"
+            f"Collected run data for {os.path.basename(bold_file)}:\n"
             f"{yaml.dump(run_data, default_flow_style=False, indent=4)}"
         ),
     )
@@ -666,13 +676,12 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
     orig_dset_description = os.path.join(fmri_dir, "dataset_description.json")
     if not os.path.isfile(orig_dset_description):
-        dset_desc = {}
+        raise FileNotFoundError(f"Dataset description DNE: {orig_dset_description}")
 
-    else:
-        with open(orig_dset_description, "r") as fo:
-            dset_desc = json.load(fo)
+    with open(orig_dset_description, "r") as fo:
+        dset_desc = json.load(fo)
 
-        assert dset_desc["DatasetType"] == "derivative"
+    assert dset_desc["DatasetType"] == "derivative"
 
     # Update dataset description
     dset_desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
@@ -708,9 +717,11 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     import os
 
     dataset_description = os.path.join(fmri_dir, "dataset_description.json")
-    if os.path.isfile(dataset_description):
-        with open(dataset_description) as f:
-            dataset_dict = json.load(f)
+    if not os.path.isfile(dataset_description):
+        raise FileNotFoundError(f"Dataset description DNE: {dataset_description}")
+
+    with open(dataset_description) as f:
+        dataset_dict = json.load(f)
 
     info_dict = {
         "name": dataset_dict["GeneratedBy"][0]["Name"],
@@ -723,29 +734,13 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
     elif input_type == "dcan":
         info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]"
     elif input_type == "hcp":
-        info_dict["references"] = "[@hcppipelines]"
+        info_dict["references"] = "[@glasser2013minimal]"
     elif input_type == "nibabies":
         info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
     else:
         raise ValueError(f"Unsupported input_type '{input_type}'")
 
     return info_dict
-
-
-def _add_subject_prefix(subid):
-    """Extract or compile subject entity from subject ID.
-
-    Parameters
-    ----------
-    subid : :obj:`str`
-        A subject ID (e.g., 'sub-XX' or just 'XX').
-
-    Returns
-    -------
-    str
-        Subject entity (e.g., 'sub-XX').
-    """
-    return subid if subid.startswith("sub-") else "-".join(("sub", subid))
 
 
 def _get_tr(img):
@@ -767,7 +762,6 @@ def _get_tr(img):
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
-    raise RuntimeError("Could not extract TR - unknown data structure type")
 
 
 def get_freesurfer_dir(fmri_dir):

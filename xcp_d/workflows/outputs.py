@@ -39,12 +39,12 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
     rh_pial_surf
     lh_wm_surf
     rh_wm_surf
-    lh_sulcal_depth
-    rh_sulcal_depth
-    lh_sulcal_curv
-    rh_sulcal_curv
-    lh_cortical_thickness
-    rh_cortical_thickness
+    sulcal_depth
+    sulcal_curv
+    cortical_thickness
+    cortical_thickness_corr
+    myelin
+    myelin_smoothed
     """
     workflow = Workflow(name=name)
 
@@ -55,12 +55,12 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
@@ -81,12 +81,12 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
             ("lh_wm_surf", "in3"),
             ("rh_wm_surf", "in4"),
             # fsLR-space surface shape files
-            ("lh_sulcal_depth", "in5"),
-            ("rh_sulcal_depth", "in6"),
-            ("lh_sulcal_curv", "in7"),
-            ("rh_sulcal_curv", "in8"),
-            ("lh_cortical_thickness", "in9"),
-            ("rh_cortical_thickness", "in10"),
+            ("sulcal_depth", "in5"),
+            ("sulcal_curv", "in6"),
+            ("cortical_thickness", "in7"),
+            ("cortical_thickness_corr", "in8"),
+            ("myelin", "in9"),
+            ("myelin_smoothed", "in10"),
         ]),
     ])
     # fmt:on
@@ -96,15 +96,14 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
         name="filter_out_undefined",
     )
 
-    # fmt:off
     workflow.connect([(collect_files, filter_out_undefined, [("out", "inlist")])])
-    # fmt:on
 
-    ds_outputs = pe.MapNode(
+    ds_copied_outputs = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
+            check_hdr=False,
         ),
-        name="ds_outputs",
+        name="ds_copied_outputs",
         run_without_submitting=True,
         mem_gb=1,
         iterfield=["in_file", "source_file"],
@@ -112,7 +111,7 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
 
     # fmt:off
     workflow.connect([
-        (filter_out_undefined, ds_outputs, [
+        (filter_out_undefined, ds_copied_outputs, [
             ("outlist", "in_file"),
             ("outlist", "source_file"),
         ]),
@@ -132,6 +131,7 @@ def init_postproc_derivatives_wf(
     motion_filter_type,
     smoothing,
     params,
+    exact_scans,
     cifti,
     dcan_qc,
     output_dir,
@@ -156,6 +156,7 @@ def init_postproc_derivatives_wf(
                 motion_filter_type=None,
                 smoothing=6,
                 params="36P",
+                exact_scans=[],
                 cifti=False,
                 dcan_qc=True,
                 output_dir=".",
@@ -175,6 +176,7 @@ def init_postproc_derivatives_wf(
     %(motion_filter_type)s
     %(smoothing)s
     %(params)s
+    %(exact_scans)s
     %(cifti)s
     %(dcan_qc)s
     output_dir : :obj:`str`
@@ -222,6 +224,7 @@ def init_postproc_derivatives_wf(
                 "coverage",
                 "timeseries",
                 "correlations",
+                "correlations_exact",
                 "qc_file",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
@@ -240,6 +243,7 @@ def init_postproc_derivatives_wf(
                 "coverage_ciftis",
                 "timeseries_ciftis",
                 "correlation_ciftis",
+                "correlation_ciftis_exact",
             ],
         ),
         name="inputnode",
@@ -281,7 +285,12 @@ def init_postproc_derivatives_wf(
     )
 
     # fmt:off
-    workflow.connect([(inputnode, ds_temporal_mask, [("temporal_mask_metadata", "meta_dict")])])
+    workflow.connect([
+        (inputnode, ds_temporal_mask, [
+            ("temporal_mask_metadata", "meta_dict"),
+            ("temporal_mask", "in_file"),
+        ]),
+    ])
     # fmt:on
 
     ds_filtered_motion = pe.Node(
@@ -300,30 +309,27 @@ def init_postproc_derivatives_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_filtered_motion, [("motion_metadata", "meta_dict")]),
+        (inputnode, ds_filtered_motion, [
+            ("motion_metadata", "meta_dict"),
+            ("filtered_motion", "in_file"),
+        ]),
     ])
     # fmt:on
 
-    ds_confounds = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            dismiss_entities=["space", "cohort", "den", "res"],
-            datatype="func",
-            suffix="design",
-            extension=".tsv",
-        ),
-        name="ds_confounds",
-        run_without_submitting=False,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_temporal_mask, [("temporal_mask", "in_file")]),
-        (inputnode, ds_filtered_motion, [("filtered_motion", "in_file")]),
-        (inputnode, ds_confounds, [("confounds_file", "in_file")])
-    ])
-    # fmt:on
+    if params != "none":
+        ds_confounds = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["space", "cohort", "den", "res"],
+                datatype="func",
+                suffix="design",
+                extension=".tsv",
+            ),
+            name="ds_confounds",
+            run_without_submitting=False,
+        )
+        workflow.connect([(inputnode, ds_confounds, [("confounds_file", "in_file")])])
 
     ds_coverage_files = pe.MapNode(
         DerivativesDataSink(
@@ -368,14 +374,49 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
         iterfield=["atlas", "in_file"],
     )
+
+    for i_exact_scan, exact_scan in enumerate(exact_scans):
+        select_exact_scan_files = pe.MapNode(
+            niu.Select(index=i_exact_scan),
+            name=f"select_exact_scan_files_{i_exact_scan}",
+            iterfield=["inlist"],
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, select_exact_scan_files, [("correlations_exact", "inlist")]),
+        ])
+        # fmt:on
+
+        ds_correlations_exact = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                measure="pearsoncorrelation",
+                desc=f"{exact_scan}volumes",
+                suffix="conmat",
+                extension=".tsv",
+            ),
+            name=f"ds_correlations_exact_{i_exact_scan}",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_correlations_exact, [("atlas_names", "atlas")]),
+            (select_exact_scan_files, ds_correlations_exact, [("out", "in_file")]),
+        ])
+        # fmt:on
+
     ds_parcellated_reho = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=name_source,
             dismiss_entities=["desc"],
             cohort=cohort,
-            desc="reho",
-            suffix="timeseries",
+            suffix="reho",
             extension=".tsv",
         ),
         name="ds_parcellated_reho",
@@ -412,8 +453,7 @@ def init_postproc_derivatives_wf(
                 source_file=name_source,
                 dismiss_entities=["desc"],
                 cohort=cohort,
-                desc="alff",
-                suffix="timeseries",
+                suffix="alff",
                 extension=".tsv",
             ),
             name="ds_parcellated_alff",

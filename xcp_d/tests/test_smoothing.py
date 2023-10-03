@@ -75,10 +75,10 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     return
 
 
-def test_smoothing_cifti(fmriprep_with_freesurfer_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)):
+def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)):
     """Test CIFTI smoothing."""
     tmpdir = tmp_path_factory.mktemp("test_smoothing_cifti")
-    in_file = fmriprep_with_freesurfer_data["cifti_file"]
+    in_file = ds001419_data["cifti_file"]
     # pull out atlases for each hemisphere
     right_surf = pkgrf(
         "xcp_d",

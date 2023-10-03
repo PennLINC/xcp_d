@@ -6,21 +6,21 @@ import pytest
 from xcp_d.utils import write_save
 
 
-def test_read_ndata(fmriprep_with_freesurfer_data):
+def test_read_ndata(ds001419_data):
     """Test write_save.read_ndata."""
     # Try to load a gifti
-    gifti_file = fmriprep_with_freesurfer_data["gifti_file"]
+    gifti_file = ds001419_data["gifti_file"]
     with pytest.raises(ValueError, match="Unknown extension"):
         write_save.read_ndata(gifti_file)
 
     # Load cifti
-    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+    cifti_file = ds001419_data["cifti_file"]
     cifti_data = write_save.read_ndata(cifti_file)
     assert cifti_data.shape == (91282, 60)
 
     # Load nifti
-    nifti_file = fmriprep_with_freesurfer_data["nifti_file"]
-    mask_file = fmriprep_with_freesurfer_data["brain_mask_file"]
+    nifti_file = ds001419_data["nifti_file"]
+    mask_file = ds001419_data["brain_mask_file"]
 
     with pytest.raises(AssertionError, match="must be provided"):
         write_save.read_ndata(nifti_file, maskfile=None)
@@ -29,11 +29,11 @@ def test_read_ndata(fmriprep_with_freesurfer_data):
     assert nifti_data.shape == (249657, 60)
 
 
-def test_write_ndata(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_write_ndata(ds001419_data, tmp_path_factory):
     """Test write_save.write_ndata."""
     tmpdir = tmp_path_factory.mktemp("test_write_ndata")
 
-    cifti_file = fmriprep_with_freesurfer_data["cifti_file"]
+    cifti_file = ds001419_data["cifti_file"]
     cifti_data = write_save.read_ndata(cifti_file)
     cifti_data[1000, 50] = 1000
 

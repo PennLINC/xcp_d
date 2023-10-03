@@ -11,6 +11,7 @@ from nipype import logging
 from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import list_to_str
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -148,6 +149,7 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
 
     BASE_DESCRIPTIONS = {
         "custom": "A custom set of regressors was used, with no other regressors from XCP-D.",
+        "none": "No nuisance regression was performed.",
         "24P": (
             "In total, 24 nuisance regressors were selected from the preprocessing confounds, "
             "according to the '24P' strategy. "
@@ -240,10 +242,11 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
             "from the BOLD data in the later regression."
         )
 
-    desc += (
-        " Finally, linear trend and intercept terms were added to the regressors prior to "
-        "denoising."
-    )
+    if params != "none":
+        desc += (
+            " Finally, linear trend and intercept terms were added to the regressors prior to "
+            "denoising."
+        )
 
     return desc
 
@@ -256,6 +259,7 @@ def describe_censoring(
     band_stop_max,
     head_radius,
     fd_thresh,
+    exact_scans,
 ):
     """Build a text description of the motion parameter filtering and FD censoring process.
 
@@ -267,6 +271,7 @@ def describe_censoring(
     %(band_stop_max)s
     %(head_radius)s
     %(fd_thresh)s
+    %(exact_scans)s
 
     Returns
     -------
@@ -295,14 +300,30 @@ def describe_censoring(
             f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
         )
 
-    return (
-        f"In order to identify high-motion outlier volumes, {filter_str}"
-        "framewise displacement was calculated using the formula from @power_fd_dvars, "
-        f"with a head radius of {head_radius} mm. "
-        f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
-        f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of later "
-        f"censoring [@power_fd_dvars]."
-    )
+    outlier_str = ""
+    if fd_thresh > 0:
+        outlier_str = (
+            f"In order to identify high-motion outlier volumes, {filter_str}"
+            "framewise displacement was calculated using the formula from @power_fd_dvars, "
+            f"with a head radius of {head_radius} mm. "
+            f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
+            f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of "
+            "later censoring [@power_fd_dvars]."
+        )
+
+    exact_str = ""
+    if exact_scans and (fd_thresh > 0):
+        exact_str = (
+            " Additional sets of censoring volumes were randomly selected to produce additional "
+            f"correlation matrices limited to {list_to_str(exact_scans)} volumes."
+        )
+    elif exact_scans:
+        exact_str = (
+            "Volumes were randomly selected for censoring, to produce additional correlation "
+            f"matrices limited to {list_to_str(exact_scans)} volumes."
+        )
+
+    return outlier_str + exact_str
 
 
 def _get_acompcor_confounds(confounds_file):
@@ -345,10 +366,11 @@ def load_confound_matrix(
 
     Returns
     -------
-    confounds_df : pandas.DataFrame
+    confounds_df : :obj:`pandas.DataFrame` or None
         The loaded and selected confounds.
         If "AROMA" is requested, then this DataFrame will include signal components as well.
         These will be named something like "signal_[XX]".
+        If ``params`` is "none", ``confounds_df`` will be None.
     """
     PARAM_KWARGS = {
         # Get rot and trans values, as well as derivatives and square
@@ -404,7 +426,10 @@ def load_confound_matrix(
         },
     }
 
-    if params in PARAM_KWARGS.keys():
+    if params == "none":
+        return None
+
+    if params in PARAM_KWARGS:
         kwargs = PARAM_KWARGS[params]
 
         confounds_df = _load_single_confounds_file(
@@ -436,6 +461,9 @@ def load_confound_matrix(
         # For both custom and fMRIPrep confounds
         custom_confounds_df = pd.read_table(custom_confounds, sep="\t")
         confounds_df = pd.concat([custom_confounds_df, confounds_df], axis=1)
+
+    confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
+    confounds_df["intercept"] = np.ones(confounds_df.shape[0])
 
     return confounds_df
 

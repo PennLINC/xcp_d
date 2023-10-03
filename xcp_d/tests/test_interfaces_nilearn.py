@@ -8,11 +8,11 @@ import pandas as pd
 from xcp_d.interfaces import nilearn
 
 
-def test_nilearn_merge(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_nilearn_merge(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.Merge."""
     tmpdir = tmp_path_factory.mktemp("test_nilearn_merge")
 
-    in_file = fmriprep_with_freesurfer_data["boldref"]
+    in_file = ds001419_data["boldref"]
     interface = nilearn.Merge(
         in_files=[in_file, in_file],
         out_file="merged.nii.gz",
@@ -24,11 +24,11 @@ def test_nilearn_merge(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert out_img.shape[3] == 2
 
 
-def test_nilearn_smooth(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_nilearn_smooth(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.Smooth."""
     tmpdir = tmp_path_factory.mktemp("test_nilearn_smooth")
 
-    in_file = fmriprep_with_freesurfer_data["boldref"]
+    in_file = ds001419_data["boldref"]
     interface = nilearn.Smooth(
         in_file=in_file,
         fwhm=6,
@@ -50,11 +50,11 @@ def test_nilearn_smooth(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert out_img.ndim == 3
 
 
-def test_nilearn_binarymath(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_nilearn_binarymath(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.BinaryMath."""
     tmpdir = tmp_path_factory.mktemp("test_nilearn_binarymath")
 
-    in_file = fmriprep_with_freesurfer_data["brain_mask_file"]
+    in_file = ds001419_data["brain_mask_file"]
     interface = nilearn.BinaryMath(
         in_file=in_file,
         expression="img * 5",
@@ -68,12 +68,12 @@ def test_nilearn_binarymath(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert np.min(out_data) == 0
 
 
-def test_nilearn_resampletoimage(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_nilearn_resampletoimage(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.ResampleToImage."""
     tmpdir = tmp_path_factory.mktemp("test_nilearn_meanimage")
 
-    source_file = fmriprep_with_freesurfer_data["boldref_t1w"]
-    target_file = fmriprep_with_freesurfer_data["t1w"]
+    source_file = ds001419_data["boldref_t1w"]
+    target_file = ds001419_data["t1w"]
     target_img = nb.load(target_file)
     source_img = nb.load(source_file)
     assert not np.array_equal(target_img.header.get_zooms(), source_img.header.get_zooms())
@@ -90,13 +90,13 @@ def test_nilearn_resampletoimage(fmriprep_with_freesurfer_data, tmp_path_factory
     assert np.array_equal(target_img.header.get_zooms(), out_img.header.get_zooms())
 
 
-def test_nilearn_denoisenifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.DenoiseNifti."""
     tmpdir = tmp_path_factory.mktemp("test_nilearn_denoisenifti")
 
-    preprocessed_bold = fmriprep_with_freesurfer_data["nifti_file"]
-    mask = fmriprep_with_freesurfer_data["brain_mask_file"]
-    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
+    preprocessed_bold = ds001419_data["nifti_file"]
+    mask = ds001419_data["brain_mask_file"]
+    confounds_file = ds001419_data["confounds_file"]
 
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
@@ -131,12 +131,12 @@ def test_nilearn_denoisenifti(fmriprep_with_freesurfer_data, tmp_path_factory):
     _check_denoising_outputs(preprocessed_img, results.outputs, cifti=False)
 
 
-def test_nilearn_denoisecifti(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.DenoiseCifti."""
     tmpdir = tmp_path_factory.mktemp("test_nilearn_denoisecifti")
 
-    preprocessed_bold = fmriprep_with_freesurfer_data["cifti_file"]
-    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
+    preprocessed_bold = ds001419_data["cifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
 
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)

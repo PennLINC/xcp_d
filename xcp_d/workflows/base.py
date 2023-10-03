@@ -24,8 +24,9 @@ from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     _get_tr,
     collect_data,
+    collect_mesh_data,
+    collect_morphometry_data,
     collect_run_data,
-    collect_surface_data,
     get_entity,
     get_preproc_pipeline_info,
     group_across_runs,
@@ -73,6 +74,8 @@ def init_xcpd_wf(
     smoothing,
     custom_confounds_folder,
     dummy_scans,
+    random_seed,
+    exact_time,
     cifti,
     omp_nthreads,
     layout=None,
@@ -128,6 +131,8 @@ def init_xcpd_wf(
                 smoothing=6,
                 custom_confounds_folder=None,
                 dummy_scans=0,
+                random_seed=None,
+                exact_time=[],
                 cifti=False,
                 omp_nthreads=1,
                 layout=None,
@@ -170,11 +175,13 @@ def init_xcpd_wf(
     %(smoothing)s
     %(custom_confounds_folder)s
     %(dummy_scans)s
+    %(random_seed)s
     %(process_surfaces)s
     %(dcan_qc)s
     %(input_type)s
     %(min_coverage)s
     %(min_time)s
+    %(exact_time)s
     combineruns
     %(name)s
 
@@ -211,6 +218,7 @@ def init_xcpd_wf(
             smoothing=smoothing,
             output_dir=output_dir,
             dummy_scans=dummy_scans,
+            random_seed=random_seed,
             custom_confounds_folder=custom_confounds_folder,
             fd_thresh=fd_thresh,
             process_surfaces=process_surfaces,
@@ -218,6 +226,7 @@ def init_xcpd_wf(
             input_type=input_type,
             min_coverage=min_coverage,
             min_time=min_time,
+            exact_time=exact_time,
             combineruns=combineruns,
             name=f"single_subject_{subject_id}_wf",
         )
@@ -260,11 +269,13 @@ def init_subject_wf(
     output_dir,
     custom_confounds_folder,
     dummy_scans,
+    random_seed,
     fd_thresh,
     despike,
     dcan_qc,
     min_coverage,
     min_time,
+    exact_time,
     omp_nthreads,
     layout,
     name,
@@ -304,11 +315,13 @@ def init_subject_wf(
                 output_dir=".",
                 custom_confounds_folder=None,
                 dummy_scans=0,
+                random_seed=None,
                 fd_thresh=0.3,
                 despike=True,
                 dcan_qc=False,
                 min_coverage=0.5,
                 min_time=100,
+                exact_time=[],
                 omp_nthreads=1,
                 layout=None,
                 name="single_subject_sub-01_wf",
@@ -339,11 +352,13 @@ def init_subject_wf(
     %(output_dir)s
     %(custom_confounds_folder)s
     %(dummy_scans)s
+    %(random_seed)s
     %(fd_thresh)s
     %(despike)s
     %(dcan_qc)s
     %(min_coverage)s
     %(min_time)s
+    %(exact_time)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -366,7 +381,11 @@ def init_subject_wf(
     t2w_available = subj_data["t2w"] is not None
     primary_anat = "T1w" if subj_data["t1w"] else "T2w"
 
-    mesh_available, morphometry_files, standard_space_mesh, surface_data = collect_surface_data(
+    mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
+        layout=layout,
+        participant_label=subject_id,
+    )
+    morph_file_types, morphometry_files = collect_morphometry_data(
         layout=layout,
         participant_label=subject_id,
     )
@@ -390,13 +409,13 @@ def init_subject_wf(
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                # shape files
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                # morphometry files
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
@@ -410,18 +429,18 @@ def init_subject_wf(
     inputnode.inputs.anat_to_template_xfm = subj_data["anat_to_template_xfm"]
 
     # surface mesh files (required for brainsprite/warp workflows)
-    inputnode.inputs.lh_pial_surf = surface_data["lh_pial_surf"]
-    inputnode.inputs.rh_pial_surf = surface_data["rh_pial_surf"]
-    inputnode.inputs.lh_wm_surf = surface_data["lh_wm_surf"]
-    inputnode.inputs.rh_wm_surf = surface_data["rh_wm_surf"]
+    inputnode.inputs.lh_pial_surf = mesh_files["lh_pial_surf"]
+    inputnode.inputs.rh_pial_surf = mesh_files["rh_pial_surf"]
+    inputnode.inputs.lh_wm_surf = mesh_files["lh_wm_surf"]
+    inputnode.inputs.rh_wm_surf = mesh_files["rh_wm_surf"]
 
     # optional surface shape files (used by surface-warping workflow)
-    inputnode.inputs.lh_sulcal_depth = surface_data["lh_sulcal_depth"]
-    inputnode.inputs.rh_sulcal_depth = surface_data["rh_sulcal_depth"]
-    inputnode.inputs.lh_sulcal_curv = surface_data["lh_sulcal_curv"]
-    inputnode.inputs.rh_sulcal_curv = surface_data["rh_sulcal_curv"]
-    inputnode.inputs.lh_cortical_thickness = surface_data["lh_cortical_thickness"]
-    inputnode.inputs.rh_cortical_thickness = surface_data["rh_cortical_thickness"]
+    inputnode.inputs.sulcal_depth = morphometry_files["sulcal_depth"]
+    inputnode.inputs.sulcal_curv = morphometry_files["sulcal_curv"]
+    inputnode.inputs.cortical_thickness = morphometry_files["cortical_thickness"]
+    inputnode.inputs.cortical_thickness_corr = morphometry_files["cortical_thickness_corr"]
+    inputnode.inputs.myelin = morphometry_files["myelin"]
+    inputnode.inputs.myelin_smoothed = morphometry_files["myelin_smoothed"]
 
     workflow = Workflow(name=name)
 
@@ -501,7 +520,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         t1w_available=t1w_available,
         t2w_available=t2w_available,
         target_space=target_space,
-        dcan_qc=dcan_qc,
         omp_nthreads=omp_nthreads,
         mem_gb=1,
         name="postprocess_anat_wf",
@@ -538,7 +556,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             dcan_qc=dcan_qc,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
-            morphometry_files=morphometry_files,
+            morphometry_files=morph_file_types,
             process_surfaces=process_surfaces,
             output_dir=output_dir,
             t1w_available=t1w_available,
@@ -557,15 +575,16 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
                 ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
                 ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-                ("lh_sulcal_depth", "inputnode.lh_sulcal_depth"),
-                ("rh_sulcal_depth", "inputnode.rh_sulcal_depth"),
-                ("lh_sulcal_curv", "inputnode.lh_sulcal_curv"),
-                ("rh_sulcal_curv", "inputnode.rh_sulcal_curv"),
-                ("lh_cortical_thickness", "inputnode.lh_cortical_thickness"),
-                ("rh_cortical_thickness", "inputnode.rh_cortical_thickness"),
             ]),
         ])
         # fmt:on
+
+        for morph_file in morph_file_types:
+            # fmt:off
+            workflow.connect([
+                (inputnode, postprocess_surfaces_wf, [(morph_file, f"inputnode.{morph_file}")]),
+            ])
+            # fmt:on
 
         if process_surfaces or standard_space_mesh:
             # Use standard-space structurals
@@ -589,26 +608,25 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])
             # fmt:on
 
-        if morphometry_files:
+        if morph_file_types:
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 output_dir=output_dir,
-                files_to_parcellate=morphometry_files,
+                files_to_parcellate=morph_file_types,
                 min_coverage=min_coverage,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 name="parcellate_surfaces_wf",
             )
 
-            for morphometry_file in morphometry_files:
+            for morph_file_type in morph_file_types:
                 # fmt:off
                 workflow.connect([
                     (inputnode, parcellate_surfaces_wf, [
-                        (f"lh_{morphometry_file}", f"inputnode.lh_{morphometry_file}"),
-                        (f"rh_{morphometry_file}", f"inputnode.rh_{morphometry_file}"),
+                        (morph_file_type, f"inputnode.{morph_file_type}"),
                     ]),
                 ])
-                # fmt:oon
+                # fmt:on
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(
@@ -651,11 +669,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(
-                layout,
-                input_type,
-                bold_file,
+                layout=layout,
+                bold_file=bold_file,
                 cifti=cifti,
                 primary_anat=primary_anat,
+                target_space=target_space,
             )
 
             post_scrubbing_duration = flag_bad_run(
@@ -669,13 +687,31 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 head_radius=head_radius,
                 fd_thresh=fd_thresh,
             )
+            # Reduce exact_times to only include values greater than the post-scrubbing duration.
             if (min_time >= 0) and (post_scrubbing_duration < min_time):
                 LOGGER.warning(
-                    f"Less than {min_time} seconds in {bold_file} survive high-motion outlier "
-                    f"scrubbing ({post_scrubbing_duration}). "
+                    f"Less than {min_time} seconds in {os.path.basename(bold_file)} survive "
+                    f"high-motion outlier scrubbing ({post_scrubbing_duration}). "
                     "This run will not be processed."
                 )
                 continue
+
+            exact_scans = []
+            if exact_time:
+                retained_exact_times = [t for t in exact_time if t <= post_scrubbing_duration]
+                dropped_exact_times = [t for t in exact_time if t > post_scrubbing_duration]
+                if dropped_exact_times:
+                    LOGGER.warning(
+                        f"{post_scrubbing_duration} seconds in {os.path.basename(bold_file)} "
+                        "survive high-motion outlier scrubbing. "
+                        "Only retaining exact-time values greater than this "
+                        f"({retained_exact_times})."
+                    )
+
+                exact_scans = [
+                    int(t // run_data["bold_metadata"]["RepetitionTime"])
+                    for t in retained_exact_times
+                ]
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
@@ -693,6 +729,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 output_dir=output_dir,
                 custom_confounds_folder=custom_confounds_folder,
                 dummy_scans=dummy_scans,
+                random_seed=random_seed,
                 fd_thresh=fd_thresh,
                 despike=despike,
                 dcan_qc=dcan_qc,
@@ -701,6 +738,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 min_coverage=min_coverage,
+                exact_scans=exact_scans,
                 omp_nthreads=omp_nthreads,
                 layout=layout,
                 name=f"{'cifti' if cifti else 'nifti'}_postprocess_{run_counter}_wf",
@@ -754,13 +792,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             concatenate_data_wf = init_concatenate_data_wf(
                 output_dir=output_dir,
                 motion_filter_type=motion_filter_type,
-                mem_gb=1,
-                omp_nthreads=omp_nthreads,
                 TR=TR,
                 head_radius=head_radius,
+                params=params,
                 smoothing=smoothing,
                 cifti=cifti,
                 dcan_qc=dcan_qc,
+                mem_gb=1,
+                omp_nthreads=omp_nthreads,
                 name=f"concatenate_entity_set_{ent_set}_wf",
             )
 
@@ -777,9 +816,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # fmt:on
 
             for io_name, node in merge_dict.items():
-                # fmt:off
                 workflow.connect([(node, concatenate_data_wf, [("out", f"inputnode.{io_name}")])])
-                # fmt:on
 
     # fmt:off
     workflow.connect([

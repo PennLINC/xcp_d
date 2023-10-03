@@ -22,6 +22,7 @@ def init_concatenate_data_wf(
     omp_nthreads,
     TR,
     head_radius,
+    params,
     smoothing,
     cifti,
     dcan_qc,
@@ -43,6 +44,7 @@ def init_concatenate_data_wf(
                 omp_nthreads=1,
                 TR=2,
                 head_radius=50,
+                params="none",
                 smoothing=None,
                 cifti=False,
                 dcan_qc=True,
@@ -57,6 +59,7 @@ def init_concatenate_data_wf(
     %(omp_nthreads)s
     %(TR)s
     %(head_radius)s
+    %(params)s
     %(smoothing)s
     %(cifti)s
     %(dcan_qc)s
@@ -185,10 +188,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        params=params,
         cifti=cifti,
         dcan_qc=dcan_qc,
+        mem_gb=mem_gb,
+        omp_nthreads=omp_nthreads,
         name="concat_qc_report_wf",
     )
     qc_report_wf.inputs.inputnode.dummy_scans = 0

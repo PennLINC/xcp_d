@@ -13,7 +13,6 @@ from num2words import num2words
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.filemanip import check_binary_mask
 from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
@@ -53,6 +52,8 @@ def init_postprocess_nifti_wf(
     t2w_available,
     n_runs,
     min_coverage,
+    exact_scans,
+    random_seed,
     omp_nthreads,
     layout=None,
     name="bold_postprocess_wf",
@@ -117,6 +118,8 @@ def init_postprocess_nifti_wf(
                 t2w_available=True,
                 n_runs=1,
                 min_coverage=0.5,
+                exact_scans=[],
+                random_seed=None,
                 omp_nthreads=1,
                 layout=layout,
                 name="nifti_postprocess_wf",
@@ -153,6 +156,8 @@ def init_postprocess_nifti_wf(
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
     %(min_coverage)s
+    %(exact_scans)s
+    %(random_seed)s
     %(omp_nthreads)s
     %(layout)s
     %(name)s
@@ -239,16 +244,11 @@ def init_postprocess_nifti_wf(
 
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
+    inputnode.inputs.bold_mask = run_data["boldmask"]
     inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
     inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
     inputnode.inputs.anat_to_native_xfm = run_data["anat_to_native_xfm"]
     inputnode.inputs.dummy_scans = dummy_scans
-
-    # TODO: This is a workaround for a bug in nibabies.
-    # Once https://github.com/nipreps/nibabies/issues/245 is resolved
-    # and a new release is made, remove this.
-    mask_file = check_binary_mask(run_data["boldmask"])
-    inputnode.inputs.bold_mask = mask_file
 
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
@@ -317,6 +317,8 @@ def init_postprocess_nifti_wf(
         TR=TR,
         params=params,
         dummy_scans=dummy_scans,
+        random_seed=random_seed,
+        exact_scans=exact_scans,
         motion_filter_type=motion_filter_type,
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
@@ -421,6 +423,9 @@ def init_postprocess_nifti_wf(
             ("atlas_labels_files", "inputnode.atlas_labels_files"),
         ]),
         (downcast_data, connectivity_wf, [("bold_mask", "inputnode.bold_mask")]),
+        (prepare_confounds_wf, connectivity_wf, [
+            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+        ]),
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
@@ -474,10 +479,11 @@ def init_postprocess_nifti_wf(
         output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
+        params=params,
         dcan_qc=dcan_qc,
         cifti=False,
+        mem_gb=mem_gbx["timeseries"],
+        omp_nthreads=omp_nthreads,
         name="qc_report_wf",
     )
 
@@ -511,6 +517,7 @@ def init_postprocess_nifti_wf(
         name_source=bold_file,
         bandpass_filter=bandpass_filter,
         params=params,
+        exact_scans=exact_scans,
         cifti=False,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
@@ -540,9 +547,10 @@ def init_postprocess_nifti_wf(
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
         (connectivity_wf, postproc_derivatives_wf, [
-            ("outputnode.correlations", "inputnode.correlations"),
-            ("outputnode.timeseries", "inputnode.timeseries"),
             ("outputnode.coverage", "inputnode.coverage"),
+            ("outputnode.timeseries", "inputnode.timeseries"),
+            ("outputnode.correlations", "inputnode.correlations"),
+            ("outputnode.correlations_exact", "inputnode.correlations_exact"),
             ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
         ]),
     ])
@@ -562,27 +570,26 @@ def init_postprocess_nifti_wf(
         # fmt:on
 
     # executive summary workflow
-    if dcan_qc:
-        execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
-            preproc_nifti=bold_file,
-            t1w_available=t1w_available,
-            t2w_available=t2w_available,
-            output_dir=output_dir,
-            layout=layout,
-            name="execsummary_functional_plots_wf",
-        )
+    execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
+        preproc_nifti=bold_file,
+        t1w_available=t1w_available,
+        t2w_available=t2w_available,
+        output_dir=output_dir,
+        layout=layout,
+        name="execsummary_functional_plots_wf",
+    )
 
-        # fmt:off
-        workflow.connect([
-            # Use inputnode for executive summary instead of downcast_data
-            # because T1w is used as name source.
-            (inputnode, execsummary_functional_plots_wf, [
-                ("boldref", "inputnode.boldref"),
-                ("t1w", "inputnode.t1w"),
-                ("t2w", "inputnode.t2w"),
-            ]),
-        ])
-        # fmt:on
+    # fmt:off
+    workflow.connect([
+        # Use inputnode for executive summary instead of downcast_data
+        # because T1w is used as name source.
+        (inputnode, execsummary_functional_plots_wf, [
+            ("boldref", "inputnode.boldref"),
+            ("t1w", "inputnode.t1w"),
+            ("t2w", "inputnode.t2w"),
+        ]),
+    ])
+    # fmt:on
 
     return workflow
 

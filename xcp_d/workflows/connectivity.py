@@ -10,11 +10,7 @@ from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.nilearn import IndexImage
-from xcp_d.interfaces.workbench import (
-    CiftiCreateDenseFromTemplate,
-    CiftiCreateDenseScalar,
-    CiftiParcellate,
-)
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import cast_cifti_to_int16
@@ -91,9 +87,10 @@ def init_load_atlases_wf(
     )
 
     atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
+        Function(input_names=["subset"], output_names=["atlas_names"], function=get_atlas_names),
         name="atlas_name_grabber",
     )
+    atlas_name_grabber.inputs.subset = "all"
 
     workflow.connect([(atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")])])
 
@@ -101,7 +98,7 @@ def init_load_atlases_wf(
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file", "atlas_labels_file"],
+            output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
             function=get_atlas_cifti if cifti else get_atlas_nifti,
         ),
         name="atlas_file_grabber",
@@ -241,6 +238,72 @@ def init_load_atlases_wf(
     ])
     # fmt:on
 
+    ds_atlas_labels_file = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            dismiss_entities=[
+                "datatype",
+                "subject",
+                "session",
+                "task",
+                "run",
+                "desc",
+                "space",
+                "res",
+                "den",
+                "cohort",
+            ],
+            allowed_entities=["atlas"],
+            suffix="dseg",
+            extension=".tsv",
+        ),
+        name="ds_atlas_labels_file",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_atlas_labels_file, [("name_source", "source_file")]),
+        (atlas_name_grabber, ds_atlas_labels_file, [("atlas_names", "atlas")]),
+        (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_atlas_metadata = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            dismiss_entities=[
+                "datatype",
+                "subject",
+                "session",
+                "task",
+                "run",
+                "desc",
+                "space",
+                "res",
+                "den",
+                "cohort",
+            ],
+            allowed_entities=["atlas"],
+            suffix="dseg",
+            extension=".json",
+        ),
+        name="ds_atlas_metadata",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_atlas_metadata, [("name_source", "source_file")]),
+        (atlas_name_grabber, ds_atlas_metadata, [("atlas_names", "atlas")]),
+        (atlas_file_grabber, ds_atlas_metadata, [("atlas_metadata_file", "in_file")]),
+    ])
+    # fmt:on
+
     return workflow
 
 
@@ -264,7 +327,7 @@ def init_parcellate_surfaces_wf(
 
             wf = init_parcellate_surfaces_wf(
                 output_dir=".",
-                files_to_parcellate=["sulc", "curv", "thickness"],
+                files_to_parcellate=["sulcal_depth", "sulcal_curv", "cortical_thickness"],
                 min_coverage=0.5,
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -284,12 +347,12 @@ def init_parcellate_surfaces_wf(
 
     Inputs
     ------
-    lh_sulcal_depth
-    rh_sulcal_depth
-    lh_sulcal_curv
-    rh_sulcal_curv
-    lh_cortical_thickness
-    rh_cortical_thickness
+    sulcal_depth
+    sulcal_curv
+    cortical_thickness
+    cortical_thickness_corr
+    myelin
+    myelin_smoothed
     """
     workflow = Workflow(name=name)
 
@@ -297,32 +360,36 @@ def init_parcellate_surfaces_wf(
         "sulcal_depth": "sulc",
         "sulcal_curv": "curv",
         "cortical_thickness": "thickness",
+        "cortical_thickness_corr": "thicknessCorrected",
+        "myelin": "myelin",
+        "myelin_smoothed": "myelinSmoothed",
     }
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
     )
 
     atlas_name_grabber = pe.Node(
-        Function(output_names=["atlas_names"], function=get_atlas_names),
+        Function(input_names=["subset"], output_names=["atlas_names"], function=get_atlas_names),
         name="atlas_name_grabber",
     )
+    atlas_name_grabber.inputs.subset = "cortical"
 
     # Get CIFTI atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file", "atlas_labels_file"],
+            output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
             function=get_atlas_cifti,
         ),
         name="atlas_file_grabber",
@@ -332,22 +399,6 @@ def init_parcellate_surfaces_wf(
     workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
 
     for file_to_parcellate in files_to_parcellate:
-        # Convert giftis to ciftis
-        convert_giftis_to_cifti = pe.Node(
-            CiftiCreateDenseScalar(),
-            name=f"convert_{file_to_parcellate}_to_cifti",
-            n_procs=omp_nthreads,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, convert_giftis_to_cifti, [
-                (f"lh_{file_to_parcellate}", "left_metric"),
-                (f"rh_{file_to_parcellate}", "right_metric"),
-            ]),
-        ])
-        # fmt:on
-
         resample_atlas_to_surface = pe.MapNode(
             CiftiCreateDenseFromTemplate(),
             name=f"resample_atlas_to_{file_to_parcellate}",
@@ -357,8 +408,8 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
+            (inputnode, resample_atlas_to_surface, [(file_to_parcellate, "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_surface, [("atlas_file", "label")]),
-            (convert_giftis_to_cifti, resample_atlas_to_surface, [("out_file", "template_cifti")]),
         ])
         # fmt:on
 
@@ -376,7 +427,7 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
-            (convert_giftis_to_cifti, parcellate_atlas, [("out_file", "in_file")]),
+            (inputnode, parcellate_atlas, [(file_to_parcellate, "in_file")]),
             (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
         ])
         # fmt:on
@@ -392,9 +443,9 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
+            (inputnode, parcellate_surface, [(file_to_parcellate, "data_file")]),
             (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas_file")]),
             (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
-            (convert_giftis_to_cifti, parcellate_surface, [("out_file", "data_file")]),
             (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
         ])
         # fmt:on
@@ -416,7 +467,7 @@ def init_parcellate_surfaces_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_parcellated_surface, [(f"lh_{file_to_parcellate}", "source_file")]),
+            (inputnode, ds_parcellated_surface, [(file_to_parcellate, "source_file")]),
             (atlas_name_grabber, ds_parcellated_surface, [("atlas_names", "atlas")]),
             (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
         ])
@@ -464,6 +515,7 @@ def init_functional_connectivity_nifti_wf(
     %(name_source)s
     denoised_bold
         clean bold after filtered out nuisscance and filtering
+    %(temporal_mask)s
     alff
     reho
     %(atlas_names)s
@@ -475,6 +527,7 @@ def init_functional_connectivity_nifti_wf(
     %(coverage)s
     %(timeseries)s
     %(correlations)s
+    %(correlations_exact)s
     parcellated_alff
     parcellated_reho
     """
@@ -483,9 +536,11 @@ def init_functional_connectivity_nifti_wf(
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
 with *Nilearn's* *NiftiLabelsMasker* for the following atlases:
-the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
-atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
-the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].
+the Schaefer Supplemented with Subcortical Structures (4S) atlas
+[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo] at 10 different
+resolutions (152, 252, 352, 452, 552, 652, 752, 852, 952, and 1052 parcels),
+the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
+the Tian subcortical atlas [@tian2020topographic], and the CIFTI subcortical atlas.
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
@@ -499,6 +554,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "name_source",
                 "bold_mask",
                 "denoised_bold",
+                "temporal_mask",
                 "alff",  # may be Undefined
                 "reho",
                 "atlas_names",
@@ -514,6 +570,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "coverage",
                 "timeseries",
                 "correlations",
+                "correlations_exact",
                 "parcellated_alff",
                 "parcellated_reho",
             ],
@@ -532,14 +589,16 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     workflow.connect([
         (inputnode, functional_connectivity, [
             ("denoised_bold", "filtered_file"),
+            ("temporal_mask", "temporal_mask"),
             ("bold_mask", "mask"),
             ("atlas_files", "atlas"),
             ("atlas_labels_files", "atlas_labels"),
         ]),
         (functional_connectivity, outputnode, [
+            ("coverage", "coverage"),
             ("timeseries", "timeseries"),
             ("correlations", "correlations"),
-            ("coverage", "coverage"),
+            ("correlations_exact", "correlations_exact"),
         ]),
     ])
     # fmt:on
@@ -663,6 +722,7 @@ def init_functional_connectivity_cifti_wf(
         Clean CIFTI after filtering and nuisance regression.
         The CIFTI file is in the same standard space as the atlases,
         so no transformations will be applied to the data before parcellation.
+    %(temporal_mask)s
     alff
     reho
     %(atlas_names)s
@@ -675,9 +735,11 @@ def init_functional_connectivity_cifti_wf(
     %(coverage_ciftis)s
     %(timeseries_ciftis)s
     %(correlation_ciftis)s
+    correlation_ciftis_exact
     %(coverage)s
     %(timeseries)s
     %(correlations)s
+    correlations_exact
     parcellated_reho
     parcellated_alff
     """
@@ -685,9 +747,12 @@ def init_functional_connectivity_cifti_wf(
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
 Connectome Workbench [@hcppipelines] for the following atlases:
-the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
-atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
-the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].
+the Schaefer Supplemented with Subcortical Structures (4S) atlas
+[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo] at 10 different
+resolutions (152, 252, 352, 452, 552, 652, 752, 852, 952, and 1052 parcels),
+the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
+the Tian subcortical atlas [@tian2020topographic], and the HCP CIFTI subcortical atlas
+[@glasser2013minimal].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
@@ -701,6 +766,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             fields=[
                 "name_source",
                 "denoised_bold",
+                "temporal_mask",
                 "alff",  # may be Undefined
                 "reho",
                 "atlas_names",
@@ -717,9 +783,11 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "coverage_ciftis",
                 "timeseries_ciftis",
                 "correlation_ciftis",
+                "correlation_ciftis_exact",
                 "coverage",
                 "timeseries",
                 "correlations",
+                "correlations_exact",
                 "parcellated_alff",
                 "parcellated_reho",
             ],
@@ -739,6 +807,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     workflow.connect([
         (inputnode, functional_connectivity, [
             ("denoised_bold", "data_file"),
+            ("temporal_mask", "temporal_mask"),
             ("atlas_files", "atlas_file"),
             ("atlas_labels_files", "atlas_labels"),
             ("parcellated_atlas_files", "parcellated_atlas"),
@@ -747,9 +816,11 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("coverage_ciftis", "coverage_ciftis"),
             ("timeseries_ciftis", "timeseries_ciftis"),
             ("correlation_ciftis", "correlation_ciftis"),
+            ("correlation_ciftis_exact", "correlation_ciftis_exact"),
             ("coverage", "coverage"),
             ("timeseries", "timeseries"),
             ("correlations", "correlations"),
+            ("correlations_exact", "correlations_exact"),
         ]),
     ])
     # fmt:on

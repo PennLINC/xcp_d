@@ -3,28 +3,59 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 from nilearn import masking
 
 from xcp_d.utils import utils
 
 
-def test_estimate_brain_radius(fmriprep_with_freesurfer_data):
+def test_estimate_brain_radius(ds001419_data):
     """Ensure that the brain radius estimation function returns the right value."""
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    bold_mask = ds001419_data["brain_mask_file"]
 
-    radius = utils.estimate_brain_radius(bold_mask)
+    radius = utils.estimate_brain_radius(bold_mask, head_radius="auto")
     assert radius == 78.12350298308195
 
+    radius = utils.estimate_brain_radius(bold_mask, head_radius=50)
+    assert radius == 50
 
-def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
+
+def test_butter_bandpass():
+    """Test butter_bandpass."""
+    n_volumes, n_voxels = 100, 1000
+    data = np.random.random((n_volumes, n_voxels))
+    sampling_rate = 0.5  # TR of 2 seconds
+    filters = [
+        {"low_pass": 0.1, "high_pass": 0.01},
+        {"low_pass": 0.1, "high_pass": 0},
+        {"low_pass": 0, "high_pass": 0.01},
+    ]
+    for filter in filters:
+        filtered_data = utils.butter_bandpass(
+            data=data,
+            sampling_rate=sampling_rate,
+            **filter,
+        )
+        assert filtered_data.shape == (n_volumes, n_voxels)
+
+    with pytest.raises(ValueError, match="Filter parameters are not valid."):
+        utils.butter_bandpass(
+            data=data,
+            sampling_rate=sampling_rate,
+            low_pass=0,
+            high_pass=0,
+        )
+
+
+def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
     tmpdir = tmp_path_factory.mktemp("test_denoise_with_nilearn")
 
     high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
-    preprocessed_bold = fmriprep_with_freesurfer_data["nifti_file"]
-    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
-    bold_mask = fmriprep_with_freesurfer_data["brain_mask_file"]
+    preprocessed_bold = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+    bold_mask = ds001419_data["brain_mask_file"]
 
     preprocessed_bold_arr = masking.apply_mask(preprocessed_bold, bold_mask)
     # Reduce the size of the data for the test
@@ -81,7 +112,7 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
-    # Finally, do the orthogonalization
+    # Next, do the orthogonalization
     reduced_confounds_df["signal__test"] = confounds_df["global_signal"]
 
     # Move intercept to end of dataframe
@@ -102,6 +133,241 @@ def test_denoise_with_nilearn(fmriprep_with_freesurfer_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
-
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
+
+    # Finally, run without denoising
+    (
+        uncensored_denoised_bold,
+        interpolated_filtered_bold,
+    ) = utils.denoise_with_nilearn(
+        preprocessed_bold=preprocessed_bold_arr,
+        confounds_file=None,
+        temporal_mask=temporal_mask,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        filter_order=filter_order,
+        TR=TR,
+    )
+    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
+
+
+def test_list_to_str():
+    """Test the list_to_str function."""
+    string = utils.list_to_str(["a"])
+    assert string == "a"
+
+    string = utils.list_to_str(["a", "b"])
+    assert string == "a and b"
+
+    string = utils.list_to_str(["a", "b", "c"])
+    assert string == "a, b, and c"
+
+    with pytest.raises(ValueError, match="Zero-length list provided."):
+        utils.list_to_str([])
+
+
+def test_get_bold2std_and_t1w_xfms(ds001419_data):
+    """Test get_bold2std_and_t1w_xfms."""
+    bold_file_nlin2009c = ds001419_data["nifti_file"]
+    nlin2009c_to_anat_xfm = ds001419_data["template_to_anat_xfm"]
+    anat_to_native_xfm = ds001419_data["anat_to_native_xfm"]
+
+    # MNI152NLin2009cAsym --> MNI152NLin2009cAsym/T1w
+    (
+        xforms_to_mni,
+        xforms_to_mni_invert,
+        xforms_to_t1w,
+        xforms_to_t1w_invert,
+    ) = utils.get_bold2std_and_t1w_xfms(
+        bold_file_nlin2009c,
+        nlin2009c_to_anat_xfm,
+        anat_to_native_xfm,
+    )
+    assert len(xforms_to_mni) == 1
+    assert len(xforms_to_mni_invert) == 1
+    assert len(xforms_to_t1w) == 1
+    assert len(xforms_to_t1w_invert) == 1
+
+    # MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
+    bold_file_nlin6asym = bold_file_nlin2009c.replace(
+        "space-MNI152NLin2009cAsym_",
+        "space-MNI152NLin6Asym_",
+    )
+    nlin6asym_to_anat_xfm = nlin2009c_to_anat_xfm.replace(
+        "from-MNI152NLin2009cAsym_",
+        "from-MNI152NLin6Asym_",
+    )
+    (
+        xforms_to_mni,
+        xforms_to_mni_invert,
+        xforms_to_t1w,
+        xforms_to_t1w_invert,
+    ) = utils.get_bold2std_and_t1w_xfms(
+        bold_file_nlin6asym,
+        nlin6asym_to_anat_xfm,
+        anat_to_native_xfm,
+    )
+    assert len(xforms_to_mni) == 1
+    assert len(xforms_to_mni_invert) == 1
+    assert len(xforms_to_t1w) == 1
+    assert len(xforms_to_t1w_invert) == 1
+
+    # MNIInfant --> MNI152NLin2009cAsym/T1w
+    bold_file_infant = bold_file_nlin2009c.replace(
+        "space-MNI152NLin2009cAsym_",
+        "space-MNIInfant_cohort-1_",
+    )
+    infant_to_anat_xfm = nlin2009c_to_anat_xfm.replace(
+        "from-MNI152NLin2009cAsym_",
+        "from-MNIInfant+1_",
+    )
+    (
+        xforms_to_mni,
+        xforms_to_mni_invert,
+        xforms_to_t1w,
+        xforms_to_t1w_invert,
+    ) = utils.get_bold2std_and_t1w_xfms(
+        bold_file_infant,
+        infant_to_anat_xfm,
+        anat_to_native_xfm,
+    )
+    assert len(xforms_to_mni) == 1
+    assert len(xforms_to_mni_invert) == 1
+    assert len(xforms_to_t1w) == 1
+    assert len(xforms_to_t1w_invert) == 1
+
+    # T1w --> MNI152NLin2009cAsym/T1w
+    bold_file_t1w = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-T1w_")
+    (
+        xforms_to_mni,
+        xforms_to_mni_invert,
+        xforms_to_t1w,
+        xforms_to_t1w_invert,
+    ) = utils.get_bold2std_and_t1w_xfms(
+        bold_file_t1w,
+        nlin2009c_to_anat_xfm,
+        anat_to_native_xfm,
+    )
+    assert len(xforms_to_mni) == 1
+    assert len(xforms_to_mni_invert) == 1
+    assert len(xforms_to_t1w) == 1
+    assert len(xforms_to_t1w_invert) == 1
+
+    # T1w --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
+    bold_file_t1w = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-T1w_")
+    (
+        xforms_to_mni,
+        xforms_to_mni_invert,
+        xforms_to_t1w,
+        xforms_to_t1w_invert,
+    ) = utils.get_bold2std_and_t1w_xfms(
+        bold_file_t1w,
+        nlin6asym_to_anat_xfm,
+        anat_to_native_xfm,
+    )
+    assert len(xforms_to_mni) == 2
+    assert len(xforms_to_mni_invert) == 2
+    assert len(xforms_to_t1w) == 1
+    assert len(xforms_to_t1w_invert) == 1
+
+    # native --> MNI152NLin2009cAsym/T1w
+    bold_file_native = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "")
+    (
+        xforms_to_mni,
+        xforms_to_mni_invert,
+        xforms_to_t1w,
+        xforms_to_t1w_invert,
+    ) = utils.get_bold2std_and_t1w_xfms(
+        bold_file_native,
+        nlin2009c_to_anat_xfm,
+        anat_to_native_xfm,
+    )
+    assert len(xforms_to_mni) == 2
+    assert len(xforms_to_mni_invert) == 2
+    assert len(xforms_to_t1w) == 1
+    assert len(xforms_to_t1w_invert) == 1
+
+    # native --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
+    bold_file_native = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "")
+    (
+        xforms_to_mni,
+        xforms_to_mni_invert,
+        xforms_to_t1w,
+        xforms_to_t1w_invert,
+    ) = utils.get_bold2std_and_t1w_xfms(
+        bold_file_native,
+        nlin6asym_to_anat_xfm,
+        anat_to_native_xfm,
+    )
+    assert len(xforms_to_mni) == 3
+    assert len(xforms_to_mni_invert) == 3
+    assert len(xforms_to_t1w) == 1
+    assert len(xforms_to_t1w_invert) == 1
+
+    # tofail --> MNI152NLin2009cAsym/T1w
+    bold_file_tofail = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-tofail_")
+    with pytest.raises(ValueError, match="Transform does not match BOLD space"):
+        utils.get_bold2std_and_t1w_xfms(
+            bold_file_tofail,
+            nlin2009c_to_anat_xfm,
+            anat_to_native_xfm,
+        )
+
+    tofail_to_anat_xfm = nlin2009c_to_anat_xfm.replace("from-MNI152NLin2009cAsym_", "from-tofail_")
+    with pytest.raises(ValueError, match="Space 'tofail'"):
+        utils.get_bold2std_and_t1w_xfms(
+            bold_file_tofail,
+            tofail_to_anat_xfm,
+            anat_to_native_xfm,
+        )
+
+
+def test_get_std2bold_xfms(ds001419_data):
+    """Test get_std2bold_xfms.
+
+    get_std2bold_xfms finds transforms to go from the input file's space to MNI152NLin6Asym.
+    """
+    bold_file_nlin2009c = ds001419_data["nifti_file"]
+
+    # MNI152NLin6Asym --> MNI152NLin2009cAsym
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin2009c)
+    assert len(xforms_to_mni) == 1
+
+    # MNI152NLin6Asym --> MNI152NLin6Asym
+    bold_file_nlin6asym = bold_file_nlin2009c.replace(
+        "space-MNI152NLin2009cAsym_",
+        "space-MNI152NLin6Asym_",
+    )
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin6asym)
+    assert len(xforms_to_mni) == 1
+
+    # MNI152NLin6Asym --> MNIInfant
+    bold_file_infant = bold_file_nlin2009c.replace(
+        "space-MNI152NLin2009cAsym_",
+        "space-MNIInfant_cohort-1_",
+    )
+    xforms_to_mni = utils.get_std2bold_xfms(bold_file_infant)
+    assert len(xforms_to_mni) == 2
+
+    # MNI152NLin6Asym --> tofail
+    bold_file_tofail = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-tofail_")
+    with pytest.raises(ValueError, match="Space 'tofail'"):
+        utils.get_std2bold_xfms(bold_file_tofail)
+
+
+def test_fwhm2sigma():
+    """Test fwhm2sigma."""
+    fwhm = 8
+    sigma = utils.fwhm2sigma(fwhm)
+    assert np.allclose(sigma, 3.39728)
+
+
+def test_select_first():
+    """Test _select_first."""
+    lst = ["a", "b", "c"]
+    assert utils._select_first(lst) == "a"
+
+    lst = "abc"
+    assert utils._select_first(lst) == "a"

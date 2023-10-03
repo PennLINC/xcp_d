@@ -9,12 +9,12 @@ from nilearn.glm.first_level import make_first_level_design_matrix
 from xcp_d.utils.confounds import describe_regression, load_confound_matrix
 
 
-def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
+def test_custom_confounds(ds001419_data, tmp_path_factory):
     """Ensure that custom confounds can be loaded without issue."""
     tempdir = tmp_path_factory.mktemp("test_custom_confounds")
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
-    confounds_json = fmriprep_with_freesurfer_data["confounds_json"]
+    bold_file = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+    confounds_json = ds001419_data["confounds_json"]
 
     N_VOLUMES = 60
     TR = 2.5
@@ -52,7 +52,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
         custom_confounds=custom_confounds_file,
     )
     # We expect n params + 2 (one for each condition in custom confounds)
-    assert combined_confounds.shape == (N_VOLUMES, 26)
+    assert combined_confounds.shape == (N_VOLUMES, 28)
     assert "condition01" in combined_confounds.columns
     assert "condition02" in combined_confounds.columns
 
@@ -64,7 +64,7 @@ def test_custom_confounds(fmriprep_with_freesurfer_data, tmp_path_factory):
         custom_confounds=custom_confounds_file,
     )
     # We expect 2 (one for each condition in custom confounds)
-    assert combined_confounds.shape == (N_VOLUMES, 26)
+    assert combined_confounds.shape == (N_VOLUMES, 28)
     assert "condition01" in combined_confounds.columns
     assert "condition02" in combined_confounds.columns
 
@@ -96,6 +96,7 @@ def test_describe_regression():
     _check_describe_regression_result("aroma", "AROMA motion-labeled components")
     _check_describe_regression_result("aroma_gsr", "AROMA motion-labeled components")
     _check_describe_regression_result("custom", "A custom set of regressors was used")
+    _check_describe_regression_result("none", "No nuisance regression was performed")
 
     with pytest.raises(ValueError, match="Unrecognized parameter string"):
         describe_regression(
@@ -117,11 +118,11 @@ def _check_describe_regression_result(params, match):
     return result
 
 
-def test_load_confounds(fmriprep_with_freesurfer_data):
+def test_load_confounds(ds001419_data):
     """Ensure that xcp_d loads the right confounds."""
-    bold_file = fmriprep_with_freesurfer_data["nifti_file"]
-    confounds_file = fmriprep_with_freesurfer_data["confounds_file"]
-    confounds_json = fmriprep_with_freesurfer_data["confounds_json"]
+    bold_file = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+    confounds_json = ds001419_data["confounds_json"]
 
     N_VOLUMES = 60
 
@@ -131,7 +132,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 24)
+    assert confounds_df.shape == (N_VOLUMES, 26)
 
     confounds_df = load_confound_matrix(
         params="27P",
@@ -139,7 +140,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 27)
+    assert confounds_df.shape == (N_VOLUMES, 29)
 
     confounds_df = load_confound_matrix(
         params="36P",
@@ -147,7 +148,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 36)
+    assert confounds_df.shape == (N_VOLUMES, 38)
 
     confounds_df = load_confound_matrix(
         params="acompcor",
@@ -155,7 +156,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 28)
+    assert confounds_df.shape == (N_VOLUMES, 30)
 
     confounds_df = load_confound_matrix(
         params="acompcor_gsr",
@@ -163,7 +164,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 29)
+    assert confounds_df.shape == (N_VOLUMES, 31)
 
     confounds_df = load_confound_matrix(
         params="aroma",
@@ -171,7 +172,7 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 48)
+    assert confounds_df.shape == (N_VOLUMES, 50)
 
     confounds_df = load_confound_matrix(
         params="aroma_gsr",
@@ -179,7 +180,15 @@ def test_load_confounds(fmriprep_with_freesurfer_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 49)
+    assert confounds_df.shape == (N_VOLUMES, 51)
+
+    confounds_df = load_confound_matrix(
+        params="none",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert not confounds_df
 
     with pytest.raises(ValueError, match="Unrecognized parameter string"):
         load_confound_matrix(

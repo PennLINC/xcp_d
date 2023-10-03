@@ -30,6 +30,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
 )
 from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_sphere
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import list_to_str
 from xcp_d.workflows.execsummary import (
     init_brainsprite_figures_wf,
     init_execsummary_anatomical_plots_wf,
@@ -46,7 +47,6 @@ def init_postprocess_anat_wf(
     t1w_available,
     t2w_available,
     target_space,
-    dcan_qc,
     omp_nthreads,
     mem_gb,
     name="postprocess_anat_wf",
@@ -68,7 +68,6 @@ def init_postprocess_anat_wf(
                 t1w_available=True,
                 t2w_available=True,
                 target_space="MNI152NLin6Asym",
-                dcan_qc=True,
                 omp_nthreads=1,
                 mem_gb=0.1,
                 name="postprocess_anat_wf",
@@ -84,7 +83,6 @@ def init_postprocess_anat_wf(
         True if a preprocessed T2w is available, False if not.
     target_space : :obj:`str`
         Target NIFTI template for T1w.
-    %(dcan_qc)s
     %(omp_nthreads)s
     %(mem_gb)s
     %(name)s
@@ -153,9 +151,7 @@ def init_postprocess_anat_wf(
         run_without_submitting=False,
     )
 
-    # fmt:off
     workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "source_file")])])
-    # fmt:on
 
     if t1w_available:
         ds_t1w_std = pe.Node(
@@ -200,21 +196,22 @@ def init_postprocess_anat_wf(
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
         # workaround in place.
-        # fmt:off
         workflow.connect([(inputnode, ds_anat_dseg_std, [("anat_dseg", "in_file")])])
-        # fmt:on
 
         if t1w_available:
-            # fmt:off
             workflow.connect([(inputnode, ds_t1w_std, [("t1w", "in_file")])])
-            # fmt:on
 
         if t2w_available:
-            # fmt:off
             workflow.connect([(inputnode, ds_t2w_std, [("t2w", "in_file")])])
-            # fmt:on
 
     else:
+        out = (
+            ["T1w"] if t1w_available else [] + ["T2w"] if t2w_available else [] + ["segmentation"]
+        )
+        workflow.__desc__ = f"""\
+Native-space {list_to_str(out)} images were transformed to {target_space} space at 1 mm3
+resolution.
+"""
         warp_anat_dseg_to_template = pe.Node(
             ApplyTransforms(
                 num_threads=2,
@@ -287,33 +284,32 @@ def init_postprocess_anat_wf(
             ])
             # fmt:on
 
-    if dcan_qc:
-        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
-            t1w_available=t1w_available,
-            t2w_available=t2w_available,
-            output_dir=output_dir,
-            name="execsummary_anatomical_plots_wf",
-        )
+    execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+        t1w_available=t1w_available,
+        t2w_available=t2w_available,
+        output_dir=output_dir,
+        name="execsummary_anatomical_plots_wf",
+    )
 
+    # fmt:off
+    workflow.connect([
+        (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
+    ])
+    # fmt:on
+
+    if t1w_available:
         # fmt:off
         workflow.connect([
-            (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
+            (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
         ])
         # fmt:on
 
-        if t1w_available:
-            # fmt:off
-            workflow.connect([
-                (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
-            ])
-            # fmt:on
-
-        if t2w_available:
-            # fmt:off
-            workflow.connect([
-                (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
-            ])
-            # fmt:on
+    if t2w_available:
+        # fmt:off
+        workflow.connect([
+            (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
+        ])
+        # fmt:on
 
     return workflow
 
@@ -388,9 +384,12 @@ def init_postprocess_surfaces_wf(
     %(template_to_anat_xfm)s
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
-    lh_sulcal_depth, rh_sulcal_depth
-    lh_sulcal_curv, rh_sulcal_curv
-    lh_cortical_thickness, rh_cortical_thickness
+    sulcal_depth
+    sulcal_curv
+    cortical_thickness
+    cortical_thickness_corr
+    myelin
+    myelin_smoothed
     """
     workflow = Workflow(name=name)
 
@@ -405,12 +404,12 @@ def init_postprocess_surfaces_wf(
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
-                "lh_sulcal_depth",
-                "rh_sulcal_depth",
-                "lh_sulcal_curv",
-                "rh_sulcal_curv",
-                "lh_cortical_thickness",
-                "rh_cortical_thickness",
+                "sulcal_depth",
+                "sulcal_curv",
+                "cortical_thickness",
+                "cortical_thickness_corr",
+                "myelin",
+                "myelin_smoothed",
             ],
         ),
         name="inputnode",
@@ -466,8 +465,7 @@ def init_postprocess_surfaces_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, copy_std_surfaces_to_datasink, [
-                    (f"lh_{morphometry_file}", f"inputnode.lh_{morphometry_file}"),
-                    (f"rh_{morphometry_file}", f"inputnode.rh_{morphometry_file}"),
+                    (morphometry_file, f"inputnode.{morphometry_file}"),
                 ]),
             ])
             # fmt:on
@@ -485,12 +483,8 @@ def init_postprocess_surfaces_wf(
         }
         # fmt:off
         workflow.connect([
-            (inputnode, hcp_surface_wfs["lh"], [
-                ("lh_pial_surf", "inputnode.name_source"),
-            ]),
-            (inputnode, hcp_surface_wfs["rh"], [
-                ("rh_pial_surf", "inputnode.name_source"),
-            ]),
+            (inputnode, hcp_surface_wfs["lh"], [("lh_pial_surf", "inputnode.name_source")]),
+            (inputnode, hcp_surface_wfs["rh"], [("rh_pial_surf", "inputnode.name_source")]),
         ])
         # fmt:on
 

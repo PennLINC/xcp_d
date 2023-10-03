@@ -5,16 +5,16 @@
 Outputs of *XCP-D*
 ##################
 
-The  ``xcp_d`` outputs are written out in BIDS format and consist of three main parts.
+The  *XCP-D* outputs are written out in BIDS format and consist of three main parts.
 
 .. admonition:: A note on BIDS compliance
 
-   ``xcp_d`` attempts to follow the BIDS specification as best as possible.
-   However, many ``xcp_d`` derivatives are not currently covered by the specification.
+   *XCP-D* attempts to follow the BIDS specification as best as possible.
+   However, many *XCP-D* derivatives are not currently covered by the specification.
    In those instances, we attempt to follow recommendations from existing BIDS Extension Proposals
    (BEPs), which are in-progress proposals to add new features to BIDS.
 
-   Three BEPs that are of particular use in ``xcp_d`` are
+   Three BEPs that are of particular use in *XCP-D* are
    `BEP012: Functional preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/519>`_,
    `BEP017: BIDS connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_,
    and
@@ -24,8 +24,8 @@ The  ``xcp_d`` outputs are written out in BIDS format and consist of three main 
    In cases where a derivative type is not covered by an existing BEP,
    we have simply attempted to follow the general principles of BIDS.
 
-   If you discover a problem with the BIDS compliance of ``xcp_d``'s derivatives, please open an
-   issue in the ``xcp_d`` repository.
+   If you discover a problem with the BIDS compliance of *XCP-D*'s derivatives, please open an
+   issue in the *XCP-D* repository.
 
 
 ***************
@@ -42,6 +42,33 @@ The executive summary is based on the DCAN lab's
    xcp_d/
       sub-<label>.html
       sub-<label>[_ses-<label>]_executive_summary.html
+
+
+*************************
+Parcellations and Atlases
+*************************
+
+*XCP-D* produces parcellated anatomical and functional outputs using a series of atlases.
+The individual outputs are documented in the relevant sections of this document,
+with this section describing the atlases themselves.
+
+The atlases currently used in *XCP-D* can be separated into three groups: subcortical, cortical,
+and combined cortical/subcortical.
+The two subcortical atlases are the Tian atlas :footcite:p:`tian2020topographic` and the
+CIFTI subcortical parcellation.
+The cortical atlases are the Glasser :footcite:p:`Glasser_2016` and the
+Gordon :footcite:p:`Gordon_2014`.
+The combined cortical/subcortical atlases are 10 different resolutions of the
+4S (Schaefer Supplemented with Subcortical Structures) atlas.
+
+The 4S atlas combines the Schaefer 2018 cortical atlas (version v0143) :footcite:p:`Schaefer_2017`
+at 10 different resolutions (100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcels) with
+the CIT168 subcortical atlas :footcite:p:`pauli2018high`,
+the Diedrichson cerebellar atlas :footcite:p:`king2019functional`,
+and the HCP thalamic atlas :footcite:p:`najdenovska2018vivo`.
+The 4S atlas is used in the same manner across three PennLINC BIDS Apps:
+XCP-D, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
+For more information about the 4S atlas, please see https://github.com/PennLINC/AtlasPack.
 
 
 ******************
@@ -116,7 +143,7 @@ functional connectivity matrices, and resting-state derivatives.
 
 .. important::
 
-   Prior to version 0.4.0, the denoised data outputted by ``xcp_d`` was interpolated,
+   Prior to version 0.4.0, the denoised data outputted by *XCP-D* was interpolated,
    meaning that high-motion volumes were replaced with interpolated data prior to temporal
    filtering.
    **This was a bug.**
@@ -178,6 +205,10 @@ Functional timeseries and connectivity matrices
 
 This includes the atlases used to extract the timeseries.
 
+.. important::
+   Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the ``--exact-time``
+   parameter is used.
+
 .. code-block::
 
    xcp_d/
@@ -193,6 +224,7 @@ This includes the atlases used to extract the timeseries.
             <source_entities>_space-<label>_atlas-<label>_coverage.tsv
             <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
             <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
+            <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_desc-<INT>volumes_conmat.tsv
 
             # Cifti
             <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.tsv
@@ -201,6 +233,7 @@ This includes the atlases used to extract the timeseries.
             <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
             <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.tsv
             <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_conmat.pconn.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_measure-pearsoncorrelation_desc-<INT>volumes_conmat.tsv
 
 
 Resting-state metric derivatives (ReHo and ALFF)
@@ -230,15 +263,15 @@ data.
             <source_entities>_space-<label>_reho.nii.gz
             <source_entities>_space-<label>_alff.nii.gz
             <source_entities>_space-<label>_desc-smooth_alff.nii.gz
-            <source_entities>_space-<label>_atlas-<atlas>_desc-alff_timeseries.tsv
-            <source_entities>_space-<label>_atlas-<atlas>_desc-reho_timeseries.tsv
+            <source_entities>_space-<label>_atlas-<atlas>_alff.tsv
+            <source_entities>_space-<label>_atlas-<atlas>_reho.tsv
 
             # Cifti
             <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
             <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
             <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
-            <source_entities>_space-fsLR_atlas-<atlas>_desc-alff_timeseries.tsv
-            <source_entities>_space-fsLR_atlas-<atlas>_desc-reho_timeseries.tsv
+            <source_entities>_space-fsLR_atlas-<atlas>_alff.tsv
+            <source_entities>_space-fsLR_atlas-<atlas>_reho.tsv
 
 
 Other outputs include quality control, framewise displacement, and confounds files
@@ -248,6 +281,7 @@ Other outputs include quality control, framewise displacement, and confounds fil
 
    xcp_d/
       desc-linc_qc.json
+
       sub-<label>/[ses-<label>/]
          func/
             # Nifti

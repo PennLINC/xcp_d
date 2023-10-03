@@ -3,10 +3,10 @@ from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
-    InputMultiObject,
     OutputMultiObject,
     SimpleInterface,
     TraitedSpec,
+    Undefined,
     traits,
     traits_extension,
 )
@@ -118,8 +118,12 @@ class ConvertTo32(SimpleInterface):
 
 
 class _FilterUndefinedInputSpec(BaseInterfaceInputSpec):
-    inlist = InputMultiObject(
-        traits.Str,
+    inlist = traits.List(
+        traits.Either(
+            traits.Str,
+            None,
+            Undefined,
+        ),
         mandatory=True,
         desc="List of objects to filter.",
     )
