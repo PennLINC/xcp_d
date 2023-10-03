@@ -8,6 +8,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
@@ -27,21 +28,12 @@ from xcp_d.utils.utils import fwhm2sigma
 
 @fill_doc
 def init_prepare_confounds_wf(
-    output_dir,
     TR,
-    params,
     dummy_scans,
-    random_seed,
     exact_scans,
-    motion_filter_type,
-    band_stop_min,
-    band_stop_max,
-    motion_filter_order,
     head_radius,
-    fd_thresh,
     custom_confounds_file,
     mem_gb,
-    omp_nthreads,
     name="prepare_confounds_wf",
 ):
     """Prepare confounds.
@@ -57,41 +49,23 @@ def init_prepare_confounds_wf(
             from xcp_d.workflows.postprocessing import init_prepare_confounds_wf
 
             wf = init_prepare_confounds_wf(
-                output_dir=".",
                 TR=0.8,
-                params="27P",
                 dummy_scans="auto",
-                random_seed=None,
                 exact_scans=[],
-                motion_filter_type="notch",
-                band_stop_min=12,
-                band_stop_max=20,
-                motion_filter_order=4,
                 head_radius=70,
-                fd_thresh=0.3,
                 custom_confounds_file=None,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="prepare_confounds_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
     %(TR)s
-    %(params)s
     %(dummy_scans)s
-    %(random_seed)s
-    %(motion_filter_type)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(motion_filter_order)s
     %(head_radius)s
         This will already be estimated before this workflow.
-    %(fd_thresh)s
     %(custom_confounds_file)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "prepare_confounds_wf".
 
@@ -119,6 +93,16 @@ def init_prepare_confounds_wf(
     %(temporal_mask)s
     temporal_mask_metadata : :obj:`dict`
     """
+    output_dir = config.execution.output_dir
+    fd_thresh = config.workflow.fd_thresh
+    motion_filter_type = config.workflow.motion_filter_type
+    motion_filter_order = config.workflow.motion_filter_order
+    band_stop_min = config.workflow.band_stop_min
+    band_stop_max = config.workflow.band_stop_max
+    params = config.workflow.nuisance_regressors
+    random_seed = config.workflow.random_seed
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow = Workflow(name=name)
 
     dummy_scans_str = ""
@@ -398,9 +382,7 @@ def init_prepare_confounds_wf(
 @fill_doc
 def init_despike_wf(
     TR,
-    cifti,
     mem_gb,
-    omp_nthreads,
     name="despike_wf",
 ):
     """Despike BOLD data with AFNI's 3dDespike.
@@ -421,18 +403,14 @@ def init_despike_wf(
 
             wf = init_despike_wf(
                 TR=0.8,
-                cifti=True,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="despike_wf",
             )
 
     Parameters
     ----------
     %(TR)s
-    %(cifti)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "despike_wf".
 
@@ -446,6 +424,9 @@ def init_despike_wf(
     bold_file : :obj:`str`
         The despiked NIFTI or CIFTI BOLD file.
     """
+    cifti = config.workflow.cifti
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
     outputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="outputnode")
@@ -512,14 +493,7 @@ The BOLD data were despiked with *AFNI*'s *3dDespike*.
 @fill_doc
 def init_denoise_bold_wf(
     TR,
-    low_pass,
-    high_pass,
-    bpf_order,
-    bandpass_filter,
-    smoothing,
-    cifti,
     mem_gb,
-    omp_nthreads,
     name="denoise_bold_wf",
 ):
     """Denoise BOLD data.
@@ -533,28 +507,14 @@ def init_denoise_bold_wf(
 
             wf = init_denoise_bold_wf(
                 TR=0.8,
-                high_pass=0.01,
-                low_pass=0.08,
-                bpf_order=2,
-                bandpass_filter=True,
-                smoothing=6,
-                cifti=False,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="denoise_bold_wf",
             )
 
     Parameters
     ----------
     %(TR)s
-    %(low_pass)s
-    %(high_pass)s
-    %(bpf_order)s
-    %(bandpass_filter)s
-    %(smoothing)s
-    %(cifti)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "denoise_bold_wf".
 
@@ -572,6 +532,14 @@ def init_denoise_bold_wf(
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     """
+    bandpass_filter = not config.workflow.disable_bandpass_filter
+    high_pass = config.workflow.lower_bpf
+    low_pass = config.workflow.upper_bpf
+    smoothing = config.workflow.smoothing
+    bpf_order = config.workflow.bpf_order
+    cifti = config.workflow.cifti
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow = Workflow(name=name)
 
     workflow.__desc__ = (
@@ -699,10 +667,7 @@ def init_denoise_bold_wf(
 
 @fill_doc
 def init_resd_smoothing_wf(
-    smoothing,
-    cifti,
     mem_gb,
-    omp_nthreads,
     name="resd_smoothing_wf",
 ):
     """Smooth BOLD residuals.
@@ -715,19 +680,13 @@ def init_resd_smoothing_wf(
             from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
 
             wf = init_resd_smoothing_wf(
-                smoothing=6,
-                cifti=True,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="resd_smoothing_wf",
             )
 
     Parameters
     ----------
-    %(smoothing)s
-    %(cifti)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "resd_smoothing_wf".
 
@@ -739,6 +698,10 @@ def init_resd_smoothing_wf(
     -------
     smoothed_bold
     """
+    smoothing = config.workflow.smoothing
+    cifti = config.workflow.cifti
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow = Workflow(name=name)
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
     outputnode = pe.Node(niu.IdentityInterface(fields=["smoothed_bold"]), name="outputnode")

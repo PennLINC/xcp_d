@@ -11,6 +11,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
@@ -29,11 +30,9 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 @fill_doc
 def init_brainsprite_figures_wf(
-    output_dir,
     t1w_available,
     t2w_available,
     mem_gb,
-    omp_nthreads,
     name="init_brainsprite_figures_wf",
 ):
     """Create mosaic and PNG files for executive summary brainsprite.
@@ -46,23 +45,19 @@ def init_brainsprite_figures_wf(
             from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
 
             wf = init_brainsprite_figures_wf(
-                output_dir=".",
                 t1w_available=True,
                 t2w_available=True,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="brainsprite_figures_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
     t1w_available : bool
         True if a T1w image is available.
     t2w_available : bool
         True if a T2w image is available.
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "init_brainsprite_figures_wf".
 
@@ -77,6 +72,9 @@ def init_brainsprite_figures_wf(
     lh_pial_surf
     rh_pial_surf
     """
+    output_dir = str(config.execution.output_dir)
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
@@ -303,8 +301,6 @@ def init_execsummary_functional_plots_wf(
     preproc_nifti,
     t1w_available,
     t2w_available,
-    output_dir,
-    layout,
     name="execsummary_functional_plots_wf",
 ):
     """Generate the functional figures for an executive summary.
@@ -320,8 +316,6 @@ def init_execsummary_functional_plots_wf(
                 preproc_nifti=None,
                 t1w_available=True,
                 t2w_available=True,
-                output_dir=".",
-                layout=None,
                 name="execsummary_functional_plots_wf",
             )
 
@@ -334,8 +328,6 @@ def init_execsummary_functional_plots_wf(
         Generally True.
     t2w_available : :obj:`bool`
         Generally False.
-    %(output_dir)s
-    %(layout)s
     %(name)s
 
     Inputs
@@ -350,6 +342,9 @@ def init_execsummary_functional_plots_wf(
     t2w
         T2w image in a standard space, taken from the output of init_postprocess_anat_wf.
     """
+    output_dir = str(config.execution.output_dir)
+    layout = config.execution.layout
+
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
@@ -474,7 +469,6 @@ def init_execsummary_functional_plots_wf(
         # fmt:on
 
         plot_anat_on_task_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc=f"{anat[0].upper()}{anat[1:]}OnTask",
             name=f"plot_{anat}_on_task_wf",
         )
@@ -492,7 +486,6 @@ def init_execsummary_functional_plots_wf(
         # fmt:on
 
         plot_task_on_anat_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc=f"TaskOn{anat[0].upper()}{anat[1:]}",
             name=f"plot_task_on_{anat}_wf",
         )
@@ -516,7 +509,6 @@ def init_execsummary_functional_plots_wf(
 def init_execsummary_anatomical_plots_wf(
     t1w_available,
     t2w_available,
-    output_dir,
     name="execsummary_anatomical_plots_wf",
 ):
     """Generate the anatomical figures for an executive summary.
@@ -531,7 +523,6 @@ def init_execsummary_anatomical_plots_wf(
             wf = init_execsummary_anatomical_plots_wf(
                 t1w_available=True,
                 t2w_available=True,
-                output_dir=".",
                 name="execsummary_anatomical_plots_wf",
             )
 
@@ -541,7 +532,6 @@ def init_execsummary_anatomical_plots_wf(
         Generally True.
     t2w_available : bool
         Generally False.
-    %(output_dir)s
     %(name)s
 
     Inputs
@@ -585,7 +575,6 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:on
 
         plot_anat_on_atlas_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc="AnatOnAtlas",
             name=f"plot_{anat}_on_atlas_wf",
         )
@@ -601,7 +590,6 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:on
 
         plot_atlas_on_anat_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc="AtlasOnAnat",
             name=f"plot_atlas_on_{anat}_wf",
         )
@@ -624,7 +612,6 @@ def init_execsummary_anatomical_plots_wf(
 
 @fill_doc
 def init_plot_custom_slices_wf(
-    output_dir,
     desc,
     name="plot_custom_slices_wf",
 ):
@@ -641,14 +628,12 @@ def init_plot_custom_slices_wf(
             from xcp_d.workflows.execsummary import init_plot_custom_slices_wf
 
             wf = init_plot_custom_slices_wf(
-                output_dir=".",
                 desc="AtlasOnSubcorticals",
                 name="plot_custom_slices_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
     desc : :obj:`str`
         String to be used as ``desc`` entity in output filename.
     %(name)s
@@ -663,6 +648,8 @@ def init_plot_custom_slices_wf(
     # NOTE: These slices are almost certainly specific to a given MNI template and resolution.
     SINGLE_SLICES = ["x", "x", "x", "y", "y", "y", "z", "z", "z"]
     SLICE_NUMBERS = [36, 45, 52, 43, 54, 65, 23, 33, 39]
+
+    output_dir = str(config.execution.output_dir)
 
     workflow = Workflow(name=name)
 
@@ -731,12 +718,13 @@ def init_plot_custom_slices_wf(
 
 
 def init_plot_overlay_wf(
-    output_dir,
     desc,
     name="plot_overlay_wf",
 ):
     """Use the default slices from slicesdir to make a plot."""
     from xcp_d.interfaces.plotting import SlicesDir
+
+    output_dir = str(config.execution.output_dir)
 
     workflow = Workflow(name=name)
 

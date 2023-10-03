@@ -3,6 +3,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.concatenation import (
     CleanNameSource,
@@ -16,16 +17,9 @@ from xcp_d.workflows.plotting import init_qc_report_wf
 
 @fill_doc
 def init_concatenate_data_wf(
-    output_dir,
-    motion_filter_type,
-    mem_gb,
-    omp_nthreads,
     TR,
     head_radius,
-    params,
-    smoothing,
-    cifti,
-    dcan_qc,
+    mem_gb,
     name="concatenate_data_wf",
 ):
     """Concatenate postprocessed data.
@@ -38,31 +32,17 @@ def init_concatenate_data_wf(
             from xcp_d.workflows.concatenation import init_concatenate_data_wf
 
             wf = init_concatenate_data_wf(
-                output_dir=".",
-                motion_filter_type=None,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 TR=2,
                 head_radius=50,
-                params="none",
-                smoothing=None,
-                cifti=False,
-                dcan_qc=True,
+                mem_gb=0.1,
                 name="concatenate_data_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
-    %(motion_filter_type)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(TR)s
     %(head_radius)s
-    %(params)s
-    %(smoothing)s
-    %(cifti)s
-    %(dcan_qc)s
+    %(mem_gb)s
     %(name)s
         Default is "concatenate_data_wf".
 
@@ -96,6 +76,12 @@ def init_concatenate_data_wf(
     %(timeseries_ciftis)s
         This will be a list of lists, with one sublist for each run.
     """
+    motion_filter_type = config.workflow.motion_filter_type
+    output_dir = config.execution.output_dir
+    cifti = config.workflow.cifti
+    smoothing = config.workflow.smoothing
+    dcan_qc = config.workflow.dcan_qc
+
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
@@ -185,14 +171,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     # Now, run the QC report workflow on the concatenated BOLD file.
     qc_report_wf = init_qc_report_wf(
-        output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        params=params,
-        cifti=cifti,
-        dcan_qc=dcan_qc,
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
         name="concat_qc_report_wf",
     )
     qc_report_wf.inputs.inputnode.dummy_scans = 0

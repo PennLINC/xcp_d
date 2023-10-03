@@ -10,6 +10,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
+from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
@@ -30,32 +31,14 @@ LOGGER = logging.getLogger("nipype.workflow")
 @fill_doc
 def init_postprocess_cifti_wf(
     bold_file,
-    bandpass_filter,
-    high_pass,
-    low_pass,
-    bpf_order,
-    motion_filter_type,
-    motion_filter_order,
-    band_stop_min,
-    band_stop_max,
-    smoothing,
     head_radius,
-    params,
-    output_dir,
     custom_confounds_folder,
     dummy_scans,
-    fd_thresh,
-    despike,
-    dcan_qc,
     run_data,
     t1w_available,
     t2w_available,
     n_runs,
-    min_coverage,
     exact_scans,
-    random_seed,
-    omp_nthreads,
-    layout=None,
     name="cifti_postprocess_wf",
 ):
     """Organize the cifti processing workflow.
@@ -94,32 +77,14 @@ def init_postprocess_cifti_wf(
 
             wf = init_postprocess_cifti_wf(
                 bold_file=bold_file,
-                bandpass_filter=True,
-                high_pass=0.01,
-                low_pass=0.08,
-                bpf_order=2,
-                motion_filter_type="notch",
-                motion_filter_order=4,
-                band_stop_min=12,
-                band_stop_max=20,
-                smoothing=6,
                 head_radius=50.,
-                params="27P",
-                output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
                 dummy_scans=2,
-                fd_thresh=0.3,
-                despike=True,
-                dcan_qc=True,
                 run_data=run_data,
                 t1w_available=True,
                 t2w_available=True,
                 n_runs=1,
-                min_coverage=0.5,
                 exact_scans=[],
-                random_seed=None,
-                omp_nthreads=1,
-                layout=layout,
                 name="cifti_postprocess_wf",
             )
             wf.inputs.inputnode.t1w = subj_data["t1w"]
@@ -127,35 +92,17 @@ def init_postprocess_cifti_wf(
     Parameters
     ----------
     bold_file
-    %(bandpass_filter)s
-    %(high_pass)s
-    %(low_pass)s
-    %(bpf_order)s
-    %(motion_filter_type)s
-    %(motion_filter_order)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(smoothing)s
     %(head_radius)s
         This will already be estimated before this workflow.
-    %(params)s
-    %(output_dir)s
     %(custom_confounds_folder)s
     %(dummy_scans)s
-    %(fd_thresh)s
-    %(despike)s
-    %(dcan_qc)s
     run_data : dict
     t1w_available
     t2w_available
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
-    %(min_coverage)s
-    %(random_seed)s
     %(exact_scans)s
-    %(omp_nthreads)s
-    %(layout)s
     %(name)s
         Default is "cifti_postprocess_wf".
 
@@ -201,6 +148,11 @@ def init_postprocess_cifti_wf(
     ----------
     .. footbibliography::
     """
+    fd_thresh = config.workflow.fd_thresh
+    omp_nthreads = config.nipype.omp_nthreads
+    despike = config.workflow.despike
+    bandpass_filter = not config.workflow.disable_bandpass_filter
+
     workflow = Workflow(name=name)
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
@@ -289,21 +241,12 @@ def init_postprocess_cifti_wf(
     # fmt:on
 
     prepare_confounds_wf = init_prepare_confounds_wf(
-        output_dir=output_dir,
         TR=TR,
-        params=params,
         dummy_scans=dummy_scans,
-        random_seed=random_seed,
         exact_scans=exact_scans,
-        motion_filter_type=motion_filter_type,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        motion_filter_order=motion_filter_order,
         head_radius=head_radius,
-        fd_thresh=fd_thresh,
         custom_confounds_file=custom_confounds_file,
         mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
         name="prepare_confounds_wf",
     )
 
@@ -328,14 +271,7 @@ def init_postprocess_cifti_wf(
 
     denoise_bold_wf = init_denoise_bold_wf(
         TR=TR,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        bpf_order=bpf_order,
-        bandpass_filter=bandpass_filter,
-        smoothing=smoothing,
-        cifti=True,
         mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
         name="denoise_bold_wf",
     )
 
@@ -357,9 +293,7 @@ def init_postprocess_cifti_wf(
     if despike:
         despike_wf = init_despike_wf(
             TR=TR,
-            cifti=True,
             mem_gb=mem_gbx["timeseries"],
-            omp_nthreads=omp_nthreads,
             name="despike_wf",
         )
 
@@ -384,11 +318,7 @@ def init_postprocess_cifti_wf(
         # fmt:on
 
     connectivity_wf = init_functional_connectivity_cifti_wf(
-        min_coverage=min_coverage,
-        alff_available=bandpass_filter and (fd_thresh <= 0),
-        output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
         name="connectivity_wf",
     )
 
@@ -414,17 +344,11 @@ def init_postprocess_cifti_wf(
     ])
     # fmt:on
 
-    if bandpass_filter:
+    if bandpass_filter and (fd_thresh <= 0):
         alff_wf = init_alff_wf(
             name_source=bold_file,
-            output_dir=output_dir,
             TR=TR,
-            low_pass=low_pass,
-            high_pass=high_pass,
-            smoothing=smoothing,
-            cifti=True,
             mem_gb=mem_gbx["timeseries"],
-            omp_nthreads=omp_nthreads,
             name="alff_wf",
         )
 
@@ -439,9 +363,7 @@ def init_postprocess_cifti_wf(
 
     reho_wf = init_reho_cifti_wf(
         name_source=bold_file,
-        output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
         name="reho_wf",
     )
 
@@ -455,14 +377,9 @@ def init_postprocess_cifti_wf(
     # fmt:on
 
     qc_report_wf = init_qc_report_wf(
-        output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        params=params,
-        dcan_qc=dcan_qc,
-        cifti=True,
         mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
         name="qc_report_wf",
     )
 
@@ -485,18 +402,8 @@ def init_postprocess_cifti_wf(
     # fmt:on
 
     postproc_derivatives_wf = init_postproc_derivatives_wf(
-        smoothing=smoothing,
         name_source=bold_file,
-        bandpass_filter=bandpass_filter,
-        params=params,
         exact_scans=exact_scans,
-        cifti=True,
-        dcan_qc=dcan_qc,
-        output_dir=output_dir,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        fd_thresh=fd_thresh,
-        motion_filter_type=motion_filter_type,
         TR=TR,
         name="postproc_derivatives_wf",
     )
@@ -531,7 +438,7 @@ def init_postprocess_cifti_wf(
         ]),
     ])
 
-    if bandpass_filter:
+    if bandpass_filter and (fd_thresh <= 0):
         workflow.connect([
             (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
@@ -548,8 +455,6 @@ def init_postprocess_cifti_wf(
         preproc_nifti=run_data["nifti_file"],
         t1w_available=t1w_available,
         t2w_available=t2w_available,
-        output_dir=output_dir,
-        layout=layout,
         name="execsummary_functional_plots_wf",
     )
 

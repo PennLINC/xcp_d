@@ -8,6 +8,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
@@ -25,14 +26,8 @@ from xcp_d.utils.utils import fwhm2sigma
 @fill_doc
 def init_alff_wf(
     name_source,
-    output_dir,
     TR,
-    low_pass,
-    high_pass,
-    smoothing,
-    cifti,
     mem_gb,
-    omp_nthreads,
     name="alff_wf",
 ):
     """Compute alff for both nifti and cifti.
@@ -45,28 +40,16 @@ def init_alff_wf(
             from xcp_d.workflows.restingstate import init_alff_wf
             wf = init_alff_wf(
                 name_source="/path/to/file.nii.gz",
-                output_dir=".",
                 TR=2.,
-                low_pass=0.1,
-                high_pass=0.01,
-                smoothing=6,
-                cifti=False,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="alff_wf",
             )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
     %(TR)s
-    %(low_pass)s
-    %(high_pass)s
-    %(smoothing)s
-    %(cifti)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "compute_alff_wf".
 
@@ -85,6 +68,13 @@ def init_alff_wf(
     smoothed_alff
         smoothed alff  output
     """
+    output_dir = config.execution.output_dir
+    high_pass = config.workflow.lower_bpf
+    low_pass = config.workflow.upper_bpf
+    smoothing = config.workflow.smoothing
+    cifti = config.workflow.cifti
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f""" \
@@ -217,9 +207,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 @fill_doc
 def init_reho_cifti_wf(
     name_source,
-    output_dir,
     mem_gb,
-    omp_nthreads,
     name="cifti_reho_wf",
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
@@ -233,18 +221,14 @@ def init_reho_cifti_wf(
 
             wf = init_reho_cifti_wf(
                 name_source="/path/to/bold.dtseries.nii",
-                output_dir=".",
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="cifti_reho_wf",
             )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "cifti_reho_wf".
 
@@ -259,6 +243,9 @@ def init_reho_cifti_wf(
     reho
         ReHo in a CIFTI file.
     """
+    output_dir = config.execution.output_dir
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 
@@ -372,9 +359,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 @fill_doc
 def init_reho_nifti_wf(
     name_source,
-    output_dir,
     mem_gb,
-    omp_nthreads,
     name="nifti_reho_wf",
 ):
     """Compute ReHo on volumetric (NIFTI) data.
@@ -387,18 +372,14 @@ def init_reho_nifti_wf(
             from xcp_d.workflows.restingstate import init_reho_nifti_wf
             wf = init_reho_nifti_wf(
                 name_source="/path/to/bold.nii.gz",
-                output_dir=".",
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="nifti_reho_wf",
             )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "nifti_reho_wf".
 
@@ -415,6 +396,9 @@ def init_reho_nifti_wf(
     reho
         reho output
     """
+    output_dir = config.execution.output_dir
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow = Workflow(name=name)
     workflow.__desc__ = """
 Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood voxels using

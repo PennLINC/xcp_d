@@ -6,6 +6,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
@@ -19,10 +20,7 @@ from xcp_d.utils.utils import get_std2bold_xfms
 
 @fill_doc
 def init_load_atlases_wf(
-    output_dir,
-    cifti,
     mem_gb,
-    omp_nthreads,
     name="load_atlases_wf",
 ):
     """Load atlases and warp them to the same space as the BOLD file.
@@ -35,19 +33,13 @@ def init_load_atlases_wf(
             from xcp_d.workflows.connectivity import init_load_atlases_wf
 
             wf = init_load_atlases_wf(
-                output_dir=".",
-                cifti=True,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="load_atlases_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
-    %(cifti)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "load_atlases_wf".
 
@@ -63,6 +55,10 @@ def init_load_atlases_wf(
     atlas_labels_files
     parcellated_atlas_files
     """
+    cifti = config.workflow.cifti
+    omp_nthreads = config.nipype.omp_nthreads
+    output_dir = config.execution.output_dir
+
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
@@ -309,11 +305,8 @@ def init_load_atlases_wf(
 
 @fill_doc
 def init_parcellate_surfaces_wf(
-    output_dir,
     files_to_parcellate,
-    min_coverage,
     mem_gb,
-    omp_nthreads,
     name="parcellate_surfaces_wf",
 ):
     """Parcellate surface files and write them out to the output directory.
@@ -326,23 +319,17 @@ def init_parcellate_surfaces_wf(
             from xcp_d.workflows.connectivity import init_parcellate_surfaces_wf
 
             wf = init_parcellate_surfaces_wf(
-                output_dir=".",
                 files_to_parcellate=["sulcal_depth", "sulcal_curv", "cortical_thickness"],
-                min_coverage=0.5,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="parcellate_surfaces_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
     files_to_parcellate : :obj:`list` of :obj:`str`
         List of surface file types to parcellate
         (e.g., "sulcal_depth", "sulcal_curv", "cortical_thickness").
-    %(min_coverage)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
 
     Inputs
@@ -354,6 +341,10 @@ def init_parcellate_surfaces_wf(
     myelin
     myelin_smoothed
     """
+    omp_nthreads = config.nipype.omp_nthreads
+    min_coverage = config.workflow.min_coverage
+    output_dir = config.execution.output_dir
+
     workflow = Workflow(name=name)
 
     SURF_DESCS = {
@@ -478,9 +469,6 @@ def init_parcellate_surfaces_wf(
 
 @fill_doc
 def init_functional_connectivity_nifti_wf(
-    output_dir,
-    alff_available,
-    min_coverage,
     mem_gb,
     name="connectivity_wf",
 ):
@@ -494,18 +482,12 @@ def init_functional_connectivity_nifti_wf(
             from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 
             wf = init_functional_connectivity_nifti_wf(
-                output_dir=".",
-                alff_available=True,
-                min_coverage=0.5,
                 mem_gb=0.1,
                 name="connectivity_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
-    alff_available
-    %(min_coverage)s
     %(mem_gb)s
     %(name)s
         Default is "connectivity_wf".
@@ -531,6 +513,13 @@ def init_functional_connectivity_nifti_wf(
     parcellated_alff
     parcellated_reho
     """
+    min_coverage = config.workflow.min_coverage
+    output_dir = config.execution.output_dir
+    bandpass_filter = not config.workflow.disable_bandpass_filter
+    fd_thresh = config.workflow.fd_thresh
+
+    alff_available = bandpass_filter and (fd_thresh <= 0)
+
     workflow = Workflow(name=name)
 
     workflow.__desc__ = f"""
@@ -681,11 +670,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
 @fill_doc
 def init_functional_connectivity_cifti_wf(
-    output_dir,
-    alff_available,
-    min_coverage,
     mem_gb,
-    omp_nthreads,
     name="connectivity_wf",
 ):
     """Extract CIFTI time series.
@@ -696,22 +681,15 @@ def init_functional_connectivity_cifti_wf(
             :simple_form: yes
 
             from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
+
             wf = init_functional_connectivity_cifti_wf(
-                output_dir=".",
-                alff_available=True,
-                min_coverage=0.5,
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="connectivity_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
-    alff_available
-    %(min_coverage)s
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "connectivity_wf".
 
@@ -743,6 +721,14 @@ def init_functional_connectivity_cifti_wf(
     parcellated_reho
     parcellated_alff
     """
+    min_coverage = config.workflow.min_coverage
+    output_dir = config.execution.output_dir
+    bandpass_filter = not config.workflow.disable_bandpass_filter
+    fd_thresh = config.workflow.fd_thresh
+    omp_nthreads = config.nipype.omp_nthreads
+
+    alff_available = bandpass_filter and (fd_thresh <= 0)
+
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using

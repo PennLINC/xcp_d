@@ -92,6 +92,7 @@ finally:
 
 if not hasattr(sys, "_is_pytest_session"):
     sys._is_pytest_session = False  # Trick to avoid sklearn's FutureWarnings
+
 # Disable all warnings in main and children processes only on production versions
 if not any(
     (
@@ -177,9 +178,11 @@ class _Config:
         for k, v in settings.items():
             if v is None:
                 continue
+
             if k in cls._paths:
                 setattr(cls, k, Path(v).absolute())
                 continue
+
             if hasattr(cls, k):
                 setattr(cls, k, v)
 
@@ -196,12 +199,15 @@ class _Config:
         for k, v in cls.__dict__.items():
             if k.startswith("_") or v is None:
                 continue
+
             if callable(getattr(cls, k)):
                 continue
+
             if k in cls._paths:
                 v = str(v)
 
             out[k] = v
+
         return out
 
 
@@ -275,6 +281,7 @@ class nipype(_Config):
             out["plugin_args"]["n_procs"] = int(cls.nprocs)
             if cls.memory_gb:
                 out["plugin_args"]["memory_gb"] = float(cls.memory_gb)
+
         return out
 
     @classmethod
@@ -399,8 +406,14 @@ del _oc_policy
 
 class workflow(_Config):
     """Configure the particular execution graph of this workflow."""
+    analysis_level = "participant"
+    # The BIDS App analysis level (only "participant" allowed)
     input_type = "fmriprep"
     # The pipeline used to generate the preprocessed derivatives.
+    combineruns = False
+    # After denoising, concatenate each derivative from each task across runs.
+    cifti = False
+    # Whether to process ciftis or niftis.
     smoothing = 6
     # FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD data.
     # This may be set to 0.
@@ -417,6 +430,8 @@ class workflow(_Config):
     # Coverage threshold to apply to parcels in each atlas.
     min_time = 100
     # Post-scrubbing threshold to apply to individual runs in the dataset.
+    exact_time = []
+    # Produce correlation matrices limited to each requested amount of time
     dummy_scans = 0
     # Number of volumes to remove from the beginning of each run.
     disable_bandpass_filter = True
