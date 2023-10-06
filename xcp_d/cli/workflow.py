@@ -18,7 +18,7 @@ def build_workflow(config_file, retval):
     from niworkflows.utils.misc import check_valid_fs_license
 
     from xcp_d import config
-    from xcp_d.utils.misc import check_deps
+    from xcp_d.cli.parser_utils import check_deps
     from xcp_d.workflows.base import init_xcpd_wf
 
     config.load(config_file)
