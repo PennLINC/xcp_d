@@ -99,9 +99,6 @@ def build_workflow(config_file, retval):
       * Participant list: {subject_list}.
       * Run identifier: {config.execution.run_uuid}."""
 
-    if config.execution.anat_derivatives:
-        init_msg += f"""
-      * Anatomical derivatives: {config.execution.anat_derivatives}."""
     build_log.log(25, init_msg)
 
     retval["workflow"] = init_xcpd_wf()
