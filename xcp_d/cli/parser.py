@@ -17,7 +17,7 @@ from xcp_d.cli.parser_utils import (
 from xcp_d.cli.version import check_latest, is_flagged
 
 
-def get_parser():
+def _build_parser():
     """Build parser object."""
     verstr = f"XCP-D v{config.environment.version}"
     currentv = Version(config.environment.version)
@@ -449,6 +449,25 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help="Enable Nipype's resource monitoring to keep track of memory and CPU usage.",
     )
     g_other.add_argument(
+        "--config-file",
+        action="store",
+        metavar="FILE",
+        help="Use pre-generated configuration file. Values in file will be overridden "
+        "by command-line arguments.",
+    )
+    g_other.add_argument(
+        "--write-graph",
+        action="store_true",
+        default=False,
+        help="Write workflow graph.",
+    )
+    g_other.add_argument(
+        "--stop-on-first-crash",
+        action="store_true",
+        default=False,
+        help="Force stopping on first crash, even if a work directory was specified.",
+    )
+    g_other.add_argument(
         "--notrack",
         action="store_true",
         default=False,
@@ -518,10 +537,28 @@ def parse_args(args=None, namespace=None):
     """Parse args and run further checks on the command line."""
     import logging
 
-    parser = get_parser()
+    parser = _build_parser()
     opts = parser.parse_args(args, namespace)
+
+    if opts.config_file:
+        skip = {} if opts.reports_only else {"execution": ("run_uuid",)}
+        config.load(opts.config_file, skip=skip, init=False)
+        config.loggers.cli.info(f"Loaded previous configuration file {opts.config_file}")
+
     config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
-    config.from_dict(vars(opts))
+    config.from_dict(vars(opts), init=["nipype"])
+
+    if not config.execution.notrack:
+        import pkgutil
+
+        if pkgutil.find_loader("sentry_sdk") is None:
+            config.execution.notrack = True
+            config.loggers.cli.warning("Telemetry disabled because sentry_sdk is not installed.")
+        else:
+            config.loggers.cli.info(
+                "Telemetry system to collect crashes and errors is enabled "
+                "- thanks for your feedback!. Use option ``--notrack`` to opt out."
+            )
 
     # Retrieve logging level
     build_log = config.loggers.cli
@@ -561,6 +598,12 @@ def parse_args(args=None, namespace=None):
         build_log.info(f"Clearing previous aslprep working directory: {work_dir}")
         if not clean_directory(work_dir):
             build_log.warning(f"Could not clear all contents of working directory: {work_dir}")
+
+    # Update the config with an empty dict to trigger initialization of all config
+    # sections (we used `init=False` above).
+    # This must be done after cleaning the work directory, or we could delete an
+    # open SQLite database
+    config.from_dict({})
 
     # Ensure input and output folders are not the same
     if output_dir == fmri_dir:
