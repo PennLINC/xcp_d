@@ -10,6 +10,9 @@ def build_workflow(config_file, retval):
     ``multiprocessing.Process`` that allows fmriprep to enforce
     a hard-limited memory-scope.
     """
+    import os
+    from pathlib import Path
+
     from niworkflows.reports.core import generate_reports
     from niworkflows.utils.bids import check_pipeline_version, collect_participants
     from niworkflows.utils.misc import check_valid_fs_license
@@ -24,44 +27,44 @@ def build_workflow(config_file, retval):
     output_dir = config.execution.output_dir
     version = config.environment.version
 
-    if opts.clean_workdir:
+    if config.execution.clean_workdir:
         from niworkflows.utils.misc import clean_directory
 
-        build_log.info(f"Clearing previous xcp_d working directory: {opts.work_dir}")
-        if not clean_directory(opts.work_dir):
+        build_log.info(f"Clearing previous xcp_d working directory: {config.execution.work_dir}")
+        if not clean_directory(config.execution.work_dir):
             build_log.warning(
-                f"Could not clear all contents of working directory: {opts.work_dir}"
+                f"Could not clear all contents of working directory: {config.execution.work_dir}"
             )
 
     retval["return_code"] = 1
     retval["workflow"] = None
-    retval["fmri_dir"] = str(opts.fmri_dir)
-    retval["output_dir"] = str(opts.output_dir)
-    retval["work_dir"] = str(opts.work_dir)
+    retval["fmri_dir"] = str(config.execution.fmri_dir)
+    retval["output_dir"] = str(config.execution.output_dir)
+    retval["work_dir"] = str(config.execution.work_dir)
 
     # First check that fmriprep_dir looks like a BIDS folder
-    if opts.input_type in ("dcan", "hcp"):
-        if opts.input_type == "dcan":
+    if config.workflow.input_type in ("dcan", "hcp"):
+        if config.workflow.input_type == "dcan":
             from xcp_d.utils.dcan2fmriprep import convert_dcan2bids as convert_to_bids
-        elif opts.input_type == "hcp":
+        elif config.workflow.input_type == "hcp":
             from xcp_d.utils.hcp2fmriprep import convert_hcp2bids as convert_to_bids
 
-        NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
+        config.loggers.cli.info(f"Converting {config.workflow.input_type} to fmriprep format")
         converted_fmri_dir = os.path.join(
-            opts.work_dir,
-            f"dset_bids/derivatives/{opts.input_type}",
+            config.execution.work_dir,
+            f"dset_bids/derivatives/{config.workflow.input_type}",
         )
         os.makedirs(converted_fmri_dir, exist_ok=True)
 
         convert_to_bids(
-            opts.fmri_dir,
+            config.execution.fmri_dir,
             out_dir=converted_fmri_dir,
-            participant_ids=opts.participant_label,
+            participant_ids=config.execution.participant_label,
         )
 
-        opts.fmri_dir = Path(converted_fmri_dir)
+        config.execution.fmri_dir = Path(converted_fmri_dir)
 
-    if not os.path.isfile((os.path.join(opts.fmri_dir, "dataset_description.json"))):
+    if not os.path.isfile((os.path.join(config.execution.fmri_dir, "dataset_description.json"))):
         build_log.error(
             "No dataset_description.json file found in input directory. "
             "Make sure to point to the specific pipeline's derivatives folder. "
@@ -73,15 +76,18 @@ def build_workflow(config_file, retval):
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
     retval["run_uuid"] = run_uuid
 
-    layout = BIDSLayout(str(opts.fmri_dir), validate=False, derivatives=True)
-    subject_list = collect_participants(layout, participant_label=opts.participant_label)
+    layout = BIDSLayout(str(config.execution.fmri_dir), validate=False, derivatives=True)
+    subject_list = collect_participants(
+        layout,
+        participant_label=config.execution.participant_label,
+    )
     retval["subject_list"] = subject_list
 
     # Load base plugin_settings from file if --use-plugin
-    if opts.use_plugin is not None:
+    if config.nipype.plugin is not None:
         from yaml import load as loadyml
 
-        with open(opts.use_plugin) as f:
+        with open(config.nipype.plugin) as f:
             plugin_settings = loadyml(f)
 
         plugin_settings.setdefault("plugin_args", {})
@@ -97,31 +103,31 @@ def build_workflow(config_file, retval):
         }
 
     # Permit overriding plugin config with specific CLI options
-    nthreads = opts.nthreads
-    omp_nthreads = opts.omp_nthreads
+    nprocs = config.nipype.nprocs
+    omp_nthreads = config.nipype.omp_nthreads
 
-    if (nthreads == 1) or (omp_nthreads > nthreads):
+    if (nprocs == 1) or (omp_nthreads > nprocs):
         omp_nthreads = 1
 
-    plugin_settings["plugin_args"]["n_procs"] = nthreads
+    plugin_settings["plugin_args"]["n_procs"] = nprocs
 
-    if 1 < nthreads < omp_nthreads:
+    if 1 < nprocs < omp_nthreads:
         build_log.warning(
-            f"Per-process threads (--omp-nthreads={omp_nthreads}) exceed total "
-            f"threads (--nthreads/--n_cpus={nthreads})"
+            f"Per-process threads (--omp-nprocs={omp_nthreads}) exceed total "
+            f"threads (--nprocs/--n_cpus={nprocs})"
         )
 
-    if opts.mem_gb:
-        plugin_settings["plugin_args"]["memory_gb"] = opts.mem_gb
+    if config.nipype.memory_gb:
+        plugin_settings["plugin_args"]["memory_gb"] = config.nipype.memory_gb
 
     retval["plugin_settings"] = plugin_settings
 
     # Set up directories
-    log_dir = opts.output_dir / "xcp_d" / "logs"
+    log_dir = config.execution.output_dir / "xcp_d" / "logs"
 
     # Check and create output and working directories
-    opts.output_dir.mkdir(exist_ok=True, parents=True)
-    opts.work_dir.mkdir(exist_ok=True, parents=True)
+    config.execution.output_dir.mkdir(exist_ok=True, parents=True)
+    config.execution.work_dir.mkdir(exist_ok=True, parents=True)
     log_dir.mkdir(exist_ok=True, parents=True)
 
     # Nipype config (logs and execution)
@@ -140,14 +146,14 @@ def build_workflow(config_file, retval):
                 "get_linked_libs": False,
             },
             "monitoring": {
-                "enabled": opts.resource_monitor,
+                "enabled": config.nipype.resource_monitor,
                 "sample_frequency": "0.5",
                 "summary_append": True,
             },
         }
     )
 
-    if opts.resource_monitor:
+    if config.nipype.resource_monitor:
         ncfg.enable_resource_monitor()
 
     # Build main workflow
@@ -155,7 +161,7 @@ def build_workflow(config_file, retval):
         25,
         f"""\
 Running xcp_d version {config.environment.version}:
-    * fMRI directory path: {opts.fmri_dir}.
+    * fMRI directory path: {config.execution.fmri_dir}.
     * Participant list: {subject_list}.
     * Run identifier: {run_uuid}.
 
