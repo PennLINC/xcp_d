@@ -462,9 +462,6 @@ class execution(_Config):
                     for k, v in filters.items()
                 }
 
-        if "all" in cls.debug:
-            cls.debug = list(DEBUG_MODES)
-
 
 # These variables are not necessary anymore
 del _fs_license
