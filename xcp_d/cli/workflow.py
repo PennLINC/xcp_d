@@ -97,8 +97,7 @@ def build_workflow(config_file, retval):
     Running XCP-D version {config.environment.version}:
       * BIDS dataset path: {config.execution.fmri_dir}.
       * Participant list: {subject_list}.
-      * Run identifier: {config.execution.run_uuid}.
-      * Output spaces: {config.execution.output_spaces}."""
+      * Run identifier: {config.execution.run_uuid}."""
 
     if config.execution.anat_derivatives:
         init_msg += f"""
