@@ -7,7 +7,9 @@ import pandas as pd
 import pytest
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.cli import combineqc, parser_utils, run
+from xcp_d.cli import combineqc
+from xcp_d.cli.parser import parse_args
+from xcp_d.cli.workflow import build_boilerplate, build_workflow
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.tests.utils import (
     check_affines,
@@ -53,29 +55,14 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "200",
         "--random-seed=8675309",
     ]
-    opts = run.get_parser().parse_args(parameters)
-
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
+        out_dir=out_dir,
+        input_type="fmriprep",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_ds001419_nifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="nifti")
 
 
 @pytest.mark.ds001419_cifti
@@ -114,28 +101,14 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--upper-bpf=0.0",
         f"--fs-license-file={fs_license_file}",
     ]
-    opts = run.get_parser().parse_args(parameters)
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
+        out_dir=out_dir,
+        input_type="fmriprep",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.pnc_nifti
@@ -173,29 +146,14 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         "200",
         "--random-seed=8675309",
     ]
-    opts = run.get_parser().parse_args(parameters)
-
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["1648798153"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="1648798153",
+        parameters=parameters,
+        data_dir=data_dir,
+        out_dir=out_dir,
+        input_type="fmriprep",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_pnc_nifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="nifti")
 
 
 @pytest.mark.pnc_cifti
@@ -233,28 +191,14 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
     ]
-    opts = run.get_parser().parse_args(parameters)
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["1648798153"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="1648798153",
+        parameters=parameters,
+        data_dir=data_dir,
+        out_dir=out_dir,
+        input_type="fmriprep",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_pnc_cifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.pnc_cifti_t2wonly
@@ -315,28 +259,14 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
     ]
-    opts = run.get_parser().parse_args(parameters)
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["1648798153"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="1648798153",
+        parameters=parameters,
+        data_dir=data_dir,
+        out_dir=out_dir,
+        input_type="fmriprep",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_pnc_cifti_t2wonly_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.fmriprep_without_freesurfer
@@ -435,7 +365,6 @@ def test_nibabies(data_dir, output_dir, working_dir):
         participant_label="01",
         parameters=parameters,
         data_dir=data_dir,
-        work_dir=work_dir,
         out_dir=out_dir,
         input_type=input_type,
     )
@@ -446,26 +375,26 @@ def _run_and_generate(
     participant_label,
     parameters,
     data_dir,
-    work_dir,
     out_dir,
     input_type,
 ):
-    opts = run.get_parser().parse_args(parameters)
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval["workflow"]
-    missing = parser_utils.check_deps(xcpd_wf)
-    assert not missing
+    from xcp_d import config
 
+    parameters.append("--stop-on-first-crash")
+    parse_args(parameters)
+    config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
+    config.loggers.cli.warning(f"Saving config file to {config_file}")
+    config.to_filename(config_file)
+
+    retval = build_workflow(config_file, retval={})
+    xcpd_wf = retval["workflow"]
     xcpd_wf.run()
+    build_boilerplate(str(config_file), xcpd_wf)
     generate_reports(
-        subject_list=[participant_label],
-        fmri_dir=data_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
+        [participant_label],
+        out_dir,
+        config.execution.run_uuid,
+        config=pkgrf("xcp_d", "data/reports-spec.yml"),
         packagename="xcp_d",
     )
 
