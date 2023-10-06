@@ -36,7 +36,7 @@ def build_workflow(config_file, retval):
         build_log.warning(msg)
 
     # Please note this is the input folder's dataset_description.json
-    dset_desc_path = config.execution.bids_dir / "dataset_description.json"
+    dset_desc_path = config.execution.fmri_dir / "dataset_description.json"
     if dset_desc_path.exists():
         from hashlib import sha256
 
@@ -95,7 +95,7 @@ def build_workflow(config_file, retval):
     # Build main workflow
     init_msg = f"""
     Running XCP-D version {config.environment.version}:
-      * BIDS dataset path: {config.execution.bids_dir}.
+      * BIDS dataset path: {config.execution.fmri_dir}.
       * Participant list: {subject_list}.
       * Run identifier: {config.execution.run_uuid}.
       * Output spaces: {config.execution.output_spaces}."""

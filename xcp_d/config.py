@@ -445,7 +445,7 @@ class execution(_Config):
                 ),
             )
             cls._layout = BIDSLayout(
-                str(cls.bids_dir),
+                str(cls.fmri_dir),
                 database_path=_db_path,
                 reset_database=True,
                 indexer=_indexer,

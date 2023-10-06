@@ -309,7 +309,7 @@ def main():
             packagename="xcp_d",
         )
         write_derivative_description(
-            config.execution.bids_dir,
+            config.execution.fmri_dir,
             config.execution.output_dir / "xcp_d",
         )
 
