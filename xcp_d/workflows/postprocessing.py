@@ -100,7 +100,7 @@ def init_prepare_confounds_wf(
     band_stop_min = config.workflow.band_stop_min
     band_stop_max = config.workflow.band_stop_max
     params = config.workflow.nuisance_regressors
-    random_seed = config.workflow.random_seed
+    random_seed = config.seeds.numpy
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow = Workflow(name=name)
