@@ -154,8 +154,8 @@ class FunctionalSummary(SummaryInterface):
             f"{round(qcfile['mean_dvars_final'][0], 4)}"
         )
         fd_dvars_correlation = (
-            f"{round(qcfile['motionDVCorrInit'][0], 4)}, "
-            f"{round(qcfile['motionDVCorrFinal'][0], 4)}"
+            f"{round(qcfile['fd_dvars_correlation_initial'][0], 4)}, "
+            f"{round(qcfile['fd_dvars_correlation_final'][0], 4)}"
         )
         num_vols_censored = str(round(qcfile["num_censored_volumes"][0], 4))
 
