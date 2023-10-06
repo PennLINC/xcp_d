@@ -38,17 +38,21 @@ def test_collect_participants(datasets):
 def test_collect_data_ds001419(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["ds001419"]
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        derivatives=True,
+        config=["bids", "derivatives"],
+    )
 
     # NIFTI workflow, but also get a BIDSLayout
-    layout, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
         task=None,
-        bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=None,
     )
 
     assert len(subj_data["bold"]) == 5
@@ -59,15 +63,13 @@ def test_collect_data_ds001419(datasets):
     assert "from-MNI152NLin2009cAsym" in subj_data["template_to_anat_xfm"]
 
     # CIFTI workflow
-    _, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
         task="rest",
-        bids_validate=False,
         bids_filters=None,
         cifti=True,
-        layout=layout,
     )
 
     assert len(subj_data["bold"]) == 1
@@ -89,15 +91,13 @@ def test_collect_data_nibabies(datasets):
     )
 
     # NIFTI workflow
-    _, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
         task=None,
-        bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=layout,
     )
 
     assert len(subj_data["bold"]) == 1
@@ -110,15 +110,13 @@ def test_collect_data_nibabies(datasets):
 
     # CIFTI workflow
     with pytest.raises(FileNotFoundError):
-        _, subj_data = xbids.collect_data(
-            bids_dir=bids_dir,
+        subj_data = xbids.collect_data(
+            layout=layout,
             input_type="fmriprep",
             participant_label="01",
             task=None,
-            bids_validate=False,
             bids_filters=None,
             cifti=True,
-            layout=layout,
         )
 
 

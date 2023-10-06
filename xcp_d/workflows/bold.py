@@ -56,12 +56,18 @@ def init_postprocess_nifti_wf(
 
             fmri_dir = download_example_data()
 
-            layout, subj_data = collect_data(
-                bids_dir=fmri_dir,
+            layout = BIDSLayout(
+                fmri_dir,
+                validate=False,
+                derivatives=True,
+                config=["bids", "derivatives"],
+            )
+
+            subj_data = collect_data(
+                layout=layout,
                 input_type="fmriprep",
                 participant_label="01",
                 task="imagery",
-                bids_validate=False,
                 cifti=False,
             )
 
