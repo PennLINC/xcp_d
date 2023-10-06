@@ -13,12 +13,12 @@ def build_workflow(config_file, retval):
     import os
     from pathlib import Path
 
-    from niworkflows.reports.core import generate_reports
     from niworkflows.utils.bids import check_pipeline_version, collect_participants
     from niworkflows.utils.misc import check_valid_fs_license
 
     from xcp_d import config
     from xcp_d.cli.parser_utils import check_deps
+    from xcp_d.interfaces.report_core import generate_reports
     from xcp_d.workflows.base import init_xcpd_wf
 
     config.load(config_file)
@@ -84,9 +84,11 @@ def build_workflow(config_file, retval):
 
         build_log.log(25, f"Running --reports-only on participants {', '.join(subject_list)}")
         retval["return_code"] = generate_reports(
-            subject_list,
-            config.execution.output_dir,
-            config.execution.run_uuid,
+            subject_list=subject_list,
+            fmri_dir=config.execution.fmri_dir,
+            work_dir=config.execution.work_dir,
+            output_dir=config.execution.output_dir,
+            run_uuid=config.execution.run_uuid,
             config=pkgrf("xcp_d", "data/reports-spec.yml"),
             packagename="xcp_d",
         )

@@ -391,9 +391,11 @@ def _run_and_generate(
     xcpd_wf.run()
     build_boilerplate(str(config_file), xcpd_wf)
     generate_reports(
-        [participant_label],
-        out_dir,
-        config.execution.run_uuid,
+        subject_list=[participant_label],
+        fmri_dir=config.execution.fmri_dir,
+        work_dir=config.execution.work_dir,
+        output_dir=out_dir,
+        run_uuid=config.execution.run_uuid,
         config=pkgrf("xcp_d", "data/reports-spec.yml"),
         packagename="xcp_d",
     )

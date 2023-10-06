@@ -168,7 +168,7 @@ def main():
     from pathlib import Path
 
     from xcp_d.cli.parser import parse_args
-    from xcp_d.utils.bids import write_derivative_description
+    from xcp_d.utils.bids import write_dataset_description
 
     parse_args()
 
@@ -297,18 +297,21 @@ def main():
         errno = 0
 
     finally:
-        from niworkflows.reports.core import generate_reports
         from pkg_resources import resource_filename as pkgrf
+
+        from xcp_d.interfaces.report_core import generate_reports
 
         # Generate reports phase
         failed_reports = generate_reports(
-            config.execution.participant_label,
-            config.execution.output_dir,
-            config.execution.run_uuid,
+            subject_list=config.execution.participant_label,
+            fmri_dir=config.execution.fmri_dir,
+            work_dir=config.execution.work_dir,
+            output_dir=config.execution.output_dir,
+            run_uuid=config.execution.run_uuid,
             config=pkgrf("xcp_d", "data/reports-spec.yml"),
             packagename="xcp_d",
         )
-        write_derivative_description(
+        write_dataset_description(
             config.execution.fmri_dir,
             config.execution.output_dir / "xcp_d",
         )
