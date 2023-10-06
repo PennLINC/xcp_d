@@ -495,7 +495,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 exact_scans=exact_scans,
-                layout=layout,
                 name=f"{'cifti' if cifti else 'nifti'}_postprocess_{run_counter}_wf",
             )
             run_counter += 1
