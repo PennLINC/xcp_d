@@ -1,258 +1,319 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""The xcp_d preprocessing worklow."""
+"""The XCP-D preprocessing worklow."""
 from xcp_d import config
 
 
-def _main(args=None, namespace=None):
-    from multiprocessing import set_start_method
+def _validate_parameters():
+    """Validate parameters.
 
-    set_start_method("forkserver")
+    This function was abstracted out of build_workflow to make testing easier.
+    """
+    import os
 
-    main(args=args, namespace=namespace)
+    config.execution.fmri_dir = config.execution.fmri_dir.resolve()
+    config.execution.output_dir = config.execution.output_dir.resolve()
+    config.execution.work_dir = config.execution.work_dir.resolve()
+
+    return_code = 0
+
+    # Set the FreeSurfer license
+    if config.execution.fs_license_file is not None:
+        config.execution.fs_license_file = config.execution.fs_license_file.resolve()
+        if config.execution.fs_license_file.is_file():
+            os.environ["FS_LICENSE"] = str(config.execution.fs_license_file)
+
+        else:
+            config.loggers.cli.error(
+                f"Freesurfer license DNE: {config.execution.fs_license_file}."
+            )
+            return_code = 1
+
+    # Check the validity of inputs
+    if config.execution.output_dir == config.execution.fmri_dir:
+        rec_path = (
+            config.execution.fmri_dir / "derivatives" / f"xcp_d-{config.environment.version.split('+')[0]}"
+        )
+        config.loggers.cli.error(
+            "The selected output folder is the same as the input fmri input. "
+            "Please modify the output path "
+            f"(suggestion: {rec_path})."
+        )
+        return_code = 1
+
+    if opts.analysis_level != "participant":
+        config.loggers.cli.error('Please select analysis level "participant"')
+        return_code = 1
+
+    # Bandpass filter parameters
+    if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
+        opts.bandpass_filter = False
+
+    if (
+        opts.bandpass_filter
+        and (opts.lower_bpf >= opts.upper_bpf)
+        and (opts.lower_bpf > 0 and opts.upper_bpf > 0)
+    ):
+        config.loggers.cli.error(
+            f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
+            f"'--upper-bpf' ({opts.upper_bpf})."
+        )
+        return_code = 1
+    elif not opts.bandpass_filter:
+        config.loggers.cli.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
+
+    # Scrubbing parameters
+    if opts.fd_thresh <= 0:
+        ignored_params = "\n\t".join(
+            [
+                "--min-time",
+                "--motion-filter-type",
+                "--band-stop-min",
+                "--band-stop-max",
+                "--motion-filter-order",
+                "--head_radius",
+            ]
+        )
+        config.loggers.cli.warning(
+            "Framewise displacement-based scrubbing is disabled. "
+            f"The following parameters will have no effect:\n\t{ignored_params}"
+        )
+        opts.min_time = 0
+        opts.motion_filter_type = None
+        opts.band_stop_min = None
+        opts.band_stop_max = None
+        opts.motion_filter_order = None
+
+    # Motion filtering parameters
+    if opts.motion_filter_type == "notch":
+        if not (opts.band_stop_min and opts.band_stop_max):
+            config.loggers.cli.error(
+                "Please set both '--band-stop-min' and '--band-stop-max' if you want to apply "
+                "the 'notch' motion filter."
+            )
+            return_code = 1
+        elif opts.band_stop_min >= opts.band_stop_max:
+            config.loggers.cli.error(
+                f"'--band-stop-min' ({opts.band_stop_min}) must be lower than "
+                f"'--band-stop-max' ({opts.band_stop_max})."
+            )
+            return_code = 1
+        elif opts.band_stop_min < 1 or opts.band_stop_max < 1:
+            config.loggers.cli.warning(
+                f"Either '--band-stop-min' ({opts.band_stop_min}) or "
+                f"'--band-stop-max' ({opts.band_stop_max}) is suspiciously low. "
+                "Please remember that these values should be in breaths-per-minute."
+            )
+
+    elif opts.motion_filter_type == "lp":
+        if not opts.band_stop_min:
+            config.loggers.cli.error(
+                "Please set '--band-stop-min' if you want to apply the 'lp' motion filter."
+            )
+            return_code = 1
+        elif opts.band_stop_min < 1:
+            config.loggers.cli.warning(
+                f"'--band-stop-min' ({opts.band_stop_max}) is suspiciously low. "
+                "Please remember that this value should be in breaths-per-minute."
+            )
+
+        if opts.band_stop_max:
+            config.loggers.cli.warning("'--band-stop-max' is ignored when '--motion-filter-type' is 'lp'.")
+
+    elif opts.band_stop_min or opts.band_stop_max:
+        config.loggers.cli.warning(
+            "'--band-stop-min' and '--band-stop-max' are ignored if '--motion-filter-type' "
+            "is not set."
+        )
+
+    # Some parameters are automatically set depending on the input type.
+    if opts.input_type in ("dcan", "hcp"):
+        if not opts.cifti:
+            config.loggers.cli.warning(
+                f"With input_type {opts.input_type}, cifti processing (--cifti) will be "
+                "enabled automatically."
+            )
+            opts.cifti = True
+
+        if not opts.process_surfaces:
+            config.loggers.cli.warning(
+                f"With input_type {opts.input_type}, surface normalization "
+                "(--warp-surfaces-native2std) will be enabled automatically."
+            )
+            opts.process_surfaces = True
+
+    # process_surfaces and nifti processing are incompatible.
+    if opts.process_surfaces and not opts.cifti:
+        config.loggers.cli.error(
+            "In order to perform surface normalization (--warp-surfaces-native2std), "
+            "you must enable cifti processing (--cifti)."
+        )
+        return_code = 1
+
+    return opts, return_code
 
 
 def main(args=None, namespace=None):
     """Run the main workflow."""
+    import gc
+    import sys
+    from multiprocessing import Manager, Process
+    from os import EX_SOFTWARE
+    from pathlib import Path
+
+    from xcp_d.utils.bids import write_derivative_description
+
     from multiprocessing import Manager, Process
 
-    from xcp_d.cli.parser import get_parser
+    from xcp_d.cli.parser import parse_args
 
-    opts = get_parser().parse_args(args, namespace)
-    config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
-    config.from_dict(vars(opts))
-
-    # Retrieve logging level
-    build_log = config.loggers.cli
-
-    # Load base plugin_settings from file if --use-plugin
-    if opts.use_plugin is not None:
-        import yaml
-
-        with open(opts.use_plugin) as f:
-            plugin_settings = yaml.load(f, Loader=yaml.FullLoader)
-        _plugin = plugin_settings.get("plugin")
-        if _plugin:
-            config.nipype.plugin = _plugin
-            config.nipype.plugin_args = plugin_settings.get("plugin_args", {})
-            config.nipype.nprocs = opts.nprocs or config.nipype.plugin_args.get(
-                "n_procs", config.nipype.nprocs
-            )
-
-    # Resource management options
-    # Note that we're making strong assumptions about valid plugin args
-    # This may need to be revisited if people try to use batch plugins
-    if 1 < config.nipype.nprocs < config.nipype.omp_nthreads:
-        build_log.warning(
-            f"Per-process threads (--omp-nthreads={config.nipype.omp_nthreads}) exceed "
-            f"total threads (--nthreads/--n_cpus={config.nipype.nprocs})"
-        )
-
-    fmri_dir = config.execution.fmri_dir
-    output_dir = config.execution.output_dir
-    work_dir = config.execution.work_dir
-    version = config.environment.version
-
-    # Wipe out existing work_dir
-    if opts.clean_workdir and work_dir.exists():
-        from niworkflows.utils.misc import clean_directory
-
-        build_log.info(f"Clearing previous aslprep working directory: {work_dir}")
-        if not clean_directory(work_dir):
-            build_log.warning(f"Could not clear all contents of working directory: {work_dir}")
-
-    # Ensure input and output folders are not the same
-    if output_dir == bids_dir:
-        rec_path = bids_dir / "derivatives" / f"aslprep-{version.split('+')[0]}"
-        parser.error(
-            "The selected output folder is the same as the input BIDS folder. "
-            f"Please modify the output path (suggestion: {rec_path})."
-        )
-
-    if bids_dir in work_dir.parents:
-        parser.error(
-            "The selected working directory is a subdirectory of the input BIDS folder. "
-            "Please modify the output path."
-        )
-
-    # Setup directories
-    config.execution.log_dir = output_dir / "aslprep" / "logs"
-    # Check and create output and working directories
-    config.execution.log_dir.mkdir(exist_ok=True, parents=True)
-    output_dir.mkdir(exist_ok=True, parents=True)
-    work_dir.mkdir(exist_ok=True, parents=True)
-
-    # Force initialization of the BIDSLayout
-    config.execution.init()
-    all_subjects = config.execution.layout.get_subjects()
-    if config.execution.participant_label is None:
-        config.execution.participant_label = all_subjects
-
-    participant_label = set(config.execution.participant_label)
-    missing_subjects = participant_label - set(all_subjects)
-    if missing_subjects:
-        parser.error(
-            "One or more participant labels were not found in the BIDS directory: "
-            f"{', '.join(missing_subjects)}."
-        )
-
-    config.execution.participant_label = sorted(participant_label)
-
-    # OLD
-    exec_env = os.name
+    parse_args()
 
     sentry_sdk = None
-    if not opts.notrack:
+    if not config.execution.notrack:
         import sentry_sdk
 
         from xcp_d.utils.sentry import sentry_setup
 
-        sentry_setup(opts, exec_env)
+        sentry_setup()
 
-    # Call build_workflow(opts, retval)
+    # Validate the config before writing it out to a file
+    _validate_parameters()
+
+    # CRITICAL Save the config to a file. This is necessary because the execution graph
+    # is built as a separate process to keep the memory footprint low.
+    # The most straightforward way to communicate with the child process is via the filesystem.
+    config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
+    config.to_filename(config_file)
+
+    # CRITICAL Call build_workflow(config_file, retval) in a subprocess.
+    # Because Python on Linux does not ever free virtual memory (VM), running the
+    # workflow construction jailed within a process preempts excessive VM buildup.
     with Manager() as mgr:
+        from xcp_d.cli.workflow import build_workflow
+
         retval = mgr.dict()
-        p = Process(target=build_workflow, args=(opts, retval))
+        p = Process(target=build_workflow, args=(str(config_file), retval))
         p.start()
         p.join()
 
         retcode = p.exitcode or retval.get("return_code", 0)
-
-        work_dir = Path(retval.get("work_dir"))
-        fmri_dir = Path(retval.get("fmri_dir"))
-        output_dir = Path(retval.get("output_dir"))
-        plugin_settings = retval.get("plugin_settings", None)
-        subject_list = retval.get("subject_list", None)
-        run_uuid = retval.get("run_uuid", None)
         xcpd_wf = retval.get("workflow", None)
 
-    retcode = retcode or int(xcpd_wf is None)
+    # CRITICAL Load the config from the file. This is necessary because the ``build_workflow``
+    # function executed constrained in a process may change the config (and thus the global
+    # state of XCP-D).
+    config.load(config_file)
+
+    if config.execution.reports_only:
+        sys.exit(int(retcode > 0))
+
+    if xcpd_wf and config.execution.write_graph:
+        xcpd_wf.write_graph(graph2use="colored", format="svg", simple_form=True)
+
+    retcode = retcode or (xcpd_wf is None) * EX_SOFTWARE
     if retcode != 0:
         sys.exit(retcode)
 
-    # Check workflow for missing commands
-    missing = check_deps(xcpd_wf)
-    if missing:
-        print("Cannot run xcp_d. Missing dependencies:", file=sys.stderr)
-        for iface, cmd in missing:
-            print(f"\t{cmd} (Interface: {iface})")
-        sys.exit(2)
+    # Generate boilerplate
+    with Manager() as mgr:
+        from xcp_d.cli.workflow import build_boilerplate
+
+        p = Process(target=build_boilerplate, args=(str(config_file), xcpd_wf))
+        p.start()
+        p.join()
+
+    if config.execution.boilerplate_only:
+        sys.exit(int(retcode > 0))
 
     # Clean up master process before running workflow, which may create forks
     gc.collect()
 
-    # Track start of workflow with sentry
-    if not opts.notrack:
-        from xcp_d.utils.sentry import start_ping
+    # Sentry tracking
+    if sentry_sdk is not None:
+        with sentry_sdk.configure_scope() as scope:
+            scope.set_tag("run_uuid", config.execution.run_uuid)
+            scope.set_tag("npart", len(config.execution.participant_label))
+        sentry_sdk.add_breadcrumb(message="XCP-D started", level="info")
+        sentry_sdk.capture_message("XCP-D started", level="info")
 
-        start_ping(run_uuid, len(subject_list))
-
+    config.loggers.workflow.log(
+        15,
+        "\n".join(["XCP-D config:"] + [f"\t\t{s}" for s in config.dumps().splitlines()]),
+    )
+    config.loggers.workflow.log(25, "XCP-D started!")
     errno = 1  # Default is error exit unless otherwise set
     try:
-        xcpd_wf.run(**plugin_settings)
-
+        xcpd_wf.run(**config.nipype.get_plugin())
     except Exception as e:
-        if not opts.notrack:
+        if not config.execution.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
             crashfolders = [
-                output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
+                config.execution.output_dir
+                / "xcp_d"
+                / f"sub-{s}"
+                / "log"
+                / config.execution.run_uuid
+                for s in config.execution.participant_label
             ]
             for crashfolder in crashfolders:
                 for crashfile in crashfolder.glob("crash*.*"):
                     process_crashfile(crashfile)
 
-        if "Workflow did not execute cleanly" not in str(e):
-            sentry_sdk.capture_exception(e)
-
-        logger.critical("xcp_d failed: %s", e)
+            if "Workflow did not execute cleanly" not in str(e):
+                sentry_sdk.capture_exception(e)
+        config.loggers.workflow.critical("XCP-D failed: %s", e)
         raise
-
     else:
-        errno = 0
-        logger.log(25, "xcp_d finished without errors")
-        if not opts.notrack:
-            sentry_sdk.capture_message("xcp_d finished without errors", level="info")
+        config.loggers.workflow.log(25, "XCP-D finished successfully!")
+        if not config.execution.notrack:
+            success_message = "XCP-D finished without errors"
+            sentry_sdk.add_breadcrumb(message=success_message, level="info")
+            sentry_sdk.capture_message(success_message, level="info")
 
-    finally:
-        from shutil import copyfile
-        from subprocess import CalledProcessError, TimeoutExpired, check_call
-
-        from pkg_resources import resource_filename as pkgrf
-
-        from xcp_d.interfaces.report_core import generate_reports
-
-        citation_files = {
-            ext: output_dir / "xcp_d" / "logs" / f"CITATION.{ext}"
-            for ext in ("bib", "tex", "md", "html")
-        }
-
-        if citation_files["md"].exists():
-            # Generate HTML file resolving citations
-            cmd = [
-                "pandoc",
-                "-s",
-                "--bibliography",
-                pkgrf("xcp_d", "data/boilerplate.bib"),
-                "--filter",
-                "pandoc-citeproc",
-                "--metadata",
-                'pagetitle="xcp_d citation boilerplate"',
-                str(citation_files["md"]),
-                "-o",
-                str(citation_files["html"]),
-            ]
-            logger.info("Generating an HTML version of the citation boilerplate...")
-            try:
-                check_call(cmd, timeout=10)
-            except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-                logger.warning(f"Could not generate CITATION.html file:\n{' '.join(cmd)}")
-
-            # Generate LaTex file resolving citations
-            cmd = [
-                "pandoc",
-                "-s",
-                "--bibliography",
-                pkgrf("xcp_d", "data/boilerplate.bib"),
-                "--natbib",
-                str(citation_files["md"]),
-                "-o",
-                str(citation_files["tex"]),
-            ]
-            logger.info("Generating a LaTeX version of the citation boilerplate...")
-            try:
-                check_call(cmd, timeout=10)
-            except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-                logger.warning(f"Could not generate CITATION.tex file:\n{' '.join(cmd)}")
-            else:
-                copyfile(pkgrf("xcp_d", "data/boilerplate.bib"), citation_files["bib"])
-
-        else:
-            logger.warning(
-                "xcp_d could not find the markdown version of "
-                f"the citation boilerplate ({citation_files['md']}). "
-                "HTML and LaTeX versions of it will not be available"
+        # Bother users with the boilerplate only iff the workflow went okay.
+        boiler_file = config.execution.output_dir / "xcp_d" / "logs" / "CITATION.md"
+        if boiler_file.exists():
+            if config.environment.exec_env in (
+                "singularity",
+                "docker",
+                "xcp_d-docker",
+            ):
+                boiler_file = Path("<OUTPUT_PATH>") / boiler_file.relative_to(
+                    config.execution.output_dir
+                )
+            config.loggers.workflow.log(
+                25,
+                "Works derived from this XCP-D execution should include the "
+                f"boilerplate text found in {boiler_file}.",
             )
+        errno = 0
+    finally:
+        from niworkflows.reports.core import generate_reports
+        from pkg_resources import resource_filename as pkgrf
 
         # Generate reports phase
         failed_reports = generate_reports(
-            subject_list=subject_list,
-            fmri_dir=fmri_dir,
-            work_dir=work_dir,
-            output_dir=output_dir,
-            run_uuid=run_uuid,
-            config=pkgrf("xcp_d", "data/reports.yml"),
+            config.execution.participant_label,
+            config.execution.output_dir,
+            config.execution.run_uuid,
+            config=pkgrf("xcp_d", "data/reports-spec.yml"),
             packagename="xcp_d",
         )
+        write_derivative_description(
+            config.execution.bids_dir, config.execution.output_dir / "xcp_d"
+        )
 
-        if failed_reports and not opts.notrack:
+        if failed_reports and not config.execution.notrack:
             sentry_sdk.capture_message(
-                f"Report generation failed for {failed_reports} subjects", level="error"
+                f"Report generation failed for {failed_reports} subjects",
+                level="error",
             )
         sys.exit(int((errno + failed_reports) > 0))
 
 
-def _validate_parameters(opts, build_log):
+def _validate_parameters(opts, config.loggers.cli):
     """Validate parameters.
 
     This function was abstracted out of build_workflow to make testing easier.
@@ -270,7 +331,7 @@ def _validate_parameters(opts, build_log):
             os.environ["FS_LICENSE"] = str(opts.fs_license_file)
 
         else:
-            build_log.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
+            config.loggers.cli.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
             return_code = 1
 
     # Check the validity of inputs
@@ -278,7 +339,7 @@ def _validate_parameters(opts, build_log):
         rec_path = (
             opts.fmri_dir / "derivatives" / f"xcp_d-{config.environment.version.split('+')[0]}"
         )
-        build_log.error(
+        config.loggers.cli.error(
             "The selected output folder is the same as the input fmri input. "
             "Please modify the output path "
             f"(suggestion: {rec_path})."
@@ -286,7 +347,7 @@ def _validate_parameters(opts, build_log):
         return_code = 1
 
     if opts.analysis_level != "participant":
-        build_log.error('Please select analysis level "participant"')
+        config.loggers.cli.error('Please select analysis level "participant"')
         return_code = 1
 
     # Bandpass filter parameters
@@ -298,13 +359,13 @@ def _validate_parameters(opts, build_log):
         and (opts.lower_bpf >= opts.upper_bpf)
         and (opts.lower_bpf > 0 and opts.upper_bpf > 0)
     ):
-        build_log.error(
+        config.loggers.cli.error(
             f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
             f"'--upper-bpf' ({opts.upper_bpf})."
         )
         return_code = 1
     elif not opts.bandpass_filter:
-        build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
+        config.loggers.cli.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
 
     # Scrubbing parameters
     if opts.fd_thresh <= 0:
@@ -318,7 +379,7 @@ def _validate_parameters(opts, build_log):
                 "--head_radius",
             ]
         )
-        build_log.warning(
+        config.loggers.cli.warning(
             "Framewise displacement-based scrubbing is disabled. "
             f"The following parameters will have no effect:\n\t{ignored_params}"
         )
@@ -331,19 +392,19 @@ def _validate_parameters(opts, build_log):
     # Motion filtering parameters
     if opts.motion_filter_type == "notch":
         if not (opts.band_stop_min and opts.band_stop_max):
-            build_log.error(
+            config.loggers.cli.error(
                 "Please set both '--band-stop-min' and '--band-stop-max' if you want to apply "
                 "the 'notch' motion filter."
             )
             return_code = 1
         elif opts.band_stop_min >= opts.band_stop_max:
-            build_log.error(
+            config.loggers.cli.error(
                 f"'--band-stop-min' ({opts.band_stop_min}) must be lower than "
                 f"'--band-stop-max' ({opts.band_stop_max})."
             )
             return_code = 1
         elif opts.band_stop_min < 1 or opts.band_stop_max < 1:
-            build_log.warning(
+            config.loggers.cli.warning(
                 f"Either '--band-stop-min' ({opts.band_stop_min}) or "
                 f"'--band-stop-max' ({opts.band_stop_max}) is suspiciously low. "
                 "Please remember that these values should be in breaths-per-minute."
@@ -351,21 +412,21 @@ def _validate_parameters(opts, build_log):
 
     elif opts.motion_filter_type == "lp":
         if not opts.band_stop_min:
-            build_log.error(
+            config.loggers.cli.error(
                 "Please set '--band-stop-min' if you want to apply the 'lp' motion filter."
             )
             return_code = 1
         elif opts.band_stop_min < 1:
-            build_log.warning(
+            config.loggers.cli.warning(
                 f"'--band-stop-min' ({opts.band_stop_max}) is suspiciously low. "
                 "Please remember that this value should be in breaths-per-minute."
             )
 
         if opts.band_stop_max:
-            build_log.warning("'--band-stop-max' is ignored when '--motion-filter-type' is 'lp'.")
+            config.loggers.cli.warning("'--band-stop-max' is ignored when '--motion-filter-type' is 'lp'.")
 
     elif opts.band_stop_min or opts.band_stop_max:
-        build_log.warning(
+        config.loggers.cli.warning(
             "'--band-stop-min' and '--band-stop-max' are ignored if '--motion-filter-type' "
             "is not set."
         )
@@ -373,14 +434,14 @@ def _validate_parameters(opts, build_log):
     # Some parameters are automatically set depending on the input type.
     if opts.input_type in ("dcan", "hcp"):
         if not opts.cifti:
-            build_log.warning(
+            config.loggers.cli.warning(
                 f"With input_type {opts.input_type}, cifti processing (--cifti) will be "
                 "enabled automatically."
             )
             opts.cifti = True
 
         if not opts.process_surfaces:
-            build_log.warning(
+            config.loggers.cli.warning(
                 f"With input_type {opts.input_type}, surface normalization "
                 "(--warp-surfaces-native2std) will be enabled automatically."
             )
@@ -388,7 +449,7 @@ def _validate_parameters(opts, build_log):
 
     # process_surfaces and nifti processing are incompatible.
     if opts.process_surfaces and not opts.cifti:
-        build_log.error(
+        config.loggers.cli.error(
             "In order to perform surface normalization (--warp-surfaces-native2std), "
             "you must enable cifti processing (--cifti)."
         )
@@ -415,12 +476,12 @@ def build_workflow(opts, retval):
 
     log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
 
-    build_log = nlogging.getLogger("nipype.workflow")
-    build_log.setLevel(log_level)
+    config.loggers.cli = nlogging.getLogger("nipype.workflow")
+    config.loggers.cli.setLevel(log_level)
     nlogging.getLogger("nipype.interface").setLevel(log_level)
     nlogging.getLogger("nipype.utils").setLevel(log_level)
 
-    opts, retval["return_code"] = _validate_parameters(opts, build_log)
+    opts, retval["return_code"] = _validate_parameters(opts, config.loggers.cli)
 
     if retval["return_code"] == 1:
         return retval
@@ -428,9 +489,9 @@ def build_workflow(opts, retval):
     if opts.clean_workdir:
         from niworkflows.utils.misc import clean_directory
 
-        build_log.info(f"Clearing previous xcp_d working directory: {opts.work_dir}")
+        config.loggers.cli.info(f"Clearing previous xcp_d working directory: {opts.work_dir}")
         if not clean_directory(opts.work_dir):
-            build_log.warning(
+            config.loggers.cli.warning(
                 f"Could not clear all contents of working directory: {opts.work_dir}"
             )
 
@@ -463,7 +524,7 @@ def build_workflow(opts, retval):
         opts.fmri_dir = Path(converted_fmri_dir)
 
     if not os.path.isfile((os.path.join(opts.fmri_dir, "dataset_description.json"))):
-        build_log.error(
+        config.loggers.cli.error(
             "No dataset_description.json file found in input directory. "
             "Make sure to point to the specific pipeline's derivatives folder. "
             "For example, use '/dset/derivatives/fmriprep', not /dset/derivatives'."
@@ -507,7 +568,7 @@ def build_workflow(opts, retval):
     plugin_settings["plugin_args"]["n_procs"] = nthreads
 
     if 1 < nthreads < omp_nthreads:
-        build_log.warning(
+        config.loggers.cli.warning(
             f"Per-process threads (--omp-nthreads={omp_nthreads}) exceed total "
             f"threads (--nthreads/--n_cpus={nthreads})"
         )
@@ -552,7 +613,7 @@ def build_workflow(opts, retval):
         ncfg.enable_resource_monitor()
 
     # Build main workflow
-    build_log.log(
+    config.loggers.cli.log(
         25,
         f"""\
 Running xcp_d version {config.environment.version}:
@@ -582,7 +643,7 @@ Running xcp_d version {config.environment.version}:
 
         citation_files["md"].write_text(boilerplate)
 
-    build_log.log(
+    config.loggers.cli.log(
         25,
         (
             "Works derived from this xcp_d execution should include the following boilerplate:\n\n"
