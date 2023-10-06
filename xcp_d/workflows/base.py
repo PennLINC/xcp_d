@@ -156,7 +156,7 @@ def init_subject_wf(subject_id):
     dummy_scans = config.workflow.dummy_scans
 
     subj_data = collect_data(
-        bids_dir=config.execution.layout,
+        layout=config.execution.layout,
         input_type=input_type,
         participant_label=subject_id,
         task=task_id,
