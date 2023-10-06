@@ -297,6 +297,7 @@ class QCPlots(SimpleInterface):
         censoring_df = pd.read_table(self.inputs.temporal_mask)
         tmask_arr = censoring_df["framewise_displacement"].values
         num_censored_volumes = int(tmask_arr.sum())
+        num_retained_volumes = int((tmask_arr == 0).sum())
 
         # Apply temporal mask to interpolated/full data
         rmsd_censored = rmsd[tmask_arr == 0]
@@ -382,30 +383,37 @@ class QCPlots(SimpleInterface):
 
         # Calculate QC measures
         mean_fd = np.mean(preproc_fd_timeseries)
+        mean_censored_fd = np.mean(postproc_fd_timeseries)
         mean_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
-        motionDVCorrInit = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[0][1]
-        motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[0][1]
+        fd_dvars_correlation_initial = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[
+            0, 1
+        ]
+        fd_dvars_correlation_final = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[
+            0, 1
+        ]
         rmsd_max_value = np.nanmax(rmsd_censored)
 
         # A summary of all the values
         qc_values_dict.update(
             {
-                "meanFD": [mean_fd],
-                "relMeansRMSMotion": [mean_rms],
-                "relMaxRMSMotion": [rmsd_max_value],
-                "meanDVInit": [mean_dvars_before_processing],
-                "meanDVFinal": [mean_dvars_after_processing],
+                "mean_fd": [mean_fd],
+                "mean_censored_fd": [mean_censored_fd],
+                "mean_relative_rms": [mean_rms],
+                "max_relative_rms": [rmsd_max_value],
+                "mean_dvars_initial": [mean_dvars_before_processing],
+                "mean_dvars_final": [mean_dvars_after_processing],
+                "num_dummy_volumes": [dummy_scans],
                 "num_censored_volumes": [num_censored_volumes],
-                "nVolsRemoved": [dummy_scans],
-                "motionDVCorrInit": [motionDVCorrInit],
-                "motionDVCorrFinal": [motionDVCorrFinal],
+                "num_retained_volumes": [num_retained_volumes],
+                "fd_dvars_correlation_initial": [fd_dvars_correlation_initial],
+                "fd_dvars_correlation_final": [fd_dvars_correlation_final],
             }
         )
 
         qc_metadata = {
-            "meanFD": {
+            "mean_fd": {
                 "LongName": "Mean Framewise Displacement",
                 "Description": (
                     "Average framewise displacement without any motion parameter filtering. "
@@ -415,7 +423,7 @@ class QCPlots(SimpleInterface):
                 "Units": "mm",
                 "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
             },
-            "relMeansRMSMotion": {
+            "mean_relative_rms": {
                 "LongName": "Mean Relative Root Mean Squared",
                 "Description": (
                     "Average relative root mean squared calculated from motion parameters, "
@@ -424,7 +432,7 @@ class QCPlots(SimpleInterface):
                 ),
                 "Units": "arbitrary",
             },
-            "relMaxRMSMotion": {
+            "max_relative_rms": {
                 "LongName": "Maximum Relative Root Mean Squared",
                 "Description": (
                     "Maximum relative root mean squared calculated from motion parameters, "
@@ -433,7 +441,7 @@ class QCPlots(SimpleInterface):
                 ),
                 "Units": "arbitrary",
             },
-            "meanDVInit": {
+            "mean_dvars_initial": {
                 "LongName": "Mean DVARS Before Postprocessing",
                 "Description": (
                     "Average DVARS (temporal derivative of root mean squared variance over "
@@ -441,7 +449,7 @@ class QCPlots(SimpleInterface):
                 ),
                 "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
             },
-            "meanDVFinal": {
+            "mean_dvars_final": {
                 "LongName": "Mean DVARS After Postprocessing",
                 "Description": (
                     "Average DVARS (temporal derivative of root mean squared variance over "
@@ -456,13 +464,13 @@ class QCPlots(SimpleInterface):
                     "This does not include dummy volumes."
                 ),
             },
-            "nVolsRemoved": {
+            "num_dummy_volumes": {
                 "LongName": "Number of Dummy Volumes",
                 "Description": (
                     "The number of non-steady state volumes removed from the time series by XCP-D."
                 ),
             },
-            "motionDVCorrInit": {
+            "fd_dvars_correlation_initial": {
                 "LongName": "FD-DVARS Correlation Before Postprocessing",
                 "Description": (
                     "The Pearson correlation coefficient between framewise displacement and DVARS "
@@ -470,7 +478,7 @@ class QCPlots(SimpleInterface):
                     "after removal of dummy volumes, but before removal of high-motion outliers."
                 ),
             },
-            "motionDVCorrFinal": {
+            "fd_dvars_correlation_final": {
                 "LongName": "FD-DVARS Correlation After Postprocessing",
                 "Description": (
                     "The Pearson correlation coefficient between framewise displacement and DVARS "
