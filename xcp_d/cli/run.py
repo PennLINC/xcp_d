@@ -32,8 +32,9 @@ def _validate_parameters():
     # Check the validity of inputs
     if config.execution.output_dir == config.execution.fmri_dir:
         rec_path = (
-            config.execution.fmri_dir / "derivatives" /
-            f"xcp_d-{config.environment.version.split('+')[0]}"
+            config.execution.fmri_dir
+            / "derivatives"
+            / f"xcp_d-{config.environment.version.split('+')[0]}"
         )
         config.loggers.cli.error(
             "The selected output folder is the same as the input fmri input. "
@@ -158,7 +159,7 @@ def _validate_parameters():
     return return_code
 
 
-def main(args=None, namespace=None):
+def main():
     """Run the main workflow."""
     import gc
     import sys
@@ -166,11 +167,8 @@ def main(args=None, namespace=None):
     from os import EX_SOFTWARE
     from pathlib import Path
 
-    from xcp_d.utils.bids import write_derivative_description
-
-    from multiprocessing import Manager, Process
-
     from xcp_d.cli.parser import parse_args
+    from xcp_d.utils.bids import write_derivative_description
 
     parse_args()
 
@@ -268,8 +266,10 @@ def main(args=None, namespace=None):
 
             if "Workflow did not execute cleanly" not in str(e):
                 sentry_sdk.capture_exception(e)
+
         config.loggers.workflow.critical("XCP-D failed: %s", e)
         raise
+
     else:
         config.loggers.workflow.log(25, "XCP-D finished successfully!")
         if not config.execution.notrack:
@@ -293,7 +293,9 @@ def main(args=None, namespace=None):
                 "Works derived from this XCP-D execution should include the "
                 f"boilerplate text found in {boiler_file}.",
             )
+
         errno = 0
+
     finally:
         from niworkflows.reports.core import generate_reports
         from pkg_resources import resource_filename as pkgrf
@@ -307,7 +309,8 @@ def main(args=None, namespace=None):
             packagename="xcp_d",
         )
         write_derivative_description(
-            config.execution.bids_dir, config.execution.output_dir / "xcp_d"
+            config.execution.bids_dir,
+            config.execution.output_dir / "xcp_d",
         )
 
         if failed_reports and not config.execution.notrack:
@@ -315,6 +318,7 @@ def main(args=None, namespace=None):
                 f"Report generation failed for {failed_reports} subjects",
                 level="error",
             )
+
         sys.exit(int((errno + failed_reports) > 0))
 
 
