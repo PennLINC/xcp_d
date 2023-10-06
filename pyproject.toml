@@ -39,6 +39,7 @@ dependencies = [
     "seaborn",  # for plots
     "sentry-sdk ~= 1.4.3",  # for usage reports
     "templateflow ~= 0.8.1",
+    "toml",
 ]
 dynamic = ["version"]
 
