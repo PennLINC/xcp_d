@@ -17,6 +17,7 @@ from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from packaging.version import Version
 
 from xcp_d import config
 from xcp_d.__about__ import __version__
@@ -52,10 +53,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_xcpd_wf(
-    subject_list,
-    name="xcpd_wf",
-):
+def init_xcpd_wf():
     """Build and organize execution of xcp_d pipeline.
 
     It also connects the subworkflows under the xcp_d workflow.
@@ -77,35 +75,24 @@ def init_xcpd_wf(
             # Create xcp_d derivatives folder.
             os.mkdir(os.path.join(out_dir, "xcp_d"))
 
-            wf = init_xcpd_wf(
-                subject_list=["01"],
-                name="xcpd_wf",
-            )
-
-    Parameters
-    ----------
-    subject_list : list
-        List of subject labels
-    %(name)s
+            wf = init_xcpd_wf()
 
     References
     ----------
     .. footbibliography::
     """
-    xcpd_wf = Workflow(name="xcpd_wf")
+    ver = Version(config.environment.version)
+
+    xcpd_wf = Workflow(name=f"xcp_d_{ver.major}_{ver.minor}_wf")
     xcpd_wf.base_dir = config.execution.work_dir
-    LOGGER.info(f"Beginning the {name} workflow")
 
     write_dataset_description(
         config.execution.fmri_dir,
         os.path.join(config.execution.output_dir, "xcp_d"),
     )
 
-    for subject_id in subject_list:
-        single_subj_wf = init_subject_wf(
-            subject_id=subject_id,
-            name=f"single_subject_{subject_id}_wf",
-        )
+    for subject_id in config.execution.participant_label:
+        single_subj_wf = init_subject_wf(subject_id=subject_id)
 
         single_subj_wf.config["execution"]["crashdump_dir"] = os.path.join(
             config.execution.output_dir,
@@ -124,10 +111,7 @@ def init_xcpd_wf(
 
 
 @fill_doc
-def init_subject_wf(
-    subject_id,
-    name,
-):
+def init_subject_wf(subject_id):
     """Organize the postprocessing pipeline for a single subject.
 
     Workflow Graph
@@ -140,15 +124,11 @@ def init_subject_wf(
 
             fmri_dir = download_example_data()
 
-            wf = init_subject_wf(
-                subject_id="01",
-                name="single_subject_sub-01_wf",
-            )
+            wf = init_subject_wf(subject_id="01")
 
     Parameters
     ----------
     %(subject_id)s
-    %(name)s
 
     References
     ----------
@@ -175,15 +155,13 @@ def init_subject_wf(
     custom_confounds_folder = config.workflow.custom_confounds
     dummy_scans = config.workflow.dummy_scans
 
-    layout, subj_data = collect_data(
-        bids_dir=fmri_dir,
+    subj_data = collect_data(
+        bids_dir=config.execution.layout,
         input_type=input_type,
         participant_label=subject_id,
         task=task_id,
         bids_filters=bids_filters,
-        bids_validate=False,
         cifti=cifti,
-        layout=layout,
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
@@ -250,7 +228,7 @@ def init_subject_wf(
     inputnode.inputs.myelin = morphometry_files["myelin"]
     inputnode.inputs.myelin_smoothed = morphometry_files["myelin_smoothed"]
 
-    workflow = Workflow(name=name)
+    workflow = Workflow(name=f"single_subject_{subject_id}_wf")
 
     info_dict = get_preproc_pipeline_info(input_type=input_type, fmri_dir=fmri_dir)
 

@@ -149,41 +149,29 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
 
 @fill_doc
 def collect_data(
-    bids_dir,
+    layout,
     input_type,
     participant_label,
     task=None,
-    bids_validate=False,
     bids_filters=None,
     cifti=False,
-    layout=None,
 ):
     """Collect data from a BIDS dataset.
 
     Parameters
     ----------
-    bids_dir
+    %(layout)s
     %(input_type)s
     participant_label
     task
     bids_validate
     bids_filters
     %(cifti)s
-    %(layout)s
 
     Returns
     -------
-    %(layout)s
     subj_data : dict
     """
-    if not isinstance(layout, BIDSLayout):
-        layout = BIDSLayout(
-            str(bids_dir),
-            validate=bids_validate,
-            derivatives=True,
-            config=["bids", "derivatives"],
-        )
-
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
@@ -363,7 +351,7 @@ def collect_data(
 
     LOGGER.log(25, f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 
-    return layout, subj_data
+    return subj_data
 
 
 @fill_doc
