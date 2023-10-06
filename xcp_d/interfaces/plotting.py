@@ -384,7 +384,7 @@ class QCPlots(SimpleInterface):
         # Calculate QC measures
         mean_fd = np.mean(preproc_fd_timeseries)
         mean_censored_fd = np.mean(postproc_fd_timeseries)
-        mean_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
+        mean_relative_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
         fd_dvars_correlation_initial = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[
@@ -400,7 +400,7 @@ class QCPlots(SimpleInterface):
             {
                 "mean_fd": [mean_fd],
                 "mean_censored_fd": [mean_censored_fd],
-                "mean_relative_rms": [mean_rms],
+                "mean_relative_rms": [mean_relative_rms],
                 "max_relative_rms": [rmsd_max_value],
                 "mean_dvars_initial": [mean_dvars_before_processing],
                 "mean_dvars_final": [mean_dvars_after_processing],
@@ -420,7 +420,7 @@ class QCPlots(SimpleInterface):
                     "This value includes high-motion outliers, but not dummy volumes. "
                     "FD is calculated according to the Power definition."
                 ),
-                "Units": "mm",
+                "Units": "mm / volume",
                 "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
             },
             "mean_relative_rms": {
