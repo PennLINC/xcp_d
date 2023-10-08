@@ -528,7 +528,7 @@ class workflow(_Config):
     # Head radius used to calculate framewise displacement, in mm.
     fd_thresh = 0.3
     # Framewise displacement threshold for censoring.
-    warp_surfaces_native2std = False
+    process_surfaces = False
     # If used, a workflow will be run to warp native-space (fsnative) reconstructed cortical
     # surfaces (surf.gii files) produced by Freesurfer into standard (fsLR) space.
     dcan_qc = False

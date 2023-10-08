@@ -374,7 +374,7 @@ def init_postprocess_surfaces_wf(
     myelin_smoothed
     """
     dcan_qc = config.workflow.dcan_qc
-    process_surfaces = config.workflow.warp_surfaces_native2std
+    process_surfaces = config.workflow.process_surfaces
 
     workflow = Workflow(name=name)
 

@@ -139,7 +139,7 @@ def init_subject_wf(subject_id):
     task_id = config.execution.task_id
     bids_filters = config.execution.bids_filters
     layout = config.execution.layout
-    process_surfaces = config.workflow.warp_surfaces_native2std
+    process_surfaces = config.workflow.process_surfaces
     combineruns = config.workflow.combineruns
     dcan_qc = config.workflow.dcan_qc
     output_dir = config.execution.output_dir
