@@ -10,16 +10,17 @@ def _validate_parameters():
     This function was abstracted out of build_workflow to make testing easier.
     """
     import os
+    from pathlib import Path
 
-    config.execution.fmri_dir = config.execution.fmri_dir.resolve()
-    config.execution.output_dir = config.execution.output_dir.resolve()
-    config.execution.work_dir = config.execution.work_dir.resolve()
+    config.execution.fmri_dir = Path(config.execution.fmri_dir).resolve()
+    config.execution.output_dir = Path(config.execution.output_dir).resolve()
+    config.execution.work_dir = Path(config.execution.work_dir).resolve()
 
     return_code = 0
 
     # Set the FreeSurfer license
     if config.execution.fs_license_file is not None:
-        config.execution.fs_license_file = config.execution.fs_license_file.resolve()
+        config.execution.fs_license_file = Path(config.execution.fs_license_file).resolve()
         if config.execution.fs_license_file.is_file():
             os.environ["FS_LICENSE"] = str(config.execution.fs_license_file)
 
