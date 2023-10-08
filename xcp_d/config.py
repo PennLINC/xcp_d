@@ -505,7 +505,7 @@ class workflow(_Config):
     # Produce correlation matrices limited to each requested amount of time
     dummy_scans = 0
     # Number of volumes to remove from the beginning of each run.
-    disable_bandpass_filter = True
+    disable_bandpass_filter = False
     # Disable bandpass filtering.
     lower_bpf = 0.01
     # Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to the
