@@ -532,7 +532,7 @@ def init_denoise_bold_wf(
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     """
-    bandpass_filter = not config.workflow.disable_bandpass_filter
+    enable_bandpass_filter = not config.workflow.disable_bandpass_filter
     high_pass = config.workflow.lower_bpf
     low_pass = config.workflow.upper_bpf
     smoothing = config.workflow.smoothing
@@ -546,7 +546,7 @@ def init_denoise_bold_wf(
         "Nuisance regressors were regressed from the BOLD data using linear regression, "
         "as implemented in *Nilearn*."
     )
-    if bandpass_filter:
+    if enable_bandpass_filter:
         if low_pass > 0 and high_pass > 0:
             btype = "band-pass"
             preposition = "between"
@@ -600,7 +600,7 @@ def init_denoise_bold_wf(
             low_pass=low_pass,
             high_pass=high_pass,
             filter_order=bpf_order,
-            bandpass_filter=bandpass_filter,
+            enable_bandpass_filter=enable_bandpass_filter,
         ),
         name="regress_and_filter_bold",
         mem_gb=mem_gb,

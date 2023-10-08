@@ -515,10 +515,10 @@ def init_functional_connectivity_nifti_wf(
     """
     min_coverage = config.workflow.min_coverage
     output_dir = config.execution.output_dir
-    bandpass_filter = not config.workflow.disable_bandpass_filter
+    enable_bandpass_filter = not config.workflow.disable_bandpass_filter
     fd_thresh = config.workflow.fd_thresh
 
-    alff_available = bandpass_filter and (fd_thresh <= 0)
+    alff_available = enable_bandpass_filter and (fd_thresh <= 0)
 
     workflow = Workflow(name=name)
 
@@ -723,11 +723,11 @@ def init_functional_connectivity_cifti_wf(
     """
     min_coverage = config.workflow.min_coverage
     output_dir = config.execution.output_dir
-    bandpass_filter = not config.workflow.disable_bandpass_filter
+    enable_bandpass_filter = not config.workflow.disable_bandpass_filter
     fd_thresh = config.workflow.fd_thresh
     omp_nthreads = config.nipype.omp_nthreads
 
-    alff_available = bandpass_filter and (fd_thresh <= 0)
+    alff_available = enable_bandpass_filter and (fd_thresh <= 0)
 
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""

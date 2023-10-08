@@ -185,7 +185,7 @@ def init_postproc_derivatives_wf(
     """
     dcan_qc = config.workflow.dcan_qc
     output_dir = config.execution.output_dir
-    bandpass_filter = not config.workflow.disable_bandpass_filter
+    enable_bandpass_filter = not config.workflow.disable_bandpass_filter
     high_pass = config.workflow.lower_bpf
     low_pass = config.workflow.upper_bpf
     fd_thresh = config.workflow.fd_thresh
@@ -234,7 +234,7 @@ def init_postproc_derivatives_wf(
         "RepetitionTime": TR,
         "nuisance parameters": params,
     }
-    if bandpass_filter:
+    if enable_bandpass_filter:
         if low_pass > 0 and high_pass > 0:
             key = "Freq Band"
             val = [high_pass, low_pass]
@@ -426,7 +426,7 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    if bandpass_filter and (fd_thresh <= 0):
+    if enable_bandpass_filter and (fd_thresh <= 0):
         ds_parcellated_alff = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -513,7 +513,7 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
         )
 
-        if bandpass_filter and (fd_thresh <= 0):
+        if enable_bandpass_filter and (fd_thresh <= 0):
             ds_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -546,7 +546,7 @@ def init_postproc_derivatives_wf(
                 mem_gb=2,
             )
 
-            if bandpass_filter and (fd_thresh <= 0):
+            if enable_bandpass_filter and (fd_thresh <= 0):
                 ds_smoothed_alff = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -695,7 +695,7 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
         )
 
-        if bandpass_filter and (fd_thresh <= 0):
+        if enable_bandpass_filter and (fd_thresh <= 0):
             ds_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -731,7 +731,7 @@ def init_postproc_derivatives_wf(
                 mem_gb=2,
             )
 
-            if bandpass_filter and (fd_thresh <= 0):
+            if enable_bandpass_filter and (fd_thresh <= 0):
                 ds_smoothed_alff = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -767,13 +767,13 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
-    if bandpass_filter and (fd_thresh <= 0):
+    if enable_bandpass_filter and (fd_thresh <= 0):
         workflow.connect([(inputnode, ds_alff, [("alff", "in_file")])])
 
     if smoothing:
         workflow.connect([(inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")])])
 
-        if bandpass_filter and (fd_thresh <= 0):
+        if enable_bandpass_filter and (fd_thresh <= 0):
             workflow.connect([(inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")])])
 
     return workflow

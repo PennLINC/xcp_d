@@ -50,10 +50,10 @@ def _validate_parameters():
 
     # Bandpass filter parameters
     if config.workflow.lower_bpf <= 0 and config.workflow.upper_bpf <= 0:
-        config.workflow.bandpass_filter = False
+        config.workflow.disable_bandpass_filter = True
 
     if (
-        config.workflow.bandpass_filter
+        (not config.workflow.disable_bandpass_filter)
         and (config.workflow.lower_bpf >= config.workflow.upper_bpf)
         and (config.workflow.lower_bpf > 0 and config.workflow.upper_bpf > 0)
     ):
@@ -62,7 +62,7 @@ def _validate_parameters():
             f"'--upper-bpf' ({config.workflow.upper_bpf})."
         )
         return_code = 1
-    elif not config.workflow.bandpass_filter:
+    elif config.workflow.disable_bandpass_filter:
         config.loggers.cli.warning(
             "Bandpass filtering is disabled. ALFF outputs will not be generated."
         )

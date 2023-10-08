@@ -255,7 +255,7 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
         desc="The tab-delimited high-motion outliers file.",
     )
     TR = traits.Float(mandatory=True, desc="Repetition time")
-    bandpass_filter = traits.Bool(mandatory=True, desc="To apply bandpass or not")
+    enable_bandpass_filter = traits.Bool(mandatory=True, desc="To apply bandpass or not")
     low_pass = traits.Float(mandatory=True, default_value=0.10, desc="Lowpass filter in Hz")
     high_pass = traits.Float(mandatory=True, default_value=0.01, desc="Highpass filter in Hz")
     filter_order = traits.Int(mandatory=True, default_value=2, desc="Filter order")
@@ -287,7 +287,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
     output_spec = _DenoiseImageOutputSpec
 
     def _run_interface(self, runtime):
-        if not self.inputs.bandpass_filter:
+        if not self.inputs.enable_bandpass_filter:
             low_pass, high_pass = None, None
         else:
             low_pass, high_pass = self.inputs.low_pass, self.inputs.high_pass
@@ -354,7 +354,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
     output_spec = _DenoiseImageOutputSpec
 
     def _run_interface(self, runtime):
-        if not self.inputs.bandpass_filter:
+        if not self.inputs.enable_bandpass_filter:
             low_pass, high_pass = None, None
         else:
             low_pass, high_pass = self.inputs.low_pass, self.inputs.high_pass

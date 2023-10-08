@@ -29,7 +29,7 @@ def base_opts():
         "analysis_level": "participant",
         "lower_bpf": 0.01,
         "upper_bpf": 0.1,
-        "bandpass_filter": True,
+        "enable_bandpass_filter": True,
         "fd_thresh": 0.3,
         "min_time": 100,
         "motion_filter_type": "notch",
@@ -81,15 +81,15 @@ def test_validate_parameters_04(base_opts, caplog):
     """Test run._validate_parameters."""
     opts = deepcopy(base_opts)
 
-    assert opts.bandpass_filter is True
+    assert opts.enable_bandpass_filter is True
 
-    # Disable bandpass_filter to False indirectly
+    # Disable enable_bandpass_filter to False indirectly
     opts.lower_bpf = -1
     opts.upper_bpf = -1
 
     opts, return_code = run._validate_parameters(deepcopy(opts), build_log)
 
-    assert opts.bandpass_filter is False
+    assert opts.enable_bandpass_filter is False
     assert "Bandpass filtering is disabled." in caplog.text
     assert return_code == 0
 

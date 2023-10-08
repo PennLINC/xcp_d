@@ -157,7 +157,7 @@ def init_postprocess_cifti_wf(
     fd_thresh = config.workflow.fd_thresh
     omp_nthreads = config.nipype.omp_nthreads
     despike = config.workflow.despike
-    bandpass_filter = not config.workflow.disable_bandpass_filter
+    enable_bandpass_filter = not config.workflow.disable_bandpass_filter
 
     workflow = Workflow(name=name)
 
@@ -350,7 +350,7 @@ def init_postprocess_cifti_wf(
     ])
     # fmt:on
 
-    if bandpass_filter and (fd_thresh <= 0):
+    if enable_bandpass_filter and (fd_thresh <= 0):
         alff_wf = init_alff_wf(
             name_source=bold_file,
             TR=TR,
@@ -444,7 +444,7 @@ def init_postprocess_cifti_wf(
         ]),
     ])
 
-    if bandpass_filter and (fd_thresh <= 0):
+    if enable_bandpass_filter and (fd_thresh <= 0):
         workflow.connect([
             (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
