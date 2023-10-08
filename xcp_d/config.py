@@ -170,7 +170,7 @@ _fs_license = os.getenv("FS_LICENSE")
 if not _fs_license and os.getenv("FREESURFER_HOME"):
     _fs_home = os.getenv("FREESURFER_HOME")
     if _fs_home and (Path(_fs_home) / "license.txt").is_file():
-        _fs_license = str(Path(_fs_home) / "license.txt")
+        _fs_license = Path(_fs_home) / "license.txt"
     del _fs_home
 
 _templateflow_home = Path(

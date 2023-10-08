@@ -30,6 +30,9 @@ xcp_d/dataset_description.json
 xcp_d/desc-linc_qc.json
 xcp_d/logs
 xcp_d/logs/CITATION.md
+xcp_d/logs/CITATION.bib
+xcp_d/logs/CITATION.html
+xcp_d/logs/CITATION.tex
 xcp_d/space-MNI152NLin2009cAsym_atlas-4S1052Parcels_res-2_dseg.nii.gz
 xcp_d/space-MNI152NLin2009cAsym_atlas-4S152Parcels_res-2_dseg.nii.gz
 xcp_d/space-MNI152NLin2009cAsym_atlas-4S252Parcels_res-2_dseg.nii.gz
