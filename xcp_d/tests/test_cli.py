@@ -61,7 +61,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
-        input_type="fmriprep",
+        input_type="nifti",
     )
 
 
@@ -107,7 +107,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
-        input_type="fmriprep",
+        input_type="cifti",
     )
 
 
@@ -152,7 +152,7 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
-        input_type="fmriprep",
+        input_type="nifti",
     )
 
 
@@ -197,7 +197,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
-        input_type="fmriprep",
+        input_type="cifti",
     )
 
 
@@ -265,7 +265,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
-        input_type="fmriprep",
+        input_type="cifti",
     )
 
 
