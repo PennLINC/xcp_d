@@ -5,6 +5,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import pytest
+from nipype import logging
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.cli import combineqc, parser_utils, run
@@ -16,6 +17,8 @@ from xcp_d.tests.utils import (
     get_test_data_path,
     run_command,
 )
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 @pytest.mark.ds001419_nifti
@@ -218,7 +221,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
     motion_df = pd.read_table(motion_file)
     motion_df.loc[-10:, "trans_x"] = 100
     motion_df.to_csv(motion_file, sep="\t", index=False)
-    print("Overwrote confounds file.")
+    LOGGER.warning(f"Overwrote confounds file at {motion_file}.")
 
     parameters = [
         dataset_dir,
