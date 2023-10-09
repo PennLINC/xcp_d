@@ -466,16 +466,20 @@ def denoise_with_nilearn(
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
     # From https://stackoverflow.com/a/48106843/2589328
-    nums = sorted(set(np.where(sample_mask)[0]))
-    if nums:
-        gaps = [[s, e] for s, e in zip(nums, nums[1:]) if s + 1 < e]
-        edges = iter(nums[:1] + sum(gaps, []) + nums[-1:])
+    outlier_idx = sorted(set(np.where(sample_mask)[0]))
+    if outlier_idx:
+        gaps = [[s, e] for s, e in zip(outlier_idx, outlier_idx[1:]) if s + 1 < e]
+        edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
         consecutive_outliers_idx = list(zip(edges, edges))
         first_outliers = consecutive_outliers_idx[0]
         last_outliers = consecutive_outliers_idx[-1]
 
         # Replace outliers at beginning of run
         if first_outliers[0] == 0:
+            LOGGER.warning(
+                f"Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) "
+                "will be replaced with first non-outlier volume's values."
+            )
             for i_vol in range(first_outliers[1]):
                 interpolated_unfiltered_bold[i_vol, :] = interpolated_unfiltered_bold[
                     first_outliers[1] + 1, :
@@ -483,10 +487,16 @@ def denoise_with_nilearn(
 
         # Replace outliers at end of run
         if last_outliers[1] == n_volumes:
+            LOGGER.warning(
+                f"Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) "
+                "will be replaced with last non-outlier volume's values."
+            )
             for i_vol in range(last_outliers[0], -1):
                 interpolated_unfiltered_bold[i_vol, :] = interpolated_unfiltered_bold[
                     last_outliers[0] - 1, :
                 ]
+        elif last_outliers[1] > n_volumes:
+            raise ValueError(f"Something's wrong: {last_outliers} > {n_volumes}")
 
     # Now apply the bandpass filter to the interpolated, denoised data
     if low_pass is not None and high_pass is not None:
