@@ -219,7 +219,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-confounds_timeseries.tsv",
     )
     motion_df = pd.read_table(motion_file)
-    motion_df.loc[50:, "trans_x"] = np.arange(10) * 20
+    motion_df.loc[54:, "trans_x"] = np.arange(6) * 20
     motion_df.to_csv(motion_file, sep="\t", index=False)
     LOGGER.warning(f"Overwrote confounds file at {motion_file}.")
 
@@ -231,6 +231,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
+        "--min-time=60",
         "--nuisance-regressors=acompcor_gsr",
         "--despike",
         "--head_radius=40",
