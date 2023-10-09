@@ -467,20 +467,26 @@ def denoise_with_nilearn(
     # low-motion volume's data.
     # From https://stackoverflow.com/a/48106843/2589328
     nums = sorted(set(np.where(sample_mask)[0]))
-    gaps = [[s, e] for s, e in zip(nums, nums[1:]) if s + 1 < e]
-    edges = iter(nums[:1] + sum(gaps, []) + nums[-1:])
-    consecutive_outliers_idx = list(zip(edges, edges))
-    if consecutive_outliers_idx[0][0] == 0:
-        for i_vol in range(consecutive_outliers_idx[0][0], consecutive_outliers_idx[0][1] + 1):
-            interpolated_unfiltered_bold[i_vol, :] = interpolated_unfiltered_bold[
-                consecutive_outliers_idx[0][1] + 1, :
-            ]
+    if nums:
+        gaps = [[s, e] for s, e in zip(nums, nums[1:]) if s + 1 < e]
+        edges = iter(nums[:1] + sum(gaps, []) + nums[-1:])
+        consecutive_outliers_idx = list(zip(edges, edges))
+        first_outliers = consecutive_outliers_idx[0]
+        last_outliers = consecutive_outliers_idx[-1]
 
-    if consecutive_outliers_idx[-1][1] == n_volumes:
-        for i_vol in range(consecutive_outliers_idx[-1][0], consecutive_outliers_idx[0][1] + 1):
-            interpolated_unfiltered_bold[i_vol, :] = interpolated_unfiltered_bold[
-                consecutive_outliers_idx[-1][0] - 1, :
-            ]
+        # Replace outliers at beginning of run
+        if first_outliers[0] == 0:
+            for i_vol in range(first_outliers[1]):
+                interpolated_unfiltered_bold[i_vol, :] = interpolated_unfiltered_bold[
+                    first_outliers[1] + 1, :
+                ]
+
+        # Replace outliers at end of run
+        if last_outliers[1] == n_volumes:
+            for i_vol in range(last_outliers[0], -1):
+                interpolated_unfiltered_bold[i_vol, :] = interpolated_unfiltered_bold[
+                    last_outliers[0] - 1, :
+                ]
 
     # Now apply the bandpass filter to the interpolated, denoised data
     if low_pass is not None and high_pass is not None:
