@@ -480,10 +480,9 @@ def denoise_with_nilearn(
                 f"Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) "
                 "will be replaced with first non-outlier volume's values."
             )
-            for i_vol in range(first_outliers[1]):
-                interpolated_unfiltered_bold[i_vol, :] = interpolated_unfiltered_bold[
-                    first_outliers[1] + 1, :
-                ]
+            interpolated_unfiltered_bold[: first_outliers[1], :] = interpolated_unfiltered_bold[
+                first_outliers[1] + 1, :
+            ]
 
         # Replace outliers at end of run
         if last_outliers[1] == n_volumes:
@@ -491,10 +490,9 @@ def denoise_with_nilearn(
                 f"Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) "
                 "will be replaced with last non-outlier volume's values."
             )
-            for i_vol in range(last_outliers[0], -1):
-                interpolated_unfiltered_bold[i_vol, :] = interpolated_unfiltered_bold[
-                    last_outliers[0] - 1, :
-                ]
+            interpolated_unfiltered_bold[last_outliers[0] :, :] = interpolated_unfiltered_bold[
+                last_outliers[0] - 1, :
+            ]
         elif last_outliers[1] > n_volumes:
             raise ValueError(f"Something's wrong: {last_outliers} > {n_volumes}")
 
