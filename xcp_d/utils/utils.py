@@ -467,7 +467,7 @@ def denoise_with_nilearn(
     # low-motion volume's data.
     # From https://stackoverflow.com/a/48106843/2589328
     outlier_idx = sorted(set(np.where(~sample_mask)[0]))
-    if outlier_idx and False:
+    if outlier_idx:
         gaps = [[s, e] for s, e in zip(outlier_idx, outlier_idx[1:]) if s + 1 < e]
         edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
         consecutive_outliers_idx = list(zip(edges, edges))
