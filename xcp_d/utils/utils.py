@@ -474,6 +474,9 @@ def denoise_with_nilearn(
         first_outliers = consecutive_outliers_idx[0]
         last_outliers = consecutive_outliers_idx[-1]
 
+        LOGGER.warning(consecutive_outliers_idx)
+        LOGGER.warning(n_volumes)
+
         # Replace outliers at beginning of run
         if first_outliers[0] == 0:
             LOGGER.warning(
