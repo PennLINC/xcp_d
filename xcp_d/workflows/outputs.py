@@ -302,6 +302,18 @@ def init_postproc_derivatives_wf(
     )
     preprocessed_bold_sources.inputs.in1 = name_source
 
+    preprocessed_confounds_sources = pe.Node(
+        InferBIDSURIs(
+            numinputs=1,
+            dataset_name="preprocessed",
+            dataset_path=fmri_dir,
+        ),
+        name="preprocessed_confounds_sources",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    preprocessed_confounds_sources.inputs.in1 = name_source
+
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -825,6 +837,14 @@ def init_postproc_derivatives_wf(
             (preprocessed_bold_sources, ds_interpolated_denoised_bold, [("bids_uris", "Sources")]),
             (ds_interpolated_denoised_bold, outputnode, [
                 ("out_file", "interpolated_filtered_bold"),
+            ]),
+        ])
+        # fmt:on
+    else:
+        # fmt:off
+        workflow.connect([
+            (inputnode, outputnode, [
+                ("interpolated_filtered_bold", "interpolated_filtered_bold"),
             ]),
         ])
         # fmt:on

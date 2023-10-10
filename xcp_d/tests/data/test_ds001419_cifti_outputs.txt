@@ -165,6 +165,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolate
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolated_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_reho.dscalar.nii
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-dcan_qc.hdf5
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.tsv
@@ -277,6 +278,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolate
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolated_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_reho.dscalar.nii
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S1052Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S1052Parcels_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S152Parcels_den-91k_timeseries.ptseries.nii

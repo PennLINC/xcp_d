@@ -528,7 +528,10 @@ def init_postprocess_nifti_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, postproc_derivatives_wf, [("atlas_names", "inputnode.atlas_names")]),
+        (inputnode, postproc_derivatives_wf, [
+            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
+            ("atlas_names", "inputnode.atlas_names"),
+        ]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file"),
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
