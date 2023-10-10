@@ -931,12 +931,12 @@ def group_across_runs(in_files):
         directions.append(direction)
 
     # Combine the three lists into a list of tuples
-    combined_data = list(zip(directions, run_numbers, in_files))
+    combined_data = list(zip(run_numbers, directions, in_files))
 
-    # Sort the list of tuples first by directions and then by run_numbers
+    # Sort the list of tuples first by run and then by direction
     sorted_data = sorted(combined_data, key=lambda x: (x[0], x[1]))
 
-    # Extract the sorted in_files list
+    # Sort the file list
     sorted_in_files = [item[2] for item in sorted_data]
 
     # Extract the unique sets of entities (i.e., the filename, minus the run and dir entities).
