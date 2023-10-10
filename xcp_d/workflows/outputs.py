@@ -295,12 +295,12 @@ def init_postproc_derivatives_wf(
             numinputs=1,
             dataset_name="preprocessed",
             dataset_path=fmri_dir,
-            in1=name_source,
         ),
         name="preprocessed_bold_sources",
         run_without_submitting=True,
         mem_gb=1,
     )
+    preprocessed_bold_sources.inputs.in1 = name_source
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
