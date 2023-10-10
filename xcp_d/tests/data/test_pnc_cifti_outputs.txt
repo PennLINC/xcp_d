@@ -104,6 +104,7 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-filtered_motion.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-filtered_motion.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_design.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_design.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_outliers.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_outliers.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-4S1052Parcels_coverage.tsv
