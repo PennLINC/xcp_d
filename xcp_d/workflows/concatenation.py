@@ -255,7 +255,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     )
     # fmt:off
     workflow.connect([
-        (concatenate_inputs, filtered_motion_sources, [("filtered_motion", "in1")]),
+        (filter_out_failed_runs, filtered_motion_sources, [("filtered_motion", "in1")]),
         (filtered_motion_sources, ds_filtered_motion, [("bids_uris", "Sources")]),
     ])
     # fmt:on
@@ -291,7 +291,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     )
     # fmt:off
     workflow.connect([
-        (concatenate_inputs, temporal_mask_sources, [("temporal_mask", "in1")]),
+        (filter_out_failed_runs, temporal_mask_sources, [("temporal_mask", "in1")]),
         (temporal_mask_sources, ds_temporal_mask, [("bids_uris", "Sources")]),
     ])
     # fmt:on
@@ -330,7 +330,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     )
     # fmt:off
     workflow.connect([
-        (concatenate_inputs, timeseries_sources, [("timeseries", "in1")]),
+        (filter_out_failed_runs, timeseries_sources, [("timeseries", "in1")]),
         (timeseries_sources, ds_timeseries, [("bids_uris", "Sources")]),
     ])
     # fmt:on
@@ -385,7 +385,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
         # fmt:off
         workflow.connect([
-            (concatenate_inputs, timeseries_ciftis_sources, [("timeseries_ciftis", "in1")]),
+            (filter_out_failed_runs, timeseries_ciftis_sources, [("timeseries_ciftis", "in1")]),
             (timeseries_ciftis_sources, ds_timeseries_cifti_files, [("bids_uris", "Sources")]),
         ])
         # fmt:on
@@ -475,7 +475,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     )
     # fmt:off
     workflow.connect([
-        (concatenate_inputs, censored_filtered_bold_sources, [("censored_denoised_bold", "in1")]),
+        (filter_out_failed_runs, censored_filtered_bold_sources, [
+            ("censored_denoised_bold", "in1"),
+        ]),
         (censored_filtered_bold_sources, ds_censored_filtered_bold, [("bids_uris", "Sources")]),
     ])
     # fmt:on
@@ -502,7 +504,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
         # fmt:off
         workflow.connect([
-            (concatenate_inputs, smoothed_denoised_bold_sources, [
+            (filter_out_failed_runs, smoothed_denoised_bold_sources, [
                 ("smoothed_denoised_bold", "in1"),
             ]),
             (smoothed_denoised_bold_sources, ds_smoothed_denoised_bold, [
@@ -536,7 +538,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         # fmt:off
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
-            (concatenate_inputs, ds_interpolated_filtered_bold, [
+            (filter_out_failed_runs, ds_interpolated_filtered_bold, [
                 ("interpolated_filtered_bold", "in_file"),
             ]),
         ])
