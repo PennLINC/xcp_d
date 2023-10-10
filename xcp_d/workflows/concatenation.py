@@ -28,7 +28,7 @@ def init_concatenate_data_wf(
     dcan_qc,
     name="concatenate_data_wf",
 ):
-    """Concatenate postprocessed data.
+    """Concatenate postprocessed data across runs and directions.
 
     Workflow Graph
         .. workflow::
@@ -99,7 +99,7 @@ def init_concatenate_data_wf(
     workflow = Workflow(name=name)
 
     workflow.__desc__ = """
-Postprocessing derivatives from multi-run tasks were then concatenated across runs.
+Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.
 """
 
     inputnode = pe.Node(
