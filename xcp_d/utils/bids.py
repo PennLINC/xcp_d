@@ -697,6 +697,18 @@ def write_dataset_description(fmri_dir, xcpd_dir):
     dset_desc["GeneratedBy"] = generated_by
     dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
 
+    # Add DatasetLinks
+    if "DatasetLinks" not in dset_desc.keys():
+        dset_desc["DatasetLinks"] = {}
+
+    if "preprocessed" in dset_desc["DatasetLinks"].keys():
+        LOGGER.warning("'preprocessed' is already a dataset link. Overwriting.")
+        dset_desc["DatasetLinks"]["preprocessed"] = fmri_dir
+
+    if "xcp_d" in dset_desc["DatasetLinks"].keys():
+        LOGGER.warning("'xcp_d' is already a dataset link. Overwriting.")
+        dset_desc["DatasetLinks"]["xcp_d"] = xcpd_dir
+
     xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
         with open(xcpd_dset_description, "r") as fo:

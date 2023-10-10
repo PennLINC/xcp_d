@@ -30,6 +30,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 @fill_doc
 def init_postprocess_nifti_wf(
     bold_file,
+    fmri_dir,
     bandpass_filter,
     high_pass,
     low_pass,
@@ -96,6 +97,7 @@ def init_postprocess_nifti_wf(
 
             wf = init_postprocess_nifti_wf(
                 bold_file=bold_file,
+                fmri_dir=fmri_dir,
                 bandpass_filter=True,
                 high_pass=0.01,
                 low_pass=0.08,
@@ -340,8 +342,6 @@ def init_postprocess_nifti_wf(
         ]),
         (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
         (prepare_confounds_wf, outputnode, [
-            ("outputnode.filtered_motion", "filtered_motion"),
-            ("outputnode.temporal_mask", "temporal_mask"),
             ("outputnode.fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("outputnode.preprocessed_bold", "preprocessed_bold"),
         ]),
@@ -370,9 +370,6 @@ def init_postprocess_nifti_wf(
         ]),
         (denoise_bold_wf, outputnode, [
             ("outputnode.uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("outputnode.interpolated_filtered_bold", "interpolated_filtered_bold"),
-            ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
-            ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
         ]),
     ])
     # fmt:on
@@ -429,7 +426,6 @@ def init_postprocess_nifti_wf(
         (denoise_bold_wf, connectivity_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
-        (connectivity_wf, outputnode, [("outputnode.timeseries", "timeseries")]),
     ])
     # fmt:on
 
@@ -515,6 +511,7 @@ def init_postprocess_nifti_wf(
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         smoothing=smoothing,
         name_source=bold_file,
+        fmri_dir=fmri_dir,
         bandpass_filter=bandpass_filter,
         params=params,
         exact_scans=exact_scans,
@@ -552,6 +549,14 @@ def init_postprocess_nifti_wf(
             ("outputnode.correlations", "inputnode.correlations"),
             ("outputnode.correlations_exact", "inputnode.correlations_exact"),
             ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
+        ]),
+        (postproc_derivatives_wf, outputnode, [
+            ("outputnode.filtered_motion", "filtered_motion"),
+            ("outputnode.temporal_mask", "temporal_mask"),
+            ("outputnode.interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
+            ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
+            ("outputnode.timeseries", "timeseries"),
         ]),
     ])
     # fmt:on

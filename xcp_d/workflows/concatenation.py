@@ -3,7 +3,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.bids import DerivativesDataSink, InferBIDSURIs
 from xcp_d.interfaces.concatenation import (
     CleanNameSource,
     ConcatenateInputs,
@@ -243,6 +243,23 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     ])
     # fmt:on
 
+    filtered_motion_sources = pe.Node(
+        InferBIDSURIs(
+            numinputs=1,
+            dataset_name="xcp_d",
+            dataset_path=output_dir,
+        ),
+        name="filtered_motion_sources",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    # fmt:off
+    workflow.connect([
+        (concatenate_inputs, filtered_motion_sources, [("filtered_motion", "in1")]),
+        (filtered_motion_sources, ds_filtered_motion, [("bids_uris", "Sources")]),
+    ])
+    # fmt:on
+
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -259,6 +276,23 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
         (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
+    ])
+    # fmt:on
+
+    temporal_mask_sources = pe.Node(
+        InferBIDSURIs(
+            numinputs=1,
+            dataset_name="xcp_d",
+            dataset_path=output_dir,
+        ),
+        name="temporal_mask_sources",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    # fmt:off
+    workflow.connect([
+        (concatenate_inputs, temporal_mask_sources, [("temporal_mask", "in1")]),
+        (temporal_mask_sources, ds_temporal_mask, [("bids_uris", "Sources")]),
     ])
     # fmt:on
 
@@ -280,6 +314,24 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         (inputnode, ds_timeseries, [("atlas_names", "atlas")]),
         (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
         (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
+    ])
+    # fmt:on
+
+    timeseries_sources = pe.MapNode(
+        InferBIDSURIs(
+            numinputs=1,
+            dataset_name="xcp_d",
+            dataset_path=output_dir,
+        ),
+        name="timeseries_sources",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["in1"],
+    )
+    # fmt:off
+    workflow.connect([
+        (concatenate_inputs, timeseries_sources, [("timeseries", "in1")]),
+        (timeseries_sources, ds_timeseries, [("bids_uris", "Sources")]),
     ])
     # fmt:on
 
@@ -317,6 +369,24 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
             (inputnode, ds_timeseries_cifti_files, [("atlas_names", "atlas")]),
             (concatenate_inputs, ds_timeseries_cifti_files, [("timeseries_ciftis", "in_file")]),
+        ])
+        # fmt:on
+
+        timeseries_ciftis_sources = pe.MapNode(
+            InferBIDSURIs(
+                numinputs=1,
+                dataset_name="xcp_d",
+                dataset_path=output_dir,
+            ),
+            name="timeseries_ciftis_sources",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["in1"],
+        )
+        # fmt:off
+        workflow.connect([
+            (concatenate_inputs, timeseries_ciftis_sources, [("timeseries_ciftis", "in1")]),
+            (timeseries_ciftis_sources, ds_timeseries_cifti_files, [("bids_uris", "Sources")]),
         ])
         # fmt:on
 
@@ -393,6 +463,23 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     ])
     # fmt:on
 
+    censored_filtered_bold_sources = pe.Node(
+        InferBIDSURIs(
+            numinputs=1,
+            dataset_name="xcp_d",
+            dataset_path=output_dir,
+        ),
+        name="censored_filtered_bold_sources",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    # fmt:off
+    workflow.connect([
+        (concatenate_inputs, censored_filtered_bold_sources, [("censored_denoised_bold", "in1")]),
+        (censored_filtered_bold_sources, ds_censored_filtered_bold, [("bids_uris", "Sources")]),
+    ])
+    # fmt:on
+
     if smoothing:
         # fmt:off
         workflow.connect([
@@ -403,7 +490,49 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ])
         # fmt:on
 
+        smoothed_denoised_bold_sources = pe.Node(
+            InferBIDSURIs(
+                numinputs=1,
+                dataset_name="xcp_d",
+                dataset_path=output_dir,
+            ),
+            name="smoothed_denoised_bold_sources",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        # fmt:off
+        workflow.connect([
+            (concatenate_inputs, smoothed_denoised_bold_sources, [
+                ("smoothed_denoised_bold", "in1"),
+            ]),
+            (smoothed_denoised_bold_sources, ds_smoothed_denoised_bold, [
+                ("bids_uris", "Sources"),
+            ]),
+        ])
+        # fmt:on
+
     if dcan_qc:
+        interpolated_filtered_bold_sources = pe.Node(
+            InferBIDSURIs(
+                numinputs=1,
+                dataset_name="xcp_d",
+                dataset_path=output_dir,
+            ),
+            name="interpolated_filtered_bold_sources",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        # fmt:off
+        workflow.connect([
+            (concatenate_inputs, interpolated_filtered_bold_sources, [
+                ("interpolated_filtered_bold", "in1"),
+            ]),
+            (interpolated_filtered_bold_sources, ds_interpolated_filtered_bold, [
+                ("bids_uris", "Sources"),
+            ]),
+        ])
+        # fmt:on
+
         # fmt:off
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),

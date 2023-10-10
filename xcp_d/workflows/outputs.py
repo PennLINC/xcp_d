@@ -5,7 +5,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.bids import DerivativesDataSink, InferBIDSURIs
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
@@ -124,6 +124,7 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
 @fill_doc
 def init_postproc_derivatives_wf(
     name_source,
+    fmri_dir,
     bandpass_filter,
     low_pass,
     high_pass,
@@ -149,6 +150,7 @@ def init_postproc_derivatives_wf(
 
             wf = init_postproc_derivatives_wf(
                 name_source="/path/to/file.nii.gz",
+                fmri_dir="/path/to",
                 bandpass_filter=True,
                 low_pass=0.1,
                 high_pass=0.008,
@@ -168,6 +170,8 @@ def init_postproc_derivatives_wf(
     ----------
     name_source : :obj:`str`
         bold or cifti files
+    fmri_dir : :obj:`str`
+        Path to the preprocessing derivatives.
     low_pass : float
         low pass filter
     high_pass : float
@@ -249,6 +253,21 @@ def init_postproc_derivatives_wf(
         name="inputnode",
     )
 
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "filtered_motion",
+                "temporal_mask",
+                "interpolated_filtered_bold",
+                "censored_denoised_bold",
+                "smoothed_denoised_bold",
+                "timeseries",
+                "timeseries_ciftis",
+            ],
+        ),
+        name="outputnode",
+    )
+
     # Create dictionary of basic information
     cleaned_data_dictionary = {
         "RepetitionTime": TR,
@@ -290,6 +309,7 @@ def init_postproc_derivatives_wf(
             ("temporal_mask_metadata", "meta_dict"),
             ("temporal_mask", "in_file"),
         ]),
+        (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
     ])
     # fmt:on
 
@@ -313,6 +333,7 @@ def init_postproc_derivatives_wf(
             ("motion_metadata", "meta_dict"),
             ("filtered_motion", "in_file"),
         ]),
+        (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
     ])
     # fmt:on
 
@@ -435,6 +456,7 @@ def init_postproc_derivatives_wf(
             ("timeseries", "in_file"),
             ("atlas_names", "atlas"),
         ]),
+        (ds_timeseries, outputnode, [("out_file", "timeseries")]),
         (inputnode, ds_correlations, [
             ("correlations", "in_file"),
             ("atlas_names", "atlas"),
@@ -692,6 +714,7 @@ def init_postproc_derivatives_wf(
                 ("timeseries_ciftis", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
+            (ds_timeseries_cifti_files, outputnode, [("out_file", "timeseries_ciftis")]),
             (inputnode, ds_correlation_cifti_files, [
                 ("correlation_ciftis", "in_file"),
                 ("atlas_names", "atlas"),
@@ -773,8 +796,26 @@ def init_postproc_derivatives_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_denoised_bold, [("censored_denoised_bold", "in_file")]),
+        (ds_denoised_bold, outputnode, [("out_file", "censored_denoised_bold")]),
         (inputnode, ds_qc_file, [("qc_file", "in_file")]),
         (inputnode, ds_reho, [("reho", "in_file")]),
+    ])
+    # fmt:on
+
+    denoised_bold_sources = pe.Node(
+        InferBIDSURIs(
+            numinputs=1,
+            dataset_name="preprocessed",
+            dataset_path=fmri_dir,
+        ),
+        name="denoised_bold_sources",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    # fmt:off
+    workflow.connect([
+        (inputnode, denoised_bold_sources, [("censored_denoised_bold", "in1")]),
+        (denoised_bold_sources, ds_denoised_bold, [("bids_uris", "Sources")]),
     ])
     # fmt:on
 
@@ -784,6 +825,9 @@ def init_postproc_derivatives_wf(
             (inputnode, ds_interpolated_denoised_bold, [
                 ("interpolated_filtered_bold", "in_file"),
             ]),
+            (ds_interpolated_denoised_bold, outputnode, [
+                ("out_file", "interpolated_filtered_bold"),
+            ]),
         ])
         # fmt:on
 
@@ -791,7 +835,12 @@ def init_postproc_derivatives_wf(
         workflow.connect([(inputnode, ds_alff, [("alff", "in_file")])])
 
     if smoothing:
-        workflow.connect([(inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")])])
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")]),
+            (ds_smoothed_bold, outputnode, [("out_file", "smoothed_denoised_bold")]),
+        ])
+        # fmt:on
 
         if bandpass_filter and (fd_thresh <= 0):
             workflow.connect([(inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")])])

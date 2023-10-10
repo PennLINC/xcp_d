@@ -715,6 +715,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
+                fmri_dir=fmri_dir,
                 bandpass_filter=bandpass_filter,
                 high_pass=high_pass,
                 low_pass=low_pass,
