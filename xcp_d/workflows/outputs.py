@@ -223,6 +223,9 @@ def init_postproc_derivatives_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
+                # preprocessing files to use as sources
+                "fmriprep_confounds_file",
+                # postprocessed outputs
                 "atlas_names",
                 "confounds_file",
                 "coverage",
@@ -312,7 +315,7 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
     )
-    preprocessed_confounds_sources.inputs.in1 = name_source
+    workflow.connect([inputnode, preprocessed_confounds_sources, "fmriprep_confounds_file", "in1"])
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
@@ -333,6 +336,7 @@ def init_postproc_derivatives_wf(
             ("temporal_mask_metadata", "meta_dict"),
             ("temporal_mask", "in_file"),
         ]),
+        (preprocessed_confounds_sources, ds_temporal_mask, [("bids_uris", "Sources")]),
         (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
     ])
     # fmt:on
@@ -357,6 +361,7 @@ def init_postproc_derivatives_wf(
             ("motion_metadata", "meta_dict"),
             ("filtered_motion", "in_file"),
         ]),
+        (preprocessed_confounds_sources, ds_filtered_motion, [("bids_uris", "Sources")]),
         (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
     ])
     # fmt:on
@@ -374,7 +379,12 @@ def init_postproc_derivatives_wf(
             name="ds_confounds",
             run_without_submitting=False,
         )
-        workflow.connect([(inputnode, ds_confounds, [("confounds_file", "in_file")])])
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_confounds, [("confounds_file", "in_file")]),
+            (preprocessed_confounds_sources, ds_confounds, [("bids_uris", "Sources")]),
+        ])
+        # fmt:on
 
     ds_coverage_files = pe.MapNode(
         DerivativesDataSink(

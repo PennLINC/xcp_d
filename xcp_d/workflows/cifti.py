@@ -498,7 +498,7 @@ def init_postprocess_cifti_wf(
     # fmt:off
     workflow.connect([
         (inputnode, postproc_derivatives_wf, [
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("atlas_names", "inputnode.atlas_names"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
