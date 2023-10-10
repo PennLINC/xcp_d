@@ -474,11 +474,6 @@ def denoise_with_nilearn(
         first_outliers = consecutive_outliers_idx[0]
         last_outliers = consecutive_outliers_idx[-1]
 
-        LOGGER.warning("TEST")
-        LOGGER.warning(last_outliers)
-        LOGGER.warning(n_volumes)
-        LOGGER.warning("END TEST")
-
         # Replace outliers at beginning of run
         if first_outliers[0] == 0:
             LOGGER.warning(
@@ -490,7 +485,7 @@ def denoise_with_nilearn(
             ] = interpolated_unfiltered_bold[first_outliers[1] + 1, :]
 
         # Replace outliers at end of run
-        if last_outliers[1] == n_volumes:
+        if last_outliers[1] == n_volumes - 1:
             LOGGER.warning(
                 f"Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) "
                 "will be replaced with last non-outlier volume's values."
@@ -498,8 +493,6 @@ def denoise_with_nilearn(
             interpolated_unfiltered_bold[last_outliers[0] :, :] = interpolated_unfiltered_bold[
                 last_outliers[0] - 1, :
             ]
-        elif last_outliers[1] > n_volumes:
-            raise ValueError(f"Something's wrong: {last_outliers} > {n_volumes}")
 
     # Now apply the bandpass filter to the interpolated, denoised data
     if low_pass is not None and high_pass is not None:
