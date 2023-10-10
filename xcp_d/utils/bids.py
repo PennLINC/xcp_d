@@ -934,7 +934,7 @@ def group_across_runs(in_files):
     combined_data = list(zip(run_numbers, directions, in_files))
 
     # Sort the list of tuples first by run and then by direction
-    sorted_data = sorted(combined_data, key=lambda x: (x[0], x[1]))
+    sorted_data = sorted(combined_data, key=lambda x: (x[0], x[1], x[2]))
 
     # Sort the file list
     sorted_in_files = [item[2] for item in sorted_data]
