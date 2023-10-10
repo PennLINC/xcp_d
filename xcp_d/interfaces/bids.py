@@ -5,14 +5,14 @@ from pathlib import Path
 from bids.layout import Config
 from nipype import logging
 from nipype.interfaces.base import (
-    isdefined,
     BaseInterfaceInputSpec,
     DynamicTraitedSpec,
     TraitedSpec,
+    isdefined,
     traits,
 )
+from nipype.interfaces.io import IOBase, add_traits
 from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
-from nipype.interfaces.io import add_traits, IOBase
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.utils import _listify
