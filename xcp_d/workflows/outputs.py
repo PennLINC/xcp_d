@@ -315,7 +315,11 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
     )
-    workflow.connect([inputnode, preprocessed_confounds_sources, "fmriprep_confounds_file", "in1"])
+    # fmt:off
+    workflow.connect([
+        (inputnode, preprocessed_confounds_sources, [("fmriprep_confounds_file", "in1")]),
+    ])
+    # fmt:on
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
