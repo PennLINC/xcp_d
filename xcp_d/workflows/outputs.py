@@ -290,6 +290,18 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
 
+    preprocessed_bold_sources = pe.Node(
+        InferBIDSURIs(
+            numinputs=1,
+            dataset_name="preprocessed",
+            dataset_path=fmri_dir,
+            in1=name_source,
+        ),
+        name="preprocessed_bold_sources",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -796,26 +808,11 @@ def init_postproc_derivatives_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_denoised_bold, [("censored_denoised_bold", "in_file")]),
+        (preprocessed_bold_sources, ds_denoised_bold, [("bids_uris", "Sources")]),
         (ds_denoised_bold, outputnode, [("out_file", "censored_denoised_bold")]),
         (inputnode, ds_qc_file, [("qc_file", "in_file")]),
         (inputnode, ds_reho, [("reho", "in_file")]),
-    ])
-    # fmt:on
-
-    denoised_bold_sources = pe.Node(
-        InferBIDSURIs(
-            numinputs=1,
-            dataset_name="preprocessed",
-            dataset_path=fmri_dir,
-        ),
-        name="denoised_bold_sources",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    # fmt:off
-    workflow.connect([
-        (inputnode, denoised_bold_sources, [("censored_denoised_bold", "in1")]),
-        (denoised_bold_sources, ds_denoised_bold, [("bids_uris", "Sources")]),
+        (preprocessed_bold_sources, ds_reho, [("bids_uris", "Sources")]),
     ])
     # fmt:on
 
@@ -825,6 +822,7 @@ def init_postproc_derivatives_wf(
             (inputnode, ds_interpolated_denoised_bold, [
                 ("interpolated_filtered_bold", "in_file"),
             ]),
+            (preprocessed_bold_sources, ds_interpolated_denoised_bold, [("bids_uris", "Sources")]),
             (ds_interpolated_denoised_bold, outputnode, [
                 ("out_file", "interpolated_filtered_bold"),
             ]),
@@ -832,17 +830,28 @@ def init_postproc_derivatives_wf(
         # fmt:on
 
     if bandpass_filter and (fd_thresh <= 0):
-        workflow.connect([(inputnode, ds_alff, [("alff", "in_file")])])
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_alff, [("alff", "in_file")]),
+            (preprocessed_bold_sources, ds_alff, [("bids_uris", "Sources")]),
+        ])
+        # fmt:on
 
     if smoothing:
         # fmt:off
         workflow.connect([
             (inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")]),
+            (preprocessed_bold_sources, ds_smoothed_bold, [("bids_uris", "Sources")]),
             (ds_smoothed_bold, outputnode, [("out_file", "smoothed_denoised_bold")]),
         ])
         # fmt:on
 
         if bandpass_filter and (fd_thresh <= 0):
-            workflow.connect([(inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")])])
+            # fmt:off
+            workflow.connect([
+                (inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")]),
+                (preprocessed_bold_sources, ds_smoothed_alff, [("bids_uris", "Sources")]),
+            ])
+            # fmt:on
 
     return workflow
