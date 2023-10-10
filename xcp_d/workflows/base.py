@@ -635,7 +635,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     n_runs = len(preproc_files)
-    preproc_files = group_across_runs(preproc_files)
+    preproc_files = group_across_runs(preproc_files)  # group files across runs and directions
     run_counter = 0
     for ent_set, task_files in enumerate(preproc_files):
         # Assuming TR is constant across runs for a given combination of entities.
