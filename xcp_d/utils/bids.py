@@ -703,11 +703,13 @@ def write_dataset_description(fmri_dir, xcpd_dir):
 
     if "preprocessed" in dset_desc["DatasetLinks"].keys():
         LOGGER.warning("'preprocessed' is already a dataset link. Overwriting.")
-        dset_desc["DatasetLinks"]["preprocessed"] = fmri_dir
+
+    dset_desc["DatasetLinks"]["preprocessed"] = fmri_dir
 
     if "xcp_d" in dset_desc["DatasetLinks"].keys():
         LOGGER.warning("'xcp_d' is already a dataset link. Overwriting.")
-        dset_desc["DatasetLinks"]["xcp_d"] = xcpd_dir
+
+    dset_desc["DatasetLinks"]["xcp_d"] = xcpd_dir
 
     xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
