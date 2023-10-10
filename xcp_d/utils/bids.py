@@ -896,7 +896,11 @@ def get_entity(filename, entity):
 
 
 def group_across_runs(in_files):
-    """Group preprocessed BOLD files by unique sets of entities, ignoring run.
+    """Group preprocessed BOLD files by unique sets of entities, ignoring run and direction.
+
+    We only ignore direction for the sake of HCP.
+    This may lead to small problems for non-HCP datasets that differentiate scans based on
+    both run and direction.
 
     Parameters
     ----------
@@ -913,17 +917,27 @@ def group_across_runs(in_files):
 
     # First, extract run information and sort the input files by the runs,
     # so that any cases where files are not already in ascending run order get fixed.
-    run_numbers = []
+    run_numbers, directions = [], []
     for in_file in in_files:
         run = get_entity(in_file, "run")
         if run is None:
             run = 0
 
-        run_numbers.append(int(run))
+        direction = get_entity(in_file, "dir")
+        if direction is None:
+            direction = "none"
 
-    # Sort the files by the run numbers.
-    zipped_pairs = zip(run_numbers, in_files)
-    sorted_in_files = [x for _, x in sorted(zipped_pairs)]
+        run_numbers.append(int(run))
+        directions.append(direction)
+
+    # Combine the three lists into a list of tuples
+    combined_data = list(zip(directions, run_numbers, in_files))
+
+    # Sort the list of tuples first by directions and then by run_numbers
+    sorted_data = sorted(combined_data, key=lambda x: (x[0], x[1]))
+
+    # Extract the sorted in_files list
+    sorted_in_files = [item[2] for item in sorted_data]
 
     # Extract the unique sets of entities (i.e., the filename, minus the run and dir entities).
     unique_filenames = [re.sub("_run-[0-9]+_", "_", os.path.basename(f)) for f in sorted_in_files]
