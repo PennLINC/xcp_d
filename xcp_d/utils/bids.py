@@ -925,8 +925,9 @@ def group_across_runs(in_files):
     zipped_pairs = zip(run_numbers, in_files)
     sorted_in_files = [x for _, x in sorted(zipped_pairs)]
 
-    # Extract the unique sets of entities (i.e., the filename, minus the run entity).
+    # Extract the unique sets of entities (i.e., the filename, minus the run and dir entities).
     unique_filenames = [re.sub("_run-[0-9]+_", "_", os.path.basename(f)) for f in sorted_in_files]
+    unique_filenames = [re.sub("_dir-[0-9a-zA-Z]+_", "_", f) for f in unique_filenames]
 
     # Assign each in_file to a group of files with the same entities, except run.
     out_files, grouped_unique_filenames = [], []
