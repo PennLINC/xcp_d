@@ -250,42 +250,47 @@ def test_get_entity(datasets):
 def test_group_across_runs():
     """Test group_across_runs."""
     in_files = [
+        "/path/sub-01_task-axcpt_run-03_bold.nii.gz",
         "/path/sub-01_task-rest_run-03_bold.nii.gz",
         "/path/sub-01_task-rest_run-01_bold.nii.gz",
-        "/path/sub-01_task-rest_run-02_bold.nii.gz",
         "/path/sub-01_task-axcpt_run-02_bold.nii.gz",
+        "/path/sub-01_task-rest_run-02_bold.nii.gz",
         "/path/sub-01_task-axcpt_run-01_bold.nii.gz",
-        "/path/sub-01_task-axcpt_run-03_bold.nii.gz",
     ]
     grouped_files = xbids.group_across_runs(in_files)
-    assert isinstance(grouped_files, dict)
-    assert "sub-01_task-rest_bold.nii.gz" in grouped_files.keys()
-    assert len(grouped_files["sub-01_task-rest_bold.nii.gz"] == 3)
-    assert grouped_files["sub-01_task-rest_bold.nii.gz"] == [
+    assert isinstance(grouped_files, list)
+    assert len(grouped_files[0] == 3)
+    assert grouped_files[0] == [
+        "/path/sub-01_task-axcpt_run-01_bold.nii.gz",
+        "/path/sub-01_task-axcpt_run-02_bold.nii.gz",
+        "/path/sub-01_task-axcpt_run-03_bold.nii.gz",
+    ]
+    assert len(grouped_files[1] == 3)
+    assert grouped_files[1] == [
         "/path/sub-01_task-rest_run-01_bold.nii.gz",
         "/path/sub-01_task-rest_run-02_bold.nii.gz",
         "/path/sub-01_task-rest_run-03_bold.nii.gz",
     ]
-    assert "sub-01_task-axcpt_bold.nii.gz" in grouped_files.keys()
-    assert len(grouped_files["sub-01_task-axcpt_bold.nii.gz"] == 3)
 
     in_files = [
-        "/path/sub-01_task-rest_dir-RL_run-1_bold.nii.gz",
-        "/path/sub-01_task-rest_dir-LR_run-1_bold.nii.gz",
-        "/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz",
         "/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-RL_run-1_bold.nii.gz",
         "/path/sub-01_task-axcpt_dir-LR_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-LR_run-1_bold.nii.gz",
         "/path/sub-01_task-axcpt_dir-RL_bold.nii.gz",
     ]
     grouped_files = xbids.group_across_runs(in_files)
-    assert isinstance(grouped_files, dict)
-    assert "sub-01_task-rest_bold.nii.gz" in grouped_files.keys()
-    assert len(grouped_files["sub-01_task-rest_bold.nii.gz"] == 4)
-    assert grouped_files["sub-01_task-rest_bold.nii.gz"] == [
+    assert isinstance(grouped_files, list)
+    assert len(grouped_files[0] == 2)
+    assert grouped_files[0] == [
+        "/path/sub-01_task-axcpt_dir-LR_bold.nii.gz",
+        "/path/sub-01_task-axcpt_dir-RL_bold.nii.gz",
+    ]
+    assert len(grouped_files[1] == 4)
+    assert grouped_files[1] == [
         "/path/sub-01_task-rest_dir-LR_run-1_bold.nii.gz",
         "/path/sub-01_task-rest_dir-RL_run-1_bold.nii.gz",
         "/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz",
         "/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz",
     ]
-    assert "sub-01_task-axcpt_bold.nii.gz" in grouped_files.keys()
-    assert len(grouped_files["sub-01_task-axcpt_bold.nii.gz"] == 2)
