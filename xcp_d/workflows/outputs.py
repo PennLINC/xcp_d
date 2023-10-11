@@ -126,10 +126,12 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
 @fill_doc
 def init_postproc_derivatives_wf(
     name_source,
+    source_metadata,
     fmri_dir,
     bandpass_filter,
     low_pass,
     high_pass,
+    bpf_order,
     fd_thresh,
     motion_filter_type,
     smoothing,
@@ -152,10 +154,12 @@ def init_postproc_derivatives_wf(
 
             wf = init_postproc_derivatives_wf(
                 name_source="/path/to/file.nii.gz",
+                source_metadata={},
                 fmri_dir="/path/to",
                 bandpass_filter=True,
                 low_pass=0.1,
                 high_pass=0.008,
+                bpf_order=2,
                 fd_thresh=0.3,
                 motion_filter_type=None,
                 smoothing=6,
@@ -172,12 +176,14 @@ def init_postproc_derivatives_wf(
     ----------
     name_source : :obj:`str`
         bold or cifti files
+    source_metadata : :obj:`dict`
     fmri_dir : :obj:`str`
         Path to the preprocessing derivatives.
     low_pass : float
         low pass filter
     high_pass : float
         high pass filter
+    bpf_order
     %(fd_thresh)s
     %(motion_filter_type)s
     %(smoothing)s
@@ -281,20 +287,27 @@ def init_postproc_derivatives_wf(
     cleaned_data_dictionary = {
         "RepetitionTime": TR,
         "nuisance parameters": params,
+        **source_metadata,
     }
+    software_filters = None
     if bandpass_filter:
+        software_filters = {}
         if low_pass > 0 and high_pass > 0:
-            key = "Freq Band"
-            val = [high_pass, low_pass]
+            software_filters["Bandpass filter"] = {
+                "Low-pass cutoff (Hz)": low_pass,
+                "High-pass cutoff (Hz)": high_pass,
+                "Filter order": bpf_order,
+            }
         elif high_pass > 0:
-            key = "High-pass Cutoff"
-            val = high_pass
+            software_filters["High-pass filter"] = {
+                "cutoff (Hz)": high_pass,
+                "Filter order": bpf_order,
+            }
         elif low_pass > 0:
-            key = "Low-pass Cutoff"
-            val = low_pass
-        cleaned_data_dictionary[key] = val
-
-    smoothed_data_dictionary = {"FWHM": smoothing}  # Separate dictionary for smoothing
+            software_filters["Low-pass filter"] = {
+                "cutoff (Hz)": low_pass,
+                "Filter order": bpf_order,
+            }
 
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
@@ -371,6 +384,8 @@ def init_postproc_derivatives_wf(
             suffix="outliers",
             extension=".tsv",
             source_file=name_source,
+            # Metadata
+            Sources=None,
         ),
         name="ds_temporal_mask",
         run_without_submitting=True,
@@ -396,6 +411,8 @@ def init_postproc_derivatives_wf(
             desc="filtered" if motion_filter_type else None,
             suffix="motion",
             extension=".tsv",
+            # Metadata
+            Sources=None,
         ),
         name="ds_filtered_motion",
         run_without_submitting=True,
@@ -422,6 +439,8 @@ def init_postproc_derivatives_wf(
                 datatype="func",
                 suffix="design",
                 extension=".tsv",
+                # Metadata
+                Sources=None,
             ),
             name="ds_confounds",
             run_without_submitting=False,
@@ -441,6 +460,8 @@ def init_postproc_derivatives_wf(
             cohort=cohort,
             suffix="coverage",
             extension=".tsv",
+            # Metadata
+            Sources=None,
         ),
         name="ds_coverage_files",
         run_without_submitting=True,
@@ -455,6 +476,8 @@ def init_postproc_derivatives_wf(
             cohort=cohort,
             suffix="timeseries",
             extension=".tsv",
+            # Metadata
+            Sources=None,
         ),
         name="ds_timeseries",
         run_without_submitting=True,
@@ -470,6 +493,8 @@ def init_postproc_derivatives_wf(
             measure="pearsoncorrelation",
             suffix="conmat",
             extension=".tsv",
+            # Metadata
+            Sources=None,
         ),
         name="ds_correlations",
         run_without_submitting=True,
@@ -499,6 +524,8 @@ def init_postproc_derivatives_wf(
                 desc=f"{exact_scan}volumes",
                 suffix="conmat",
                 extension=".tsv",
+                # Metadata
+                Sources=None,
             ),
             name=f"ds_correlations_exact_{i_exact_scan}",
             run_without_submitting=True,
@@ -520,6 +547,8 @@ def init_postproc_derivatives_wf(
             cohort=cohort,
             suffix="reho",
             extension=".tsv",
+            # Metadata
+            Sources=None,
         ),
         name="ds_parcellated_reho",
         run_without_submitting=True,
@@ -562,6 +591,8 @@ def init_postproc_derivatives_wf(
                 cohort=cohort,
                 suffix="alff",
                 extension=".tsv",
+                # Metadata
+                Sources=None,
             ),
             name="ds_parcellated_alff",
             run_without_submitting=True,
@@ -590,6 +621,9 @@ def init_postproc_derivatives_wf(
                 desc="denoised",
                 extension=".nii.gz",
                 compression=True,
+                # Metadata
+                SoftwareFilters=software_filters,
+                Sources=None,
             ),
             name="ds_denoised_bold",
             run_without_submitting=True,
@@ -605,6 +639,9 @@ def init_postproc_derivatives_wf(
                     desc="interpolated",
                     extension=".nii.gz",
                     compression=True,
+                    # Metadata
+                    SoftwareFilters=software_filters,
+                    Sources=None,
                 ),
                 name="ds_interpolated_denoised_bold",
                 run_without_submitting=True,
@@ -620,6 +657,8 @@ def init_postproc_derivatives_wf(
                 desc="linc",
                 suffix="qc",
                 extension=".csv",
+                # Metadata
+                Sources=None,
             ),
             name="ds_qc_file",
             run_without_submitting=True,
@@ -635,6 +674,9 @@ def init_postproc_derivatives_wf(
                 suffix="reho",
                 extension=".nii.gz",
                 compression=True,
+                # Metadata
+                SoftwareFilters=software_filters,
+                Sources=None,
             ),
             name="ds_reho",
             run_without_submitting=True,
@@ -651,6 +693,9 @@ def init_postproc_derivatives_wf(
                     suffix="alff",
                     extension=".nii.gz",
                     compression=True,
+                    # Metadata
+                    SoftwareFilters=software_filters,
+                    Sources=None,
                 ),
                 name="ds_alff",
                 run_without_submitting=True,
@@ -662,12 +707,15 @@ def init_postproc_derivatives_wf(
             ds_smoothed_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    meta_dict=smoothed_data_dictionary,
                     source_file=name_source,
                     cohort=cohort,
                     desc="denoisedSmoothed",
                     extension=".nii.gz",
                     compression=True,
+                    # Metadata
+                    SoftwareFilters=software_filters,
+                    FWHM=smoothing,
+                    Sources=None,
                 ),
                 name="ds_smoothed_bold",
                 run_without_submitting=True,
@@ -678,13 +726,16 @@ def init_postproc_derivatives_wf(
                 ds_smoothed_alff = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
-                        meta_dict=smoothed_data_dictionary,
                         source_file=name_source,
                         cohort=cohort,
                         desc="smooth",
                         suffix="alff",
                         extension=".nii.gz",
                         compression=True,
+                        # Metadata
+                        SoftwareFilters=software_filters,
+                        FWHM=smoothing,
+                        Sources=None,
                     ),
                     name="ds_smoothed_alff",
                     run_without_submitting=True,
@@ -703,6 +754,9 @@ def init_postproc_derivatives_wf(
                 desc="denoised",
                 den="91k",
                 extension=".dtseries.nii",
+                # Metadata
+                SoftwareFilters=software_filters,
+                Sources=None,
             ),
             name="ds_denoised_bold",
             run_without_submitting=True,
@@ -719,6 +773,8 @@ def init_postproc_derivatives_wf(
                     desc="interpolated",
                     den="91k",
                     extension=".dtseries.nii",
+                    # Metadata
+                    Sources=None,
                 ),
                 name="ds_interpolated_denoised_bold",
                 run_without_submitting=True,
@@ -735,6 +791,8 @@ def init_postproc_derivatives_wf(
                 desc="linc",
                 suffix="qc",
                 extension=".csv",
+                # Metadata
+                Sources=None,
             ),
             name="ds_qc_file",
             run_without_submitting=True,
@@ -750,6 +808,8 @@ def init_postproc_derivatives_wf(
                 cohort=cohort,
                 suffix="coverage",
                 extension=".pscalar.nii",
+                # Metadata
+                Sources=None,
             ),
             name="ds_coverage_cifti_files",
             run_without_submitting=True,
@@ -766,6 +826,8 @@ def init_postproc_derivatives_wf(
                 den="91k",
                 suffix="timeseries",
                 extension=".ptseries.nii",
+                # Metadata
+                Sources=None,
             ),
             name="ds_timeseries_cifti_files",
             run_without_submitting=True,
@@ -783,6 +845,8 @@ def init_postproc_derivatives_wf(
                 measure="pearsoncorrelation",
                 suffix="conmat",
                 extension=".pconn.nii",
+                # Metadata
+                Sources=None,
             ),
             name="ds_correlation_cifti_files",
             run_without_submitting=True,
@@ -818,6 +882,9 @@ def init_postproc_derivatives_wf(
                 den="91k",
                 suffix="reho",
                 extension=".dscalar.nii",
+                # Metadata
+                SoftwareFilters=software_filters,
+                Sources=None,
             ),
             name="ds_reho",
             run_without_submitting=True,
@@ -835,18 +902,20 @@ def init_postproc_derivatives_wf(
                     den="91k",
                     suffix="alff",
                     extension=".dscalar.nii",
+                    # Metadata
+                    SoftwareFilters=software_filters,
+                    Sources=None,
                 ),
                 name="ds_alff",
                 run_without_submitting=True,
                 mem_gb=1,
             )
 
-        if smoothing:  # If smoothed
-            # Write out detivatives via DerivativesDataSink
+        if smoothing:
+            # Write out derivatives via DerivativesDataSink
             ds_smoothed_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    meta_dict=smoothed_data_dictionary,
                     source_file=name_source,
                     dismiss_entities=["den"],
                     cohort=cohort,
@@ -854,6 +923,10 @@ def init_postproc_derivatives_wf(
                     desc="denoisedSmoothed",
                     extension=".dtseries.nii",
                     check_hdr=False,
+                    # Metadata
+                    SoftwareFilters=software_filters,
+                    FWHM=smoothing,
+                    Sources=None,
                 ),
                 name="ds_smoothed_bold",
                 run_without_submitting=True,
@@ -864,7 +937,6 @@ def init_postproc_derivatives_wf(
                 ds_smoothed_alff = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
-                        meta_dict=smoothed_data_dictionary,
                         source_file=name_source,
                         dismiss_entities=["den"],
                         cohort=cohort,
@@ -873,6 +945,10 @@ def init_postproc_derivatives_wf(
                         suffix="alff",
                         extension=".dscalar.nii",
                         check_hdr=False,
+                        # Metadata
+                        SoftwareFilters=software_filters,
+                        FWHM=smoothing,
+                        Sources=None,
                     ),
                     name="ds_smoothed_alff",
                     run_without_submitting=True,
