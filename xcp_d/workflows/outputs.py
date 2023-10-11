@@ -1,6 +1,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for collecting and saving xcp_d outputs."""
+import os
+
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -193,6 +195,7 @@ def init_postproc_derivatives_wf(
     ------
     %(atlas_names)s
         Used for indexing ``timeseries`` and ``correlations``.
+    %(atlas_files)s
     %(timeseries)s
     %(correlations)s
     %(coverage)s
@@ -227,6 +230,7 @@ def init_postproc_derivatives_wf(
                 "fmriprep_confounds_file",
                 # postprocessed outputs
                 "atlas_names",
+                "atlas_files",  # for Sources
                 "confounds_file",
                 "coverage",
                 "timeseries",
@@ -256,6 +260,8 @@ def init_postproc_derivatives_wf(
         name="inputnode",
     )
 
+    # Outputs that may be used by the concatenation workflow, in which case we want the actual
+    # output filenames for the Sources metadata field.
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -293,33 +299,70 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
 
-    preprocessed_bold_sources = pe.Node(
+    preproc_bold_src = pe.Node(
         InferBIDSURIs(
             numinputs=1,
             dataset_name="preprocessed",
             dataset_path=fmri_dir,
         ),
-        name="preprocessed_bold_sources",
+        name="preproc_bold_src",
         run_without_submitting=True,
         mem_gb=1,
     )
-    preprocessed_bold_sources.inputs.in1 = name_source
+    preproc_bold_src.inputs.in1 = name_source
 
-    preprocessed_confounds_sources = pe.Node(
+    preproc_confounds_src = pe.Node(
         InferBIDSURIs(
             numinputs=1,
             dataset_name="preprocessed",
             dataset_path=fmri_dir,
         ),
-        name="preprocessed_confounds_sources",
+        name="preproc_confounds_src",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    workflow.connect([(inputnode, preproc_confounds_src, [("fmriprep_confounds_file", "in1")])])
+
+    atlas_src = pe.MapNode(
+        InferBIDSURIs(
+            numinputs=1,
+            dataset_name="xcp_d",
+            dataset_path=os.path.join(output_dir, "xcp_d"),
+        ),
+        name="atlas_src",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["in1"],
+    )
+    workflow.connect([(inputnode, atlas_src, [("atlas_files", "in1")])])
+
+    merge_dense_src = pe.Node(
+        niu.Merge(numinputs=2),
+        name="merge_dense_src",
         run_without_submitting=True,
         mem_gb=1,
     )
     # fmt:off
     workflow.connect([
-        (inputnode, preprocessed_confounds_sources, [("fmriprep_confounds_file", "in1")]),
+        (preproc_bold_src, merge_dense_src, [("bids_uris", "in1")]),
+        (preproc_confounds_src, merge_dense_src, [("bids_uris", "in2")]),
     ])
-    # fmt:on
+    # fmt:off
+
+    merge_parcellated_src = pe.MapNode(
+        niu.Merge(numinputs=3),
+        name="merge_parcellated_src",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["in3"],
+    )
+    # fmt:off
+    workflow.connect([
+        (preproc_bold_src, merge_parcellated_src, [("bids_uris", "in1")]),
+        (preproc_confounds_src, merge_parcellated_src, [("bids_uris", "in2")]),
+        (atlas_src, merge_parcellated_src, [("bids_uris", "in3")]),
+    ])
+    # fmt:off
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
@@ -340,7 +383,7 @@ def init_postproc_derivatives_wf(
             ("temporal_mask_metadata", "meta_dict"),
             ("temporal_mask", "in_file"),
         ]),
-        (preprocessed_confounds_sources, ds_temporal_mask, [("bids_uris", "Sources")]),
+        (preproc_confounds_src, ds_temporal_mask, [("bids_uris", "Sources")]),
         (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
     ])
     # fmt:on
@@ -365,7 +408,7 @@ def init_postproc_derivatives_wf(
             ("motion_metadata", "meta_dict"),
             ("filtered_motion", "in_file"),
         ]),
-        (preprocessed_confounds_sources, ds_filtered_motion, [("bids_uris", "Sources")]),
+        (preproc_confounds_src, ds_filtered_motion, [("bids_uris", "Sources")]),
         (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
     ])
     # fmt:on
@@ -386,7 +429,7 @@ def init_postproc_derivatives_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_confounds, [("confounds_file", "in_file")]),
-            (preprocessed_confounds_sources, ds_confounds, [("bids_uris", "Sources")]),
+            (preproc_confounds_src, ds_confounds, [("bids_uris", "Sources")]),
         ])
         # fmt:on
 
@@ -490,19 +533,23 @@ def init_postproc_derivatives_wf(
             ("coverage", "in_file"),
             ("atlas_names", "atlas"),
         ]),
+        (merge_parcellated_src, ds_coverage_files, [("out", "Sources")]),
         (inputnode, ds_timeseries, [
             ("timeseries", "in_file"),
             ("atlas_names", "atlas"),
         ]),
+        (merge_parcellated_src, ds_timeseries, [("out", "Sources")]),
         (ds_timeseries, outputnode, [("out_file", "timeseries")]),
         (inputnode, ds_correlations, [
             ("correlations", "in_file"),
             ("atlas_names", "atlas"),
         ]),
+        (merge_parcellated_src, ds_correlations, [("out", "Sources")]),
         (inputnode, ds_parcellated_reho, [
             ("parcellated_reho", "in_file"),
             ("atlas_names", "atlas"),
         ]),
+        (merge_parcellated_src, ds_parcellated_reho, [("out", "Sources")]),
     ])
     # fmt:on
 
@@ -528,6 +575,7 @@ def init_postproc_derivatives_wf(
                 ("parcellated_alff", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
+            (merge_parcellated_src, ds_parcellated_alff, [("out", "Sources")]),
         ])
         # fmt:on
 
@@ -834,11 +882,11 @@ def init_postproc_derivatives_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_denoised_bold, [("censored_denoised_bold", "in_file")]),
-        (preprocessed_bold_sources, ds_denoised_bold, [("bids_uris", "Sources")]),
+        (merge_dense_src, ds_denoised_bold, [("out", "Sources")]),
         (ds_denoised_bold, outputnode, [("out_file", "censored_denoised_bold")]),
         (inputnode, ds_qc_file, [("qc_file", "in_file")]),
         (inputnode, ds_reho, [("reho", "in_file")]),
-        (preprocessed_bold_sources, ds_reho, [("bids_uris", "Sources")]),
+        (merge_dense_src, ds_reho, [("out", "Sources")]),
     ])
     # fmt:on
 
@@ -848,7 +896,7 @@ def init_postproc_derivatives_wf(
             (inputnode, ds_interpolated_denoised_bold, [
                 ("interpolated_filtered_bold", "in_file"),
             ]),
-            (preprocessed_bold_sources, ds_interpolated_denoised_bold, [("bids_uris", "Sources")]),
+            (merge_dense_src, ds_interpolated_denoised_bold, [("out", "Sources")]),
             (ds_interpolated_denoised_bold, outputnode, [
                 ("out_file", "interpolated_filtered_bold"),
             ]),
@@ -867,7 +915,7 @@ def init_postproc_derivatives_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_alff, [("alff", "in_file")]),
-            (preprocessed_bold_sources, ds_alff, [("bids_uris", "Sources")]),
+            (merge_dense_src, ds_alff, [("out", "Sources")]),
         ])
         # fmt:on
 
@@ -875,7 +923,7 @@ def init_postproc_derivatives_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")]),
-            (preprocessed_bold_sources, ds_smoothed_bold, [("bids_uris", "Sources")]),
+            (merge_dense_src, ds_smoothed_bold, [("out", "Sources")]),
             (ds_smoothed_bold, outputnode, [("out_file", "smoothed_denoised_bold")]),
         ])
         # fmt:on
@@ -884,7 +932,7 @@ def init_postproc_derivatives_wf(
             # fmt:off
             workflow.connect([
                 (inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")]),
-                (preprocessed_bold_sources, ds_smoothed_alff, [("bids_uris", "Sources")]),
+                (merge_dense_src, ds_smoothed_alff, [("out", "Sources")]),
             ])
             # fmt:on
 

@@ -500,6 +500,7 @@ def init_postprocess_cifti_wf(
         (inputnode, postproc_derivatives_wf, [
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("atlas_names", "inputnode.atlas_names"),
+            ("atlas_files", "inputnode.atlas_files"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
             ("outputnode.interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),

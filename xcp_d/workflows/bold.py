@@ -531,6 +531,7 @@ def init_postprocess_nifti_wf(
         (inputnode, postproc_derivatives_wf, [
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("atlas_names", "inputnode.atlas_names"),
+            ("atlas_files", "inputnode.atlas_files"),
         ]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file"),
