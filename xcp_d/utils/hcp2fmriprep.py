@@ -202,8 +202,13 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         # NOTE: What is the first element in the folder name?
         _, base_task_id, dir_id = base_task_name.split("_")
         match = re.match(r"([A-Za-z0-9]+[a-zA-Z]+)(\d+)$", base_task_id)
-        task_id = match.group(1).lower()
-        run_id = int(match.group(2))
+        if match:
+            task_id = match.group(1).lower()
+            run_id = int(match.group(2))
+        else:
+            task_id = base_task_id.lower()
+            run_id = 1
+
         task_ent = f"task-{task_id}"
         run_ent = f"run-{run_id}"
         dir_ent = f"dir-{dir_id}"
