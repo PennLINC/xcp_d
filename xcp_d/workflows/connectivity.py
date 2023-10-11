@@ -104,13 +104,7 @@ def init_load_atlases_wf(
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
     )
-
-    # fmt:off
-    workflow.connect([
-        (atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")]),
-        (atlas_file_grabber, outputnode, [("atlas_labels_file", "atlas_labels_files")]),
-    ])
-    # fmt:on
+    workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
 
     atlas_buffer = pe.Node(niu.IdentityInterface(fields=["atlas_file"]), name="atlas_buffer")
 
@@ -158,7 +152,6 @@ def init_load_atlases_wf(
             (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
                 ("transformfile", "transforms"),
             ]),
-            (warp_atlases_to_bold_space, outputnode, [("output_image", "atlas_files")]),
             (warp_atlases_to_bold_space, atlas_buffer, [("output_image", "atlas_file")]),
         ])
         # fmt:on
@@ -175,7 +168,6 @@ def init_load_atlases_wf(
         workflow.connect([
             (inputnode, resample_atlas_to_data, [("bold_file", "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
-            (resample_atlas_to_data, outputnode, [("cifti_out", "atlas_files")]),
         ])
         # fmt:on
 
@@ -235,6 +227,7 @@ def init_load_atlases_wf(
         (inputnode, ds_atlas, [("name_source", "source_file")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (atlas_buffer, ds_atlas, [("atlas_file", "in_file")]),
+        (ds_atlas, outputnode, [("out_file", "atlas_files")]),
     ])
     # fmt:on
 
@@ -268,6 +261,7 @@ def init_load_atlases_wf(
         (inputnode, ds_atlas_labels_file, [("name_source", "source_file")]),
         (atlas_name_grabber, ds_atlas_labels_file, [("atlas_names", "atlas")]),
         (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
+        (ds_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
     ])
     # fmt:on
 
