@@ -526,7 +526,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
         # fmt:off
         workflow.connect([
-            (concatenate_inputs, interpolated_filtered_bold_sources, [
+            (filter_out_failed_runs, interpolated_filtered_bold_sources, [
                 ("interpolated_filtered_bold", "in1"),
             ]),
             (interpolated_filtered_bold_sources, ds_interpolated_filtered_bold, [
