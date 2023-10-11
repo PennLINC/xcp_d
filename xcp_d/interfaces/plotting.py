@@ -277,7 +277,7 @@ class QCPlots(SimpleInterface):
     output_spec = _QCPlotsOutputSpec
 
     def _run_interface(self, runtime):
-        # Load confound matrix and load motion with motion filtering
+        # Load confound matrix and load motion without motion filtering
         confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         preproc_motion_df = load_motion(
             confounds_df.copy(),
