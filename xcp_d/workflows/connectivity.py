@@ -98,7 +98,7 @@ def init_load_atlases_wf(
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file", "atlas_labels_file"],
+            output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
             function=get_atlas_cifti if cifti else get_atlas_nifti,
         ),
         name="atlas_file_grabber",
@@ -238,6 +238,72 @@ def init_load_atlases_wf(
     ])
     # fmt:on
 
+    ds_atlas_labels_file = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            dismiss_entities=[
+                "datatype",
+                "subject",
+                "session",
+                "task",
+                "run",
+                "desc",
+                "space",
+                "res",
+                "den",
+                "cohort",
+            ],
+            allowed_entities=["atlas"],
+            suffix="dseg",
+            extension=".tsv",
+        ),
+        name="ds_atlas_labels_file",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_atlas_labels_file, [("name_source", "source_file")]),
+        (atlas_name_grabber, ds_atlas_labels_file, [("atlas_names", "atlas")]),
+        (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
+    ])
+    # fmt:on
+
+    ds_atlas_metadata = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            check_hdr=False,
+            dismiss_entities=[
+                "datatype",
+                "subject",
+                "session",
+                "task",
+                "run",
+                "desc",
+                "space",
+                "res",
+                "den",
+                "cohort",
+            ],
+            allowed_entities=["atlas"],
+            suffix="dseg",
+            extension=".json",
+        ),
+        name="ds_atlas_metadata",
+        iterfield=["atlas", "in_file"],
+        run_without_submitting=True,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_atlas_metadata, [("name_source", "source_file")]),
+        (atlas_name_grabber, ds_atlas_metadata, [("atlas_names", "atlas")]),
+        (atlas_file_grabber, ds_atlas_metadata, [("atlas_metadata_file", "in_file")]),
+    ])
+    # fmt:on
+
     return workflow
 
 
@@ -323,7 +389,7 @@ def init_parcellate_surfaces_wf(
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas_name"],
-            output_names=["atlas_file", "atlas_labels_file"],
+            output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
             function=get_atlas_cifti,
         ),
         name="atlas_file_grabber",
@@ -470,9 +536,11 @@ def init_functional_connectivity_nifti_wf(
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
 with *Nilearn's* *NiftiLabelsMasker* for the following atlases:
-the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
-atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
-the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].
+the Schaefer Supplemented with Subcortical Structures (4S) atlas
+[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo] at 10 different
+resolutions (152, 252, 352, 452, 552, 652, 752, 852, 952, and 1052 parcels),
+the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
+the Tian subcortical atlas [@tian2020topographic], and the CIFTI subcortical atlas.
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
@@ -678,10 +746,13 @@ def init_functional_connectivity_cifti_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
-Connectome Workbench [@glasser2013minimal] for the following atlases:
-the Schaefer 17-network 100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 parcel
-atlas [@Schaefer_2017], the Glasser atlas [@Glasser_2016],
-the Gordon atlas [@Gordon_2014], and the Tian subcortical atlas [@tian2020topographic].
+Connectome Workbench [@hcppipelines] for the following atlases:
+the Schaefer Supplemented with Subcortical Structures (4S) atlas
+[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo] at 10 different
+resolutions (152, 252, 352, 452, 552, 652, 752, 852, 952, and 1052 parcels),
+the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
+the Tian subcortical atlas [@tian2020topographic], and the HCP CIFTI subcortical atlas
+[@glasser2013minimal].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
