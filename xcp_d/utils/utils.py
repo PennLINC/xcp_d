@@ -465,9 +465,9 @@ def denoise_with_nilearn(
     )
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
-    # From https://stackoverflow.com/a/48106843/2589328
-    outlier_idx = sorted(set(np.where(~sample_mask)[0]))
+    outlier_idx = np.where(~sample_mask)[0]
     if outlier_idx:
+        # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
         gaps = [[s, e] for s, e in zip(outlier_idx, outlier_idx[1:]) if s + 1 < e]
         edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
         consecutive_outliers_idx = list(zip(edges, edges))
