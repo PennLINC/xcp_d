@@ -383,7 +383,7 @@ class QCPlots(SimpleInterface):
 
         # Calculate QC measures
         mean_fd = np.mean(preproc_fd_timeseries)
-        mean_censored_fd = np.mean(postproc_fd_timeseries)
+        mean_fd_post_censoring = np.mean(postproc_fd_timeseries)
         mean_relative_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
@@ -399,7 +399,7 @@ class QCPlots(SimpleInterface):
         qc_values_dict.update(
             {
                 "mean_fd": [mean_fd],
-                "mean_censored_fd": [mean_censored_fd],
+                "mean_fd_post_censoring": [mean_fd_post_censoring],
                 "mean_relative_rms": [mean_relative_rms],
                 "max_relative_rms": [rmsd_max_value],
                 "mean_dvars_initial": [mean_dvars_before_processing],
@@ -418,6 +418,16 @@ class QCPlots(SimpleInterface):
                 "Description": (
                     "Average framewise displacement without any motion parameter filtering. "
                     "This value includes high-motion outliers, but not dummy volumes. "
+                    "FD is calculated according to the Power definition."
+                ),
+                "Units": "mm / volume",
+                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
+            },
+            "mean_fd_post_censoring": {
+                "LongName": "Mean Framewise Displacement After Censoring",
+                "Description": (
+                    "Average framewise displacement without any motion parameter filtering. "
+                    "This value does not include high-motion outliers or dummy volumes. "
                     "FD is calculated according to the Power definition."
                 ),
                 "Units": "mm / volume",
@@ -457,6 +467,12 @@ class QCPlots(SimpleInterface):
                 ),
                 "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
             },
+            "num_dummy_volumes": {
+                "LongName": "Number of Dummy Volumes",
+                "Description": (
+                    "The number of non-steady state volumes removed from the time series by XCP-D."
+                ),
+            },
             "num_censored_volumes": {
                 "LongName": "Number of Censored Volumes",
                 "Description": (
@@ -464,10 +480,11 @@ class QCPlots(SimpleInterface):
                     "This does not include dummy volumes."
                 ),
             },
-            "num_dummy_volumes": {
-                "LongName": "Number of Dummy Volumes",
+            "num_retained_volumes": {
+                "LongName": "Number of Retained Volumes",
                 "Description": (
-                    "The number of non-steady state volumes removed from the time series by XCP-D."
+                    "The number of volumes retained in the denoised dataset. "
+                    "This does not include dummy volumes or high-motion outliers."
                 ),
             },
             "fd_dvars_correlation_initial": {
