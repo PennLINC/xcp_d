@@ -3,6 +3,7 @@
 """Functions for converting HCP-format data to fMRIPrep format."""
 import glob
 import os
+import re
 
 import nibabel as nb
 import pandas as pd
@@ -199,8 +200,12 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     for base_task_name in task_names:
         LOGGER.info(f"Processing {base_task_name}")
         # NOTE: What is the first element in the folder name?
-        _, task_id, dir_id = base_task_name.split("_")
+        _, base_task_id, dir_id = base_task_name.split("_")
+        match = re.match(r"([A-Za-z0-9]+[a-zA-Z]+)(\d+)$", base_task_id)
+        task_id = match.group(1).lower()
+        run_id = int(match.group(2))
         task_ent = f"task-{task_id}"
+        run_ent = f"run-{run_id}"
         dir_ent = f"dir-{dir_id}"
 
         task_dir_orig = os.path.join(func_dir_orig, base_task_name)
@@ -209,7 +214,10 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         sbref_orig = os.path.join(task_dir_orig, "SBRef_dc.nii.gz")
         boldref_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{subses_ents}_{task_ent}_{dir_ent}_{volspace_ent}_{RES_ENT}_boldref.nii.gz",
+            (
+                f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}_{volspace_ent}_{RES_ENT}_"
+                f"boldref.nii.gz"
+            ),
         )
         copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
@@ -217,7 +225,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         bold_nifti_fmriprep = os.path.join(
             func_dir_fmriprep,
             (
-                f"{subses_ents}_{task_ent}_{dir_ent}_{volspace_ent}_{RES_ENT}_"
+                f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}_{volspace_ent}_{RES_ENT}_"
                 "desc-preproc_bold.nii.gz"
             ),
         )
@@ -229,20 +237,20 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         bold_cifti_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{subses_ents}_{task_ent}_{dir_ent}_space-fsLR_den-91k_bold.dtseries.nii",
+            f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.nii",
         )
         copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
         # More identity transforms
         native_to_t1w_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{subses_ents}_{task_ent}_{dir_ent}_from-scanner_to-T1w_mode-image_xfm.txt",
+            f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}_from-scanner_to-T1w_mode-image_xfm.txt",
         )
         copy_dictionary[identity_xfm].append(native_to_t1w_fmriprep)
 
         t1w_to_native_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{subses_ents}_{task_ent}_{dir_ent}_from-T1w_to-scanner_mode-image_xfm.txt",
+            f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}_from-T1w_to-scanner_mode-image_xfm.txt",
         )
         copy_dictionary[identity_xfm].append(t1w_to_native_fmriprep)
 
@@ -253,7 +261,10 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         }
         bold_nifti_json_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{subses_ents}_{task_ent}_{dir_ent}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.json",
+            (
+                f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}_{volspace_ent}_{RES_ENT}"
+                "_desc-preproc_bold.json"
+            ),
         )
         write_json(bold_metadata, bold_nifti_json_fmriprep)
 
@@ -268,7 +279,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         bold_cifti_json_fmriprep = os.path.join(
             func_dir_fmriprep,
-            f"{subses_ents}_{task_ent}_{dir_ent}_space-fsLR_den-91k_bold.dtseries.json",
+            f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.json",
         )
         write_json(bold_metadata, bold_cifti_json_fmriprep)
 
@@ -276,7 +287,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         collect_confounds(
             task_dir_orig,
             func_dir_fmriprep,
-            f"{subses_ents}_{task_ent}_{dir_ent}",
+            f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}",
             work_dir=work_dir,
             bold_file=bold_nifti_orig,
             brainmask_file=os.path.join(task_dir_orig, "brainmask_fs.2.nii.gz"),
@@ -289,7 +300,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         os.makedirs(figdir, exist_ok=True)
         bbref_fig_fmriprep = os.path.join(
             figdir,
-            f"{subses_ents}_{task_ent}_{dir_ent}_desc-bbregister_bold.svg",
+            f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}_desc-bbregister_bold.svg",
         )
         t1w = os.path.join(anat_dir_orig, "T1w.nii.gz")
         ribbon = os.path.join(anat_dir_orig, "ribbon.nii.gz")
