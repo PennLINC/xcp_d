@@ -514,6 +514,15 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         # fmt:on
 
     if dcan_qc:
+        # fmt:off
+        workflow.connect([
+            (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
+            (concatenate_inputs, ds_interpolated_filtered_bold, [
+                ("interpolated_filtered_bold", "in_file"),
+            ]),
+        ])
+        # fmt:on
+
         interpolated_filtered_bold_sources = pe.Node(
             InferBIDSURIs(
                 numinputs=1,
@@ -531,15 +540,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ]),
             (interpolated_filtered_bold_sources, ds_interpolated_filtered_bold, [
                 ("bids_uris", "Sources"),
-            ]),
-        ])
-        # fmt:on
-
-        # fmt:off
-        workflow.connect([
-            (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
-            (filter_out_failed_runs, ds_interpolated_filtered_bold, [
-                ("interpolated_filtered_bold", "in_file"),
             ]),
         ])
         # fmt:on
