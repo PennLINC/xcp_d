@@ -23,7 +23,7 @@ The 0.5.1 fixes some bugs for the XCP-D manuscript.
 * Update documentation for 0.5.0 release by @tsalo in https://github.com/PennLINC/xcp_d/pull/937
 
 
-**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.5.0...0.6.0
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.5.0...0.5.1
 
 ## 0.5.0
 
