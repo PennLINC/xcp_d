@@ -676,6 +676,7 @@ def init_postproc_derivatives_wf(
                 compression=True,
                 # Metadata
                 SoftwareFilters=software_filters,
+                Neighborhood="vertices",
                 Sources=None,
             ),
             name="ds_reho",
@@ -884,6 +885,7 @@ def init_postproc_derivatives_wf(
                 extension=".dscalar.nii",
                 # Metadata
                 SoftwareFilters=software_filters,
+                Neighborhood="vertices",
                 Sources=None,
             ),
             name="ds_reho",

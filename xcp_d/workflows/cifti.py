@@ -478,19 +478,21 @@ def init_postprocess_cifti_wf(
     # fmt:on
 
     postproc_derivatives_wf = init_postproc_derivatives_wf(
-        smoothing=smoothing,
         name_source=bold_file,
+        source_metadata=run_data["bold_metadata"],
         fmri_dir=fmri_dir,
         bandpass_filter=bandpass_filter,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        bpf_order=bpf_order,
+        fd_thresh=fd_thresh,
+        motion_filter_type=motion_filter_type,
+        smoothing=smoothing,
         params=params,
         exact_scans=exact_scans,
         cifti=True,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        fd_thresh=fd_thresh,
-        motion_filter_type=motion_filter_type,
         TR=TR,
         name="postproc_derivatives_wf",
     )
