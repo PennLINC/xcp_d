@@ -46,15 +46,15 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
     template_mask_arr = nb.load(template_mask).get_fdata()
 
     reg_qc = {
-        "coregDice": [dice(bold2t1w_mask_arr, t1w_mask_arr)],
-        "coregPearson": [pearson(bold2t1w_mask_arr, t1w_mask_arr)],
-        "coregCoverage": [overlap(bold2t1w_mask_arr, t1w_mask_arr)],
-        "normDice": [dice(bold2template_mask_arr, template_mask_arr)],
-        "normPearson": [pearson(bold2template_mask_arr, template_mask_arr)],
-        "normCoverage": [overlap(bold2template_mask_arr, template_mask_arr)],
+        "coreg_dice": [dice(bold2t1w_mask_arr, t1w_mask_arr)],
+        "coreg_correlation": [pearson(bold2t1w_mask_arr, t1w_mask_arr)],
+        "coreg_overlap": [overlap(bold2t1w_mask_arr, t1w_mask_arr)],
+        "norm_dice": [dice(bold2template_mask_arr, template_mask_arr)],
+        "norm_correlation": [pearson(bold2template_mask_arr, template_mask_arr)],
+        "norm_overlap": [overlap(bold2template_mask_arr, template_mask_arr)],
     }
     qc_metadata = {
-        "coregDice": {
+        "coreg_dice": {
             "LongName": "Coregistration Sørensen-Dice Coefficient",
             "Description": (
                 "The Sørensen-Dice coefficient calculated between the binary brain masks from the "
@@ -64,7 +64,7 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
             ),
             "Term URL": "https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient",
         },
-        "coregPearson": {
+        "coreg_correlation": {
             "LongName": "Coregistration Pearson Correlation",
             "Description": (
                 "The Pearson correlation coefficient calculated between the binary brain masks "
@@ -74,7 +74,7 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
             ),
             "Term URL": "https://en.wikipedia.org/wiki/Pearson_correlation_coefficient",
         },
-        "coregCoverage": {
+        "coreg_overlap": {
             "LongName": "Coregistration Coverage Metric",
             "Description": (
                 "The Szymkiewicz-Simpson overlap coefficient calculated between the binary brain "
@@ -83,7 +83,7 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
             ),
             "Term URL": "https://en.wikipedia.org/wiki/Overlap_coefficient",
         },
-        "normDice": {
+        "norm_dice": {
             "LongName": "Normalization Sørensen-Dice Coefficient",
             "Description": (
                 "The Sørensen-Dice coefficient calculated between the binary brain masks from the "
@@ -93,7 +93,7 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
             ),
             "Term URL": "https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient",
         },
-        "normPearson": {
+        "norm_correlation": {
             "LongName": "Normalization Pearson Correlation",
             "Description": (
                 "The Pearson correlation coefficient calculated between the binary brain masks "
@@ -103,7 +103,7 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
             ),
             "Term URL": "https://en.wikipedia.org/wiki/Pearson_correlation_coefficient",
         },
-        "normCoverage": {
+        "norm_overlap": {
             "LongName": "Normalization Overlap Coefficient",
             "Description": (
                 "The Szymkiewicz-Simpson overlap coefficient calculated between the binary brain "
