@@ -195,7 +195,7 @@ def init_postproc_derivatives_wf(
     ------
     %(atlas_names)s
         Used for indexing ``timeseries`` and ``correlations``.
-    %(atlas_files)s
+    atlas_files
     %(timeseries)s
     %(correlations)s
     %(coverage)s
