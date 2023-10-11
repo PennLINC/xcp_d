@@ -1,4 +1,6 @@
 """Workflows for concatenating postprocessed data."""
+import os
+
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -247,7 +249,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         InferBIDSURIs(
             numinputs=1,
             dataset_name="xcp_d",
-            dataset_path=output_dir,
+            dataset_path=os.path.join(output_dir, "xcp_d"),
         ),
         name="filtered_motion_sources",
         run_without_submitting=True,
@@ -283,7 +285,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         InferBIDSURIs(
             numinputs=1,
             dataset_name="xcp_d",
-            dataset_path=output_dir,
+            dataset_path=os.path.join(output_dir, "xcp_d"),
         ),
         name="temporal_mask_sources",
         run_without_submitting=True,
@@ -321,7 +323,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         InferBIDSURIs(
             numinputs=1,
             dataset_name="xcp_d",
-            dataset_path=output_dir,
+            dataset_path=os.path.join(output_dir, "xcp_d"),
         ),
         name="timeseries_sources",
         run_without_submitting=True,
@@ -376,7 +378,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             InferBIDSURIs(
                 numinputs=1,
                 dataset_name="xcp_d",
-                dataset_path=output_dir,
+                dataset_path=os.path.join(output_dir, "xcp_d"),
             ),
             name="timeseries_ciftis_sources",
             run_without_submitting=True,
@@ -467,7 +469,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         InferBIDSURIs(
             numinputs=1,
             dataset_name="xcp_d",
-            dataset_path=output_dir,
+            dataset_path=os.path.join(output_dir, "xcp_d"),
         ),
         name="censored_filtered_bold_sources",
         run_without_submitting=True,
@@ -496,7 +498,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             InferBIDSURIs(
                 numinputs=1,
                 dataset_name="xcp_d",
-                dataset_path=output_dir,
+                dataset_path=os.path.join(output_dir, "xcp_d"),
             ),
             name="smoothed_denoised_bold_sources",
             run_without_submitting=True,
@@ -527,7 +529,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             InferBIDSURIs(
                 numinputs=1,
                 dataset_name="xcp_d",
-                dataset_path=output_dir,
+                dataset_path=os.path.join(output_dir, "xcp_d"),
             ),
             name="interpolated_filtered_bold_sources",
             run_without_submitting=True,
