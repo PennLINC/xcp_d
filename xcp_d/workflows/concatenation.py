@@ -310,7 +310,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         name="ds_timeseries",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file"],
+        iterfield=["atlas", "in_file", "Sources"],
     )
 
     # fmt:off
@@ -378,7 +378,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name="ds_timeseries_cifti_files",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file"],
+            iterfield=["atlas", "in_file", "Sources"],
         )
 
         # fmt:off

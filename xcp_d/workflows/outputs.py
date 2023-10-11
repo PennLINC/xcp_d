@@ -347,7 +347,7 @@ def init_postproc_derivatives_wf(
         (preproc_bold_src, merge_dense_src, [("bids_uris", "in1")]),
         (preproc_confounds_src, merge_dense_src, [("bids_uris", "in2")]),
     ])
-    # fmt:off
+    # fmt:on
 
     merge_parcellated_src = pe.MapNode(
         niu.Merge(numinputs=3),
@@ -362,7 +362,7 @@ def init_postproc_derivatives_wf(
         (preproc_confounds_src, merge_parcellated_src, [("bids_uris", "in2")]),
         (atlas_src, merge_parcellated_src, [("bids_uris", "in3")]),
     ])
-    # fmt:off
+    # fmt:on
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
@@ -445,7 +445,7 @@ def init_postproc_derivatives_wf(
         name="ds_coverage_files",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file"],
+        iterfield=["atlas", "in_file", "Sources"],
     )
     ds_timeseries = pe.MapNode(
         DerivativesDataSink(
@@ -459,7 +459,7 @@ def init_postproc_derivatives_wf(
         name="ds_timeseries",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file"],
+        iterfield=["atlas", "in_file", "Sources"],
     )
     ds_correlations = pe.MapNode(
         DerivativesDataSink(
@@ -474,7 +474,7 @@ def init_postproc_derivatives_wf(
         name="ds_correlations",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file"],
+        iterfield=["atlas", "in_file", "Sources"],
     )
 
     for i_exact_scan, exact_scan in enumerate(exact_scans):
@@ -524,7 +524,7 @@ def init_postproc_derivatives_wf(
         name="ds_parcellated_reho",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file"],
+        iterfield=["atlas", "in_file", "Sources"],
     )
 
     # fmt:off
@@ -566,7 +566,7 @@ def init_postproc_derivatives_wf(
             name="ds_parcellated_alff",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file"],
+            iterfield=["atlas", "in_file", "Sources"],
         )
 
         # fmt:off

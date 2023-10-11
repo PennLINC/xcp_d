@@ -54,21 +54,6 @@ class _InferBIDSURIsOutputSpec(TraitedSpec):
     bids_uris = traits.List(desc="Merged output")
 
 
-def _ravel(in_val):
-    if not isinstance(in_val, list):
-        return in_val
-
-    flat_list = []
-    for val in in_val:
-        raveled_val = _ravel(val)
-        if isinstance(raveled_val, list):
-            flat_list.extend(raveled_val)
-        else:
-            flat_list.append(raveled_val)
-
-    return flat_list
-
-
 class InferBIDSURIs(IOBase):
     """Basic interface class to merge inputs into a single list and infer BIDS URIs."""
 
