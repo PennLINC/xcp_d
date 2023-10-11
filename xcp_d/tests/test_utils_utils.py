@@ -152,6 +152,37 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
+    # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
+    # Create an updated censoring file with outliers at first and last two volumes
+    censoring_df = confounds_df[["framewise_displacement"]]
+    censoring_df["framewise_displacement"] = False
+    censoring_df.iloc[:2]["framewise_displacement"] = True
+    censoring_df.iloc[-2:]["framewise_displacement"] = True
+    n_censored_volumes = censoring_df["framewise_displacement"].sum()
+    assert n_censored_volumes == 4
+    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+
+    # Run without denoising or filtering
+    _, interpolated_filtered_bold = utils.denoise_with_nilearn(
+        preprocessed_bold=preprocessed_bold_arr,
+        confounds_file=None,
+        temporal_mask=temporal_mask,
+        low_pass=None,
+        high_pass=None,
+        filter_order=0,
+        TR=TR,
+    )
+    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
+    # The first two volumes should be the same as the third (first non-outlier) volume
+    assert np.array_equal(interpolated_filtered_bold[0, :], interpolated_filtered_bold[2, :])
+    assert np.array_equal(interpolated_filtered_bold[1, :], interpolated_filtered_bold[2, :])
+    assert not np.array_equal(interpolated_filtered_bold[2, :], interpolated_filtered_bold[3, :])
+    # The last volume should be the same as the third-to-last (last non-outlier) volume
+    assert np.array_equal(interpolated_filtered_bold[-1, :], interpolated_filtered_bold[-3, :])
+    assert np.array_equal(interpolated_filtered_bold[-2, :], interpolated_filtered_bold[-3, :])
+    assert not np.array_equal(interpolated_filtered_bold[-3, :], interpolated_filtered_bold[-4, :])
+
 
 def test_list_to_str():
     """Test the list_to_str function."""

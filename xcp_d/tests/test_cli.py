@@ -5,6 +5,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import pytest
+from nipype import logging
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.cli import combineqc, parser_utils, run
@@ -16,6 +17,8 @@ from xcp_d.tests.utils import (
     get_test_data_path,
     run_command,
 )
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 @pytest.mark.ds001419_nifti
@@ -210,6 +213,17 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "pnc_cifti_filter.json")
 
+    # Make the last few volumes outliers to check https://github.com/PennLINC/xcp_d/issues/949
+    motion_file = os.path.join(
+        dataset_dir,
+        "sub-1648798153/ses-PNC1/func/"
+        "sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-confounds_timeseries.tsv",
+    )
+    motion_df = pd.read_table(motion_file)
+    motion_df.loc[56:, "trans_x"] = np.arange(1, 5) * 20
+    motion_df.to_csv(motion_file, sep="\t", index=False)
+    LOGGER.warning(f"Overwrote confounds file at {motion_file}.")
+
     parameters = [
         dataset_dir,
         out_dir,
@@ -218,6 +232,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
+        "--min-time=60",
         "--nuisance-regressors=acompcor_gsr",
         "--despike",
         "--head_radius=40",
