@@ -494,37 +494,6 @@ def denoise_with_nilearn(
                 last_outliers[0] - 1, :
             ]
 
-    # Replace any high-motion volumes at the beginning or end of the run with the closest
-    # low-motion volume's data.
-    outlier_idx = list(np.where(~sample_mask)[0])
-    if outlier_idx:
-        # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
-        gaps = [[s, e] for s, e in zip(outlier_idx, outlier_idx[1:]) if s + 1 < e]
-        edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
-        consecutive_outliers_idx = list(zip(edges, edges))
-        first_outliers = consecutive_outliers_idx[0]
-        last_outliers = consecutive_outliers_idx[-1]
-
-        # Replace outliers at beginning of run
-        if first_outliers[0] == 0:
-            LOGGER.warning(
-                f"Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) "
-                "will be replaced with first non-outlier volume's values."
-            )
-            interpolated_unfiltered_bold[
-                : first_outliers[1] + 1, :
-            ] = interpolated_unfiltered_bold[first_outliers[1] + 1, :]
-
-        # Replace outliers at end of run
-        if last_outliers[1] == n_volumes - 1:
-            LOGGER.warning(
-                f"Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) "
-                "will be replaced with last non-outlier volume's values."
-            )
-            interpolated_unfiltered_bold[last_outliers[0] :, :] = interpolated_unfiltered_bold[
-                last_outliers[0] - 1, :
-            ]
-
     # Now apply the bandpass filter to the interpolated, denoised data
     if low_pass is not None and high_pass is not None:
         # TODO: Replace with nilearn.signal.butterworth once 0.10.1 is released.

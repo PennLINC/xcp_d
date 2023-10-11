@@ -356,17 +356,6 @@ outlier volumes with cubic spline interpolated data, as implemented in ``Nilearn
 
 The resulting ``interpolated, denoised BOLD`` is primarily used for bandpass filtering.
 
-.. warning::
-   In versions 0.4.0rc2 - 0.5.0, XCP-D used cubic spline interpolation,
-   followed by bandpass filtering.
-
-   However, cubic spline interpolation can introduce large spikes and drops in the signal
-   when the censored volumes are at the beginning or end of the run,
-   which are then propagated to the filtered data.
-
-   To address this, XCP-D now replaces interpolated volumes at the edges of the run with the
-   closest non-outlier volume's data, as of 0.5.1.
-
 
 Bandpass filtering [OPTIONAL]
 -----------------------------
