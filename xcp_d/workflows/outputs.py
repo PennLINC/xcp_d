@@ -462,6 +462,7 @@ def init_postproc_derivatives_wf(
             extension=".tsv",
             # Metadata
             Sources=None,
+            DummyMetadata="TEST",
         ),
         name="ds_coverage_files",
         run_without_submitting=True,

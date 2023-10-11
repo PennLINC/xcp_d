@@ -16,7 +16,7 @@
     },
     {
       "name": "Sources",
-      "pattern": ""
+      "pattern": "ignore-(this)"
     }
   ],
   "default_path_patterns": [
