@@ -1,5 +1,30 @@
 # What's New
 
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## 0.5.1
+
+The 0.5.1 fixes some bugs for the XCP-D manuscript.
+
+### 🛠 Breaking Changes
+* Update the QC metrics by @tsalo in https://github.com/PennLINC/xcp_d/pull/958
+
+### 🎉 Exciting New Features
+* Split HCP tasks into task and run entities by @tsalo in https://github.com/PennLINC/xcp_d/pull/952
+* Concatenate across directions as well as runs by @tsalo in https://github.com/PennLINC/xcp_d/pull/965
+
+### 🐛 Bug Fixes
+* Fix resting-state plots in executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/941
+* Load T1w-to-standard transform to same space as volumetric BOLD scan by @tsalo in https://github.com/PennLINC/xcp_d/pull/926
+* Pin Nilearn version by @tsalo in https://github.com/PennLINC/xcp_d/pull/955
+* Don't interpolate volumes at beginning/end of run by @tsalo in https://github.com/PennLINC/xcp_d/pull/950
+
+### Other Changes
+* Update documentation for 0.5.0 release by @tsalo in https://github.com/PennLINC/xcp_d/pull/937
+
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.5.0...0.6.0
+
 ## 0.5.0
 
 The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce any backwards-incompatible changes between this release and 1.0.0 (the official paper release).
