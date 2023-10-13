@@ -12,7 +12,7 @@ from xcp_d.interfaces.concatenation import (
     FilterOutFailedRuns,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _select_first
+from xcp_d.utils.utils import _make_dictionary, _select_first
 from xcp_d.workflows.plotting import init_qc_report_wf
 
 
@@ -300,6 +300,19 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     )
     workflow.connect([(filter_runs, timeseries_src, [("timeseries", "in1")])])
 
+    make_timeseries_dict = pe.MapNode(
+        niu.Function(
+            function=_make_dictionary,
+            input_names=["Sources"],
+            output_names=["metadata"],
+        ),
+        run_without_submitting=True,
+        mem_gb=1,
+        name="make_timeseries_dict",
+        iterfield=["Sources"],
+    )
+    workflow.connect([(timeseries_src, make_timeseries_dict, [("bids_uris", "Sources")])])
+
     ds_timeseries = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -310,7 +323,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         name="ds_timeseries",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file", "Sources"],
+        iterfield=["atlas", "in_file", "meta_dict"],
     )
 
     # fmt:off
@@ -318,7 +331,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         (inputnode, ds_timeseries, [("atlas_names", "atlas")]),
         (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
         (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
-        (timeseries_src, ds_timeseries, [("bids_uris", "Sources")]),
+        (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
     ])
     # fmt:on
 
@@ -366,6 +379,23 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
         workflow.connect([(filter_runs, timeseries_ciftis_src, [("timeseries_ciftis", "in1")])])
 
+        make_timeseries_ciftis_dict = pe.MapNode(
+            niu.Function(
+                function=_make_dictionary,
+                input_names=["Sources"],
+                output_names=["metadata"],
+            ),
+            run_without_submitting=True,
+            mem_gb=1,
+            name="make_timeseries_ciftis_dict",
+            iterfield=["Sources"],
+        )
+        # fmt:off
+        workflow.connect([
+            (timeseries_src, make_timeseries_ciftis_dict, [("bids_uris", "Sources")]),
+        ])
+        # fmt:on
+
         ds_timeseries_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -378,7 +408,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name="ds_timeseries_cifti_files",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file", "Sources"],
+            iterfield=["atlas", "in_file", "meta_dict"],
         )
 
         # fmt:off
@@ -386,7 +416,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
             (inputnode, ds_timeseries_cifti_files, [("atlas_names", "atlas")]),
             (concatenate_inputs, ds_timeseries_cifti_files, [("timeseries_ciftis", "in_file")]),
-            (timeseries_ciftis_src, ds_timeseries_cifti_files, [("bids_uris", "Sources")]),
+            (make_timeseries_ciftis_dict, ds_timeseries_cifti_files, [("metadata", "meta_dict")]),
         ])
         # fmt:on
 

@@ -537,3 +537,10 @@ def _listify(obj):
     This provides a simple way to accept flexible arguments.
     """
     return obj if isinstance(obj, (list, tuple, type(None), np.ndarray)) else [obj]
+
+
+def _make_dictionary(metadata=None, **kwargs):
+    if metadata:
+        return metadata.update(kwargs)
+    else:
+        return dict(kwargs)

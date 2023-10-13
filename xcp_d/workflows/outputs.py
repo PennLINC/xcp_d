@@ -11,6 +11,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink, InferBIDSURIs
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import _make_dictionary
 
 
 @fill_doc
@@ -376,9 +377,6 @@ def init_postproc_derivatives_wf(
         (atlas_src, merge_parcellated_src, [("bids_uris", "in3")]),
     ])
     # fmt:on
-
-    def _make_dictionary(**kwargs):
-        return dict(kwargs)
 
     make_dict = pe.MapNode(
         niu.Function(
