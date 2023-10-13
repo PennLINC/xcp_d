@@ -377,6 +377,22 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
+    def _make_dictionary(**kwargs):
+        return dict(kwargs)
+
+    make_dict = pe.MapNode(
+        niu.Function(
+            function=_make_dictionary,
+            input_names=["Sources"],
+            output_names=["metadata"],
+        ),
+        run_without_submitting=True,
+        mem_gb=1,
+        name="make_dict",
+        iterfields=["Sources"],
+    )
+    workflow.connect([(merge_parcellated_src, make_dict, [("out", "Sources")])])
+
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -384,8 +400,6 @@ def init_postproc_derivatives_wf(
             suffix="outliers",
             extension=".tsv",
             source_file=name_source,
-            # Metadata
-            Sources=None,
         ),
         name="ds_temporal_mask",
         run_without_submitting=True,
@@ -411,8 +425,6 @@ def init_postproc_derivatives_wf(
             desc="filtered" if motion_filter_type else None,
             suffix="motion",
             extension=".tsv",
-            # Metadata
-            Sources=None,
         ),
         name="ds_filtered_motion",
         run_without_submitting=True,
@@ -439,8 +451,6 @@ def init_postproc_derivatives_wf(
                 datatype="func",
                 suffix="design",
                 extension=".tsv",
-                # Metadata
-                Sources=None,
             ),
             name="ds_confounds",
             run_without_submitting=False,
@@ -460,14 +470,11 @@ def init_postproc_derivatives_wf(
             cohort=cohort,
             suffix="coverage",
             extension=".tsv",
-            # Metadata
-            Sources=None,
-            DummyMetadata="TEST",
         ),
         name="ds_coverage_files",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file", "Sources"],
+        iterfield=["atlas", "in_file", "meta_dict"],
     )
     ds_timeseries = pe.MapNode(
         DerivativesDataSink(
@@ -477,13 +484,11 @@ def init_postproc_derivatives_wf(
             cohort=cohort,
             suffix="timeseries",
             extension=".tsv",
-            # Metadata
-            Sources=None,
         ),
         name="ds_timeseries",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file", "Sources"],
+        iterfield=["atlas", "in_file", "meta_dict"],
     )
     ds_correlations = pe.MapNode(
         DerivativesDataSink(
@@ -494,13 +499,11 @@ def init_postproc_derivatives_wf(
             measure="pearsoncorrelation",
             suffix="conmat",
             extension=".tsv",
-            # Metadata
-            Sources=None,
         ),
         name="ds_correlations",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file", "Sources"],
+        iterfield=["atlas", "in_file", "meta_dict"],
     )
 
     for i_exact_scan, exact_scan in enumerate(exact_scans):
@@ -525,8 +528,6 @@ def init_postproc_derivatives_wf(
                 desc=f"{exact_scan}volumes",
                 suffix="conmat",
                 extension=".tsv",
-                # Metadata
-                Sources=None,
             ),
             name=f"ds_correlations_exact_{i_exact_scan}",
             run_without_submitting=True,
@@ -549,12 +550,13 @@ def init_postproc_derivatives_wf(
             suffix="reho",
             extension=".tsv",
             # Metadata
-            Sources=None,
+            SoftwareFilters=software_filters,
+            Neighborhood="vertices",
         ),
         name="ds_parcellated_reho",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file", "Sources"],
+        iterfield=["atlas", "in_file", "meta_dict"],
     )
 
     # fmt:off
@@ -563,23 +565,23 @@ def init_postproc_derivatives_wf(
             ("coverage", "in_file"),
             ("atlas_names", "atlas"),
         ]),
-        (merge_parcellated_src, ds_coverage_files, [("out", "Sources")]),
+        (make_dict, ds_coverage_files, [("metadata", "meta_dict")]),
         (inputnode, ds_timeseries, [
             ("timeseries", "in_file"),
             ("atlas_names", "atlas"),
         ]),
-        (merge_parcellated_src, ds_timeseries, [("out", "Sources")]),
+        (make_dict, ds_timeseries, [("metadata", "meta_dict")]),
         (ds_timeseries, outputnode, [("out_file", "timeseries")]),
         (inputnode, ds_correlations, [
             ("correlations", "in_file"),
             ("atlas_names", "atlas"),
         ]),
-        (merge_parcellated_src, ds_correlations, [("out", "Sources")]),
+        (make_dict, ds_correlations, [("metadata", "meta_dict")]),
         (inputnode, ds_parcellated_reho, [
             ("parcellated_reho", "in_file"),
             ("atlas_names", "atlas"),
         ]),
-        (merge_parcellated_src, ds_parcellated_reho, [("out", "Sources")]),
+        (make_dict, ds_parcellated_reho, [("metadata", "meta_dict")]),
     ])
     # fmt:on
 
@@ -592,13 +594,11 @@ def init_postproc_derivatives_wf(
                 cohort=cohort,
                 suffix="alff",
                 extension=".tsv",
-                # Metadata
-                Sources=None,
             ),
             name="ds_parcellated_alff",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file", "Sources"],
+            iterfield=["atlas", "in_file", "meta_dict"],
         )
 
         # fmt:off
@@ -607,7 +607,7 @@ def init_postproc_derivatives_wf(
                 ("parcellated_alff", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
-            (merge_parcellated_src, ds_parcellated_alff, [("out", "Sources")]),
+            (make_dict, ds_parcellated_alff, [("metadata", "meta_dict")]),
         ])
         # fmt:on
 
@@ -616,15 +616,14 @@ def init_postproc_derivatives_wf(
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                meta_dict=cleaned_data_dictionary,
                 source_file=name_source,
                 cohort=cohort,
                 desc="denoised",
                 extension=".nii.gz",
                 compression=True,
                 # Metadata
+                meta_dict=cleaned_data_dictionary,
                 SoftwareFilters=software_filters,
-                Sources=None,
             ),
             name="ds_denoised_bold",
             run_without_submitting=True,
@@ -635,14 +634,13 @@ def init_postproc_derivatives_wf(
             ds_interpolated_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    meta_dict=cleaned_data_dictionary,
                     source_file=name_source,
                     desc="interpolated",
                     extension=".nii.gz",
                     compression=True,
                     # Metadata
+                    meta_dict=cleaned_data_dictionary,
                     SoftwareFilters=software_filters,
-                    Sources=None,
                 ),
                 name="ds_interpolated_denoised_bold",
                 run_without_submitting=True,
@@ -658,8 +656,6 @@ def init_postproc_derivatives_wf(
                 desc="linc",
                 suffix="qc",
                 extension=".csv",
-                # Metadata
-                Sources=None,
             ),
             name="ds_qc_file",
             run_without_submitting=True,
@@ -678,7 +674,6 @@ def init_postproc_derivatives_wf(
                 # Metadata
                 SoftwareFilters=software_filters,
                 Neighborhood="vertices",
-                Sources=None,
             ),
             name="ds_reho",
             run_without_submitting=True,
@@ -697,7 +692,6 @@ def init_postproc_derivatives_wf(
                     compression=True,
                     # Metadata
                     SoftwareFilters=software_filters,
-                    Sources=None,
                 ),
                 name="ds_alff",
                 run_without_submitting=True,
@@ -717,7 +711,6 @@ def init_postproc_derivatives_wf(
                     # Metadata
                     SoftwareFilters=software_filters,
                     FWHM=smoothing,
-                    Sources=None,
                 ),
                 name="ds_smoothed_bold",
                 run_without_submitting=True,
@@ -737,7 +730,6 @@ def init_postproc_derivatives_wf(
                         # Metadata
                         SoftwareFilters=software_filters,
                         FWHM=smoothing,
-                        Sources=None,
                     ),
                     name="ds_smoothed_alff",
                     run_without_submitting=True,
@@ -749,7 +741,6 @@ def init_postproc_derivatives_wf(
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                meta_dict=cleaned_data_dictionary,
                 source_file=name_source,
                 dismiss_entities=["den"],
                 cohort=cohort,
@@ -757,8 +748,8 @@ def init_postproc_derivatives_wf(
                 den="91k",
                 extension=".dtseries.nii",
                 # Metadata
+                meta_dict=cleaned_data_dictionary,
                 SoftwareFilters=software_filters,
-                Sources=None,
             ),
             name="ds_denoised_bold",
             run_without_submitting=True,
@@ -769,14 +760,13 @@ def init_postproc_derivatives_wf(
             ds_interpolated_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    meta_dict=cleaned_data_dictionary,
                     source_file=name_source,
                     dismiss_entities=["den"],
                     desc="interpolated",
                     den="91k",
                     extension=".dtseries.nii",
                     # Metadata
-                    Sources=None,
+                    meta_dict=cleaned_data_dictionary,
                 ),
                 name="ds_interpolated_denoised_bold",
                 run_without_submitting=True,
@@ -793,8 +783,6 @@ def init_postproc_derivatives_wf(
                 desc="linc",
                 suffix="qc",
                 extension=".csv",
-                # Metadata
-                Sources=None,
             ),
             name="ds_qc_file",
             run_without_submitting=True,
@@ -810,13 +798,11 @@ def init_postproc_derivatives_wf(
                 cohort=cohort,
                 suffix="coverage",
                 extension=".pscalar.nii",
-                # Metadata
-                Sources=None,
             ),
             name="ds_coverage_cifti_files",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file"],
+            iterfield=["atlas", "in_file", "meta_dict"],
         )
         ds_timeseries_cifti_files = pe.MapNode(
             DerivativesDataSink(
@@ -828,13 +814,11 @@ def init_postproc_derivatives_wf(
                 den="91k",
                 suffix="timeseries",
                 extension=".ptseries.nii",
-                # Metadata
-                Sources=None,
             ),
             name="ds_timeseries_cifti_files",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file"],
+            iterfield=["atlas", "in_file", "meta_dict"],
         )
         ds_correlation_cifti_files = pe.MapNode(
             DerivativesDataSink(
@@ -847,13 +831,11 @@ def init_postproc_derivatives_wf(
                 measure="pearsoncorrelation",
                 suffix="conmat",
                 extension=".pconn.nii",
-                # Metadata
-                Sources=None,
             ),
             name="ds_correlation_cifti_files",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file"],
+            iterfield=["atlas", "in_file", "meta_dict"],
         )
 
         # fmt:off
@@ -862,15 +844,18 @@ def init_postproc_derivatives_wf(
                 ("coverage_ciftis", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
+            (make_dict, ds_coverage_cifti_files, [("metadata", "meta_dict")]),
             (inputnode, ds_timeseries_cifti_files, [
                 ("timeseries_ciftis", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
+            (make_dict, ds_timeseries_cifti_files, [("metadata", "meta_dict")]),
             (ds_timeseries_cifti_files, outputnode, [("out_file", "timeseries_ciftis")]),
             (inputnode, ds_correlation_cifti_files, [
                 ("correlation_ciftis", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
+            (make_dict, ds_correlation_cifti_files, [("metadata", "meta_dict")]),
         ])
         # fmt:on
 
@@ -887,7 +872,6 @@ def init_postproc_derivatives_wf(
                 # Metadata
                 SoftwareFilters=software_filters,
                 Neighborhood="vertices",
-                Sources=None,
             ),
             name="ds_reho",
             run_without_submitting=True,
@@ -907,7 +891,6 @@ def init_postproc_derivatives_wf(
                     extension=".dscalar.nii",
                     # Metadata
                     SoftwareFilters=software_filters,
-                    Sources=None,
                 ),
                 name="ds_alff",
                 run_without_submitting=True,
@@ -929,7 +912,6 @@ def init_postproc_derivatives_wf(
                     # Metadata
                     SoftwareFilters=software_filters,
                     FWHM=smoothing,
-                    Sources=None,
                 ),
                 name="ds_smoothed_bold",
                 run_without_submitting=True,
@@ -951,7 +933,6 @@ def init_postproc_derivatives_wf(
                         # Metadata
                         SoftwareFilters=software_filters,
                         FWHM=smoothing,
-                        Sources=None,
                     ),
                     name="ds_smoothed_alff",
                     run_without_submitting=True,

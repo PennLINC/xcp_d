@@ -13,10 +13,6 @@
     {
       "name": "measure",
       "pattern": "(?:^|_)measure-([a-zA-Z0-9]+)"
-    },
-    {
-      "name": "Sources",
-      "pattern": "ignore-(this)"
     }
   ],
   "default_path_patterns": [
