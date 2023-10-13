@@ -389,7 +389,7 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
         name="make_dict",
-        iterfields=["Sources"],
+        iterfield=["Sources"],
     )
     workflow.connect([(merge_parcellated_src, make_dict, [("out", "Sources")])])
 
