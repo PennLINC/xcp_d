@@ -391,6 +391,7 @@ def init_postproc_derivatives_wf(
     )
     workflow.connect([(merge_parcellated_src, make_dict, [("out", "Sources")])])
 
+    # TODO: Use filtered motion file as Sources.
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -460,6 +461,7 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
+    # TODO: Add brain mask to Sources (for NIfTIs).
     ds_coverage_files = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -474,6 +476,7 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
         iterfield=["atlas", "in_file", "meta_dict"],
     )
+    # TODO: Use postprocessed BOLD as Source. And maybe coverage file?
     ds_timeseries = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -488,6 +491,7 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
         iterfield=["atlas", "in_file", "meta_dict"],
     )
+    # TODO: Use timeseries file as Source.
     ds_correlations = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -539,6 +543,7 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
+    # TODO: Use ReHo as Source
     ds_parcellated_reho = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -584,6 +589,7 @@ def init_postproc_derivatives_wf(
     # fmt:on
 
     if bandpass_filter and (fd_thresh <= 0):
+        # TODO: Use ALFF as Source
         ds_parcellated_alff = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -609,7 +615,7 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
-    # Write out detivatives via DerivativesDataSink
+    # Write out derivatives via DerivativesDataSink
     if not cifti:  # if Nifti
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
@@ -629,6 +635,7 @@ def init_postproc_derivatives_wf(
         )
 
         if dcan_qc:
+            # TODO: Use denoised BOLD as Source
             ds_interpolated_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -660,6 +667,7 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
         )
 
+        # TODO: Use denoised BOLD as Source
         ds_reho = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -679,6 +687,7 @@ def init_postproc_derivatives_wf(
         )
 
         if bandpass_filter and (fd_thresh <= 0):
+            # TODO: Use denoised BOLD as Source
             ds_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -697,7 +706,8 @@ def init_postproc_derivatives_wf(
             )
 
         if smoothing:  # if smoothed
-            # Write out detivatives via DerivativesDataSink
+            # Write out derivatives via DerivativesDataSink
+            # TODO: Use denoised BOLD as Source
             ds_smoothed_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -716,6 +726,7 @@ def init_postproc_derivatives_wf(
             )
 
             if bandpass_filter and (fd_thresh <= 0):
+                # TODO: Use ALFF as Source
                 ds_smoothed_alff = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
@@ -755,6 +766,7 @@ def init_postproc_derivatives_wf(
         )
 
         if dcan_qc:
+            # TODO: Use denoised BOLD as Source
             ds_interpolated_denoised_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -787,6 +799,7 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
         )
 
+        # TODO: Use denoised BOLD as Source
         ds_coverage_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -802,6 +815,7 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
             iterfield=["atlas", "in_file", "meta_dict"],
         )
+        # TODO: Use denoised BOLD as Source. And maybe coverage file?
         ds_timeseries_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -818,6 +832,7 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
             iterfield=["atlas", "in_file", "meta_dict"],
         )
+        # TODO: Use timeseries file as Source
         ds_correlation_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -857,6 +872,7 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
+        # TODO: Use denoised BOLD as Source
         ds_reho = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -877,6 +893,7 @@ def init_postproc_derivatives_wf(
         )
 
         if bandpass_filter and (fd_thresh <= 0):
+            # TODO: Use denoised BOLD as Source
             ds_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -897,6 +914,7 @@ def init_postproc_derivatives_wf(
 
         if smoothing:
             # Write out derivatives via DerivativesDataSink
+            # TODO: Use denoised BOLD as Source
             ds_smoothed_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -917,6 +935,7 @@ def init_postproc_derivatives_wf(
             )
 
             if bandpass_filter and (fd_thresh <= 0):
+                # TODO: Use ALFF as Source
                 ds_smoothed_alff = pe.Node(
                     DerivativesDataSink(
                         base_directory=output_dir,
