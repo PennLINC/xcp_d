@@ -369,7 +369,7 @@ def init_postproc_derivatives_wf(
         name="make_atlas_dict",
         iterfield=["Sources"],
     )
-    workflow.connect([(atlas_src, make_atlas_dict, [("out", "Sources")])])
+    workflow.connect([(atlas_src, make_atlas_dict, [("bids_uris", "Sources")])])
 
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
