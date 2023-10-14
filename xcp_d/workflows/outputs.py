@@ -391,31 +391,6 @@ def init_postproc_derivatives_wf(
     )
     workflow.connect([(merge_parcellated_src, make_dict, [("out", "Sources")])])
 
-    # TODO: Use filtered motion file as Sources.
-    ds_temporal_mask = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
-            suffix="outliers",
-            extension=".tsv",
-            source_file=name_source,
-        ),
-        name="ds_temporal_mask",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_temporal_mask, [
-            ("temporal_mask_metadata", "meta_dict"),
-            ("temporal_mask", "in_file"),
-        ]),
-        (preproc_confounds_src, ds_temporal_mask, [("bids_uris", "Sources")]),
-        (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
-    ])
-    # fmt:on
-
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -441,6 +416,31 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
+    # TODO: Use filtered motion file as Sources.
+    ds_temporal_mask = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
+            suffix="outliers",
+            extension=".tsv",
+            source_file=name_source,
+        ),
+        name="ds_temporal_mask",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_temporal_mask, [
+            ("temporal_mask_metadata", "meta_dict"),
+            ("temporal_mask", "in_file"),
+        ]),
+        (preproc_confounds_src, ds_temporal_mask, [("bids_uris", "Sources")]),
+        (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
+    ])
+    # fmt:on
+
     if params != "none":
         ds_confounds = pe.Node(
             DerivativesDataSink(
@@ -458,160 +458,6 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_confounds, [("confounds_file", "in_file")]),
             (preproc_confounds_src, ds_confounds, [("bids_uris", "Sources")]),
-        ])
-        # fmt:on
-
-    # TODO: Add brain mask to Sources (for NIfTIs).
-    ds_coverage_files = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            dismiss_entities=["desc"],
-            cohort=cohort,
-            suffix="coverage",
-            extension=".tsv",
-        ),
-        name="ds_coverage_files",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["atlas", "in_file", "meta_dict"],
-    )
-    # TODO: Use postprocessed BOLD as Source. And maybe coverage file?
-    ds_timeseries = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            dismiss_entities=["desc"],
-            cohort=cohort,
-            suffix="timeseries",
-            extension=".tsv",
-        ),
-        name="ds_timeseries",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["atlas", "in_file", "meta_dict"],
-    )
-    # TODO: Use timeseries file as Source.
-    ds_correlations = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            dismiss_entities=["desc"],
-            cohort=cohort,
-            measure="pearsoncorrelation",
-            suffix="conmat",
-            extension=".tsv",
-        ),
-        name="ds_correlations",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["atlas", "in_file", "meta_dict"],
-    )
-
-    for i_exact_scan, exact_scan in enumerate(exact_scans):
-        select_exact_scan_files = pe.MapNode(
-            niu.Select(index=i_exact_scan),
-            name=f"select_exact_scan_files_{i_exact_scan}",
-            iterfield=["inlist"],
-        )
-        # fmt:off
-        workflow.connect([
-            (inputnode, select_exact_scan_files, [("correlations_exact", "inlist")]),
-        ])
-        # fmt:on
-
-        ds_correlations_exact = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                measure="pearsoncorrelation",
-                desc=f"{exact_scan}volumes",
-                suffix="conmat",
-                extension=".tsv",
-            ),
-            name=f"ds_correlations_exact_{i_exact_scan}",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file"],
-        )
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_correlations_exact, [("atlas_names", "atlas")]),
-            (select_exact_scan_files, ds_correlations_exact, [("out", "in_file")]),
-        ])
-        # fmt:on
-
-    # TODO: Use ReHo as Source
-    ds_parcellated_reho = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            dismiss_entities=["desc"],
-            cohort=cohort,
-            suffix="reho",
-            extension=".tsv",
-            # Metadata
-            SoftwareFilters=software_filters,
-            Neighborhood="vertices",
-        ),
-        name="ds_parcellated_reho",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["atlas", "in_file", "meta_dict"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_coverage_files, [
-            ("coverage", "in_file"),
-            ("atlas_names", "atlas"),
-        ]),
-        (make_dict, ds_coverage_files, [("metadata", "meta_dict")]),
-        (inputnode, ds_timeseries, [
-            ("timeseries", "in_file"),
-            ("atlas_names", "atlas"),
-        ]),
-        (make_dict, ds_timeseries, [("metadata", "meta_dict")]),
-        (ds_timeseries, outputnode, [("out_file", "timeseries")]),
-        (inputnode, ds_correlations, [
-            ("correlations", "in_file"),
-            ("atlas_names", "atlas"),
-        ]),
-        (make_dict, ds_correlations, [("metadata", "meta_dict")]),
-        (inputnode, ds_parcellated_reho, [
-            ("parcellated_reho", "in_file"),
-            ("atlas_names", "atlas"),
-        ]),
-        (make_dict, ds_parcellated_reho, [("metadata", "meta_dict")]),
-    ])
-    # fmt:on
-
-    if bandpass_filter and (fd_thresh <= 0):
-        # TODO: Use ALFF as Source
-        ds_parcellated_alff = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                suffix="alff",
-                extension=".tsv",
-            ),
-            name="ds_parcellated_alff",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_parcellated_alff, [
-                ("parcellated_alff", "in_file"),
-                ("atlas_names", "atlas"),
-            ]),
-            (make_dict, ds_parcellated_alff, [("metadata", "meta_dict")]),
         ])
         # fmt:on
 
@@ -1012,5 +858,159 @@ def init_postproc_derivatives_wf(
                 (merge_dense_src, ds_smoothed_alff, [("out", "Sources")]),
             ])
             # fmt:on
+
+    # TODO: Add brain mask to Sources (for NIfTIs).
+    ds_coverage_files = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            dismiss_entities=["desc"],
+            cohort=cohort,
+            suffix="coverage",
+            extension=".tsv",
+        ),
+        name="ds_coverage_files",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file", "meta_dict"],
+    )
+    # TODO: Use postprocessed BOLD as Source. And maybe coverage file?
+    ds_timeseries = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            dismiss_entities=["desc"],
+            cohort=cohort,
+            suffix="timeseries",
+            extension=".tsv",
+        ),
+        name="ds_timeseries",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file", "meta_dict"],
+    )
+    # TODO: Use timeseries file as Source.
+    ds_correlations = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            dismiss_entities=["desc"],
+            cohort=cohort,
+            measure="pearsoncorrelation",
+            suffix="conmat",
+            extension=".tsv",
+        ),
+        name="ds_correlations",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file", "meta_dict"],
+    )
+
+    for i_exact_scan, exact_scan in enumerate(exact_scans):
+        select_exact_scan_files = pe.MapNode(
+            niu.Select(index=i_exact_scan),
+            name=f"select_exact_scan_files_{i_exact_scan}",
+            iterfield=["inlist"],
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, select_exact_scan_files, [("correlations_exact", "inlist")]),
+        ])
+        # fmt:on
+
+        ds_correlations_exact = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                measure="pearsoncorrelation",
+                desc=f"{exact_scan}volumes",
+                suffix="conmat",
+                extension=".tsv",
+            ),
+            name=f"ds_correlations_exact_{i_exact_scan}",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file"],
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_correlations_exact, [("atlas_names", "atlas")]),
+            (select_exact_scan_files, ds_correlations_exact, [("out", "in_file")]),
+        ])
+        # fmt:on
+
+    # TODO: Use ReHo as Source
+    ds_parcellated_reho = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            dismiss_entities=["desc"],
+            cohort=cohort,
+            suffix="reho",
+            extension=".tsv",
+            # Metadata
+            SoftwareFilters=software_filters,
+            Neighborhood="vertices",
+        ),
+        name="ds_parcellated_reho",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file", "meta_dict"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_coverage_files, [
+            ("coverage", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (make_dict, ds_coverage_files, [("metadata", "meta_dict")]),
+        (inputnode, ds_timeseries, [
+            ("timeseries", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (make_dict, ds_timeseries, [("metadata", "meta_dict")]),
+        (ds_timeseries, outputnode, [("out_file", "timeseries")]),
+        (inputnode, ds_correlations, [
+            ("correlations", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (make_dict, ds_correlations, [("metadata", "meta_dict")]),
+        (inputnode, ds_parcellated_reho, [
+            ("parcellated_reho", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (make_dict, ds_parcellated_reho, [("metadata", "meta_dict")]),
+    ])
+    # fmt:on
+
+    if bandpass_filter and (fd_thresh <= 0):
+        # TODO: Use ALFF as Source
+        ds_parcellated_alff = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                suffix="alff",
+                extension=".tsv",
+            ),
+            name="ds_parcellated_alff",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file", "meta_dict"],
+        )
+
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_parcellated_alff, [
+                ("parcellated_alff", "in_file"),
+                ("atlas_names", "atlas"),
+            ]),
+            (make_dict, ds_parcellated_alff, [("metadata", "meta_dict")]),
+        ])
+        # fmt:on
 
     return workflow
