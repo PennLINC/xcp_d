@@ -542,7 +542,17 @@ def _listify(obj):
 
 def _make_dictionary(metadata=None, **kwargs):
     if metadata:
-        return metadata.update(kwargs)
+        for key, value in kwargs.items():
+            if key not in metadata.keys():
+                metadata[key] = value
+            elif isinstance(value, list):
+                # Append the values if they're a list
+                metadata[key] += value
+            else:
+                # Overwrite the old value
+                metadata[key] = value
+
+        return metadata
     else:
         return dict(kwargs)
 

@@ -74,7 +74,6 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
         niu.Merge(10),
         name="collect_files",
     )
-
     # fmt:off
     workflow.connect([
         (inputnode, collect_files, [
@@ -98,7 +97,6 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
         FilterUndefined(),
         name="filter_out_undefined",
     )
-
     workflow.connect([(collect_files, filter_out_undefined, [("out", "inlist")])])
 
     ds_copied_outputs = pe.MapNode(
@@ -111,7 +109,6 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
         mem_gb=1,
         iterfield=["in_file", "source_file"],
     )
-
     # fmt:off
     workflow.connect([
         (filter_out_undefined, ds_copied_outputs, [
@@ -284,6 +281,12 @@ def init_postproc_derivatives_wf(
         name="outputnode",
     )
 
+    def _postproc_to_source(out_file):
+        return _out_file_to_source(out_file, "xcp_d", os.path.join(output_dir, "xcp_d"))
+
+    def _preproc_to_source(out_file):
+        return _out_file_to_source(out_file, "preprocessed", fmri_dir)
+
     # Create dictionary of basic information
     cleaned_data_dictionary = {
         "RepetitionTime": TR,
@@ -313,17 +316,7 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
 
-    preproc_bold_src = pe.Node(
-        InferBIDSURIs(
-            numinputs=1,
-            dataset_name="preprocessed",
-            dataset_path=fmri_dir,
-        ),
-        name="preproc_bold_src",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    preproc_bold_src.inputs.in1 = name_source
+    preproc_bold_src = _preproc_to_source(name_source)
 
     preproc_confounds_src = pe.Node(
         InferBIDSURIs(
@@ -356,29 +349,10 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
     )
-    # fmt:off
-    workflow.connect([
-        (preproc_bold_src, merge_dense_src, [("bids_uris", "in1")]),
-        (preproc_confounds_src, merge_dense_src, [("bids_uris", "in2")]),
-    ])
-    # fmt:on
+    merge_dense_src.inputs.in1 = preproc_bold_src
+    workflow.connect([(preproc_confounds_src, merge_dense_src, [("bids_uris", "in2")])])
 
-    merge_parcellated_src = pe.MapNode(
-        niu.Merge(numinputs=3),
-        name="merge_parcellated_src",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["in3"],
-    )
-    # fmt:off
-    workflow.connect([
-        (preproc_bold_src, merge_parcellated_src, [("bids_uris", "in1")]),
-        (preproc_confounds_src, merge_parcellated_src, [("bids_uris", "in2")]),
-        (atlas_src, merge_parcellated_src, [("bids_uris", "in3")]),
-    ])
-    # fmt:on
-
-    make_dict = pe.MapNode(
+    make_atlas_dict = pe.MapNode(
         niu.Function(
             function=_make_dictionary,
             input_names=["Sources"],
@@ -386,10 +360,10 @@ def init_postproc_derivatives_wf(
         ),
         run_without_submitting=True,
         mem_gb=1,
-        name="make_dict",
+        name="make_atlas_dict",
         iterfield=["Sources"],
     )
-    workflow.connect([(merge_parcellated_src, make_dict, [("out", "Sources")])])
+    workflow.connect([(atlas_src, make_atlas_dict, [("out", "Sources")])])
 
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
@@ -404,7 +378,6 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
     )
-
     # fmt:off
     workflow.connect([
         (inputnode, ds_filtered_motion, [
@@ -423,29 +396,27 @@ def init_postproc_derivatives_wf(
             suffix="outliers",
             extension=".tsv",
             source_file=name_source,
+            # Metadata
+            Threshold=fd_thresh,
         ),
         name="ds_temporal_mask",
         run_without_submitting=True,
         mem_gb=1,
     )
-
     # fmt:off
     workflow.connect([
         (inputnode, ds_temporal_mask, [
             ("temporal_mask_metadata", "meta_dict"),
             ("temporal_mask", "in_file"),
         ]),
-        (ds_filtered_motion, ds_temporal_mask, [
-            (
-                ("out_file", _out_file_to_source, "xcp_d", os.path.join(output_dir, "xcp_d")),
-                "Sources",
-            ),
-        ]),
+        (ds_filtered_motion, ds_temporal_mask, [(("out_file", _postproc_to_source), "Sources")]),
         (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
     ])
     # fmt:on
 
     if params != "none":
+        # TODO: Add custom confounds file to sources
+        # TODO: Add temporal mask to sources
         ds_confounds = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -466,6 +437,7 @@ def init_postproc_derivatives_wf(
         # fmt:on
 
     # Write out derivatives via DerivativesDataSink
+    # TODO: Add temporal mask to sources
     ds_denoised_bold = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -483,9 +455,15 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=2,
     )
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_denoised_bold, [("censored_denoised_bold", "in_file")]),
+        (merge_dense_src, ds_denoised_bold, [("out", "Sources")]),
+        (ds_denoised_bold, outputnode, [("out_file", "censored_denoised_bold")]),
+    ])
+    # fmt:on
 
     if dcan_qc:
-        # TODO: Use denoised BOLD as Source
         ds_interpolated_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -501,6 +479,28 @@ def init_postproc_derivatives_wf(
             run_without_submitting=True,
             mem_gb=2,
         )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_interpolated_denoised_bold, [
+                ("interpolated_filtered_bold", "in_file"),
+            ]),
+            (ds_denoised_bold, ds_interpolated_denoised_bold, [
+                (("out_file", _postproc_to_source), "Sources"),
+            ]),
+            (ds_interpolated_denoised_bold, outputnode, [
+                ("out_file", "interpolated_filtered_bold"),
+            ]),
+        ])
+        # fmt:on
+
+    else:
+        # fmt:off
+        workflow.connect([
+            (inputnode, outputnode, [
+                ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ]),
+        ])
+        # fmt:on
 
     ds_qc_file = pe.Node(
         DerivativesDataSink(
@@ -517,124 +517,31 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
     )
+    workflow.connect([(inputnode, ds_qc_file, [("qc_file", "in_file")])])
 
-    if cifti:
-        # TODO: Use denoised BOLD as Source
-        ds_coverage_cifti_files = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                check_hdr=False,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                suffix="coverage",
-                extension=".pscalar.nii",
-            ),
-            name="ds_coverage_cifti_files",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
-        )
-        # TODO: Use denoised BOLD as Source. And maybe coverage file?
-        ds_timeseries_cifti_files = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                check_hdr=False,
-                dismiss_entities=["desc", "den"],
-                cohort=cohort,
-                den="91k" if cifti else None,
-                suffix="timeseries",
-                extension=".ptseries.nii",
-            ),
-            name="ds_timeseries_cifti_files",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
-        )
-        # TODO: Use timeseries file as Source
-        ds_correlation_cifti_files = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                check_hdr=False,
-                dismiss_entities=["desc", "den"],
-                cohort=cohort,
-                den="91k" if cifti else None,
-                measure="pearsoncorrelation",
-                suffix="conmat",
-                extension=".pconn.nii",
-            ),
-            name="ds_correlation_cifti_files",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_coverage_cifti_files, [
-                ("coverage_ciftis", "in_file"),
-                ("atlas_names", "atlas"),
-            ]),
-            (make_dict, ds_coverage_cifti_files, [("metadata", "meta_dict")]),
-            (inputnode, ds_timeseries_cifti_files, [
-                ("timeseries_ciftis", "in_file"),
-                ("atlas_names", "atlas"),
-            ]),
-            (make_dict, ds_timeseries_cifti_files, [("metadata", "meta_dict")]),
-            (ds_timeseries_cifti_files, outputnode, [("out_file", "timeseries_ciftis")]),
-            (inputnode, ds_correlation_cifti_files, [
-                ("correlation_ciftis", "in_file"),
-                ("atlas_names", "atlas"),
-            ]),
-            (make_dict, ds_correlation_cifti_files, [("metadata", "meta_dict")]),
-        ])
-        # fmt:on
-
-    # TODO: Use denoised BOLD as Source
-    ds_reho = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            check_hdr=False,
-            dismiss_entities=["desc", "den"],
-            cohort=cohort,
-            den="91k" if cifti else None,
-            suffix="reho",
-            extension=".dscalar.nii" if cifti else ".nii.gz",
-            # Metadata
-            SoftwareFilters=software_filters,
-            Neighborhood="vertices",
+    # Convert Sources to a dictionary, to play well with parcellation MapNodes.
+    add_denoised_to_sources = pe.MapNode(
+        niu.Function(
+            function=_make_dictionary,
+            input_names=["metadata", "Sources"],
+            output_names=["metadata"],
         ),
-        name="ds_reho",
         run_without_submitting=True,
         mem_gb=1,
+        name="add_denoised_to_sources",
+        iterfield=["metadata"],
     )
-
-    if bandpass_filter and (fd_thresh <= 0):
-        # TODO: Use denoised BOLD as Source
-        ds_alff = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                check_hdr=False,
-                dismiss_entities=["desc", "den"],
-                cohort=cohort,
-                den="91k" if cifti else None,
-                suffix="alff",
-                extension=".dscalar.nii" if cifti else ".nii.gz",
-                # Metadata
-                SoftwareFilters=software_filters,
-            ),
-            name="ds_alff",
-            run_without_submitting=True,
-            mem_gb=1,
-        )
+    # fmt:off
+    workflow.connect([
+        (make_atlas_dict, add_denoised_to_sources, [("metadata", "metadata")]),
+        (ds_denoised_bold, add_denoised_to_sources, [
+            (("out_file", _postproc_to_source), "Sources"),
+        ]),
+    ])
+    # fmt:on
 
     if smoothing:
         # Write out derivatives via DerivativesDataSink
-        # TODO: Use denoised BOLD as Source
         ds_smoothed_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -653,88 +560,17 @@ def init_postproc_derivatives_wf(
             run_without_submitting=True,
             mem_gb=2,
         )
-
-        if bandpass_filter and (fd_thresh <= 0):
-            # TODO: Use ALFF as Source
-            ds_smoothed_alff = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    source_file=name_source,
-                    dismiss_entities=["den"],
-                    cohort=cohort,
-                    desc="smooth",
-                    den="91k" if cifti else None,
-                    suffix="alff",
-                    extension=".dscalar.nii" if cifti else ".nii.gz",
-                    check_hdr=False,
-                    # Metadata
-                    SoftwareFilters=software_filters,
-                    FWHM=smoothing,
-                ),
-                name="ds_smoothed_alff",
-                run_without_submitting=True,
-                mem_gb=1,
-            )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_denoised_bold, [("censored_denoised_bold", "in_file")]),
-        (merge_dense_src, ds_denoised_bold, [("out", "Sources")]),
-        (ds_denoised_bold, outputnode, [("out_file", "censored_denoised_bold")]),
-        (inputnode, ds_qc_file, [("qc_file", "in_file")]),
-        (inputnode, ds_reho, [("reho", "in_file")]),
-        (merge_dense_src, ds_reho, [("out", "Sources")]),
-    ])
-    # fmt:on
-
-    if dcan_qc:
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_interpolated_denoised_bold, [
-                ("interpolated_filtered_bold", "in_file"),
-            ]),
-            (merge_dense_src, ds_interpolated_denoised_bold, [("out", "Sources")]),
-            (ds_interpolated_denoised_bold, outputnode, [
-                ("out_file", "interpolated_filtered_bold"),
-            ]),
-        ])
-        # fmt:on
-    else:
-        # fmt:off
-        workflow.connect([
-            (inputnode, outputnode, [
-                ("interpolated_filtered_bold", "interpolated_filtered_bold"),
-            ]),
-        ])
-        # fmt:on
-
-    if bandpass_filter and (fd_thresh <= 0):
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_alff, [("alff", "in_file")]),
-            (merge_dense_src, ds_alff, [("out", "Sources")]),
-        ])
-        # fmt:on
-
-    if smoothing:
         # fmt:off
         workflow.connect([
             (inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")]),
-            (merge_dense_src, ds_smoothed_bold, [("out", "Sources")]),
+            (ds_denoised_bold, ds_smoothed_bold, [(("out_file", _postproc_to_source), "Sources")]),
             (ds_smoothed_bold, outputnode, [("out_file", "smoothed_denoised_bold")]),
         ])
         # fmt:on
 
-        if bandpass_filter and (fd_thresh <= 0):
-            # fmt:off
-            workflow.connect([
-                (inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")]),
-                (merge_dense_src, ds_smoothed_alff, [("out", "Sources")]),
-            ])
-            # fmt:on
-
+    # Connectivity workflow outputs
     # TODO: Add brain mask to Sources (for NIfTIs).
-    ds_coverage_files = pe.MapNode(
+    ds_coverage = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=name_source,
@@ -743,12 +579,41 @@ def init_postproc_derivatives_wf(
             suffix="coverage",
             extension=".tsv",
         ),
-        name="ds_coverage_files",
+        name="ds_coverage",
         run_without_submitting=True,
         mem_gb=1,
         iterfield=["atlas", "in_file", "meta_dict"],
     )
-    # TODO: Use postprocessed BOLD as Source. And maybe coverage file?
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_coverage, [
+            ("coverage", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (make_atlas_dict, ds_coverage, [("metadata", "meta_dict")]),
+    ])
+    # fmt:on
+
+    add_coverage_to_src = pe.MapNode(
+        niu.Function(
+            function=_make_dictionary,
+            input_names=["metadata", "Sources"],
+            output_names=["metadata"],
+        ),
+        run_without_submitting=True,
+        mem_gb=1,
+        name="add_coverage_to_src",
+        iterfield=["metadata", "Sources"],
+    )
+    # fmt:off
+    workflow.connect([
+        (add_denoised_to_sources, add_coverage_to_src, [("metadata", "metadata")]),
+        (ds_coverage, add_coverage_to_src, [
+            (("out_file", _postproc_to_source), "Sources"),
+        ]),
+    ])
+    # fmt:on
+
     ds_timeseries = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -763,7 +628,31 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
         iterfield=["atlas", "in_file", "meta_dict"],
     )
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_timeseries, [
+            ("timeseries", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (add_coverage_to_src, ds_timeseries, [("metadata", "meta_dict")]),
+        (ds_timeseries, outputnode, [("out_file", "timeseries")]),
+    ])
+    # fmt:on
+
     # TODO: Use timeseries file as Source.
+    make_corrs_meta_dict = pe.MapNode(
+        niu.Function(
+            function=_make_dictionary,
+            input_names=["Sources"],
+            output_names=["metadata"],
+        ),
+        run_without_submitting=True,
+        mem_gb=1,
+        name="make_corrs_meta_dict",
+        iterfield=["Sources"],
+    )
+    workflow.connect([(ds_timeseries, make_corrs_meta_dict, [("out_file", "Sources")])])
+
     ds_correlations = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -779,6 +668,132 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
         iterfield=["atlas", "in_file", "meta_dict"],
     )
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_correlations, [
+            ("correlations", "in_file"),
+            ("atlas_names", "atlas"),
+        ]),
+        (make_corrs_meta_dict, ds_correlations, [("metadata", "meta_dict")]),
+    ])
+    # fmt:on
+
+    if cifti:
+        ds_coverage_ciftis = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=["desc"],
+                cohort=cohort,
+                suffix="coverage",
+                extension=".pscalar.nii",
+            ),
+            name="ds_coverage_ciftis",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file", "meta_dict"],
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_coverage_ciftis, [
+                ("coverage_ciftis", "in_file"),
+                ("atlas_names", "atlas"),
+            ]),
+            (add_denoised_to_sources, ds_coverage_ciftis, [("metadata", "meta_dict")]),
+        ])
+        # fmt:on
+
+        add_ccoverage_to_src = pe.MapNode(
+            niu.Function(
+                function=_make_dictionary,
+                input_names=["metadata", "Sources"],
+                output_names=["metadata"],
+            ),
+            run_without_submitting=True,
+            mem_gb=1,
+            name="add_ccoverage_to_src",
+            iterfield=["metadata", "Sources"],
+        )
+        # fmt:off
+        workflow.connect([
+            (add_denoised_to_sources, add_ccoverage_to_src, [("metadata", "metadata")]),
+            (ds_coverage_ciftis, add_ccoverage_to_src, [
+                (("out_file", _postproc_to_source), "Sources"),
+            ]),
+        ])
+        # fmt:on
+
+        ds_timeseries_ciftis = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=["desc", "den"],
+                cohort=cohort,
+                den="91k" if cifti else None,
+                suffix="timeseries",
+                extension=".ptseries.nii",
+            ),
+            name="ds_timeseries_ciftis",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file", "meta_dict"],
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_timeseries_ciftis, [
+                ("timeseries_ciftis", "in_file"),
+                ("atlas_names", "atlas"),
+            ]),
+            (add_ccoverage_to_src, ds_timeseries_ciftis, [("metadata", "meta_dict")]),
+            (ds_timeseries_ciftis, outputnode, [("out_file", "timeseries_ciftis")]),
+        ])
+        # fmt:on
+
+        make_ccorrs_meta_dict = pe.MapNode(
+            niu.Function(
+                function=_make_dictionary,
+                input_names=["Sources"],
+                output_names=["metadata"],
+            ),
+            run_without_submitting=True,
+            mem_gb=1,
+            name="make_ccorrs_meta_dict",
+            iterfield=["Sources"],
+        )
+        # fmt:off
+        workflow.connect([
+            (ds_timeseries_ciftis, make_ccorrs_meta_dict, [("out_file", "Sources")]),
+        ])
+        # fmt:on
+
+        ds_correlation_ciftis = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=["desc", "den"],
+                cohort=cohort,
+                den="91k" if cifti else None,
+                measure="pearsoncorrelation",
+                suffix="conmat",
+                extension=".pconn.nii",
+            ),
+            name="ds_correlation_ciftis",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file", "meta_dict"],
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_correlation_ciftis, [
+                ("correlation_ciftis", "in_file"),
+                ("atlas_names", "atlas"),
+            ]),
+            (make_ccorrs_meta_dict, ds_correlation_ciftis, [("metadata", "meta_dict")]),
+        ])
+        # fmt:on
 
     for i_exact_scan, exact_scan in enumerate(exact_scans):
         select_exact_scan_files = pe.MapNode(
@@ -815,6 +830,32 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
+    # Resting state metric outputs
+    ds_reho = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            check_hdr=False,
+            dismiss_entities=["desc", "den"],
+            cohort=cohort,
+            den="91k" if cifti else None,
+            suffix="reho",
+            extension=".dscalar.nii" if cifti else ".nii.gz",
+            # Metadata
+            SoftwareFilters=software_filters,
+            Neighborhood="vertices",
+        ),
+        name="ds_reho",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_reho, [("reho", "in_file")]),
+        (ds_denoised_bold, ds_reho, [(("out_file", _postproc_to_source), "Sources")]),
+    ])
+    # fmt:on
+
     # TODO: Use ReHo as Source
     ds_parcellated_reho = pe.MapNode(
         DerivativesDataSink(
@@ -833,34 +874,86 @@ def init_postproc_derivatives_wf(
         mem_gb=1,
         iterfield=["atlas", "in_file", "meta_dict"],
     )
-
     # fmt:off
     workflow.connect([
-        (inputnode, ds_coverage_files, [
-            ("coverage", "in_file"),
-            ("atlas_names", "atlas"),
-        ]),
-        (make_dict, ds_coverage_files, [("metadata", "meta_dict")]),
-        (inputnode, ds_timeseries, [
-            ("timeseries", "in_file"),
-            ("atlas_names", "atlas"),
-        ]),
-        (make_dict, ds_timeseries, [("metadata", "meta_dict")]),
-        (ds_timeseries, outputnode, [("out_file", "timeseries")]),
-        (inputnode, ds_correlations, [
-            ("correlations", "in_file"),
-            ("atlas_names", "atlas"),
-        ]),
-        (make_dict, ds_correlations, [("metadata", "meta_dict")]),
         (inputnode, ds_parcellated_reho, [
             ("parcellated_reho", "in_file"),
             ("atlas_names", "atlas"),
         ]),
-        (make_dict, ds_parcellated_reho, [("metadata", "meta_dict")]),
+        (make_atlas_dict, ds_parcellated_reho, [("metadata", "meta_dict")]),
     ])
     # fmt:on
 
     if bandpass_filter and (fd_thresh <= 0):
+        ds_alff = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=["desc", "den"],
+                cohort=cohort,
+                den="91k" if cifti else None,
+                suffix="alff",
+                extension=".dscalar.nii" if cifti else ".nii.gz",
+                # Metadata
+                SoftwareFilters=software_filters,
+            ),
+            name="ds_alff",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_alff, [("alff", "in_file")]),
+            (ds_denoised_bold, ds_alff, [(("out_file", _postproc_to_source), "Sources")]),
+        ])
+        # fmt:on
+
+        if smoothing:
+            ds_smoothed_alff = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    source_file=name_source,
+                    dismiss_entities=["den"],
+                    cohort=cohort,
+                    desc="smooth",
+                    den="91k" if cifti else None,
+                    suffix="alff",
+                    extension=".dscalar.nii" if cifti else ".nii.gz",
+                    check_hdr=False,
+                    # Metadata
+                    SoftwareFilters=software_filters,
+                    FWHM=smoothing,
+                ),
+                name="ds_smoothed_alff",
+                run_without_submitting=True,
+                mem_gb=1,
+            )
+            # fmt:off
+            workflow.connect([
+                (inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")]),
+                (ds_alff, ds_smoothed_alff, [(("out_file", _postproc_to_source), "Sources")]),
+            ])
+            # fmt:on
+
+        add_alff_to_sources = pe.MapNode(
+            niu.Function(
+                function=_make_dictionary,
+                input_names=["metadata", "Sources"],
+                output_names=["metadata"],
+            ),
+            run_without_submitting=True,
+            mem_gb=1,
+            name="add_alff_to_sources",
+            iterfield=["metadata"],
+        )
+        # fmt:off
+        workflow.connect([
+            (make_atlas_dict, add_alff_to_sources, [("metadata", "metadata")]),
+            (ds_alff, add_alff_to_sources, [(("out_file", _postproc_to_source), "Sources")]),
+        ])
+        # fmt:on
+
         # TODO: Use ALFF as Source
         ds_parcellated_alff = pe.MapNode(
             DerivativesDataSink(
@@ -876,14 +969,13 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
             iterfield=["atlas", "in_file", "meta_dict"],
         )
-
         # fmt:off
         workflow.connect([
             (inputnode, ds_parcellated_alff, [
                 ("parcellated_alff", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
-            (make_dict, ds_parcellated_alff, [("metadata", "meta_dict")]),
+            (add_alff_to_sources, ds_parcellated_alff, [("metadata", "meta_dict")]),
         ])
         # fmt:on
 
