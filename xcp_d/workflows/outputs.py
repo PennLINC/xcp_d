@@ -11,7 +11,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink, InferBIDSURIs
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _make_dictionary
+from xcp_d.utils.utils import _make_dictionary, _out_file_to_source
 
 
 @fill_doc
@@ -416,7 +416,6 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    # TODO: Use filtered motion file as Sources.
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -436,7 +435,12 @@ def init_postproc_derivatives_wf(
             ("temporal_mask_metadata", "meta_dict"),
             ("temporal_mask", "in_file"),
         ]),
-        (preproc_confounds_src, ds_temporal_mask, [("bids_uris", "Sources")]),
+        (ds_filtered_motion, ds_temporal_mask, [
+            (
+                ("out_file", _out_file_to_source, "xcp_d", os.path.join(output_dir, "xcp_d")),
+                "Sources",
+            ),
+        ]),
         (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
     ])
     # fmt:on
@@ -462,189 +466,59 @@ def init_postproc_derivatives_wf(
         # fmt:on
 
     # Write out derivatives via DerivativesDataSink
-    if not cifti:  # if Nifti
-        ds_denoised_bold = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                cohort=cohort,
-                desc="denoised",
-                extension=".nii.gz",
-                compression=True,
-                # Metadata
-                meta_dict=cleaned_data_dictionary,
-                SoftwareFilters=software_filters,
-            ),
-            name="ds_denoised_bold",
-            run_without_submitting=True,
-            mem_gb=2,
-        )
+    ds_denoised_bold = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            dismiss_entities=["den"],
+            cohort=cohort,
+            desc="denoised",
+            den="91k" if cifti else None,
+            extension=".dtseries.nii" if cifti else ".nii.gz",
+            # Metadata
+            meta_dict=cleaned_data_dictionary,
+            SoftwareFilters=software_filters,
+        ),
+        name="ds_denoised_bold",
+        run_without_submitting=True,
+        mem_gb=2,
+    )
 
-        if dcan_qc:
-            # TODO: Use denoised BOLD as Source
-            ds_interpolated_denoised_bold = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    source_file=name_source,
-                    desc="interpolated",
-                    extension=".nii.gz",
-                    compression=True,
-                    # Metadata
-                    meta_dict=cleaned_data_dictionary,
-                    SoftwareFilters=software_filters,
-                ),
-                name="ds_interpolated_denoised_bold",
-                run_without_submitting=True,
-                mem_gb=2,
-            )
-
-        ds_qc_file = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                desc="linc",
-                suffix="qc",
-                extension=".csv",
-            ),
-            name="ds_qc_file",
-            run_without_submitting=True,
-            mem_gb=1,
-        )
-
+    if dcan_qc:
         # TODO: Use denoised BOLD as Source
-        ds_reho = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                dismiss_entities=["desc"],
-                cohort=cohort,
-                suffix="reho",
-                extension=".nii.gz",
-                compression=True,
-                # Metadata
-                SoftwareFilters=software_filters,
-                Neighborhood="vertices",
-            ),
-            name="ds_reho",
-            run_without_submitting=True,
-            mem_gb=1,
-        )
-
-        if bandpass_filter and (fd_thresh <= 0):
-            # TODO: Use denoised BOLD as Source
-            ds_alff = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    source_file=name_source,
-                    dismiss_entities=["desc"],
-                    cohort=cohort,
-                    suffix="alff",
-                    extension=".nii.gz",
-                    compression=True,
-                    # Metadata
-                    SoftwareFilters=software_filters,
-                ),
-                name="ds_alff",
-                run_without_submitting=True,
-                mem_gb=1,
-            )
-
-        if smoothing:  # if smoothed
-            # Write out derivatives via DerivativesDataSink
-            # TODO: Use denoised BOLD as Source
-            ds_smoothed_bold = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    source_file=name_source,
-                    cohort=cohort,
-                    desc="denoisedSmoothed",
-                    extension=".nii.gz",
-                    compression=True,
-                    # Metadata
-                    SoftwareFilters=software_filters,
-                    FWHM=smoothing,
-                ),
-                name="ds_smoothed_bold",
-                run_without_submitting=True,
-                mem_gb=2,
-            )
-
-            if bandpass_filter and (fd_thresh <= 0):
-                # TODO: Use ALFF as Source
-                ds_smoothed_alff = pe.Node(
-                    DerivativesDataSink(
-                        base_directory=output_dir,
-                        source_file=name_source,
-                        cohort=cohort,
-                        desc="smooth",
-                        suffix="alff",
-                        extension=".nii.gz",
-                        compression=True,
-                        # Metadata
-                        SoftwareFilters=software_filters,
-                        FWHM=smoothing,
-                    ),
-                    name="ds_smoothed_alff",
-                    run_without_submitting=True,
-                    mem_gb=1,
-                )
-
-    else:  # For cifti files
-        # Write out derivatives via DerivativesDataSink
-        ds_denoised_bold = pe.Node(
+        ds_interpolated_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["den"],
-                cohort=cohort,
-                desc="denoised",
-                den="91k",
-                extension=".dtseries.nii",
+                desc="interpolated",
+                den="91k" if cifti else None,
+                extension=".dtseries.nii" if cifti else ".nii.gz",
                 # Metadata
                 meta_dict=cleaned_data_dictionary,
-                SoftwareFilters=software_filters,
             ),
-            name="ds_denoised_bold",
+            name="ds_interpolated_denoised_bold",
             run_without_submitting=True,
             mem_gb=2,
         )
 
-        if dcan_qc:
-            # TODO: Use denoised BOLD as Source
-            ds_interpolated_denoised_bold = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    source_file=name_source,
-                    dismiss_entities=["den"],
-                    desc="interpolated",
-                    den="91k",
-                    extension=".dtseries.nii",
-                    # Metadata
-                    meta_dict=cleaned_data_dictionary,
-                ),
-                name="ds_interpolated_denoised_bold",
-                run_without_submitting=True,
-                mem_gb=2,
-            )
+    ds_qc_file = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            dismiss_entities=["desc", "den"],
+            cohort=cohort,
+            den="91k" if cifti else None,
+            desc="linc",
+            suffix="qc",
+            extension=".csv",
+        ),
+        name="ds_qc_file",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
 
-        ds_qc_file = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                dismiss_entities=["desc", "den"],
-                cohort=cohort,
-                den="91k",
-                desc="linc",
-                suffix="qc",
-                extension=".csv",
-            ),
-            name="ds_qc_file",
-            run_without_submitting=True,
-            mem_gb=1,
-        )
-
+    if cifti:
         # TODO: Use denoised BOLD as Source
         ds_coverage_cifti_files = pe.MapNode(
             DerivativesDataSink(
@@ -669,7 +543,7 @@ def init_postproc_derivatives_wf(
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
-                den="91k",
+                den="91k" if cifti else None,
                 suffix="timeseries",
                 extension=".ptseries.nii",
             ),
@@ -686,7 +560,7 @@ def init_postproc_derivatives_wf(
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
-                den="91k",
+                den="91k" if cifti else None,
                 measure="pearsoncorrelation",
                 suffix="conmat",
                 extension=".pconn.nii",
@@ -718,89 +592,89 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
+    # TODO: Use denoised BOLD as Source
+    ds_reho = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            check_hdr=False,
+            dismiss_entities=["desc", "den"],
+            cohort=cohort,
+            den="91k" if cifti else None,
+            suffix="reho",
+            extension=".dscalar.nii" if cifti else ".nii.gz",
+            # Metadata
+            SoftwareFilters=software_filters,
+            Neighborhood="vertices",
+        ),
+        name="ds_reho",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+
+    if bandpass_filter and (fd_thresh <= 0):
         # TODO: Use denoised BOLD as Source
-        ds_reho = pe.Node(
+        ds_alff = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
-                den="91k",
-                suffix="reho",
-                extension=".dscalar.nii",
+                den="91k" if cifti else None,
+                suffix="alff",
+                extension=".dscalar.nii" if cifti else ".nii.gz",
                 # Metadata
                 SoftwareFilters=software_filters,
-                Neighborhood="vertices",
             ),
-            name="ds_reho",
+            name="ds_alff",
             run_without_submitting=True,
             mem_gb=1,
         )
 
-        if bandpass_filter and (fd_thresh <= 0):
-            # TODO: Use denoised BOLD as Source
-            ds_alff = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    source_file=name_source,
-                    check_hdr=False,
-                    dismiss_entities=["desc", "den"],
-                    cohort=cohort,
-                    den="91k",
-                    suffix="alff",
-                    extension=".dscalar.nii",
-                    # Metadata
-                    SoftwareFilters=software_filters,
-                ),
-                name="ds_alff",
-                run_without_submitting=True,
-                mem_gb=1,
-            )
+    if smoothing:
+        # Write out derivatives via DerivativesDataSink
+        # TODO: Use denoised BOLD as Source
+        ds_smoothed_bold = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                dismiss_entities=["den"],
+                cohort=cohort,
+                den="91k" if cifti else None,
+                desc="denoisedSmoothed",
+                extension=".dtseries.nii" if cifti else ".nii.gz",
+                check_hdr=False,
+                # Metadata
+                SoftwareFilters=software_filters,
+                FWHM=smoothing,
+            ),
+            name="ds_smoothed_bold",
+            run_without_submitting=True,
+            mem_gb=2,
+        )
 
-        if smoothing:
-            # Write out derivatives via DerivativesDataSink
-            # TODO: Use denoised BOLD as Source
-            ds_smoothed_bold = pe.Node(
+        if bandpass_filter and (fd_thresh <= 0):
+            # TODO: Use ALFF as Source
+            ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["den"],
                     cohort=cohort,
-                    den="91k",
-                    desc="denoisedSmoothed",
-                    extension=".dtseries.nii",
+                    desc="smooth",
+                    den="91k" if cifti else None,
+                    suffix="alff",
+                    extension=".dscalar.nii" if cifti else ".nii.gz",
                     check_hdr=False,
                     # Metadata
                     SoftwareFilters=software_filters,
                     FWHM=smoothing,
                 ),
-                name="ds_smoothed_bold",
+                name="ds_smoothed_alff",
                 run_without_submitting=True,
-                mem_gb=2,
+                mem_gb=1,
             )
-
-            if bandpass_filter and (fd_thresh <= 0):
-                # TODO: Use ALFF as Source
-                ds_smoothed_alff = pe.Node(
-                    DerivativesDataSink(
-                        base_directory=output_dir,
-                        source_file=name_source,
-                        dismiss_entities=["den"],
-                        cohort=cohort,
-                        desc="smooth",
-                        den="91k",
-                        suffix="alff",
-                        extension=".dscalar.nii",
-                        check_hdr=False,
-                        # Metadata
-                        SoftwareFilters=software_filters,
-                        FWHM=smoothing,
-                    ),
-                    name="ds_smoothed_alff",
-                    run_without_submitting=True,
-                    mem_gb=1,
-                )
 
     # fmt:off
     workflow.connect([
