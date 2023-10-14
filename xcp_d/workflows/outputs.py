@@ -520,7 +520,7 @@ def init_postproc_derivatives_wf(
     workflow.connect([(inputnode, ds_qc_file, [("qc_file", "in_file")])])
 
     # Convert Sources to a dictionary, to play well with parcellation MapNodes.
-    add_denoised_to_sources = pe.MapNode(
+    add_denoised_to_src = pe.MapNode(
         niu.Function(
             function=_make_dictionary,
             input_names=["metadata", "Sources"],
@@ -528,13 +528,13 @@ def init_postproc_derivatives_wf(
         ),
         run_without_submitting=True,
         mem_gb=1,
-        name="add_denoised_to_sources",
+        name="add_denoised_to_src",
         iterfield=["metadata"],
     )
     # fmt:off
     workflow.connect([
-        (make_atlas_dict, add_denoised_to_sources, [("metadata", "metadata")]),
-        (ds_denoised_bold, add_denoised_to_sources, [
+        (make_atlas_dict, add_denoised_to_src, [("metadata", "metadata")]),
+        (ds_denoised_bold, add_denoised_to_src, [
             (("out_file", _postproc_to_source), "Sources"),
         ]),
     ])
@@ -607,7 +607,7 @@ def init_postproc_derivatives_wf(
     )
     # fmt:off
     workflow.connect([
-        (add_denoised_to_sources, add_coverage_to_src, [("metadata", "metadata")]),
+        (add_denoised_to_src, add_coverage_to_src, [("metadata", "metadata")]),
         (ds_coverage, add_coverage_to_src, [
             (("out_file", _postproc_to_source), "Sources"),
         ]),
@@ -639,7 +639,6 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    # TODO: Use timeseries file as Source.
     make_corrs_meta_dict = pe.MapNode(
         niu.Function(
             function=_make_dictionary,
@@ -700,7 +699,7 @@ def init_postproc_derivatives_wf(
                 ("coverage_ciftis", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
-            (add_denoised_to_sources, ds_coverage_ciftis, [("metadata", "meta_dict")]),
+            (add_denoised_to_src, ds_coverage_ciftis, [("metadata", "meta_dict")]),
         ])
         # fmt:on
 
@@ -717,7 +716,7 @@ def init_postproc_derivatives_wf(
         )
         # fmt:off
         workflow.connect([
-            (add_denoised_to_sources, add_ccoverage_to_src, [("metadata", "metadata")]),
+            (add_denoised_to_src, add_ccoverage_to_src, [("metadata", "metadata")]),
             (ds_coverage_ciftis, add_ccoverage_to_src, [
                 (("out_file", _postproc_to_source), "Sources"),
             ]),
@@ -857,6 +856,24 @@ def init_postproc_derivatives_wf(
     # fmt:on
 
     # TODO: Use ReHo as Source
+    add_reho_to_src = pe.MapNode(
+        niu.Function(
+            function=_make_dictionary,
+            input_names=["metadata", "Sources"],
+            output_names=["metadata"],
+        ),
+        run_without_submitting=True,
+        mem_gb=1,
+        name="add_reho_to_src",
+        iterfield=["metadata"],
+    )
+    # fmt:off
+    workflow.connect([
+        (make_atlas_dict, add_reho_to_src, [("metadata", "metadata")]),
+        (ds_reho, add_reho_to_src, [(("out_file", _postproc_to_source), "Sources")]),
+    ])
+    # fmt:on
+
     ds_parcellated_reho = pe.MapNode(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -880,7 +897,7 @@ def init_postproc_derivatives_wf(
             ("parcellated_reho", "in_file"),
             ("atlas_names", "atlas"),
         ]),
-        (make_atlas_dict, ds_parcellated_reho, [("metadata", "meta_dict")]),
+        (add_reho_to_src, ds_parcellated_reho, [("metadata", "meta_dict")]),
     ])
     # fmt:on
 
@@ -936,7 +953,7 @@ def init_postproc_derivatives_wf(
             ])
             # fmt:on
 
-        add_alff_to_sources = pe.MapNode(
+        add_alff_to_src = pe.MapNode(
             niu.Function(
                 function=_make_dictionary,
                 input_names=["metadata", "Sources"],
@@ -944,17 +961,16 @@ def init_postproc_derivatives_wf(
             ),
             run_without_submitting=True,
             mem_gb=1,
-            name="add_alff_to_sources",
+            name="add_alff_to_src",
             iterfield=["metadata"],
         )
         # fmt:off
         workflow.connect([
-            (make_atlas_dict, add_alff_to_sources, [("metadata", "metadata")]),
-            (ds_alff, add_alff_to_sources, [(("out_file", _postproc_to_source), "Sources")]),
+            (make_atlas_dict, add_alff_to_src, [("metadata", "metadata")]),
+            (ds_alff, add_alff_to_src, [(("out_file", _postproc_to_source), "Sources")]),
         ])
         # fmt:on
 
-        # TODO: Use ALFF as Source
         ds_parcellated_alff = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -975,7 +991,7 @@ def init_postproc_derivatives_wf(
                 ("parcellated_alff", "in_file"),
                 ("atlas_names", "atlas"),
             ]),
-            (add_alff_to_sources, ds_parcellated_alff, [("metadata", "meta_dict")]),
+            (add_alff_to_src, ds_parcellated_alff, [("metadata", "meta_dict")]),
         ])
         # fmt:on
 
