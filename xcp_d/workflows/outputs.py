@@ -282,6 +282,8 @@ def init_postproc_derivatives_wf(
     )
 
     def _postproc_to_source(out_file, output_dir):
+        import os
+
         from xcp_d.utils.utils import _out_file_to_source
 
         return _out_file_to_source(out_file, "xcp_d", os.path.join(output_dir, "xcp_d"))

@@ -659,7 +659,7 @@ def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, xcpd_dir):
+def write_dataset_description(fmri_dir, xcpd_dir, custom_confounds_folder=None):
     """Write dataset_description.json file for derivatives.
 
     Parameters
@@ -710,6 +710,12 @@ def write_dataset_description(fmri_dir, xcpd_dir):
         LOGGER.warning("'xcp_d' is already a dataset link. Overwriting.")
 
     dset_desc["DatasetLinks"]["xcp_d"] = str(xcpd_dir)
+
+    if custom_confounds_folder:
+        if "custom_confounds" in dset_desc["DatasetLinks"].keys():
+            LOGGER.warning("'custom_confounds' is already a dataset link. Overwriting.")
+
+        dset_desc["DatasetLinks"]["custom_confounds"] = str(custom_confounds_folder)
 
     xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
