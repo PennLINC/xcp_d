@@ -541,18 +541,21 @@ def _listify(obj):
 
 
 def _make_dictionary(metadata=None, **kwargs):
+    from copy import deepcopy
+
     if metadata:
+        out_metadata = deepcopy(metadata)
         for key, value in kwargs.items():
             if key not in metadata.keys():
-                metadata[key] = value
+                out_metadata[key] = value
             elif isinstance(value, list):
                 # Append the values if they're a list
-                metadata[key] += value
+                out_metadata[key] += value
             else:
                 # Overwrite the old value
-                metadata[key] = value
+                out_metadata[key] = value
 
-        return metadata
+        return out_metadata
     else:
         return dict(kwargs)
 
