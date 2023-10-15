@@ -395,36 +395,50 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    ds_temporal_mask = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
-            suffix="outliers",
-            extension=".tsv",
-            source_file=name_source,
-            # Metadata
-            Threshold=fd_thresh,
-        ),
-        name="ds_temporal_mask",
+    merge_dense_src = pe.Node(
+        niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if params != "none" else 0))),
+        name="merge_dense_src",
         run_without_submitting=True,
         mem_gb=1,
     )
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_temporal_mask, [
-            ("temporal_mask_metadata", "meta_dict"),
-            ("temporal_mask", "in_file"),
-        ]),
-        (ds_filtered_motion, ds_temporal_mask, [
-            (("out_file", _postproc_to_source, output_dir), "Sources"),
-        ]),
-        (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
-    ])
-    # fmt:on
+    merge_dense_src.inputs.in1 = preproc_bold_src
+
+    if fd_thresh > 0:
+        ds_temporal_mask = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
+                suffix="outliers",
+                extension=".tsv",
+                source_file=name_source,
+                # Metadata
+                Threshold=fd_thresh,
+            ),
+            name="ds_temporal_mask",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_temporal_mask, [
+                ("temporal_mask_metadata", "meta_dict"),
+                ("temporal_mask", "in_file"),
+            ]),
+            (ds_filtered_motion, ds_temporal_mask, [
+                (("out_file", _postproc_to_source, output_dir), "Sources"),
+            ]),
+            (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
+            (ds_temporal_mask, merge_dense_src, [
+                (("out_file", _postproc_to_source, output_dir), "in2"),
+            ]),
+        ])
+        # fmt:on
 
     if params != "none":
         confounds_src = pe.Node(
-            niu.Merge(numinputs=3 if custom_confounds_file else 2),
+            niu.Merge(
+                numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if custom_confounds_file else 0))
+            ),
             name="confounds_src",
             run_without_submitting=True,
             mem_gb=1,
@@ -436,7 +450,7 @@ def init_postproc_derivatives_wf(
                 (("out_file", _postproc_to_source, output_dir), "in2"),
             ]),
         ])
-        # fmt:on
+        # fmt:off
         if custom_confounds_file:
             confounds_src.inputs.in3 = _custom_to_source(custom_confounds_file)
 
@@ -456,24 +470,11 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_confounds, [("confounds_file", "in_file")]),
             (confounds_src, ds_confounds, [("out", "Sources")]),
+            (ds_confounds, merge_dense_src, [
+                (("out_file", _postproc_to_source, output_dir), f"in{3 if fd_thresh > 0 else 2}"),
+            ]),
         ])
         # fmt:on
-
-    merge_dense_src = pe.Node(
-        niu.Merge(numinputs=3),
-        name="merge_dense_src",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    merge_dense_src.inputs.in1 = preproc_bold_src
-    # fmt:off
-    workflow.connect([
-        (ds_confounds, merge_dense_src, [(("out_file", _postproc_to_source, output_dir), "in2")]),
-        (ds_temporal_mask, merge_dense_src, [
-            (("out_file", _postproc_to_source, output_dir), "in3"),
-        ]),
-    ])
-    # fmt:on
 
     # Write out derivatives via DerivativesDataSink
     ds_denoised_bold = pe.Node(
