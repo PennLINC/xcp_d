@@ -396,7 +396,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
         # fmt:off
         workflow.connect([
-            (timeseries_src, make_timeseries_ciftis_dict, [("bids_uris", "Sources")]),
+            (timeseries_ciftis_src, make_timeseries_ciftis_dict, [
+                (("bids_uris", _transpose_lol), "Sources"),
+            ]),
         ])
         # fmt:on
 
