@@ -422,24 +422,24 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    confounds_src = pe.Node(
-        niu.Merge(numinputs=3 if custom_confounds_file else 2),
-        name="confounds_src",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    # fmt:off
-    workflow.connect([
-        (inputnode, confounds_src, [("fmriprep_confounds_file", "in1")]),
-        (ds_temporal_mask, confounds_src, [
-            (("out_file", _postproc_to_source, output_dir), "in2"),
-        ]),
-    ])
-    # fmt:on
-    if custom_confounds_file:
-        confounds_src.inputs.in3 = _custom_to_source(custom_confounds_file)
-
     if params != "none":
+        confounds_src = pe.Node(
+            niu.Merge(numinputs=3 if custom_confounds_file else 2),
+            name="confounds_src",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        # fmt:off
+        workflow.connect([
+            (inputnode, confounds_src, [("fmriprep_confounds_file", "in1")]),
+            (ds_temporal_mask, confounds_src, [
+                (("out_file", _postproc_to_source, output_dir), "in2"),
+            ]),
+        ])
+        # fmt:on
+        if custom_confounds_file:
+            confounds_src.inputs.in3 = _custom_to_source(custom_confounds_file)
+
         ds_confounds = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -455,7 +455,7 @@ def init_postproc_derivatives_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_confounds, [("confounds_file", "in_file")]),
-            (confounds_src, ds_confounds, [("bids_uris", "Sources")]),
+            (confounds_src, ds_confounds, [("out", "Sources")]),
         ])
         # fmt:on
 
