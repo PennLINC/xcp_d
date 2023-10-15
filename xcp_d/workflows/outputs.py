@@ -138,7 +138,7 @@ def init_postproc_derivatives_wf(
     cifti,
     dcan_qc,
     output_dir,
-    TR,
+    custom_confounds_file,
     name="postproc_derivatives_wf",
 ):
     """Write out the xcp_d derivatives in BIDS format.
@@ -166,7 +166,7 @@ def init_postproc_derivatives_wf(
                 cifti=False,
                 dcan_qc=True,
                 output_dir=".",
-                TR=2.,
+                custom_confounds_file=None,
                 name="postproc_derivatives_wf",
             )
 
@@ -191,7 +191,8 @@ def init_postproc_derivatives_wf(
     %(dcan_qc)s
     output_dir : :obj:`str`
         output directory
-    %(TR)s
+    custom_confounds_file
+        Only used for Sources metadata.
     %(name)s
         Default is "connectivity_wf".
 
@@ -302,9 +303,20 @@ def init_postproc_derivatives_wf(
         else:
             return _out_file_to_source(out_file, "preprocessed", fmri_dir)
 
+    def _custom_to_source(out_file):
+        import os
+
+        from xcp_d.utils.utils import _out_file_to_source
+
+        if isinstance(out_file, list):
+            return [
+                _out_file_to_source(of, "custom_confounds", os.path.dirname(of)) for of in out_file
+            ]
+        else:
+            return _out_file_to_source(out_file, "custom_confounds", os.path.dirname(out_file))
+
     # Create dictionary of basic information
     cleaned_data_dictionary = {
-        "RepetitionTime": TR,
         "nuisance parameters": params,
         **source_metadata,
     }
@@ -333,18 +345,6 @@ def init_postproc_derivatives_wf(
 
     preproc_bold_src = _preproc_to_source(name_source, fmri_dir)
 
-    preproc_confounds_src = pe.Node(
-        InferBIDSURIs(
-            numinputs=1,
-            dataset_name="preprocessed",
-            dataset_path=fmri_dir,
-        ),
-        name="preproc_confounds_src",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    workflow.connect([(inputnode, preproc_confounds_src, [("fmriprep_confounds_file", "in1")])])
-
     atlas_src = pe.MapNode(
         InferBIDSURIs(
             numinputs=1,
@@ -357,15 +357,6 @@ def init_postproc_derivatives_wf(
         iterfield=["in1"],
     )
     workflow.connect([(inputnode, atlas_src, [("atlas_files", "in1")])])
-
-    merge_dense_src = pe.Node(
-        niu.Merge(numinputs=2),
-        name="merge_dense_src",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    merge_dense_src.inputs.in1 = preproc_bold_src
-    workflow.connect([(preproc_confounds_src, merge_dense_src, [("bids_uris", "in2")])])
 
     make_atlas_dict = pe.MapNode(
         niu.Function(
@@ -398,8 +389,8 @@ def init_postproc_derivatives_wf(
         (inputnode, ds_filtered_motion, [
             ("motion_metadata", "meta_dict"),
             ("filtered_motion", "in_file"),
+            (("fmriprep_confounds_file", _preproc_to_source, fmri_dir), "Sources"),
         ]),
-        (preproc_confounds_src, ds_filtered_motion, [("bids_uris", "Sources")]),
         (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
     ])
     # fmt:on
@@ -431,9 +422,28 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
+    confounds_src = pe.Node(
+        InferBIDSURIs(
+            numinputs=3 if custom_confounds_file else 2,
+            dataset_name="preprocessed",
+            dataset_path=fmri_dir,
+        ),
+        name="confounds_src",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    # fmt:off
+    workflow.connect([
+        (inputnode, confounds_src, [("fmriprep_confounds_file", "in1")]),
+        (ds_temporal_mask, confounds_src, [
+            (("out_file", _postproc_to_source, output_dir), "in2"),
+        ]),
+    ])
+    # fmt:on
+    if custom_confounds_file:
+        confounds_src.inputs.in3 = _custom_to_source(custom_confounds_file)
+
     if params != "none":
-        # TODO: Add custom confounds file to sources
-        # TODO: Add temporal mask to sources
         ds_confounds = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -449,12 +459,27 @@ def init_postproc_derivatives_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_confounds, [("confounds_file", "in_file")]),
-            (preproc_confounds_src, ds_confounds, [("bids_uris", "Sources")]),
+            (confounds_src, ds_confounds, [("bids_uris", "Sources")]),
         ])
         # fmt:on
 
+    merge_dense_src = pe.Node(
+        niu.Merge(numinputs=3),
+        name="merge_dense_src",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    merge_dense_src.inputs.in1 = preproc_bold_src
+    # fmt:off
+    workflow.connect([
+        (ds_confounds, merge_dense_src, [(("out_file", _postproc_to_source, output_dir), "in2")]),
+        (ds_temporal_mask, merge_dense_src, [
+            (("out_file", _postproc_to_source, output_dir), "in3"),
+        ]),
+    ])
+    # fmt:on
+
     # Write out derivatives via DerivativesDataSink
-    # TODO: Add temporal mask to sources
     ds_denoised_bold = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -874,7 +899,6 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    # TODO: Use ReHo as Source
     add_reho_to_src = pe.MapNode(
         niu.Function(
             function=_make_dictionary,

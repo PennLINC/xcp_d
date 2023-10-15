@@ -524,7 +524,7 @@ def init_postprocess_nifti_wf(
         cifti=False,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
-        TR=TR,
+        custom_confounds_file=custom_confounds_file,
         name="postproc_derivatives_wf",
     )
 
