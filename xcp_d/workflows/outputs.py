@@ -286,12 +286,21 @@ def init_postproc_derivatives_wf(
 
         from xcp_d.utils.utils import _out_file_to_source
 
-        return _out_file_to_source(out_file, "xcp_d", os.path.join(output_dir, "xcp_d"))
+        if isinstance(out_file, list):
+            return [
+                _out_file_to_source(of, "xcp_d", os.path.join(output_dir, "xcp_d"))
+                for of in out_file
+            ]
+        else:
+            return _out_file_to_source(out_file, "xcp_d", os.path.join(output_dir, "xcp_d"))
 
     def _preproc_to_source(out_file, fmri_dir):
         from xcp_d.utils.utils import _out_file_to_source
 
-        return _out_file_to_source(out_file, "preprocessed", fmri_dir)
+        if isinstance(out_file, list):
+            return [_out_file_to_source(of, "preprocessed", fmri_dir) for of in out_file]
+        else:
+            return _out_file_to_source(out_file, "preprocessed", fmri_dir)
 
     # Create dictionary of basic information
     cleaned_data_dictionary = {
