@@ -423,11 +423,7 @@ def init_postproc_derivatives_wf(
     # fmt:on
 
     confounds_src = pe.Node(
-        InferBIDSURIs(
-            numinputs=3 if custom_confounds_file else 2,
-            dataset_name="preprocessed",
-            dataset_path=fmri_dir,
-        ),
+        niu.Merge(numinputs=3 if custom_confounds_file else 2),
         name="confounds_src",
         run_without_submitting=True,
         mem_gb=1,
