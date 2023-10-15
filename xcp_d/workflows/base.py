@@ -799,6 +799,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 smoothing=smoothing,
                 cifti=cifti,
                 dcan_qc=dcan_qc,
+                fd_thresh=fd_thresh,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 name=f"concatenate_entity_set_{ent_set}_wf",

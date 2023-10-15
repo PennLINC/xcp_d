@@ -501,7 +501,7 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    if dcan_qc:
+    if dcan_qc and (fd_thresh > 0):
         ds_interpolated_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,

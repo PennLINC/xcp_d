@@ -20,14 +20,15 @@ from xcp_d.workflows.plotting import init_qc_report_wf
 def init_concatenate_data_wf(
     output_dir,
     motion_filter_type,
-    mem_gb,
-    omp_nthreads,
     TR,
     head_radius,
     params,
     smoothing,
     cifti,
     dcan_qc,
+    fd_thresh,
+    mem_gb,
+    omp_nthreads,
     name="concatenate_data_wf",
 ):
     """Concatenate postprocessed data across runs and directions.
@@ -42,14 +43,15 @@ def init_concatenate_data_wf(
             wf = init_concatenate_data_wf(
                 output_dir=".",
                 motion_filter_type=None,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 TR=2,
                 head_radius=50,
                 params="none",
                 smoothing=None,
                 cifti=False,
                 dcan_qc=True,
+                fd_thresh=0.3,
+                mem_gb=0.1,
+                omp_nthreads=1,
                 name="concatenate_data_wf",
             )
 
@@ -57,14 +59,15 @@ def init_concatenate_data_wf(
     ----------
     %(output_dir)s
     %(motion_filter_type)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(TR)s
     %(head_radius)s
     %(params)s
     %(smoothing)s
     %(cifti)s
     %(dcan_qc)s
+    fd_thresh
+    %(mem_gb)s
+    %(omp_nthreads)s
     %(name)s
         Default is "concatenate_data_wf".
 
@@ -440,7 +443,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-        if dcan_qc:
+        if dcan_qc and (fd_thresh > 0):
             ds_interpolated_filtered_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -480,7 +483,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-        if dcan_qc:
+        if dcan_qc and (fd_thresh > 0):
             ds_interpolated_filtered_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
