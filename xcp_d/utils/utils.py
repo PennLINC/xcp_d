@@ -563,3 +563,8 @@ def _make_dictionary(metadata=None, **kwargs):
 def _out_file_to_source(in_file, dataset_name, dataset_path):
     bids_uri = [f"bids:{dataset_name}:{str(Path(in_file).relative_to(dataset_path))}"]
     return bids_uri
+
+
+def _transpose_lol(lol):
+    """Transpose list of lists."""
+    return list(map(list, zip(*lol)))
