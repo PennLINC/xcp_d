@@ -7,6 +7,7 @@ A PR will be submitted to niworkflows at some point.
 """
 import os
 import warnings
+from pathlib import Path
 
 import nibabel as nb
 import yaml
@@ -975,3 +976,51 @@ def group_across_runs(in_files):
         out_files[group_idx].append(in_file)
 
     return out_files
+
+
+def _make_uri(in_file, dataset_name, dataset_path):
+    """Convert a filename to a BIDS URI.
+
+    Raises
+    ------
+    ValueError
+        If ``in_file`` is not relative to ``dataset_path``.
+    """
+    bids_uri = [f"bids:{dataset_name}:{str(Path(in_file).relative_to(dataset_path))}"]
+    return bids_uri
+
+
+def _make_xcpd_uri(out_file, output_dir):
+    """Convert postprocessing derivative's path to BIDS URI."""
+    import os
+
+    from xcp_d.utils.bids import _make_uri
+
+    dataset_path = os.path.join(output_dir, "xcp_d")
+
+    if isinstance(out_file, list):
+        return [_make_uri(of, "xcp_d", dataset_path) for of in out_file]
+    else:
+        return _make_uri(out_file, "xcp_d", dataset_path)
+
+
+def _make_preproc_uri(out_file, fmri_dir):
+    """Convert preprocessing derivative's path to BIDS URI."""
+    from xcp_d.utils.bids import _make_uri
+
+    if isinstance(out_file, list):
+        return [_make_uri(of, "preprocessed", fmri_dir) for of in out_file]
+    else:
+        return _make_uri(out_file, "preprocessed", fmri_dir)
+
+
+def _make_custom_uri(out_file):
+    """Convert custom confound's path to BIDS URI."""
+    import os
+
+    from xcp_d.utils.bids import _make_uri
+
+    if isinstance(out_file, list):
+        return [_make_uri(of, "custom_confounds", os.path.dirname(of)) for of in out_file]
+    else:
+        return _make_uri(out_file, "custom_confounds", os.path.dirname(out_file))

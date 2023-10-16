@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Miscellaneous utility functions for xcp_d."""
 import warnings
-from pathlib import Path
 
 import nibabel as nb
 import numpy as np
@@ -563,12 +562,6 @@ def _make_dictionary(metadata=None, **kwargs):
         return out_metadata
     else:
         return dict(kwargs)
-
-
-def _out_file_to_source(in_file, dataset_name, dataset_path):
-    """Convert a filename to a BIDS URI."""
-    bids_uri = [f"bids:{dataset_name}:{str(Path(in_file).relative_to(dataset_path))}"]
-    return bids_uri
 
 
 def _transpose_lol(lol):

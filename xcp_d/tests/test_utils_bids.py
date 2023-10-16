@@ -294,3 +294,16 @@ def test_group_across_runs():
         "/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz",
         "/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz",
     ]
+
+
+def test_make_uri():
+    """Test _make_uri."""
+    in_file = "/path/to/dset/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    dataset_name = "test"
+    dataset_path = "/path/to/dset"
+    uri = xbids._make_uri(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
+    assert uri == "bids:test:sub-01/func/sub-01_task-rest_bold.nii.gz"
+
+    dataset_path = "/another/path/haha"
+    with pytest.raises(ValueError, match="is not in the subpath of"):
+        xbids._make_uri(in_file, dataset_name=dataset_name, dataset_path=dataset_path)

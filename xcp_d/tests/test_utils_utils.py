@@ -450,19 +450,6 @@ def test_make_dictionary():
     assert out_metadata["Sources"] == ["b"]
 
 
-def test_out_file_to_source():
-    """Test _out_file_to_source."""
-    in_file = "/path/to/dset/sub-01/func/sub-01_task-rest_bold.nii.gz"
-    dataset_name = "test"
-    dataset_path = "/path/to/dset"
-    uri = utils._out_file_to_source(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
-    assert uri == "bids:test:sub-01/func/sub-01_task-rest_bold.nii.gz"
-
-    dataset_path = "/another/path/haha"
-    with pytest.raises(ValueError, match="is not in the subpath of"):
-        utils._out_file_to_source(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
-
-
 def test_transpose_lol():
     """Test _transpose_lol."""
     inputs = [

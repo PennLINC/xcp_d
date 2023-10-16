@@ -9,7 +9,12 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.bids import DerivativesDataSink, InferBIDSURIs
 from xcp_d.interfaces.utils import FilterUndefined
-from xcp_d.utils.bids import get_entity
+from xcp_d.utils.bids import (
+    _make_custom_uri,
+    _make_preproc_uri,
+    _make_xcpd_uri,
+    get_entity,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _make_dictionary
 
@@ -282,39 +287,6 @@ def init_postproc_derivatives_wf(
         name="outputnode",
     )
 
-    def _postproc_to_source(out_file, output_dir):
-        import os
-
-        from xcp_d.utils.utils import _out_file_to_source
-
-        if isinstance(out_file, list):
-            return [
-                _out_file_to_source(of, "xcp_d", os.path.join(output_dir, "xcp_d"))
-                for of in out_file
-            ]
-        else:
-            return _out_file_to_source(out_file, "xcp_d", os.path.join(output_dir, "xcp_d"))
-
-    def _preproc_to_source(out_file, fmri_dir):
-        from xcp_d.utils.utils import _out_file_to_source
-
-        if isinstance(out_file, list):
-            return [_out_file_to_source(of, "preprocessed", fmri_dir) for of in out_file]
-        else:
-            return _out_file_to_source(out_file, "preprocessed", fmri_dir)
-
-    def _custom_to_source(out_file):
-        import os
-
-        from xcp_d.utils.utils import _out_file_to_source
-
-        if isinstance(out_file, list):
-            return [
-                _out_file_to_source(of, "custom_confounds", os.path.dirname(of)) for of in out_file
-            ]
-        else:
-            return _out_file_to_source(out_file, "custom_confounds", os.path.dirname(out_file))
-
     # Create dictionary of basic information
     cleaned_data_dictionary = {
         "nuisance parameters": params,
@@ -343,7 +315,7 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
 
-    preproc_bold_src = _preproc_to_source(name_source, fmri_dir)
+    preproc_bold_src = _make_preproc_uri(name_source, fmri_dir)
 
     atlas_src = pe.MapNode(
         InferBIDSURIs(
@@ -389,7 +361,7 @@ def init_postproc_derivatives_wf(
         (inputnode, ds_filtered_motion, [
             ("motion_metadata", "meta_dict"),
             ("filtered_motion", "in_file"),
-            (("fmriprep_confounds_file", _preproc_to_source, fmri_dir), "Sources"),
+            (("fmriprep_confounds_file", _make_preproc_uri, fmri_dir), "Sources"),
         ]),
         (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
     ])
@@ -425,11 +397,11 @@ def init_postproc_derivatives_wf(
                 ("temporal_mask", "in_file"),
             ]),
             (ds_filtered_motion, ds_temporal_mask, [
-                (("out_file", _postproc_to_source, output_dir), "Sources"),
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
             (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
             (ds_temporal_mask, merge_dense_src, [
-                (("out_file", _postproc_to_source, output_dir), "in2"),
+                (("out_file", _make_xcpd_uri, output_dir), "in2"),
             ]),
         ])
         # fmt:on
@@ -448,16 +420,16 @@ def init_postproc_derivatives_wf(
             # fmt:off
             workflow.connect([
                 (ds_temporal_mask, confounds_src, [
-                    (("out_file", _postproc_to_source, output_dir), "in2"),
+                    (("out_file", _make_xcpd_uri, output_dir), "in2"),
                 ]),
             ])
             # fmt:on
 
             if custom_confounds_file:
-                confounds_src.inputs.in3 = _custom_to_source(custom_confounds_file)
+                confounds_src.inputs.in3 = _make_custom_uri(custom_confounds_file)
 
         elif custom_confounds_file:
-            confounds_src.inputs.in2 = _custom_to_source(custom_confounds_file)
+            confounds_src.inputs.in2 = _make_custom_uri(custom_confounds_file)
 
         ds_confounds = pe.Node(
             DerivativesDataSink(
@@ -476,7 +448,7 @@ def init_postproc_derivatives_wf(
             (inputnode, ds_confounds, [("confounds_file", "in_file")]),
             (confounds_src, ds_confounds, [("out", "Sources")]),
             (ds_confounds, merge_dense_src, [
-                (("out_file", _postproc_to_source, output_dir), f"in{3 if fd_thresh > 0 else 2}"),
+                (("out_file", _make_xcpd_uri, output_dir), f"in{3 if fd_thresh > 0 else 2}"),
             ]),
         ])
         # fmt:on
@@ -529,7 +501,7 @@ def init_postproc_derivatives_wf(
                 ("interpolated_filtered_bold", "in_file"),
             ]),
             (ds_denoised_bold, ds_interpolated_denoised_bold, [
-                (("out_file", _postproc_to_source, output_dir), "Sources"),
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
             (ds_interpolated_denoised_bold, outputnode, [
                 ("out_file", "interpolated_filtered_bold"),
@@ -579,7 +551,7 @@ def init_postproc_derivatives_wf(
     workflow.connect([
         (make_atlas_dict, add_denoised_to_src, [("metadata", "metadata")]),
         (ds_denoised_bold, add_denoised_to_src, [
-            (("out_file", _postproc_to_source, output_dir), "Sources"),
+            (("out_file", _make_xcpd_uri, output_dir), "Sources"),
         ]),
     ])
     # fmt:on
@@ -608,7 +580,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")]),
             (ds_denoised_bold, ds_smoothed_bold, [
-                (("out_file", _postproc_to_source, output_dir), "Sources"),
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
             (ds_smoothed_bold, outputnode, [("out_file", "smoothed_denoised_bold")]),
         ])
@@ -655,7 +627,7 @@ def init_postproc_derivatives_wf(
     workflow.connect([
         (add_denoised_to_src, add_coverage_to_src, [("metadata", "metadata")]),
         (ds_coverage, add_coverage_to_src, [
-            (("out_file", _postproc_to_source, output_dir), "Sources"),
+            (("out_file", _make_xcpd_uri, output_dir), "Sources"),
         ]),
     ])
     # fmt:on
@@ -764,7 +736,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (add_denoised_to_src, add_ccoverage_to_src, [("metadata", "metadata")]),
             (ds_coverage_ciftis, add_ccoverage_to_src, [
-                (("out_file", _postproc_to_source, output_dir), "Sources"),
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])
         # fmt:on
@@ -897,7 +869,7 @@ def init_postproc_derivatives_wf(
     # fmt:off
     workflow.connect([
         (inputnode, ds_reho, [("reho", "in_file")]),
-        (ds_denoised_bold, ds_reho, [(("out_file", _postproc_to_source, output_dir), "Sources")]),
+        (ds_denoised_bold, ds_reho, [(("out_file", _make_xcpd_uri, output_dir), "Sources")]),
     ])
     # fmt:on
 
@@ -915,7 +887,7 @@ def init_postproc_derivatives_wf(
     # fmt:off
     workflow.connect([
         (make_atlas_dict, add_reho_to_src, [("metadata", "metadata")]),
-        (ds_reho, add_reho_to_src, [(("out_file", _postproc_to_source, output_dir), "Sources")]),
+        (ds_reho, add_reho_to_src, [(("out_file", _make_xcpd_uri, output_dir), "Sources")]),
     ])
     # fmt:on
 
@@ -968,7 +940,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_alff, [("alff", "in_file")]),
             (ds_denoised_bold, ds_alff, [
-                (("out_file", _postproc_to_source, output_dir), "Sources"),
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])
         # fmt:on
@@ -997,7 +969,7 @@ def init_postproc_derivatives_wf(
             workflow.connect([
                 (inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")]),
                 (ds_alff, ds_smoothed_alff, [
-                    (("out_file", _postproc_to_source, output_dir), "Sources"),
+                    (("out_file", _make_xcpd_uri, output_dir), "Sources"),
                 ]),
             ])
             # fmt:on
@@ -1017,7 +989,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (make_atlas_dict, add_alff_to_src, [("metadata", "metadata")]),
             (ds_alff, add_alff_to_src, [
-                (("out_file", _postproc_to_source, output_dir), "Sources"),
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])
         # fmt:on

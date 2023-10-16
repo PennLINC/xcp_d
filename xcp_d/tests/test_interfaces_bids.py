@@ -25,3 +25,13 @@ def test_infer_bids_uris():
         f"bids:{dataset_name}:sub-01/ses-01/func/sub-01_ses-01_task-rest_run-02_bold.nii.gz",
         f"bids:{dataset_name}:sub-01/ses-01/func/sub-01_ses-01_task-nback_run-01_bold.nii.gz",
     ]
+
+    dataset_name = "ds000001"
+    dataset_path = "/path/to/dset"
+    infer_bids_uris = bids.InferBIDSURIs(
+        numinputs=0,
+        dataset_name=dataset_name,
+        dataset_path=dataset_path,
+    )
+    out = infer_bids_uris.run()
+    assert out.outputs.bids_uris == []

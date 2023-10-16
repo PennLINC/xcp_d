@@ -93,14 +93,6 @@ class InferBIDSURIs(IOBase):
             f"bids:{self.inputs.dataset_name}:{str(Path(p).relative_to(self.inputs.dataset_path))}"
             for p in raw_paths
         ]
-        if not bids_uris:
-            raise ValueError(
-                "Something's missing:\n"
-                f"\tdataset_name: {self.inputs.dataset_name}\n"
-                f"\tdataset_path: {self.inputs.dataset_path}\n"
-                f"\tvalues: {values}\n"
-                f"\traw_paths: {raw_paths}"
-            )
 
         outputs["bids_uris"] = bids_uris
         return outputs
