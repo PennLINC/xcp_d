@@ -554,9 +554,9 @@ def _make_dictionary(metadata=None, **kwargs):
         for key, value in kwargs.items():
             if key not in metadata.keys():
                 out_metadata[key] = value
-            elif isinstance(value, list):
+            elif isinstance(value, list) or isinstance(out_metadata[key], list):
                 # Append the values if they're a list
-                out_metadata[key] = _listify(out_metadata[key]) + value
+                out_metadata[key] = _listify(out_metadata[key]) + _listify(value)
             else:
                 # Overwrite the old value
                 out_metadata[key] = value
