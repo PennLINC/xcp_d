@@ -305,5 +305,5 @@ def test_make_uri():
     assert uri == "bids:test:sub-01/func/sub-01_task-rest_bold.nii.gz"
 
     dataset_path = "/another/path/haha"
-    with pytest.raises(ValueError, match="is not in the subpath of"):
+    with pytest.raises(ValueError, match="does not start with"):
         xbids._make_uri(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
