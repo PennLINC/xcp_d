@@ -425,6 +425,7 @@ class _GenerateConfoundsOutputSpec(TraitedSpec):
             "It will also always have the linear trend and a constant column."
         ),
     )
+    confounds_metadata = traits.Dict(desc="Metadata associated with the confounds_file output.")
     motion_file = File(
         exists=True,
         desc="The filtered motion parameters.",
@@ -497,13 +498,62 @@ class GenerateConfounds(SimpleInterface):
         )
 
         # Load nuisance regressors, but use filtered motion parameters.
-        confounds_df = load_confound_matrix(
+        confounds_df, confounds_metadata = load_confound_matrix(
             params=self.inputs.params,
             img_file=self.inputs.in_file,
             confounds_file=self._results["filtered_confounds_file"],
             confounds_json_file=self.inputs.fmriprep_confounds_json,
             custom_confounds=self.inputs.custom_confounds_file,
         )
+
+        # Orthogonalize full nuisance regressors w.r.t. any signal regressors
+        signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
+        if signal_columns:
+            LOGGER.warning(
+                "Signal columns detected. "
+                "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
+                f"{', '.join(signal_columns)}"
+            )
+            noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
+
+            # Don't orthogonalize the intercept or linear trend regressors
+            untouched_cols = ["linear_trend", "intercept"]
+            columns_to_denoise = [c for c in noise_columns if c not in untouched_cols]
+            orth_confounds_df = confounds_df[noise_columns].copy()
+            orth_columns = [f"{c}_orth" for c in columns_to_denoise]
+            orth_confounds_df = pd.DataFrame(
+                index=confounds_df.index,
+                columns=orth_columns + untouched_cols,
+            )
+            orth_confounds_df.loc[:, untouched_cols] = confounds_df[untouched_cols]
+
+            # Do the orthogonalization
+            signal_regressors = confounds_df[signal_columns].to_numpy()
+            noise_regressors = confounds_df[columns_to_denoise].to_numpy()
+            signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
+            pred_noise_regressors = np.dot(signal_regressors, signal_betas)
+            orth_noise_regressors = noise_regressors - pred_noise_regressors
+
+            # Replace the old data
+            orth_confounds_df.loc[:, orth_columns] = orth_noise_regressors
+            confounds_df = orth_confounds_df
+
+            for col in columns_to_denoise:
+                desc_str = (
+                    "This regressor is orthogonalized with respect to the 'signal' regressors "
+                    f"({', '.join(signal_columns)}) prior to any censoring."
+                )
+
+                col_metadata = {}
+                if col in confounds_metadata.keys():
+                    col_metadata = confounds_metadata.pop(col)
+                    if "Description" in col_metadata.keys():
+                        desc_str = f"{col_metadata['Description']} {desc_str}"
+
+                col_metadata["Description"] = desc_str
+                confounds_metadata[f"{col}_orth"] = col_metadata
+
+        self._results["confounds_metadata"] = confounds_metadata
 
         # get the output
         self._results["motion_file"] = fname_presuffix(

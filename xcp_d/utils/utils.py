@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Miscellaneous utility functions for xcp_d."""
-import warnings
-
 import nibabel as nb
 import numpy as np
 from nipype import logging
@@ -398,7 +396,6 @@ def denoise_with_nilearn(
     # Only remove high-motion outliers in this step (not the random volumes for trimming).
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
-    signal_columns = None
     denoise = bool(confounds_file)
     if denoise:
         confounds_df = pd.read_table(confounds_file)
@@ -406,28 +403,6 @@ def denoise_with_nilearn(
         assert "intercept" in confounds_df.columns
         assert "linear_trend" in confounds_df.columns
         assert confounds_df.columns[-1] == "intercept"
-
-        signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
-
-    # Orthogonalize full nuisance regressors w.r.t. any signal regressors
-    if signal_columns:
-        warnings.warn(
-            "Signal columns detected. "
-            "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
-            f"{', '.join(signal_columns)}"
-        )
-        noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
-        # Don't orthogonalize the intercept or linear trend regressors
-        columns_to_denoise = [c for c in noise_columns if c not in ["linear_trend", "intercept"]]
-        temp_confounds_df = confounds_df[noise_columns].copy()
-
-        signal_regressors = confounds_df[signal_columns].to_numpy()
-        noise_regressors = confounds_df[columns_to_denoise].to_numpy()
-        signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
-        pred_noise_regressors = np.dot(signal_regressors, signal_betas)
-        orth_noise_regressors = noise_regressors - pred_noise_regressors
-        temp_confounds_df.loc[:, columns_to_denoise] = orth_noise_regressors
-        confounds_df = temp_confounds_df
 
     # Censor the data and confounds
     preprocessed_bold_censored = preprocessed_bold[sample_mask, :]

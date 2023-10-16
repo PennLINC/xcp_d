@@ -112,30 +112,6 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
 
-    # Next, do the orthogonalization
-    reduced_confounds_df["signal__test"] = confounds_df["global_signal"]
-
-    # Move intercept to end of dataframe
-    reduced_confounds_df = reduced_confounds_df[
-        [c for c in reduced_confounds_df.columns if c not in ["intercept"]] + ["intercept"]
-    ]
-    orth_confounds_file = os.path.join(tmpdir, "orth_confounds.tsv")
-    reduced_confounds_df.to_csv(orth_confounds_file, sep="\t", index=False)
-    (
-        uncensored_denoised_bold,
-        interpolated_filtered_bold,
-    ) = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=orth_confounds_file,
-        temporal_mask=temporal_mask,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        filter_order=filter_order,
-        TR=TR,
-    )
-    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
-
     # Finally, run without denoising
     (
         uncensored_denoised_bold,
