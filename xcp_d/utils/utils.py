@@ -355,14 +355,13 @@ def denoise_with_nilearn(
 
     This step does the following:
 
-        1. Orthogonalize nuisance regressors w.r.t. any signal regressors.
-        2. Censor the data and associated confounds.
-        3. Mean-center the censored and uncensored confounds, based on the censored confounds.
-        4. Estimate betas using only the censored data.
-        5. Apply the betas to denoise the *full* (uncensored) BOLD data.
-        6. Apply the betas to denoise the censored BOLD data.
-        7. Interpolate the censored, denoised data.
-        8. Bandpass filter the interpolated, denoised data.
+        1. Censor the data and associated confounds.
+        2. Mean-center the censored and uncensored confounds, based on the censored confounds.
+        3. Estimate betas using only the censored data.
+        4. Apply the betas to denoise the *full* (uncensored) BOLD data.
+        5. Apply the betas to denoise the censored BOLD data.
+        6. Interpolate the censored, denoised data.
+        7. Bandpass filter the interpolated, denoised data.
 
     Parameters
     ----------
