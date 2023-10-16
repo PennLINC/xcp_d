@@ -541,6 +541,11 @@ def _listify(obj):
 
 
 def _make_dictionary(metadata=None, **kwargs):
+    """Create or modify a dictionary.
+
+    This will add kwargs to a metadata dictionary if the dictionary is provided,
+    or create a dictionary from scratch if not.
+    """
     from copy import deepcopy
 
     if metadata:
@@ -561,6 +566,7 @@ def _make_dictionary(metadata=None, **kwargs):
 
 
 def _out_file_to_source(in_file, dataset_name, dataset_path):
+    """Convert a filename to a BIDS URI."""
     bids_uri = [f"bids:{dataset_name}:{str(Path(in_file).relative_to(dataset_path))}"]
     return bids_uri
 

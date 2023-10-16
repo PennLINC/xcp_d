@@ -402,3 +402,91 @@ def test_select_first():
 
     lst = "abc"
     assert utils._select_first(lst) == "a"
+
+
+def test_listify():
+    """Test _listify."""
+    inputs = [
+        1,
+        (1,),
+        "a",
+        ["a"],
+        ["a", ["b", "c"]],
+        ("a", "b"),
+    ]
+    outputs = [
+        [1],
+        [1],
+        ["a"],
+        ["a"],
+        ["a", ["b", "c"]],
+        ["a", "b"],
+    ]
+    for i, input_ in enumerate(inputs):
+        expected_output = outputs[i]
+        output = utils._listify(input_)
+        assert output == expected_output
+
+
+def test_make_dictionary():
+    """Test _make_dictionary."""
+    metadata = {"Sources": ["a"]}
+    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
+    # Ensure the original dictionary isn't modified.
+    assert metadata["Sources"] == ["a"]
+    assert out_metadata["Sources"] == ["a", "b"]
+
+    metadata = {"Test": "a"}
+    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
+    assert out_metadata["Sources"] == ["b"]
+
+    metadata = {"Sources": "a"}
+    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
+    # Ensure the original dictionary isn't modified.
+    assert metadata["Sources"] == "a"
+    assert out_metadata["Sources"] == ["b"]
+
+    out_metadata = utils._make_dictionary(metadata=None, Sources=["b"])
+    assert out_metadata["Sources"] == ["b"]
+
+
+def test_out_file_to_source():
+    """Test _out_file_to_source."""
+    in_file = "/path/to/dset/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    dataset_name = "test"
+    dataset_path = "/path/to/dset"
+    uri = utils._out_file_to_source(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
+    assert uri == "bids:test:sub-01/func/sub-01_task-rest_bold.nii.gz"
+
+    dataset_path = "/another/path/haha"
+    with pytest.raises(ValueError, match="is not in the subpath of"):
+        utils._out_file_to_source(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
+
+
+def test_transpose_lol():
+    """Test _transpose_lol."""
+    inputs = [
+        [
+            ["a", "b", "c"],
+            [1, 2, 3],
+        ],
+        [
+            ["a", "b", "c", "d"],
+            [1, 2, 3],
+        ],
+    ]
+    outputs = [
+        [
+            ["a", 1],
+            ["b", 2],
+            ["c", 3],
+        ],
+        [
+            ["a", 1],
+            ["b", 2],
+            ["c", 3],
+        ],
+    ]
+    for i, input_ in enumerate(inputs):
+        expected_output = outputs[i]
+        assert utils._transpose_lol(input_) == expected_output
