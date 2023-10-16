@@ -1,4 +1,6 @@
 """Tests for framewise displacement calculation."""
+from nipype.interfaces.base import isdefined
+
 from xcp_d.interfaces import bids
 
 
@@ -34,4 +36,4 @@ def test_infer_bids_uris():
         dataset_path=dataset_path,
     )
     out = infer_bids_uris.run()
-    assert out.outputs.bids_uris == []
+    assert not isdefined(out.outputs.bids_uris)

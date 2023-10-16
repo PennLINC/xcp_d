@@ -986,7 +986,7 @@ def _make_uri(in_file, dataset_name, dataset_path):
     ValueError
         If ``in_file`` is not relative to ``dataset_path``.
     """
-    bids_uri = [f"bids:{dataset_name}:{str(Path(in_file).relative_to(dataset_path))}"]
+    bids_uri = f"bids:{dataset_name}:{str(Path(in_file).relative_to(dataset_path))}"
     return bids_uri
 
 
@@ -1001,7 +1001,7 @@ def _make_xcpd_uri(out_file, output_dir):
     if isinstance(out_file, list):
         return [_make_uri(of, "xcp_d", dataset_path) for of in out_file]
     else:
-        return _make_uri(out_file, "xcp_d", dataset_path)
+        return [_make_uri(out_file, "xcp_d", dataset_path)]
 
 
 def _make_preproc_uri(out_file, fmri_dir):
@@ -1011,7 +1011,7 @@ def _make_preproc_uri(out_file, fmri_dir):
     if isinstance(out_file, list):
         return [_make_uri(of, "preprocessed", fmri_dir) for of in out_file]
     else:
-        return _make_uri(out_file, "preprocessed", fmri_dir)
+        return [_make_uri(out_file, "preprocessed", fmri_dir)]
 
 
 def _make_custom_uri(out_file):
@@ -1023,4 +1023,4 @@ def _make_custom_uri(out_file):
     if isinstance(out_file, list):
         return [_make_uri(of, "custom_confounds", os.path.dirname(of)) for of in out_file]
     else:
-        return _make_uri(out_file, "custom_confounds", os.path.dirname(out_file))
+        return [_make_uri(out_file, "custom_confounds", os.path.dirname(out_file))]

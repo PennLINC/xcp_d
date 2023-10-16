@@ -416,11 +416,11 @@ def test_listify():
     ]
     outputs = [
         [1],
-        [1],
+        (1,),
         ["a"],
         ["a"],
         ["a", ["b", "c"]],
-        ["a", "b"],
+        ("a", "b"),
     ]
     for i, input_ in enumerate(inputs):
         expected_output = outputs[i]

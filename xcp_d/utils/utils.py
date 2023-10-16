@@ -547,6 +547,8 @@ def _make_dictionary(metadata=None, **kwargs):
     """
     from copy import deepcopy
 
+    from xcp_d.utils.utils import _listify
+
     if metadata:
         out_metadata = deepcopy(metadata)
         for key, value in kwargs.items():
@@ -554,7 +556,7 @@ def _make_dictionary(metadata=None, **kwargs):
                 out_metadata[key] = value
             elif isinstance(value, list):
                 # Append the values if they're a list
-                out_metadata[key] += value
+                out_metadata[key] = _listify(out_metadata[key]) + value
             else:
                 # Overwrite the old value
                 out_metadata[key] = value
