@@ -397,7 +397,7 @@ def _run_and_generate(
 
     parameters.append("--stop-on-first-crash")
     parse_args(parameters)
-    config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
+    config_file = config.execution.log_dir / f"config-{config.execution.run_uuid}.toml"
     config.loggers.cli.warning(f"Saving config file to {config_file}")
     config.to_filename(config_file)
 
