@@ -473,8 +473,6 @@ class execution(_Config):
                 }
                 cls.bids_filters[acq] = new_filters
 
-            raise ValueError(cls.bids_filters)
-
 
 # These variables are not necessary anymore
 del _fs_license
