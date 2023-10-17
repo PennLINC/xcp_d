@@ -317,6 +317,9 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         confounds_df.to_csv(out_file, sep="\t", index=False)
         LOGGER.warning(f"Created {out_file}")
 
+    assert os.path.isdir(os.path.dirname(custom_confounds_dir))
+    assert os.path.isdir(custom_confounds_dir)
+
     cmd = (
         f"xcp_d {dataset_dir} {out_dir} participant "
         f"-w {work_dir} "
