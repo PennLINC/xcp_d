@@ -17,6 +17,19 @@ from xcp_d.utils.utils import _make_dictionary, _select_first, _transpose_lol
 from xcp_d.workflows.plotting import init_qc_report_wf
 
 
+def _make_xcpd_uri_lol(in_list, output_dir):
+    from xcp_d.utils.bids import _make_xcpd_uri
+    from xcp_d.utils.utils import _transpose_lol
+
+    out = []
+    for sublist in in_list:
+        sublist_out = _make_xcpd_uri(sublist, output_dir)
+        out.append(sublist_out)
+
+    out_lol = _transpose_lol(out)
+    return out_lol
+
+
 @fill_doc
 def init_concatenate_data_wf(
     output_dir,
@@ -285,7 +298,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     # fmt:off
     workflow.connect([
         (filter_runs, make_timeseries_dict, [
-            ((("timeseries", _make_xcpd_uri, output_dir), _transpose_lol), "Sources"),
+            (("timeseries", _make_xcpd_uri_lol, output_dir), "Sources"),
         ]),
     ])
     # fmt:on
