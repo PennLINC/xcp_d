@@ -40,7 +40,7 @@ def json_file(file_):
             data = json.load(fo)
 
         # Convert None or Query.NONE and "*" to Query.ANY
-        data = _replace_none_with_test(data)
+        data = _replace_values(data)
         return data
     else:
         raise ValueError(f"Not supported: {file_}")
