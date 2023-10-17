@@ -430,7 +430,7 @@ def load_confound_matrix(
     }
 
     if params == "none":
-        return None, None
+        return None, {}
 
     if params in PARAM_KWARGS:
         kwargs = PARAM_KWARGS[params]
