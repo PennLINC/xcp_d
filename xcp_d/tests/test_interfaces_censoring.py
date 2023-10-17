@@ -26,6 +26,10 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
 
+    custom_confounds_file = os.path.join(tmpdir, "custom_confounds.tsv")
+    df2 = pd.DataFrame(columns=["signal__test"], data=np.random.random((df.shape[0], 1)))
+    df2.to_csv(custom_confounds_file, sep="\t", index=False, header=True)
+
     # Run workflow
     interface = censoring.GenerateConfounds(
         in_file=in_file,
@@ -35,7 +39,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
         head_radius=50,
         fmriprep_confounds_file=confounds_tsv,
         fmriprep_confounds_json=confounds_json,
-        custom_confounds_file=None,
+        custom_confounds_file=custom_confounds_file,
         motion_filter_type=None,
         motion_filter_order=4,
         band_stop_min=0,
@@ -47,6 +51,10 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert os.path.isfile(results.outputs.confounds_file)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    out_confounds_file = results.outputs.confounds_file
+    out_df = pd.read_table(out_confounds_file)
+    assert out_df.shape[1] == 26  # 24(P) + linear trend + constant
+    assert sum(out_df.columns.str.endswith("_orth")) == 24  # all 24(P), not linear trend/constant
 
 
 def test_random_censor(tmp_path_factory):
