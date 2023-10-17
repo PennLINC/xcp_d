@@ -1,13 +1,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for collecting and saving xcp_d outputs."""
-import os
-
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces.bids import DerivativesDataSink, InferBIDSURIs
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import (
     _make_custom_uri,
@@ -317,19 +315,6 @@ def init_postproc_derivatives_wf(
 
     preproc_bold_src = _make_preproc_uri(name_source, fmri_dir)
 
-    atlas_src = pe.MapNode(
-        InferBIDSURIs(
-            numinputs=1,
-            dataset_name="xcp_d",
-            dataset_path=os.path.join(output_dir, "xcp_d"),
-        ),
-        name="atlas_src",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["in1"],
-    )
-    workflow.connect([(inputnode, atlas_src, [("atlas_files", "in1")])])
-
     make_atlas_dict = pe.MapNode(
         niu.Function(
             function=_make_dictionary,
@@ -341,7 +326,11 @@ def init_postproc_derivatives_wf(
         name="make_atlas_dict",
         iterfield=["Sources"],
     )
-    workflow.connect([(atlas_src, make_atlas_dict, [("bids_uris", "Sources")])])
+    # fmt:off
+    workflow.connect([
+        (inputnode, make_atlas_dict, [(("atlas_files", _make_xcpd_uri, output_dir), "Sources")]),
+    ])
+    # fmt:on
 
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(

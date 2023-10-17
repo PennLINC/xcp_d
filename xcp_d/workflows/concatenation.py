@@ -11,6 +11,7 @@ from xcp_d.interfaces.concatenation import (
     ConcatenateInputs,
     FilterOutFailedRuns,
 )
+from xcp_d.utils.bids import _make_xcpd_uri
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _make_dictionary, _select_first, _transpose_lol
 from xcp_d.workflows.plotting import init_qc_report_wf
@@ -225,18 +226,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     ])
     # fmt:on
 
-    filtered_motion_src = pe.Node(
-        InferBIDSURIs(
-            numinputs=1,
-            dataset_name="xcp_d",
-            dataset_path=os.path.join(output_dir, "xcp_d"),
-        ),
-        name="filtered_motion_src",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    workflow.connect([(filter_runs, filtered_motion_src, [("filtered_motion", "in1")])])
-
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -254,21 +243,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (clean_name_source, ds_filtered_motion, [("name_source", "source_file")]),
         (concatenate_inputs, ds_filtered_motion, [("filtered_motion", "in_file")]),
-        (filtered_motion_src, ds_filtered_motion, [("bids_uris", "Sources")]),
+        (filter_runs, ds_filtered_motion, [
+            (("filtered_motion", _make_xcpd_uri, output_dir), "Sources"),
+        ]),
     ])
     # fmt:on
-
-    temporal_mask_src = pe.Node(
-        InferBIDSURIs(
-            numinputs=1,
-            dataset_name="xcp_d",
-            dataset_path=os.path.join(output_dir, "xcp_d"),
-        ),
-        name="temporal_mask_src",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    workflow.connect([(filter_runs, temporal_mask_src, [("temporal_mask", "in1")])])
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
@@ -286,22 +265,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
         (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
-        (temporal_mask_src, ds_temporal_mask, [("bids_uris", "Sources")]),
+        (filter_runs, ds_temporal_mask, [
+            (("temporal_mask", _make_xcpd_uri, output_dir), "Sources"),
+        ]),
     ])
     # fmt:on
-
-    timeseries_src = pe.MapNode(
-        InferBIDSURIs(
-            numinputs=1,
-            dataset_name="xcp_d",
-            dataset_path=os.path.join(output_dir, "xcp_d"),
-        ),
-        name="timeseries_src",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["in1"],
-    )
-    workflow.connect([(filter_runs, timeseries_src, [("timeseries", "in1")])])
 
     make_timeseries_dict = pe.MapNode(
         niu.Function(
@@ -316,7 +284,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     )
     # fmt:off
     workflow.connect([
-        (timeseries_src, make_timeseries_dict, [(("bids_uris", _transpose_lol), "Sources")]),
+        (filter_runs, make_timeseries_dict, [
+            ((("timeseries", _make_xcpd_uri, output_dir), _transpose_lol), "Sources"),
+        ]),
     ])
     # fmt:on
 
@@ -341,23 +311,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
         (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
         (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
-    ])
-    # fmt:on
-
-    censored_filtered_bold_src = pe.Node(
-        InferBIDSURIs(
-            numinputs=1,
-            dataset_name="xcp_d",
-            dataset_path=os.path.join(output_dir, "xcp_d"),
-        ),
-        name="censored_filtered_bold_src",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (filter_runs, censored_filtered_bold_src, [("censored_denoised_bold", "in1")]),
     ])
     # fmt:on
 
@@ -502,7 +455,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (clean_name_source, ds_censored_filtered_bold, [("name_source", "source_file")]),
         (concatenate_inputs, ds_censored_filtered_bold, [("censored_denoised_bold", "in_file")]),
-        (censored_filtered_bold_src, ds_censored_filtered_bold, [("bids_uris", "Sources")]),
+        (filter_runs, ds_censored_filtered_bold, [
+            (("censored_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
+        ]),
     ])
     # fmt:on
 
