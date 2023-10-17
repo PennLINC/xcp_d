@@ -16,6 +16,21 @@ logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
 logger = logging.getLogger("cli")
 
 
+def _replace_values(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = _replace_values(value)
+    elif isinstance(obj, list):
+        for i in range(len(obj)):
+            obj[i] = _replace_values(obj[i])
+    elif obj is None:
+        return Query.NONE
+    elif obj == "*":
+        return Query.ANY
+
+    return obj
+
+
 def json_file(file_):
     """Load a JSON file and return it."""
     if file_ is None:
@@ -25,10 +40,7 @@ def json_file(file_):
             data = json.load(fo)
 
         # Convert None or Query.NONE and "*" to Query.ANY
-        data = {
-            k: Query.NONE if v is None else (Query.ANY if v == "*" else v) for k, v in data.items()
-        }
-
+        data = _replace_none_with_test(data)
         return data
     else:
         raise ValueError(f"Not supported: {file_}")
