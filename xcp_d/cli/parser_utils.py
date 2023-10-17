@@ -6,6 +6,7 @@ import os
 import warnings
 from argparse import Action
 
+from bids.layout import Query
 from niworkflows import NIWORKFLOWS_LOG
 
 warnings.filterwarnings("ignore")
@@ -22,6 +23,12 @@ def json_file(file_):
     elif os.path.isfile(file_):
         with open(file_, "r") as fo:
             data = json.load(fo)
+
+        # Convert None or Query.NONE and "*" to Query.ANY
+        data = {
+            k: Query.NONE if v is None else (Query.ANY if v == "*" else v) for k, v in data.items()
+        }
+
         return data
     else:
         raise ValueError(f"Not supported: {file_}")
