@@ -509,7 +509,6 @@ class GenerateConfounds(SimpleInterface):
         # Orthogonalize full nuisance regressors w.r.t. any signal regressors
         signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
         if signal_columns:
-            raise ValueError(confounds_metadata)
             LOGGER.warning(
                 "Signal columns detected. "
                 "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
