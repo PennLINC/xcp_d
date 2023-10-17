@@ -83,6 +83,8 @@ def check_generated_files(out_dir, output_list_file):
 
     # Ignore figures
     found_files = [f for f in found_files if "figures" not in f]
+    # Ignore config TOML files
+    found_files = [f for f in found_files if ("config-" not in f) and not f.endswith(".toml")]
 
     with open(output_list_file, "r") as fo:
         expected_files = fo.readlines()
