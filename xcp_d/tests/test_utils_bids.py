@@ -154,18 +154,10 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
     with open(dset_description, "r") as fo:
         desc = json.load(fo)
 
-    desc["DatasetLinks"] = {
-        "preprocessed": "/fake/path",
-        "xcp_d": "/fake/path2",
-        "custom_confounds": "/fake/path3",
-    }
-    with open(dset_description, "w") as fo:
-        json.dump(desc, fo, indent=4)
-
     assert "'preprocessed' is already a dataset link" not in caplog.text
     assert "'xcp_d' is already a dataset link" not in caplog.text
     assert "'custom_confounds' is already a dataset link" not in caplog.text
-    xbids.write_dataset_description(fmri_dir, tmpdir, custom_confounds_folder="/fake/path4")
+    xbids.write_dataset_description(tmpdir, tmpdir, custom_confounds_folder="/fake/path4")
     assert "'preprocessed' is already a dataset link" in caplog.text
     assert "'xcp_d' is already a dataset link" in caplog.text
     assert "'custom_confounds' is already a dataset link" in caplog.text
