@@ -112,6 +112,7 @@ def init_prepare_confounds_wf(
     %(fmriprep_confounds_file)s
     confounds_file : :obj:`str`
         The selected confounds, potentially including custom confounds, after dummy scan removal.
+    confounds_metadata : :obj:`dict`
     %(dummy_scans)s
         If originally set to "auto", this output will have the actual number of dummy volumes.
     %(filtered_motion)s
@@ -181,6 +182,7 @@ def init_prepare_confounds_wf(
                 "preprocessed_bold",
                 "fmriprep_confounds_file",  # used to calculate motion in concatenation workflow
                 "confounds_file",
+                "confounds_metadata",
                 "dummy_scans",
                 "filtered_motion",
                 "motion_metadata",
@@ -216,7 +218,10 @@ def init_prepare_confounds_wf(
             ("fmriprep_confounds_json", "fmriprep_confounds_json"),
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
-        (generate_confounds, outputnode, [("motion_metadata", "motion_metadata")]),
+        (generate_confounds, outputnode, [
+            ("motion_metadata", "motion_metadata"),
+            ("confounds_metadata", "confounds_metadata"),
+        ]),
     ])
     # fmt:on
 

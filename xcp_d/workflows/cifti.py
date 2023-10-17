@@ -512,6 +512,7 @@ def init_postprocess_cifti_wf(
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.confounds_file", "inputnode.confounds_file"),
+            ("outputnode.confounds_metadata", "inputnode.confounds_metadata"),
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
             ("outputnode.motion_metadata", "inputnode.motion_metadata"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
