@@ -433,7 +433,6 @@ class execution(_Config):
             # Recommended after PyBIDS 12.1
             _indexer = BIDSLayoutIndexer(
                 validate=False,
-                derivatives=True,
                 ignore=(
                     "code",
                     "stimuli",
@@ -447,6 +446,7 @@ class execution(_Config):
             )
             cls._layout = BIDSLayout(
                 str(cls.fmri_dir),
+                derivatives=True,
                 database_path=_db_path,
                 reset_database=True,
                 indexer=_indexer,
