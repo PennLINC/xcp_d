@@ -326,6 +326,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             dismiss_entities=["desc"],
             suffix="timeseries",
             extension=".tsv",
+            # Metadata
+            SamplingFrequency="TR",
         ),
         name="ds_timeseries",
         run_without_submitting=True,

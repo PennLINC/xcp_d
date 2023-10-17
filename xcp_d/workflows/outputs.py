@@ -640,6 +640,8 @@ def init_postproc_derivatives_wf(
             cohort=cohort,
             suffix="timeseries",
             extension=".tsv",
+            # Metadata
+            SamplingFrequency="TR",
         ),
         name="ds_timeseries",
         run_without_submitting=True,
