@@ -430,7 +430,7 @@ def load_confound_matrix(
     }
 
     if params == "none":
-        return None
+        return None, None
 
     if params in PARAM_KWARGS:
         kwargs = PARAM_KWARGS[params]
@@ -482,7 +482,7 @@ def load_confound_matrix(
     confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
     confounds_df["intercept"] = np.ones(confounds_df.shape[0])
 
-    return confounds_df
+    return confounds_df, confounds_metadata
 
 
 def _get_mixing_matrix(img_file):
