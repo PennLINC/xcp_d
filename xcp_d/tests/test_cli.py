@@ -302,6 +302,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     work_dir = os.path.join(working_dir, test_name)
     custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
     os.makedirs(custom_confounds_dir, exist_ok=True)
+    LOGGER.warning(f"Created {custom_confounds_dir}")
 
     test_data_dir = get_test_data_path()
 
@@ -314,6 +315,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
             data=np.random.random((16, 2)),
         )
         confounds_df.to_csv(out_file, sep="\t", index=False)
+        LOGGER.warning(f"Created {out_file}")
 
     cmd = (
         f"xcp_d {dataset_dir} {out_dir} participant "

@@ -260,11 +260,6 @@ def collect_data(
             break
 
     if not bold_data:
-        raise ValueError(
-            f"bold_data: {bold_data}\n\n"
-            f"query: {queries['bold']}\n\n"
-            f"all files: {layout.get_files()}"
-        )
         raise FileNotFoundError(
             f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)})."
         )
