@@ -1004,6 +1004,20 @@ def _make_xcpd_uri(out_file, output_dir):
         return [_make_uri(out_file, "xcp_d", dataset_path)]
 
 
+def _make_xcpd_uri_lol(in_list, output_dir):
+    """Call _make_xcpd_uri on a list of lists and then transpose the result."""
+    from xcp_d.utils.bids import _make_xcpd_uri
+    from xcp_d.utils.utils import _transpose_lol
+
+    out = []
+    for sublist in in_list:
+        sublist_out = _make_xcpd_uri(sublist, output_dir)
+        out.append(sublist_out)
+
+    out_lol = _transpose_lol(out)
+    return out_lol
+
+
 def _make_preproc_uri(out_file, fmri_dir):
     """Convert preprocessing derivative's path to BIDS URI."""
     from xcp_d.utils.bids import _make_uri
@@ -1015,7 +1029,7 @@ def _make_preproc_uri(out_file, fmri_dir):
 
 
 def _make_custom_uri(out_file):
-    """Convert custom confound's path to BIDS URI."""
+    """Convert custom confounds' path to BIDS URI."""
     import os
 
     from xcp_d.utils.bids import _make_uri

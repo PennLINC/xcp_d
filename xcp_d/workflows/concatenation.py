@@ -1,33 +1,18 @@
 """Workflows for concatenating postprocessed data."""
-import os
-
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d.interfaces.bids import DerivativesDataSink, InferBIDSURIs
+from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.concatenation import (
     CleanNameSource,
     ConcatenateInputs,
     FilterOutFailedRuns,
 )
-from xcp_d.utils.bids import _make_xcpd_uri
+from xcp_d.utils.bids import _make_xcpd_uri, _make_xcpd_uri_lol
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _make_dictionary, _select_first, _transpose_lol
+from xcp_d.utils.utils import _make_dictionary, _select_first
 from xcp_d.workflows.plotting import init_qc_report_wf
-
-
-def _make_xcpd_uri_lol(in_list, output_dir):
-    from xcp_d.utils.bids import _make_xcpd_uri
-    from xcp_d.utils.utils import _transpose_lol
-
-    out = []
-    for sublist in in_list:
-        sublist_out = _make_xcpd_uri(sublist, output_dir)
-        out.append(sublist_out)
-
-    out_lol = _transpose_lol(out)
-    return out_lol
 
 
 @fill_doc
@@ -341,19 +326,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             mem_gb=2,
         )
 
-        timeseries_ciftis_src = pe.MapNode(
-            InferBIDSURIs(
-                numinputs=1,
-                dataset_name="xcp_d",
-                dataset_path=os.path.join(output_dir, "xcp_d"),
-            ),
-            name="timeseries_ciftis_src",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["in1"],
-        )
-        workflow.connect([(filter_runs, timeseries_ciftis_src, [("timeseries_ciftis", "in1")])])
-
         make_timeseries_ciftis_dict = pe.MapNode(
             niu.Function(
                 function=_make_dictionary,
@@ -367,8 +339,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
         # fmt:off
         workflow.connect([
-            (timeseries_ciftis_src, make_timeseries_ciftis_dict, [
-                (("bids_uris", _transpose_lol), "Sources"),
+            (filter_runs, make_timeseries_ciftis_dict, [
+                (("timeseries_ciftis", _make_xcpd_uri_lol, output_dir), "Sources"),
             ]),
         ])
         # fmt:on
@@ -481,24 +453,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (concatenate_inputs, ds_smoothed_denoised_bold, [
                 ("smoothed_denoised_bold", "in_file"),
             ]),
-        ])
-        # fmt:on
-
-        smoothed_denoised_bold_src = pe.Node(
-            InferBIDSURIs(
-                numinputs=1,
-                dataset_name="xcp_d",
-                dataset_path=os.path.join(output_dir, "xcp_d"),
-            ),
-            name="smoothed_denoised_bold_src",
-            run_without_submitting=True,
-            mem_gb=1,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (filter_runs, smoothed_denoised_bold_src, [("smoothed_denoised_bold", "in1")]),
-            (smoothed_denoised_bold_src, ds_smoothed_denoised_bold, [("bids_uris", "Sources")]),
+            (filter_runs, ds_smoothed_denoised_bold, [
+                (("smoothed_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
+            ]),
         ])
         # fmt:on
 
@@ -509,25 +466,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (concatenate_inputs, ds_interpolated_filtered_bold, [
                 ("interpolated_filtered_bold", "in_file"),
             ]),
-        ])
-        # fmt:on
-
-        interpolated_filtered_bold_src = pe.Node(
-            InferBIDSURIs(
-                numinputs=1,
-                dataset_name="xcp_d",
-                dataset_path=os.path.join(output_dir, "xcp_d"),
-            ),
-            name="interpolated_filtered_bold_src",
-            run_without_submitting=True,
-            mem_gb=1,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (filter_runs, interpolated_filtered_bold_src, [("interpolated_filtered_bold", "in1")]),
-            (interpolated_filtered_bold_src, ds_interpolated_filtered_bold, [
-                ("bids_uris", "Sources"),
+            (filter_runs, ds_interpolated_filtered_bold, [
+                (("interpolated_filtered_bold", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])
         # fmt:on
