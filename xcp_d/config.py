@@ -456,27 +456,24 @@ class execution(_Config):
         if cls.bids_filters:
             from bids.layout import Query
 
-            # unserialize pybids Query enum values
+            def _convert_value(value):
+                """Replace 'Query' strings with Query objects."""
+                if not isinstance(value, Query) and "Query" in value:
+                    return getattr(Query, value[7:-4])
+
+                return value
+
+            # Unserialize pybids Query enum values
             for acq, filters in cls.bids_filters.items():
-                new_filters = {}
-                for key, values in filters.items():
-                    if isinstance(values, list):
-                        new_values = []
-                        for val in values:
-                            if not isinstance(val, Query) and "Query" in val:
-                                new_val = getattr(Query, val[7:-4])
-                            else:
-                                new_val = val
-
-                            new_values.append(new_val)
-                    elif not isinstance(val, Query) and "Query" in val:
-                        new_values = getattr(Query, values[7:-4])
-                    else:
-                        new_values = values
-
-                    new_filters[key] = new_values
-
+                new_filters = {
+                    key: [_convert_value(val) for val in values]
+                    if isinstance(values, list)
+                    else _convert_value(values)
+                    for key, values in filters.items()
+                }
                 cls.bids_filters[acq] = new_filters
+
+            raise ValueError(cls.bids_filters)
 
 
 # These variables are not necessary anymore
@@ -650,10 +647,10 @@ def from_dict(settings, init=True, ignore=None):
     def initialize(x):
         return init if init in (True, False) else x in init
 
-    nipype.load(settings, init=initialize('nipype'), ignore=ignore)
-    execution.load(settings, init=initialize('execution'), ignore=ignore)
-    workflow.load(settings, init=initialize('workflow'), ignore=ignore)
-    seeds.load(settings, init=initialize('seeds'), ignore=ignore)
+    nipype.load(settings, init=initialize("nipype"), ignore=ignore)
+    execution.load(settings, init=initialize("execution"), ignore=ignore)
+    workflow.load(settings, init=initialize("workflow"), ignore=ignore)
+    seeds.load(settings, init=initialize("seeds"), ignore=ignore)
 
     loggers.init()
 
