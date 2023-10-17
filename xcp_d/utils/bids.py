@@ -231,7 +231,6 @@ def collect_data(
         queries["anat_brainmask"]["space"] = "MNI152NLin6Asym"
 
     queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
-    raise Exception(queries["bold"])
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
@@ -259,6 +258,8 @@ def collect_data(
         if bold_data:
             # will leave the best available space in the query
             break
+
+    raise Exception(queries["bold"])
 
     if not bold_data:
         raise FileNotFoundError(
