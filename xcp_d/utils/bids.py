@@ -172,6 +172,7 @@ def collect_data(
     -------
     subj_data : dict
     """
+    raise ValueError(bids_filters)
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
