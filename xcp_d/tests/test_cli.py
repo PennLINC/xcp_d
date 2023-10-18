@@ -333,6 +333,15 @@ def test_nibabies(data_dir, output_dir, working_dir):
         input_type=input_type,
     )
 
+    dm_file = os.path.join(
+        out_dir,
+        "xcp_d",
+        "sub-01/ses-1mo/func",
+        "sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.tsv",
+    )
+    dm_df = pd.read_table(dm_file)
+    assert all(c in dm_df.columns for c in confounds_df.columns)
+
 
 @pytest.mark.fmriprep_without_freesurfer
 def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
@@ -350,25 +359,8 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
-    custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
-    os.makedirs(custom_confounds_dir, exist_ok=True)
-    LOGGER.warning(f"Created {custom_confounds_dir}")
 
     test_data_dir = get_test_data_path()
-
-    # Create custom confounds folder
-    for run_number in [1, 2]:
-        out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
-        out_file = os.path.join(custom_confounds_dir, out_file)
-        confounds_df = pd.DataFrame(
-            columns=["a", "b"],
-            data=np.random.random((16, 2)),
-        )
-        confounds_df.to_csv(out_file, sep="\t", index=False)
-        LOGGER.warning(f"Created {out_file}")
-
-    assert os.path.isdir(os.path.dirname(custom_confounds_dir))
-    assert os.path.isdir(custom_confounds_dir)
 
     cmd = (
         f"xcp_d {dataset_dir} {out_dir} participant "
@@ -383,8 +375,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--disable-bandpass-filter "
         "--min-time 20 "
         "--dcan-qc "
-        "--dummy-scans 1 "
-        f"--custom_confounds={custom_confounds_dir}"
+        "--dummy-scans 1"
     )
 
     run_command(cmd)
@@ -397,13 +388,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     check_generated_files(out_dir, output_list_file)
 
     check_affines(dataset_dir, out_dir, input_type="nifti")
-
-    dm_file = os.path.join(
-        xcpd_dir,
-        "sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv",
-    )
-    dm_df = pd.read_table(dm_file)
-    assert all(c in dm_df.columns for c in confounds_df.columns)
 
 
 def _run_and_generate(
