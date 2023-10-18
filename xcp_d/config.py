@@ -545,9 +545,7 @@ class workflow(_Config):
     dcan_qc = False
     # Run DCAN QC.
 
-    _paths = (
-        "custom_confounds",
-    )
+    _paths = ("custom_confounds",)
 
 
 class loggers:

@@ -41,8 +41,7 @@ def sentry_setup():
     environment = (
         "dev"
         if (
-            os.getenv("XCP_D_DEV", "").lower in ("1", "on", "yes", "y", "true")
-            or ("+" in release)
+            os.getenv("XCP_D_DEV", "").lower in ("1", "on", "yes", "y", "true") or ("+" in release)
         )
         else "prod"
     )

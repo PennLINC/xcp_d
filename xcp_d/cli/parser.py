@@ -536,9 +536,6 @@ discourage its usage.""",
 def parse_args(args=None, namespace=None):
     """Parse args and run further checks on the command line."""
     import logging
-    import os
-
-    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     parser = _build_parser()
     opts = parser.parse_args(args, namespace)
@@ -548,12 +545,8 @@ def parse_args(args=None, namespace=None):
         config.load(opts.config_file, skip=skip, init=False)
         config.loggers.cli.info(f"Loaded previous configuration file {opts.config_file}")
 
-    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
-
     config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     config.from_dict(vars(opts), init=["nipype"])
-
-    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     if not config.execution.notrack:
         import pkgutil
@@ -611,7 +604,6 @@ def parse_args(args=None, namespace=None):
     # This must be done after cleaning the work directory, or we could delete an
     # open SQLite database
     config.from_dict({})
-    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     # Ensure input and output folders are not the same
     if output_dir == fmri_dir:
@@ -629,7 +621,6 @@ def parse_args(args=None, namespace=None):
     config.execution.log_dir.mkdir(exist_ok=True, parents=True)
     output_dir.mkdir(exist_ok=True, parents=True)
     work_dir.mkdir(exist_ok=True, parents=True)
-    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     # Force initialization of the BIDSLayout
     config.execution.init()
@@ -645,5 +636,4 @@ def parse_args(args=None, namespace=None):
             f"{', '.join(missing_subjects)}."
         )
 
-    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     config.execution.participant_label = sorted(participant_label)
