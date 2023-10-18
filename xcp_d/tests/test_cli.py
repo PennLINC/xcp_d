@@ -6,18 +6,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from nipype import logging
-from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.cli import combineqc
-from xcp_d.cli.parser import parse_args
-from xcp_d.cli.workflow import build_boilerplate, build_workflow
-from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.tests.utils import (
     check_affines,
     check_generated_files,
     download_test_data,
     get_test_data_path,
-    run_command,
 )
 
 LOGGER = logging.getLogger("nipype.utils")
@@ -36,7 +31,6 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     filter_file = os.path.join(test_data_dir, "ds001419_nifti_filter.json")
 
     parameters = [
-        "xcp_d",
         dataset_dir,
         out_dir,
         "participant",
@@ -59,7 +53,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "200",
         "--random-seed=8675309",
     ]
-    _run_and_generate_2(
+    _run_xcpd(
         test_name=test_name,
         parameters=parameters,
         data_dir=data_dir,
@@ -104,9 +98,8 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--upper-bpf=0.0",
         f"--fs-license-file={fs_license_file}",
     ]
-    _run_and_generate(
+    _run_xcpd(
         test_name=test_name,
-        participant_label="01",
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
@@ -149,9 +142,8 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         "200",
         "--random-seed=8675309",
     ]
-    _run_and_generate(
+    _run_xcpd(
         test_name=test_name,
-        participant_label="1648798153",
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
@@ -206,9 +198,8 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
     ]
-    _run_and_generate(
+    _run_xcpd(
         test_name=test_name,
-        participant_label="1648798153",
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
@@ -274,9 +265,8 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
     ]
-    _run_and_generate(
+    _run_xcpd(
         test_name=test_name,
-        participant_label="1648798153",
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
@@ -324,9 +314,8 @@ def test_nibabies(data_dir, output_dir, working_dir):
         "--dcan-qc",
         f"--custom_confounds={custom_confounds_dir}",
     ]
-    _run_and_generate(
+    _run_xcpd(
         test_name=test_name,
-        participant_label="01",
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
@@ -360,73 +349,39 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    test_data_dir = get_test_data_path()
-
-    cmd = (
-        f"xcp_d {dataset_dir} {out_dir} participant "
-        f"-w {work_dir} "
-        "--nthreads 2 "
-        "--omp-nthreads 2 "
-        "--despike "
-        "--head_radius 40 "
-        "--smoothing 6 "
-        "-f 100 "
-        "--nuisance-regressors 27P "
-        "--disable-bandpass-filter "
-        "--min-time 20 "
-        "--dcan-qc "
-        "--dummy-scans 1"
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--despike",
+        "--head_radius=40",
+        "--smoothing=6",
+        "--fd-thresh=100",
+        "--nuisance-regressors=27P",
+        "--disable-bandpass-filter",
+        "--min-time=20",
+        "--dcan-qc",
+        "--dummy-scans=1",
+        "--omp-nthreads=2",
+        "--nthreads=2",
+    ]
+    _run_xcpd(
+        test_name=test_name,
+        parameters=parameters,
+        data_dir=data_dir,
+        out_dir=out_dir,
+        input_type="nifti",
     )
-
-    run_command(cmd)
 
     # Run combine-qc too
     xcpd_dir = os.path.join(out_dir, "xcp_d")
-    combineqc.main([xcpd_dir, "summary"])
+    combineqc.main([xcpd_dir, os.path.join(xcpd_dir, "summary")])
 
-    output_list_file = os.path.join(test_data_dir, "test_fmriprep_without_freesurfer_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="nifti")
+    assert os.path.isfile(os.path.join(xcpd_dir, "summary_allsubjects_qc.csv"))
 
 
-def _run_and_generate(
-    test_name,
-    participant_label,
-    parameters,
-    data_dir,
-    out_dir,
-    input_type,
-):
-    from xcp_d import config
-
-    parameters.append("--stop-on-first-crash")
-    parse_args(parameters)
-    config_file = config.execution.log_dir / f"config-{config.execution.run_uuid}.toml"
-    config.loggers.cli.warning(f"Saving config file to {config_file}")
-    config.to_filename(config_file)
-
-    retval = build_workflow(config_file, retval={})
-    xcpd_wf = retval["workflow"]
-    xcpd_wf.run()
-    build_boilerplate(str(config_file), xcpd_wf)
-    generate_reports(
-        subject_list=[participant_label],
-        fmri_dir=config.execution.fmri_dir,
-        work_dir=config.execution.work_dir,
-        output_dir=out_dir,
-        run_uuid=config.execution.run_uuid,
-        config=pkgrf("xcp_d", "data/reports-spec.yml"),
-        packagename="xcp_d",
-    )
-
-    output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type=input_type)
-
-
-def _run_and_generate_2(
+def _run_xcpd(
     test_name,
     parameters,
     data_dir,
@@ -437,6 +392,9 @@ def _run_and_generate_2(
     from unittest.mock import patch
 
     from xcp_d.cli.run import main
+
+    # Prepend command name (can really be any string, since we're calling main directly).
+    parameters = ["xcp_d"] + parameters
 
     with patch.object(sys, "argv", parameters):
         main()
