@@ -58,9 +58,8 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "200",
         "--random-seed=8675309",
     ]
-    _run_and_generate(
+    _run_and_generate_2(
         test_name=test_name,
-        participant_label="01",
         parameters=parameters,
         data_dir=data_dir,
         out_dir=out_dir,
@@ -419,6 +418,27 @@ def _run_and_generate(
         config=pkgrf("xcp_d", "data/reports-spec.yml"),
         packagename="xcp_d",
     )
+
+    output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
+    check_generated_files(out_dir, output_list_file)
+
+    check_affines(data_dir, out_dir, input_type=input_type)
+
+
+def _run_and_generate_2(
+    test_name,
+    parameters,
+    data_dir,
+    out_dir,
+    input_type,
+):
+    import sys
+    from unittest.mock import patch
+
+    from xcp_d.cli.run import main
+
+    with patch.object(sys, "argv", parameters):
+        main()
 
     output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
     check_generated_files(out_dir, output_list_file)
