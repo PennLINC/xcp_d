@@ -106,12 +106,7 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
         return None
 
     if not os.path.isdir(custom_confounds_folder):
-        parent_dir = os.path.dirname(custom_confounds_folder)
-        parent_contents = "\n\t".join(os.listdir(parent_dir))
-        raise ValueError(
-            f"Custom confounds location does not exist: {custom_confounds_folder}\n\n"
-            f"Contents of {parent_dir}:\n\t{parent_contents}"
-        )
+        raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
 
     custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
     custom_confounds_file = os.path.abspath(
