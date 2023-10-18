@@ -212,6 +212,7 @@ def init_postprocess_nifti_wf(
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
     # used for the boilerplate.
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     custom_confounds_file = get_custom_confounds(
         custom_confounds_folder,
         run_data["confounds"],
