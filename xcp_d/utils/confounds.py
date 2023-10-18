@@ -107,6 +107,7 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
 
     assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     if not os.path.isdir(custom_confounds_folder):
+        raise Exception(type(custom_confounds_folder))
         parent_dir = os.path.dirname(custom_confounds_folder)
         parent_contents = "\n\t".join(os.listdir(parent_dir))
         raise ValueError(
