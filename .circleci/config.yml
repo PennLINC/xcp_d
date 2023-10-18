@@ -137,6 +137,8 @@ jobs:
             - .coverage.fmriprep_without_freesurfer
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/xcp_d/
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   ds001419_nifti:
     <<: *dockersetup
@@ -168,6 +170,8 @@ jobs:
             - .coverage.ds001419_nifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_nifti/xcp_d/
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   ds001419_cifti:
     <<: *dockersetup
@@ -199,6 +203,8 @@ jobs:
             - .coverage.ds001419_cifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   pnc_nifti:
     <<: *dockersetup
@@ -230,6 +236,8 @@ jobs:
             - .coverage.pnc_nifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_pnc_nifti/xcp_d/
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   nibabies:
     <<: *dockersetup
@@ -261,6 +269,8 @@ jobs:
             - .coverage.nibabies
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_nibabies/xcp_d/
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   pnc_cifti:
     <<: *dockersetup
@@ -292,6 +302,8 @@ jobs:
             - .coverage.pnc_cifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_pnc_cifti/xcp_d/
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   pnc_cifti_t2wonly:
     <<: *dockersetup
@@ -323,6 +335,8 @@ jobs:
             - .coverage.pnc_cifti_t2wonly
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_pnc_cifti_t2wonly/xcp_d/
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   pytests:
     <<: *dockersetup
