@@ -537,8 +537,6 @@ def parse_args(args=None, namespace=None):
     """Parse args and run further checks on the command line."""
     import logging
 
-    raise Exception(args)
-
     parser = _build_parser()
     opts = parser.parse_args(args, namespace)
 

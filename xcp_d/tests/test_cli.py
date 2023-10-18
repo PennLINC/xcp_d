@@ -36,6 +36,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     filter_file = os.path.join(test_data_dir, "ds001419_nifti_filter.json")
 
     parameters = [
+        "xcp_d",
         dataset_dir,
         out_dir,
         "participant",
