@@ -284,6 +284,56 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     )
 
 
+@pytest.mark.nibabies
+def test_nibabies(data_dir, output_dir, working_dir):
+    """Run xcp_d on Nibabies derivatives, with nifti options."""
+    test_name = "test_nibabies"
+    input_type = "nibabies"
+
+    dataset_dir = download_test_data("nibabies", data_dir)
+    dataset_dir = os.path.join(dataset_dir, "derivatives", "nibabies")
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
+
+    # Create custom confounds folder
+    custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
+    os.makedirs(custom_confounds_dir, exist_ok=True)
+
+    out_file = os.path.join(
+        custom_confounds_dir,
+        "sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-confounds_timeseries.tsv",
+    )
+    confounds_df = pd.DataFrame(
+        columns=["a", "b"],
+        data=np.random.random((16, 2)),
+    )
+    confounds_df.to_csv(out_file, sep="\t", index=False)
+    LOGGER.warning(f"Created {out_file}")
+
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        f"--input-type={input_type}",
+        "--nuisance-regressors=27P",
+        "--despike",
+        "--head_radius=auto",
+        "--smoothing=0",
+        "--fd-thresh=0",
+        "--dcan-qc",
+        f"--custom_confounds={custom_confounds_dir}",
+    ]
+    _run_and_generate(
+        test_name=test_name,
+        participant_label="01",
+        parameters=parameters,
+        data_dir=data_dir,
+        out_dir=out_dir,
+        input_type=input_type,
+    )
+
+
 @pytest.mark.fmriprep_without_freesurfer
 def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
@@ -354,40 +404,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     )
     dm_df = pd.read_table(dm_file)
     assert all(c in dm_df.columns for c in confounds_df.columns)
-
-
-@pytest.mark.nibabies
-def test_nibabies(data_dir, output_dir, working_dir):
-    """Run xcp_d on Nibabies derivatives, with nifti options."""
-    test_name = "test_nibabies"
-    input_type = "nibabies"
-
-    dataset_dir = download_test_data("nibabies", data_dir)
-    dataset_dir = os.path.join(dataset_dir, "derivatives", "nibabies")
-    out_dir = os.path.join(output_dir, test_name)
-    work_dir = os.path.join(working_dir, test_name)
-
-    parameters = [
-        dataset_dir,
-        out_dir,
-        "participant",
-        f"-w={work_dir}",
-        f"--input-type={input_type}",
-        "--nuisance-regressors=27P",
-        "--despike",
-        "--head_radius=auto",
-        "--smoothing=0",
-        "--fd-thresh=0",
-        "--dcan-qc",
-    ]
-    _run_and_generate(
-        test_name=test_name,
-        participant_label="01",
-        parameters=parameters,
-        data_dir=data_dir,
-        out_dir=out_dir,
-        input_type=input_type,
-    )
 
 
 def _run_and_generate(

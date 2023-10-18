@@ -512,9 +512,9 @@ By default, this workflow is disabled.
     if latest is not None and currentv < latest:
         print(
             f"""\
-You are using aslprep-{currentv}, and a newer version of aslprep is available: {latest}.
+You are using xcp_d-{currentv}, and a newer version of xcp_d is available: {latest}.
 Please check out our documentation about how and when to upgrade:
-https://aslprep.readthedocs.io/en/latest/faq.html#upgrading""",
+https://xcp_d.readthedocs.io/en/latest/faq.html#upgrading""",
             file=sys.stderr,
         )
 
@@ -523,7 +523,7 @@ https://aslprep.readthedocs.io/en/latest/faq.html#upgrading""",
         _reason = _blist[1] or "unknown"
         print(
             f"""\
-WARNING: Version {config.environment.version} of aslprep (current) has been FLAGGED
+WARNING: Version {config.environment.version} of xcp_d (current) has been FLAGGED
 (reason: {_reason}).
 That means some severe flaw was found in it and we strongly
 discourage its usage.""",
@@ -595,7 +595,7 @@ def parse_args(args=None, namespace=None):
     if opts.clean_workdir and work_dir.exists():
         from niworkflows.utils.misc import clean_directory
 
-        build_log.info(f"Clearing previous aslprep working directory: {work_dir}")
+        build_log.info(f"Clearing previous xcp_d working directory: {work_dir}")
         if not clean_directory(work_dir):
             build_log.warning(f"Could not clear all contents of working directory: {work_dir}")
 
