@@ -134,6 +134,7 @@ def init_subject_wf(subject_id):
     ----------
     .. footbibliography::
     """
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     fmri_dir = config.execution.fmri_dir
     input_type = config.workflow.input_type
     task_id = config.execution.task_id
@@ -166,6 +167,7 @@ def init_subject_wf(subject_id):
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
     primary_anat = "T1w" if subj_data["t1w"] else "T2w"
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
         layout=layout,
@@ -179,6 +181,7 @@ def init_subject_wf(subject_id):
     # determine the appropriate post-processing workflow
     init_postprocess_bold_wf = init_postprocess_cifti_wf if cifti else init_postprocess_nifti_wf
     preproc_files = subj_data["bold"]
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -229,6 +232,7 @@ def init_subject_wf(subject_id):
     inputnode.inputs.myelin_smoothed = morphometry_files["myelin_smoothed"]
 
     workflow = Workflow(name=f"single_subject_{subject_id}_wf")
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     info_dict = get_preproc_pipeline_info(input_type=input_type, fmri_dir=fmri_dir)
 

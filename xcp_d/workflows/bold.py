@@ -167,6 +167,7 @@ def init_postprocess_nifti_wf(
     ----------
     .. footbibliography::
     """
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     fd_thresh = config.workflow.fd_thresh
     omp_nthreads = config.nipype.omp_nthreads
     despike = config.workflow.despike
