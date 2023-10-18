@@ -134,7 +134,6 @@ def init_subject_wf(subject_id):
     ----------
     .. footbibliography::
     """
-
     fmri_dir = config.execution.fmri_dir
     input_type = config.workflow.input_type
     task_id = config.execution.task_id

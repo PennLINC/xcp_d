@@ -167,7 +167,6 @@ def _validate_parameters():
 def main():
     """Run the main workflow."""
     import gc
-    import os
     import sys
     from multiprocessing import Manager, Process
     from os import EX_SOFTWARE

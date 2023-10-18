@@ -167,7 +167,6 @@ def init_postprocess_nifti_wf(
     ----------
     .. footbibliography::
     """
-
     fd_thresh = config.workflow.fd_thresh
     omp_nthreads = config.nipype.omp_nthreads
     despike = config.workflow.despike
