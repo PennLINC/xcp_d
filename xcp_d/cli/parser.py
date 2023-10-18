@@ -611,6 +611,7 @@ def parse_args(args=None, namespace=None):
     # This must be done after cleaning the work directory, or we could delete an
     # open SQLite database
     config.from_dict({})
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     # Ensure input and output folders are not the same
     if output_dir == fmri_dir:
@@ -628,6 +629,7 @@ def parse_args(args=None, namespace=None):
     config.execution.log_dir.mkdir(exist_ok=True, parents=True)
     output_dir.mkdir(exist_ok=True, parents=True)
     work_dir.mkdir(exist_ok=True, parents=True)
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     # Force initialization of the BIDSLayout
     config.execution.init()
@@ -643,4 +645,5 @@ def parse_args(args=None, namespace=None):
             f"{', '.join(missing_subjects)}."
         )
 
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     config.execution.participant_label = sorted(participant_label)

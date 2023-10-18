@@ -12,6 +12,7 @@ def _validate_parameters():
     import os
     from pathlib import Path
 
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     config.execution.fmri_dir = Path(config.execution.fmri_dir).resolve()
     config.execution.output_dir = Path(config.execution.output_dir).resolve()
     config.execution.work_dir = Path(config.execution.work_dir).resolve()
@@ -31,6 +32,7 @@ def _validate_parameters():
             return_code = 1
 
     # Check the validity of inputs
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     if config.execution.output_dir == config.execution.fmri_dir:
         rec_path = (
             config.execution.fmri_dir
@@ -48,6 +50,7 @@ def _validate_parameters():
         config.loggers.cli.error('Please select analysis level "participant"')
         return_code = 1
 
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     # Bandpass filter parameters
     if config.workflow.lower_bpf <= 0 and config.workflow.upper_bpf <= 0:
         config.workflow.disable_bandpass_filter = True
@@ -68,6 +71,7 @@ def _validate_parameters():
         )
 
     # Scrubbing parameters
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     if config.workflow.fd_thresh <= 0:
         ignored_params = "\n\t".join(
             [
@@ -90,6 +94,7 @@ def _validate_parameters():
         config.workflow.motion_filter_order = None
 
     # Motion filtering parameters
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     if config.workflow.motion_filter_type == "notch":
         if not (config.workflow.band_stop_min and config.workflow.band_stop_max):
             config.loggers.cli.error(
@@ -134,6 +139,7 @@ def _validate_parameters():
         )
 
     # Some parameters are automatically set depending on the input type.
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     if config.workflow.input_type in ("dcan", "hcp"):
         if not config.workflow.cifti:
             config.loggers.cli.warning(
@@ -163,6 +169,7 @@ def _validate_parameters():
 def main():
     """Run the main workflow."""
     import gc
+    import os
     import sys
     from multiprocessing import Manager, Process
     from os import EX_SOFTWARE
@@ -187,8 +194,9 @@ def main():
     # CRITICAL Save the config to a file. This is necessary because the execution graph
     # is built as a separate process to keep the memory footprint low.
     # The most straightforward way to communicate with the child process is via the filesystem.
-    config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
+    config_file = config.execution.log_dir / f"config-{config.execution.run_uuid}.toml"
     config.to_filename(config_file)
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     # CRITICAL Call build_workflow(config_file, retval) in a subprocess.
     # Because Python on Linux does not ever free virtual memory (VM), running the
@@ -208,6 +216,7 @@ def main():
     # function executed constrained in a process may change the config (and thus the global
     # state of XCP-D).
     config.load(config_file)
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
 
     if config.execution.reports_only:
         sys.exit(int(retcode > 0))
@@ -220,6 +229,7 @@ def main():
         sys.exit(retcode)
 
     # Generate boilerplate
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     with Manager() as mgr:
         from xcp_d.cli.workflow import build_boilerplate
 
@@ -231,6 +241,7 @@ def main():
         sys.exit(int(retcode > 0))
 
     # Clean up master process before running workflow, which may create forks
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     gc.collect()
 
     # Sentry tracking
@@ -247,8 +258,11 @@ def main():
     )
     config.loggers.workflow.log(25, "XCP-D started!")
     errno = 1  # Default is error exit unless otherwise set
+    assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     try:
+        assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
         xcpd_wf.run(**config.nipype.get_plugin())
+        assert os.path.isdir("/src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer")
     except Exception as e:
         if not config.execution.notrack:
             from xcp_d.utils.sentry import process_crashfile
