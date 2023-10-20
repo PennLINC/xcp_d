@@ -503,3 +503,43 @@ def list_to_str(lst):
         return " and ".join(lst_str)
     else:
         return f"{', '.join(lst_str[:-1])}, and {lst_str[-1]}"
+
+
+def _listify(obj):
+    """Wrap all non-list or tuple objects in a list.
+
+    This provides a simple way to accept flexible arguments.
+    """
+    return obj if isinstance(obj, (list, tuple, type(None), np.ndarray)) else [obj]
+
+
+def _make_dictionary(metadata=None, **kwargs):
+    """Create or modify a dictionary.
+
+    This will add kwargs to a metadata dictionary if the dictionary is provided,
+    or create a dictionary from scratch if not.
+    """
+    from copy import deepcopy
+
+    from xcp_d.utils.utils import _listify
+
+    if metadata:
+        out_metadata = deepcopy(metadata)
+        for key, value in kwargs.items():
+            if key not in metadata.keys():
+                out_metadata[key] = value
+            elif isinstance(value, list) or isinstance(out_metadata[key], list):
+                # Append the values if they're a list
+                out_metadata[key] = _listify(out_metadata[key]) + _listify(value)
+            else:
+                # Overwrite the old value
+                out_metadata[key] = value
+
+        return out_metadata
+    else:
+        return dict(kwargs)
+
+
+def _transpose_lol(lol):
+    """Transpose list of lists."""
+    return list(map(list, zip(*lol)))

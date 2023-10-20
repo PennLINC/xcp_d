@@ -147,17 +147,22 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
 
     # It will work when we give it a real fmri_dir.
     fmri_dir = datasets["ds001419"]
-    xbids.write_dataset_description(fmri_dir, tmpdir)
+    xbids.write_dataset_description(fmri_dir, tmpdir, custom_confounds_folder="/fake/path4")
     assert os.path.isfile(dset_description)
 
     # Now overwrite the description.
-    xbids.write_dataset_description(fmri_dir, tmpdir)
-    assert os.path.isfile(dset_description)
-
-    # Now change the version and re-run the function.
     with open(dset_description, "r") as fo:
         desc = json.load(fo)
 
+    assert "'preprocessed' is already a dataset link" not in caplog.text
+    assert "'xcp_d' is already a dataset link" not in caplog.text
+    assert "'custom_confounds' is already a dataset link" not in caplog.text
+    xbids.write_dataset_description(tmpdir, tmpdir, custom_confounds_folder="/fake/path4")
+    assert "'preprocessed' is already a dataset link" in caplog.text
+    assert "'xcp_d' is already a dataset link" in caplog.text
+    assert "'custom_confounds' is already a dataset link" in caplog.text
+
+    # Now change the version and re-run the function.
     desc["GeneratedBy"][0]["Version"] = "0.0.1"
     with open(dset_description, "w") as fo:
         json.dump(desc, fo, indent=4)
@@ -294,3 +299,77 @@ def test_group_across_runs():
         "/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz",
         "/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz",
     ]
+
+
+def test_make_uri():
+    """Test _make_uri."""
+    in_file = "/path/to/dset/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    dataset_name = "test"
+    dataset_path = "/path/to/dset"
+    uri = xbids._make_uri(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
+    assert uri == "bids:test:sub-01/func/sub-01_task-rest_bold.nii.gz"
+
+    dataset_path = "/another/path/haha"
+    with pytest.raises(ValueError, match="does not start with"):
+        xbids._make_uri(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
+
+
+def test_make_xcpd_uri():
+    """Test _make_xcpd_uri."""
+    out_file = "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    uri = xbids._make_xcpd_uri(out_file, output_dir="/path/to/dset")
+    assert uri == ["bids:xcp_d:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+    xbids._make_xcpd_uri([out_file], output_dir="/path/to/dset")
+    assert uri == ["bids:xcp_d:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+
+def test_make_xcpd_uri_lol():
+    """Test _make_xcpd_uri_lol."""
+    in_list = [
+        [
+            "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "/path/to/dset/xcp_d/sub-02/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "/path/to/dset/xcp_d/sub-03/func/sub-01_task-rest_run-1_bold.nii.gz",
+        ],
+        [
+            "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "/path/to/dset/xcp_d/sub-02/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "/path/to/dset/xcp_d/sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
+        ],
+    ]
+    uris = xbids._make_xcpd_uri_lol(in_list, output_dir="/path/to/dset/")
+    assert uris == [
+        [
+            "bids:xcp_d:sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids:xcp_d:sub-01/func/sub-01_task-rest_run-2_bold.nii.gz",
+        ],
+        [
+            "bids:xcp_d:sub-02/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids:xcp_d:sub-02/func/sub-01_task-rest_run-2_bold.nii.gz",
+        ],
+        [
+            "bids:xcp_d:sub-03/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids:xcp_d:sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
+        ],
+    ]
+
+
+def test_make_preproc_uri():
+    """Test _make_preproc_uri."""
+    out_file = "/path/to/dset/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    uri = xbids._make_preproc_uri(out_file, fmri_dir="/path/to/dset")
+    assert uri == ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+    xbids._make_preproc_uri([out_file], fmri_dir="/path/to/dset")
+    assert uri == ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+
+def test_make_custom_uri():
+    """Test _make_custom_uri."""
+    out_file = "/path/to/dset/sub-01_task-rest_bold.nii.gz"
+    uri = xbids._make_custom_uri(out_file)
+    assert uri == ["bids:custom_confounds:sub-01_task-rest_bold.nii.gz"]
+
+    xbids._make_custom_uri([out_file])
+    assert uri == ["bids:custom_confounds:sub-01_task-rest_bold.nii.gz"]

@@ -7,6 +7,7 @@ A PR will be submitted to niworkflows at some point.
 """
 import os
 import warnings
+from pathlib import Path
 
 import nibabel as nb
 import yaml
@@ -659,7 +660,7 @@ def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, xcpd_dir):
+def write_dataset_description(fmri_dir, xcpd_dir, custom_confounds_folder=None):
     """Write dataset_description.json file for derivatives.
 
     Parameters
@@ -696,6 +697,26 @@ def write_dataset_description(fmri_dir, xcpd_dir):
     )
     dset_desc["GeneratedBy"] = generated_by
     dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
+
+    # Add DatasetLinks
+    if "DatasetLinks" not in dset_desc.keys():
+        dset_desc["DatasetLinks"] = {}
+
+    if "preprocessed" in dset_desc["DatasetLinks"].keys():
+        LOGGER.warning("'preprocessed' is already a dataset link. Overwriting.")
+
+    dset_desc["DatasetLinks"]["preprocessed"] = str(fmri_dir)
+
+    if "xcp_d" in dset_desc["DatasetLinks"].keys():
+        LOGGER.warning("'xcp_d' is already a dataset link. Overwriting.")
+
+    dset_desc["DatasetLinks"]["xcp_d"] = str(xcpd_dir)
+
+    if custom_confounds_folder:
+        if "custom_confounds" in dset_desc["DatasetLinks"].keys():
+            LOGGER.warning("'custom_confounds' is already a dataset link. Overwriting.")
+
+        dset_desc["DatasetLinks"]["custom_confounds"] = str(custom_confounds_folder)
 
     xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
@@ -955,3 +976,65 @@ def group_across_runs(in_files):
         out_files[group_idx].append(in_file)
 
     return out_files
+
+
+def _make_uri(in_file, dataset_name, dataset_path):
+    """Convert a filename to a BIDS URI.
+
+    Raises
+    ------
+    ValueError
+        If ``in_file`` is not relative to ``dataset_path``.
+    """
+    bids_uri = f"bids:{dataset_name}:{str(Path(in_file).relative_to(dataset_path))}"
+    return bids_uri
+
+
+def _make_xcpd_uri(out_file, output_dir):
+    """Convert postprocessing derivative's path to BIDS URI."""
+    import os
+
+    from xcp_d.utils.bids import _make_uri
+
+    dataset_path = os.path.join(output_dir, "xcp_d")
+
+    if isinstance(out_file, list):
+        return [_make_uri(of, "xcp_d", dataset_path) for of in out_file]
+    else:
+        return [_make_uri(out_file, "xcp_d", dataset_path)]
+
+
+def _make_xcpd_uri_lol(in_list, output_dir):
+    """Call _make_xcpd_uri on a list of lists and then transpose the result."""
+    from xcp_d.utils.bids import _make_xcpd_uri
+    from xcp_d.utils.utils import _transpose_lol
+
+    out = []
+    for sublist in in_list:
+        sublist_out = _make_xcpd_uri(sublist, output_dir)
+        out.append(sublist_out)
+
+    out_lol = _transpose_lol(out)
+    return out_lol
+
+
+def _make_preproc_uri(out_file, fmri_dir):
+    """Convert preprocessing derivative's path to BIDS URI."""
+    from xcp_d.utils.bids import _make_uri
+
+    if isinstance(out_file, list):
+        return [_make_uri(of, "preprocessed", fmri_dir) for of in out_file]
+    else:
+        return [_make_uri(out_file, "preprocessed", fmri_dir)]
+
+
+def _make_custom_uri(out_file):
+    """Convert custom confounds' path to BIDS URI."""
+    import os
+
+    from xcp_d.utils.bids import _make_uri
+
+    if isinstance(out_file, list):
+        return [_make_uri(of, "custom_confounds", os.path.dirname(of)) for of in out_file]
+    else:
+        return [_make_uri(out_file, "custom_confounds", os.path.dirname(out_file))]

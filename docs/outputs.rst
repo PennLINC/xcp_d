@@ -165,21 +165,15 @@ Denoised or residual BOLD data
    xcp_d/
       sub-<label>/[ses-<label>/]
          func/
-            # Nifti
+            # NIfTI
             <source_entities>_space-<label>_desc-denoised_bold.nii.gz
-            <source_entities>_space-<label>_desc-denoised_bold.json
             <source_entities>_space-<label>_desc-denoisedSmoothed_bold.nii.gz
-            <source_entities>_space-<label>_desc-denoisedSmoothed_bold.json
             <source_entities>_space-<label>_desc-interpolated_bold.nii.gz
-            <source_entities>_space-<label>_desc-interpolated_bold.json
 
-            # Cifti
+            # CIFTI
             <source_entities>_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
-            <source_entities>_space-fsLR_den-91k_desc-denoised_bold.json
             <source_entities>_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
-            <source_entities>_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
             <source_entities>_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
-            <source_entities>_space-fsLR_den-91k_desc-interpolated_bold.json
 
 .. important::
 
@@ -212,21 +206,21 @@ This includes the atlases used to extract the timeseries.
 .. code-block::
 
    xcp_d/
-      # Nifti
+      # NIfTI
       space-<label>_atlas-<label>_dseg.nii.gz
 
-      # Cifti
+      # CIFTI
       space-<label>_atlas-<label>_dseg.dlabel.nii
 
       sub-<label>/[ses-<label>/]
          func/
-            # Nifti
+            # NIfTI
             <source_entities>_space-<label>_atlas-<label>_coverage.tsv
             <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
             <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_conmat.tsv
             <source_entities>_space-<label>_atlas-<label>_measure-pearsoncorrelation_desc-<INT>volumes_conmat.tsv
 
-            # Cifti
+            # CIFTI
             <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.tsv
             <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.pscalar.nii
             <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.tsv
@@ -259,14 +253,14 @@ data.
    xcp_d/
       sub-<label>/[ses-<label>/]
          func/
-            # Nifti
+            # NIfTI
             <source_entities>_space-<label>_reho.nii.gz
             <source_entities>_space-<label>_alff.nii.gz
             <source_entities>_space-<label>_desc-smooth_alff.nii.gz
             <source_entities>_space-<label>_atlas-<atlas>_alff.tsv
             <source_entities>_space-<label>_atlas-<atlas>_reho.tsv
 
-            # Cifti
+            # CIFTI
             <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
             <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
             <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
@@ -284,21 +278,15 @@ Other outputs include quality control, framewise displacement, and confounds fil
 
       sub-<label>/[ses-<label>/]
          func/
-            # Nifti
-            <source_entities>_space-<label>_desc-linc_qc.csv
             <source_entities>[_desc-filtered]_motion.tsv
-            <source_entities>[_desc-filtered]_motion.json
             <source_entities>_outliers.tsv
-            <source_entities>_outliers.json
             <source_entities>_design.tsv
 
-            # Cifti
+            # NIfTI
+            <source_entities>_space-<label>_desc-linc_qc.csv
+
+            # CIFTI
             <source_entities>_space-fsLR_desc-linc_qc.csv
-            <source_entities>[_desc-filtered]_motion.tsv
-            <source_entities>[_desc-filtered]_motion.json
-            <source_entities>_outliers.tsv
-            <source_entities>_outliers.json
-            <source_entities>_design.tsv
 
 ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns:
 one for each of the six filtered motion parameters, as well as "framewise_displacement".
@@ -327,10 +315,6 @@ to 1mm FD in 0.01 steps.
    xcp_d/
       sub-<label>/[ses-<label>/]
          func/
-            # Nifti
-            <source_entities>_desc-dcan_qc.hdf5
-
-            # Cifti
             <source_entities>_desc-dcan_qc.hdf5
 
 These files have the following keys:

@@ -9,8 +9,9 @@ from xcp_d.interfaces.concatenation import (
     ConcatenateInputs,
     FilterOutFailedRuns,
 )
+from xcp_d.utils.bids import _make_xcpd_uri, _make_xcpd_uri_lol
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _select_first
+from xcp_d.utils.utils import _make_dictionary, _select_first
 from xcp_d.workflows.plotting import init_qc_report_wf
 
 
@@ -18,14 +19,15 @@ from xcp_d.workflows.plotting import init_qc_report_wf
 def init_concatenate_data_wf(
     output_dir,
     motion_filter_type,
-    mem_gb,
-    omp_nthreads,
     TR,
     head_radius,
     params,
     smoothing,
     cifti,
     dcan_qc,
+    fd_thresh,
+    mem_gb,
+    omp_nthreads,
     name="concatenate_data_wf",
 ):
     """Concatenate postprocessed data across runs and directions.
@@ -40,14 +42,15 @@ def init_concatenate_data_wf(
             wf = init_concatenate_data_wf(
                 output_dir=".",
                 motion_filter_type=None,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 TR=2,
                 head_radius=50,
                 params="none",
                 smoothing=None,
                 cifti=False,
                 dcan_qc=True,
+                fd_thresh=0.3,
+                mem_gb=0.1,
+                omp_nthreads=1,
                 name="concatenate_data_wf",
             )
 
@@ -55,14 +58,15 @@ def init_concatenate_data_wf(
     ----------
     %(output_dir)s
     %(motion_filter_type)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(TR)s
     %(head_radius)s
     %(params)s
     %(smoothing)s
     %(cifti)s
     %(dcan_qc)s
+    fd_thresh
+    %(mem_gb)s
+    %(omp_nthreads)s
     %(name)s
         Default is "concatenate_data_wf".
 
@@ -131,19 +135,16 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         CleanNameSource(),
         name="clean_name_source",
     )
-
-    # fmt:off
     workflow.connect([(inputnode, clean_name_source, [("name_source", "name_source")])])
-    # fmt:on
 
-    filter_out_failed_runs = pe.Node(
+    filter_runs = pe.Node(
         FilterOutFailedRuns(),
-        name="filter_out_failed_runs",
+        name="filter_runs",
     )
 
     # fmt:off
     workflow.connect([
-        (inputnode, filter_out_failed_runs, [
+        (inputnode, filter_runs, [
             ("preprocessed_bold", "preprocessed_bold"),
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("filtered_motion", "filtered_motion"),
@@ -168,7 +169,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     # fmt:off
     workflow.connect([
-        (filter_out_failed_runs, concatenate_inputs, [
+        (filter_runs, concatenate_inputs, [
             ("preprocessed_bold", "preprocessed_bold"),
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("filtered_motion", "filtered_motion"),
@@ -204,7 +205,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("anat_brainmask", "inputnode.anat_brainmask"),
         ]),
         (clean_name_source, qc_report_wf, [("name_source", "inputnode.name_source")]),
-        (filter_out_failed_runs, qc_report_wf, [
+        (filter_runs, qc_report_wf, [
             # nifti-only inputs
             (("bold_mask", _select_first), "inputnode.bold_mask"),
             (("boldref", _select_first), "inputnode.boldref"),
@@ -240,6 +241,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (clean_name_source, ds_filtered_motion, [("name_source", "source_file")]),
         (concatenate_inputs, ds_filtered_motion, [("filtered_motion", "in_file")]),
+        (filter_runs, ds_filtered_motion, [
+            (("filtered_motion", _make_xcpd_uri, output_dir), "Sources"),
+        ]),
     ])
     # fmt:on
 
@@ -259,6 +263,28 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
         (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
+        (filter_runs, ds_temporal_mask, [
+            (("temporal_mask", _make_xcpd_uri, output_dir), "Sources"),
+        ]),
+    ])
+    # fmt:on
+
+    make_timeseries_dict = pe.MapNode(
+        niu.Function(
+            function=_make_dictionary,
+            input_names=["Sources"],
+            output_names=["metadata"],
+        ),
+        run_without_submitting=True,
+        mem_gb=1,
+        name="make_timeseries_dict",
+        iterfield=["Sources"],
+    )
+    # fmt:off
+    workflow.connect([
+        (filter_runs, make_timeseries_dict, [
+            (("timeseries", _make_xcpd_uri_lol, output_dir), "Sources"),
+        ]),
     ])
     # fmt:on
 
@@ -268,11 +294,13 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             dismiss_entities=["desc"],
             suffix="timeseries",
             extension=".tsv",
+            # Metadata
+            SamplingFrequency="TR",
         ),
         name="ds_timeseries",
         run_without_submitting=True,
         mem_gb=1,
-        iterfield=["atlas", "in_file"],
+        iterfield=["atlas", "in_file", "meta_dict"],
     )
 
     # fmt:off
@@ -280,6 +308,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         (inputnode, ds_timeseries, [("atlas_names", "atlas")]),
         (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
         (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
+        (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
     ])
     # fmt:on
 
@@ -297,6 +326,25 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             mem_gb=2,
         )
 
+        make_timeseries_ciftis_dict = pe.MapNode(
+            niu.Function(
+                function=_make_dictionary,
+                input_names=["Sources"],
+                output_names=["metadata"],
+            ),
+            run_without_submitting=True,
+            mem_gb=1,
+            name="make_timeseries_ciftis_dict",
+            iterfield=["Sources"],
+        )
+        # fmt:off
+        workflow.connect([
+            (filter_runs, make_timeseries_ciftis_dict, [
+                (("timeseries_ciftis", _make_xcpd_uri_lol, output_dir), "Sources"),
+            ]),
+        ])
+        # fmt:on
+
         ds_timeseries_cifti_files = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -309,7 +357,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name="ds_timeseries_cifti_files",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file"],
+            iterfield=["atlas", "in_file", "meta_dict"],
         )
 
         # fmt:off
@@ -317,6 +365,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
             (inputnode, ds_timeseries_cifti_files, [("atlas_names", "atlas")]),
             (concatenate_inputs, ds_timeseries_cifti_files, [("timeseries_ciftis", "in_file")]),
+            (make_timeseries_ciftis_dict, ds_timeseries_cifti_files, [("metadata", "meta_dict")]),
         ])
         # fmt:on
 
@@ -334,7 +383,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-        if dcan_qc:
+        if dcan_qc and (fd_thresh > 0):
             ds_interpolated_filtered_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -360,6 +409,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             run_without_submitting=True,
             mem_gb=2,
         )
+
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
@@ -373,7 +423,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-        if dcan_qc:
+        if dcan_qc and (fd_thresh > 0):
             ds_interpolated_filtered_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -390,6 +440,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (clean_name_source, ds_censored_filtered_bold, [("name_source", "source_file")]),
         (concatenate_inputs, ds_censored_filtered_bold, [("censored_denoised_bold", "in_file")]),
+        (filter_runs, ds_censored_filtered_bold, [
+            (("censored_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
+        ]),
     ])
     # fmt:on
 
@@ -400,6 +453,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (concatenate_inputs, ds_smoothed_denoised_bold, [
                 ("smoothed_denoised_bold", "in_file"),
             ]),
+            (filter_runs, ds_smoothed_denoised_bold, [
+                (("smoothed_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
+            ]),
         ])
         # fmt:on
 
@@ -409,6 +465,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_interpolated_filtered_bold, [
                 ("interpolated_filtered_bold", "in_file"),
+            ]),
+            (filter_runs, ds_interpolated_filtered_bold, [
+                (("interpolated_filtered_bold", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])
         # fmt:on
