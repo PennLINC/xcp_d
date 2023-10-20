@@ -208,6 +208,7 @@ def init_postproc_derivatives_wf(
     reho
     parcellated_reho
     confounds_file
+    confounds_metadata
     %(filtered_motion)s
     motion_metadata
     %(temporal_mask)s
@@ -221,6 +222,7 @@ def init_postproc_derivatives_wf(
             fields=[
                 "atlas_names",
                 "confounds_file",
+                "confounds_metadata",
                 "coverage",
                 "timeseries",
                 "correlations",
@@ -329,7 +331,14 @@ def init_postproc_derivatives_wf(
             name="ds_confounds",
             run_without_submitting=False,
         )
-        workflow.connect([(inputnode, ds_confounds, [("confounds_file", "in_file")])])
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_confounds, [
+                ("confounds_file", "in_file"),
+                ("confounds_metadata", "meta_dict"),
+            ]),
+        ])
+        # fmt:on
 
     ds_coverage_files = pe.MapNode(
         DerivativesDataSink(
