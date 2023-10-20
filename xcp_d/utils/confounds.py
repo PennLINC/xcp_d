@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Confound matrix selection based on Ciric et al. 2007."""
+import json
 import os
 import warnings
 
@@ -371,6 +372,8 @@ def load_confound_matrix(
         If "AROMA" is requested, then this DataFrame will include signal components as well.
         These will be named something like "signal_[XX]".
         If ``params`` is "none", ``confounds_df`` will be None.
+    confounds_metadata : :obj:`dict`
+        Metadata for the columns in the confounds file.
     """
     PARAM_KWARGS = {
         # Get rot and trans values, as well as derivatives and square
@@ -427,7 +430,7 @@ def load_confound_matrix(
     }
 
     if params == "none":
-        return None
+        return None, {}
 
     if params in PARAM_KWARGS:
         kwargs = PARAM_KWARGS[params]
@@ -462,10 +465,24 @@ def load_confound_matrix(
         custom_confounds_df = pd.read_table(custom_confounds, sep="\t")
         confounds_df = pd.concat([custom_confounds_df, confounds_df], axis=1)
 
+    with open(confounds_json_file, "r") as fo:
+        full_confounds_metadata = json.load(fo)
+
+    confounds_metadata = {
+        k: v for k, v in full_confounds_metadata.items() if k in confounds_df.columns
+    }
+    confounds_metadata["linear_trend"] = {
+        "Description": (
+            "Linear trend regressor, generated after dummy scan removal, "
+            "but before any censoring."
+        ),
+    }
+    confounds_metadata["intercept"] = {"Description": "Intercept regressor."}
+
     confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
     confounds_df["intercept"] = np.ones(confounds_df.shape[0])
 
-    return confounds_df
+    return confounds_df, confounds_metadata
 
 
 def _get_mixing_matrix(img_file):

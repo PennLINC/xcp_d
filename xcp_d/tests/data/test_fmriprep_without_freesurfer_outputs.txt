@@ -56,6 +56,7 @@ xcp_d/sub-01/func
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-dcan_qc.hdf5
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_motion.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_motion.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_outliers.json
@@ -184,6 +185,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_r
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-dcan_qc.hdf5
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.tsv
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_motion.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_motion.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_outliers.json

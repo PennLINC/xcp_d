@@ -223,6 +223,7 @@ def init_postproc_derivatives_wf(
     reho
     parcellated_reho
     confounds_file
+    confounds_metadata
     %(filtered_motion)s
     motion_metadata
     %(temporal_mask)s
@@ -240,6 +241,7 @@ def init_postproc_derivatives_wf(
                 "atlas_names",
                 "atlas_files",  # for Sources
                 "confounds_file",
+                "confounds_metadata",
                 "coverage",
                 "timeseries",
                 "correlations",
@@ -434,7 +436,10 @@ def init_postproc_derivatives_wf(
         )
         # fmt:off
         workflow.connect([
-            (inputnode, ds_confounds, [("confounds_file", "in_file")]),
+            (inputnode, ds_confounds, [
+                ("confounds_file", "in_file"),
+                ("confounds_metadata", "meta_dict"),
+            ]),
             (confounds_src, ds_confounds, [("out", "Sources")]),
             (ds_confounds, merge_dense_src, [
                 (("out_file", _make_xcpd_uri, output_dir), f"in{3 if fd_thresh > 0 else 2}"),

@@ -54,6 +54,7 @@ xcp_d/sub-01/ses-1mo/func
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-dcan_qc.hdf5
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.tsv
+xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.json
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.tsv
 xcp_d/sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_atlas-4S1052Parcels_cohort-1_alff.json
