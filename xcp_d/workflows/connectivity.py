@@ -211,15 +211,19 @@ def init_load_atlases_wf(
                 "space",
                 "res",
                 "den",
+                "cohort",
             ],
             output_names=["out_file"],
-        )
+        ),
+        name="ds_atlas",
+        iterfield=["in_file", "atlas"],
     )
     ds_atlas.inputs.output_dir = output_dir
     ds_atlas.inputs.extension = ".dlabel.nii" if cifti else ".nii.gz"
     ds_atlas.inputs.space = get_entity(name_source, "space")
     ds_atlas.inputs.res = get_entity(name_source, "res")
     ds_atlas.inputs.den = get_entity(name_source, "den")
+    ds_atlas.inputs.cohort = get_entity(name_source, "cohort")
 
     # fmt:off
     workflow.connect([

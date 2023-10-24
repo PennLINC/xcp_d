@@ -147,7 +147,7 @@ def get_atlas_cifti(atlas_name):
     return atlas_file, atlas_labels_file, atlas_metadata_file
 
 
-def copy_atlas(in_file, output_dir, atlas, extension, space=None, res=None, den=None):
+def copy_atlas(in_file, output_dir, atlas, extension, space=None, res=None, den=None, cohort=None):
     """Copy atlas file to output directory.
 
     I can't use DerivativesDataSink because it has a problem with dlabel CIFTI files.
@@ -161,12 +161,13 @@ def copy_atlas(in_file, output_dir, atlas, extension, space=None, res=None, den=
     import os
     import shutil
 
+    cohort_str = f"_cohort-{cohort}" if cohort else ""
     if extension == ".dlabel.nii":
         res_str = f"_res-{res}" if res else ""
-        atlas_basename = f"space-{space}_atlas-{atlas}{res_str}_dseg{extension}"
+        atlas_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
     elif extension == ".nii.gz":
         den_str = f"_den-{den}" if den else ""
-        atlas_basename = f"space-{space}_atlas-{atlas}{den_str}_dseg{extension}"
+        atlas_basename = f"space-{space}_atlas-{atlas}{den_str}{cohort_str}_dseg{extension}"
 
     out_atlas_file = os.path.join(output_dir, "xcp_d", atlas_basename)
     shutil.copyfile(in_file, out_atlas_file)
