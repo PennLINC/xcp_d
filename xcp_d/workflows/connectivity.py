@@ -11,13 +11,20 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.nilearn import IndexImage
 from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
-from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
+from xcp_d.utils.atlas import (
+    copy_atlas,
+    get_atlas_cifti,
+    get_atlas_names,
+    get_atlas_nifti,
+)
+from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
 
 
 @fill_doc
 def init_load_atlases_wf(
+    name_source,
     output_dir,
     cifti,
     mem_gb,
@@ -34,6 +41,7 @@ def init_load_atlases_wf(
             from xcp_d.workflows.connectivity import init_load_atlases_wf
 
             wf = init_load_atlases_wf(
+                name_source="file.nii.gz",
                 output_dir=".",
                 cifti=True,
                 mem_gb=0.1,
@@ -43,6 +51,7 @@ def init_load_atlases_wf(
 
     Parameters
     ----------
+    %(name_source)s
     %(output_dir)s
     %(cifti)s
     %(mem_gb)s
@@ -192,18 +201,25 @@ def init_load_atlases_wf(
         # fmt:on
 
     ds_atlas = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
-            allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
-            suffix="dseg",
-            extension=".dlabel.nii" if cifti else ".nii.gz",
-        ),
-        name="ds_atlas",
-        iterfield=["atlas", "in_file"],
-        run_without_submitting=True,
+        Function(
+            function=copy_atlas,
+            input_names=[
+                "in_file",
+                "output_dir",
+                "atlas",
+                "extension",
+                "space",
+                "res",
+                "den",
+            ],
+            output_names=["out_file"],
+        )
     )
+    ds_atlas.inputs.output_dir = output_dir
+    ds_atlas.inputs.extension = ".dlabel.nii" if cifti else ".nii.gz"
+    ds_atlas.inputs.space = get_entity(name_source, "space")
+    ds_atlas.inputs.res = get_entity(name_source, "res")
+    ds_atlas.inputs.den = get_entity(name_source, "den")
 
     # fmt:off
     workflow.connect([

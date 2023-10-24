@@ -145,3 +145,29 @@ def get_atlas_cifti(atlas_name):
         )
 
     return atlas_file, atlas_labels_file, atlas_metadata_file
+
+
+def copy_atlas(in_file, output_dir, atlas, extension, space=None, res=None, den=None):
+    """Copy atlas file to output directory.
+
+    I can't use DerivativesDataSink because it has a problem with dlabel CIFTI files.
+    It gives the following error:
+    "AttributeError: 'Cifti2Header' object has no attribute 'set_data_dtype'"
+
+    I can't override the CIFTI atlas's data dtype ahead of time because setting it to int8 or int16
+    somehow converts all of the values in the data array to weird floats.
+    This could be a version-specific nibabel issue.
+    """
+    import os
+    import shutil
+
+    if extension == ".dlabel.nii":
+        res_str = f"_res-{res}" if res else ""
+        atlas_basename = f"space-{space}_atlas-{atlas}{res_str}_dseg{extension}"
+    elif extension == ".nii.gz":
+        den_str = f"_den-{den}" if den else ""
+        atlas_basename = f"space-{space}_atlas-{atlas}{den_str}_dseg{extension}"
+
+    out_atlas_file = os.path.join(output_dir, "xcp_d", atlas_basename)
+    shutil.copyfile(in_file, out_atlas_file)
+    return out_atlas_file

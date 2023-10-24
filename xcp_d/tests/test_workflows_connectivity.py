@@ -30,6 +30,7 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     bold_file = ds001419_data["nifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
+        name_source=bold_file,
         output_dir=tmpdir,
         cifti=False,
         mem_gb=1,
@@ -52,6 +53,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     bold_file = ds001419_data["cifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
+        name_source=bold_file,
         output_dir=tmpdir,
         cifti=True,
         mem_gb=1,

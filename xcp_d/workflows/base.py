@@ -538,6 +538,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # Load the atlases, warping to the same space as the BOLD data if necessary.
     load_atlases_wf = init_load_atlases_wf(
+        name_source=preproc_files[0],
         output_dir=output_dir,
         cifti=cifti,
         mem_gb=1,
