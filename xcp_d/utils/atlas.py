@@ -162,12 +162,12 @@ def copy_atlas(in_file, output_dir, atlas, extension, space=None, res=None, den=
     import shutil
 
     cohort_str = f"_cohort-{cohort}" if cohort else ""
+    res_str = f"_res-{res}" if res else ""
+    den_str = f"_den-{den}" if den else ""
     if extension == ".dlabel.nii":
-        res_str = f"_res-{res}" if res else ""
-        atlas_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
-    elif extension == ".nii.gz":
-        den_str = f"_den-{den}" if den else ""
         atlas_basename = f"space-{space}_atlas-{atlas}{den_str}{cohort_str}_dseg{extension}"
+    elif extension == ".nii.gz":
+        atlas_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
 
     out_atlas_file = os.path.join(output_dir, "xcp_d", atlas_basename)
     shutil.copyfile(in_file, out_atlas_file)
