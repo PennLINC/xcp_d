@@ -13,7 +13,6 @@ from xcp_d.interfaces.nilearn import IndexImage
 from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.modified_data import cast_cifti_to_int16
 from xcp_d.utils.utils import get_std2bold_xfms
 
 
@@ -168,6 +167,7 @@ def init_load_atlases_wf(
         workflow.connect([
             (inputnode, resample_atlas_to_data, [("bold_file", "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
+            (resample_atlas_to_data, atlas_buffer, [("cifti_out", "atlas_file")]),
         ])
         # fmt:on
 
@@ -188,23 +188,6 @@ def init_load_atlases_wf(
             (atlas_file_grabber, parcellate_atlas, [("atlas_file", "atlas_label")]),
             (resample_atlas_to_data, parcellate_atlas, [("cifti_out", "in_file")]),
             (parcellate_atlas, outputnode, [("out_file", "parcellated_atlas_files")]),
-        ])
-        # fmt:on
-
-        cast_atlas_to_int16 = pe.MapNode(
-            Function(
-                function=cast_cifti_to_int16,
-                input_names=["in_file"],
-                output_names=["out_file"],
-            ),
-            name="cast_atlas_to_int16",
-            iterfield=["in_file"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (resample_atlas_to_data, cast_atlas_to_int16, [("cifti_out", "in_file")]),
-            (cast_atlas_to_int16, atlas_buffer, [("out_file", "atlas_file")]),
         ])
         # fmt:on
 
