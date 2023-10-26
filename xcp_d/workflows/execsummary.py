@@ -379,7 +379,7 @@ def init_execsummary_functional_plots_wf(
         bb_register_prefix = current_bold_file.split("_desc")[0]
 
     bold_t1w_registration_files = layout.get(
-        desc=["bbregister", "coreg", "bbr"],
+        desc=["bbregister", "coreg", "bbr", "flirtbbr"],
         extension=".svg",
         suffix="bold",
         return_type="file",
