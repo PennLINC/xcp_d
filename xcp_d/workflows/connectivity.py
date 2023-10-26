@@ -17,14 +17,12 @@ from xcp_d.utils.atlas import (
     get_atlas_names,
     get_atlas_nifti,
 )
-from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
 
 
 @fill_doc
 def init_load_atlases_wf(
-    name_source,
     output_dir,
     cifti,
     mem_gb,
@@ -41,7 +39,6 @@ def init_load_atlases_wf(
             from xcp_d.workflows.connectivity import init_load_atlases_wf
 
             wf = init_load_atlases_wf(
-                name_source="file.nii.gz",
                 output_dir=".",
                 cifti=True,
                 mem_gb=0.1,
@@ -51,7 +48,6 @@ def init_load_atlases_wf(
 
     Parameters
     ----------
-    %(name_source)s
     %(output_dir)s
     %(cifti)s
     %(mem_gb)s
@@ -204,30 +200,20 @@ def init_load_atlases_wf(
         Function(
             function=copy_atlas,
             input_names=[
+                "name_source",
                 "in_file",
                 "output_dir",
                 "atlas",
-                "extension",
-                "space",
-                "res",
-                "den",
-                "cohort",
             ],
             output_names=["out_file"],
         ),
         name="ds_atlas",
         iterfield=["in_file", "atlas"],
     )
-    ds_atlas.inputs.output_dir = output_dir
-    ds_atlas.inputs.extension = ".dlabel.nii" if cifti else ".nii.gz"
-    ds_atlas.inputs.space = get_entity(name_source, "space")
-    ds_atlas.inputs.res = get_entity(name_source, "res")
-    ds_atlas.inputs.den = get_entity(name_source, "den")
-    ds_atlas.inputs.cohort = get_entity(name_source, "cohort")
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_atlas, [("name_source", "source_file")]),
+        (inputnode, ds_atlas, [("name_source", "name_source")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (atlas_buffer, ds_atlas, [("atlas_file", "in_file")]),
         (ds_atlas, outputnode, [("out_file", "atlas_files")]),
