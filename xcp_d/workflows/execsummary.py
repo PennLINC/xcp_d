@@ -379,29 +379,33 @@ def init_execsummary_functional_plots_wf(
         bb_register_prefix = current_bold_file.split("_desc")[0]
 
     bold_t1w_registration_files = layout.get(
-        desc=["bbregister", "coreg", "bbr"],
+        desc=["bbregister", "coreg", "bbr", "flirtbbr"],
         extension=".svg",
         suffix="bold",
         return_type="file",
     )
-    bold_t1w_registration_file = fnmatch.filter(
-        bold_t1w_registration_files,
-        f"*/{bb_register_prefix}*",
-    )[0]
+    if not bold_t1w_registration_files:
+        LOGGER.warning("No coregistration figure found in preprocessing derivatives.")
+    else:
+        # TODO: Switch to interface
+        bold_t1w_registration_file = fnmatch.filter(
+            bold_t1w_registration_files,
+            f"*/{bb_register_prefix}*",
+        )[0]
 
-    ds_registration_figure = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            in_file=bold_t1w_registration_file,
-            dismiss_entities=["den"],
-            datatype="figures",
-            desc="bbregister",
-        ),
-        name="ds_registration_figure",
-        run_without_submitting=True,
-    )
+        ds_registration_figure = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                in_file=bold_t1w_registration_file,
+                dismiss_entities=["den"],
+                datatype="figures",
+                desc="bbregister",
+            ),
+            name="ds_registration_figure",
+            run_without_submitting=True,
+        )
 
-    workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
+        workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
 
     # Calculate the mean bold image
     calculate_mean_bold = pe.Node(
