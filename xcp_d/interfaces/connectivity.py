@@ -167,11 +167,11 @@ class NiftiConnect(SimpleInterface):
             standardize=False,
             resampling_target=None,  # they should be in the same space/resolution already
         )
-        masker_labels = masker.labels_[:]
 
         # Use nilearn for time_series
         timeseries_arr = masker.fit_transform(filtered_file)
         assert timeseries_arr.shape[1] == n_found_nodes
+        masker_labels = masker.labels_[:]
         del masker
         gc.collect()
 
