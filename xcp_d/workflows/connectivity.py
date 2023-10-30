@@ -11,9 +11,13 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
 from xcp_d.interfaces.nilearn import IndexImage
 from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
-from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_names, get_atlas_nifti
+from xcp_d.utils.atlas import (
+    copy_atlas,
+    get_atlas_cifti,
+    get_atlas_names,
+    get_atlas_nifti,
+)
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.modified_data import cast_cifti_to_int16
 from xcp_d.utils.utils import get_std2bold_xfms
 
 
@@ -168,6 +172,7 @@ def init_load_atlases_wf(
         workflow.connect([
             (inputnode, resample_atlas_to_data, [("bold_file", "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
+            (resample_atlas_to_data, atlas_buffer, [("cifti_out", "atlas_file")]),
         ])
         # fmt:on
 
@@ -191,40 +196,25 @@ def init_load_atlases_wf(
         ])
         # fmt:on
 
-        cast_atlas_to_int16 = pe.MapNode(
-            Function(
-                function=cast_cifti_to_int16,
-                input_names=["in_file"],
-                output_names=["out_file"],
-            ),
-            name="cast_atlas_to_int16",
-            iterfield=["in_file"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (resample_atlas_to_data, cast_atlas_to_int16, [("cifti_out", "in_file")]),
-            (cast_atlas_to_int16, atlas_buffer, [("out_file", "atlas_file")]),
-        ])
-        # fmt:on
-
     ds_atlas = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=["datatype", "subject", "session", "task", "run", "desc"],
-            allowed_entities=["space", "res", "den", "atlas", "desc", "cohort"],
-            suffix="dseg",
-            extension=".dlabel.nii" if cifti else ".nii.gz",
+        Function(
+            function=copy_atlas,
+            input_names=[
+                "name_source",
+                "in_file",
+                "output_dir",
+                "atlas",
+            ],
+            output_names=["out_file"],
         ),
         name="ds_atlas",
-        iterfield=["atlas", "in_file"],
-        run_without_submitting=True,
+        iterfield=["in_file", "atlas"],
     )
+    ds_atlas.inputs.output_dir = output_dir
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_atlas, [("name_source", "source_file")]),
+        (inputnode, ds_atlas, [("name_source", "name_source")]),
         (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (atlas_buffer, ds_atlas, [("atlas_file", "in_file")]),
         (ds_atlas, outputnode, [("out_file", "atlas_files")]),

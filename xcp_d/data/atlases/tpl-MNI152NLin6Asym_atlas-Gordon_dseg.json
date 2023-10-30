@@ -21,5 +21,9 @@
             ]
         }
     },
-    "SpatialReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-01_T1w.nii.gz"
+    "SpatialReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-01_T1w.nii.gz",
+    "community": {
+        "Description": "The name of the community 'network' with which each parcel is associated.",
+        "LongName": "Community Label"
+    }
 }
