@@ -63,7 +63,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     load_atlases_wf.base_dir = tmpdir
     load_atlases_wf_res = load_atlases_wf.run()
     nodes = get_nodes(load_atlases_wf_res)
-    atlas_names = nodes["load_atlases_wf.cast_atlas_to_int16"].get_output("out_file")
+    atlas_names = nodes["load_atlases_wf.ds_atlas"].get_output("out_file")
     assert len(atlas_names) == 14
 
 

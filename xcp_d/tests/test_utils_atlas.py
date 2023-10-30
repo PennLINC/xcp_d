@@ -43,3 +43,27 @@ def test_get_atlas_cifti():
 
     with pytest.raises(FileNotFoundError, match="DNE"):
         atlas.get_atlas_cifti("tofail")
+
+
+def test_copy_atlas(tmp_path_factory):
+    """Test xcp_d.utils.atlas.copy_atlas."""
+    tmpdir = tmp_path_factory.mktemp("test_copy_atlas")
+    os.makedirs(os.path.join(tmpdir, "xcp_d"), exist_ok=True)
+
+    # NIfTI
+    atlas_file, _, _ = atlas.get_atlas_nifti("Gordon")
+    name_source = "sub-01_task-A_run-01_space-MNI152NLin2009cAsym_res-2_desc-z_bold.nii.gz"
+    out_file = atlas.copy_atlas(
+        name_source=name_source, in_file=atlas_file, output_dir=tmpdir, atlas="Y"
+    )
+    assert os.path.isfile(out_file)
+    assert os.path.basename(out_file) == "space-MNI152NLin2009cAsym_atlas-Y_res-2_dseg.nii.gz"
+
+    # CIFTI
+    atlas_file, _, _ = atlas.get_atlas_cifti("Gordon")
+    name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
+    out_file = atlas.copy_atlas(
+        name_source=name_source, in_file=atlas_file, output_dir=tmpdir, atlas="Y"
+    )
+    assert os.path.isfile(out_file)
+    assert os.path.basename(out_file) == "space-fsLR_atlas-Y_den-91k_dseg.dlabel.nii"
