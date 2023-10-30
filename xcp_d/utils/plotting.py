@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
 import os
-import tempfile
 
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
