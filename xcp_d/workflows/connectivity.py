@@ -566,7 +566,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiConnect(min_coverage=min_coverage, correlate=True),
         name="functional_connectivity",
         iterfield=["atlas", "atlas_labels"],
-        mem_gb=mem_gb,
+        mem_gb=mem_gb * 3,
     )
 
     # fmt:off
@@ -781,7 +781,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
     functional_connectivity = pe.MapNode(
         CiftiConnect(min_coverage=min_coverage, correlate=True),
-        mem_gb=mem_gb,
+        mem_gb=mem_gb * 3,
         name="functional_connectivity",
         n_procs=omp_nthreads,
         iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
