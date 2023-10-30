@@ -27,6 +27,7 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
         denoised_bold_figure=denoised_bold_figure,
         TR=t_r,
         standardize=False,
+        temporary_file_dir=tmpdir,
     )
     assert os.path.isfile(out_file1)
     assert os.path.isfile(out_file2)
@@ -43,6 +44,7 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
         denoised_bold_figure=denoised_bold_figure,
         TR=t_r,
         standardize=True,
+        temporary_file_dir=tmpdir,
     )
     assert os.path.isfile(out_file1)
     assert os.path.isfile(out_file2)
