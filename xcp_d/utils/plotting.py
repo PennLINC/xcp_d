@@ -489,6 +489,7 @@ def plot_fmri_es(
     preprocessed_bold_figure,
     denoised_bold_figure,
     standardize,
+    temporary_file_dir,
     mask=None,
     seg_data=None,
     run_index=None,
@@ -512,6 +513,8 @@ def plot_fmri_es(
         If False, then the preferred DCAN version of the plot will be generated,
         where the BOLD data are not rescaled, and the carpet plot has color limits of -600 and 600.
         If True, then the BOLD data will be z-scored and the color limits will be -2 and 2.
+    temporary_file_dir : :obj:`str`
+        Path in which to store temporary files.
     mask : :obj:`str`, optional
         Brain mask file. Used only when the pre- and post-processed BOLD data are NIFTIs.
     seg_data : :obj:`str`, optional
@@ -602,10 +605,11 @@ def plot_fmri_es(
         ).T
 
         # Make a temporary file for niftis and ciftis
+        rm_temp_file = True
         if preprocessed_bold.endswith(".nii.gz"):
-            temp_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.nii.gz")
+            temp_preprocessed_file = os.path.join(temporary_file_dir, "filex_raw.nii.gz")
         else:
-            temp_preprocessed_file = os.path.join(tempfile.mkdtemp(), "filex_raw.dtseries.nii")
+            temp_preprocessed_file = os.path.join(temporary_file_dir, "filex_raw.dtseries.nii")
 
         # Write out the scaled data
         temp_preprocessed_file = write_ndata(
@@ -616,6 +620,7 @@ def plot_fmri_es(
             TR=TR,
         )
     else:
+        rm_temp_file = False
         temp_preprocessed_file = preprocessed_bold
 
     files_for_carpet = [temp_preprocessed_file, uncensored_denoised_bold]
@@ -684,6 +689,10 @@ def plot_fmri_es(
 
         # Save out the before processing file
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
+
+    # Remove temporary files
+    if rm_temp_file:
+        os.remove(temp_preprocessed_file)
 
     # Save out the after processing file
     return preprocessed_bold_figure, denoised_bold_figure
