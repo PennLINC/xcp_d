@@ -649,6 +649,7 @@ class QCPlotsES(SimpleInterface):
             preprocessed_bold_figure=preprocessed_bold_figure,
             denoised_bold_figure=denoised_bold_figure,
             standardize=self.inputs.standardize,
+            temporary_file_dir=runtime.cwd,
             mask=mask_file,
             seg_data=segmentation_file,
             run_index=run_index,
