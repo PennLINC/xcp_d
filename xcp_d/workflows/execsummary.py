@@ -378,20 +378,21 @@ def init_execsummary_functional_plots_wf(
     else:
         bb_register_prefix = current_bold_file.split("_desc")[0]
 
+    # TODO: Switch to interface
     bold_t1w_registration_files = layout.get(
         desc=["bbregister", "coreg", "bbr", "flirtbbr"],
         extension=".svg",
         suffix="bold",
         return_type="file",
     )
+    bold_t1w_registration_files = fnmatch.filter(
+        bold_t1w_registration_files,
+        f"*/{bb_register_prefix}*",
+    )
     if not bold_t1w_registration_files:
         LOGGER.warning("No coregistration figure found in preprocessing derivatives.")
     else:
-        # TODO: Switch to interface
-        bold_t1w_registration_file = fnmatch.filter(
-            bold_t1w_registration_files,
-            f"*/{bb_register_prefix}*",
-        )[0]
+        bold_t1w_registration_file = bold_t1w_registration_files[0]
 
         ds_registration_figure = pe.Node(
             DerivativesDataSink(
