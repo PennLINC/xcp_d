@@ -380,7 +380,7 @@ def init_execsummary_functional_plots_wf(
 
     # TODO: Switch to interface
     bold_t1w_registration_files = layout.get(
-        desc=["bbregister", "coreg", "bbr", "flirtbbr"],
+        desc=["bbregister", "coreg", "bbr", "flirtbbr", "flirtnobbr"],
         extension=".svg",
         suffix="bold",
         return_type="file",
