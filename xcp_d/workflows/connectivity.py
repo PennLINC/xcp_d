@@ -431,7 +431,7 @@ def init_parcellate_surfaces_wf(
             mem_gb=mem_gb,
             name=f"parcellate_{file_to_parcellate}",
             n_procs=omp_nthreads,
-            iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+            iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
         )
 
         # fmt:off
@@ -856,7 +856,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         mem_gb=mem_gb,
         name="parcellate_reho",
         n_procs=omp_nthreads,
-        iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+        iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
     )
 
     # fmt:off
@@ -877,7 +877,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             mem_gb=mem_gb,
             name="parcellate_alff",
             n_procs=omp_nthreads,
-            iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+            iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
         )
 
         # fmt:off
