@@ -16,7 +16,10 @@ from xcp_d.interfaces.connectivity import (
     TSVConnect,
 )
 from xcp_d.interfaces.nilearn import IndexImage
-from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellateWorkbench
+from xcp_d.interfaces.workbench import (
+    CiftiCreateDenseFromTemplate,
+    CiftiParcellateWorkbench,
+)
 from xcp_d.utils.atlas import (
     copy_atlas,
     get_atlas_cifti,

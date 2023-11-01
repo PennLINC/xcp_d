@@ -8,7 +8,10 @@ import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d.interfaces.ants import ApplyTransforms
-from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellateWorkbench
+from xcp_d.interfaces.workbench import (
+    CiftiCreateDenseFromTemplate,
+    CiftiParcellateWorkbench,
+)
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
