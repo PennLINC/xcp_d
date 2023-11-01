@@ -232,7 +232,7 @@ class _TSVConnectOutputSpec(TraitedSpec):
 
 def correlate_timeseries(timeseries, temporal_mask):
     """Correlate timeseries stored in a TSV file."""
-    timeseries_df = pd.read_table(timeseries, index_col="Node")
+    timeseries_df = pd.read_table(timeseries)
     correlations_df = timeseries_df.corr()
 
     # Create correlation matrices limited to exact scan numbers

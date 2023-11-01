@@ -136,17 +136,3 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     # reshape alff so it's no longer 1 dimensional, but a #ofvoxels by 1 matrix
     alff = np.reshape(alff, [len(alff), 1])
     return alff
-
-
-def calculate_correlation(timeseries_tsv):
-    """Calculate correlation matrix from TSV."""
-    import os
-
-    import pandas as pd
-
-    timeseries_df = pd.read_table(timeseries_tsv, index_col="Node")
-    correlation_df = timeseries_df.corr()
-    basename = os.path.basename(timeseries_tsv)
-    out_file = f"corr_{basename}"
-    correlation_df.to_csv(out_file, sep="\t", index=True, index_label="Node")
-    return out_file
