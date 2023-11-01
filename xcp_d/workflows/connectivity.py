@@ -636,8 +636,8 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:off
     workflow.connect([
         (inputnode, connectivity_plot, [
-            ("denoised_bold", "in_file"),
             ("atlas_names", "atlas_names"),
+            ("atlas_labels_files", "atlas_tsvs"),
         ]),
         (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
     ])
@@ -860,8 +860,8 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:off
     workflow.connect([
         (inputnode, connectivity_plot, [
-            ("denoised_bold", "in_file"),
             ("atlas_names", "atlas_names"),
+            ("atlas_labels_files", "atlas_tsvs"),
         ]),
         (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
     ])

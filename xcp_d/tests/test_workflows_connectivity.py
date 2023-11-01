@@ -101,7 +101,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # Load atlases
-    atlas_names = ["4S1052Parcels", "4S252Parcels", "4S452Parcels", "Gordon", "Glasser"]
+    atlas_names = ["4S1052Parcels", "4S152Parcels", "4S452Parcels", "Gordon", "Glasser"]
     atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
 
@@ -239,7 +239,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # Load atlases
-    atlas_names = ["4S1052Parcels", "4S252Parcels", "4S452Parcels", "Gordon", "Glasser"]
+    atlas_names = ["4S1052Parcels", "4S152Parcels", "4S452Parcels", "Gordon", "Glasser"]
     atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
 
