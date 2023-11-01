@@ -471,8 +471,8 @@ class SurfaceGenerateInflated(WBCommand):
     _cmd = "wb_command -surface-generate-inflated"
 
 
-class _CiftiParcellateInputSpec(CommandLineInputSpec):
-    """Input specification for the CiftiParcellate command."""
+class _CiftiParcellateWorkbenchInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiParcellateWorkbench command."""
 
     in_file = File(
         exists=True,
@@ -583,13 +583,13 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
     )
 
 
-class _CiftiParcellateOutputSpec(TraitedSpec):
-    """Output specification for the CiftiParcellate command."""
+class _CiftiParcellateWorkbenchOutputSpec(TraitedSpec):
+    """Output specification for the CiftiParcellateWorkbench command."""
 
     out_file = File(exists=True, desc="output CIFTI file")
 
 
-class CiftiParcellate(WBCommand):
+class CiftiParcellateWorkbench(WBCommand):
     """Extract timeseries from CIFTI file.
 
     The input cifti file must have a brain models mapping on the chosen
@@ -597,7 +597,7 @@ class CiftiParcellate(WBCommand):
 
     Examples
     --------
-    >>> ciftiparcel = CiftiParcellate()
+    >>> ciftiparcel = CiftiParcellateWorkbench()
     >>> ciftiparcel.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
     >>> ciftiparcel.inputs.out_file = 'sub_01XX_task-rest.ptseries.nii'
     >>> ciftiparcel.inputs.atlas_label = 'schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii'
@@ -608,8 +608,8 @@ class CiftiParcellate(WBCommand):
     sub_01XX_task-rest.ptseries.nii
     """
 
-    input_spec = _CiftiParcellateInputSpec
-    output_spec = _CiftiParcellateOutputSpec
+    input_spec = _CiftiParcellateWorkbenchInputSpec
+    output_spec = _CiftiParcellateWorkbenchOutputSpec
     _cmd = "wb_command -cifti-parcellate"
 
 

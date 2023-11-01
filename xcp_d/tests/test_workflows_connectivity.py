@@ -8,7 +8,7 @@ import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d.interfaces.ants import ApplyTransforms
-from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
+from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellateWorkbench
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
@@ -252,7 +252,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         )
         resample_results = resample_atlas_to_data.run(cwd=tmpdir)
 
-        parcellate_atlas = CiftiParcellate(
+        parcellate_atlas = CiftiParcellateWorkbench(
             direction="COLUMN",
             only_numeric=True,
             out_file=f"parcellated_atlas_{i_file}.pscalar.nii",
