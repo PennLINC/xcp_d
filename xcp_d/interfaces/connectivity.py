@@ -627,11 +627,15 @@ class CiftiConnect(SimpleInterface):
 
 
 class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="bold file")
     atlas_names = InputMultiObject(
         traits.Str,
         mandatory=True,
         desc="List of atlases. Aligned with the list of time series in time_series_tsv.",
+    )
+    atlas_tsvs = InputMultiObject(
+        traits.Str,
+        mandatory=True,
+        desc="The dseg.tsv associated with each atlas.",
     )
     correlations_tsv = InputMultiObject(
         File(exists=True),
@@ -747,11 +751,10 @@ class ConnectPlot(SimpleInterface):
         for atlas_name, subdict in ATLAS_LOOKUP.items():
             atlas_idx = self.inputs.atlas_names.index(atlas_name)
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
+            dseg_file = self.inputs.atlas_tsvs[atlas_idx]
 
             column_name = COMMUNITY_LOOKUP[atlas_name]
-            dseg_file = f"atlas-{atlas_name}_dseg.tsv"
             dseg_df = pd.read_table(dseg_file)
-
             corrs_df = pd.read_table(atlas_file, index_col="Node")
 
             if atlas_name.startswith("4S"):
