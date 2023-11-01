@@ -814,7 +814,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     workflow.connect([
         (inputnode, parcellate_data, [
             ("denoised_bold", "data_file"),
-            ("atlas_files", "atlas_file"),
+            ("atlas_files", "atlas"),
             ("atlas_labels_files", "atlas_labels"),
             ("parcellated_atlas_files", "parcellated_atlas"),
         ]),

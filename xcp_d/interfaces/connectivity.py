@@ -318,7 +318,7 @@ class _CiftiParcellateInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Dense CIFTI time series file to parcellate.",
     )
-    atlas_file = File(
+    atlas = File(
         exists=True,
         mandatory=True,
         desc=(
@@ -358,18 +358,18 @@ class CiftiParcellate(SimpleInterface):
     def _run_interface(self, runtime):
         min_coverage = self.inputs.min_coverage
         data_file = self.inputs.data_file
-        atlas_file = self.inputs.atlas_file
+        atlas = self.inputs.atlas
         pscalar_file = self.inputs.parcellated_atlas
         atlas_labels = self.inputs.atlas_labels
 
         cifti_intents = get_cifti_intents()
 
         assert data_file.endswith((".dtseries.nii", ".dscalar.nii")), data_file
-        assert atlas_file.endswith(".dlabel.nii"), atlas_file
+        assert atlas.endswith(".dlabel.nii"), atlas
         assert pscalar_file.endswith(".pscalar.nii"), pscalar_file
 
         data_img = nb.load(data_file)
-        atlas_img = nb.load(atlas_file)
+        atlas_img = nb.load(atlas)
         pscalar_img = nb.load(pscalar_file)
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
         node_labels_df.sort_index(inplace=True)  # ensure index is in order
