@@ -426,21 +426,21 @@ def denoise_with_nilearn(
         uncensored_denoised_bold = preprocessed_bold.copy()
         censored_denoised_bold = preprocessed_bold_censored.copy()
 
-    # Now interpolate the censored, denoised data with cubic spline interpolation
-    interpolated_unfiltered_bold = np.zeros(
-        (n_volumes, n_voxels),
-        dtype=censored_denoised_bold.dtype,
-    )
-    interpolated_unfiltered_bold[sample_mask, :] = censored_denoised_bold
-    interpolated_unfiltered_bold = signal._interpolate_volumes(
-        interpolated_unfiltered_bold,
-        sample_mask=sample_mask,
-        t_r=TR,
-    )
-    # Replace any high-motion volumes at the beginning or end of the run with the closest
-    # low-motion volume's data.
     outlier_idx = list(np.where(~sample_mask)[0])
     if outlier_idx:
+        # Now interpolate the censored, denoised data with cubic spline interpolation
+        interpolated_unfiltered_bold = np.zeros(
+            (n_volumes, n_voxels),
+            dtype=censored_denoised_bold.dtype,
+        )
+        interpolated_unfiltered_bold[sample_mask, :] = censored_denoised_bold
+        interpolated_unfiltered_bold = signal._interpolate_volumes(
+            interpolated_unfiltered_bold,
+            sample_mask=sample_mask,
+            t_r=TR,
+        )
+        # Replace any high-motion volumes at the beginning or end of the run with the closest
+        # low-motion volume's data.
         # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
         gaps = [[s, e] for s, e in zip(outlier_idx, outlier_idx[1:]) if s + 1 < e]
         edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
@@ -467,6 +467,8 @@ def denoise_with_nilearn(
             interpolated_unfiltered_bold[last_outliers[0] :, :] = interpolated_unfiltered_bold[
                 last_outliers[0] - 1, :
             ]
+    else:
+        interpolated_unfiltered_bold = censored_denoised_bold.copy()
 
     # Now apply the bandpass filter to the interpolated, denoised data
     if low_pass is not None and high_pass is not None:
