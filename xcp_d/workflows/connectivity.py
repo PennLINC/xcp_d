@@ -437,7 +437,7 @@ def init_parcellate_surfaces_wf(
         # fmt:off
         workflow.connect([
             (inputnode, parcellate_surface, [(file_to_parcellate, "data_file")]),
-            (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas_file")]),
+            (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas")]),
             (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
             (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
         ])
@@ -863,7 +863,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     workflow.connect([
         (inputnode, parcellate_reho, [
             ("reho", "data_file"),
-            ("atlas_files", "atlas_file"),
+            ("atlas_files", "atlas"),
             ("atlas_labels_files", "atlas_labels"),
             ("parcellated_atlas_files", "parcellated_atlas"),
         ]),
@@ -884,7 +884,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         workflow.connect([
             (inputnode, parcellate_alff, [
                 ("alff", "data_file"),
-                ("atlas_files", "atlas_file"),
+                ("atlas_files", "atlas"),
                 ("atlas_labels_files", "atlas_labels"),
                 ("parcellated_atlas_files", "parcellated_atlas"),
             ]),
