@@ -12,8 +12,8 @@ from xcp_d.interfaces.connectivity import (
     CiftiConnect,
     CiftiParcellate,
     ConnectPlot,
-    NiftiConnect,
     NiftiParcellate,
+    TSVConnect,
 )
 from xcp_d.interfaces.nilearn import IndexImage
 from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellateWorkbench
@@ -591,7 +591,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:on
 
     functional_connectivity = pe.MapNode(
-        NiftiConnect(),
+        TSVConnect(),
         name="functional_connectivity",
         iterfield=["timeseries"],
         mem_gb=mem_gb * 3,

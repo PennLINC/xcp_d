@@ -212,8 +212,8 @@ class NiftiParcellate(SimpleInterface):
         return runtime
 
 
-class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
-    timeseries = File(exists=True, desc="Parcellated time series file.")
+class _TSVConnectInputSpec(BaseInterfaceInputSpec):
+    timeseries = File(exists=True, desc="Parcellated time series TSV file.")
     temporal_mask = File(
         exists=True,
         mandatory=False,
@@ -221,7 +221,7 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _NiftiConnectOutputSpec(TraitedSpec):
+class _TSVConnectOutputSpec(TraitedSpec):
     correlations = File(exists=True, desc="Correlation matrix file.")
     correlations_exact = traits.Either(
         None,
@@ -249,7 +249,7 @@ def correlate_timeseries(timeseries, temporal_mask):
     return correlations_df, correlations_exact
 
 
-class NiftiConnect(SimpleInterface):
+class TSVConnect(SimpleInterface):
     """Extract timeseries and compute connectivity matrices.
 
     Write out time series using Nilearn's NiftiLabelMasker
@@ -257,8 +257,8 @@ class NiftiConnect(SimpleInterface):
     timeseries using numpy.
     """
 
-    input_spec = _NiftiConnectInputSpec
-    output_spec = _NiftiConnectOutputSpec
+    input_spec = _TSVConnectInputSpec
+    output_spec = _TSVConnectOutputSpec
 
     def _run_interface(self, runtime):
         correlations_df, correlations_exact = correlate_timeseries(
@@ -641,11 +641,10 @@ class CiftiConnect(SimpleInterface):
         del conn_img, correlations_df
         gc.collect()
 
-        self._results["correlations_exact"] = None
-        self._results["correlation_ciftis_exact"] = None
-        if correlations_exact:
-            self._results["correlations_exact"] = []
-            self._results["correlation_ciftis_exact"] = []
+        if not correlations_exact:
+            self._results["correlations_exact"] = None
+            self._results["correlation_ciftis_exact"] = None
+            return runtime
 
         for exact_column, exact_correlations_df in correlations_exact.items():
             exact_correlations_file = fname_presuffix(
