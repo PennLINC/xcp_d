@@ -334,7 +334,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ),
         run_without_submitting=True,
         mem_gb=1,
-        name="make_timeseries_dict",
+        name="make_correlations_dict",
         iterfield=["Sources"],
     )
     # fmt:off
