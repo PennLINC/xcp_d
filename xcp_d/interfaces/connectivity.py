@@ -512,6 +512,13 @@ class CiftiParcellate(SimpleInterface):
         )
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
 
+        self._results["coverage"] = fname_presuffix(
+            "coverage.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        coverage_df.to_csv(self._results["coverage"], sep="\t", na_rep="n/a", index_label="Node")
+
         # Prepare to create output CIFTIs
         time_axis = data_img.header.get_axis(0)
         new_header = nb.cifti2.Cifti2Header.from_axes((time_axis, parcels_axis))
