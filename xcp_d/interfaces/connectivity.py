@@ -722,11 +722,11 @@ class ConnectPlot(SimpleInterface):
 
     def _run_interface(self, runtime):
         ATLAS_LOOKUP = {
-            "4S152Parcels": {
+            "4S156Parcels": {
                 "title": "4S 152 Parcels",
                 "axes": [0, 0],
             },
-            "4S452Parcels": {
+            "4S456Parcels": {
                 "title": "4S 452 Parcels",
                 "axes": [0, 1],
             },
@@ -741,8 +741,8 @@ class ConnectPlot(SimpleInterface):
         }
 
         COMMUNITY_LOOKUP = {
-            "4S152Parcels": "network_label",
-            "4S452Parcels": "network_label",
+            "4S156Parcels": "network_label",
+            "4S456Parcels": "network_label",
             "Glasser": "community_yeo",
             "Gordon": "community",
         }
