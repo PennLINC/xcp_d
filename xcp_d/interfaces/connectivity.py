@@ -655,6 +655,8 @@ class CiftiConnect(SimpleInterface):
             self._results["correlation_ciftis_exact"] = None
             return runtime
 
+        self._results["correlations_exact"] = []
+        self._results["correlation_ciftis_exact"] = []
         for exact_column, exact_correlations_df in correlations_exact.items():
             exact_correlations_file = fname_presuffix(
                 f"correlations_{exact_column}.tsv",

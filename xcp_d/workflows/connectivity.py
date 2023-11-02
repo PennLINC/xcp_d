@@ -218,6 +218,7 @@ def init_load_atlases_wf(
         ),
         name="ds_atlas",
         iterfield=["in_file", "atlas"],
+        run_without_submitting=True,
     )
     ds_atlas.inputs.output_dir = output_dir
 
