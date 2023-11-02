@@ -9,6 +9,7 @@ from xcp_d.interfaces.concatenation import (
     ConcatenateInputs,
     FilterOutFailedRuns,
 )
+from xcp_d.interfaces.connectivity import TSVConnect
 from xcp_d.utils.bids import _make_xcpd_uri, _make_xcpd_uri_lol
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _make_dictionary, _select_first
@@ -309,6 +310,57 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
         (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
         (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
+    ])
+    # fmt:on
+
+    correlate_timeseries = pe.MapNode(
+        TSVConnect(),
+        run_without_submitting=True,
+        mem_gb=1,
+        name="correlate_timeseries",
+        iterfield=["timeseries"],
+    )
+    workflow.connect([(concatenate_inputs, correlate_timeseries, [("timeseries", "timeseries")])])
+
+    make_correlations_dict = pe.MapNode(
+        niu.Function(
+            function=_make_dictionary,
+            input_names=["Sources"],
+            output_names=["metadata"],
+        ),
+        run_without_submitting=True,
+        mem_gb=1,
+        name="make_correlations_dict",
+        iterfield=["Sources"],
+    )
+    # fmt:off
+    workflow.connect([
+        (ds_timeseries, make_correlations_dict, [
+            (("out_file", _make_xcpd_uri, output_dir), "Sources"),
+        ]),
+    ])
+    # fmt:on
+
+    ds_correlations = pe.MapNode(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["desc"],
+            measure="pearsoncorrelation",
+            suffix="conmat",
+            extension=".tsv",
+        ),
+        name="ds_correlations",
+        run_without_submitting=True,
+        mem_gb=1,
+        iterfield=["atlas", "in_file", "meta_dict"],
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, ds_correlations, [("atlas_names", "atlas")]),
+        (clean_name_source, ds_correlations, [("name_source", "source_file")]),
+        (correlate_timeseries, ds_correlations, [("correlations", "in_file")]),
+        (make_correlations_dict, ds_correlations, [("metadata", "meta_dict")]),
     ])
     # fmt:on
 
