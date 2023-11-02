@@ -732,25 +732,12 @@ def _validate_parameters(opts, build_log):
 
     # Scrubbing parameters
     if opts.fd_thresh <= 0:
-        ignored_params = "\n\t".join(
-            [
-                "--min-time",
-                "--motion-filter-type",
-                "--band-stop-min",
-                "--band-stop-max",
-                "--motion-filter-order",
-                "--head_radius",
-            ]
-        )
+        ignored_params = "\n\t".join(["--min-time"])
         build_log.warning(
             "Framewise displacement-based scrubbing is disabled. "
             f"The following parameters will have no effect:\n\t{ignored_params}"
         )
         opts.min_time = 0
-        opts.motion_filter_type = None
-        opts.band_stop_min = None
-        opts.band_stop_max = None
-        opts.motion_filter_order = None
 
     # Motion filtering parameters
     if opts.motion_filter_type == "notch":
