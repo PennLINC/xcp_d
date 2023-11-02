@@ -723,11 +723,11 @@ class ConnectPlot(SimpleInterface):
     def _run_interface(self, runtime):
         ATLAS_LOOKUP = {
             "4S156Parcels": {
-                "title": "4S 152 Parcels",
+                "title": "4S 156 Parcels",
                 "axes": [0, 0],
             },
             "4S456Parcels": {
-                "title": "4S 452 Parcels",
+                "title": "4S 456 Parcels",
                 "axes": [0, 1],
             },
             "Gordon": {
