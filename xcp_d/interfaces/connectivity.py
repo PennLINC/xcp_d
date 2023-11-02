@@ -16,6 +16,7 @@ from nipype.interfaces.base import (
     InputMultiObject,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
 
@@ -236,15 +237,16 @@ def correlate_timeseries(timeseries, temporal_mask):
     correlations_df = timeseries_df.corr()
 
     # Create correlation matrices limited to exact scan numbers
-    censoring_df = pd.read_table(temporal_mask)
-    censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
-    censored_censoring_df.reset_index(drop=True, inplace=True)
-    exact_columns = [c for c in censoring_df.columns if c.startswith("exact_")]
     correlations_exact = {}
-    for exact_column in exact_columns:
-        exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
-        exact_correlations_df = exact_timeseries_df.corr()
-        correlations_exact[exact_column] = exact_correlations_df
+    if isdefined(temporal_mask):
+        censoring_df = pd.read_table(temporal_mask)
+        censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
+        censored_censoring_df.reset_index(drop=True, inplace=True)
+        exact_columns = [c for c in censoring_df.columns if c.startswith("exact_")]
+        for exact_column in exact_columns:
+            exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
+            exact_correlations_df = exact_timeseries_df.corr()
+            correlations_exact[exact_column] = exact_correlations_df
 
     return correlations_df, correlations_exact
 
