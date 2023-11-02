@@ -91,7 +91,11 @@ def init_load_atlases_wf(
     )
 
     atlas_name_grabber = pe.Node(
-        Function(input_names=["subset"], output_names=["atlas_names"], function=get_atlas_names),
+        Function(
+            input_names=["atlases", "subset"],
+            output_names=["atlas_names"],
+            function=get_atlas_names,
+        ),
         name="atlas_name_grabber",
     )
     atlas_name_grabber.inputs.subset = "all"
@@ -294,6 +298,7 @@ def init_load_atlases_wf(
 @fill_doc
 def init_parcellate_surfaces_wf(
     output_dir,
+    atlases,
     files_to_parcellate,
     min_coverage,
     mem_gb,
@@ -321,6 +326,7 @@ def init_parcellate_surfaces_wf(
     Parameters
     ----------
     %(output_dir)s
+    atlases
     files_to_parcellate : :obj:`list` of :obj:`str`
         List of surface file types to parcellate
         (e.g., "sulcal_depth", "sulcal_curv", "cortical_thickness").
@@ -364,9 +370,14 @@ def init_parcellate_surfaces_wf(
     )
 
     atlas_name_grabber = pe.Node(
-        Function(input_names=["subset"], output_names=["atlas_names"], function=get_atlas_names),
+        Function(
+            input_names=["atlases", "subset"],
+            output_names=["atlas_names"],
+            function=get_atlas_names,
+        ),
         name="atlas_name_grabber",
     )
+    atlas_name_grabber.inputs.atlases = atlases
     atlas_name_grabber.inputs.subset = "cortical"
 
     # Get CIFTI atlases via pkgrf

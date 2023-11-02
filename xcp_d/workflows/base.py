@@ -76,6 +76,7 @@ def init_xcpd_wf(
     dummy_scans,
     random_seed,
     exact_time,
+    atlases,
     cifti,
     omp_nthreads,
     layout=None,
@@ -133,6 +134,7 @@ def init_xcpd_wf(
                 dummy_scans=0,
                 random_seed=None,
                 exact_time=[],
+                atlases=["Glasser"],
                 cifti=False,
                 omp_nthreads=1,
                 layout=None,
@@ -160,6 +162,7 @@ def init_xcpd_wf(
     %(band_stop_max)s
     %(omp_nthreads)s
     %(cifti)s
+    atlases
     task_id : :obj:`str` or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
     bids_filters : dict or None
@@ -209,6 +212,7 @@ def init_xcpd_wf(
             fmri_dir=fmri_dir,
             omp_nthreads=omp_nthreads,
             subject_id=subject_id,
+            atlases=atlases,
             cifti=cifti,
             despike=despike,
             head_radius=head_radius,
@@ -252,6 +256,7 @@ def init_subject_wf(
     input_type,
     process_surfaces,
     combineruns,
+    atlases,
     cifti,
     task_id,
     bids_filters,
@@ -298,6 +303,7 @@ def init_subject_wf(
                 input_type="fmriprep",
                 process_surfaces=False,
                 combineruns=False,
+                atlases=["Glasser"],
                 cifti=False,
                 task_id="imagery",
                 bids_filters=None,
@@ -334,6 +340,7 @@ def init_subject_wf(
     %(input_type)s
     %(process_surfaces)s
     combineruns
+    atlases
     %(cifti)s
     task_id : :obj:`str` or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
@@ -537,15 +544,17 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # fmt:on
 
     # Load the atlases, warping to the same space as the BOLD data if necessary.
-    load_atlases_wf = init_load_atlases_wf(
-        output_dir=output_dir,
-        cifti=cifti,
-        mem_gb=1,
-        omp_nthreads=omp_nthreads,
-        name="load_atlases_wf",
-    )
-    load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
-    load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
+    if atlases:
+        load_atlases_wf = init_load_atlases_wf(
+            atlases=atlases,
+            output_dir=output_dir,
+            cifti=cifti,
+            mem_gb=1,
+            omp_nthreads=omp_nthreads,
+            name="load_atlases_wf",
+        )
+        load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
+        load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
 
     if process_surfaces or (dcan_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
@@ -612,6 +621,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 output_dir=output_dir,
+                atlases=atlases,
                 files_to_parcellate=morph_file_types,
                 min_coverage=min_coverage,
                 mem_gb=1,

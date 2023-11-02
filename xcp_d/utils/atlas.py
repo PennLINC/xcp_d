@@ -1,7 +1,7 @@
 """Functions for working with atlases."""
 
 
-def get_atlas_names(subset):
+def get_atlas_names(atlases, subset):
     """Get a list of atlases to be used for parcellation and functional connectivity analyses.
 
     The actual list of files for the atlases is loaded from a different function.
@@ -18,7 +18,7 @@ def get_atlas_names(subset):
     :obj:`list` of :obj:`str`
         List of atlases.
     """
-    atlases = {
+    BUILTIN_ATLASES = {
         "cortical": [
             "4S156Parcels",
             "4S256Parcels",
@@ -38,8 +38,13 @@ def get_atlas_names(subset):
             "HCP",
         ],
     }
-    atlases["all"] = sorted(list(set(atlases["cortical"] + atlases["subcortical"])))
-    return atlases[subset]
+    BUILTIN_ATLASES["all"] = sorted(
+        list(set(BUILTIN_ATLASES["cortical"] + BUILTIN_ATLASES["subcortical"]))
+    )
+    subset_atlases = BUILTIN_ATLASES[subset]
+    assert all([atlas in BUILTIN_ATLASES["all"] for atlas in atlases])
+    selected_atlases = [atlas for atlas in atlases if atlas in subset_atlases]
+    return selected_atlases
 
 
 def get_atlas_nifti(atlas_name):

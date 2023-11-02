@@ -8,14 +8,15 @@ from xcp_d.utils import atlas
 
 def test_get_atlas_names():
     """Test xcp_d.utils.atlas.get_atlas_names."""
-    atlas_names = atlas.get_atlas_names("all")
+    atlas_names = atlas.get_atlas_names(atlases=["4S156Parcels", "4S256Parcels"], subset="all")
     assert isinstance(atlas_names, list)
     assert all(isinstance(name, str) for name in atlas_names)
+    assert len(atlas_names) == 2
 
 
 def test_get_atlas_nifti():
     """Test xcp_d.utils.atlas.get_atlas_nifti."""
-    atlas_names = atlas.get_atlas_names("all")
+    atlas_names = atlas.get_atlas_names(atlases=["4S156Parcels", "4S256Parcels"], subset="all")
     for atlas_name in atlas_names:
         atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_nifti(atlas_name)
         assert isinstance(atlas_file, str)
@@ -31,7 +32,7 @@ def test_get_atlas_nifti():
 
 def test_get_atlas_cifti():
     """Test xcp_d.utils.atlas.get_atlas_cifti."""
-    atlas_names = atlas.get_atlas_names("all")
+    atlas_names = atlas.get_atlas_names(atlases=["4S156Parcels", "4S256Parcels"], subset="all")
     for atlas_name in atlas_names:
         atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_cifti(atlas_name)
         assert isinstance(atlas_file, str)
