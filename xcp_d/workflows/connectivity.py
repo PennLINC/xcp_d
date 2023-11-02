@@ -23,6 +23,7 @@ from xcp_d.utils.utils import get_std2bold_xfms
 
 @fill_doc
 def init_load_atlases_wf(
+    atlases,
     output_dir,
     cifti,
     mem_gb,
@@ -90,18 +91,6 @@ def init_load_atlases_wf(
         name="outputnode",
     )
 
-    atlas_name_grabber = pe.Node(
-        Function(
-            input_names=["atlases", "subset"],
-            output_names=["atlas_names"],
-            function=get_atlas_names,
-        ),
-        name="atlas_name_grabber",
-    )
-    atlas_name_grabber.inputs.subset = "all"
-
-    workflow.connect([(atlas_name_grabber, outputnode, [("atlas_names", "atlas_names")])])
-
     # get atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
@@ -112,7 +101,7 @@ def init_load_atlases_wf(
         name="atlas_file_grabber",
         iterfield=["atlas_name"],
     )
-    workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
+    atlas_file_grabber.inputs.atlas_name = atlases
 
     atlas_buffer = pe.Node(niu.IdentityInterface(fields=["atlas_file"]), name="atlas_buffer")
 
@@ -215,11 +204,11 @@ def init_load_atlases_wf(
         iterfield=["in_file", "atlas"],
     )
     ds_atlas.inputs.output_dir = output_dir
+    ds_atlas.inputs.atlas = atlases
 
     # fmt:off
     workflow.connect([
         (inputnode, ds_atlas, [("name_source", "name_source")]),
-        (atlas_name_grabber, ds_atlas, [("atlas_names", "atlas")]),
         (atlas_buffer, ds_atlas, [("atlas_file", "in_file")]),
         (ds_atlas, outputnode, [("out_file", "atlas_files")]),
     ])
@@ -249,11 +238,11 @@ def init_load_atlases_wf(
         iterfield=["atlas", "in_file"],
         run_without_submitting=True,
     )
+    ds_atlas_labels_file.inputs.atlas = atlases
 
     # fmt:off
     workflow.connect([
         (inputnode, ds_atlas_labels_file, [("name_source", "source_file")]),
-        (atlas_name_grabber, ds_atlas_labels_file, [("atlas_names", "atlas")]),
         (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
         (ds_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
     ])
@@ -283,11 +272,11 @@ def init_load_atlases_wf(
         iterfield=["atlas", "in_file"],
         run_without_submitting=True,
     )
+    ds_atlas_metadata.inputs.atlas = atlases
 
     # fmt:off
     workflow.connect([
         (inputnode, ds_atlas_metadata, [("name_source", "source_file")]),
-        (atlas_name_grabber, ds_atlas_metadata, [("atlas_names", "atlas")]),
         (atlas_file_grabber, ds_atlas_metadata, [("atlas_metadata_file", "in_file")]),
     ])
     # fmt:on
@@ -316,6 +305,7 @@ def init_parcellate_surfaces_wf(
 
             wf = init_parcellate_surfaces_wf(
                 output_dir=".",
+                atlases=["Glasser"],
                 files_to_parcellate=["sulcal_depth", "sulcal_curv", "cortical_thickness"],
                 min_coverage=0.5,
                 mem_gb=0.1,

@@ -617,7 +617,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])
             # fmt:on
 
-        if morph_file_types:
+        if morph_file_types and atlases:
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 output_dir=output_dir,
@@ -741,6 +741,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 custom_confounds_folder=custom_confounds_folder,
                 dummy_scans=dummy_scans,
                 random_seed=random_seed,
+                atlases=atlases,
                 fd_thresh=fd_thresh,
                 despike=despike,
                 dcan_qc=dcan_qc,
@@ -762,26 +763,32 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
                 ]),
-                (load_atlases_wf, postprocess_bold_wf, [
-                    ("outputnode.atlas_names", "inputnode.atlas_names"),
-                    ("outputnode.atlas_files", "inputnode.atlas_files"),
-                    ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
-                ]),
             ])
             # fmt:on
 
-            if cifti:
+            if atlases:
                 # fmt:off
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [
-                        (
-                            "outputnode.parcellated_atlas_files",
-                            "inputnode.parcellated_atlas_files",
-                        ),
+                        ("outputnode.atlas_files", "inputnode.atlas_files"),
+                        ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
                     ]),
                 ])
                 # fmt:on
-            else:
+
+                if cifti:
+                    # fmt:off
+                    workflow.connect([
+                        (load_atlases_wf, postprocess_bold_wf, [
+                            (
+                                "outputnode.parcellated_atlas_files",
+                                "inputnode.parcellated_atlas_files",
+                            ),
+                        ]),
+                    ])
+                    # fmt:on
+
+            if not cifti:
                 # fmt:off
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [

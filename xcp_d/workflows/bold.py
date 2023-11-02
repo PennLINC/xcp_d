@@ -45,6 +45,7 @@ def init_postprocess_nifti_wf(
     output_dir,
     custom_confounds_folder,
     dummy_scans,
+    atlases,
     fd_thresh,
     despike,
     dcan_qc,
@@ -112,6 +113,7 @@ def init_postprocess_nifti_wf(
                 output_dir=".",
                 custom_confounds_folder=custom_confounds_folder,
                 dummy_scans=2,
+                atlases=["Glasser"],
                 fd_thresh=0.3,
                 despike=True,
                 dcan_qc=True,
@@ -148,6 +150,7 @@ def init_postprocess_nifti_wf(
     %(output_dir)s
     %(custom_confounds_folder)s
     %(dummy_scans)s
+    atlases
     %(fd_thresh)s
     %(despike)s
     %(dcan_qc)s
@@ -403,31 +406,32 @@ def init_postprocess_nifti_wf(
         ])
         # fmt:on
 
-    connectivity_wf = init_functional_connectivity_nifti_wf(
-        output_dir=output_dir,
-        min_coverage=min_coverage,
-        alff_available=bandpass_filter and (fd_thresh <= 0),
-        mem_gb=mem_gbx["timeseries"],
-        name="connectivity_wf",
-    )
+    if atlases:
+        connectivity_wf = init_functional_connectivity_nifti_wf(
+            output_dir=output_dir,
+            min_coverage=min_coverage,
+            alff_available=bandpass_filter and (fd_thresh <= 0),
+            mem_gb=mem_gbx["timeseries"],
+            name="connectivity_wf",
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, connectivity_wf, [
-            ("bold_file", "inputnode.name_source"),
-            ("atlas_names", "inputnode.atlas_names"),
-            ("atlas_files", "inputnode.atlas_files"),
-            ("atlas_labels_files", "inputnode.atlas_labels_files"),
-        ]),
-        (downcast_data, connectivity_wf, [("bold_mask", "inputnode.bold_mask")]),
-        (prepare_confounds_wf, connectivity_wf, [
-            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-        ]),
-        (denoise_bold_wf, connectivity_wf, [
-            ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
-        ]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, connectivity_wf, [
+                ("bold_file", "inputnode.name_source"),
+                ("atlas_names", "inputnode.atlas_names"),
+                ("atlas_files", "inputnode.atlas_files"),
+                ("atlas_labels_files", "inputnode.atlas_labels_files"),
+            ]),
+            (downcast_data, connectivity_wf, [("bold_mask", "inputnode.bold_mask")]),
+            (prepare_confounds_wf, connectivity_wf, [
+                ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+            ]),
+            (denoise_bold_wf, connectivity_wf, [
+                ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+            ]),
+        ])
+        # fmt:on
 
     if bandpass_filter and (fd_thresh <= 0):
         alff_wf = init_alff_wf(
@@ -437,6 +441,7 @@ def init_postprocess_nifti_wf(
             low_pass=low_pass,
             high_pass=high_pass,
             smoothing=smoothing,
+            atlases=atlases,
             cifti=False,
             mem_gb=mem_gbx["timeseries"],
             omp_nthreads=omp_nthreads,
@@ -456,6 +461,7 @@ def init_postprocess_nifti_wf(
     reho_wf = init_reho_nifti_wf(
         name_source=bold_file,
         output_dir=output_dir,
+        atlases=atlases,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         name="reho_wf",
@@ -550,13 +556,6 @@ def init_postprocess_nifti_wf(
         ]),
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
-        (connectivity_wf, postproc_derivatives_wf, [
-            ("outputnode.coverage", "inputnode.coverage"),
-            ("outputnode.timeseries", "inputnode.timeseries"),
-            ("outputnode.correlations", "inputnode.correlations"),
-            ("outputnode.correlations_exact", "inputnode.correlations_exact"),
-            ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
-        ]),
         (postproc_derivatives_wf, outputnode, [
             ("outputnode.filtered_motion", "filtered_motion"),
             ("outputnode.temporal_mask", "temporal_mask"),
@@ -568,6 +567,19 @@ def init_postprocess_nifti_wf(
     ])
     # fmt:on
 
+    if atlases:
+        # fmt:off
+        workflow.connect([
+            (connectivity_wf, postproc_derivatives_wf, [
+                ("outputnode.coverage", "inputnode.coverage"),
+                ("outputnode.timeseries", "inputnode.timeseries"),
+                ("outputnode.correlations", "inputnode.correlations"),
+                ("outputnode.correlations_exact", "inputnode.correlations_exact"),
+                ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
+            ]),
+        ])
+        # fmt:on
+
     if bandpass_filter and (fd_thresh <= 0):
         # fmt:off
         workflow.connect([
@@ -575,11 +587,16 @@ def init_postprocess_nifti_wf(
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
-            (connectivity_wf, postproc_derivatives_wf, [
-                ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
-            ]),
         ])
         # fmt:on
+        if atlases:
+            # fmt:off
+            workflow.connect([
+                (connectivity_wf, postproc_derivatives_wf, [
+                    ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
+                ]),
+            ])
+            # fmt:on
 
     # executive summary workflow
     execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(

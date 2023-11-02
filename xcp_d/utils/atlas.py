@@ -10,7 +10,8 @@ def get_atlas_names(atlases, subset):
 
     Parameters
     ----------
-    subset = {"all", "subcortical", "cortical"}
+    atlases : list of str
+    subset : {"all", "subcortical", "cortical"}
         Description of the subset of atlases to collect.
 
     Returns
