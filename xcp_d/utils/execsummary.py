@@ -31,7 +31,7 @@ def make_mosaic(png_files):
         path = os.path.expanduser(file_)
         with Image.open(path) as img:
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
-            img.thumbnail((IMAGE_DIM, IMAGE_DIM), resample=Image.ANTIALIAS)
+            img.thumbnail((IMAGE_DIM, IMAGE_DIM), resample=Image.Resampling.LANCZOS)
 
             x = index % images_per_side * IMAGE_DIM
             y = index // images_per_side * IMAGE_DIM

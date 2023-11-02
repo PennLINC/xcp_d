@@ -20,16 +20,16 @@ def get_atlas_names(subset):
     """
     atlases = {
         "cortical": [
-            "4S152Parcels",
-            "4S252Parcels",
-            "4S352Parcels",
-            "4S452Parcels",
-            "4S552Parcels",
-            "4S652Parcels",
-            "4S752Parcels",
-            "4S852Parcels",
-            "4S952Parcels",
-            "4S1052Parcels",
+            "4S156Parcels",
+            "4S256Parcels",
+            "4S356Parcels",
+            "4S456Parcels",
+            "4S556Parcels",
+            "4S656Parcels",
+            "4S756Parcels",
+            "4S856Parcels",
+            "4S956Parcels",
+            "4S1056Parcels",
             "Glasser",
             "Gordon",
         ],
@@ -51,9 +51,9 @@ def get_atlas_nifti(atlas_name):
 
     Parameters
     ----------
-    atlas_name : {"4S152Parcels", "4S252Parcels", "4S352Parcels", "4S452Parcels", \
-                  "4S552Parcels", "4S652Parcels", "4S752Parcels", "4S852Parcels", \
-                  "4S952Parcels", "4S1052Parcels", "Glasser", "Gordon", \
+    atlas_name : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
+                  "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
+                  "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
                   "Tian", "HCP"}
         The name of the NIFTI atlas to fetch.
 
@@ -108,9 +108,9 @@ def get_atlas_cifti(atlas_name):
 
     Parameters
     ----------
-    atlas_name : {"4S152Parcels", "4S252Parcels", "4S352Parcels", "4S452Parcels", \
-                  "4S552Parcels", "4S652Parcels", "4S752Parcels", "4S852Parcels", \
-                  "4S952Parcels", "4S1052Parcels", "Glasser", "Gordon", \
+    atlas_name : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
+                  "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
+                  "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
                   "Tian", "HCP"}
         The name of the CIFTI atlas to fetch.
 

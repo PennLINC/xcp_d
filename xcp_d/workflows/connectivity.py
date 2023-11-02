@@ -521,10 +521,11 @@ def init_functional_connectivity_nifti_wf(
 Processed functional timeseries were extracted from the residual BOLD signal
 with *Nilearn's* *NiftiLabelsMasker* for the following atlases:
 the Schaefer Supplemented with Subcortical Structures (4S) atlas
-[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo] at 10 different
-resolutions (152, 252, 352, 452, 552, 652, 752, 852, 952, and 1052 parcels),
+[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo,@glasser2013minimal] at
+10 different resolutions (156, 256, 356, 456, 556, 656, 756, 856, 956, and 1056 parcels),
 the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
-the Tian subcortical atlas [@tian2020topographic], and the CIFTI subcortical atlas.
+the Tian subcortical atlas [@tian2020topographic], and the HCP CIFTI subcortical atlas
+[@glasser2013minimal].
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
@@ -732,8 +733,8 @@ def init_functional_connectivity_cifti_wf(
 Processed functional timeseries were extracted from residual BOLD using
 Connectome Workbench [@hcppipelines] for the following atlases:
 the Schaefer Supplemented with Subcortical Structures (4S) atlas
-[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo] at 10 different
-resolutions (152, 252, 352, 452, 552, 652, 752, 852, 952, and 1052 parcels),
+[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo,@glasser2013minimal] at
+10 different resolutions (156, 256, 356, 456, 556, 656, 756, 856, 956, and 1056 parcels),
 the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
 the Tian subcortical atlas [@tian2020topographic], and the HCP CIFTI subcortical atlas
 [@glasser2013minimal].
