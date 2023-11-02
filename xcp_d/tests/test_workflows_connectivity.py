@@ -151,9 +151,9 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Let's find the correct workflow outputs
     atlas_file = warped_atlases[0]
     assert os.path.isfile(atlas_file)
-    coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[0]
+    coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
     assert os.path.isfile(coverage)
-    timeseries = nodes["connectivity_wf.functional_connectivity"].get_output("timeseries")[0]
+    timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
     assert os.path.isfile(timeseries)
     correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[0]
     assert os.path.isfile(correlations)
@@ -288,11 +288,9 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the cifti files
-    pscalar = nodes["connectivity_wf.functional_connectivity"].get_output("coverage_ciftis")[0]
+    pscalar = nodes["connectivity_wf.parcellate_data"].get_output("coverage_ciftis")[0]
     assert os.path.isfile(pscalar)
-    timeseries_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
-        "timeseries_ciftis"
-    )[0]
+    timeseries_ciftis = nodes["connectivity_wf.parcellate_data"].get_output("timeseries_ciftis")[0]
     assert os.path.isfile(timeseries_ciftis)
     correlation_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
         "correlation_ciftis"
@@ -300,9 +298,9 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     assert os.path.isfile(correlation_ciftis)
 
     # Let's find the tsv files
-    coverage = nodes["connectivity_wf.functional_connectivity"].get_output("coverage")[0]
+    coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
     assert os.path.isfile(coverage)
-    timeseries = nodes["connectivity_wf.functional_connectivity"].get_output("timeseries")[0]
+    timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
     assert os.path.isfile(timeseries)
     correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[0]
     assert os.path.isfile(correlations)
