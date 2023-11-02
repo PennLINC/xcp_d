@@ -336,7 +336,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     # fmt:off
     workflow.connect([
         (ds_timeseries, make_correlations_dict, [
-            (("out_file", _make_xcpd_uri_lol, output_dir), "Sources"),
+            (("out_file", _make_xcpd_uri, output_dir), "Sources"),
         ]),
     ])
     # fmt:on
