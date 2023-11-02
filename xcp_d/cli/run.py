@@ -241,19 +241,6 @@ def get_parser():
         ),
     )
     g_param.add_argument(
-        "--min_coverage",
-        "--min-coverage",
-        required=False,
-        default=0.5,
-        type=_restricted_float,
-        help=(
-            "Coverage threshold to apply to parcels in each atlas. "
-            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
-            "Must be a value between zero and one, indicating proportion of the parcel. "
-            "Default is 0.5."
-        ),
-    )
-    g_param.add_argument(
         "--min_time",
         "--min-time",
         required=False,
@@ -434,6 +421,70 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
             "If there is less than the required amount of 'good' data, "
             "then the corresponding correlation matrix will not be produced."
         ),
+    )
+
+    g_parcellation = parser.add_argument_group("Parcellation options")
+    g_parcellation.add_argument(
+        "--min_coverage",
+        "--min-coverage",
+        required=False,
+        default=0.5,
+        type=_restricted_float,
+        help=(
+            "Coverage threshold to apply to parcels in each atlas. "
+            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
+            "Must be a value between zero and one, indicating proportion of the parcel. "
+            "Default is 0.5."
+        ),
+    )
+
+    g_atlases = g_parcellation.add_mutually_exclusive_group(required=False)
+    g_atlases.add_argument(
+        "--skip-parcellation",
+        "--skip_parcellation",
+        action="store_const",
+        const=[],
+        target="atlases",
+        help="Skip parcellation and correlation steps.",
+    )
+    g_atlases.add_argument(
+        "--atlases",
+        action="store",
+        nargs="+",
+        choices=[
+            "4S156Parcels",
+            "4S256Parcels",
+            "4S356Parcels",
+            "4S456Parcels",
+            "4S556Parcels",
+            "4S656Parcels",
+            "4S756Parcels",
+            "4S856Parcels",
+            "4S956Parcels",
+            "4S1056Parcels",
+            "Glasser",
+            "Gordon",
+            "Tian",
+            "HCP",
+        ],
+        default=[
+            "4S156Parcels",
+            "4S256Parcels",
+            "4S356Parcels",
+            "4S456Parcels",
+            "4S556Parcels",
+            "4S656Parcels",
+            "4S756Parcels",
+            "4S856Parcels",
+            "4S956Parcels",
+            "4S1056Parcels",
+            "Glasser",
+            "Gordon",
+            "Tian",
+            "HCP",
+        ],
+        target="atlases",
+        help="Selection of atlases to apply to the data. All are used by default.",
     )
 
     g_other = parser.add_argument_group("Other options")
