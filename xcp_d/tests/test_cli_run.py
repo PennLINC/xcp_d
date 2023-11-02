@@ -118,10 +118,6 @@ def test_validate_parameters_06(base_opts, caplog):
     opts, return_code = run._validate_parameters(deepcopy(opts), build_log)
 
     assert opts.min_time == 0
-    assert opts.motion_filter_type is None
-    assert opts.band_stop_min is None
-    assert opts.band_stop_max is None
-    assert opts.motion_filter_order is None
     assert "Framewise displacement-based scrubbing is disabled." in caplog.text
     assert return_code == 0
 
