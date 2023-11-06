@@ -17,6 +17,7 @@ from xcp_d.interfaces.connectivity import (
 )
 from xcp_d.interfaces.nilearn import IndexImage
 from xcp_d.interfaces.workbench import (
+    CiftiChangeMapping,
     CiftiCreateDenseFromTemplate,
     CiftiParcellateWorkbench,
 )
@@ -170,6 +171,8 @@ def init_load_atlases_wf(
         # fmt:on
 
     else:
+        # Add empty vertices to atlas for locations in data, but not in atlas
+        # (e.g., subcortical regions for cortex-only atlases)
         resample_atlas_to_data = pe.MapNode(
             CiftiCreateDenseFromTemplate(),
             name="resample_atlas_to_data",
@@ -185,6 +188,26 @@ def init_load_atlases_wf(
         ])
         # fmt:on
 
+        # Change the atlas to a scalar file.
+        convert_to_dscalar = pe.MapNode(
+            CiftiChangeMapping(
+                direction="ROW",
+                scalar=True,
+                cifti_out="atlas.dscalar.nii",
+            ),
+            name="convert_to_dscalar",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+            iterfield=["data_cifti"],
+        )
+        # fmt:off
+        workflow.connect([
+            (resample_atlas_to_data, convert_to_dscalar, [("cifti_out", "data_cifti")]),
+        ])
+        # fmt:on
+
+        # Convert atlas from dlabel to pscalar format.
+        # The pscalar version of the atlas is later used for its ParcelAxis.
         parcellate_atlas = pe.MapNode(
             CiftiParcellateWorkbench(
                 direction="COLUMN",
@@ -200,7 +223,7 @@ def init_load_atlases_wf(
         # fmt:off
         workflow.connect([
             (atlas_file_grabber, parcellate_atlas, [("atlas_file", "atlas_label")]),
-            (resample_atlas_to_data, parcellate_atlas, [("cifti_out", "in_file")]),
+            (convert_to_dscalar, parcellate_atlas, [("cifti_out", "in_file")]),
             (parcellate_atlas, outputnode, [("out_file", "parcellated_atlas_files")]),
         ])
         # fmt:on
