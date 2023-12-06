@@ -111,10 +111,6 @@ def ds001419_data(datasets):
         anat_dir,
         "sub-01_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
     )
-    files["anat_to_native_xfm"] = os.path.join(
-        func_dir,
-        "sub-01_task-rest_from-T1w_to-scanner_mode-image_xfm.txt",
-    )
     files["boldref"] = os.path.join(
         func_dir,
         "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_boldref.nii.gz",
@@ -168,10 +164,6 @@ def pnc_data(datasets):
     files["template_to_anat_xfm"] = os.path.join(
         anat_dir,
         "sub-1648798153_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
-    )
-    files["anat_to_native_xfm"] = os.path.join(
-        func_dir,
-        "sub-1648798153_task-rest_from-T1w_to-scanner_mode-image_xfm.txt",
     )
     files["boldref"] = os.path.join(
         func_dir,

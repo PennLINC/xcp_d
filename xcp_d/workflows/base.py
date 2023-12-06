@@ -653,7 +653,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "interpolated_filtered_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
-                "anat_to_native_xfm",
                 "bold_mask",
                 "boldref",
                 "timeseries",

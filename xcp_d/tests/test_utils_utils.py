@@ -179,7 +179,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     """Test get_bold2std_and_t1w_xfms."""
     bold_file_nlin2009c = ds001419_data["nifti_file"]
     nlin2009c_to_anat_xfm = ds001419_data["template_to_anat_xfm"]
-    anat_to_native_xfm = ds001419_data["anat_to_native_xfm"]
 
     # MNI152NLin2009cAsym --> MNI152NLin2009cAsym/T1w
     (
@@ -190,7 +189,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_nlin2009c,
         nlin2009c_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 1
     assert len(xforms_to_mni_invert) == 1
@@ -214,7 +212,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_nlin6asym,
         nlin6asym_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 1
     assert len(xforms_to_mni_invert) == 1
@@ -238,7 +235,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_infant,
         infant_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 1
     assert len(xforms_to_mni_invert) == 1
@@ -255,7 +251,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_t1w,
         nlin2009c_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 1
     assert len(xforms_to_mni_invert) == 1
@@ -272,7 +267,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_t1w,
         nlin6asym_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 2
     assert len(xforms_to_mni_invert) == 2
@@ -289,7 +283,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_native,
         nlin2009c_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 2
     assert len(xforms_to_mni_invert) == 2
@@ -306,7 +299,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_native,
         nlin6asym_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 3
     assert len(xforms_to_mni_invert) == 3
@@ -319,7 +311,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_tofail,
             nlin2009c_to_anat_xfm,
-            anat_to_native_xfm,
         )
 
     tofail_to_anat_xfm = nlin2009c_to_anat_xfm.replace("from-MNI152NLin2009cAsym_", "from-tofail_")
@@ -327,7 +318,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_tofail,
             tofail_to_anat_xfm,
-            anat_to_native_xfm,
         )
 
 

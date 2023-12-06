@@ -12,7 +12,7 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger("nipype.utils")
 
 
-def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, anat_to_native_xfm):
+def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
@@ -27,7 +27,6 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, anat_to_native_xf
     template_to_anat_xfm
         The ``from`` field is assumed to be the same space as the BOLD file is in.
         The MNI space could be MNI152NLin2009cAsym, MNI152NLin6Asym, or MNIInfant.
-    anat_to_native_xfm
 
     Returns
     -------
@@ -57,6 +56,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, anat_to_native_xf
 
     if bold_space in ("native", "T1w"):
         base_std_space = get_entity(template_to_anat_xfm, "from")
+        raise ValueError(f"BOLD space '{bold_space}' not supported.")
     elif f"from-{bold_space}" not in template_to_anat_xfm:
         raise ValueError(
             f"Transform does not match BOLD space: {bold_space} != {template_to_anat_xfm}"
@@ -114,28 +114,6 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm, anat_to_native_xf
 
         xforms_to_T1w = ["identity"]
         xforms_to_T1w_invert = [False]
-
-    elif bold_space == "native":
-        # native (BOLD) --> T1w --> ?? (extract from template_to_anat_xfm) --> MNI152NLin2009cAsym
-        # Should not be reachable, since xcpd doesn't support native-space BOLD inputs
-        if base_std_space != "MNI152NLin2009cAsym":
-            std_to_mni_xfm = str(
-                get_template(
-                    template="MNI152NLin2009cAsym",
-                    mode="image",
-                    suffix="xfm",
-                    extension=".h5",
-                    **{"from": base_std_space},
-                ),
-            )
-            xforms_to_MNI = [std_to_mni_xfm, template_to_anat_xfm, anat_to_native_xfm]
-            xforms_to_MNI_invert = [False, True, True]
-        else:
-            xforms_to_MNI = [template_to_anat_xfm, anat_to_native_xfm]
-            xforms_to_MNI_invert = [True, True]
-
-        xforms_to_T1w = [anat_to_native_xfm]
-        xforms_to_T1w_invert = [True]
 
     else:
         raise ValueError(f"Space '{bold_space}' in {bold_file} not supported.")

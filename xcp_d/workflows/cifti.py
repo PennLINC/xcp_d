@@ -193,8 +193,6 @@ def init_postprocess_cifti_wf(
     %(boldref)s
     bold_mask
         This will not be defined.
-    %(anat_to_native_xfm)s
-        This will not be defined.
     %(atlas_names)s
     %(timeseries)s
     %(timeseries_ciftis)s
@@ -262,7 +260,6 @@ def init_postprocess_cifti_wf(
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",  # will not be defined
-                "anat_to_native_xfm",  # will not be defined
                 "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",

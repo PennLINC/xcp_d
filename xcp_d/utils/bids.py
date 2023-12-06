@@ -608,13 +608,6 @@ def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
             suffix="mask",
             extension=[".nii", ".nii.gz"],
         )
-        run_data["anat_to_native_xfm"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            **{"from": primary_anat},  # "from" is protected Python kw
-            to="scanner",
-            suffix="xfm",
-        )
     else:
         # Split cohort out of the space for MNIInfant templates.
         cohort = None
