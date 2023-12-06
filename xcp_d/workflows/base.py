@@ -379,7 +379,6 @@ def init_subject_wf(
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
-    primary_anat = "T1w" if subj_data["t1w"] else "T2w"
 
     mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
         layout=layout,
@@ -671,7 +670,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 layout=layout,
                 bold_file=bold_file,
                 cifti=cifti,
-                primary_anat=primary_anat,
                 target_space=target_space,
             )
 
