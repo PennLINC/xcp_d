@@ -121,7 +121,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "smoothed_denoised_bold",
                 "bold_mask",  # only for niftis, from postproc workflows
                 "boldref",  # only for niftis, from postproc workflows
-                "anat_to_native_xfm",  # only for niftis, from postproc workflows
                 "anat_brainmask",  # only for niftis, from data collection
                 "template_to_anat_xfm",  # only for niftis, from data collection
                 "atlas_names",
@@ -156,7 +155,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("bold_mask", "bold_mask"),
             ("boldref", "boldref"),
-            ("anat_to_native_xfm", "anat_to_native_xfm"),
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
         ])
@@ -210,7 +208,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             # nifti-only inputs
             (("bold_mask", _select_first), "inputnode.bold_mask"),
             (("boldref", _select_first), "inputnode.boldref"),
-            (("anat_to_native_xfm", _select_first), "inputnode.anat_to_native_xfm"),
         ]),
         (concatenate_inputs, qc_report_wf, [
             ("preprocessed_bold", "inputnode.preprocessed_bold"),

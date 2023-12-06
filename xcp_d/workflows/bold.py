@@ -90,7 +90,6 @@ def init_postprocess_nifti_wf(
                 input_type="fmriprep",
                 bold_file=bold_file,
                 cifti=False,
-                primary_anat="T1w",
             )
 
             custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
@@ -189,7 +188,6 @@ def init_postprocess_nifti_wf(
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
     fmriprep_confounds_json
-    %(anat_to_native_xfm)s
     %(dummy_scans)s
 
     Outputs
@@ -206,7 +204,6 @@ def init_postprocess_nifti_wf(
     %(smoothed_denoised_bold)s
     %(boldref)s
     bold_mask
-    %(anat_to_native_xfm)s
     %(atlas_names)s
     %(timeseries)s
     %(timeseries_ciftis)s
@@ -234,7 +231,6 @@ def init_postprocess_nifti_wf(
                 "anat_brainmask",
                 "fmriprep_confounds_file",
                 "fmriprep_confounds_json",
-                "anat_to_native_xfm",
                 "dummy_scans",
                 "atlas_names",
                 "atlas_files",
@@ -249,7 +245,6 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.bold_mask = run_data["boldmask"]
     inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
     inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
-    inputnode.inputs.anat_to_native_xfm = run_data["anat_to_native_xfm"]
     inputnode.inputs.dummy_scans = dummy_scans
 
     # Load custom confounds
@@ -279,7 +274,6 @@ def init_postprocess_nifti_wf(
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",
-                "anat_to_native_xfm",
                 "timeseries",
                 "timeseries_ciftis",  # will not be defined
             ],
@@ -298,10 +292,7 @@ def init_postprocess_nifti_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, outputnode, [
-            ("bold_file", "name_source"),
-            ("anat_to_native_xfm", "anat_to_native_xfm"),
-        ]),
+        (inputnode, outputnode, [("bold_file", "name_source")]),
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
             ("boldref", "boldref"),
@@ -491,7 +482,6 @@ def init_postprocess_nifti_wf(
             ("bold_mask", "inputnode.bold_mask"),
             ("anat_brainmask", "inputnode.anat_brainmask"),
             ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("anat_to_native_xfm", "inputnode.anat_to_native_xfm"),
         ]),
         (prepare_confounds_wf, qc_report_wf, [
             ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),

@@ -231,19 +231,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             )
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
-            # More identity transforms
-            native_to_t1w_fmriprep = os.path.join(
-                func_dir_fmriprep,
-                f"{subses_ents}_{task_ent}_{run_ent}_from-scanner_to-T1w_mode-image_xfm.txt",
-            )
-            copy_dictionary[identity_xfm].append(native_to_t1w_fmriprep)
-
-            t1w_to_native_fmriprep = os.path.join(
-                func_dir_fmriprep,
-                f"{subses_ents}_{task_ent}_{run_ent}_from-T1w_to-scanner_mode-image_xfm.txt",
-            )
-            copy_dictionary[identity_xfm].append(t1w_to_native_fmriprep)
-
             # Extract metadata for JSON files
             bold_metadata = {
                 "RepetitionTime": float(nb.load(bold_nifti_orig).header.get_zooms()[-1]),
