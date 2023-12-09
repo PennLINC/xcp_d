@@ -115,12 +115,14 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     Implementation based on https://pubmed.ncbi.nlm.nih.gov/16919409/.
     """
     fs = 1 / TR  # sampling frequency
-    alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of
-    # number of voxels
-    for ii in range(data_matrix.shape[0]):  # Loop through the voxels
+    n_voxels = data_matrix.shape[0]
+    alff = np.zeros(n_voxels)
+    for i_voxel in range(n_voxels):
         # get array of sample frequencies + power spectrum density
         array_of_sample_frequencies, power_spec_density = signal.periodogram(
-            data_matrix[ii, :], fs, scaling="spectrum"
+            data_matrix[i_voxel, :],
+            fs,
+            scaling="spectrum",
         )
         # square root of power spectrum density
         power_spec_density_sqrt = np.sqrt(power_spec_density)
@@ -132,7 +134,88 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
         # alff for that voxel is 2 * the mean of the sqrt of the power spec density
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff[ii] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0] : ff_alff[1]])
-    # reshape alff so it's no longer 1 dimensional, but a #ofvoxels by 1 matrix
-    alff = np.reshape(alff, [len(alff), 1])
+        alff[i_voxel] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0] : ff_alff[1]])
+
+    # Add second dimension to array
+    alff = alff[:, None]
+
     return alff
+
+
+def calculate_psd_mean(bold_signal, valid_frames, sampling_interval):
+    """Calculate the Power Spectral Density (PSD) mean from lagged autocovariance.
+
+    Parameters
+    ----------
+    bold_signal : numpy.ndarray
+        The input BOLD signal (voxels x time series).
+    valid_frames : numpy.ndarray
+        Binary array indicating valid frames (1s) and invalid frames (0s).
+    sampling_interval : float
+        Sampling interval, e.g., 2.2s.
+
+    Returns
+    -------
+    numpy.ndarray
+        PSD mean computed from the lagged autocovariance.
+
+    Notes
+    -----
+    This function computes the lagged autocovariance for each voxel, then
+    calculates the Power Spectral Density (PSD) mean from the autocovariance.
+
+    The input arrays `bold_signal` and `valid_frames` must have the same number of time points.
+
+    References
+    ----------
+    This function is adapted from Avi's interp_lag_dat.c.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> bold_signal = np.random.randn(10, 100)  # Example BOLD signal
+    >>> valid_frames = np.random.choice([0, 1], size=100)  # Example valid frames array
+    >>> sampling_interval = 2.2  # Example sampling interval
+    >>> psd_mean_result = calculate_psd_mean(bold_signal, valid_frames, sampling_interval)
+    """
+    n_voxels, n_vols = bold_signal.shape
+
+    # Initialize variables
+    autocovariance_mean = np.zeros((n_vols, n_voxels))
+    psd_mean = np.zeros((n_voxels, n_vols))
+
+    # Compute lagged autocovariance
+    for i_voxel in range(n_voxels):
+        for j_lag in range(1, (n_vols // 2) + 2):
+            sum_term = 0
+            num_valid_pairs = 0
+            for k_vol in range(1, (n_vols - j_lag + 2)):
+                if valid_frames[k_vol - 1] != 1 or valid_frames[j_lag + k_vol - 2] != 1:
+                    continue
+
+                sum_term += (
+                    bold_signal[i_voxel, k_vol - 1] * bold_signal[i_voxel, k_vol + j_lag - 2]
+                )
+                num_valid_pairs += 1
+
+            lag_time = (j_lag - 1) * sampling_interval / 20
+            autocovariance_mean[j_lag - 1, i_voxel] = (
+                sum_term * np.exp(-0.5 * lag_time * lag_time) / num_valid_pairs
+            )
+
+    # Mirror autocovariance
+    for i_lag in range(2, (n_vols // 2) + 1):
+        autocovariance_mean[n_vols - i_lag + 1, :] = autocovariance_mean[i_lag - 1, :]
+
+    # Calculate PSD mean
+    for i_voxel in range(n_voxels):
+        autocovariance_mean_voxel = autocovariance_mean[:, i_voxel]
+        for freq_index in range(1, (n_vols // 2) + 2):
+            cos_values = np.cos(2 * np.pi * (freq_index - 1) * np.arange(n_vols) / n_vols)
+            psd_mean[i_voxel, freq_index - 1] = np.dot(cos_values, autocovariance_mean_voxel)
+
+    # Mirror PSD mean
+    for freq_index in range(2, (n_vols // 2) + 1):
+        psd_mean[:, n_vols - freq_index] = psd_mean[:, freq_index - 1]
+
+    return psd_mean
