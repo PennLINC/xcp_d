@@ -7,7 +7,12 @@ version: 2
 updates:
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
-    labels: ["maintenance"]
+    labels: ["maintenance", "ignore-for-release"]
     assignees: ["tsalo"]
     schedule:
       interval: "weekly"
+  - package-ecosystem: pip
+    directory: "/"
+    labels: ["maintenance", "ignore-for-release"]
+    schedule:
+      interval: weekly
