@@ -128,7 +128,7 @@ class ComputeALFF(SimpleInterface):
         sample_mask = None
         temporal_mask = self.inputs.temporal_mask
         if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
-            censoring_df = pd.read_table(self.inputs.sample_mask)
+            censoring_df = pd.read_table(temporal_mask)
             sample_mask = censoring_df["framewise_displacement"].values
 
         # compute the ALFF
