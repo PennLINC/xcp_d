@@ -423,7 +423,7 @@ def init_postprocess_cifti_wf(
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.uncensored_denoised_bold", "inputnode.denoised_bold"),
             ]),
             (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])
