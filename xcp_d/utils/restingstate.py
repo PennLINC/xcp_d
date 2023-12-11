@@ -118,7 +118,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     """
     fs = 1 / TR  # sampling frequency
     n_voxels, n_volumes = data_matrix.shape
-    if not sample_mask:
+    if sample_mask is None:
         sample_mask = np.ones(n_volumes, dtype=int)
 
     assert sample_mask.size == n_volumes
