@@ -19,14 +19,14 @@ dependencies = [
     'importlib_resources; python_version < "3.9"',
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
     "h5py",  # for DCAN motion file
-    "indexed_gzip ~= 1.6.4",  # for loading imgs in nibabel
+    "indexed_gzip ~= 1.8.7",  # for loading imgs in nibabel
     "jinja2 ~= 3.0.0",  # for executive summary
     "matplotlib ~= 3.4.2",
     "networkx ~= 2.8.8",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
     "nilearn == 0.10.1",  # 0.10.2 raises error with compcor from fMRIPrep 23
     "nipype ~= 1.8.5",
-    "niworkflows == 1.7.3",
+    "niworkflows == 1.9.0",
     "num2words",  # for boilerplates
     "numpy ~= 1.19",
     "packaging",  # for version string parsing
@@ -37,7 +37,7 @@ dependencies = [
     "scikit-learn ~= 1.1",
     "scipy >= 1.8.0",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 1.4.3",  # for usage reports
+    "sentry-sdk ~= 1.38.0",  # for usage reports
     "templateflow ~= 0.8.1",
 ]
 dynamic = ["version"]
