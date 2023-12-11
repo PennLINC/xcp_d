@@ -131,9 +131,9 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
     # Create an updated censoring file with outliers at first and last two volumes
     censoring_df = confounds_df[["framewise_displacement"]]
-    censoring_df["framewise_displacement"] = False
-    censoring_df.iloc[:2]["framewise_displacement"] = True
-    censoring_df.iloc[-2:]["framewise_displacement"] = True
+    censoring_df.loc[:, "framewise_displacement"] = False
+    censoring_df.loc[:2, :]["framewise_displacement"] = True
+    censoring_df.iloc[58:]["framewise_displacement"] = True
     n_censored_volumes = censoring_df["framewise_displacement"].sum()
     assert n_censored_volumes == 4
     temporal_mask = os.path.join(tmpdir, "censoring.tsv")
