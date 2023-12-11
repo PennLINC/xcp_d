@@ -122,7 +122,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
         array_of_sample_frequencies, power_spec_density = signal.periodogram(
             data_matrix[i_voxel, :],
             fs,
-            scaling="spectrum",
+            scaling="density",
         )
         # square root of power spectrum density
         power_spec_density_sqrt = np.sqrt(power_spec_density)
