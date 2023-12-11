@@ -133,7 +133,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     censoring_df = confounds_df[["framewise_displacement"]]
     censoring_df.loc[:, "framewise_displacement"] = False
     censoring_df.loc[:2, "framewise_displacement"] = True
-    censoring_df.loc[58:, "framewise_displacement"] = True
+    censoring_df.loc[59:, "framewise_displacement"] = True
     n_censored_volumes = censoring_df["framewise_displacement"].sum()
     assert n_censored_volumes == 4
     temporal_mask = os.path.join(tmpdir, "censoring.tsv")
