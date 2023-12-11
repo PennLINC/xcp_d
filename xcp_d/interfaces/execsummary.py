@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout, Query
 from bs4 import BeautifulSoup
-from jinja2 import Environment, FileSystemLoader, Markup
+from jinja2 import Environment, FileSystemLoader
+from markupsafe import Markup
 from pkg_resources import resource_filename as pkgrf
 
 
