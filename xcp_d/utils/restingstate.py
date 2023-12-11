@@ -91,7 +91,7 @@ def mesh_adjacency(hemi):
     return data_array + data_array.T  # transpose data_array and add it to itself
 
 
-def compute_alff(data_matrix, low_pass, high_pass, TR):
+def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     """Compute amplitude of low-frequency fluctuation (ALFF).
 
     Parameters
@@ -104,6 +104,8 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
         high pass frequency in Hz
     TR : float
         repetition time in seconds
+    sample_mask : numpy.ndarray
+        (timepoints,) 1D array with 1s for good volumes and 0s for censored ones.
 
     Returns
     -------
@@ -115,17 +117,16 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     Implementation based on https://pubmed.ncbi.nlm.nih.gov/16919409/.
     """
     fs = 1 / TR  # sampling frequency
-    n_voxels = data_matrix.shape[0]
-    alff = np.zeros(n_voxels)
-    for i_voxel in range(n_voxels):
-        # get array of sample frequencies + power spectrum density
-        array_of_sample_frequencies, power_spec_density = signal.periodogram(
-            data_matrix[i_voxel, :],
-            fs,
-            scaling="density",
-        )
-        # square root of power spectrum density
-        power_spec_density_sqrt = np.sqrt(power_spec_density)
+    n_voxels, n_volumes = data_matrix.shape
+    if not sample_mask:
+        sample_mask = np.ones(n_volumes, dtype=int)
+
+    assert sample_mask.size == n_volumes
+    if sample_mask.sum() != sample_mask.size:
+        LOGGER.warning("Outlier volumes detected. ALFF will be calculated using auto-PSD method.")
+        array_of_sample_frequencies = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)
+        power_spectrum = calculate_psd_mean(data_matrix, sample_mask, TR)
+        power_spectrum_sqrt = np.sqrt(power_spectrum)
         # get the position of the arguments closest to high_pass and low_pass, respectively
         ff_alff = [
             np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
@@ -134,7 +135,31 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
         # alff for that voxel is 2 * the mean of the sqrt of the power spec density
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff[i_voxel] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0] : ff_alff[1]])
+        alff = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1], :], axis=1)
+    else:
+        alff = np.zeros(n_voxels)
+        for i_voxel in range(n_voxels):
+            # get array of sample frequencies + power spectrum density
+            array_of_sample_frequencies, power_spectrum = signal.periodogram(
+                data_matrix[i_voxel, :],
+                fs,
+                scaling="spectrum",
+            )
+            # square root of power spectrum density
+            power_spectrum_sqrt = np.sqrt(power_spectrum)
+            # get the position of the arguments closest to high_pass and low_pass, respectively
+            ff_alff = [
+                np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
+                np.argmin(np.abs(array_of_sample_frequencies - low_pass)),
+            ]
+            # alff for that voxel is 2 * the mean of the sqrt of the power spec density
+            # from the value closest to the low pass cutoff, to the value closest
+            # to the high pass pass cutoff
+            alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+
+    assert alff.shape == n_voxels
+    # Standardize ALFF based on the global mean ALFF value
+    alff /= np.mean(alff)
 
     # Add second dimension to array
     alff = alff[:, None]

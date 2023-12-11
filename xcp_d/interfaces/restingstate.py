@@ -8,6 +8,7 @@
 import os
 import shutil
 
+import pandas as pd
 from nipype import logging
 from nipype.interfaces.afni.preprocess import Despike, DespikeInputSpec
 from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
@@ -16,6 +17,7 @@ from nipype.interfaces.base import (
     File,
     SimpleInterface,
     TraitedSpec,
+    Undefined,
     traits,
     traits_extension,
 )
@@ -101,6 +103,12 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         desc=" brain mask for nifti file",
     )
+    temporal_mask = traits.Either(
+        File(exists=True),
+        Undefined,
+        mandatory=False,
+        desc="Temporal mask.",
+    )
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
@@ -116,16 +124,23 @@ class ComputeALFF(SimpleInterface):
     def _run_interface(self, runtime):
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+
+        sample_mask = None
+        temporal_mask = self.inputs.temporal_mask
+        if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
+            censoring_df = pd.read_table(self.inputs.sample_mask)
+            sample_mask = censoring_df["framewise_displacement"].values
+
         # compute the ALFF
         alff_mat = compute_alff(
             data_matrix=data_matrix,
             low_pass=self.inputs.low_pass,
             high_pass=self.inputs.high_pass,
             TR=self.inputs.TR,
+            sample_mask=sample_mask,
         )
 
         # Write out the data
-
         if self.inputs.in_file.endswith(".dtseries.nii"):
             suffix = "_alff.dscalar.nii"
         elif self.inputs.in_file.endswith(".nii.gz"):

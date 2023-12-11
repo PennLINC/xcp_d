@@ -244,8 +244,7 @@ Resting-state metric derivatives (ReHo and ALFF)
 
 .. important::
       ALFF will not be generated if bandpass filtering is disabled with the
-      ``--disable-bandpass-filtering`` parameter,
-      or if high-motion outlier censoring is enabled ``--fd-thresh`` is greater than zero.
+      ``--disable-bandpass-filtering`` parameter.
 
 *XCP-D* will also parcellate the ReHo and ALFF maps with each of the atlases used for the BOLD
 data.

@@ -76,6 +76,7 @@ def init_alff_wf(
        residual and filtered
     bold_mask
        bold mask if bold is nifti
+    temporal_mask
     name_source
 
     Outputs
@@ -95,7 +96,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold", "bold_mask"]),
+        niu.IdentityInterface(fields=["denoised_bold", "bold_mask", "temporal_mask"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -127,6 +128,7 @@ calculated at each voxel to yield voxel-wise ALFF measures.
         (inputnode, alff_compt, [
             ("denoised_bold", "in_file"),
             ("bold_mask", "mask"),
+            ("temporal_mask", "temporal_mask"),
         ]),
         (alff_compt, alff_plot, [("alff", "filename")]),
         (alff_compt, outputnode, [("alff", "alff")])
