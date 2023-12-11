@@ -121,7 +121,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     if sample_mask is None:
         sample_mask = np.ones(n_volumes, dtype=int)
 
-    assert sample_mask.size == n_volumes
+    assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
     if sample_mask.sum() != sample_mask.size:
         LOGGER.warning("Outlier volumes detected. ALFF will be calculated using auto-PSD method.")
         array_of_sample_frequencies = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)
@@ -157,7 +157,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
             # to the high pass pass cutoff
             alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
 
-    assert alff.shape == n_voxels
+    assert alff.shape == n_voxels, f"{alff.shape} == {n_voxels}"
     # Standardize ALFF based on the global mean ALFF value
     alff /= np.mean(alff)
 
