@@ -135,7 +135,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         # alff for that voxel is 2 * the mean of the sqrt of the power spec density
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1], :], axis=1)
+        alff = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1], :], axis=0)
     else:
         alff = np.zeros(n_voxels)
         for i_voxel in range(n_voxels):
