@@ -147,7 +147,7 @@ image yourself.
    .. code-block:: bash
 
       docker run \
-         -v /path/to/local/xcp_d:/usr/local/miniconda/lib/python3.8/site-packages/xcp_d \
+         -v /path/to/local/xcp_d:/usr/local/miniconda/lib/python3.10/site-packages/xcp_d \
          pennlinc/xcp_d:unstable \
          ...  # see the usage documentation for info on what else to include in this command
 
