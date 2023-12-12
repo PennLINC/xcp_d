@@ -125,6 +125,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
             "Outlier volumes detected. ALFF will be calculated using Lomb-Scargle method."
         )
 
+    sample_mask = sample_mask.astype(bool)
     assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
     alff = np.zeros(n_voxels)
