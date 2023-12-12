@@ -148,6 +148,8 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
                 angular_frequencies,
                 normalize=True,
             )
+            if any(np.isnan(power_spectrum)):
+                raise Exception(power_spectrum)
         else:
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
