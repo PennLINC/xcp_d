@@ -122,44 +122,52 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         sample_mask = np.ones(n_volumes, dtype=int)
 
     assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
-    if sample_mask.sum() != sample_mask.size:
-        LOGGER.warning("Outlier volumes detected. ALFF will be calculated using auto-PSD method.")
-        array_of_sample_frequencies = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)
-        power_spectrum = calculate_psd_mean(data_matrix, sample_mask, TR)
-        power_spectrum_sqrt = np.sqrt(power_spectrum)
-        # get the position of the arguments closest to high_pass and low_pass, respectively
-        ff_alff = [
-            np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
-            np.argmin(np.abs(array_of_sample_frequencies - low_pass)),
-        ]
-        # alff for that voxel is 2 * the mean of the sqrt of the power spec density
-        # from the value closest to the low pass cutoff, to the value closest
-        # to the high pass pass cutoff
-        alff = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1], :], axis=0)
-    else:
-        alff = np.zeros(n_voxels)
-        for i_voxel in range(n_voxels):
+
+    alff = np.zeros(n_voxels)
+    for i_voxel in range(n_voxels):
+        voxel_data = data_matrix[i_voxel, :]
+        # Normalize data matrix over time. This will ensure that the standard periodogram and
+        # Lomb-Scargle periodogram will have the same scale.
+        voxel_data -= np.mean(voxel_data)
+        voxel_data /= np.std(voxel_data)
+
+        if sample_mask.sum() != sample_mask.size:
+            LOGGER.warning(
+                "Outlier volumes detected. ALFF will be calculated using Lomb-Scargle method."
+            )
+            voxel_data_censored = voxel_data[sample_mask]
+            time_arr = np.arange(0, (n_volumes * TR) + 0.01, TR)
+            assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
+            time_arr = time_arr[sample_mask]
+            frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
+            angular_frequencies = 2 * np.pi * frequencies_hz
+            power_spectrum = signal.lombscargle(
+                time_arr,
+                voxel_data_censored,
+                angular_frequencies,
+                normalize=True,
+            )
+        else:
             # get array of sample frequencies + power spectrum density
-            array_of_sample_frequencies, power_spectrum = signal.periodogram(
+            frequencies_hz, power_spectrum = signal.periodogram(
                 data_matrix[i_voxel, :],
                 fs,
                 scaling="spectrum",
             )
-            # square root of power spectrum density
-            power_spectrum_sqrt = np.sqrt(power_spectrum)
-            # get the position of the arguments closest to high_pass and low_pass, respectively
-            ff_alff = [
-                np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
-                np.argmin(np.abs(array_of_sample_frequencies - low_pass)),
-            ]
-            # alff for that voxel is 2 * the mean of the sqrt of the power spec density
-            # from the value closest to the low pass cutoff, to the value closest
-            # to the high pass pass cutoff
-            alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
 
-    assert alff.shape == n_voxels, f"{alff.shape} == {n_voxels}"
-    # Standardize ALFF based on the global mean ALFF value
-    alff /= np.mean(alff)
+        # square root of power spectrum
+        power_spectrum_sqrt = np.sqrt(power_spectrum)
+        # get the position of the arguments closest to high_pass and low_pass, respectively
+        ff_alff = [
+            np.argmin(np.abs(frequencies_hz - high_pass)),
+            np.argmin(np.abs(frequencies_hz - low_pass)),
+        ]
+        # alff for that voxel is 2 * the mean of the sqrt of the power spec
+        # from the value closest to the low pass cutoff, to the value closest
+        # to the high pass pass cutoff
+        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+
+    assert alff.shape == n_voxels, f"{alff.shape} != {n_voxels}"
 
     # Add second dimension to array
     alff = alff[:, None]
