@@ -151,6 +151,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
             )
             if any(np.isnan(power_spectrum)):
                 raise Exception(
+                    f"unique(data): {np.unique(data_matrix)}\n"
                     f"power_spectrum: {power_spectrum}\n"
                     f"time_arr: {time_arr}\n"
                     f"voxel_data_censored: {voxel_data_censored}\n"
