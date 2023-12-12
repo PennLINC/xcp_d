@@ -136,7 +136,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
                 "Outlier volumes detected. ALFF will be calculated using Lomb-Scargle method."
             )
             voxel_data_censored = voxel_data[sample_mask]
-            time_arr = np.arange(0, (n_volumes * TR) + 0.01, TR)
+            time_arr = np.arange(0, n_volumes * TR, TR)
             assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
             time_arr = time_arr[sample_mask]
             frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
