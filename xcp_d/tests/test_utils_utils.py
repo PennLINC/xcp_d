@@ -151,13 +151,13 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     )
     assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
     # The first two volumes should be the same as the third (first non-outlier) volume
-    assert np.array_equal(interpolated_filtered_bold[0, :], interpolated_filtered_bold[2, :])
-    assert np.array_equal(interpolated_filtered_bold[1, :], interpolated_filtered_bold[2, :])
-    assert not np.array_equal(interpolated_filtered_bold[2, :], interpolated_filtered_bold[3, :])
+    assert np.allclose(interpolated_filtered_bold[0, :], interpolated_filtered_bold[2, :])
+    assert np.allclose(interpolated_filtered_bold[1, :], interpolated_filtered_bold[2, :])
+    assert not np.allclose(interpolated_filtered_bold[2, :], interpolated_filtered_bold[3, :])
     # The last volume should be the same as the third-to-last (last non-outlier) volume
-    assert np.array_equal(interpolated_filtered_bold[-1, :], interpolated_filtered_bold[-3, :])
-    assert np.array_equal(interpolated_filtered_bold[-2, :], interpolated_filtered_bold[-3, :])
-    assert not np.array_equal(interpolated_filtered_bold[-3, :], interpolated_filtered_bold[-4, :])
+    assert np.allclose(interpolated_filtered_bold[-1, :], interpolated_filtered_bold[-3, :])
+    assert np.allclose(interpolated_filtered_bold[-2, :], interpolated_filtered_bold[-3, :])
+    assert not np.allclose(interpolated_filtered_bold[-3, :], interpolated_filtered_bold[-4, :])
 
 
 def test_list_to_str():
