@@ -133,11 +133,11 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         voxel_data = data_matrix[i_voxel, :]
         # Normalize data matrix over time. This will ensure that the standard periodogram and
         # Lomb-Scargle periodogram will have the same scale.
-        voxel_data -= np.mean(voxel_data)
-        voxel_data /= np.std(voxel_data)
+        voxel_data_mc = voxel_data - np.mean(voxel_data)
+        voxel_data_mc /= np.std(voxel_data_mc)
 
         if sample_mask.sum() != sample_mask.size:
-            voxel_data_censored = voxel_data[sample_mask]
+            voxel_data_censored = voxel_data_mc[sample_mask]
             time_arr = np.arange(0, n_volumes * TR, TR)
             assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
             time_arr = time_arr[sample_mask]
@@ -151,10 +151,12 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
             )
             if any(np.isnan(power_spectrum)):
                 raise Exception(
+                    f"voxel_data: {voxel_data}\n"
+                    f"voxel_data_mc: {voxel_data_mc}\n"
+                    f"voxel_data_censored: {voxel_data_censored}\n"
                     f"unique(data): {np.unique(data_matrix)}\n"
                     f"power_spectrum: {power_spectrum}\n"
                     f"time_arr: {time_arr}\n"
-                    f"voxel_data_censored: {voxel_data_censored}\n"
                     f"frequencies_hz: {frequencies_hz}\n"
                     f"angular_frequencies: {angular_frequencies}\n"
                 )
