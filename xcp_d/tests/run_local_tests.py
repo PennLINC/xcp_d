@@ -66,9 +66,9 @@ def run_command(command, env=None):
 def run_tests(test_regex, test_mark):
     """Run the tests."""
     local_patch = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    mounted_code = "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d"
+    mounted_code = "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d"
     run_str = "docker run --rm -ti "
-    run_str += f"-v {local_patch}:/usr/local/miniconda/lib/python3.8/site-packages/xcp_d "
+    run_str += f"-v {local_patch}:/usr/local/miniconda/lib/python3.10/site-packages/xcp_d "
     run_str += "--entrypoint pytest "
     run_str += "pennlinc/xcp_d:unstable "
     run_str += (
