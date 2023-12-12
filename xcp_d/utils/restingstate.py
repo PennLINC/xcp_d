@@ -117,13 +117,21 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
     fs = 1 / TR  # sampling frequency
     alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of
     # number of voxels
-    for ii in range(data_matrix.shape[0]):  # Loop through the voxels
+    for i_voxel in range(data_matrix.shape[0]):  # Loop through the voxels
         # get array of sample frequencies + power spectrum density
-        array_of_sample_frequencies, power_spec_density = signal.periodogram(
-            data_matrix[ii, :], fs, scaling="spectrum"
+        voxel_data = data_matrix[i_voxel, :]
+        array_of_sample_frequencies, power_spectrum = signal.periodogram(
+            voxel_data, fs, scaling="spectrum"
         )
+        if any(np.isnan(power_spectrum)):
+            raise Exception(
+                f"power_spectrum: {power_spectrum}\n"
+                f"voxel_data: {voxel_data}\n"
+                f"frequencies_hz: {array_of_sample_frequencies}\n"
+            )
+
         # square root of power spectrum density
-        power_spec_density_sqrt = np.sqrt(power_spec_density)
+        power_spectrum_sqrt = np.sqrt(power_spectrum)
         # get the position of the arguments closest to high_pass and low_pass, respectively
         ff_alff = [
             np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
@@ -132,7 +140,8 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
         # alff for that voxel is 2 * the mean of the sqrt of the power spec density
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff[ii] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0] : ff_alff[1]])
+        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+
     # reshape alff so it's no longer 1 dimensional, but a #ofvoxels by 1 matrix
     alff = np.reshape(alff, [len(alff), 1])
     return alff
