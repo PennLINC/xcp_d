@@ -11,7 +11,7 @@ def pytest_addoption(parser):
         "--working_dir",
         action="store",
         default=(
-            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data/"
+            "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/xcp_d/tests/data/test_data/"
             "run_pytests/work"
         ),
     )
@@ -19,14 +19,14 @@ def pytest_addoption(parser):
         "--data_dir",
         action="store",
         default=(
-            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data"
+            "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/xcp_d/tests/data/test_data"
         ),
     )
     parser.addoption(
         "--output_dir",
         action="store",
         default=(
-            "/usr/local/miniconda/lib/python3.8/site-packages/xcp_d/xcp_d/tests/data/test_data/"
+            "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/xcp_d/tests/data/test_data/"
             "run_pytests/out"
         ),
     )
