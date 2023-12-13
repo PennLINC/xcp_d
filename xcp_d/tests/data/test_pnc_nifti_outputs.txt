@@ -57,6 +57,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_desc-p
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_desc-preproc_design.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_outliers.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_outliers.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S1056Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S1056Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S1056Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S1056Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.json
@@ -67,6 +69,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S1056Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S1056Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S1056Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S156Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S156Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S156Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S156Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.json
@@ -77,6 +81,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S156Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S156Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S156Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S256Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S256Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S256Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S256Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.json
@@ -87,6 +93,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S256Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S256Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S256Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S356Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S356Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S356Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S356Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.json
@@ -97,6 +105,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S356Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S356Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S356Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S456Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S456Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S456Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S456Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.json
@@ -107,6 +117,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S456Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S456Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S456Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S556Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S556Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S556Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S556Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.json
@@ -117,6 +129,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S556Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S556Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S556Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S656Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S656Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S656Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S656Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.json
@@ -127,6 +141,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S656Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S656Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S656Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S756Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S756Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S756Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S756Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.json
@@ -137,6 +153,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S756Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S756Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S756Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S856Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S856Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S856Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S856Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.json
@@ -147,6 +165,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S856Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S856Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S856Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S956Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S956Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S956Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S956Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.json
@@ -157,6 +177,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S956Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S956Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-4S956Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Glasser_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Glasser_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Glasser_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Glasser_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Glasser_measure-pearsoncorrelation_conmat.json
@@ -167,6 +189,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Glasser_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Glasser_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Glasser_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Gordon_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Gordon_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Gordon_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Gordon_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Gordon_measure-pearsoncorrelation_conmat.json
@@ -177,6 +201,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Gordon_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Gordon_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Gordon_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-HCP_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-HCP_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-HCP_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-HCP_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-HCP_measure-pearsoncorrelation_conmat.json
@@ -187,6 +213,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-HCP_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-HCP_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-HCP_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Tian_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Tian_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Tian_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Tian_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Tian_measure-pearsoncorrelation_conmat.json
@@ -198,10 +226,14 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Tian_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_atlas-Tian_timeseries.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_desc-linc_qc.csv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_alff.nii.gz
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_desc-denoised_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_desc-denoised_bold.nii.gz
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_desc-smooth_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_desc-smooth_alff.nii.gz
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_reho.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-frac2back_space-MNI152NLin6Asym_res-2_reho.nii.gz
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-filtered_motion.json
@@ -210,6 +242,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-preproc_design.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_outliers.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_outliers.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S1056Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S1056Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S1056Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S1056Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.json
@@ -220,6 +254,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S1056Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S1056Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S1056Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S156Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S156Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S156Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S156Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.json
@@ -230,6 +266,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S156Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S156Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S156Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S256Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S256Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S256Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S256Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.json
@@ -240,6 +278,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S256Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S256Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S256Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S356Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S356Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S356Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S356Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.json
@@ -250,6 +290,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S356Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S356Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S356Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S456Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S456Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S456Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S456Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.json
@@ -260,6 +302,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S456Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S456Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S456Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S556Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S556Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S556Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S556Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.json
@@ -270,6 +314,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S556Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S556Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S556Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S656Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S656Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S656Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S656Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.json
@@ -280,6 +326,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S656Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S656Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S656Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S756Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S756Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S756Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S756Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.json
@@ -290,6 +338,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S756Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S756Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S756Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S856Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S856Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S856Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S856Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.json
@@ -300,6 +350,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S856Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S856Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S856Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S956Parcels_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S956Parcels_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S956Parcels_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S956Parcels_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.json
@@ -310,6 +362,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S956Parcels_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S956Parcels_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-4S956Parcels_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Glasser_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Glasser_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Glasser_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Glasser_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Glasser_measure-pearsoncorrelation_conmat.json
@@ -320,6 +374,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Glasser_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Glasser_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Glasser_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Gordon_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Gordon_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Gordon_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Gordon_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Gordon_measure-pearsoncorrelation_conmat.json
@@ -330,6 +386,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Gordon_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Gordon_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Gordon_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-HCP_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-HCP_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-HCP_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-HCP_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-HCP_measure-pearsoncorrelation_conmat.json
@@ -340,6 +398,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-HCP_reho.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-HCP_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-HCP_timeseries.tsv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Tian_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Tian_alff.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Tian_coverage.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Tian_coverage.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Tian_measure-pearsoncorrelation_conmat.json
@@ -351,10 +411,14 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Tian_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_atlas-Tian_timeseries.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_desc-linc_qc.csv
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_alff.nii.gz
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-denoised_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-denoised_bold.nii.gz
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-smooth_alff.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_desc-smooth_alff.nii.gz
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_reho.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-MNI152NLin6Asym_res-2_reho.nii.gz
 xcp_d/sub-1648798153_ses-PNC1_executive_summary.html
