@@ -60,8 +60,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-preproc_design.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_outliers.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_outliers.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.json
@@ -72,8 +70,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S156Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S156Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S156Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S156Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.json
@@ -84,8 +80,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S1
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S156Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S156Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S156Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S256Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S256Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S256Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S256Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.json
@@ -96,8 +90,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S2
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S256Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S256Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S256Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S356Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S356Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S356Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S356Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.json
@@ -108,8 +100,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S3
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S356Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S356Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S356Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S456Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S456Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S456Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S456Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.json
@@ -120,8 +110,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S4
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S456Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S456Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S456Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S556Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S556Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S556Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S556Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.json
@@ -132,8 +120,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S5
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S556Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S556Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S556Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S656Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S656Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S656Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S656Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.json
@@ -144,8 +130,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S6
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S656Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S656Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S656Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S756Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S756Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S756Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S756Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.json
@@ -156,8 +140,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S7
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S756Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S756Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S756Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S856Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S856Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S856Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S856Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.json
@@ -168,8 +150,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S8
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S856Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S856Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S856Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S956Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S956Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S956Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S956Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.json
@@ -180,8 +160,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S956Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S956Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-4S956Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.json
@@ -192,8 +170,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gla
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gordon_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gordon_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gordon_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gordon_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gordon_measure-pearsoncorrelation_conmat.json
@@ -204,8 +180,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gor
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gordon_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gordon_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Gordon_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP_measure-pearsoncorrelation_conmat.json
@@ -216,8 +190,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-HCP_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Tian_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Tian_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Tian_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Tian_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Tian_measure-pearsoncorrelation_conmat.json
@@ -229,14 +201,10 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Tia
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Tian_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_atlas-Tian_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_desc-linc_qc.csv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.nii.gz
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_reho.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.json
@@ -245,8 +213,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-preproc_design.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_outliers.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_outliers.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.json
@@ -257,8 +223,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S156Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S156Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S156Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S156Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.json
@@ -269,8 +233,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S1
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S156Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S156Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S156Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S256Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S256Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S256Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S256Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.json
@@ -281,8 +243,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S2
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S256Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S256Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S256Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S356Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S356Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S356Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S356Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.json
@@ -293,8 +253,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S3
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S356Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S356Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S356Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S456Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S456Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S456Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S456Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.json
@@ -305,8 +263,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S4
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S456Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S456Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S456Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S556Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S556Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S556Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S556Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.json
@@ -317,8 +273,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S5
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S556Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S556Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S556Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S656Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S656Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S656Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S656Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.json
@@ -329,8 +283,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S6
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S656Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S656Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S656Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S756Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S756Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S756Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S756Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.json
@@ -341,8 +293,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S7
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S756Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S756Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S756Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S856Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S856Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S856Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S856Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.json
@@ -353,8 +303,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S8
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S856Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S856Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S856Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S956Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S956Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S956Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S956Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.json
@@ -365,8 +313,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S956Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S956Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-4S956Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.json
@@ -377,8 +323,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gla
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gordon_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gordon_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gordon_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gordon_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gordon_measure-pearsoncorrelation_conmat.json
@@ -389,8 +333,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gor
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gordon_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gordon_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Gordon_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP_measure-pearsoncorrelation_conmat.json
@@ -401,8 +343,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-HCP_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Tian_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Tian_alff.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Tian_coverage.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Tian_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Tian_measure-pearsoncorrelation_conmat.json
@@ -414,14 +354,10 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Tia
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Tian_timeseries.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_atlas-Tian_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_desc-linc_qc.csv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.nii.gz
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_reho.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.json
@@ -490,8 +426,6 @@ xcp_d/sub-01/func/sub-01_task-rest_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-rest_desc-preproc_design.tsv
 xcp_d/sub-01/func/sub-01_task-rest_outliers.json
 xcp_d/sub-01/func/sub-01_task-rest_outliers.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.json
@@ -502,8 +436,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S1056Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.json
@@ -514,8 +446,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S156Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.json
@@ -526,8 +456,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S256Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.json
@@ -538,8 +466,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S356Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.json
@@ -550,8 +476,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S456Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.json
@@ -562,8 +486,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S556Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.json
@@ -574,8 +496,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S656Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.json
@@ -586,8 +506,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S756Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.json
@@ -598,8 +516,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S856Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.json
@@ -610,8 +526,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-4S956Parcels_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_measure-pearsoncorrelation_conmat.json
@@ -622,8 +536,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_reho.
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Glasser_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_measure-pearsoncorrelation_conmat.json
@@ -634,8 +546,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_reho.j
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Gordon_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_measure-pearsoncorrelation_conmat.json
@@ -646,8 +556,6 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_reho.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-HCP_timeseries.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Tian_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Tian_alff.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Tian_coverage.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Tian_coverage.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Tian_measure-pearsoncorrelation_conmat.json
@@ -659,14 +567,10 @@ xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Tian_reho.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Tian_timeseries.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_atlas-Tian_timeseries.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-linc_qc.csv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.nii.gz
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-smooth_alff.nii.gz
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_reho.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_reho.nii.gz
 xcp_d/sub-01_executive_summary.html
