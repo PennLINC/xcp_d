@@ -17,6 +17,7 @@ from xcp_d.utils import (
     qcmetrics,
     restingstate,
     sentry,
+    ukb2fmriprep,
     utils,
     write_save,
 )
@@ -36,6 +37,7 @@ __all__ = [
     "qcmetrics",
     "restingstate",
     "sentry",
+    "ukb2fmriprep",
     "utils",
     "write_save",
 ]

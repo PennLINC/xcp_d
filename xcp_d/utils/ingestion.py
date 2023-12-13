@@ -167,10 +167,10 @@ def collect_confounds(
         nifti=bold_file,
         work_dir=work_dir,
     )
-    rsmd = np.loadtxt(rmsd_file)
+    rmsd = np.loadtxt(rmsd_file)
 
     brainreg = pd.DataFrame(
-        {"global_signal": mean_gs, "white_matter": mean_wm, "csf": mean_csf, "rmsd": rsmd}
+        {"global_signal": mean_gs, "white_matter": mean_wm, "csf": mean_csf, "rmsd": rmsd}
     )
 
     # get derivatives and powers
