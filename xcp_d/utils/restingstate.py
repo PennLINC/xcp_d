@@ -135,6 +135,14 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         # Lomb-Scargle periodogram will have the same scale.
         voxel_data_mc = voxel_data - np.mean(voxel_data)
         voxel_data_mc /= np.std(voxel_data_mc)
+        voxel_data -= np.mean(voxel_data)
+        voxel_data /= np.std(voxel_data)
+        if any(np.isnan(voxel_data)):
+            raise Exception(
+                f"voxel_data: {voxel_data}\n"
+                f"voxel_data_mc: {voxel_data_mc}\n"
+                f"unique(data): {np.unique(data_matrix)}\n"
+            )
 
         if sample_mask.sum() != sample_mask.size:
             voxel_data_censored = voxel_data_mc[sample_mask]
@@ -149,17 +157,6 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
                 angular_frequencies,
                 normalize=True,
             )
-            if any(np.isnan(power_spectrum)):
-                raise Exception(
-                    f"voxel_data: {voxel_data}\n"
-                    f"voxel_data_mc: {voxel_data_mc}\n"
-                    f"voxel_data_censored: {voxel_data_censored}\n"
-                    f"unique(data): {np.unique(data_matrix)}\n"
-                    f"power_spectrum: {power_spectrum}\n"
-                    f"time_arr: {time_arr}\n"
-                    f"frequencies_hz: {frequencies_hz}\n"
-                    f"angular_frequencies: {angular_frequencies}\n"
-                )
         else:
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
