@@ -131,22 +131,19 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
-        voxel_data_copy = data_matrix[i_voxel, :].copy()
+        # Check if the voxel's data are all the same value (esp. zeros).
+        # Set ALFF to 0 in that case and move on to the next voxel.
+        if np.std(voxel_data) == 0:
+            alff[i_voxel] = 0
+            continue
+
         # Normalize data matrix over time. This will ensure that the standard periodogram and
         # Lomb-Scargle periodogram will have the same scale.
-        voxel_data_mc = voxel_data - np.mean(voxel_data)
-        voxel_data_mc /= np.std(voxel_data_mc)
         voxel_data -= np.mean(voxel_data)
         voxel_data /= np.std(voxel_data)
-        if any(np.isnan(voxel_data)):
-            raise Exception(
-                f"voxel_data: {voxel_data}\n"
-                f"voxel_data_mc: {voxel_data_mc}\n"
-                f"voxel_data_copy: {voxel_data_copy}\n"
-            )
 
         if sample_mask.sum() != sample_mask.size:
-            voxel_data_censored = voxel_data_mc[sample_mask]
+            voxel_data_censored = voxel_data[sample_mask]
             time_arr = np.arange(0, n_volumes * TR, TR)
             assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
             time_arr = time_arr[sample_mask]
@@ -161,7 +158,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         else:
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
-                data_matrix[i_voxel, :],
+                voxel_data,
                 fs,
                 scaling="spectrum",
             )
