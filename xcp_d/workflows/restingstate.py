@@ -29,6 +29,7 @@ def init_alff_wf(
     TR,
     low_pass,
     high_pass,
+    fd_thresh,
     smoothing,
     cifti,
     mem_gb,
@@ -49,6 +50,7 @@ def init_alff_wf(
                 TR=2.,
                 low_pass=0.1,
                 high_pass=0.01,
+                fd_thresh=0,
                 smoothing=6,
                 cifti=False,
                 mem_gb=0.1,
@@ -63,6 +65,7 @@ def init_alff_wf(
     %(TR)s
     %(low_pass)s
     %(high_pass)s
+    %(fd_thresh)s
     %(smoothing)s
     %(cifti)s
     %(mem_gb)s
@@ -88,11 +91,20 @@ def init_alff_wf(
     """
     workflow = Workflow(name=name)
 
+    periodogram_desc = ""
+    if fd_thresh > 0:
+        periodogram_desc = (
+            " using the Lomb-Scargle periodogram "
+            "[@lomb1976least;@scargle1982studies;@townsend2010fast;@taylorlomb]"
+        )
+
     workflow.__desc__ = f""" \
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming
-the processed BOLD timeseries to the frequency domain. The power spectrum was computed within
-the {high_pass}-{low_pass} Hz frequency band and the mean square root of the power spectrum was
-calculated at each voxel to yield voxel-wise ALFF measures.
+the mean-centered, standard deviation-normalized, denoised BOLD timeseries to the frequency
+domain{periodogram_desc}.
+The power spectrum was computed within the {high_pass}-{low_pass} Hz frequency band and the
+mean square root of the power spectrum was calculated at each voxel to yield voxel-wise ALFF
+measures.
 """
 
     inputnode = pe.Node(

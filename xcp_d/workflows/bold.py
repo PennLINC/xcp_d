@@ -427,6 +427,7 @@ def init_postprocess_nifti_wf(
             TR=TR,
             low_pass=low_pass,
             high_pass=high_pass,
+            fd_thresh=fd_thresh,
             smoothing=smoothing,
             cifti=False,
             mem_gb=mem_gbx["timeseries"],

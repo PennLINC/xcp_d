@@ -410,6 +410,7 @@ def init_postprocess_cifti_wf(
             TR=TR,
             low_pass=low_pass,
             high_pass=high_pass,
+            fd_thresh=fd_thresh,
             smoothing=smoothing,
             cifti=True,
             mem_gb=mem_gbx["timeseries"],

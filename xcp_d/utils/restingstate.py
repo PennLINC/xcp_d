@@ -104,7 +104,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         high pass frequency in Hz
     TR : float
         repetition time in seconds
-    sample_mask : numpy.ndarray
+    sample_mask : numpy.ndarray or None
         (timepoints,) 1D array with 1s for good volumes and 0s for censored ones.
 
     Returns
@@ -114,19 +114,23 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
 
     Notes
     -----
-    Implementation based on https://pubmed.ncbi.nlm.nih.gov/16919409/.
+    Implementation based on https://pubmed.ncbi.nlm.nih.gov/16919409/,
+    although the ALFF values are not scaled by the mean ALFF value across the brain.
+
+    If a ``sample_mask`` is provided, then the power spectrum will be estimated using a
+    Lomb-Scargle periodogram
+    :footcite:p:`lomb1976least,scargle1982studies,townsend2010fast,taylorlomb`.
+
+    References
+    ----------
+    .. footbibliography::
     """
     fs = 1 / TR  # sampling frequency
     n_voxels, n_volumes = data_matrix.shape
-    if sample_mask is None:
-        sample_mask = np.ones(n_volumes, dtype=int)
-    else:
-        LOGGER.warning(
-            "Outlier volumes detected. ALFF will be calculated using Lomb-Scargle method."
-        )
 
-    sample_mask = sample_mask.astype(bool)
-    assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
+    if sample_mask is not None:
+        sample_mask = sample_mask.astype(bool)
+        assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
@@ -142,7 +146,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         voxel_data -= np.mean(voxel_data)
         voxel_data /= np.std(voxel_data)
 
-        if sample_mask.sum() != sample_mask.size:
+        if sample_mask is not None:
             voxel_data_censored = voxel_data[sample_mask]
             time_arr = np.arange(0, n_volumes * TR, TR)
             assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
