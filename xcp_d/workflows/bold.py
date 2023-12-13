@@ -442,7 +442,7 @@ def init_postprocess_nifti_wf(
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.uncensored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
             ]),
             (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])

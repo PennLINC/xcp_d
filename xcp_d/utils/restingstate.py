@@ -114,7 +114,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
 
     Notes
     -----
-    Implementation based on https://pubmed.ncbi.nlm.nih.gov/16919409/,
+    Implementation based on :footcite:t:`yu2007altered`,
     although the ALFF values are not scaled by the mean ALFF value across the brain.
 
     If a ``sample_mask`` is provided, then the power spectrum will be estimated using a

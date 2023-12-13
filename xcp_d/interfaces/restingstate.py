@@ -90,12 +90,10 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(mandatory=True, desc="repetition time")
     low_pass = traits.Float(
         mandatory=True,
-        default_value=0.10,
         desc="low_pass filter in Hz",
     )
     high_pass = traits.Float(
         mandatory=True,
-        default_value=0.01,
         desc="high_pass filter in Hz",
     )
     mask = File(
@@ -116,7 +114,21 @@ class _ComputeALFFOutputSpec(TraitedSpec):
 
 
 class ComputeALFF(SimpleInterface):
-    """Compute ALFF."""
+    """Compute amplitude of low-frequency fluctuation (ALFF).
+
+    Notes
+    -----
+    The ALFF implementation is based on :footcite:t:`yu2007altered`,
+    although the ALFF values are not scaled by the mean ALFF value across the brain.
+
+    If censoring is applied (i.e., ``fd_thresh > 0``), then the power spectrum will be estimated
+    using a Lomb-Scargle periodogram
+    :footcite:p:`lomb1976least,scargle1982studies,townsend2010fast,taylorlomb`.
+
+    References
+    ----------
+    .. footbibliography::
+    """
 
     input_spec = _ComputeALFFInputSpec
     output_spec = _ComputeALFFOutputSpec
@@ -129,6 +141,7 @@ class ComputeALFF(SimpleInterface):
         temporal_mask = self.inputs.temporal_mask
         if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
             censoring_df = pd.read_table(temporal_mask)
+            # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
             sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
 
         # compute the ALFF

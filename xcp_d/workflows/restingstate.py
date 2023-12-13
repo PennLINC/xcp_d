@@ -76,7 +76,8 @@ def init_alff_wf(
     Inputs
     ------
     denoised_bold
-       residual and filtered
+       This is the ``filtered, interpolated, denoised BOLD``,
+       although interpolation is not necessary if the data were not originally censored.
     bold_mask
        bold mask if bold is nifti
     temporal_mask
@@ -88,6 +89,19 @@ def init_alff_wf(
         alff output
     smoothed_alff
         smoothed alff  output
+
+    Notes
+    -----
+    The ALFF implementation is based on :footcite:t:`yu2007altered`,
+    although the ALFF values are not scaled by the mean ALFF value across the brain.
+
+    If censoring is applied (i.e., ``fd_thresh > 0``), then the power spectrum will be estimated
+    using a Lomb-Scargle periodogram
+    :footcite:p:`lomb1976least,scargle1982studies,townsend2010fast,taylorlomb`.
+
+    References
+    ----------
+    .. footbibliography::
     """
     workflow = Workflow(name=name)
 
