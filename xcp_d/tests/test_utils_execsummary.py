@@ -18,8 +18,8 @@ def test_make_mosaic(tmp_path_factory):
     ax.set_facecolor("yellow")
     ax.set_xticks([])
     ax.set_yticks([])
-    plt.close(fig)
     fig.savefig(png_file)
+    plt.close()
 
     png_files = [png_file] * 10
     with chdir(tmpdir):
