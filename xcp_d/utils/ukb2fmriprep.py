@@ -119,6 +119,8 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     assert os.path.isfile(bold_file), os.listdir(task_dir_orig)
     bold_json = os.path.join(in_dir, "fMRI", "rfMRI.json")
     assert os.path.isfile(bold_json), os.listdir(task_dir_orig)
+    boldref_file = os.path.join(in_dir, "fMRI", "rfMRI_SBREF.nii.gz")
+    assert os.path.isfile(boldref_file), boldref_file
     brainmask_file = os.path.join(task_dir_orig, "mask.nii.gz")
     assert os.path.isfile(brainmask_file), os.listdir(task_dir_orig)
     t1w = os.path.join(in_dir, "T1", "T1_brain_to_MNI.nii.gz")
@@ -167,7 +169,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     warp_bold_to_std_results = warp_bold_to_std.run()
     bold_nifti_fmriprep = os.path.join(
         func_dir_fmriprep,
-        f"{base_task_ents}_space-{VOLSPACE}_bold.nii.gz",
+        f"{base_task_ents}_space-{VOLSPACE}_desc-preproc_bold.nii.gz",
     )
     copy_dictionary[warp_bold_to_std_results.outputs.out_file] = [bold_nifti_fmriprep]
 
@@ -204,10 +206,39 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
             f"{base_task_ents}_space-{VOLSPACE}_desc-brain_mask.nii.gz",
         )
     ]
+    # Use the brain mask as the anatomical brain mask too.
+    copy_dictionary[warp_brainmask_to_std_results.outputs.out_file].append(
+        os.path.join(
+            anat_dir_fmriprep,
+            f"{subses_ents}_space-{VOLSPACE}_desc-brain_mask.nii.gz",
+        )
+    )
+    # Use the brain mask as the "aparcaseg" dseg too.
+    copy_dictionary[warp_brainmask_to_std_results.outputs.out_file].append(
+        os.path.join(
+            anat_dir_fmriprep,
+            f"{subses_ents}_space-{VOLSPACE}_desc-aparcaseg_dseg.nii.gz",
+        )
+    )
 
-    # The MNI-space anatomical image too
+    # Warp the sbref file to MNI space.
+    warp_boldref_to_std = ApplyWarp(
+        interp="spline",
+        output_type="NIFTI_GZ",
+        ref_file=template_file,
+        in_file=boldref_file,
+        field_file=warp_file,
+    )
+    warp_boldref_to_std_results = warp_boldref_to_std.run()
+    boldref_nifti_fmriprep = os.path.join(
+        func_dir_fmriprep,
+        f"{base_task_ents}_space-{VOLSPACE}_boldref.nii.gz",
+    )
+    copy_dictionary[warp_boldref_to_std_results.outputs.out_file] = [boldref_nifti_fmriprep]
+
+    # The MNI-space anatomical image.
     copy_dictionary[t1w] = [
-        os.path.join(anat_dir_fmriprep, f"{subses_ents}_space-{VOLSPACE}_T1w.nii.gz")
+        os.path.join(anat_dir_fmriprep, f"{subses_ents}_space-{VOLSPACE}_desc-preproc_T1w.nii.gz")
     ]
 
     # The identity xform is used in place of any actual ones.
