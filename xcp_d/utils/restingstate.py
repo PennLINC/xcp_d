@@ -131,6 +131,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
+        voxel_data_copy = data_matrix[i_voxel, :].copy()
         # Normalize data matrix over time. This will ensure that the standard periodogram and
         # Lomb-Scargle periodogram will have the same scale.
         voxel_data_mc = voxel_data - np.mean(voxel_data)
@@ -141,7 +142,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
             raise Exception(
                 f"voxel_data: {voxel_data}\n"
                 f"voxel_data_mc: {voxel_data_mc}\n"
-                f"unique(data): {np.unique(data_matrix)}\n"
+                f"voxel_data_copy: {voxel_data_copy}\n"
             )
 
         if sample_mask.sum() != sample_mask.size:
