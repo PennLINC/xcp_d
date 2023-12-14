@@ -177,6 +177,6 @@ def copy_atlas(name_source, in_file, output_dir, atlas):
     elif extension == ".nii.gz":
         atlas_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
 
-    out_atlas_file = os.path.join(output_dir, "xcp_d", atlas_basename)
+    out_atlas_file = os.path.join(output_dir, f"xcp_d/atlases/atlas-{atlas}", atlas_basename)
     shutil.copyfile(in_file, out_atlas_file)
     return out_atlas_file
