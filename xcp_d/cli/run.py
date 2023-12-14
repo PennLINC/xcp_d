@@ -871,11 +871,11 @@ def build_workflow(opts, retval):
     # First check that fmriprep_dir looks like a BIDS folder
     if opts.input_type in ("dcan", "hcp", "ukb"):
         if opts.input_type == "dcan":
-            from xcp_d.utils.dcan2fmriprep import convert_dcan2bids as convert_to_bids
+            from xcp_d.ingression.abcdbids import convert_dcan2bids as convert_to_bids
         elif opts.input_type == "hcp":
-            from xcp_d.utils.hcp2fmriprep import convert_hcp2bids as convert_to_bids
+            from xcp_d.ingression.hcpya import convert_hcp2bids as convert_to_bids
         elif opts.input_type == "ukb":
-            from xcp_d.utils.ukb2fmriprep import convert_ukb2bids as convert_to_bids
+            from xcp_d.ingression.ukbiobank import convert_ukb2bids as convert_to_bids
 
         NIWORKFLOWS_LOG.info(f"Converting {opts.input_type} to fmriprep format")
         converted_fmri_dir = os.path.join(

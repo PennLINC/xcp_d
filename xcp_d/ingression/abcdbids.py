@@ -1,6 +1,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Functions for converting DCAN-format derivatives to fMRIPrep format."""
+"""Functions for converting ABCD-BIDS-format derivatives to fMRIPrep format.
+
+These functions are specifically designed to work with abcd-hcp-pipeline version 0.1.3.
+https://github.com/DCAN-Labs/abcd-hcp-pipeline/releases/tag/v0.1.3
+"""
 import glob
 import os
 import re
@@ -10,16 +14,16 @@ import pandas as pd
 from nipype import logging
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils.filemanip import ensure_list
-from xcp_d.utils.ingestion import (
+from xcp_d.ingression.utils import (
     collect_anatomical_files,
-    collect_confounds,
+    collect_hcp_confounds,
     collect_meshes,
     collect_morphs,
     copy_files_in_dict,
     plot_bbreg,
     write_json,
 )
+from xcp_d.utils.filemanip import ensure_list
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -105,8 +109,8 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     volspace_ent = f"space-{VOLSPACE}"
     RES_ENT = "res-2"
 
-    subject_dir_fmriprep = os.path.join(out_dir, sub_ent)
-    os.makedirs(subject_dir_fmriprep, exist_ok=True)
+    subject_dir_bids = os.path.join(out_dir, sub_ent)
+    os.makedirs(subject_dir_bids, exist_ok=True)
 
     # get session ids
     session_folders = sorted(glob.glob(os.path.join(in_dir, sub_ent, "s*")))
@@ -133,26 +137,26 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     for ses_ent in ses_entities:
         LOGGER.info(f"Processing {ses_ent}")
         subses_ents = f"{sub_ent}_{ses_ent}"
-        session_dir_fmriprep = os.path.join(subject_dir_fmriprep, ses_ent)
+        session_dir_fmriprep = os.path.join(subject_dir_bids, ses_ent)
         anat_dir_orig = os.path.join(in_dir, sub_ent, ses_ent, "files", "MNINonLinear")
-        anat_dir_fmriprep = os.path.join(session_dir_fmriprep, "anat")
+        anat_dir_bids = os.path.join(session_dir_fmriprep, "anat")
         func_dir_orig = os.path.join(anat_dir_orig, "Results")
-        func_dir_fmriprep = os.path.join(session_dir_fmriprep, "func")
-        work_dir = os.path.join(subject_dir_fmriprep, "work")
+        func_dir_bids = os.path.join(session_dir_fmriprep, "func")
+        work_dir = os.path.join(subject_dir_bids, "work")
 
-        os.makedirs(anat_dir_fmriprep, exist_ok=True)
-        os.makedirs(func_dir_fmriprep, exist_ok=True)
+        os.makedirs(anat_dir_bids, exist_ok=True)
+        os.makedirs(func_dir_bids, exist_ok=True)
         os.makedirs(work_dir, exist_ok=True)
 
         # Create identity-based transforms
         t1w_to_template_fmriprep = os.path.join(
-            anat_dir_fmriprep,
+            anat_dir_bids,
             f"{subses_ents}_from-T1w_to-{VOLSPACE}_mode-image_xfm.txt",
         )
         copy_dictionary[identity_xfm].append(t1w_to_template_fmriprep)
 
         template_to_t1w_fmriprep = os.path.join(
-            anat_dir_fmriprep,
+            anat_dir_bids,
             f"{subses_ents}_from-{VOLSPACE}_to-T1w_mode-image_xfm.txt",
         )
         copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
@@ -161,17 +165,17 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         base_anatomical_ents = f"{subses_ents}_{volspace_ent}_{RES_ENT}"
         anat_dict = collect_anatomical_files(
             anat_dir_orig,
-            anat_dir_fmriprep,
+            anat_dir_bids,
             base_anatomical_ents,
         )
         copy_dictionary = {**copy_dictionary, **anat_dict}
 
         # Collect surface files to copy
-        mesh_dict = collect_meshes(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
+        mesh_dict = collect_meshes(anat_dir_orig, anat_dir_bids, sub_id, subses_ents)
         copy_dictionary = {**copy_dictionary, **mesh_dict}
 
         # Convert morphometry files
-        morphometry_dict = collect_morphs(anat_dir_orig, anat_dir_fmriprep, sub_id, subses_ents)
+        morphometry_dict = collect_morphs(anat_dir_orig, anat_dir_bids, sub_id, subses_ents)
         morph_dict_all_ses = {**morph_dict_all_ses, **morphometry_dict}
         LOGGER.info("Finished collecting anatomical files")
 
@@ -202,32 +206,27 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             run_ent = f"run-{run_id}"
 
             task_dir_orig = os.path.join(func_dir_orig, base_task_name)
+            func_prefix = f"{subses_ents}_{task_ent}_{run_ent}"
 
             # Find original task files
             sbref_orig = os.path.join(task_dir_orig, f"{base_task_name}_SBRef.nii.gz")
             boldref_fmriprep = os.path.join(
-                func_dir_fmriprep,
-                (
-                    f"{subses_ents}_{task_ent}_{run_ent}_{volspace_ent}_"
-                    f"{RES_ENT}_boldref.nii.gz"
-                ),
+                func_dir_bids,
+                f"{func_prefix}_{volspace_ent}_{RES_ENT}_boldref.nii.gz",
             )
             copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
             bold_nifti_orig = os.path.join(task_dir_orig, f"{base_task_name}.nii.gz")
             bold_nifti_fmriprep = os.path.join(
-                func_dir_fmriprep,
-                (
-                    f"{subses_ents}_{task_ent}_{run_ent}_"
-                    f"{volspace_ent}_{RES_ENT}_desc-preproc_bold.nii.gz"
-                ),
+                func_dir_bids,
+                f"{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.nii.gz",
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
             bold_cifti_orig = os.path.join(task_dir_orig, f"{base_task_name}_Atlas.dtseries.nii")
             bold_cifti_fmriprep = os.path.join(
-                func_dir_fmriprep,
-                f"{subses_ents}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.nii",
+                func_dir_bids,
+                f"{func_prefix}_space-fsLR_den-91k_bold.dtseries.nii",
             )
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
@@ -237,11 +236,8 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                 "TaskName": task_id,
             }
             bold_nifti_json_fmriprep = os.path.join(
-                func_dir_fmriprep,
-                (
-                    f"{subses_ents}_{task_ent}_{run_ent}_{volspace_ent}_"
-                    f"{RES_ENT}_desc-preproc_bold.json"
-                ),
+                func_dir_bids,
+                f"{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.json",
             )
             write_json(bold_metadata, bold_nifti_json_fmriprep)
 
@@ -255,16 +251,16 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                 },
             )
             bold_cifti_json_fmriprep = os.path.join(
-                func_dir_fmriprep,
-                f"{subses_ents}_{task_ent}_{run_ent}_space-fsLR_den-91k_bold.dtseries.json",
+                func_dir_bids,
+                f"{func_prefix}_space-fsLR_den-91k_bold.dtseries.json",
             )
             write_json(bold_metadata, bold_cifti_json_fmriprep)
 
             # Create confound regressors
-            collect_confounds(
-                task_dir_orig,
-                func_dir_fmriprep,
-                f"{subses_ents}_{task_ent}_{run_ent}",
+            collect_hcp_confounds(
+                task_dir_orig=task_dir_orig,
+                out_dir=func_dir_bids,
+                prefix=func_prefix,
                 work_dir=work_dir,
                 bold_file=bold_nifti_orig,
                 # This file is the anatomical brain mask downsampled to 2 mm3.
@@ -274,11 +270,11 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             )
 
             # Make figures
-            figdir = os.path.join(subject_dir_fmriprep, "figures")
+            figdir = os.path.join(subject_dir_bids, "figures")
             os.makedirs(figdir, exist_ok=True)
             bbref_fig_fmriprep = os.path.join(
                 figdir,
-                f"{subses_ents}_{task_ent}_{run_ent}_desc-bbregister_bold.svg",
+                f"{func_prefix}_desc-bbregister_bold.svg",
             )
             t1w = os.path.join(anat_dir_orig, "T1w.nii.gz")
             ribbon = os.path.join(anat_dir_orig, "ribbon.nii.gz")
@@ -324,6 +320,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     scans_tuple = tuple(scans_dict.items())
     scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
-    scans_tsv = os.path.join(subject_dir_fmriprep, f"{subses_ents}_scans.tsv")
+    scans_tsv = os.path.join(subject_dir_bids, f"{subses_ents}_scans.tsv")
     scans_df.to_csv(scans_tsv, sep="\t", index=False)
     LOGGER.info("Conversion completed")
