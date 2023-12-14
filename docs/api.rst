@@ -88,8 +88,6 @@ xcp_d-combineqc
    xcp_d.utils.bids
    xcp_d.utils.concatenation
    xcp_d.utils.confounds
-   xcp_d.utils.dcan2fmriprep
-   xcp_d.utils.hcp2fmriprep
    xcp_d.utils.doc
    xcp_d.utils.execsummary
    xcp_d.utils.filemanip
@@ -100,3 +98,23 @@ xcp_d-combineqc
    xcp_d.utils.sentry
    xcp_d.utils.utils
    xcp_d.utils.write_save
+
+
+***********************************************************************
+:mod:`xcp_d.ingression`: Functions to Ingress Preprocessing Derivatives
+***********************************************************************
+
+.. automodule:: xcp_d.ingression
+   :no-members:
+   :no-inherited-members:
+
+.. currentmodule:: xcp_d
+
+.. autosummary::
+   :toctree: generated/
+   :template: module.rst
+
+   xcp_d.ingression.abcdbids
+   xcp_d.ingression.hcpya
+   xcp_d.ingression.ukbiobank
+   xcp_d.ingression.utils
