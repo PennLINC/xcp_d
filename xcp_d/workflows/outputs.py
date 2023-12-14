@@ -914,7 +914,7 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    if bandpass_filter and (fd_thresh <= 0):
+    if bandpass_filter:
         ds_alff = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,

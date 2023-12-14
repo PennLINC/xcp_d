@@ -378,7 +378,7 @@ def init_postprocess_cifti_wf(
 
     connectivity_wf = init_functional_connectivity_cifti_wf(
         min_coverage=min_coverage,
-        alff_available=bandpass_filter and (fd_thresh <= 0),
+        alff_available=bandpass_filter,
         output_dir=output_dir,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
@@ -410,6 +410,7 @@ def init_postprocess_cifti_wf(
             TR=TR,
             low_pass=low_pass,
             high_pass=high_pass,
+            fd_thresh=fd_thresh,
             smoothing=smoothing,
             cifti=True,
             mem_gb=mem_gbx["timeseries"],
@@ -419,8 +420,11 @@ def init_postprocess_cifti_wf(
 
         # fmt:off
         workflow.connect([
+            (prepare_confounds_wf, alff_wf, [
+                ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+            ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
             ]),
             (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])

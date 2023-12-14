@@ -91,7 +91,7 @@ def mesh_adjacency(hemi):
     return data_array + data_array.T  # transpose data_array and add it to itself
 
 
-def compute_alff(data_matrix, low_pass, high_pass, TR):
+def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     """Compute amplitude of low-frequency fluctuation (ALFF).
 
     Parameters
@@ -104,6 +104,8 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
         high pass frequency in Hz
     TR : float
         repetition time in seconds
+    sample_mask : numpy.ndarray or None
+        (timepoints,) 1D array with 1s for good volumes and 0s for censored ones.
 
     Returns
     -------
@@ -112,27 +114,74 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
 
     Notes
     -----
-    Implementation based on https://pubmed.ncbi.nlm.nih.gov/16919409/.
+    Implementation based on :footcite:t:`yu2007altered`,
+    although the ALFF values are not scaled by the mean ALFF value across the brain.
+
+    If a ``sample_mask`` is provided, then the power spectrum will be estimated using a
+    Lomb-Scargle periodogram
+    :footcite:p:`lomb1976least,scargle1982studies,townsend2010fast,taylorlomb`.
+
+    References
+    ----------
+    .. footbibliography::
     """
     fs = 1 / TR  # sampling frequency
-    alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of
-    # number of voxels
-    for ii in range(data_matrix.shape[0]):  # Loop through the voxels
-        # get array of sample frequencies + power spectrum density
-        array_of_sample_frequencies, power_spec_density = signal.periodogram(
-            data_matrix[ii, :], fs, scaling="spectrum"
-        )
-        # square root of power spectrum density
-        power_spec_density_sqrt = np.sqrt(power_spec_density)
+    n_voxels, n_volumes = data_matrix.shape
+
+    if sample_mask is not None:
+        sample_mask = sample_mask.astype(bool)
+        assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
+
+    alff = np.zeros(n_voxels)
+    for i_voxel in range(n_voxels):
+        voxel_data = data_matrix[i_voxel, :]
+        # Check if the voxel's data are all the same value (esp. zeros).
+        # Set ALFF to 0 in that case and move on to the next voxel.
+        if np.std(voxel_data) == 0:
+            alff[i_voxel] = 0
+            continue
+
+        # Normalize data matrix over time. This will ensure that the standard periodogram and
+        # Lomb-Scargle periodogram will have the same scale.
+        voxel_data -= np.mean(voxel_data)
+        voxel_data /= np.std(voxel_data)
+
+        if sample_mask is not None:
+            voxel_data_censored = voxel_data[sample_mask]
+            time_arr = np.arange(0, n_volumes * TR, TR)
+            assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
+            time_arr = time_arr[sample_mask]
+            frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
+            angular_frequencies = 2 * np.pi * frequencies_hz
+            power_spectrum = signal.lombscargle(
+                time_arr,
+                voxel_data_censored,
+                angular_frequencies,
+                normalize=True,
+            )
+        else:
+            # get array of sample frequencies + power spectrum density
+            frequencies_hz, power_spectrum = signal.periodogram(
+                voxel_data,
+                fs,
+                scaling="spectrum",
+            )
+
+        # square root of power spectrum
+        power_spectrum_sqrt = np.sqrt(power_spectrum)
         # get the position of the arguments closest to high_pass and low_pass, respectively
         ff_alff = [
-            np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
-            np.argmin(np.abs(array_of_sample_frequencies - low_pass)),
+            np.argmin(np.abs(frequencies_hz - high_pass)),
+            np.argmin(np.abs(frequencies_hz - low_pass)),
         ]
-        # alff for that voxel is 2 * the mean of the sqrt of the power spec density
+        # alff for that voxel is 2 * the mean of the sqrt of the power spec
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff[ii] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0] : ff_alff[1]])
-    # reshape alff so it's no longer 1 dimensional, but a #ofvoxels by 1 matrix
-    alff = np.reshape(alff, [len(alff), 1])
+        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+
+    assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
+
+    # Add second dimension to array
+    alff = alff[:, None]
+
     return alff
