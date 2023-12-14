@@ -688,6 +688,7 @@ def plot_fmri_es(
 
         # Save out the before processing file
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
+        plt.close(fig)
 
     # Remove temporary files
     if rm_temp_file:
@@ -1283,6 +1284,7 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     axes[0, 1].set_title("Right Hemisphere", fontsize=10)
     fig.tight_layout()
     fig.savefig(output_path)
+    plt.close(fig)
     return output_path
 
 
