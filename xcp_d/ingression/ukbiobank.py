@@ -9,7 +9,11 @@ from nipype.interfaces.fsl.preprocess import ApplyWarp
 from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
-from xcp_d.ingression.utils import collect_ukbiobank_confounds, copy_files_in_dict, write_json
+from xcp_d.ingression.utils import (
+    collect_ukbiobank_confounds,
+    copy_files_in_dict,
+    write_json,
+)
 from xcp_d.utils.filemanip import ensure_list
 
 LOGGER = logging.getLogger("nipype.utils")
