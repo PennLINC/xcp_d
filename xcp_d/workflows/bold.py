@@ -395,7 +395,7 @@ def init_postprocess_nifti_wf(
     connectivity_wf = init_functional_connectivity_nifti_wf(
         output_dir=output_dir,
         min_coverage=min_coverage,
-        alff_available=bandpass_filter and (fd_thresh <= 0),
+        alff_available=bandpass_filter,
         mem_gb=mem_gbx["timeseries"],
         name="connectivity_wf",
     )
@@ -418,13 +418,14 @@ def init_postprocess_nifti_wf(
     ])
     # fmt:on
 
-    if bandpass_filter and (fd_thresh <= 0):
+    if bandpass_filter:
         alff_wf = init_alff_wf(
             name_source=bold_file,
             output_dir=output_dir,
             TR=TR,
             low_pass=low_pass,
             high_pass=high_pass,
+            fd_thresh=fd_thresh,
             smoothing=smoothing,
             cifti=False,
             mem_gb=mem_gbx["timeseries"],
@@ -435,8 +436,11 @@ def init_postprocess_nifti_wf(
         # fmt:off
         workflow.connect([
             (downcast_data, alff_wf, [("bold_mask", "inputnode.bold_mask")]),
+            (prepare_confounds_wf, alff_wf, [
+                ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+            ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
             ]),
             (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])
@@ -556,7 +560,7 @@ def init_postprocess_nifti_wf(
     ])
     # fmt:on
 
-    if bandpass_filter and (fd_thresh <= 0):
+    if bandpass_filter:
         # fmt:off
         workflow.connect([
             (alff_wf, postproc_derivatives_wf, [

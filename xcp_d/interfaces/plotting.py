@@ -195,7 +195,7 @@ class CensoringPlot(SimpleInterface):
         )
 
         fig.savefig(self._results["out_file"])
-        plt.close()
+        plt.close(fig)
         return runtime
 
 
@@ -352,7 +352,7 @@ class QCPlots(SimpleInterface):
             self._results["raw_qcplot"],
             bbox_inches="tight",
         )
-        plt.close()
+        plt.close(preproc_fig)
 
         postproc_confounds = pd.DataFrame(
             {
@@ -372,7 +372,7 @@ class QCPlots(SimpleInterface):
             self._results["clean_qcplot"],
             bbox_inches="tight",
         )
-        plt.close()
+        plt.close(postproc_fig)
 
         # Get the different components in the bold file name
         # eg: ['sub-colornest001', 'ses-1'], etc.
@@ -685,7 +685,7 @@ class AnatomicalPlot(SimpleInterface):
         fig = plt.figure(constrained_layout=False, figsize=(25, 10))
         plot_anat(img, draw_cross=False, figure=fig, vmin=np.min(arr), vmax=np.max(arr))
         fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
-        plt.close()
+        plt.close(fig)
 
         return runtime
 

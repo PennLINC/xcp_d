@@ -688,7 +688,7 @@ def plot_fmri_es(
 
         # Save out the before processing file
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
-        plt.close()
+        plt.close(fig)
 
     # Remove temporary files
     if rm_temp_file:
@@ -1136,7 +1136,12 @@ def plot_alff_reho_volumetric(output_path, filename, name_source):
     template = str(template_file)
     output_path = os.path.abspath(output_path)
     plott.plot_stat_map(
-        filename, bg_img=template, display_mode="mosaic", cut_coords=8, output_file=output_path
+        filename,
+        bg_img=template,
+        display_mode="mosaic",
+        cut_coords=8,
+        colorbar=True,
+        output_file=output_path,
     )
     return output_path
 

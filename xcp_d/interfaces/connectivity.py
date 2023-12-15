@@ -851,6 +851,6 @@ class ConnectPlot(SimpleInterface):
         )
 
         fig.savefig(self._results["connectplot"], bbox_inches="tight", pad_inches=None)
-        plt.close()
+        plt.close(fig)
 
         return runtime
