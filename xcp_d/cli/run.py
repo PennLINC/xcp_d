@@ -891,6 +891,7 @@ def build_workflow(opts, retval):
         )
 
         opts.fmri_dir = Path(converted_fmri_dir)
+        raise Exception(os.listdir(opts.fmri_dir))
 
     if not os.path.isfile((os.path.join(opts.fmri_dir, "dataset_description.json"))):
         build_log.error(
