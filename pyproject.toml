@@ -32,7 +32,7 @@ dependencies = [
     "packaging",  # for version string parsing
     "pandas",
     "psutil >= 5.4",  # for sentry
-    "pybids ~= 0.15.1",
+    "pybids ~= 0.16.4",
     "pyyaml",
     "scikit-learn ~= 1.1",
     "scipy >= 1.8.0",  # nipype needs networkx, which needs scipy > 1.8.0
