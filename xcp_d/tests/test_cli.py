@@ -181,7 +181,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
     xcpd_wf.run(**plugin_settings)
 
     generate_reports(
-        subject_list=["01"],
+        subject_list=["0000001"],
         fmri_dir=dataset_dir,
         work_dir=work_dir,
         output_dir=out_dir,

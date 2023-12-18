@@ -92,7 +92,7 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
             if subject_id not in all_subject_ids and subject_id not in EXCLUDE_LIST:
                 all_subject_ids.append(f"sub-{subject_id}")
 
-            participant_ids = all_subject_ids
+        participant_ids = all_subject_ids
 
         if len(participant_ids) == 0:
             raise ValueError(f"No subject found in {in_dir}")

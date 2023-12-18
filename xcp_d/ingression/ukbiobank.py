@@ -60,9 +60,9 @@ def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters={}):
         all_subject_ids = []
         for subject_id in participant_ids:
             if subject_id not in all_subject_ids:
-                all_subject_ids.append(f"sub-{subject_id}")
+                all_subject_ids.append(subject_id)
 
-            participant_ids = all_subject_ids
+        participant_ids = all_subject_ids
 
         if len(participant_ids) == 0:
             raise ValueError(f"No subject found in {in_dir}")
@@ -127,7 +127,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     assert os.path.isfile(boldref_file), boldref_file
     brainmask_file = os.path.join(task_dir_orig, "mask.nii.gz")
     assert os.path.isfile(brainmask_file), os.listdir(task_dir_orig)
-    t1w = os.path.join(in_dir, "T1", "T1_brain_to_MNI.nii.gz")
+    t1w = os.path.join(in_dir, "T1w", "T1_brain_to_MNI.nii.gz")
     assert os.path.isfile(t1w), os.listdir(in_dir)
     affine_file = os.path.join(task_dir_orig, "reg", "example_func2standard.mat")
     assert os.path.isfile(affine_file), os.listdir(in_dir)
