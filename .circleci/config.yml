@@ -469,6 +469,13 @@ workflows:
             tags:
               only: /.*/
 
+      - download_data_ukbiobank:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+
       - download_data_fmriprepwithoutfreesurfer:
           requires:
             - build
