@@ -141,17 +141,16 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
     check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
-@pytest.mark.pnc_nifti
-def test_pnc_nifti(data_dir, output_dir, working_dir):
+@pytest.mark.ukbiobank
+def test_ukbiobank(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with nifti options."""
-    test_name = "test_pnc_nifti"
+    test_name = "test_ukbiobank"
 
-    dataset_dir = download_test_data("pnc", data_dir)
+    dataset_dir = download_test_data("ukbiobank", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "pnc_nifti_filter.json")
 
     parameters = [
         dataset_dir,
@@ -160,8 +159,8 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
-        f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=36P",
+        "--input-type=ukbiobank",
+        "--nuisance-regressors=gsr_only",
         "--despike",
         "--dummy-scans=4",
         "--fd-thresh=0.2",
@@ -169,11 +168,7 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
-        "--min-coverage=1",
-        "--exact-time",
-        "80",
-        "100",
-        "200",
+        "--min-coverage=0.1",
         "--random-seed=8675309",
     ]
     opts = run.get_parser().parse_args(parameters)
@@ -186,7 +181,7 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
     xcpd_wf.run(**plugin_settings)
 
     generate_reports(
-        subject_list=["1648798153"],
+        subject_list=["01"],
         fmri_dir=dataset_dir,
         work_dir=work_dir,
         output_dir=out_dir,
@@ -195,7 +190,7 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         packagename="xcp_d",
     )
 
-    output_list_file = os.path.join(test_data_dir, "test_pnc_nifti_outputs.txt")
+    output_list_file = os.path.join(test_data_dir, "test_ukbiobank_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
     check_affines(dataset_dir, out_dir, input_type="nifti")

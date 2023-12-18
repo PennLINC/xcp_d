@@ -30,6 +30,7 @@ def download_test_data(dset, data_dir=None):
         "nibabies": "https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz",
         "ds001419": "https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz",
         "pnc": "https://upenn.box.com/shared/static/ui2847ys49d82pgn5ewai1mowcmsv2br.tar.gz",
+        "ukbiobank": "https://upenn.box.com/shared/static/p5h1eg4p5cd2ef9ehhljlyh1uku0xe97.tar.gz",
     }
     if dset == "*":
         for k in URLS:
