@@ -159,7 +159,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
-        "--input-type=ukbiobank",
+        "--input-type=ukb",
         "--nuisance-regressors=gsr_only",
         "--despike",
         "--dummy-scans=4",
