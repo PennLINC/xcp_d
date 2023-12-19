@@ -112,13 +112,13 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     Since the T1w is in standard space already, we use identity transforms.
 
     ::
-        <sub_id>_<ses_id>_2_0/
-            ├── fMRI/
-            │   ├── rfMRI.ica/
-            │   │   ├── mc/
+        <sub_id>_<ses_id>_2_0
+            ├── fMRI
+            │   ├── rfMRI.ica
+            │   │   ├── mc
             │   │   │   ├── prefiltered_func_data_mcf_abs.rms
             │   │   │   └── prefiltered_func_data_mcf.par
-            │   │   ├── reg/
+            │   │   ├── reg
             │   │   │   ├── example_func2standard.mat
             │   │   │   └── example_func2standard_warp.nii.gz
             │   │   ├── filtered_func_data_clean.nii.gz
