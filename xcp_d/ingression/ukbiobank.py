@@ -7,7 +7,6 @@ import pandas as pd
 from nipype import logging
 from nipype.interfaces.fsl.preprocess import ApplyWarp
 from pkg_resources import resource_filename as pkgrf
-from templateflow.api import get as get_template
 
 from xcp_d.ingression.utils import (
     collect_ukbiobank_confounds,
@@ -179,7 +178,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     VOLSPACE = "MNI152NLin6Asym"
 
     # Warp BOLD, T1w, and brainmask to MNI152NLin6Asym
-    template_file = str(get_template(template=VOLSPACE, resolution="02", suffix="T1w", desc=None))
+    template_file = pkgrf("xcp_d", "data/MNI152_T1_2mm.nii.gz")
 
     copy_dictionary = {}
 

@@ -129,11 +129,10 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                         │   └── <sub_id>.R.SmoothedMyelinMap.32k_fs_LR.func.gii
                         ├── T1w.nii.gz
                         ├── aparc+aseg.nii.gz
-                        ├── brainmask.nii.gz
+                        ├── brainmask_fs.nii.gz
                         ├── ribbon.nii.gz
                         ├── vent_2mm_<sub_id>_mask_eroded.nii.gz
                         └── wm_2mm_<sub_id>_mask_eroded.nii.gz
-
     """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir), f"Folder DNE: {in_dir}"
