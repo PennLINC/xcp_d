@@ -173,7 +173,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         premat=affine_file,
         field_file=warp_file,
     )
-    warp_bold_to_std_results = warp_bold_to_std.run()
+    warp_bold_to_std_results = warp_bold_to_std.run(cwd=work_dir)
     bold_nifti_fmriprep = os.path.join(
         func_dir_bids,
         f"{func_prefix}_space-{VOLSPACE}_desc-preproc_bold.nii.gz",
@@ -206,7 +206,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         in_file=brainmask_file,
         field_file=warp_file,
     )
-    warp_brainmask_to_std_results = warp_brainmask_to_std.run()
+    warp_brainmask_to_std_results = warp_brainmask_to_std.run(cwd=work_dir)
     copy_dictionary[warp_brainmask_to_std_results.outputs.out_file] = [
         os.path.join(
             func_dir_bids,
@@ -236,7 +236,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         in_file=boldref_file,
         field_file=warp_file,
     )
-    warp_boldref_to_std_results = warp_boldref_to_std.run()
+    warp_boldref_to_std_results = warp_boldref_to_std.run(cwd=work_dir)
     boldref_nifti_fmriprep = os.path.join(
         func_dir_bids,
         f"{func_prefix}_space-{VOLSPACE}_boldref.nii.gz",
