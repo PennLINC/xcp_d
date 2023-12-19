@@ -110,6 +110,23 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     (MNI152NLin6Asym) space with FNIRT.
 
     Since the T1w is in standard space already, we use identity transforms.
+
+    ::
+        <sub_id>_<ses_id>_2_0/
+            ├── fMRI/
+            │   ├── rfMRI.ica/
+            │   │   ├── mc/
+            │   │   │   ├── prefiltered_func_data_mcf_abs.rms
+            │   │   │   └── prefiltered_func_data_mcf.par
+            │   │   ├── reg/
+            │   │   │   ├── example_func2standard.mat
+            │   │   │   └── example_func2standard_warp.nii.gz
+            │   │   ├── filtered_func_data_clean.nii.gz
+            │   │   └── mask.nii.gz
+            │   ├── rfMRI_SBREF.json
+            │   └── rfMRI_SBREF.nii.gz
+            └── T1
+                └── T1_brain_to_MNI.nii.gz
     """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir), f"Folder DNE: {in_dir}"
@@ -127,7 +144,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     assert os.path.isfile(boldref_file), boldref_file
     brainmask_file = os.path.join(task_dir_orig, "mask.nii.gz")
     assert os.path.isfile(brainmask_file), os.listdir(task_dir_orig)
-    t1w = os.path.join(in_dir, "T1w", "T1_brain_to_MNI.nii.gz")
+    t1w = os.path.join(in_dir, "T1", "T1_brain_to_MNI.nii.gz")
     assert os.path.isfile(t1w), os.listdir(in_dir)
     affine_file = os.path.join(task_dir_orig, "reg", "example_func2standard.mat")
     assert os.path.isfile(affine_file), os.listdir(in_dir)
@@ -173,6 +190,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         premat=affine_file,
         field_file=warp_file,
     )
+    LOGGER.warning(warp_bold_to_std.cmdline)
     warp_bold_to_std_results = warp_bold_to_std.run(cwd=work_dir)
     bold_nifti_fmriprep = os.path.join(
         func_dir_bids,
