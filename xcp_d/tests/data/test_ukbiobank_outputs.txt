@@ -48,8 +48,8 @@ xcp_d/sub-0000001
 xcp_d/sub-0000001.html
 xcp_d/sub-0000001/ses-01
 xcp_d/sub-0000001/ses-01/anat
-xcp_d/sub-0000001/ses-01/anat/sub-0000001_ses-01_acq-refaced_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
-xcp_d/sub-0000001/ses-01/anat/sub-0000001_ses-01_acq-refaced_space-MNI152NLin6Asym_dseg.nii.gz
+xcp_d/sub-0000001/ses-01/anat/sub-0000001_ses-01_space-MNI152NLin6Asym_desc-aparcaseg_dseg.nii.gz
+xcp_d/sub-0000001/ses-01/anat/sub-0000001_ses-01_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
 xcp_d/sub-0000001/ses-01/func
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_desc-filtered_motion.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_desc-filtered_motion.tsv
