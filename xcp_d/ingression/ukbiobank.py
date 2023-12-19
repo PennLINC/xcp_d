@@ -111,7 +111,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
 
     Since the T1w is in standard space already, we use identity transforms.
 
-    ::
+    .. codeblock::
         <sub_id>_<ses_id>_2_0
             ├── fMRI
             │   ├── rfMRI.ica
