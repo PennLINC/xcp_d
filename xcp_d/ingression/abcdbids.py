@@ -95,6 +95,45 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     -----
     Since the T1w is in standard space already, we use identity transforms instead of the
     individual transforms available in the DCAN derivatives.
+
+    .. code-block::
+
+        sub-<sub_id>
+            └── ses-<ses_id>
+                └── files
+                    └── MNINonLinear
+                        ├── Results
+                        │   ├── ses-<ses_id>_task-<task_id>_run-<run_id>
+                        │   │   ├── ses-<ses_id>_task-<task_id>_run-<run_id>_SBRef.nii.gz
+                        │   │   ├── ses-<ses_id>_task-<task_id>_run-<run_id>.nii.gz
+                        │   │   ├── ses-<ses_id>_task-<task_id>_run-<run_id>_Atlas.dtseries.nii
+                        │   │   ├── Movement_Regressors.txt
+                        │   │   ├── Movement_AbsoluteRMS.txt
+                        │   │   └── brainmask_fs.2.0.nii.gz
+                        ├── fsaverage_LR32k
+                        │   ├── L.pial.32k_fs_LR.surf.gii
+                        │   ├── R.pial.32k_fs_LR.surf.gii
+                        │   ├── L.white.32k_fs_LR.surf.gii
+                        │   ├── R.white.32k_fs_LR.surf.gii
+                        │   ├── <sub_id>.L.thickness.32k_fs_LR.shape.gii
+                        │   ├── <sub_id>.R.thickness.32k_fs_LR.shape.gii
+                        │   ├── <sub_id>.L.corrThickness.32k_fs_LR.shape.gii
+                        │   ├── <sub_id>.R.corrThickness.32k_fs_LR.shape.gii
+                        │   ├── <sub_id>.L.curvature.32k_fs_LR.shape.gii
+                        │   ├── <sub_id>.R.curvature.32k_fs_LR.shape.gii
+                        │   ├── <sub_id>.L.sulc.32k_fs_LR.shape.gii
+                        │   ├── <sub_id>.R.sulc.32k_fs_LR.shape.gii
+                        │   ├── <sub_id>.L.MyelinMap.32k_fs_LR.func.gii
+                        │   ├── <sub_id>.R.MyelinMap.32k_fs_LR.func.gii
+                        │   ├── <sub_id>.L.SmoothedMyelinMap.32k_fs_LR.func.gii
+                        │   └── <sub_id>.R.SmoothedMyelinMap.32k_fs_LR.func.gii
+                        ├── T1w.nii.gz
+                        ├── aparc+aseg.nii.gz
+                        ├── brainmask.nii.gz
+                        ├── ribbon.nii.gz
+                        ├── vent_2mm_<sub_id>_mask_eroded.nii.gz
+                        └── wm_2mm_<sub_id>_mask_eroded.nii.gz
+
     """
     assert isinstance(in_dir, str)
     assert os.path.isdir(in_dir), f"Folder DNE: {in_dir}"
