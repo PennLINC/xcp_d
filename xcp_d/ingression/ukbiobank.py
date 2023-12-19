@@ -222,6 +222,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         output_type="NIFTI_GZ",
         ref_file=template_file,
         in_file=brainmask_file,
+        premat=affine_file,
         field_file=warp_file,
     )
     warp_brainmask_to_std_results = warp_brainmask_to_std.run(cwd=work_dir)
@@ -252,6 +253,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         output_type="NIFTI_GZ",
         ref_file=template_file,
         in_file=boldref_file,
+        premat=affine_file,
         field_file=warp_file,
     )
     warp_boldref_to_std_results = warp_boldref_to_std.run(cwd=work_dir)
