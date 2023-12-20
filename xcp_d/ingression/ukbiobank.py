@@ -137,19 +137,19 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
 
     task_dir_orig = os.path.join(in_dir, "fMRI", "rfMRI.ica")
     bold_file = os.path.join(task_dir_orig, "filtered_func_data_clean.nii.gz")
-    assert os.path.isfile(bold_file), os.listdir(task_dir_orig)
+    assert os.path.isfile(bold_file), f"File DNE: {bold_file}"
     bold_json = os.path.join(in_dir, "fMRI", "rfMRI.json")
-    assert os.path.isfile(bold_json), os.listdir(task_dir_orig)
-    boldref_file = os.path.join(in_dir, "fMRI", "rfMRI_SBREF.nii.gz")
-    assert os.path.isfile(boldref_file), boldref_file
+    assert os.path.isfile(bold_json), f"File DNE: {bold_json}"
+    boldref_file = os.path.join(task_dir_orig, "example_func.nii.gz")
+    assert os.path.isfile(boldref_file), f"File DNE: {boldref_file}"
     brainmask_file = os.path.join(task_dir_orig, "mask.nii.gz")
-    assert os.path.isfile(brainmask_file), os.listdir(task_dir_orig)
+    assert os.path.isfile(brainmask_file), f"File DNE: {brainmask_file}"
     t1w = os.path.join(in_dir, "T1", "T1_brain_to_MNI.nii.gz")
-    assert os.path.isfile(t1w), os.listdir(in_dir)
+    assert os.path.isfile(t1w), f"File DNE: {t1w}"
     affine_file = os.path.join(task_dir_orig, "reg", "example_func2standard.mat")
-    assert os.path.isfile(affine_file), os.listdir(in_dir)
+    assert os.path.isfile(affine_file), f"File DNE: {affine_file}"
     warp_file = os.path.join(task_dir_orig, "reg", "example_func2standard_warp.nii.gz")
-    assert os.path.isfile(warp_file), os.listdir(in_dir)
+    assert os.path.isfile(warp_file), f"File DNE: {warp_file}"
 
     func_prefix = f"sub-{sub_id}_ses-{ses_id}_task-rest"
     subject_dir_bids = os.path.join(out_dir, f"sub-{sub_id}", f"ses-{ses_id}")
@@ -178,6 +178,8 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     VOLSPACE = "MNI152NLin6Asym"
 
     # Warp BOLD, T1w, and brainmask to MNI152NLin6Asym
+    # We use FSL's MNI152NLin6Asym 2 mm3 template instead of TemplateFlow's version,
+    # because FSL uses LAS+ orientation, while TemplateFlow uses RAS+.
     template_file = pkgrf("xcp_d", "data/MNI152_T1_2mm.nii.gz")
 
     copy_dictionary = {}
@@ -245,7 +247,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         )
     )
 
-    # Warp the sbref file to MNI space.
+    # Warp the reference file to MNI space.
     warp_boldref_to_std = ApplyWarp(
         interp="spline",
         output_type="NIFTI_GZ",
