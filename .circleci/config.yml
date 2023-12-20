@@ -78,7 +78,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: ukbiobank-05
+          key: ukbiobank-06
       - run: *runinstall
       - run:
           name: Download ukbiobank test data
@@ -86,7 +86,7 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data ukbiobank
       - save_cache:
-          key: ukbiobank-05
+          key: ukbiobank-06
           paths:
             - /src/xcp_d/.circleci/data/ukbiobank
     # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
@@ -232,7 +232,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ukbiobank-05
+          key: ukbiobank-06
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
