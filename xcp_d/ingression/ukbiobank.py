@@ -146,8 +146,6 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     assert os.path.isfile(brainmask_file), f"File DNE: {brainmask_file}"
     t1w = os.path.join(in_dir, "T1", "T1_brain_to_MNI.nii.gz")
     assert os.path.isfile(t1w), f"File DNE: {t1w}"
-    affine_file = os.path.join(task_dir_orig, "reg", "example_func2standard.mat")
-    assert os.path.isfile(affine_file), f"File DNE: {affine_file}"
     warp_file = os.path.join(task_dir_orig, "reg", "example_func2standard_warp.nii.gz")
     assert os.path.isfile(warp_file), f"File DNE: {warp_file}"
 
