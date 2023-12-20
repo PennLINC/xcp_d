@@ -26,18 +26,18 @@ dependencies = [
     "nibabel >= 3.2.1",
     "nilearn == 0.10.1",  # 0.10.2 raises error with compcor from fMRIPrep 23
     "nipype ~= 1.8.5",
-    "niworkflows == 1.9.0",
+    "niworkflows == 1.10.0",
     "num2words",  # for boilerplates
     "numpy ~= 1.19",
     "packaging",  # for version string parsing
     "pandas",
     "psutil >= 5.4",  # for sentry
-    "pybids ~= 0.15.1",
+    "pybids ~= 0.16.4",
     "pyyaml",
     "scikit-learn ~= 1.1",
     "scipy >= 1.8.0",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 1.38.0",  # for usage reports
+    "sentry-sdk ~= 1.39.1",  # for usage reports
     "templateflow ~= 23.1.0",
 ]
 dynamic = ["version"]
