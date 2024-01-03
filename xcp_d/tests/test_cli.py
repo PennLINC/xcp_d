@@ -143,7 +143,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
 
 @pytest.mark.ukbiobank
 def test_ukbiobank(data_dir, output_dir, working_dir):
-    """Run xcp_d on pnc fMRIPrep derivatives, with nifti options."""
+    """Run xcp_d on UK Biobank derivatives."""
     test_name = "test_ukbiobank"
 
     dataset_dir = download_test_data("ukbiobank", data_dir)
@@ -193,7 +193,11 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
     output_list_file = os.path.join(test_data_dir, "test_ukbiobank_outputs.txt")
     check_generated_files(out_dir, output_list_file)
 
-    check_affines(dataset_dir, out_dir, input_type="nifti")
+    converted_fmri_dir = os.path.join(
+        opts.work_dir,
+        "dset_bids/derivatives/ukbiobank",
+    )
+    check_affines(converted_fmri_dir, out_dir, input_type="nifti")
 
 
 @pytest.mark.pnc_cifti
