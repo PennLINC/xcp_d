@@ -802,6 +802,10 @@ def get_freesurfer_dir(fmri_dir):
     import glob
     import os
 
+    from nipype import logging
+
+    LOGGER = logging.getLogger("nipype.utils")
+
     patterns = {
         "Nibabies >= 24.0.0a1": (
             os.path.join(fmri_dir, "sourcedata/mcribs"),
