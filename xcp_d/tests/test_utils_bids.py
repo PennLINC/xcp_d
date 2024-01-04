@@ -197,7 +197,7 @@ def test_get_tr(ds001419_data):
 
 def test_get_freesurfer_dir(datasets):
     """Test get_freesurfer_dir."""
-    with pytest.raises(NotADirectoryError, match="No FreeSurfer derivatives found."):
+    with pytest.raises(NotADirectoryError, match="No FreeSurfer/MCRIBS derivatives found"):
         xbids.get_freesurfer_dir(".")
 
     fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
