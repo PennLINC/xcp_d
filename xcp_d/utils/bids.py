@@ -850,7 +850,8 @@ def get_freesurfer_dir(fmri_dir):
 
         # Otherwise, continue to the next pattern
 
-    patterns_str = "\n\t".join(list(patterns.values()))
+    seg_patterns = [pattern[0] for pattern in patterns.values()]
+    patterns_str = "\n\t".join(seg_patterns)
     raise NotADirectoryError(
         "No FreeSurfer/MCRIBS derivatives found in any of the following locations:"
         f"\n\t{patterns_str}"
