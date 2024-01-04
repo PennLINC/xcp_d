@@ -413,6 +413,7 @@ def init_postprocess_surfaces_wf(
         ),
         name="inputnode",
     )
+    workflow.__desc__ = ""
 
     if dcan_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
@@ -460,6 +461,10 @@ def init_postprocess_surfaces_wf(
         )
 
     if morphometry_files:
+        workflow.__desc__ += (
+            " fsLR-space morphometry surfaces were copied from the preprocessing derivatives to "
+            "the XCP-D derivatives."
+        )
         for morphometry_file in morphometry_files:
             # fmt:off
             workflow.connect([
@@ -470,6 +475,10 @@ def init_postprocess_surfaces_wf(
             # fmt:on
 
     if mesh_available:
+        workflow.__desc__ += (
+            " HCP-style midthickness, inflated, and very-inflated surfaces were generated from "
+            "the white-matter and pial surface meshes."
+        )
         # Generate and output HCP-style surface files.
         hcp_surface_wfs = {
             hemi: init_generate_hcp_surfaces_wf(
@@ -488,6 +497,10 @@ def init_postprocess_surfaces_wf(
         # fmt:on
 
     if mesh_available and standard_space_mesh:
+        workflow.__desc__ += (
+            " All surface files were already in fsLR space, and were copied to the output "
+            "directory."
+        )
         # Mesh files are already in fsLR.
         # fmt:off
         workflow.connect([
@@ -509,6 +522,7 @@ def init_postprocess_surfaces_wf(
         # fmt:on
 
     elif mesh_available:
+        workflow.__desc__ += " fsnative-space surfaces were then warped to fsLR space."
         # Mesh files are in fsnative and must be warped to fsLR.
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
@@ -711,7 +725,7 @@ def init_warp_surfaces_to_template_wf(
         workflow.connect([
             (get_freesurfer_dir_node, apply_transforms_wf, [
                 ("freesurfer_path", "inputnode.freesurfer_path"),
-                ("software", "inputnode.segmentation_software"),
+                ("segmentation_software", "inputnode.segmentation_software"),
             ]),
             (update_xfm_wf, apply_transforms_wf, [
                 ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
