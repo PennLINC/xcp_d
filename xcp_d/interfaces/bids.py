@@ -87,6 +87,8 @@ class _CollectRegistrationFilesOutputSpec(TraitedSpec):
 
 
 class CollectRegistrationFiles(SimpleInterface):
+    """Collect registration files for fsnative-to-fsLR transformation."""
+
     input_spec = _CollectRegistrationFilesInputSpec
     output_spec = _CollectRegistrationFilesOutputSpec
 
