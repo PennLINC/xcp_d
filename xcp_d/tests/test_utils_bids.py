@@ -206,7 +206,7 @@ def test_get_freesurfer_dir(datasets):
 
     # Create fake FreeSurfer folder so there are two possible folders and it grabs the closest
     tmp_fs_dir = os.path.join(datasets["nibabies"], "sourcedata/mcribs")
-    os.mkdir(tmp_fs_dir)
+    os.makedirs(tmp_fs_dir, exist_ok=True)
     fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
     assert os.path.isdir(fs_dir)
     assert software == "MCRIBS"
