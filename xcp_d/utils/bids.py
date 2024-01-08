@@ -816,7 +816,7 @@ def get_freesurfer_dir(fmri_dir):
             "FreeSurfer",
         ),
         "Nibabies >= 21.0.0": (
-            os.path.join(fmri_dir, "sourcedata/infant_freesurfer"),
+            os.path.join(fmri_dir, "sourcedata/infant-freesurfer"),
             "FreeSurfer",
         ),
         "fMRIPrep < 20.2.1": (
@@ -824,7 +824,7 @@ def get_freesurfer_dir(fmri_dir):
             "FreeSurfer",
         ),
         "Nibabies < 21.0.0": (
-            os.path.join(os.path.dirname(fmri_dir), "infant_freesurfer"),
+            os.path.join(os.path.dirname(fmri_dir), "infant-freesurfer"),
             "FreeSurfer",
         ),
     }
