@@ -204,11 +204,12 @@ def test_get_freesurfer_dir(datasets):
     assert os.path.isdir(fs_dir)
     assert software == "FreeSurfer"
 
-    # Create fake FreeSurfer folder so there are two possible folders
-    tmp_fs_dir = os.path.join(os.path.dirname(fs_dir), "freesurfer")
+    # Create fake FreeSurfer folder so there are two possible folders and it grabs the closest
+    tmp_fs_dir = os.path.join(os.path.dirname(fs_dir), "mcribs")
     os.mkdir(tmp_fs_dir)
-    with pytest.raises(ValueError, match="More than one candidate"):
-        xbids.get_freesurfer_dir(datasets["nibabies"])
+    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
+    assert os.path.isdir(fs_dir)
+    assert software == "MCRIBS"
     os.rmdir(tmp_fs_dir)
 
     fs_dir, software = xbids.get_freesurfer_dir(datasets["pnc"])
