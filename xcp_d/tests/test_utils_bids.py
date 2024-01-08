@@ -205,7 +205,7 @@ def test_get_freesurfer_dir(datasets):
     assert software == "FreeSurfer"
 
     # Create fake FreeSurfer folder so there are two possible folders
-    tmp_fs_dir = os.path.join(os.path.dirname(fs_dir), "freesurfer-fail")
+    tmp_fs_dir = os.path.join(os.path.dirname(fs_dir), "freesurfer")
     os.mkdir(tmp_fs_dir)
     with pytest.raises(ValueError, match="More than one candidate"):
         xbids.get_freesurfer_dir(datasets["nibabies"])
