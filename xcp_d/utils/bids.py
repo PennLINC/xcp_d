@@ -799,7 +799,6 @@ def get_freesurfer_dir(fmri_dir):
     NotADirectoryError
         If no FreeSurfer derivatives are found.
     """
-    import glob
     import os
 
     from nipype import logging
@@ -831,22 +830,12 @@ def get_freesurfer_dir(fmri_dir):
 
     for desc, key in patterns.items():
         pattern, software = key
-        seg_paths = sorted(glob.glob(pattern))
-        if len(seg_paths) == 1:
+        if os.path.isdir(pattern):
             LOGGER.info(
                 f"{software} derivatives associated with {desc} preprocessing derivatives found "
-                f"at {seg_paths[0]}"
+                f"at {pattern}"
             )
-            return seg_paths[0], software
-        elif len(seg_paths) > 1:
-            seg_paths_str = "\n\t".join(seg_paths)
-            raise ValueError(
-                "More than one candidate for FreeSurfer/MCRIBS derivatives found for "
-                f"{desc} derivatives. "
-                "We recommend mounting only one FreeSurfer/MCRIBS directory in your "
-                "Docker/Singularity image. "
-                f"Detected candidates:\n\t{seg_paths_str}"
-            )
+            return pattern, software
 
         # Otherwise, continue to the next pattern
 
