@@ -161,6 +161,7 @@ measures.
     workflow.connect([
         (inputnode, alff_compt, [
             ("denoised_bold", "in_file"),
+            ("mean_bold", "mean_file"),
             ("bold_mask", "mask"),
             ("temporal_mask", "temporal_mask"),
         ]),

@@ -443,6 +443,7 @@ def init_postprocess_nifti_wf(
             ]),
             (denoise_bold_wf, alff_wf, [
                 ("outputnode.uncensored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.mean_bold", "inputnode.mean_bold"),
             ]),
             (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])

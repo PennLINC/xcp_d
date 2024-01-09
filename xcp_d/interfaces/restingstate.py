@@ -92,6 +92,11 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="nifti, cifti or gifti file containing denoised, but not band-pass filtered, data.",
     )
+    mean_file = File(
+        exists=True,
+        mandatory=True,
+        desc="nifti, cifti or gifti file containing denoised, but not band-pass filtered, data.",
+    )
     TR = traits.Float(mandatory=True, desc="repetition time")
     low_pass = traits.Float(
         mandatory=True,
@@ -146,6 +151,7 @@ class ComputeALFF(SimpleInterface):
     def _run_interface(self, runtime):
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+        mean_matrix = read_ndata(datafile=self.inputs.mean_file, maskfile=self.inputs.mask)
 
         sample_mask = None
         temporal_mask = self.inputs.temporal_mask
@@ -157,6 +163,7 @@ class ComputeALFF(SimpleInterface):
         # compute the ALFF
         alff_mat, falff_mat, peraf_mat = compute_alff(
             data_matrix=data_matrix,
+            mean_matrix=mean_matrix,
             low_pass=self.inputs.low_pass,
             high_pass=self.inputs.high_pass,
             TR=self.inputs.TR,
