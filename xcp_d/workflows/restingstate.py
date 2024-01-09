@@ -122,7 +122,7 @@ measures.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold", "bold_mask", "temporal_mask"]),
+        niu.IdentityInterface(fields=["denoised_bold", "bold_mask", "temporal_mask", "mean_bold"]),
         name="inputnode",
     )
     outputnode = pe.Node(
