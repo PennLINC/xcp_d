@@ -82,6 +82,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     (
         uncensored_denoised_bold,
         interpolated_filtered_bold,
+        mean_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
@@ -99,6 +100,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     (
         uncensored_denoised_bold,
         interpolated_filtered_bold,
+        mean_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
@@ -116,6 +118,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     (
         uncensored_denoised_bold,
         interpolated_filtered_bold,
+        mean_bold,
     ) = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,
@@ -140,7 +143,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # Run without denoising or filtering
-    _, interpolated_filtered_bold = utils.denoise_with_nilearn(
+    _, interpolated_filtered_bold, _ = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,
         temporal_mask=temporal_mask,

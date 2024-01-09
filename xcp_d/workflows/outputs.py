@@ -260,6 +260,8 @@ def init_postproc_derivatives_wf(
                 "temporal_mask",
                 "temporal_mask_metadata",
                 "dummy_scans",
+                "falff",
+                "peraf",
                 # cifti-only inputs
                 "coverage_ciftis",
                 "timeseries_ciftis",
@@ -941,6 +943,30 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
+        ds_falff = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=["desc", "den"],
+                cohort=cohort,
+                den="91k" if cifti else None,
+                suffix="falff",
+                extension=".dscalar.nii" if cifti else ".nii.gz",
+                # Metadata
+                SoftwareFilters=software_filters,
+            ),
+            name="ds_falff",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        workflow.connect([
+            (inputnode, ds_falff, [("falff", "in_file")]),
+            (ds_denoised_bold, ds_falff, [
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
+            ]),
+        ])  # fmt:skip
+
         if smoothing:
             ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
@@ -1013,5 +1039,29 @@ def init_postproc_derivatives_wf(
             (add_alff_to_src, ds_parcellated_alff, [("metadata", "meta_dict")]),
         ])
         # fmt:on
+
+    ds_peraf = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            check_hdr=False,
+            dismiss_entities=["desc", "den"],
+            cohort=cohort,
+            den="91k" if cifti else None,
+            suffix="peraf",
+            extension=".dscalar.nii" if cifti else ".nii.gz",
+            # Metadata
+            SoftwareFilters=software_filters,
+        ),
+        name="ds_peraf",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    workflow.connect([
+        (inputnode, ds_peraf, [("peraf", "in_file")]),
+        (ds_denoised_bold, ds_peraf, [
+            (("out_file", _make_xcpd_uri, output_dir), "Sources"),
+        ]),
+    ])  # fmt:skip
 
     return workflow

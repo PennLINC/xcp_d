@@ -424,7 +424,7 @@ def init_postprocess_cifti_wf(
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
+                ("outputnode.uncensored_denoised_bold", "inputnode.denoised_bold"),
             ]),
             (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])
@@ -546,6 +546,8 @@ def init_postprocess_cifti_wf(
             (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
+                ("outputnode.falff", "inputnode.falff"),
+                ("outputnode.peraf", "inputnode.peraf"),
             ]),
             (connectivity_wf, postproc_derivatives_wf, [
                 ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),

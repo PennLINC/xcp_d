@@ -366,6 +366,9 @@ def denoise_with_nilearn(
     %(interpolated_filtered_bold)s
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
         This is the primary output.
+    mean_bold
+        Returns as a :obj:`numpy.ndarray` of shape (S).
+        This is used to calculate PerAF later in the workflow.
     """
     import pandas as pd
     from nilearn import signal
@@ -406,6 +409,9 @@ def denoise_with_nilearn(
         # Apply the betas to denoise the *full* (uncensored) BOLD data
         uncensored_denoised_bold = preprocessed_bold - np.dot(nuisance_arr, betas)
 
+        # Extract mean map
+        mean_bold = betas[-1, :]
+
         # Also denoise the censored BOLD data
         censored_denoised_bold = preprocessed_bold_censored - np.dot(nuisance_censored, betas)
 
@@ -414,6 +420,7 @@ def denoise_with_nilearn(
     else:
         uncensored_denoised_bold = preprocessed_bold
         censored_denoised_bold = preprocessed_bold_censored
+        mean_bold = np.mean(preprocessed_bold, axis=0)
 
     if censor_and_interpolate:
         # Now interpolate the censored, denoised data with cubic spline interpolation
@@ -478,7 +485,7 @@ def denoise_with_nilearn(
     else:
         interpolated_filtered_bold = interpolated_unfiltered_bold
 
-    return uncensored_denoised_bold, interpolated_filtered_bold
+    return uncensored_denoised_bold, interpolated_filtered_bold, mean_bold
 
 
 def _select_first(lst):

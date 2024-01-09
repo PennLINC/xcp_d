@@ -91,13 +91,15 @@ def mesh_adjacency(hemi):
     return data_array + data_array.T  # transpose data_array and add it to itself
 
 
-def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
+def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=None):
     """Compute amplitude of low-frequency fluctuation (ALFF).
 
     Parameters
     ----------
     data_matrix : numpy.ndarray
         data matrix points by timepoints
+    mean_matrix : numpy.ndarray
+        Mean map.
     low_pass : float
         low pass frequency in Hz
     high_pass : float
@@ -111,6 +113,10 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     -------
     alff : numpy.ndarray
         ALFF values.
+    falff : numpy.ndarray
+        fALFF values.
+    peraf : numpy.ndarray
+        PerAF values.
 
     Notes
     -----
@@ -133,6 +139,8 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
     alff = np.zeros(n_voxels)
+    falff = np.zeros(n_voxels)
+    peraf = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
         # Check if the voxel's data are all the same value (esp. zeros).
@@ -159,6 +167,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
                 angular_frequencies,
                 normalize=True,
             )
+            voxel_data_for_peraf = voxel_data_censored.copy()
         else:
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
@@ -166,6 +175,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
                 fs,
                 scaling="spectrum",
             )
+            voxel_data_for_peraf = voxel_data.copy()
 
         # square root of power spectrum
         power_spectrum_sqrt = np.sqrt(power_spectrum)
@@ -178,10 +188,24 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
         alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+        falff[i_voxel] = np.sum(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]]) / np.sum(
+            power_spectrum_sqrt
+        )
+        peraf[i_voxel] = (
+            np.mean(
+                np.abs(
+                    (voxel_data_for_peraf[i_voxel, :] - mean_matrix[i_voxel])
+                    / mean_matrix[i_voxel]
+                )
+            )
+            * 100
+        )
 
     assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
 
-    # Add second dimension to array
+    # Add second dimension to arrays
     alff = alff[:, None]
+    falff = falff[:, None]
+    peraf = peraf[:, None]
 
-    return alff
+    return alff, falff, peraf

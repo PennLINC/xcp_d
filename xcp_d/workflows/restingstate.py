@@ -76,8 +76,8 @@ def init_alff_wf(
     Inputs
     ------
     denoised_bold
-       This is the ``filtered, interpolated, denoised BOLD``,
-       although interpolation is not necessary if the data were not originally censored.
+       This is the ``uncensored, denoised BOLD``. Any high-motion volumes will be censored out
+       as part of the ALFF calculation.
     bold_mask
        bold mask if bold is nifti
     temporal_mask
@@ -126,7 +126,15 @@ measures.
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["alff", "smoothed_alff", "alffplot"]),
+        niu.IdentityInterface(
+            fields=[
+                "alff",
+                "smoothed_alff",
+                "alffplot",
+                "falff",
+                "peraf",
+            ],
+        ),
         name="outputnode",
     )
 
@@ -157,7 +165,11 @@ measures.
             ("temporal_mask", "temporal_mask"),
         ]),
         (alff_compt, alff_plot, [("alff", "filename")]),
-        (alff_compt, outputnode, [("alff", "alff")])
+        (alff_compt, outputnode, [
+            ("alff", "alff"),
+            ("falff", "falff"),
+            ("peraf", "peraf"),
+        ]),
     ])
     # fmt:on
 

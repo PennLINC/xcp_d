@@ -8,6 +8,7 @@
 import os
 import shutil
 
+import numpy as np
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.afni.preprocess import Despike, DespikeInputSpec
@@ -86,7 +87,11 @@ class SurfaceReHo(SimpleInterface):
 
 
 class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="nifti, cifti or gifti file containing denoised, but not band-pass filtered, data.",
+    )
     TR = traits.Float(mandatory=True, desc="repetition time")
     low_pass = traits.Float(
         mandatory=True,
@@ -110,7 +115,12 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
-    alff = File(exists=True, mandatory=True, desc=" alff")
+    alff = File(exists=True, desc="Amplitude of low-frequency fluctuations.")
+    global_alff = traits.Float(desc="Mean ALFF value in brain.")
+    falff = File(exists=True, desc="Fractional amplitude of low-frequency fluctuations.")
+    global_falff = traits.Float(desc="Mean fALFF value in brain.")
+    peraf = File(exists=True, desc="Percent amplitude of fluctuation.")
+    global_peraf = traits.Float(desc="Mean PerAF value in brain.")
 
 
 class ComputeALFF(SimpleInterface):
@@ -145,7 +155,7 @@ class ComputeALFF(SimpleInterface):
             sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
 
         # compute the ALFF
-        alff_mat = compute_alff(
+        alff_mat, falff_mat, peraf_mat = compute_alff(
             data_matrix=data_matrix,
             low_pass=self.inputs.low_pass,
             high_pass=self.inputs.high_pass,
@@ -171,6 +181,44 @@ class ComputeALFF(SimpleInterface):
             filename=self._results["alff"],
             mask=self.inputs.mask,
         )
+        self._results["global_alff"] = np.mean(alff_mat)
+
+        if self.inputs.in_file.endswith(".dtseries.nii"):
+            suffix = "_falff.dscalar.nii"
+        elif self.inputs.in_file.endswith(".nii.gz"):
+            suffix = "_falff.nii.gz"
+        self._results["falff"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=suffix,
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(
+            data_matrix=falff_mat,
+            template=self.inputs.in_file,
+            filename=self._results["falff"],
+            mask=self.inputs.mask,
+        )
+        self._results["global_falff"] = np.mean(falff_mat)
+
+        if self.inputs.in_file.endswith(".dtseries.nii"):
+            suffix = "_peraf.dscalar.nii"
+        elif self.inputs.in_file.endswith(".nii.gz"):
+            suffix = "_peraf.nii.gz"
+        self._results["peraf"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=suffix,
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(
+            data_matrix=peraf_mat,
+            template=self.inputs.in_file,
+            filename=self._results["peraf"],
+            mask=self.inputs.mask,
+        )
+        self._results["global_peraf"] = np.mean(peraf_mat)
+
         return runtime
 
 
