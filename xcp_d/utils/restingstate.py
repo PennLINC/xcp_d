@@ -149,13 +149,15 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
             alff[i_voxel] = 0
             continue
 
-        # Normalize data matrix over time. This will ensure that the standard periodogram and
-        # Lomb-Scargle periodogram will have the same scale.
-        voxel_data -= np.mean(voxel_data)
-        voxel_data /= np.std(voxel_data)
-
         if sample_mask is not None:
             voxel_data_censored = voxel_data[sample_mask]
+            voxel_data_for_peraf = voxel_data_censored.copy()
+
+            # Normalize data matrix over time. This will ensure that the standard periodogram and
+            # Lomb-Scargle periodogram will have the same scale.
+            voxel_data_censored -= np.mean(voxel_data_censored)
+            voxel_data_censored /= np.std(voxel_data_censored)
+
             time_arr = np.arange(0, n_volumes * TR, TR)
             assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
             time_arr = time_arr[sample_mask]
@@ -167,15 +169,20 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
                 angular_frequencies,
                 normalize=True,
             )
-            voxel_data_for_peraf = voxel_data_censored.copy()
         else:
+            voxel_data_for_peraf = voxel_data.copy()
+
+            # Normalize data matrix over time. This will ensure that the standard periodogram and
+            # Lomb-Scargle periodogram will have the same scale.
+            voxel_data_copy = voxel_data - np.mean(voxel_data)
+            voxel_data_copy /= np.std(voxel_data_copy)
+
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
-                voxel_data,
+                voxel_data_copy,
                 fs,
                 scaling="spectrum",
             )
-            voxel_data_for_peraf = voxel_data.copy()
 
         # square root of power spectrum
         power_spectrum_sqrt = np.sqrt(power_spectrum)
@@ -192,12 +199,7 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
             power_spectrum_sqrt
         )
         peraf[i_voxel] = (
-            np.mean(
-                np.abs(
-                    (voxel_data_for_peraf[i_voxel, :] - mean_matrix[i_voxel])
-                    / mean_matrix[i_voxel]
-                )
-            )
+            np.mean(np.abs((voxel_data_for_peraf - mean_matrix[i_voxel]) / mean_matrix[i_voxel]))
             * 100
         )
 
