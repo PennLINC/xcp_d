@@ -28,6 +28,7 @@ sections:
     subtitle: Design Matrix for Confound Regression
     style:
       height: 100px
+      width: auto
   - bids: {datatype: figures, desc: postprocessing, suffix: bold}
     caption:  FD and DVARS are two measures of in-scanner motion.
               This plot shows standardized FD, DVARS, and then a carpet plot for the
