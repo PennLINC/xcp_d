@@ -297,12 +297,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolate
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_falff.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_falff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_peraf.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_peraf.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_tsnr.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-smooth_tsnr.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_falff.dscalar.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_falff.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_peraf.dscalar.nii
@@ -553,12 +547,6 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolate
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-linc_qc.csv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_alff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_falff.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_falff.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_peraf.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_peraf.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_tsnr.dscalar.nii
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-smooth_tsnr.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_falff.dscalar.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_falff.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_peraf.dscalar.nii
