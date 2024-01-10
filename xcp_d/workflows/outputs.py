@@ -262,6 +262,7 @@ def init_postproc_derivatives_wf(
                 "dummy_scans",
                 "falff",
                 "peraf",
+                "tsnr",
                 # cifti-only inputs
                 "coverage_ciftis",
                 "timeseries_ciftis",
@@ -1060,6 +1061,30 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_peraf, [("peraf", "in_file")]),
             (ds_denoised_bold, ds_peraf, [
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
+            ]),
+        ])  # fmt:skip
+
+        ds_tsnr = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=["desc", "den"],
+                cohort=cohort,
+                den="91k" if cifti else None,
+                suffix="tsnr",
+                extension=".dscalar.nii" if cifti else ".nii.gz",
+                # Metadata
+                SoftwareFilters=software_filters,
+            ),
+            name="ds_tsnr",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        workflow.connect([
+            (inputnode, ds_tsnr, [("tsnr", "in_file")]),
+            (ds_denoised_bold, ds_tsnr, [
                 (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])  # fmt:skip

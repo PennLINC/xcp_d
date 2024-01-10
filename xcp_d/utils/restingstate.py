@@ -117,6 +117,8 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
         fALFF values.
     peraf : numpy.ndarray
         PerAF values.
+    tsnr : numpy.ndarray
+        tSNR values.
 
     Notes
     -----
@@ -141,6 +143,7 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
     alff = np.zeros(n_voxels)
     falff = np.zeros(n_voxels)
     peraf = np.zeros(n_voxels)
+    tsnr = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
         # Check if the voxel's data are all the same value (esp. zeros).
@@ -202,11 +205,14 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
             * 100
         )
 
+        tsnr[i_voxel] = mean_matrix[i_voxel] / np.std(voxel_data_for_peraf)
+
     assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
 
     # Add second dimension to arrays
     alff = alff[:, None]
     falff = falff[:, None]
     peraf = peraf[:, None]
+    tsnr = tsnr[:, None]
 
-    return alff, falff, peraf
+    return alff, falff, peraf, tsnr

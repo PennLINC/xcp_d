@@ -133,6 +133,7 @@ measures.
                 "alffplot",
                 "falff",
                 "peraf",
+                "tsnr",
             ],
         ),
         name="outputnode",
@@ -170,6 +171,7 @@ measures.
             ("alff", "alff"),
             ("falff", "falff"),
             ("peraf", "peraf"),
+            ("tsnr", "tsnr"),
         ]),
     ])
     # fmt:on

@@ -126,6 +126,7 @@ class _ComputeALFFOutputSpec(TraitedSpec):
     global_falff = traits.Float(desc="Mean fALFF value in brain.")
     peraf = File(exists=True, desc="Percent amplitude of fluctuation.")
     global_peraf = traits.Float(desc="Mean PerAF value in brain.")
+    tsnr = File(exists=True, desc="Temporal signal to noise ratio image.")
 
 
 class ComputeALFF(SimpleInterface):
@@ -161,7 +162,7 @@ class ComputeALFF(SimpleInterface):
             sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
 
         # compute the ALFF
-        alff_mat, falff_mat, peraf_mat = compute_alff(
+        alff_mat, falff_mat, peraf_mat, tsnr_mat = compute_alff(
             data_matrix=data_matrix,
             mean_matrix=mean_matrix,
             low_pass=self.inputs.low_pass,
@@ -225,6 +226,23 @@ class ComputeALFF(SimpleInterface):
             mask=self.inputs.mask,
         )
         self._results["global_peraf"] = np.mean(peraf_mat)
+
+        if self.inputs.in_file.endswith(".dtseries.nii"):
+            suffix = "_tsnr.dscalar.nii"
+        elif self.inputs.in_file.endswith(".nii.gz"):
+            suffix = "_tsnr.nii.gz"
+        self._results["tsnr"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=suffix,
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(
+            data_matrix=tsnr_mat,
+            template=self.inputs.in_file,
+            filename=self._results["tsnr"],
+            mask=self.inputs.mask,
+        )
 
         return runtime
 

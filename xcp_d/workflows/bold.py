@@ -571,6 +571,7 @@ def init_postprocess_nifti_wf(
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
                 ("outputnode.falff", "inputnode.falff"),
                 ("outputnode.peraf", "inputnode.peraf"),
+                ("outputnode.tsnr", "inputnode.tsnr"),
             ]),
             (connectivity_wf, postproc_derivatives_wf, [
                 ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
