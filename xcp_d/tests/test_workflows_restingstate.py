@@ -109,7 +109,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
     bold_img = nb.load(bold_file)
     bold_data = bold_img.get_fdata()
     mean_bold_data = np.mean(bold_data, axis=0)
-    mean_bold = os.path.join(tempdir, "mean_bold.dscalar.nii")
+    mean_bold = os.path.join(tempdir, "mean_bold.dtseries.nii")
     write_ndata(
         mean_bold_data,
         template=bold_file,
