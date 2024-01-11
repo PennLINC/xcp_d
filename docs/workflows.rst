@@ -246,6 +246,88 @@ For more information about confound regressor selection, please refer to :footci
    options.
 
 
+.. list-table:: Preprocessing Pipeline Support
+
+   *  - Nuisance Strategy
+      - 24P
+      - 27P
+      - 36P
+      - acompcor
+      - acompcor_gsr
+      - aroma
+      - aroma_gsr
+      - gsr_only
+      - none
+   *  - fMRIPrep (>=23.1.0)
+      - X
+      - X
+      - X
+      - X
+      - X
+      -
+      -
+      - X
+      - X
+   *  - fMRIPrep (<23.1.0)
+      - X
+      - X
+      - X
+      - X
+      - X
+      - X
+      - X
+      - X
+      - X
+   *  - Nibabies
+      - X
+      - X
+      - X
+      - X
+      - X
+      -
+      -
+      - X
+      - X
+   *  - ABCD-BIDS (DCAN)
+      - X
+      - X
+      - X
+      -
+      -
+      -
+      -
+      - X
+      - X
+   *  - HCP-YA
+      - X
+      - X
+      - X
+      -
+      -
+      -
+      -
+      - X
+      - X
+   *  - UK Biobank
+      - X
+      -
+      -
+      -
+      -
+      -
+      -
+      - X
+      - X
+
+.. important::
+   fMRIPrep removed AROMA support in 23.1.0.
+   In the future, there will be an fMRIPost-AROMA BIDS App that runs AROMA on fMRIPrep outputs.
+
+.. warning::
+   The strategy ``gsr_only`` is only appropriate for UK Biobank data,
+   as those data have already been denoised with FSL FIX.
+
+
 Dummy scan removal [OPTIONAL]
 =============================
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
