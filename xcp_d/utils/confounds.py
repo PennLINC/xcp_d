@@ -212,6 +212,10 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
             "mean cerebrospinal fluid signal, and mean global signal were selected as "
             "nuisance regressors [@benchmarkp;@satterthwaite_2013]."
         ),
+        "gsr_only": (
+            "Nuisance regressors were selected according to the 'gsr_only' strategy. "
+            "Mean global signal was selected as the only nuisance regressor."
+        ),
     }
 
     if params not in BASE_DESCRIPTIONS.keys():
@@ -425,6 +429,11 @@ def load_confound_matrix(
         "aroma_gsr": {
             "strategy": ["wm_csf", "global_signal"],
             "wm_csf": "basic",
+            "global_signal": "basic",
+        },
+        # Get global signal only
+        "gsr_only": {
+            "strategy": ["global_signal"],
             "global_signal": "basic",
         },
     }

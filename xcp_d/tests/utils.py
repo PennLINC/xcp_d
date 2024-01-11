@@ -30,6 +30,7 @@ def download_test_data(dset, data_dir=None):
         "nibabies": "https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz",
         "ds001419": "https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz",
         "pnc": "https://upenn.box.com/shared/static/ui2847ys49d82pgn5ewai1mowcmsv2br.tar.gz",
+        "ukbiobank": "https://upenn.box.com/shared/static/p5h1eg4p5cd2ef9ehhljlyh1uku0xe97.tar.gz",
     }
     if dset == "*":
         for k in URLS:
@@ -105,7 +106,7 @@ def check_generated_files(out_dir, output_list_file):
 
 def check_affines(data_dir, out_dir, input_type):
     """Confirm affines don't change across XCP-D runs."""
-    fmri_layout = BIDSLayout(str(data_dir), validate=False, derivatives=False)
+    preproc_layout = BIDSLayout(str(data_dir), validate=False, derivatives=False)
     xcp_layout = BIDSLayout(str(out_dir), validate=False, derivatives=False)
     if input_type == "cifti":  # Get the .dtseries.nii
         denoised_files = xcp_layout.get(
@@ -114,7 +115,7 @@ def check_affines(data_dir, out_dir, input_type):
             extension=".dtseries.nii",
         )
         space = denoised_files[0].get_entities()["space"]
-        bold_files = fmri_layout.get(
+        preproc_files = preproc_layout.get(
             invalid_filters="allow",
             datatype="func",
             space=space,
@@ -129,7 +130,7 @@ def check_affines(data_dir, out_dir, input_type):
             extension=".nii.gz",
         )
         space = denoised_files[0].get_entities()["space"]
-        bold_files = fmri_layout.get(
+        preproc_files = preproc_layout.get(
             invalid_filters="allow",
             datatype="func",
             space=space,
@@ -144,7 +145,7 @@ def check_affines(data_dir, out_dir, input_type):
             suffix="bold",
             extension=".nii.gz",
         )
-        bold_files = fmri_layout.get(
+        preproc_files = preproc_layout.get(
             invalid_filters="allow",
             datatype="func",
             space="MNIInfant",
@@ -152,17 +153,17 @@ def check_affines(data_dir, out_dir, input_type):
             extension=".nii.gz",
         )
 
-    bold_file = bold_files[0].path
+    preproc_file = preproc_files[0].path
     denoised_file = denoised_files[0].path
 
     if input_type == "cifti":
         assert (
-            nb.load(bold_file)._nifti_header.get_intent()
+            nb.load(preproc_file)._nifti_header.get_intent()
             == nb.load(denoised_file)._nifti_header.get_intent()
         )
     else:
-        if not np.array_equal(nb.load(bold_file).affine, nb.load(denoised_file).affine):
-            raise AssertionError(f"Affines do not match:\n\t{bold_file}\n\t{denoised_file}")
+        if not np.array_equal(nb.load(preproc_file).affine, nb.load(denoised_file).affine):
+            raise AssertionError(f"Affines do not match:\n\t{preproc_file}\n\t{denoised_file}")
 
     print("No affines changed.")
 
