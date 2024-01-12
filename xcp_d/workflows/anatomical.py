@@ -191,7 +191,7 @@ def init_postprocess_anat_wf(
         ])
         # fmt:on
 
-    if input_type in ("dcan", "hcp"):
+    if input_type in ("dcan", "hcp", "ukb"):
         # Assume that the T1w, T1w segmentation, and T2w files are in standard space,
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
