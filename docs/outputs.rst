@@ -18,7 +18,7 @@ The  *XCP-D* outputs are written out in BIDS format and consist of three main pa
    `BEP012: Functional preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/519>`_,
    `BEP017: BIDS connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_,
    and
-   `BEPXXX: Atlas Specification <https://docs.google.com/document/d/1RxW4cARr3-EiBEcXjLpSIVidvnUSHE7yJCUY91i5TfM/edit?usp=sharing>`_
+   `BEP038: Atlas Specification <https://docs.google.com/document/d/1RxW4cARr3-EiBEcXjLpSIVidvnUSHE7yJCUY91i5TfM/edit?usp=sharing>`_
    (currently unnumbered).
 
    In cases where a derivative type is not covered by an existing BEP,
@@ -71,6 +71,22 @@ and the amygdala and hippocampus parcels from the HCP CIFTI subcortical parcella
 The 4S atlas is used in the same manner across three PennLINC BIDS Apps:
 XCP-D, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
 For more information about the 4S atlas, please see https://github.com/PennLINC/AtlasPack.
+
+Atlases are written out to the ``atlases`` subfolder, following BEP038.
+
+.. code-block::
+
+   xcp_d/
+      atlases/
+         atlas-<label>/
+            atlas-<label>_dseg.json
+            atlas-<label>_dseg.tsv
+
+            # NIfTI
+            space-<label>_atlas-<label>_dseg.nii.gz
+
+            # CIFTI
+            space-<label>_atlas-<label>_dseg.dlabel.nii
 
 
 ******************
@@ -208,12 +224,6 @@ This includes the atlases used to extract the timeseries.
 .. code-block::
 
    xcp_d/
-      # NIfTI
-      space-<label>_atlas-<label>_dseg.nii.gz
-
-      # CIFTI
-      space-<label>_atlas-<label>_dseg.dlabel.nii
-
       sub-<label>/[ses-<label>/]
          func/
             # NIfTI
