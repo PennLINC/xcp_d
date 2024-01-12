@@ -174,7 +174,7 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
 
 def test_get_preproc_pipeline_info(datasets):
     """Test get_preproc_pipeline_info."""
-    input_types = ["fmriprep", "nibabies", "hcp", "dcan"]
+    input_types = ["fmriprep", "nibabies", "hcp", "dcan", "ukb"]
     for input_type in input_types:
         info_dict = xbids.get_preproc_pipeline_info(input_type, datasets["ds001419"])
         assert "references" in info_dict.keys()
