@@ -826,7 +826,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ]),
                 (load_atlases_wf, concatenate_data_wf, [
-                    ("outputnode.atlas_names", "inputnode.atlas_names"),
+                    ("outputnode.atlases", "inputnode.atlases"),
                 ]),
             ])
             # fmt:on

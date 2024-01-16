@@ -94,7 +94,7 @@ def init_concatenate_data_wf(
     anat_brainmask : :obj:`str`
     %(template_to_anat_xfm)s
     %(boldref)s
-    %(atlas_names)s
+    %(atlases)s
         This will be a list of strings.
     %(timeseries)s
         This will be a list of lists, with one sublist for each run.
@@ -123,7 +123,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "boldref",  # only for niftis, from postproc workflows
                 "anat_brainmask",  # only for niftis, from data collection
                 "template_to_anat_xfm",  # only for niftis, from data collection
-                "atlas_names",
+                "atlases",
                 "timeseries",
                 "timeseries_ciftis",  # only for ciftis, from postproc workflows
             ],
@@ -303,7 +303,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_timeseries, [("atlas_names", "atlas")]),
+        (inputnode, ds_timeseries, [("atlases", "atlas")]),
         (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
         (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
         (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
@@ -354,7 +354,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_correlations, [("atlas_names", "atlas")]),
+        (inputnode, ds_correlations, [("atlases", "atlas")]),
         (clean_name_source, ds_correlations, [("name_source", "source_file")]),
         (correlate_timeseries, ds_correlations, [("correlations", "in_file")]),
         (make_correlations_dict, ds_correlations, [("metadata", "meta_dict")]),
@@ -412,7 +412,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         # fmt:off
         workflow.connect([
             (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
-            (inputnode, ds_timeseries_cifti_files, [("atlas_names", "atlas")]),
+            (inputnode, ds_timeseries_cifti_files, [("atlases", "atlas")]),
             (concatenate_inputs, ds_timeseries_cifti_files, [("timeseries_ciftis", "in_file")]),
             (make_timeseries_ciftis_dict, ds_timeseries_cifti_files, [("metadata", "meta_dict")]),
         ])

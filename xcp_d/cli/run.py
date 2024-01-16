@@ -834,6 +834,13 @@ def _validate_parameters(opts, build_log):
             "is not set."
         )
 
+    # Parcellation parameters
+    if not opts.atlases and opts.min_coverage != 0.5:
+        build_log.warning(
+            "When no atlases are selected or parcellation is explicitly skipped "
+            "('--skip-parcellation'), '--min-coverage' will have no effect."
+        )
+
     # Some parameters are automatically set depending on the input type.
     if opts.input_type in ("dcan", "hcp"):
         if not opts.cifti:

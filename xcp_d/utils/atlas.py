@@ -1,7 +1,7 @@
 """Functions for working with atlases."""
 
 
-def get_atlas_names(atlases, subset):
+def select_atlases(atlases, subset):
     """Get a list of atlases to be used for parcellation and functional connectivity analyses.
 
     The actual list of files for the atlases is loaded from a different function.

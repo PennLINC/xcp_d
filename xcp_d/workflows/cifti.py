@@ -192,7 +192,7 @@ def init_postprocess_cifti_wf(
     %(boldref)s
     bold_mask
         This will not be defined.
-    %(atlas_names)s
+    %(atlases)s
     %(timeseries)s
     %(timeseries_ciftis)s
 
@@ -215,7 +215,7 @@ def init_postprocess_cifti_wf(
                 "fmriprep_confounds_file",
                 "fmriprep_confounds_json",
                 "dummy_scans",
-                "atlas_names",
+                "atlases",
                 "atlas_files",
                 "atlas_labels_files",
                 "parcellated_atlas_files",
@@ -259,7 +259,7 @@ def init_postprocess_cifti_wf(
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",  # will not be defined
-                "atlas_names",
+                "atlases",
                 "timeseries",
                 "timeseries_ciftis",
             ],
@@ -389,7 +389,7 @@ def init_postprocess_cifti_wf(
     workflow.connect([
         (inputnode, connectivity_wf, [
             ("bold_file", "inputnode.name_source"),
-            ("atlas_names", "inputnode.atlas_names"),
+            ("atlases", "inputnode.atlases"),
             ("atlas_files", "inputnode.atlas_files"),
             ("atlas_labels_files", "inputnode.atlas_labels_files"),
             ("parcellated_atlas_files", "inputnode.parcellated_atlas_files"),
@@ -501,7 +501,7 @@ def init_postprocess_cifti_wf(
     workflow.connect([
         (inputnode, postproc_derivatives_wf, [
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
-            ("atlas_names", "inputnode.atlas_names"),
+            ("atlases", "inputnode.atlases"),
             ("atlas_files", "inputnode.atlas_files"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [

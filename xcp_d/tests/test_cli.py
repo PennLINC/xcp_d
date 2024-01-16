@@ -234,7 +234,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--min-time=60",
         "--nuisance-regressors=acompcor_gsr",
         "--despike",
-        "--head_radius=40",
+        "--head-radius=40",
         "--smoothing=6",
         "--motion-filter-type=notch",
         "--band-stop-min=12",
@@ -246,6 +246,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
+        "--skip-parcellation",
     ]
     opts = run.get_parser().parse_args(parameters)
     retval = {}

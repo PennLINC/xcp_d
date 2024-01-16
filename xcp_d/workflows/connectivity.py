@@ -24,8 +24,8 @@ from xcp_d.interfaces.workbench import (
 from xcp_d.utils.atlas import (
     copy_atlas,
     get_atlas_cifti,
-    get_atlas_names,
     get_atlas_nifti,
+    select_atlases,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
@@ -50,6 +50,7 @@ def init_load_atlases_wf(
             from xcp_d.workflows.connectivity import init_load_atlases_wf
 
             wf = init_load_atlases_wf(
+                atlases=["Glasser"],
                 output_dir=".",
                 cifti=True,
                 mem_gb=0.1,
@@ -59,6 +60,7 @@ def init_load_atlases_wf(
 
     Parameters
     ----------
+    %(atlases)s
     %(output_dir)s
     %(cifti)s
     %(mem_gb)s
@@ -73,7 +75,6 @@ def init_load_atlases_wf(
 
     Outputs
     -------
-    atlas_names
     atlas_files
     atlas_labels_files
     parcellated_atlas_files
@@ -92,7 +93,6 @@ def init_load_atlases_wf(
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "atlas_names",
                 "atlas_files",
                 "atlas_labels_files",
                 "parcellated_atlas_files",  # only used for CIFTIs
@@ -392,16 +392,16 @@ def init_parcellate_surfaces_wf(
         name="inputnode",
     )
 
-    atlas_name_grabber = pe.Node(
+    atlas_selector = pe.Node(
         Function(
             input_names=["atlases", "subset"],
-            output_names=["atlas_names"],
-            function=get_atlas_names,
+            output_names=["atlases"],
+            function=select_atlases,
         ),
-        name="atlas_name_grabber",
+        name="atlas_selector",
     )
-    atlas_name_grabber.inputs.atlases = atlases
-    atlas_name_grabber.inputs.subset = "cortical"
+    atlas_selector.inputs.atlases = atlases
+    atlas_selector.inputs.subset = "cortical"
 
     # Get CIFTI atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
@@ -414,7 +414,7 @@ def init_parcellate_surfaces_wf(
         iterfield=["atlas_name"],
     )
 
-    workflow.connect([(atlas_name_grabber, atlas_file_grabber, [("atlas_names", "atlas_name")])])
+    workflow.connect([(atlas_selector, atlas_file_grabber, [("atlases", "atlas_name")])])
 
     for file_to_parcellate in files_to_parcellate:
         resample_atlas_to_surface = pe.MapNode(
@@ -486,7 +486,7 @@ def init_parcellate_surfaces_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_parcellated_surface, [(file_to_parcellate, "source_file")]),
-            (atlas_name_grabber, ds_parcellated_surface, [("atlas_names", "atlas")]),
+            (atlas_selector, ds_parcellated_surface, [("atlases", "atlas")]),
             (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
         ])
         # fmt:on
@@ -536,7 +536,7 @@ def init_functional_connectivity_nifti_wf(
     %(temporal_mask)s
     alff
     reho
-    %(atlas_names)s
+    %(atlases)s
     atlas_files
     atlas_labels_files
 
@@ -576,7 +576,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "temporal_mask",
                 "alff",  # may be Undefined
                 "reho",
-                "atlas_names",
+                "atlases",
                 "atlas_files",
                 "atlas_labels_files",
             ],
@@ -686,7 +686,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:off
     workflow.connect([
         (inputnode, connectivity_plot, [
-            ("atlas_names", "atlas_names"),
+            ("atlases", "atlases"),
             ("atlas_labels_files", "atlas_tsvs"),
         ]),
         (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
@@ -759,7 +759,7 @@ def init_functional_connectivity_cifti_wf(
     %(temporal_mask)s
     alff
     reho
-    %(atlas_names)s
+    %(atlases)s
     atlas_files
     atlas_labels_files
     parcellated_atlas_files
@@ -803,7 +803,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "temporal_mask",
                 "alff",  # may be Undefined
                 "reho",
-                "atlas_names",
+                "atlases",
                 "atlas_files",
                 "atlas_labels_files",
                 "parcellated_atlas_files",
@@ -928,7 +928,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:off
     workflow.connect([
         (inputnode, connectivity_plot, [
-            ("atlas_names", "atlas_names"),
+            ("atlases", "atlases"),
             ("atlas_labels_files", "atlas_tsvs"),
         ]),
         (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),

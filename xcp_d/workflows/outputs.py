@@ -201,7 +201,7 @@ def init_postproc_derivatives_wf(
 
     Inputs
     ------
-    %(atlas_names)s
+    %(atlases)s
         Used for indexing ``timeseries`` and ``correlations``.
     atlas_files
     %(timeseries)s
@@ -238,7 +238,7 @@ def init_postproc_derivatives_wf(
                 # preprocessing files to use as sources
                 "fmriprep_confounds_file",
                 # postprocessed outputs
-                "atlas_names",
+                "atlases",
                 "atlas_files",  # for Sources
                 "confounds_file",
                 "confounds_metadata",
@@ -600,7 +600,7 @@ def init_postproc_derivatives_wf(
     workflow.connect([
         (inputnode, ds_coverage, [
             ("coverage", "in_file"),
-            ("atlas_names", "atlas"),
+            ("atlases", "atlas"),
         ]),
         (make_atlas_dict, ds_coverage, [("metadata", "meta_dict")]),
     ])
@@ -646,7 +646,7 @@ def init_postproc_derivatives_wf(
     workflow.connect([
         (inputnode, ds_timeseries, [
             ("timeseries", "in_file"),
-            ("atlas_names", "atlas"),
+            ("atlases", "atlas"),
         ]),
         (add_coverage_to_src, ds_timeseries, [("metadata", "meta_dict")]),
         (ds_timeseries, outputnode, [("out_file", "timeseries")]),
@@ -685,7 +685,7 @@ def init_postproc_derivatives_wf(
     workflow.connect([
         (inputnode, ds_correlations, [
             ("correlations", "in_file"),
-            ("atlas_names", "atlas"),
+            ("atlases", "atlas"),
         ]),
         (make_corrs_meta_dict, ds_correlations, [("metadata", "meta_dict")]),
     ])
@@ -711,7 +711,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_coverage_ciftis, [
                 ("coverage_ciftis", "in_file"),
-                ("atlas_names", "atlas"),
+                ("atlases", "atlas"),
             ]),
             (add_denoised_to_src, ds_coverage_ciftis, [("metadata", "meta_dict")]),
         ])
@@ -757,7 +757,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_timeseries_ciftis, [
                 ("timeseries_ciftis", "in_file"),
-                ("atlas_names", "atlas"),
+                ("atlases", "atlas"),
             ]),
             (add_ccoverage_to_src, ds_timeseries_ciftis, [("metadata", "meta_dict")]),
             (ds_timeseries_ciftis, outputnode, [("out_file", "timeseries_ciftis")]),
@@ -802,7 +802,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_correlation_ciftis, [
                 ("correlation_ciftis", "in_file"),
-                ("atlas_names", "atlas"),
+                ("atlases", "atlas"),
             ]),
             (make_ccorrs_meta_dict, ds_correlation_ciftis, [("metadata", "meta_dict")]),
         ])
@@ -838,7 +838,7 @@ def init_postproc_derivatives_wf(
         )
         # fmt:off
         workflow.connect([
-            (inputnode, ds_correlations_exact, [("atlas_names", "atlas")]),
+            (inputnode, ds_correlations_exact, [("atlases", "atlas")]),
             (select_exact_scan_files, ds_correlations_exact, [("out", "in_file")]),
         ])
         # fmt:on
@@ -908,7 +908,7 @@ def init_postproc_derivatives_wf(
     workflow.connect([
         (inputnode, ds_parcellated_reho, [
             ("parcellated_reho", "in_file"),
-            ("atlas_names", "atlas"),
+            ("atlases", "atlas"),
         ]),
         (add_reho_to_src, ds_parcellated_reho, [("metadata", "meta_dict")]),
     ])
@@ -1008,7 +1008,7 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_parcellated_alff, [
                 ("parcellated_alff", "in_file"),
-                ("atlas_names", "atlas"),
+                ("atlases", "atlas"),
             ]),
             (add_alff_to_src, ds_parcellated_alff, [("metadata", "meta_dict")]),
         ])

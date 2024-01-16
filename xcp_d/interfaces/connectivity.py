@@ -688,7 +688,7 @@ class CiftiConnect(SimpleInterface):
 
 
 class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
-    atlas_names = InputMultiObject(
+    atlases = InputMultiObject(
         traits.Str,
         mandatory=True,
         desc="List of atlases. Aligned with the list of time series in time_series_tsv.",
@@ -703,7 +703,7 @@ class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc=(
             "List of TSV file with correlation matrices. "
-            "Aligned with the list of atlases in atlas_names"
+            "Aligned with the list of atlases in 'atlases'."
         ),
     )
 
@@ -809,16 +809,16 @@ class ConnectPlot(SimpleInterface):
         }
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
-        for atlas_name, subdict in ATLAS_LOOKUP.items():
-            atlas_idx = self.inputs.atlas_names.index(atlas_name)
+        for atlas, subdict in ATLAS_LOOKUP.items():
+            atlas_idx = self.inputs.atlases.index(atlas)
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
             dseg_file = self.inputs.atlas_tsvs[atlas_idx]
 
-            column_name = COMMUNITY_LOOKUP[atlas_name]
+            column_name = COMMUNITY_LOOKUP[atlas]
             dseg_df = pd.read_table(dseg_file)
             corrs_df = pd.read_table(atlas_file, index_col="Node")
 
-            if atlas_name.startswith("4S"):
+            if atlas.startswith("4S"):
                 atlas_mapper = {
                     "CIT168Subcortical": "Subcortical",
                     "ThalamusHCP": "Thalamus",
