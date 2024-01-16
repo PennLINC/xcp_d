@@ -513,6 +513,7 @@ def init_postprocess_nifti_wf(
         smoothing=smoothing,
         params=params,
         exact_scans=exact_scans,
+        atlases=atlases,
         cifti=False,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
@@ -524,7 +525,6 @@ def init_postprocess_nifti_wf(
     workflow.connect([
         (inputnode, postproc_derivatives_wf, [
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
-            ("atlases", "inputnode.atlases"),
             ("atlas_files", "inputnode.atlas_files"),
         ]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
