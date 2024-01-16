@@ -1081,6 +1081,7 @@ Running xcp_d version {__version__}:
         process_surfaces=opts.process_surfaces,
         dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
+        atlases=opts.atlases,
         min_coverage=opts.min_coverage,
         min_time=opts.min_time,
         exact_time=opts.exact_time,
