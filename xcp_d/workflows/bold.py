@@ -429,7 +429,6 @@ def init_postprocess_nifti_wf(
             high_pass=high_pass,
             fd_thresh=fd_thresh,
             smoothing=smoothing,
-            atlases=atlases,
             cifti=False,
             mem_gb=mem_gbx["timeseries"],
             omp_nthreads=omp_nthreads,
@@ -452,7 +451,6 @@ def init_postprocess_nifti_wf(
     reho_wf = init_reho_nifti_wf(
         name_source=bold_file,
         output_dir=output_dir,
-        atlases=atlases,
         mem_gb=mem_gbx["timeseries"],
         omp_nthreads=omp_nthreads,
         name="reho_wf",
