@@ -446,7 +446,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--skip_parcellation",
         action="store_const",
         const=[],
-        target="atlases",
+        dest="atlases",
         help="Skip parcellation and correlation steps.",
     )
     g_atlases.add_argument(
@@ -485,7 +485,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
             "Tian",
             "HCP",
         ],
-        target="atlases",
+        dest="atlases",
         help="Selection of atlases to apply to the data. All are used by default.",
     )
 
