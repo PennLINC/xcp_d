@@ -27,6 +27,7 @@ def init_concatenate_data_wf(
     cifti,
     dcan_qc,
     fd_thresh,
+    atlases,
     mem_gb,
     omp_nthreads,
     name="concatenate_data_wf",
@@ -50,6 +51,7 @@ def init_concatenate_data_wf(
                 cifti=False,
                 dcan_qc=True,
                 fd_thresh=0.3,
+                atlases=[],
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="concatenate_data_wf",
@@ -65,7 +67,8 @@ def init_concatenate_data_wf(
     %(smoothing)s
     %(cifti)s
     %(dcan_qc)s
-    fd_thresh
+    %(fd_thresh)s
+    %(atlases)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -94,8 +97,6 @@ def init_concatenate_data_wf(
     anat_brainmask : :obj:`str`
     %(template_to_anat_xfm)s
     %(boldref)s
-    %(atlases)s
-        This will be a list of strings.
     %(timeseries)s
         This will be a list of lists, with one sublist for each run.
     %(timeseries_ciftis)s
@@ -123,7 +124,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "boldref",  # only for niftis, from postproc workflows
                 "anat_brainmask",  # only for niftis, from data collection
                 "template_to_anat_xfm",  # only for niftis, from data collection
-                "atlases",
                 "timeseries",
                 "timeseries_ciftis",  # only for ciftis, from postproc workflows
             ],
@@ -300,10 +300,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         mem_gb=1,
         iterfield=["atlas", "in_file", "meta_dict"],
     )
+    ds_timeseries.inputs.atlas = atlases
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_timeseries, [("atlases", "atlas")]),
         (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
         (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
         (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
@@ -351,10 +351,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         mem_gb=1,
         iterfield=["atlas", "in_file", "meta_dict"],
     )
+    ds_correlations.inputs.atlas = atlases
 
     # fmt:off
     workflow.connect([
-        (inputnode, ds_correlations, [("atlases", "atlas")]),
         (clean_name_source, ds_correlations, [("name_source", "source_file")]),
         (correlate_timeseries, ds_correlations, [("correlations", "in_file")]),
         (make_correlations_dict, ds_correlations, [("metadata", "meta_dict")]),
@@ -408,11 +408,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             mem_gb=1,
             iterfield=["atlas", "in_file", "meta_dict"],
         )
+        ds_timeseries_cifti_files.inputs.atlas = atlases
 
         # fmt:off
         workflow.connect([
             (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
-            (inputnode, ds_timeseries_cifti_files, [("atlases", "atlas")]),
             (concatenate_inputs, ds_timeseries_cifti_files, [("timeseries_ciftis", "in_file")]),
             (make_timeseries_ciftis_dict, ds_timeseries_cifti_files, [("metadata", "meta_dict")]),
         ])

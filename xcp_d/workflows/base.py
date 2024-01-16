@@ -814,22 +814,18 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 cifti=cifti,
                 dcan_qc=dcan_qc,
                 fd_thresh=fd_thresh,
+                atlases=atlases,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 name=f"concatenate_entity_set_{ent_set}_wf",
             )
 
-            # fmt:off
             workflow.connect([
                 (inputnode, concatenate_data_wf, [
                     ("anat_brainmask", "inputnode.anat_brainmask"),
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ]),
-                (load_atlases_wf, concatenate_data_wf, [
-                    ("outputnode.atlases", "inputnode.atlases"),
-                ]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
             for io_name, node in merge_dict.items():
                 workflow.connect([(node, concatenate_data_wf, [("out", f"inputnode.{io_name}")])])
