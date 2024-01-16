@@ -153,6 +153,7 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
 
         if sample_mask is not None:
             voxel_data_censored = voxel_data[sample_mask]
+            sd_scale = np.std(voxel_data_censored)
             voxel_data_for_peraf = voxel_data_censored.copy()
 
             # Normalize data matrix over time. This will ensure that the standard periodogram and
@@ -172,6 +173,7 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
                 normalize=True,
             )
         else:
+            sd_scale = np.std(voxel_data)
             voxel_data_for_peraf = voxel_data.copy()
 
             # Normalize data matrix over time. This will ensure that the standard periodogram and
@@ -197,6 +199,9 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
         alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+        # Rescale ALFF by the SD of the BOLD data to reinstate original scale.
+        alff[i_voxel] *= sd_scale
+
         falff[i_voxel] = np.sum(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]]) / np.sum(
             power_spectrum_sqrt
         )
