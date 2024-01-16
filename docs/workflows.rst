@@ -477,7 +477,8 @@ It is calculated by the following:
 2. If censoring+interpolation was performed, then the interpolated time series is censored at this
    point.
 3. Voxel-wise BOLD time series are normalized (mean-centered and scaled to unit standard deviation)
-   over time.
+   over time. This will ensure that the power spectrum from ``periodogram`` and ``lombscargle``
+   are roughly equivalent.
 4. The power spectrum and associated frequencies are estimated from the BOLD data.
 
    -  If censoring+interpolation was not performed, then this uses :func:`scipy.signal.periodogram`.
