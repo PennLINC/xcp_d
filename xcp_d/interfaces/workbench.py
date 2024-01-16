@@ -471,8 +471,8 @@ class SurfaceGenerateInflated(WBCommand):
     _cmd = "wb_command -surface-generate-inflated"
 
 
-class _CiftiParcellateInputSpec(CommandLineInputSpec):
-    """Input specification for the CiftiParcellate command."""
+class _CiftiParcellateWorkbenchInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiParcellateWorkbench command."""
 
     in_file = File(
         exists=True,
@@ -583,13 +583,13 @@ class _CiftiParcellateInputSpec(CommandLineInputSpec):
     )
 
 
-class _CiftiParcellateOutputSpec(TraitedSpec):
-    """Output specification for the CiftiParcellate command."""
+class _CiftiParcellateWorkbenchOutputSpec(TraitedSpec):
+    """Output specification for the CiftiParcellateWorkbench command."""
 
     out_file = File(exists=True, desc="output CIFTI file")
 
 
-class CiftiParcellate(WBCommand):
+class CiftiParcellateWorkbench(WBCommand):
     """Extract timeseries from CIFTI file.
 
     The input cifti file must have a brain models mapping on the chosen
@@ -597,7 +597,7 @@ class CiftiParcellate(WBCommand):
 
     Examples
     --------
-    >>> ciftiparcel = CiftiParcellate()
+    >>> ciftiparcel = CiftiParcellateWorkbench()
     >>> ciftiparcel.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
     >>> ciftiparcel.inputs.out_file = 'sub_01XX_task-rest.ptseries.nii'
     >>> ciftiparcel.inputs.atlas_label = 'schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii'
@@ -608,8 +608,8 @@ class CiftiParcellate(WBCommand):
     sub_01XX_task-rest.ptseries.nii
     """
 
-    input_spec = _CiftiParcellateInputSpec
-    output_spec = _CiftiParcellateOutputSpec
+    input_spec = _CiftiParcellateWorkbenchInputSpec
+    output_spec = _CiftiParcellateWorkbenchOutputSpec
     _cmd = "wb_command -cifti-parcellate"
 
 
@@ -1168,3 +1168,71 @@ class CiftiCreateDenseFromTemplate(WBCommand):
     input_spec = _CiftiCreateDenseFromTemplateInputSpec
     output_spec = _CiftiCreateDenseFromTemplateOutputSpec
     _cmd = "wb_command -cifti-create-dense-from-template"
+
+
+class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiCreateDenseFromTemplate command."""
+
+    data_cifti = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The cifti file to use the data from.",
+    )
+    direction = traits.Enum(
+        "ROW",
+        "COLUMN",
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="Which mapping to parcellate (integer, ROW, or COLUMN)",
+    )
+    cifti_out = File(
+        name_source=["label"],
+        name_template="converted_%s.dscalar.nii",
+        keep_extension=False,
+        argstr="%s",
+        position=2,
+        desc="The output cifti file.",
+    )
+    scalar = traits.Bool(
+        False,
+        usedefault=True,
+        argstr="-scalar",
+        position=3,
+        desc="Set the mapping to scalar",
+    )
+
+
+class _CiftiChangeMappingOutputSpec(TraitedSpec):
+    """Output specification for the CiftiCreateDenseFromTemplate command."""
+
+    cifti_out = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiChangeMapping(WBCommand):
+    """Convert to scalar, copy mapping, etc.
+
+    Take an existing cifti file and change one of the mappings.
+    Exactly one of -series, -scalar, or -from-cifti must be specified.
+    The direction can be either an integer starting from 1, or the strings 'ROW' or 'COLUMN'.
+
+    Examples
+    --------
+    >>> ccdft = CiftiChangeMapping()
+    >>> ccdft.inputs.data_cifti = "tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii"
+    >>> ccdft.inputs.direction = "ROW"
+    >>> ccdft.inputs.cifti_out = "out.dscalar.nii"
+    >>> ccdft.inputs.scalar = True
+    >>> ccdft.cmdline
+    wb_command -cifti-change-mapping \
+        tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii \
+        ROW \
+        out.dscalar.nii \
+        -scalar
+    """
+
+    input_spec = _CiftiChangeMappingInputSpec
+    output_spec = _CiftiChangeMappingOutputSpec
+    _cmd = "wb_command -cifti-change-mapping"

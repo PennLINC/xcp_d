@@ -8,9 +8,19 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.connectivity import CiftiConnect, ConnectPlot, NiftiConnect
+from xcp_d.interfaces.connectivity import (
+    CiftiConnect,
+    CiftiParcellate,
+    ConnectPlot,
+    NiftiParcellate,
+    TSVConnect,
+)
 from xcp_d.interfaces.nilearn import IndexImage
-from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate, CiftiParcellate
+from xcp_d.interfaces.workbench import (
+    CiftiChangeMapping,
+    CiftiCreateDenseFromTemplate,
+    CiftiParcellateWorkbench,
+)
 from xcp_d.utils.atlas import (
     copy_atlas,
     get_atlas_cifti,
@@ -154,6 +164,8 @@ def init_load_atlases_wf(
         # fmt:on
 
     else:
+        # Add empty vertices to atlas for locations in data, but not in atlas
+        # (e.g., subcortical regions for cortex-only atlases)
         resample_atlas_to_data = pe.MapNode(
             CiftiCreateDenseFromTemplate(),
             name="resample_atlas_to_data",
@@ -169,8 +181,28 @@ def init_load_atlases_wf(
         ])
         # fmt:on
 
+        # Change the atlas to a scalar file.
+        convert_to_dscalar = pe.MapNode(
+            CiftiChangeMapping(
+                direction="ROW",
+                scalar=True,
+                cifti_out="atlas.dscalar.nii",
+            ),
+            name="convert_to_dscalar",
+            mem_gb=mem_gb,
+            n_procs=omp_nthreads,
+            iterfield=["data_cifti"],
+        )
+        # fmt:off
+        workflow.connect([
+            (resample_atlas_to_data, convert_to_dscalar, [("cifti_out", "data_cifti")]),
+        ])
+        # fmt:on
+
+        # Convert atlas from dlabel to pscalar format.
+        # The pscalar version of the atlas is later used for its ParcelAxis.
         parcellate_atlas = pe.MapNode(
-            CiftiParcellate(
+            CiftiParcellateWorkbench(
                 direction="COLUMN",
                 only_numeric=True,
                 out_file="parcellated_atlas.pscalar.nii",
@@ -184,7 +216,7 @@ def init_load_atlases_wf(
         # fmt:off
         workflow.connect([
             (atlas_file_grabber, parcellate_atlas, [("atlas_file", "atlas_label")]),
-            (resample_atlas_to_data, parcellate_atlas, [("cifti_out", "in_file")]),
+            (convert_to_dscalar, parcellate_atlas, [("cifti_out", "in_file")]),
             (parcellate_atlas, outputnode, [("out_file", "parcellated_atlas_files")]),
         ])
         # fmt:on
@@ -202,6 +234,7 @@ def init_load_atlases_wf(
         ),
         name="ds_atlas",
         iterfield=["in_file", "atlas"],
+        run_without_submitting=True,
     )
     ds_atlas.inputs.output_dir = output_dir
     ds_atlas.inputs.atlas = atlases
@@ -399,7 +432,7 @@ def init_parcellate_surfaces_wf(
         # fmt:on
 
         parcellate_atlas = pe.MapNode(
-            CiftiParcellate(
+            CiftiParcellateWorkbench(
                 direction="COLUMN",
                 only_numeric=True,
                 out_file="parcellated_atlas.pscalar.nii",
@@ -419,17 +452,17 @@ def init_parcellate_surfaces_wf(
 
         # Parcellate the ciftis
         parcellate_surface = pe.MapNode(
-            CiftiConnect(min_coverage=min_coverage, correlate=False),
+            CiftiParcellate(min_coverage=min_coverage),
             mem_gb=mem_gb,
             name=f"parcellate_{file_to_parcellate}",
             n_procs=omp_nthreads,
-            iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+            iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
         )
 
         # fmt:off
         workflow.connect([
             (inputnode, parcellate_surface, [(file_to_parcellate, "data_file")]),
-            (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas_file")]),
+            (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas")]),
             (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
             (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
         ])
@@ -564,25 +597,40 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         name="outputnode",
     )
 
-    functional_connectivity = pe.MapNode(
-        NiftiConnect(min_coverage=min_coverage, correlate=True),
-        name="functional_connectivity",
+    parcellate_data = pe.MapNode(
+        NiftiParcellate(min_coverage=min_coverage),
+        name="parcellate_data",
         iterfield=["atlas", "atlas_labels"],
         mem_gb=mem_gb * 3,
     )
 
     # fmt:off
     workflow.connect([
-        (inputnode, functional_connectivity, [
+        (inputnode, parcellate_data, [
             ("denoised_bold", "filtered_file"),
-            ("temporal_mask", "temporal_mask"),
             ("bold_mask", "mask"),
             ("atlas_files", "atlas"),
             ("atlas_labels_files", "atlas_labels"),
         ]),
-        (functional_connectivity, outputnode, [
+        (parcellate_data, outputnode, [
             ("coverage", "coverage"),
             ("timeseries", "timeseries"),
+        ]),
+    ])
+    # fmt:on
+
+    functional_connectivity = pe.MapNode(
+        TSVConnect(),
+        name="functional_connectivity",
+        iterfield=["timeseries"],
+        mem_gb=mem_gb * 3,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, functional_connectivity, [("temporal_mask", "temporal_mask")]),
+        (parcellate_data, functional_connectivity, [("timeseries", "timeseries")]),
+        (functional_connectivity, outputnode, [
             ("correlations", "correlations"),
             ("correlations_exact", "correlations_exact"),
         ]),
@@ -590,7 +638,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # fmt:on
 
     parcellate_reho = pe.MapNode(
-        NiftiConnect(min_coverage=min_coverage, correlate=False),
+        NiftiParcellate(min_coverage=min_coverage),
         name="parcellate_reho",
         iterfield=["atlas", "atlas_labels"],
         mem_gb=mem_gb,
@@ -610,7 +658,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
     if alff_available:
         parcellate_alff = pe.MapNode(
-            NiftiConnect(min_coverage=min_coverage, correlate=False),
+            NiftiParcellate(min_coverage=min_coverage),
             name="parcellate_alff",
             iterfield=["atlas", "atlas_labels"],
             mem_gb=mem_gb,
@@ -781,49 +829,67 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         name="outputnode",
     )
 
-    functional_connectivity = pe.MapNode(
-        CiftiConnect(min_coverage=min_coverage, correlate=True),
+    parcellate_data = pe.MapNode(
+        CiftiParcellate(min_coverage=min_coverage),
+        name="parcellate_data",
+        iterfield=["atlas", "atlas_labels", "parcellated_atlas"],
         mem_gb=mem_gb * 3,
+    )
+
+    # fmt:off
+    workflow.connect([
+        (inputnode, parcellate_data, [
+            ("denoised_bold", "data_file"),
+            ("atlas_files", "atlas"),
+            ("atlas_labels_files", "atlas_labels"),
+            ("parcellated_atlas_files", "parcellated_atlas"),
+        ]),
+        (parcellate_data, outputnode, [
+            ("coverage", "coverage"),
+            ("coverage_ciftis", "coverage_ciftis"),
+            ("timeseries", "timeseries"),
+            ("timeseries_ciftis", "timeseries_ciftis"),
+        ]),
+    ])
+    # fmt:on
+
+    functional_connectivity = pe.MapNode(
+        CiftiConnect(),
         name="functional_connectivity",
-        n_procs=omp_nthreads,
-        iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+        iterfield=["timeseries", "parcellated_atlas"],
+        mem_gb=mem_gb * 3,
     )
 
     # fmt:off
     workflow.connect([
         (inputnode, functional_connectivity, [
-            ("denoised_bold", "data_file"),
             ("temporal_mask", "temporal_mask"),
-            ("atlas_files", "atlas_file"),
-            ("atlas_labels_files", "atlas_labels"),
+            ("denoised_bold", "data_file"),
             ("parcellated_atlas_files", "parcellated_atlas"),
         ]),
+        (parcellate_data, functional_connectivity, [("timeseries", "timeseries")]),
         (functional_connectivity, outputnode, [
-            ("coverage_ciftis", "coverage_ciftis"),
-            ("timeseries_ciftis", "timeseries_ciftis"),
-            ("correlation_ciftis", "correlation_ciftis"),
-            ("correlation_ciftis_exact", "correlation_ciftis_exact"),
-            ("coverage", "coverage"),
-            ("timeseries", "timeseries"),
             ("correlations", "correlations"),
+            ("correlation_ciftis", "correlation_ciftis"),
             ("correlations_exact", "correlations_exact"),
+            ("correlation_ciftis_exact", "correlation_ciftis_exact"),
         ]),
     ])
     # fmt:on
 
     parcellate_reho = pe.MapNode(
-        CiftiConnect(min_coverage=min_coverage, correlate=False),
+        CiftiParcellate(min_coverage=min_coverage),
         mem_gb=mem_gb,
         name="parcellate_reho",
         n_procs=omp_nthreads,
-        iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+        iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
     )
 
     # fmt:off
     workflow.connect([
         (inputnode, parcellate_reho, [
             ("reho", "data_file"),
-            ("atlas_files", "atlas_file"),
+            ("atlas_files", "atlas"),
             ("atlas_labels_files", "atlas_labels"),
             ("parcellated_atlas_files", "parcellated_atlas"),
         ]),
@@ -833,18 +899,18 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
     if alff_available:
         parcellate_alff = pe.MapNode(
-            CiftiConnect(min_coverage=min_coverage, correlate=False),
+            CiftiParcellate(min_coverage=min_coverage),
             mem_gb=mem_gb,
             name="parcellate_alff",
             n_procs=omp_nthreads,
-            iterfield=["atlas_labels", "atlas_file", "parcellated_atlas"],
+            iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
         )
 
         # fmt:off
         workflow.connect([
             (inputnode, parcellate_alff, [
                 ("alff", "data_file"),
-                ("atlas_files", "atlas_file"),
+                ("atlas_files", "atlas"),
                 ("atlas_labels_files", "atlas_labels"),
                 ("parcellated_atlas_files", "parcellated_atlas"),
             ]),

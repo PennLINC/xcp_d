@@ -174,7 +174,7 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
 
 def test_get_preproc_pipeline_info(datasets):
     """Test get_preproc_pipeline_info."""
-    input_types = ["fmriprep", "nibabies", "hcp", "dcan"]
+    input_types = ["fmriprep", "nibabies", "hcp", "dcan", "ukb"]
     for input_type in input_types:
         info_dict = xbids.get_preproc_pipeline_info(input_type, datasets["ds001419"])
         assert "references" in info_dict.keys()
@@ -310,7 +310,7 @@ def test_make_uri():
     assert uri == "bids:test:sub-01/func/sub-01_task-rest_bold.nii.gz"
 
     dataset_path = "/another/path/haha"
-    with pytest.raises(ValueError, match="does not start with"):
+    with pytest.raises(ValueError, match="is not in the subpath of"):
         xbids._make_uri(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
 
 

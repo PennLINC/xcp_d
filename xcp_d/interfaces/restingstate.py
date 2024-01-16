@@ -8,6 +8,7 @@
 import os
 import shutil
 
+import pandas as pd
 from nipype import logging
 from nipype.interfaces.afni.preprocess import Despike, DespikeInputSpec
 from nipype.interfaces.afni.utils import ReHoInputSpec, ReHoOutputSpec
@@ -16,6 +17,7 @@ from nipype.interfaces.base import (
     File,
     SimpleInterface,
     TraitedSpec,
+    Undefined,
     traits,
     traits_extension,
 )
@@ -88,18 +90,22 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(mandatory=True, desc="repetition time")
     low_pass = traits.Float(
         mandatory=True,
-        default_value=0.10,
         desc="low_pass filter in Hz",
     )
     high_pass = traits.Float(
         mandatory=True,
-        default_value=0.01,
         desc="high_pass filter in Hz",
     )
     mask = File(
         exists=True,
         mandatory=False,
         desc=" brain mask for nifti file",
+    )
+    temporal_mask = traits.Either(
+        File(exists=True),
+        Undefined,
+        mandatory=False,
+        desc="Temporal mask.",
     )
 
 
@@ -108,7 +114,21 @@ class _ComputeALFFOutputSpec(TraitedSpec):
 
 
 class ComputeALFF(SimpleInterface):
-    """Compute ALFF."""
+    """Compute amplitude of low-frequency fluctuation (ALFF).
+
+    Notes
+    -----
+    The ALFF implementation is based on :footcite:t:`yu2007altered`,
+    although the ALFF values are not scaled by the mean ALFF value across the brain.
+
+    If censoring is applied (i.e., ``fd_thresh > 0``), then the power spectrum will be estimated
+    using a Lomb-Scargle periodogram
+    :footcite:p:`lomb1976least,scargle1982studies,townsend2010fast,taylorlomb`.
+
+    References
+    ----------
+    .. footbibliography::
+    """
 
     input_spec = _ComputeALFFInputSpec
     output_spec = _ComputeALFFOutputSpec
@@ -116,16 +136,24 @@ class ComputeALFF(SimpleInterface):
     def _run_interface(self, runtime):
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+
+        sample_mask = None
+        temporal_mask = self.inputs.temporal_mask
+        if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
+            censoring_df = pd.read_table(temporal_mask)
+            # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
+            sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
+
         # compute the ALFF
         alff_mat = compute_alff(
             data_matrix=data_matrix,
             low_pass=self.inputs.low_pass,
             high_pass=self.inputs.high_pass,
             TR=self.inputs.TR,
+            sample_mask=sample_mask,
         )
 
         # Write out the data
-
         if self.inputs.in_file.endswith(".dtseries.nii"):
             suffix = "_alff.dscalar.nii"
         elif self.inputs.in_file.endswith(".nii.gz"):

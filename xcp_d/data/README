@@ -1,0 +1,8 @@
+MNI152_T1_2mm.nii.gz comes from the FSL standard templates folder.
+I copied it here to use in the UK Biobank ingression step,
+instead of TemplateFlow's tpl-MNI152NLin6Asym_res-2 template,
+because FSL's version is in LAS+, while TemplateFlow's version is in RAS+.
+
+FSL apparently can't handle differently-oriented files,
+and really only works with LAS+ files (yay),
+so it just seems easier to have an LAS+ copy of the template on hand.

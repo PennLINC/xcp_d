@@ -235,7 +235,7 @@ def collect_data(
             "suffix": "xfm",
         },
     }
-    if input_type in ("hcp", "dcan"):
+    if input_type in ("hcp", "dcan", "ukb"):
         # HCP/DCAN data have anats only in standard space
         queries["t1w"]["space"] = "MNI152NLin6Asym"
         queries["t2w"]["space"] = "MNI152NLin6Asym"
@@ -559,7 +559,7 @@ def collect_morphometry_data(layout, participant_label):
 
 
 @fill_doc
-def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
+def collect_run_data(layout, bold_file, cifti, target_space):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -569,8 +569,6 @@ def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
         Path to the BOLD file.
     %(cifti)s
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
-    primary_anat : {"T1w", "T2w"}
-        The anatomical modality to use for the anat-to-native transform.
     target_space
         Used to find NIfTIs in the appropriate space if ``cifti`` is ``True``.
 
@@ -607,13 +605,6 @@ def collect_run_data(layout, bold_file, cifti, primary_anat, target_space):
             desc="brain",
             suffix="mask",
             extension=[".nii", ".nii.gz"],
-        )
-        run_data["anat_to_native_xfm"] = layout.get_nearest(
-            bids_file.path,
-            strict=False,
-            **{"from": primary_anat},  # "from" is protected Python kw
-            to="scanner",
-            suffix="xfm",
         )
     else:
         # Split cohort out of the space for MNIInfant templates.
@@ -758,6 +749,8 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
         info_dict["references"] = "[@glasser2013minimal]"
     elif input_type == "nibabies":
         info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
+    elif input_type == "ukb":
+        info_dict["references"] = "[@miller2016multimodal]"
     else:
         raise ValueError(f"Unsupported input_type '{input_type}'")
 

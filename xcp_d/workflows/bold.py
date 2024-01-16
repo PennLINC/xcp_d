@@ -91,7 +91,6 @@ def init_postprocess_nifti_wf(
                 input_type="fmriprep",
                 bold_file=bold_file,
                 cifti=False,
-                primary_anat="T1w",
             )
 
             custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
@@ -186,13 +185,11 @@ def init_postprocess_nifti_wf(
     t2w
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
-    anat_dseg
     anat_brainmask
         T1w brain mask, used for transforms in the QC report workflow.
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
     fmriprep_confounds_json
-    %(anat_to_native_xfm)s
     %(dummy_scans)s
 
     Outputs
@@ -209,7 +206,6 @@ def init_postprocess_nifti_wf(
     %(smoothed_denoised_bold)s
     %(boldref)s
     bold_mask
-    %(anat_to_native_xfm)s
     %(atlas_names)s
     %(timeseries)s
     %(timeseries_ciftis)s
@@ -233,11 +229,9 @@ def init_postprocess_nifti_wf(
                 "template_to_anat_xfm",
                 "t1w",
                 "t2w",
-                "anat_dseg",
                 "anat_brainmask",
                 "fmriprep_confounds_file",
                 "fmriprep_confounds_json",
-                "anat_to_native_xfm",
                 "dummy_scans",
                 "atlas_names",
                 "atlas_files",
@@ -252,7 +246,6 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.bold_mask = run_data["boldmask"]
     inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
     inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
-    inputnode.inputs.anat_to_native_xfm = run_data["anat_to_native_xfm"]
     inputnode.inputs.dummy_scans = dummy_scans
 
     # Load custom confounds
@@ -282,7 +275,6 @@ def init_postprocess_nifti_wf(
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",
-                "anat_to_native_xfm",
                 "timeseries",
                 "timeseries_ciftis",  # will not be defined
             ],
@@ -301,10 +293,7 @@ def init_postprocess_nifti_wf(
 
     # fmt:off
     workflow.connect([
-        (inputnode, outputnode, [
-            ("bold_file", "name_source"),
-            ("anat_to_native_xfm", "anat_to_native_xfm"),
-        ]),
+        (inputnode, outputnode, [("bold_file", "name_source")]),
         (inputnode, downcast_data, [
             ("bold_file", "bold_file"),
             ("boldref", "boldref"),
@@ -410,12 +399,11 @@ def init_postprocess_nifti_wf(
         connectivity_wf = init_functional_connectivity_nifti_wf(
             output_dir=output_dir,
             min_coverage=min_coverage,
-            alff_available=bandpass_filter and (fd_thresh <= 0),
+            alff_available=bandpass_filter,
             mem_gb=mem_gbx["timeseries"],
             name="connectivity_wf",
         )
 
-        # fmt:off
         workflow.connect([
             (inputnode, connectivity_wf, [
                 ("bold_file", "inputnode.name_source"),
@@ -430,16 +418,16 @@ def init_postprocess_nifti_wf(
             (denoise_bold_wf, connectivity_wf, [
                 ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
-    if bandpass_filter and (fd_thresh <= 0):
+    if bandpass_filter:
         alff_wf = init_alff_wf(
             name_source=bold_file,
             output_dir=output_dir,
             TR=TR,
             low_pass=low_pass,
             high_pass=high_pass,
+            fd_thresh=fd_thresh,
             smoothing=smoothing,
             atlases=atlases,
             cifti=False,
@@ -451,8 +439,11 @@ def init_postprocess_nifti_wf(
         # fmt:off
         workflow.connect([
             (downcast_data, alff_wf, [("bold_mask", "inputnode.bold_mask")]),
+            (prepare_confounds_wf, alff_wf, [
+                ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+            ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
             ]),
             (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
         ])
@@ -497,7 +488,6 @@ def init_postprocess_nifti_wf(
             ("bold_mask", "inputnode.bold_mask"),
             ("anat_brainmask", "inputnode.anat_brainmask"),
             ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
-            ("anat_to_native_xfm", "inputnode.anat_to_native_xfm"),
         ]),
         (prepare_confounds_wf, qc_report_wf, [
             ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),
@@ -580,23 +570,19 @@ def init_postprocess_nifti_wf(
         ])
         # fmt:on
 
-    if bandpass_filter and (fd_thresh <= 0):
-        # fmt:off
+    if bandpass_filter:
         workflow.connect([
             (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
         if atlases:
-            # fmt:off
             workflow.connect([
                 (connectivity_wf, postproc_derivatives_wf, [
                     ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
                 ]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
     # executive summary workflow
     execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(

@@ -1,6 +1,43 @@
 # What's New
 
-<!-- Release notes generated using configuration in .github/release.yml at main -->
+## 0.6.0
+
+### 🛠 Breaking Changes
+* Replace Schaefer atlases with AtlasPack by @tsalo in https://github.com/PennLINC/xcp_d/pull/928
+* Update the QC metrics by @tsalo in https://github.com/PennLINC/xcp_d/pull/958
+* Track `Sources` for outputs with BIDS URIs by @tsalo in https://github.com/PennLINC/xcp_d/pull/966
+* Replace AtlasPack 0.0.5 atlases with AtlasPack 0.1.0 atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/991
+
+### 🎉 Exciting New Features
+* Split HCP tasks into task and run entities by @tsalo in https://github.com/PennLINC/xcp_d/pull/952
+* Concatenate across directions as well as runs by @tsalo in https://github.com/PennLINC/xcp_d/pull/965
+* Retain orthogonalized confounds by @tsalo in https://github.com/PennLINC/xcp_d/pull/975
+* Improve connectivity plots by @tsalo in https://github.com/PennLINC/xcp_d/pull/988
+* Produce correlation matrices for concatenated time series by @tsalo in https://github.com/PennLINC/xcp_d/pull/990
+
+### 🐛 Bug Fixes
+* Fix resting-state plots in executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/941
+* Load T1w-to-standard transform to same space as volumetric BOLD scan by @tsalo in https://github.com/PennLINC/xcp_d/pull/926
+* Pin Nilearn version by @tsalo in https://github.com/PennLINC/xcp_d/pull/955
+* Don't interpolate volumes at beginning/end of run by @tsalo in https://github.com/PennLINC/xcp_d/pull/950
+* Look for flirtbbr figure by @tsalo in https://github.com/PennLINC/xcp_d/pull/980
+* Make registration figure in executive summary optional by @tsalo in https://github.com/PennLINC/xcp_d/pull/981
+* Don't convert CIFTIs to int16 by @tsalo in https://github.com/PennLINC/xcp_d/pull/979
+* Store temporary files in working directory by @tsalo in https://github.com/PennLINC/xcp_d/pull/985
+* Fix HCP ingression for non-rest tasks by @tsalo in https://github.com/PennLINC/xcp_d/pull/986
+* Allow executive summary registration figure to really be empty by @tsalo in https://github.com/PennLINC/xcp_d/pull/987
+* Allow motion filtering when motion-based censoring is disabled by @tsalo in https://github.com/PennLINC/xcp_d/pull/994
+* Fix node labels and communities in Gordon atlas by @tsalo in https://github.com/PennLINC/xcp_d/pull/996
+* Fix coverage CIFTIs by @tsalo in https://github.com/PennLINC/xcp_d/pull/998
+* Remove unused native-space support by @tsalo in https://github.com/PennLINC/xcp_d/pull/1003
+
+### Other Changes
+* Update documentation for 0.5.0 release by @tsalo in https://github.com/PennLINC/xcp_d/pull/937
+* Try to reduce memory requirements of functional connectivity nodes by @tsalo in https://github.com/PennLINC/xcp_d/pull/982
+* Try to reduce memory requirements of denoising node by @tsalo in https://github.com/PennLINC/xcp_d/pull/989
+
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.5.0...0.6.0
 
 ## 0.5.1
 

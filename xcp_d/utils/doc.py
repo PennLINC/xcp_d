@@ -76,14 +76,6 @@ template_to_anat_xfm : :obj:`str`
 """
 
 docdict[
-    "anat_to_native_xfm"
-] = """
-anat_to_native_xfm : :obj:`str`
-    Path to the T1w-to-native BOLD space transform file.
-    May be "identity", for testing purposes.
-"""
-
-docdict[
     "name_source"
 ] = """
 name_source : :obj:`str`
@@ -126,7 +118,7 @@ params : {"36P", "24P", "27P", "acompcor", "acompcor_gsr", \
 docdict[
     "input_type"
 ] = """
-input_type : {"fmriprep", "dcan", "hcp", "nibabies"}
+input_type : {"fmriprep", "dcan", "hcp", "nibabies", "ukb"}
     The format of the incoming preprocessed BIDS derivatives.
     DCAN- and HCP-format derivatives will automatically be converted to a more
     BIDS-compliant format.

@@ -49,7 +49,6 @@ def test_filteroutfailedruns(ds001419_data):
     smoothed_denoised_bold = Undefined
     bold_mask = Undefined
     boldref = Undefined
-    anat_to_native_xfm = Undefined
 
     # Now the lists of lists
     timeseries = [[tsv_file, tsv_file, tsv_file]] * n_runs
@@ -66,7 +65,6 @@ def test_filteroutfailedruns(ds001419_data):
         smoothed_denoised_bold=smoothed_denoised_bold,
         bold_mask=bold_mask,
         boldref=boldref,
-        anat_to_native_xfm=anat_to_native_xfm,
         timeseries=timeseries,
         timeseries_ciftis=timeseries_ciftis,
     )
@@ -82,7 +80,6 @@ def test_filteroutfailedruns(ds001419_data):
     assert len(out.smoothed_denoised_bold) == n_good_runs
     assert len(out.bold_mask) == n_good_runs
     assert len(out.boldref) == n_good_runs
-    assert len(out.anat_to_native_xfm) == n_good_runs
     assert len(out.timeseries) == n_good_runs
     assert len(out.timeseries_ciftis) == n_good_runs
 

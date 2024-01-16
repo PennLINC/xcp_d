@@ -81,8 +81,6 @@ def init_qc_report_wf(
         Only used with non-CIFTI data.
     %(template_to_anat_xfm)s
         Only used with non-CIFTI data.
-    %(anat_to_native_xfm)s
-        Only used with non-CIFTI data.
     %(dummy_scans)s
     %(fmriprep_confounds_file)s
     %(temporal_mask)s
@@ -112,7 +110,6 @@ def init_qc_report_wf(
                 "anat_brainmask",
                 "boldref",
                 "template_to_anat_xfm",
-                "anat_to_native_xfm",
             ],
         ),
         name="inputnode",
@@ -142,7 +139,7 @@ def init_qc_report_wf(
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_anat_xfm", "anat_to_native_xfm"],
+                input_names=["bold_file", "template_to_anat_xfm"],
                 output_names=[
                     "bold_to_std_xfms",
                     "bold_to_std_xfms_invert",
@@ -159,7 +156,6 @@ def init_qc_report_wf(
             (inputnode, get_native2space_transforms, [
                 ("name_source", "bold_file"),
                 ("template_to_anat_xfm", "template_to_anat_xfm"),
-                ("anat_to_native_xfm", "anat_to_native_xfm"),
             ]),
         ])
         # fmt:on

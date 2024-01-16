@@ -5,7 +5,7 @@ orbs:
 .dockersetup:
   &dockersetup
   docker:
-    - image: pennlinc/xcp_d_build:0.0.8
+    - image: pennlinc/xcp_d_build:0.0.11
   working_directory: /src/xcp_d
 
 runinstall:
@@ -70,6 +70,25 @@ jobs:
           key: pnc-02
           paths:
             - /src/xcp_d/.circleci/data/pnc
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
+
+  download_data_ukbiobank:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: ukbiobank-08
+      - run: *runinstall
+      - run:
+          name: Download ukbiobank test data
+          command: |
+            cd /src/xcp_d/.circleci
+            python get_data.py $PWD/data ukbiobank
+      - save_cache:
+          key: ukbiobank-08
+          paths:
+            - /src/xcp_d/.circleci/data/ukbiobank
     # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
     resource_class: large
 
@@ -200,7 +219,7 @@ jobs:
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti/xcp_d/
 
-  pnc_nifti:
+  ukbiobank:
     <<: *dockersetup
     steps:
       - checkout
@@ -208,28 +227,28 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_nifti\]' )" != "" ]]; then
-              echo "Skipping pnc_nifti build"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ukbiobank\]' )" != "" ]]; then
+              echo "Skipping ukbiobank build"
               circleci step halt
             fi
       - restore_cache:
-          key: pnc-02
+          key: ukbiobank-08
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "pnc_nifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "ukbiobank" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
             mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_nifti
+            mv /src/xcp_d/.coverage /src/coverage/.coverage.ukbiobank
             # remove nifti files before uploading artifacts
             find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage/
           paths:
-            - .coverage.pnc_nifti
+            - .coverage.ukbiobank
       - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_pnc_nifti/xcp_d/
+          path: /src/xcp_d/.circleci/out/test_ukbiobank/xcp_d/
 
   nibabies:
     <<: *dockersetup
@@ -450,6 +469,13 @@ workflows:
             tags:
               only: /.*/
 
+      - download_data_ukbiobank:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+
       - download_data_fmriprepwithoutfreesurfer:
           requires:
             - build
@@ -486,9 +512,9 @@ workflows:
             tags:
               only: /.*/
 
-      - pnc_nifti:
+      - ukbiobank:
           requires:
-            - download_data_pnc
+            - download_data_ukbiobank
           filters:
             branches:
               ignore:
@@ -561,7 +587,7 @@ workflows:
             - pnc_cifti_t2wonly
             - ds001419_nifti
             - ds001419_cifti
-            - pnc_nifti
+            - ukbiobank
             - nibabies
             - nifti_without_freesurfer
             - pytests
@@ -577,7 +603,7 @@ workflows:
           requires:
             - ds001419_nifti
             - ds001419_cifti
-            - pnc_nifti
+            - ukbiobank
             - nifti_without_freesurfer
             - nibabies
             - pnc_cifti

@@ -246,6 +246,88 @@ For more information about confound regressor selection, please refer to :footci
    options.
 
 
+.. list-table:: Preprocessing Pipeline Support
+
+   *  - Nuisance Strategy
+      - 24P
+      - 27P
+      - 36P
+      - acompcor
+      - acompcor_gsr
+      - aroma
+      - aroma_gsr
+      - gsr_only
+      - none
+   *  - fMRIPrep (>=23.1.0)
+      - X
+      - X
+      - X
+      - X
+      - X
+      -
+      -
+      - X
+      - X
+   *  - fMRIPrep (<23.1.0)
+      - X
+      - X
+      - X
+      - X
+      - X
+      - X
+      - X
+      - X
+      - X
+   *  - Nibabies
+      - X
+      - X
+      - X
+      - X
+      - X
+      -
+      -
+      - X
+      - X
+   *  - ABCD-BIDS (DCAN)
+      - X
+      - X
+      - X
+      -
+      -
+      -
+      -
+      - X
+      - X
+   *  - HCP-YA
+      - X
+      - X
+      - X
+      -
+      -
+      -
+      -
+      - X
+      - X
+   *  - UK Biobank
+      - X
+      -
+      -
+      -
+      -
+      -
+      -
+      - X
+      - X
+
+.. important::
+   fMRIPrep removed AROMA support in 23.1.0.
+   In the future, there will be an fMRIPost-AROMA BIDS App that runs AROMA on fMRIPrep outputs.
+
+.. warning::
+   The strategy ``gsr_only`` is only appropriate for UK Biobank data,
+   as those data have already been denoised with FSL FIX.
+
+
 Dummy scan removal [OPTIONAL]
 =============================
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
@@ -387,10 +469,23 @@ ALFF
 ----
 :func:`~xcp_d.workflows.restingstate.init_alff_wf`
 
+Amplitude of low-frequency fluctuation (ALFF) is a measure that ostensibly localizes
+spontaneous neural activity in resting-state BOLD data.
+It is calculated by the following:
+
+1. The ``filtered, interpolated, denoised BOLD`` is passed along to the ALFF workflow.
+2. Voxel-wise BOLD time series are normalized (mean-centered and scaled to unit standard deviation)
+   over time.
+3. The power spectrum and associated frequencies are estimated from the BOLD data.
+   -  If censoring+interpolation was not performed, then this uses :func:`scipy.signal.periodogram`.
+   -  If censoring+interpolation was performed, then this uses :func:`scipy.signal.lombscargle`.
+4. The square root of the power spectrum is calculated.
+5. The power spectrum values corresponding to the frequency range retained by the
+   temporal filtering step are extracted from the full power spectrum.
+6. The mean of the within-band power spectrum is calculated and multiplied by 2.
+
 ALFF will only be calculated if the bandpass filter is enabled
-(i.e., if the ``--disable-bandpass-filter`` flag is not used)
-and censoring is disabled
-(i.e., if ``--fd-thresh`` is set to a value less than or equal to zero).
+(i.e., if the ``--disable-bandpass-filter`` flag is not used).
 
 Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is used.
 
