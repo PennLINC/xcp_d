@@ -435,7 +435,6 @@ def init_postprocess_nifti_wf(
             name="alff_wf",
         )
 
-        # fmt:off
         workflow.connect([
             (downcast_data, alff_wf, [("bold_mask", "inputnode.bold_mask")]),
             (prepare_confounds_wf, alff_wf, [
@@ -444,9 +443,9 @@ def init_postprocess_nifti_wf(
             (denoise_bold_wf, alff_wf, [
                 ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
             ]),
-            (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
+        if atlases:
+            workflow.connect([(alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")])])
 
     reho_wf = init_reho_nifti_wf(
         name_source=bold_file,
@@ -456,15 +455,14 @@ def init_postprocess_nifti_wf(
         name="reho_wf",
     )
 
-    # fmt:off
     workflow.connect([
         (downcast_data, reho_wf, [("bold_mask", "inputnode.bold_mask")]),
         (denoise_bold_wf, reho_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
-        (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
+    if atlases:
+        workflow.connect([(reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")])])
 
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
