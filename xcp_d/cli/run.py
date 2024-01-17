@@ -442,30 +442,6 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
 
     g_atlases = g_parcellation.add_mutually_exclusive_group(required=False)
     g_atlases.add_argument(
-        "--skip-parcellation",
-        "--skip_parcellation",
-        action="store_const",
-        const=[],
-        default=[
-            "4S156Parcels",
-            "4S256Parcels",
-            "4S356Parcels",
-            "4S456Parcels",
-            "4S556Parcels",
-            "4S656Parcels",
-            "4S756Parcels",
-            "4S856Parcels",
-            "4S956Parcels",
-            "4S1056Parcels",
-            "Glasser",
-            "Gordon",
-            "Tian",
-            "HCP",
-        ],
-        dest="atlases",
-        help="Skip parcellation and correlation steps.",
-    )
-    g_atlases.add_argument(
         "--atlases",
         action="store",
         nargs="+",
@@ -503,6 +479,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         ],
         dest="atlases",
         help="Selection of atlases to apply to the data. All are used by default.",
+    )
+    g_atlases.add_argument(
+        "--skip-parcellation",
+        "--skip_parcellation",
+        action="store_const",
+        const=[],
+        dest="atlases",
+        help="Skip parcellation and correlation steps.",
     )
 
     g_other = parser.add_argument_group("Other options")
