@@ -111,13 +111,13 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
 
     Returns
     -------
-    alff : numpy.ndarray
+    alff : numpy.ndarray of shape (voxels, 1)
         ALFF values.
-    falff : numpy.ndarray
+    falff : numpy.ndarray of shape (voxels, 1)
         fALFF values.
-    peraf : numpy.ndarray
+    peraf : numpy.ndarray of shape (voxels, 1)
         PerAF values.
-    tsnr : numpy.ndarray
+    tsnr : numpy.ndarray of shape (voxels, 1)
         tSNR values.
 
     Notes
@@ -140,10 +140,10 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
         sample_mask = sample_mask.astype(bool)
         assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
-    alff = np.zeros(n_voxels)
-    falff = np.zeros(n_voxels)
-    peraf = np.zeros(n_voxels)
-    tsnr = np.zeros(n_voxels)
+    alff = np.zeros((n_voxels, 1))
+    falff = np.zeros((n_voxels, 1))
+    peraf = np.zeros((n_voxels, 1))
+    tsnr = np.zeros((n_voxels, 1))
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
         # Check if the voxel's data are all the same value (esp. zeros).
@@ -154,7 +154,7 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
         if sample_mask is not None:
             voxel_data_censored = voxel_data[sample_mask]
             sd_scale = np.std(voxel_data_censored)
-            voxel_data_for_peraf = voxel_data_censored.copy()
+            voxel_data_unscaled = voxel_data_censored.copy()
 
             # Normalize data matrix over time. This will ensure that the standard periodogram and
             # Lomb-Scargle periodogram will have the same scale.
@@ -175,7 +175,7 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
             )
         else:
             sd_scale = np.std(voxel_data)
-            voxel_data_for_peraf = voxel_data.copy()
+            voxel_data_unscaled = voxel_data.copy()
 
             # Normalize data matrix over time. This will ensure that the standard periodogram and
             # Lomb-Scargle periodogram will have the same scale.
@@ -196,29 +196,21 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
             np.argmin(np.abs(frequencies_hz - high_pass)),
             np.argmin(np.abs(frequencies_hz - low_pass)),
         ]
-        # alff for that voxel is 2 * the mean of the sqrt of the power spec
-        # from the value closest to the low pass cutoff, to the value closest
-        # to the high pass pass cutoff
-        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+        # ALFF is 2 * the mean of the sqrt of the power spec from the value closest to the
+        # low pass cutoff to the value closest to the high pass cutoff
+        power_spectrum_neural = power_spectrum_sqrt[ff_alff[0] : ff_alff[1]]
+        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_neural)
         # Rescale ALFF by the SD of the BOLD data to reinstate original scale.
         alff[i_voxel] *= sd_scale
 
-        falff[i_voxel] = np.sum(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]]) / np.sum(
-            power_spectrum_sqrt
-        )
+        falff[i_voxel] = np.sum(power_spectrum_neural) / np.sum(power_spectrum_sqrt)
         peraf[i_voxel] = (
-            np.mean(np.abs((voxel_data_for_peraf - mean_matrix[i_voxel]) / mean_matrix[i_voxel]))
+            np.mean(np.abs((voxel_data_unscaled - mean_matrix[i_voxel]) / mean_matrix[i_voxel]))
             * 100
         )
 
-        tsnr[i_voxel] = mean_matrix[i_voxel] / np.std(voxel_data_for_peraf)
+        tsnr[i_voxel] = mean_matrix[i_voxel] / np.std(voxel_data_unscaled)
 
     assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
-
-    # Add second dimension to arrays
-    alff = alff[:, None]
-    falff = falff[:, None]
-    peraf = peraf[:, None]
-    tsnr = tsnr[:, None]
 
     return alff, falff, peraf, tsnr
