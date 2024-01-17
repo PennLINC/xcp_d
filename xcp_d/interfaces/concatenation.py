@@ -187,7 +187,10 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         desc="Smoothed, denoised BOLD data.",
     )
     timeseries = traits.List(
-        traits.List(File(exists=True)),
+        traits.Either(
+            traits.List(File(exists=True)),
+            Undefined,
+        ),
         desc="List of lists of parcellated time series TSV files.",
     )
     timeseries_ciftis = traits.List(
