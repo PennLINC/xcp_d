@@ -158,6 +158,7 @@ def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=
 
             # Normalize data matrix over time. This will ensure that the standard periodogram and
             # Lomb-Scargle periodogram will have the same scale.
+            # However, this also changes ALFF's scale, so we retain the SD to rescale ALFF.
             voxel_data_censored -= np.mean(voxel_data_censored)
             voxel_data_censored /= np.std(voxel_data_censored)
 

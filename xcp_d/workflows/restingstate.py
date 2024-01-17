@@ -114,11 +114,13 @@ def init_alff_wf(
 
     workflow.__desc__ = f""" \
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming
-the mean-centered, standard deviation-normalized, denoised BOLD timeseries to the frequency
+the mean-centered, standard deviation-normalized, denoised BOLD time series to the frequency
 domain{periodogram_desc}.
 The power spectrum was computed within the {high_pass}-{low_pass} Hz frequency band and the
 mean square root of the power spectrum was calculated at each voxel to yield voxel-wise ALFF
 measures.
+The resulting ALFF values were then multiplied by the standard deviation of the denoised BOLD time
+series to retain the original scaling.
 """
 
     inputnode = pe.Node(

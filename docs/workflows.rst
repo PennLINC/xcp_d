@@ -474,15 +474,23 @@ spontaneous neural activity in resting-state BOLD data.
 It is calculated by the following:
 
 1. The ``filtered, interpolated, denoised BOLD`` is passed along to the ALFF workflow.
-2. Voxel-wise BOLD time series are normalized (mean-centered and scaled to unit standard deviation)
-   over time.
-3. The power spectrum and associated frequencies are estimated from the BOLD data.
+2. If censoring+interpolation was performed, then the interpolated time series is censored at this
+   point.
+3. Voxel-wise BOLD time series are normalized (mean-centered and scaled to unit standard deviation)
+   over time. This will ensure that the power spectrum from ``periodogram`` and ``lombscargle``
+   are roughly equivalent.
+4. The power spectrum and associated frequencies are estimated from the BOLD data.
+
    -  If censoring+interpolation was not performed, then this uses :func:`scipy.signal.periodogram`.
    -  If censoring+interpolation was performed, then this uses :func:`scipy.signal.lombscargle`.
-4. The square root of the power spectrum is calculated.
-5. The power spectrum values corresponding to the frequency range retained by the
+
+5. The square root of the power spectrum is calculated.
+6. The power spectrum values corresponding to the frequency range retained by the
    temporal filtering step are extracted from the full power spectrum.
-6. The mean of the within-band power spectrum is calculated and multiplied by 2.
+7. The mean of the within-band power spectrum is calculated and multiplied by 2.
+8. The ALFF value is multiplied by the standard deviation of the voxel-wise
+   ``filtered, interpolated, denoised BOLD`` time series.
+   This brings ALFF back to its original scale, as if the time series was not normalized.
 
 ALFF will only be calculated if the bandpass filter is enabled
 (i.e., if the ``--disable-bandpass-filter`` flag is not used).
