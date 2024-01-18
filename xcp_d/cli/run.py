@@ -25,6 +25,7 @@ from xcp_d.cli.parser_utils import (
     check_deps,
     json_file,
 )
+from xcp_d.utils.atlas import select_atlases
 
 warnings.filterwarnings("ignore")
 
@@ -441,42 +442,13 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
 
     g_atlases = g_parcellation.add_mutually_exclusive_group(required=False)
+    all_atlases = select_atlases(atlases=None, subset="all")
     g_atlases.add_argument(
         "--atlases",
         action="store",
         nargs="+",
-        choices=[
-            "4S156Parcels",
-            "4S256Parcels",
-            "4S356Parcels",
-            "4S456Parcels",
-            "4S556Parcels",
-            "4S656Parcels",
-            "4S756Parcels",
-            "4S856Parcels",
-            "4S956Parcels",
-            "4S1056Parcels",
-            "Glasser",
-            "Gordon",
-            "Tian",
-            "HCP",
-        ],
-        default=[
-            "4S156Parcels",
-            "4S256Parcels",
-            "4S356Parcels",
-            "4S456Parcels",
-            "4S556Parcels",
-            "4S656Parcels",
-            "4S756Parcels",
-            "4S856Parcels",
-            "4S956Parcels",
-            "4S1056Parcels",
-            "Glasser",
-            "Gordon",
-            "Tian",
-            "HCP",
-        ],
+        choices=all_atlases,
+        default=all_atlases,
         dest="atlases",
         help="Selection of atlases to apply to the data. All are used by default.",
     )

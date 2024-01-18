@@ -10,7 +10,7 @@ def select_atlases(atlases, subset):
 
     Parameters
     ----------
-    atlases : list of str
+    atlases : None or list of str
     subset : {"all", "subcortical", "cortical"}
         Description of the subset of atlases to collect.
 
@@ -43,8 +43,12 @@ def select_atlases(atlases, subset):
         list(set(BUILTIN_ATLASES["cortical"] + BUILTIN_ATLASES["subcortical"]))
     )
     subset_atlases = BUILTIN_ATLASES[subset]
-    assert all([atlas in BUILTIN_ATLASES["all"] for atlas in atlases])
-    selected_atlases = [atlas for atlas in atlases if atlas in subset_atlases]
+    if atlases:
+        assert all([atlas in BUILTIN_ATLASES["all"] for atlas in atlases])
+        selected_atlases = [atlas for atlas in atlases if atlas in subset_atlases]
+    else:
+        selected_atlases = subset_atlases
+
     return selected_atlases
 
 
