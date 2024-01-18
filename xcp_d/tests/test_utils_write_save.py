@@ -46,10 +46,9 @@ def test_write_ndata(ds001419_data, tmp_path_factory):
     # It won't equal exactly 1000
     assert (cifti_data_loaded[1000, 50] - 1000) < 1
 
-    # Write a shortened CIFTI
+    # Write a shortened CIFTI, so that the time axis will need to be created by write_ndata
     cifti_data = cifti_data[:, ::2]
     assert cifti_data.shape == (91282, 30)
-
     temp_cifti = os.path.join(tmpdir, "file.dtseries.nii")
     write_save.write_ndata(cifti_data, template=orig_cifti, filename=temp_cifti)
     assert os.path.isfile(temp_cifti)
@@ -58,20 +57,9 @@ def test_write_ndata(ds001419_data, tmp_path_factory):
     # It won't equal exactly 1000, but check that the modified value is in the right place
     assert (cifti_data_loaded[1000, 25] - 1000) < 1
 
-    # Write a CIFTI image (no time points)
-    # NOTE: Would this ever be the case? A dtseries.nii without a time axis doesn't make sense.
-    cifti_data = cifti_data[:, 25]
-    assert cifti_data.shape == (91282,)
-
-    temp_cifti = os.path.join(tmpdir, "file.dtseries.nii")
-    write_save.write_ndata(cifti_data, template=orig_cifti, filename=temp_cifti)
-    assert os.path.isfile(temp_cifti)
-    cifti_data_loaded = write_save.read_ndata(temp_cifti)
-    assert cifti_data_loaded.shape == (91282,)
-    # It won't equal exactly 1000
-    assert (cifti_data_loaded[1000] - 1000) < 1
-
-    # Write a dscalar file
+    # Write a dscalar file (no time points)
+    cifti_data = cifti_data[:, 24:25].T
+    assert cifti_data.shape == (1, 91282)
     temp_cifti = os.path.join(tmpdir, "file.dscalar.nii")
     write_save.write_ndata(cifti_data, template=orig_cifti, filename=temp_cifti)
     assert os.path.isfile(temp_cifti)
@@ -79,3 +67,8 @@ def test_write_ndata(ds001419_data, tmp_path_factory):
     assert cifti_data_loaded.shape == (1, 91282)
     # It won't equal exactly 1000
     assert (cifti_data_loaded[0, 1000] - 1000) < 1
+
+    # Try writing out a different filetype (should fail)
+    temp_cifti = os.path.join(tmpdir, "file.pscalar.nii")
+    with pytest.raises(ValueError, match="Unsupported CIFTI extension"):
+        write_save.write_ndata(cifti_data, template=orig_cifti, filename=temp_cifti)
