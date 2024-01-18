@@ -89,6 +89,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S1056Parcels_den-
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S1056Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S1056Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S1056Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S1056Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S1056Parcels_timeseries.json
@@ -105,6 +106,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S156Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S156Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S156Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S156Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S156Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S156Parcels_timeseries.json
@@ -121,6 +123,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S256Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S256Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S256Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S256Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S256Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S256Parcels_timeseries.json
@@ -137,6 +140,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S356Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S356Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S356Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S356Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S356Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S356Parcels_timeseries.json
@@ -153,6 +157,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S456Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S456Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S456Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S456Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S456Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S456Parcels_timeseries.json
@@ -169,6 +174,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S556Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S556Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S556Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S556Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S556Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S556Parcels_timeseries.json
@@ -185,6 +191,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S656Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S656Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S656Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S656Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S656Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S656Parcels_timeseries.json
@@ -201,6 +208,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S756Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S756Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S756Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S756Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S756Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S756Parcels_timeseries.json
@@ -217,6 +225,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S856Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S856Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S856Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S856Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S856Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S856Parcels_timeseries.json
@@ -233,6 +242,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S956Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S956Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S956Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S956Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S956Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-4S956Parcels_timeseries.json
@@ -249,6 +259,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Glasser_den-91k_ti
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Glasser_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Glasser_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Glasser_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Glasser_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Glasser_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Glasser_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Glasser_timeseries.json
@@ -265,6 +276,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Gordon_den-91k_tim
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Gordon_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Gordon_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Gordon_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Gordon_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Gordon_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Gordon_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Gordon_timeseries.json
@@ -281,6 +293,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-HCP_den-91k_timese
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-HCP_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-HCP_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-HCP_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-HCP_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-HCP_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-HCP_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-HCP_timeseries.json
@@ -297,6 +310,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Tian_den-91k_times
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Tian_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Tian_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Tian_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Tian_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Tian_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Tian_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_atlas-Tian_timeseries.json
@@ -333,6 +347,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S1056Parcels_den-
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S1056Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S1056Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S1056Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S1056Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S1056Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S1056Parcels_timeseries.json
@@ -349,6 +364,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S156Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S156Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S156Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S156Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S156Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S156Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S156Parcels_timeseries.json
@@ -365,6 +381,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S256Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S256Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S256Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S256Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S256Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S256Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S256Parcels_timeseries.json
@@ -381,6 +398,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S356Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S356Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S356Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S356Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S356Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S356Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S356Parcels_timeseries.json
@@ -397,6 +415,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S456Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S456Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S456Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S456Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S456Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S456Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S456Parcels_timeseries.json
@@ -413,6 +432,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S556Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S556Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S556Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S556Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S556Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S556Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S556Parcels_timeseries.json
@@ -429,6 +449,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S656Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S656Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S656Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S656Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S656Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S656Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S656Parcels_timeseries.json
@@ -445,6 +466,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S756Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S756Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S756Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S756Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S756Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S756Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S756Parcels_timeseries.json
@@ -461,6 +483,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S856Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S856Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S856Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S856Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S856Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S856Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S856Parcels_timeseries.json
@@ -477,6 +500,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S956Parcels_den-9
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S956Parcels_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S956Parcels_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S956Parcels_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S956Parcels_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S956Parcels_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-4S956Parcels_timeseries.json
@@ -493,6 +517,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Glasser_den-91k_ti
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Glasser_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Glasser_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Glasser_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Glasser_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Glasser_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Glasser_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Glasser_timeseries.json
@@ -509,6 +534,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Gordon_den-91k_tim
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Gordon_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Gordon_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Gordon_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Gordon_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Gordon_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Gordon_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Gordon_timeseries.json
@@ -525,6 +551,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-HCP_den-91k_timese
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-HCP_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-HCP_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-HCP_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-HCP_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-HCP_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-HCP_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-HCP_timeseries.json
@@ -541,6 +568,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Tian_den-91k_times
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Tian_den-91k_timeseries.ptseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Tian_measure-pearsoncorrelation_conmat.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Tian_measure-pearsoncorrelation_conmat.tsv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Tian_measure-pearsoncorrelation_desc-26volumes_conmat.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Tian_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Tian_reho.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_atlas-Tian_timeseries.json
