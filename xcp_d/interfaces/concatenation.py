@@ -293,7 +293,10 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
         desc="Smoothed, denoised BOLD data. Optional.",
     )
     timeseries = traits.List(
-        traits.List(File(exists=True)),
+        traits.Either(
+            traits.List(File(exists=True)),
+            Undefined,
+        ),
         desc="List of lists of parcellated time series TSV files.",
     )
     timeseries_ciftis = traits.List(
