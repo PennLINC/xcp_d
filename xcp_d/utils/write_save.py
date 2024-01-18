@@ -131,8 +131,8 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         n_volumes = data_matrix.shape[0]
         _, _, out_extension = split_filename(filename)
 
-        if filename.endswith(".dlabel.nii"):
-            # Dense label files have (ScalarAxis, BrainModelAxis)
+        if filename.endswith(".dscalar.nii"):
+            # Dense scalar files have (ScalarAxis, BrainModelAxis)
             scalar_names = [f"#{i + 1}" for i in range(n_volumes)]
             ax_0 = nb.cifti2.cifti2_axes.ScalarAxis(name=scalar_names)
             ax_1 = template_img.header.get_axis(1)
