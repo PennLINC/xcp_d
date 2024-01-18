@@ -14,8 +14,8 @@ def test_read_ndata(ds001419_data):
         write_save.read_ndata(gifti_file)
 
     # Load cifti
-    orig_cifti = ds001419_data["orig_cifti"]
-    cifti_data = write_save.read_ndata(orig_cifti)
+    cifti_file = ds001419_data["cifti_file"]
+    cifti_data = write_save.read_ndata(cifti_file)
     assert cifti_data.shape == (91282, 60)
 
     # Load nifti
@@ -33,7 +33,7 @@ def test_write_ndata(ds001419_data, tmp_path_factory):
     """Test write_save.write_ndata."""
     tmpdir = tmp_path_factory.mktemp("test_write_ndata")
 
-    orig_cifti = ds001419_data["orig_cifti"]
+    orig_cifti = ds001419_data["cifti_file"]
     cifti_data = write_save.read_ndata(orig_cifti)
     cifti_data[1000, 50] = 1000
 
