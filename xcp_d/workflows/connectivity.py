@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for extracting time series and computing functional connectivity."""
-from nipype import Function
+from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -29,6 +29,8 @@ from xcp_d.utils.atlas import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
+
+LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
@@ -104,14 +106,14 @@ def init_load_atlases_wf(
     # get atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
-            input_names=["atlas_name"],
+            input_names=["atlas"],
             output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
             function=get_atlas_cifti if cifti else get_atlas_nifti,
         ),
         name="atlas_file_grabber",
-        iterfield=["atlas_name"],
+        iterfield=["atlas"],
     )
-    atlas_file_grabber.inputs.atlas_name = atlases
+    atlas_file_grabber.inputs.atlas = atlases
 
     atlas_buffer = pe.Node(niu.IdentityInterface(fields=["atlas_file"]), name="atlas_buffer")
 
@@ -392,29 +394,28 @@ def init_parcellate_surfaces_wf(
         name="inputnode",
     )
 
-    atlas_selector = pe.Node(
-        Function(
-            input_names=["atlases", "subset"],
-            output_names=["atlases"],
-            function=select_atlases,
-        ),
-        name="atlas_selector",
-    )
-    atlas_selector.inputs.atlases = atlases
-    atlas_selector.inputs.subset = "cortical"
+    selected_atlases = select_atlases(atlases=atlases, subset="cortical")
+
+    if not selected_atlases:
+        LOGGER.warning(
+            "No cortical atlases have been selected, so surface metrics will not be parcellated."
+        )
+        # If no cortical atlases are selected, inputnode could go unconnected, so add explicitly.
+        workflow.add_nodes([inputnode])
+
+        return workflow
 
     # Get CIFTI atlases via pkgrf
     atlas_file_grabber = pe.MapNode(
         Function(
-            input_names=["atlas_name"],
+            input_names=["atlas"],
             output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
             function=get_atlas_cifti,
         ),
         name="atlas_file_grabber",
-        iterfield=["atlas_name"],
+        iterfield=["atlas"],
     )
-
-    workflow.connect([(atlas_selector, atlas_file_grabber, [("atlases", "atlas_name")])])
+    atlas_file_grabber.inputs.atlas = selected_atlases
 
     for file_to_parcellate in files_to_parcellate:
         resample_atlas_to_surface = pe.MapNode(
@@ -482,11 +483,11 @@ def init_parcellate_surfaces_wf(
             mem_gb=1,
             iterfield=["atlas", "in_file"],
         )
+        ds_parcellated_surface.inputs.atlas = selected_atlases
 
         # fmt:off
         workflow.connect([
             (inputnode, ds_parcellated_surface, [(file_to_parcellate, "source_file")]),
-            (atlas_selector, ds_parcellated_surface, [("atlases", "atlas")]),
             (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
         ])
         # fmt:on

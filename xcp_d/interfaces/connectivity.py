@@ -810,6 +810,9 @@ class ConnectPlot(SimpleInterface):
 
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
         for atlas, subdict in ATLAS_LOOKUP.items():
+            if atlas not in self.inputs.atlases:
+                continue
+
             atlas_idx = self.inputs.atlases.index(atlas)
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
             dseg_file = self.inputs.atlas_tsvs[atlas_idx]
