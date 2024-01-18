@@ -49,11 +49,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
-        "--min-coverage=1",
-        "--exact-time",
-        "80",
-        "100",
-        "200",
+        "--skip-parcellation",
         "--random-seed=8675309",
     ]
     opts = run.get_parser().parse_args(parameters)
@@ -115,6 +111,11 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
+        "--atlases",
+        "Tian",
+        "HCP",
+        "--exact-time",
+        "80",
         f"--fs-license-file={fs_license_file}",
     ]
     opts = run.get_parser().parse_args(parameters)
@@ -246,7 +247,9 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
-        "--skip-parcellation",
+        "--atlases",
+        "Tian",
+        "HCP",
     ]
     opts = run.get_parser().parse_args(parameters)
     retval = {}
@@ -329,6 +332,9 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
+        "--atlases",
+        "4S156Parcels",
+        "Glasser",
     ]
     opts = run.get_parser().parse_args(parameters)
     retval = {}
