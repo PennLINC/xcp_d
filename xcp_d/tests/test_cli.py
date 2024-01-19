@@ -113,6 +113,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--upper-bpf=0.0",
         "--exact-time",
         "80",
+        "200",
         f"--fs-license-file={fs_license_file}",
     ]
     opts = run.get_parser().parse_args(parameters)
@@ -231,7 +232,6 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         f"--bids-filter-file={filter_file}",
         "--min-time=60",
         "--nuisance-regressors=acompcor_gsr",
-        "--despike",
         "--head-radius=40",
         "--smoothing=6",
         "--motion-filter-type=notch",
