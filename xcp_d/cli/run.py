@@ -25,6 +25,7 @@ from xcp_d.cli.parser_utils import (
     check_deps,
     json_file,
 )
+from xcp_d.utils.atlas import select_atlases
 
 warnings.filterwarnings("ignore")
 
@@ -106,15 +107,8 @@ def get_parser():
         metavar="FILE",
         help="A JSON file defining BIDS input filters using PyBIDS.",
     )
-    g_bids.add_argument(
-        "-m",
-        "--combineruns",
-        action="store_true",
-        default=False,
-        help="After denoising, concatenate each derivative from each task across runs.",
-    )
 
-    g_surfx = parser.add_argument_group("Options for cifti processing")
+    g_surfx = parser.add_argument_group("Options for CIFTI processing")
     g_surfx.add_argument(
         "-s",
         "--cifti",
@@ -186,14 +180,16 @@ def get_parser():
 
     g_param = parser.add_argument_group("Postprocessing parameters")
     g_param.add_argument(
-        "--smoothing",
-        default=6,
-        action="store",
-        type=float,
+        "--dummy-scans",
+        "--dummy_scans",
+        dest="dummy_scans",
+        default=0,
+        type=_int_or_auto,
+        metavar="{{auto,INT}}",
         help=(
-            "FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD "
-            "data. "
-            "This may be set to 0."
+            "Number of volumes to remove from the beginning of each run. "
+            "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
+            "preprocessing derivatives' confounds file."
         ),
     )
     g_param.add_argument(
@@ -243,102 +239,34 @@ def get_parser():
         ),
     )
     g_param.add_argument(
-        "--min_coverage",
-        "--min-coverage",
-        required=False,
-        default=0.5,
-        type=_restricted_float,
+        "--smoothing",
+        default=6,
+        action="store",
+        type=float,
         help=(
-            "Coverage threshold to apply to parcels in each atlas. "
-            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
-            "Must be a value between zero and one, indicating proportion of the parcel. "
-            "Default is 0.5."
+            "FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD "
+            "data. "
+            "This may be set to 0."
         ),
     )
     g_param.add_argument(
-        "--min_time",
-        "--min-time",
-        required=False,
-        default=100,
-        type=float,
-        help=(
-            "Post-scrubbing threshold to apply to individual runs in the dataset. "
-            "This threshold determines the minimum amount of time, in seconds, "
-            "needed to post-process a given run, once high-motion outlier volumes are removed. "
-            "This will have no impact if scrubbing is disabled "
-            "(i.e., if the FD threshold is zero or negative). "
-            "This parameter can be disabled by providing a zero or a negative value."
-        ),
-    )
-    g_param.add_argument(
-        "--dummy-scans",
-        "--dummy_scans",
-        dest="dummy_scans",
-        default=0,
-        type=_int_or_auto,
-        metavar="{{auto,INT}}",
-        help=(
-            "Number of volumes to remove from the beginning of each run. "
-            "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
-            "preprocessing derivatives' confounds file."
-        ),
+        "-m",
+        "--combineruns",
+        action="store_true",
+        default=False,
+        help="After denoising, concatenate each derivative from each task across runs.",
     )
 
-    g_param.add_argument(
-        "--random-seed",
-        "--random_seed",
-        dest="random_seed",
-        default=None,
-        type=int,
-        metavar="_RANDOM_SEED",
-        help="Initialize the random seed for the workflow.",
-    )
-
-    g_filter = parser.add_argument_group("Filtering parameters")
-
-    g_filter.add_argument(
-        "--disable-bandpass-filter",
-        "--disable_bandpass_filter",
-        dest="bandpass_filter",
-        action="store_false",
-        help=(
-            "Disable bandpass filtering. "
-            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated."
+    g_motion_filter = parser.add_argument_group(
+        title="Motion filtering parameters",
+        description=(
+            "These parameters enable and control a filter that will be applied to motion "
+            "parameters. "
+            "Motion parameters may be contaminated by non-motion noise, and applying a filter "
+            "may reduce the impact of that contamination."
         ),
     )
-    g_filter.add_argument(
-        "--lower-bpf",
-        "--lower_bpf",
-        action="store",
-        default=0.01,
-        type=float,
-        help=(
-            "Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
-            "the denoised BOLD data. Set to 0.0 or negative to disable high-pass filtering. "
-            "See Satterthwaite et al. (2013)."
-        ),
-    )
-    g_filter.add_argument(
-        "--upper-bpf",
-        "--upper_bpf",
-        action="store",
-        default=0.08,
-        type=float,
-        help=(
-            "Upper cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
-            "the denoised BOLD data. Set to 0.0 or negative to disable low-pass filtering. "
-            "See Satterthwaite et al. (2013)."
-        ),
-    )
-    g_filter.add_argument(
-        "--bpf-order",
-        "--bpf_order",
-        action="store",
-        default=2,
-        type=int,
-        help="Number of filter coefficients for the Butterworth bandpass filter.",
-    )
-    g_filter.add_argument(
+    g_motion_filter.add_argument(
         "--motion-filter-type",
         "--motion_filter_type",
         action="store",
@@ -354,7 +282,7 @@ must be defined.
 If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
 """,
     )
-    g_filter.add_argument(
+    g_motion_filter.add_argument(
         "--band-stop-min",
         "--band_stop_min",
         default=None,
@@ -371,7 +299,7 @@ When ``motion-filter-type`` is set to "lp" (low-pass filter), another commonly-u
 this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020).
 """,
     )
-    g_filter.add_argument(
+    g_motion_filter.add_argument(
         "--band-stop-max",
         "--band_stop_max",
         default=None,
@@ -384,7 +312,7 @@ This parameter is only used if ``motion-filter-type`` is set to "notch".
 This parameter is used in conjunction with ``motion-filter-order`` and ``band-stop-min``.
 """,
     )
-    g_filter.add_argument(
+    g_motion_filter.add_argument(
         "--motion-filter-order",
         "--motion_filter_order",
         default=4,
@@ -421,6 +349,108 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         ),
     )
     g_censor.add_argument(
+        "--min_time",
+        "--min-time",
+        required=False,
+        default=100,
+        type=float,
+        help=(
+            "Post-scrubbing threshold to apply to individual runs in the dataset. "
+            "This threshold determines the minimum amount of time, in seconds, "
+            "needed to post-process a given run, once high-motion outlier volumes are removed. "
+            "This will have no impact if scrubbing is disabled "
+            "(i.e., if the FD threshold is zero or negative). "
+            "This parameter can be disabled by providing a zero or a negative value."
+        ),
+    )
+
+    g_temporal_filter = parser.add_argument_group(
+        title="Data filtering parameters",
+        description=(
+            "These parameters determine whether a bandpass filter will be applied to the BOLD "
+            "data, after the censoring, denoising, and interpolation steps of the pipeline, "
+            "but before recensoring."
+        ),
+    )
+    g_temporal_filter.add_argument(
+        "--disable-bandpass-filter",
+        "--disable_bandpass_filter",
+        dest="bandpass_filter",
+        action="store_false",
+        help=(
+            "Disable bandpass filtering. "
+            "If bandpass filtering is disabled, then ALFF derivatives will not be calculated."
+        ),
+    )
+    g_temporal_filter.add_argument(
+        "--lower-bpf",
+        "--lower_bpf",
+        action="store",
+        default=0.01,
+        type=float,
+        help=(
+            "Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
+            "the denoised BOLD data. Set to 0.0 or negative to disable high-pass filtering. "
+            "See Satterthwaite et al. (2013)."
+        ),
+    )
+    g_temporal_filter.add_argument(
+        "--upper-bpf",
+        "--upper_bpf",
+        action="store",
+        default=0.08,
+        type=float,
+        help=(
+            "Upper cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
+            "the denoised BOLD data. Set to 0.0 or negative to disable low-pass filtering. "
+            "See Satterthwaite et al. (2013)."
+        ),
+    )
+    g_temporal_filter.add_argument(
+        "--bpf-order",
+        "--bpf_order",
+        action="store",
+        default=2,
+        type=int,
+        help="Number of filter coefficients for the Butterworth bandpass filter.",
+    )
+
+    g_parcellation = parser.add_argument_group("Parcellation options")
+
+    g_atlases = g_parcellation.add_mutually_exclusive_group(required=False)
+    all_atlases = select_atlases(atlases=None, subset="all")
+    g_atlases.add_argument(
+        "--atlases",
+        action="store",
+        nargs="+",
+        choices=all_atlases,
+        default=all_atlases,
+        dest="atlases",
+        help="Selection of atlases to apply to the data. All are used by default.",
+    )
+    g_atlases.add_argument(
+        "--skip-parcellation",
+        "--skip_parcellation",
+        action="store_const",
+        const=[],
+        dest="atlases",
+        help="Skip parcellation and correlation steps.",
+    )
+
+    g_parcellation.add_argument(
+        "--min_coverage",
+        "--min-coverage",
+        required=False,
+        default=0.5,
+        type=_restricted_float,
+        help=(
+            "Coverage threshold to apply to parcels in each atlas. "
+            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
+            "Must be a value between zero and one, indicating proportion of the parcel. "
+            "Default is 0.5."
+        ),
+    )
+    g_parcellation.add_argument(
         "--exact-time",
         "--exact_time",
         required=False,
@@ -439,6 +469,15 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
 
     g_other = parser.add_argument_group("Other options")
+    g_other.add_argument(
+        "--random-seed",
+        "--random_seed",
+        dest="random_seed",
+        default=None,
+        type=int,
+        metavar="_RANDOM_SEED",
+        help="Initialize the random seed for the workflow.",
+    )
     g_other.add_argument(
         "-w",
         "--work_dir",
@@ -783,6 +822,13 @@ def _validate_parameters(opts, build_log):
             "is not set."
         )
 
+    # Parcellation parameters
+    if not opts.atlases and opts.min_coverage != 0.5:
+        build_log.warning(
+            "When no atlases are selected or parcellation is explicitly skipped "
+            "('--skip-parcellation'), '--min-coverage' will have no effect."
+        )
+
     # Some parameters are automatically set depending on the input type.
     if opts.input_type in ("dcan", "hcp"):
         if not opts.cifti:
@@ -1023,6 +1069,7 @@ Running xcp_d version {__version__}:
         process_surfaces=opts.process_surfaces,
         dcan_qc=opts.dcan_qc,
         input_type=opts.input_type,
+        atlases=opts.atlases,
         min_coverage=opts.min_coverage,
         min_time=opts.min_time,
         exact_time=opts.exact_time,

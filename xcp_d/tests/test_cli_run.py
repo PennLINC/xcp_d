@@ -40,6 +40,7 @@ def base_opts():
         "cifti": True,
         "process_surfaces": True,
         "fs_license_file": Path(os.environ["FS_LICENSE"]),
+        "atlases": ["Glasser"],
     }
     opts = FakeOptions(**opts_dict)
     return opts
@@ -303,3 +304,29 @@ def test_validate_parameters_19(base_opts, caplog):
 
     assert "Freesurfer license DNE" in caplog.text
     assert return_code == 1
+
+
+def test_validate_parameters_20(base_opts, caplog):
+    """Test run._validate_parameters."""
+    opts = deepcopy(base_opts)
+    opts.atlases = []
+    opts.min_coverage = 0.1
+
+    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+
+    assert "When no atlases are selected" in caplog.text
+    assert return_code == 0
+
+
+def test_validate_parameters_21(base_opts, caplog):
+    """Test run._validate_parameters."""
+    opts = deepcopy(base_opts)
+    opts.input_type = "ukb"
+    opts.cifti = True
+    opts.process_surfaces = True
+
+    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+
+    assert "cifti processing (--cifti) will be disabled automatically." in caplog.text
+    assert "(--warp-surfaces-native2std) will be disabled automatically." in caplog.text
+    assert return_code == 0

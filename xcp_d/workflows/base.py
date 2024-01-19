@@ -75,6 +75,7 @@ def init_xcpd_wf(
     custom_confounds_folder,
     dummy_scans,
     random_seed,
+    atlases,
     exact_time,
     cifti,
     omp_nthreads,
@@ -132,15 +133,16 @@ def init_xcpd_wf(
                 custom_confounds_folder=None,
                 dummy_scans=0,
                 random_seed=None,
-                exact_time=[],
                 cifti=False,
                 omp_nthreads=1,
                 layout=None,
                 process_surfaces=False,
                 dcan_qc=False,
                 input_type="fmriprep",
-                min_coverage=0.5,
                 min_time=100,
+                atlases=["Glasser"],
+                min_coverage=0.5,
+                exact_time=[],
                 combineruns=False,
                 name="xcpd_wf",
             )
@@ -179,8 +181,9 @@ def init_xcpd_wf(
     %(process_surfaces)s
     %(dcan_qc)s
     %(input_type)s
-    %(min_coverage)s
     %(min_time)s
+    %(atlases)s
+    %(min_coverage)s
     %(exact_time)s
     combineruns
     %(name)s
@@ -224,8 +227,9 @@ def init_xcpd_wf(
             process_surfaces=process_surfaces,
             dcan_qc=dcan_qc,
             input_type=input_type,
-            min_coverage=min_coverage,
             min_time=min_time,
+            atlases=atlases,
+            min_coverage=min_coverage,
             exact_time=exact_time,
             combineruns=combineruns,
             name=f"single_subject_{subject_id}_wf",
@@ -273,8 +277,9 @@ def init_subject_wf(
     fd_thresh,
     despike,
     dcan_qc,
-    min_coverage,
     min_time,
+    atlases,
+    min_coverage,
     exact_time,
     omp_nthreads,
     layout,
@@ -298,6 +303,7 @@ def init_subject_wf(
                 input_type="fmriprep",
                 process_surfaces=False,
                 combineruns=False,
+                atlases=["Glasser"],
                 cifti=False,
                 task_id="imagery",
                 bids_filters=None,
@@ -334,6 +340,7 @@ def init_subject_wf(
     %(input_type)s
     %(process_surfaces)s
     combineruns
+    atlases
     %(cifti)s
     task_id : :obj:`str` or None
         Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
@@ -524,7 +531,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         name="postprocess_anat_wf",
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
@@ -532,19 +538,20 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ("anat_dseg", "inputnode.anat_dseg"),
             ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     # Load the atlases, warping to the same space as the BOLD data if necessary.
-    load_atlases_wf = init_load_atlases_wf(
-        output_dir=output_dir,
-        cifti=cifti,
-        mem_gb=1,
-        omp_nthreads=omp_nthreads,
-        name="load_atlases_wf",
-    )
-    load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
-    load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
+    if atlases:
+        load_atlases_wf = init_load_atlases_wf(
+            atlases=atlases,
+            output_dir=output_dir,
+            cifti=cifti,
+            mem_gb=1,
+            omp_nthreads=omp_nthreads,
+            name="load_atlases_wf",
+        )
+        load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
+        load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
 
     if process_surfaces or (dcan_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
@@ -565,7 +572,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             name="postprocess_surfaces_wf",
         )
 
-        # fmt:off
         workflow.connect([
             (inputnode, postprocess_surfaces_wf, [
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
@@ -575,42 +581,36 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
                 ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         for morph_file in morph_file_types:
-            # fmt:off
             workflow.connect([
                 (inputnode, postprocess_surfaces_wf, [(morph_file, f"inputnode.{morph_file}")]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
         if process_surfaces or standard_space_mesh:
             # Use standard-space structurals
-            # fmt:off
             workflow.connect([
                 (postprocess_anat_wf, postprocess_surfaces_wf, [
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
                 ]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
         else:
             # Use native-space structurals
-            # fmt:off
             workflow.connect([
                 (inputnode, postprocess_surfaces_wf, [
                     ("t1w", "inputnode.t1w"),
                     ("t2w", "inputnode.t2w"),
                 ]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
-        if morph_file_types:
+        if morph_file_types and atlases:
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 output_dir=output_dir,
+                atlases=atlases,
                 files_to_parcellate=morph_file_types,
                 min_coverage=min_coverage,
                 mem_gb=1,
@@ -619,13 +619,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             )
 
             for morph_file_type in morph_file_types:
-                # fmt:off
                 workflow.connect([
                     (inputnode, parcellate_surfaces_wf, [
                         (morph_file_type, f"inputnode.{morph_file_type}"),
                     ]),
-                ])
-                # fmt:on
+                ])  # fmt:skip
 
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(
@@ -728,6 +726,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 custom_confounds_folder=custom_confounds_folder,
                 dummy_scans=dummy_scans,
                 random_seed=random_seed,
+                atlases=atlases,
                 fd_thresh=fd_thresh,
                 despike=despike,
                 dcan_qc=dcan_qc,
@@ -743,48 +742,44 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             )
             run_counter += 1
 
-            # fmt:off
             workflow.connect([
                 (postprocess_anat_wf, postprocess_bold_wf, [
                     ("outputnode.t1w", "inputnode.t1w"),
                     ("outputnode.t2w", "inputnode.t2w"),
                 ]),
-                (load_atlases_wf, postprocess_bold_wf, [
-                    ("outputnode.atlas_names", "inputnode.atlas_names"),
-                    ("outputnode.atlas_files", "inputnode.atlas_files"),
-                    ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
-                ]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
-            if cifti:
-                # fmt:off
+            if atlases:
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [
-                        (
-                            "outputnode.parcellated_atlas_files",
-                            "inputnode.parcellated_atlas_files",
-                        ),
+                        ("outputnode.atlas_files", "inputnode.atlas_files"),
+                        ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
                     ]),
-                ])
-                # fmt:on
-            else:
-                # fmt:off
+                ])  # fmt:skip
+
+                if cifti:
+                    workflow.connect([
+                        (load_atlases_wf, postprocess_bold_wf, [
+                            (
+                                "outputnode.parcellated_atlas_files",
+                                "inputnode.parcellated_atlas_files",
+                            ),
+                        ]),
+                    ])  # fmt:skip
+
+            if not cifti:
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
                         ("anat_brainmask", "inputnode.anat_brainmask"),
                         ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                     ]),
-                ])
-                # fmt:on
+                ])  # fmt:skip
 
             if combineruns and (n_task_runs > 1):
                 for io_name, node in merge_dict.items():
-                    # fmt:off
                     workflow.connect([
                         (postprocess_bold_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
-                    ])
-                    # fmt:on
+                    ])  # fmt:skip
 
         if combineruns and (n_task_runs > 1):
             concatenate_data_wf = init_concatenate_data_wf(
@@ -797,32 +792,26 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 cifti=cifti,
                 dcan_qc=dcan_qc,
                 fd_thresh=fd_thresh,
+                atlases=atlases,
                 mem_gb=1,
                 omp_nthreads=omp_nthreads,
                 name=f"concatenate_entity_set_{ent_set}_wf",
             )
 
-            # fmt:off
             workflow.connect([
                 (inputnode, concatenate_data_wf, [
                     ("anat_brainmask", "inputnode.anat_brainmask"),
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
                 ]),
-                (load_atlases_wf, concatenate_data_wf, [
-                    ("outputnode.atlas_names", "inputnode.atlas_names"),
-                ]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
             for io_name, node in merge_dict.items():
                 workflow.connect([(node, concatenate_data_wf, [("out", f"inputnode.{io_name}")])])
 
-    # fmt:off
     workflow.connect([
         (summary, ds_report_summary, [("out_report", "in_file")]),
         (about, ds_report_about, [("out_report", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     for node in workflow.list_node_names():
         if node.split(".")[-1].startswith("ds_"):

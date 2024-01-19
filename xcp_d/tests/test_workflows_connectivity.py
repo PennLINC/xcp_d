@@ -33,6 +33,7 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     bold_file = ds001419_data["nifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
+        atlases=["4S156Parcels", "Glasser"],
         output_dir=tmpdir,
         cifti=False,
         mem_gb=1,
@@ -45,7 +46,7 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     load_atlases_wf_res = load_atlases_wf.run()
     nodes = get_nodes(load_atlases_wf_res)
     atlas_names = nodes["load_atlases_wf.warp_atlases_to_bold_space"].get_output("output_image")
-    assert len(atlas_names) == 14
+    assert len(atlas_names) == 2
 
 
 def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
@@ -55,6 +56,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     bold_file = ds001419_data["cifti_file"]
 
     load_atlases_wf = init_load_atlases_wf(
+        atlases=["4S156Parcels", "Glasser"],
         output_dir=tmpdir,
         cifti=True,
         mem_gb=1,
@@ -67,7 +69,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     load_atlases_wf_res = load_atlases_wf.run()
     nodes = get_nodes(load_atlases_wf_res)
     atlas_names = nodes["load_atlases_wf.ds_atlas"].get_output("out_file")
-    assert len(atlas_names) == 14
+    assert len(atlas_names) == 2
 
 
 def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
@@ -139,7 +141,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.bold_mask = bold_mask
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
-    connectivity_wf.inputs.inputnode.atlas_names = atlas_names
+    connectivity_wf.inputs.inputnode.atlases = atlas_names
     connectivity_wf.inputs.inputnode.atlas_files = warped_atlases
     connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
     connectivity_wf.base_dir = tmpdir
@@ -279,7 +281,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
     connectivity_wf.inputs.inputnode.name_source = bold_file
     connectivity_wf.inputs.inputnode.reho = fake_bold_file
-    connectivity_wf.inputs.inputnode.atlas_names = atlas_names
+    connectivity_wf.inputs.inputnode.atlases = atlas_names
     connectivity_wf.inputs.inputnode.atlas_files = atlas_files
     connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
     connectivity_wf.inputs.inputnode.parcellated_atlas_files = parcellated_atlases
