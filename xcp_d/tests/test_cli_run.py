@@ -40,6 +40,7 @@ def base_opts():
         "cifti": True,
         "process_surfaces": True,
         "fs_license_file": Path(os.environ["FS_LICENSE"]),
+        "atlases": ["Glasser"],
     }
     opts = FakeOptions(**opts_dict)
     return opts
