@@ -46,7 +46,7 @@ class CleanNameSource(SimpleInterface):
         # Remove the run entity.
         cleaned_name_source = re.sub("_run-[0-9]+_", "_", name_source)
         # Remove the dir entity.
-        cleaned_name_source = re.sub("_dir-[a-zA-Z0-9]+_", "_", name_source)
+        cleaned_name_source = re.sub("_dir-[a-zA-Z0-9]+_", "_", cleaned_name_source)
 
         self._results["name_source"] = cleaned_name_source
         return runtime
