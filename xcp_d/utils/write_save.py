@@ -164,11 +164,8 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         else:
             raise ValueError(f"Unsupported CIFTI extension '{out_extension}'")
 
-        # Modify the intent code if it doesn't match the extension.
-        target_intent = cifti_intents.get(out_extension, None)
-        if target_intent is None:
-            raise ValueError(f"Unknown CIFTI extension '{out_extension}'")
-
+        # Modify the intent code
+        target_intent = cifti_intents[out_extension]
         img.nifti_header.set_intent(target_intent)
 
     else:
