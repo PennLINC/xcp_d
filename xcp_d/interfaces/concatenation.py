@@ -35,7 +35,7 @@ class _CleanNameSourceOutputSpec(TraitedSpec):
 
 
 class CleanNameSource(SimpleInterface):
-    """Remove run entity from the name source."""
+    """Remove run and dir entities from the name source."""
 
     input_spec = _CleanNameSourceInputSpec
     output_spec = _CleanNameSourceOutputSpec
@@ -43,8 +43,11 @@ class CleanNameSource(SimpleInterface):
     def _run_interface(self, runtime):
         # Grab the first file and use that.
         name_source = self.inputs.name_source[0]
-        # Remove the run entitty.
+        # Remove the run entity.
         cleaned_name_source = re.sub("_run-[0-9]+_", "_", name_source)
+        # Remove the dir entity.
+        cleaned_name_source = re.sub("_dir-[a-zA-Z0-9]+_", "_", name_source)
+
         self._results["name_source"] = cleaned_name_source
         return runtime
 
