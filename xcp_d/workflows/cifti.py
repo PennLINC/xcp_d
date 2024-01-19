@@ -52,6 +52,7 @@ def init_postprocess_cifti_wf(
     t1w_available,
     t2w_available,
     n_runs,
+    atlases,
     min_coverage,
     exact_scans,
     random_seed,
@@ -116,6 +117,7 @@ def init_postprocess_cifti_wf(
                 t1w_available=True,
                 t2w_available=True,
                 n_runs=1,
+                atlases=["Glasser"],
                 min_coverage=0.5,
                 exact_scans=[],
                 random_seed=None,
@@ -152,6 +154,7 @@ def init_postprocess_cifti_wf(
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
+    %(atlases)s
     %(min_coverage)s
     %(random_seed)s
     %(exact_scans)s
@@ -192,7 +195,6 @@ def init_postprocess_cifti_wf(
     %(boldref)s
     bold_mask
         This will not be defined.
-    %(atlas_names)s
     %(timeseries)s
     %(timeseries_ciftis)s
 
@@ -215,7 +217,8 @@ def init_postprocess_cifti_wf(
                 "fmriprep_confounds_file",
                 "fmriprep_confounds_json",
                 "dummy_scans",
-                "atlas_names",
+                # if parcellation is performed
+                "atlases",
                 "atlas_files",
                 "atlas_labels_files",
                 "parcellated_atlas_files",
@@ -229,6 +232,7 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
     inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
     inputnode.inputs.dummy_scans = dummy_scans
+    inputnode.inputs.atlases = atlases
 
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
@@ -259,7 +263,7 @@ def init_postprocess_cifti_wf(
                 "smoothed_denoised_bold",
                 "boldref",
                 "bold_mask",  # will not be defined
-                "atlas_names",
+                # if parcellation is performed
                 "timeseries",
                 "timeseries_ciftis",
             ],
@@ -276,15 +280,13 @@ def init_postprocess_cifti_wf(
         n_procs=omp_nthreads,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, outputnode, [
             ("bold_file", "name_source"),
             ("boldref", "boldref"),
         ]),
         (inputnode, downcast_data, [("bold_file", "bold_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     prepare_confounds_wf = init_prepare_confounds_wf(
         output_dir=output_dir,
@@ -305,7 +307,6 @@ def init_postprocess_cifti_wf(
         name="prepare_confounds_wf",
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
@@ -319,8 +320,7 @@ def init_postprocess_cifti_wf(
             ("outputnode.fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("outputnode.preprocessed_bold", "preprocessed_bold"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     denoise_bold_wf = init_denoise_bold_wf(
         TR=TR,
@@ -335,7 +335,6 @@ def init_postprocess_cifti_wf(
         name="denoise_bold_wf",
     )
 
-    # fmt:off
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
@@ -344,8 +343,7 @@ def init_postprocess_cifti_wf(
         (denoise_bold_wf, outputnode, [
             ("outputnode.uncensored_denoised_bold", "uncensored_denoised_bold"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if despike:
         despike_wf = init_despike_wf(
@@ -356,7 +354,6 @@ def init_postprocess_cifti_wf(
             name="despike_wf",
         )
 
-        # fmt:off
         workflow.connect([
             (prepare_confounds_wf, despike_wf, [
                 ("outputnode.preprocessed_bold", "inputnode.bold_file"),
@@ -364,44 +361,14 @@ def init_postprocess_cifti_wf(
             (despike_wf, denoise_bold_wf, [
                 ("outputnode.bold_file", "inputnode.preprocessed_bold"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     else:
-        # fmt:off
         workflow.connect([
             (prepare_confounds_wf, denoise_bold_wf, [
                 ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),
             ]),
-        ])
-        # fmt:on
-
-    connectivity_wf = init_functional_connectivity_cifti_wf(
-        min_coverage=min_coverage,
-        alff_available=bandpass_filter,
-        output_dir=output_dir,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
-        name="connectivity_wf",
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, connectivity_wf, [
-            ("bold_file", "inputnode.name_source"),
-            ("atlas_names", "inputnode.atlas_names"),
-            ("atlas_files", "inputnode.atlas_files"),
-            ("atlas_labels_files", "inputnode.atlas_labels_files"),
-            ("parcellated_atlas_files", "inputnode.parcellated_atlas_files"),
-        ]),
-        (prepare_confounds_wf, connectivity_wf, [
-            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-        ]),
-        (denoise_bold_wf, connectivity_wf, [
-            ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
-        ]),
-    ])
-    # fmt:on
+        ])  # fmt:skip
 
     if bandpass_filter:
         alff_wf = init_alff_wf(
@@ -418,7 +385,6 @@ def init_postprocess_cifti_wf(
             name="alff_wf",
         )
 
-        # fmt:off
         workflow.connect([
             (prepare_confounds_wf, alff_wf, [
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
@@ -426,9 +392,7 @@ def init_postprocess_cifti_wf(
             (denoise_bold_wf, alff_wf, [
                 ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
             ]),
-            (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     reho_wf = init_reho_cifti_wf(
         name_source=bold_file,
@@ -438,14 +402,11 @@ def init_postprocess_cifti_wf(
         name="reho_wf",
     )
 
-    # fmt:off
     workflow.connect([
         (denoise_bold_wf, reho_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
-        (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     qc_report_wf = init_qc_report_wf(
         output_dir=output_dir,
@@ -459,7 +420,6 @@ def init_postprocess_cifti_wf(
         name="qc_report_wf",
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, qc_report_wf, [("bold_file", "inputnode.name_source")]),
         (prepare_confounds_wf, qc_report_wf, [
@@ -474,8 +434,7 @@ def init_postprocess_cifti_wf(
             ("outputnode.interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
             ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         name_source=bold_file,
@@ -490,6 +449,7 @@ def init_postprocess_cifti_wf(
         smoothing=smoothing,
         params=params,
         exact_scans=exact_scans,
+        atlases=atlases,
         cifti=True,
         dcan_qc=dcan_qc,
         output_dir=output_dir,
@@ -497,11 +457,9 @@ def init_postprocess_cifti_wf(
         name="postproc_derivatives_wf",
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, postproc_derivatives_wf, [
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
-            ("atlas_names", "inputnode.atlas_names"),
             ("atlas_files", "inputnode.atlas_files"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
@@ -519,17 +477,6 @@ def init_postprocess_cifti_wf(
             ("outputnode.temporal_mask_metadata", "inputnode.temporal_mask_metadata"),
         ]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
-        (connectivity_wf, postproc_derivatives_wf, [
-            ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
-            ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
-            ("outputnode.correlation_ciftis", "inputnode.correlation_ciftis"),
-            ("outputnode.correlation_ciftis_exact", "inputnode.correlation_ciftis_exact"),
-            ("outputnode.coverage", "inputnode.coverage"),
-            ("outputnode.timeseries", "inputnode.timeseries"),
-            ("outputnode.correlations", "inputnode.correlations"),
-            ("outputnode.correlations_exact", "inputnode.correlations_exact"),
-            ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
-        ]),
         (postproc_derivatives_wf, outputnode, [
             ("outputnode.filtered_motion", "filtered_motion"),
             ("outputnode.temporal_mask", "temporal_mask"),
@@ -539,7 +486,7 @@ def init_postprocess_cifti_wf(
             ("outputnode.timeseries", "timeseries"),
             ("outputnode.timeseries_ciftis", "timeseries_ciftis"),
         ]),
-    ])
+    ])  # fmt:skip
 
     if bandpass_filter:
         workflow.connect([
@@ -547,11 +494,53 @@ def init_postprocess_cifti_wf(
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
             ]),
-            (connectivity_wf, postproc_derivatives_wf, [
-                ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
+        ])  # fmt:skip
+
+    if atlases:
+        connectivity_wf = init_functional_connectivity_cifti_wf(
+            min_coverage=min_coverage,
+            alff_available=bandpass_filter,
+            output_dir=output_dir,
+            mem_gb=mem_gbx["timeseries"],
+            omp_nthreads=omp_nthreads,
+            name="connectivity_wf",
+        )
+
+        workflow.connect([
+            (inputnode, connectivity_wf, [
+                ("bold_file", "inputnode.name_source"),
+                ("atlases", "inputnode.atlases"),
+                ("atlas_files", "inputnode.atlas_files"),
+                ("atlas_labels_files", "inputnode.atlas_labels_files"),
+                ("parcellated_atlas_files", "inputnode.parcellated_atlas_files"),
             ]),
-        ])
-    # fmt:on
+            (prepare_confounds_wf, connectivity_wf, [
+                ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+            ]),
+            (denoise_bold_wf, connectivity_wf, [
+                ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+            ]),
+            (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
+            (connectivity_wf, postproc_derivatives_wf, [
+                ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
+                ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
+                ("outputnode.correlation_ciftis", "inputnode.correlation_ciftis"),
+                ("outputnode.correlation_ciftis_exact", "inputnode.correlation_ciftis_exact"),
+                ("outputnode.coverage", "inputnode.coverage"),
+                ("outputnode.timeseries", "inputnode.timeseries"),
+                ("outputnode.correlations", "inputnode.correlations"),
+                ("outputnode.correlations_exact", "inputnode.correlations_exact"),
+                ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
+            ]),
+        ])  # fmt:skip
+
+        if bandpass_filter:
+            workflow.connect([
+                (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
+                (connectivity_wf, postproc_derivatives_wf, [
+                    ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
+                ]),
+            ])  # fmt:skip
 
     # executive summary workflow
     execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
@@ -563,19 +552,14 @@ def init_postprocess_cifti_wf(
         name="execsummary_functional_plots_wf",
     )
 
-    # Use inputnode for executive summary instead of downcast_data
-    # because T1w is used as name source.
-    # fmt:off
     workflow.connect([
-        # Use inputnode for executive summary instead of downcast_data
-        # because T1w is used as name source.
+        # Use inputnode for executive summary instead of downcast_data because T1w is name source.
         (inputnode, execsummary_functional_plots_wf, [
             ("boldref", "inputnode.boldref"),
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow
 

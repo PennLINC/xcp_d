@@ -1,7 +1,7 @@
 """Functions for working with atlases."""
 
 
-def get_atlas_names(subset):
+def select_atlases(atlases, subset):
     """Get a list of atlases to be used for parcellation and functional connectivity analyses.
 
     The actual list of files for the atlases is loaded from a different function.
@@ -10,7 +10,8 @@ def get_atlas_names(subset):
 
     Parameters
     ----------
-    subset = {"all", "subcortical", "cortical"}
+    atlases : None or list of str
+    subset : {"all", "subcortical", "cortical"}
         Description of the subset of atlases to collect.
 
     Returns
@@ -18,7 +19,7 @@ def get_atlas_names(subset):
     :obj:`list` of :obj:`str`
         List of atlases.
     """
-    atlases = {
+    BUILTIN_ATLASES = {
         "cortical": [
             "4S156Parcels",
             "4S256Parcels",
@@ -38,11 +39,20 @@ def get_atlas_names(subset):
             "HCP",
         ],
     }
-    atlases["all"] = sorted(list(set(atlases["cortical"] + atlases["subcortical"])))
-    return atlases[subset]
+    BUILTIN_ATLASES["all"] = sorted(
+        list(set(BUILTIN_ATLASES["cortical"] + BUILTIN_ATLASES["subcortical"]))
+    )
+    subset_atlases = BUILTIN_ATLASES[subset]
+    if atlases:
+        assert all([atlas in BUILTIN_ATLASES["all"] for atlas in atlases])
+        selected_atlases = [atlas for atlas in atlases if atlas in subset_atlases]
+    else:
+        selected_atlases = subset_atlases
+
+    return selected_atlases
 
 
-def get_atlas_nifti(atlas_name):
+def get_atlas_nifti(atlas):
     """Select atlas by name from xcp_d/data using pkgrf.
 
     All atlases are in MNI space.
@@ -51,10 +61,10 @@ def get_atlas_nifti(atlas_name):
 
     Parameters
     ----------
-    atlas_name : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
-                  "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
-                  "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
-                  "Tian", "HCP"}
+    atlas : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
+             "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
+             "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
+             "Tian", "HCP"}
         The name of the NIFTI atlas to fetch.
 
     Returns
@@ -70,25 +80,25 @@ def get_atlas_nifti(atlas_name):
 
     from pkg_resources import resource_filename as pkgrf
 
-    if "4S" in atlas_name or atlas_name in ("Glasser", "Gordon"):
+    if "4S" in atlas or atlas in ("Glasser", "Gordon"):
         # 1 mm3 atlases
-        atlas_fname = f"tpl-MNI152NLin6Asym_atlas-{atlas_name}_res-01_dseg.nii.gz"
-        tsv_fname = f"atlas-{atlas_name}_dseg.tsv"
+        atlas_fname = f"tpl-MNI152NLin6Asym_atlas-{atlas}_res-01_dseg.nii.gz"
+        tsv_fname = f"atlas-{atlas}_dseg.tsv"
     else:
         # 2 mm3 atlases
-        atlas_fname = f"tpl-MNI152NLin6Asym_atlas-{atlas_name}_res-02_dseg.nii.gz"
-        tsv_fname = f"atlas-{atlas_name}_dseg.tsv"
+        atlas_fname = f"tpl-MNI152NLin6Asym_atlas-{atlas}_res-02_dseg.nii.gz"
+        tsv_fname = f"atlas-{atlas}_dseg.tsv"
 
-    if "4S" in atlas_name:
+    if "4S" in atlas:
         atlas_file = join("/AtlasPack", atlas_fname)
         atlas_labels_file = join("/AtlasPack", tsv_fname)
-        atlas_metadata_file = f"/AtlasPack/tpl-MNI152NLin6Asym_atlas-{atlas_name}_dseg.json"
+        atlas_metadata_file = f"/AtlasPack/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json"
     else:
         atlas_file = pkgrf("xcp_d", f"data/atlases/{atlas_fname}")
         atlas_labels_file = pkgrf("xcp_d", f"data/atlases/{tsv_fname}")
         atlas_metadata_file = pkgrf(
             "xcp_d",
-            f"data/atlases/tpl-MNI152NLin6Asym_atlas-{atlas_name}_dseg.json",
+            f"data/atlases/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json",
         )
 
     if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
@@ -99,7 +109,7 @@ def get_atlas_nifti(atlas_name):
     return atlas_file, atlas_labels_file, atlas_metadata_file
 
 
-def get_atlas_cifti(atlas_name):
+def get_atlas_cifti(atlas):
     """Select atlas by name from xcp_d/data.
 
     All atlases are in 91K space.
@@ -108,10 +118,10 @@ def get_atlas_cifti(atlas_name):
 
     Parameters
     ----------
-    atlas_name : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
-                  "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
-                  "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
-                  "Tian", "HCP"}
+    atlas : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
+             "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
+             "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
+             "Tian", "HCP"}
         The name of the CIFTI atlas to fetch.
 
     Returns
@@ -127,17 +137,17 @@ def get_atlas_cifti(atlas_name):
 
     from pkg_resources import resource_filename as pkgrf
 
-    if "4S" in atlas_name:
-        atlas_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas_name}_den-91k_dseg.dlabel.nii"
-        atlas_labels_file = f"/AtlasPack/atlas-{atlas_name}_dseg.tsv"
-        atlas_metadata_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas_name}_dseg.json"
+    if "4S" in atlas:
+        atlas_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_den-91k_dseg.dlabel.nii"
+        atlas_labels_file = f"/AtlasPack/atlas-{atlas}_dseg.tsv"
+        atlas_metadata_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_dseg.json"
     else:
         atlas_file = pkgrf(
             "xcp_d",
-            f"data/atlases/tpl-fsLR_atlas-{atlas_name}_den-32k_dseg.dlabel.nii",
+            f"data/atlases/tpl-fsLR_atlas-{atlas}_den-32k_dseg.dlabel.nii",
         )
-        atlas_labels_file = pkgrf("xcp_d", f"data/atlases/atlas-{atlas_name}_dseg.tsv")
-        atlas_metadata_file = pkgrf("xcp_d", f"data/atlases/tpl-fsLR_atlas-{atlas_name}_dseg.json")
+        atlas_labels_file = pkgrf("xcp_d", f"data/atlases/atlas-{atlas}_dseg.tsv")
+        atlas_metadata_file = pkgrf("xcp_d", f"data/atlases/tpl-fsLR_atlas-{atlas}_dseg.json")
 
     if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
         raise FileNotFoundError(

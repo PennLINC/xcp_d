@@ -72,6 +72,14 @@ The 4S atlas is used in the same manner across three PennLINC BIDS Apps:
 XCP-D, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
 For more information about the 4S atlas, please see https://github.com/PennLINC/AtlasPack.
 
+.. tip::
+
+   You can choose to only use a subset of the available atlases by using the ``--atlases``
+   parameter.
+
+   Alternatively, if you want to skip the parcellation step completely,
+   you can use the ``--skip-parcellation`` parameter.
+
 Atlases are written out to the ``atlases`` subfolder, following BEP038.
 
 .. code-block::

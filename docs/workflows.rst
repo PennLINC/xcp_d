@@ -36,8 +36,8 @@ Surface normalization
 ---------------------
 :func:`~xcp_d.workflows.anatomical.init_warp_surfaces_to_template_wf`
 
-If the ``--warp-surfaces-native2std`` is used, then fsnative surface files from the preprocessing
-derivatives will be warped to fsLR-32k space.
+If the ``--warp-surfaces-native2std`` flag is used,
+then fsnative surface files from the preprocessing derivatives will be warped to fsLR-32k space.
 
 .. important::
 
@@ -504,14 +504,19 @@ ReHo
 :func:`~xcp_d.workflows.restingstate.init_reho_cifti_wf`
 
 
-Parcellation and functional connectivity estimation
-===================================================
+Parcellation and functional connectivity estimation [OPTIONAL]
+==============================================================
 :func:`~xcp_d.workflows.connectivity.init_functional_connectivity_nifti_wf`,
 :func:`~xcp_d.workflows.connectivity.init_functional_connectivity_cifti_wf`
 
-The ``filtered, denoised BOLD`` is fed into a functional connectivity workflow,
+If the user chooses,
+the ``filtered, denoised BOLD`` is fed into a functional connectivity workflow,
 which extracts parcel-wise time series from the BOLD using several atlases.
 These atlases are documented in :doc:`outputs`.
+
+Users can control which atlases are used with the ``--atlases`` parameter
+(by default, all atlases are used),
+or can skip this step entirely with ``--skip-parcellation``.
 
 The resulting parcellated time series for each atlas is then used to generate static functional
 connectivity matrices, as measured with Pearson correlation coefficients.
