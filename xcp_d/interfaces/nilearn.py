@@ -395,6 +395,9 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             "uncensored_denoised.nii.gz",
         )
         uncensored_denoised_img = masker.inverse_transform(uncensored_denoised_bold)
+        pixdim = list(uncensored_denoised_img.header.get_zooms())
+        pixdim[3] = self.inputs.TR
+        uncensored_denoised_img.header.set_zooms(pixdim)
         uncensored_denoised_img.to_filename(self._results["uncensored_denoised_bold"])
 
         self._results["interpolated_filtered_bold"] = os.path.join(
@@ -402,6 +405,9 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             "filtered_denoised.nii.gz",
         )
         filtered_denoised_img = masker.inverse_transform(interpolated_filtered_bold)
+        pixdim = list(filtered_denoised_img.header.get_zooms())
+        pixdim[3] = self.inputs.TR
+        filtered_denoised_img.header.set_zooms(pixdim)
         filtered_denoised_img.to_filename(self._results["interpolated_filtered_bold"])
 
         return runtime
