@@ -197,7 +197,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         opts.work_dir,
         "dset_bids/derivatives/ukb",
     )
-    check_affines(converted_fmri_dir, out_dir, input_type="nifti")
+    check_affines(converted_fmri_dir, out_dir, input_type="ukb")
 
 
 @pytest.mark.pnc_cifti
