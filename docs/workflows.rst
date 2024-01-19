@@ -36,8 +36,8 @@ Surface normalization
 ---------------------
 :func:`~xcp_d.workflows.anatomical.init_warp_surfaces_to_template_wf`
 
-If the ``--warp-surfaces-native2std`` is used, then fsnative surface files from the preprocessing
-derivatives will be warped to fsLR-32k space.
+If the ``--warp-surfaces-native2std`` flag is used,
+then fsnative surface files from the preprocessing derivatives will be warped to fsLR-32k space.
 
 .. important::
 
@@ -474,15 +474,23 @@ spontaneous neural activity in resting-state BOLD data.
 It is calculated by the following:
 
 1. The ``filtered, interpolated, denoised BOLD`` is passed along to the ALFF workflow.
-2. Voxel-wise BOLD time series are normalized (mean-centered and scaled to unit standard deviation)
-   over time.
-3. The power spectrum and associated frequencies are estimated from the BOLD data.
+2. If censoring+interpolation was performed, then the interpolated time series is censored at this
+   point.
+3. Voxel-wise BOLD time series are normalized (mean-centered and scaled to unit standard deviation)
+   over time. This will ensure that the power spectrum from ``periodogram`` and ``lombscargle``
+   are roughly equivalent.
+4. The power spectrum and associated frequencies are estimated from the BOLD data.
+
    -  If censoring+interpolation was not performed, then this uses :func:`scipy.signal.periodogram`.
    -  If censoring+interpolation was performed, then this uses :func:`scipy.signal.lombscargle`.
-4. The square root of the power spectrum is calculated.
-5. The power spectrum values corresponding to the frequency range retained by the
+
+5. The square root of the power spectrum is calculated.
+6. The power spectrum values corresponding to the frequency range retained by the
    temporal filtering step are extracted from the full power spectrum.
-6. The mean of the within-band power spectrum is calculated and multiplied by 2.
+7. The mean of the within-band power spectrum is calculated and multiplied by 2.
+8. The ALFF value is multiplied by the standard deviation of the voxel-wise
+   ``filtered, interpolated, denoised BOLD`` time series.
+   This brings ALFF back to its original scale, as if the time series was not normalized.
 
 ALFF will only be calculated if the bandpass filter is enabled
 (i.e., if the ``--disable-bandpass-filter`` flag is not used).
@@ -496,14 +504,19 @@ ReHo
 :func:`~xcp_d.workflows.restingstate.init_reho_cifti_wf`
 
 
-Parcellation and functional connectivity estimation
-===================================================
+Parcellation and functional connectivity estimation [OPTIONAL]
+==============================================================
 :func:`~xcp_d.workflows.connectivity.init_functional_connectivity_nifti_wf`,
 :func:`~xcp_d.workflows.connectivity.init_functional_connectivity_cifti_wf`
 
-The ``filtered, denoised BOLD`` is fed into a functional connectivity workflow,
+If the user chooses,
+the ``filtered, denoised BOLD`` is fed into a functional connectivity workflow,
 which extracts parcel-wise time series from the BOLD using several atlases.
 These atlases are documented in :doc:`outputs`.
+
+Users can control which atlases are used with the ``--atlases`` parameter
+(by default, all atlases are used),
+or can skip this step entirely with ``--skip-parcellation``.
 
 The resulting parcellated time series for each atlas is then used to generate static functional
 connectivity matrices, as measured with Pearson correlation coefficients.

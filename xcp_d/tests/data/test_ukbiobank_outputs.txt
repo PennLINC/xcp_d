@@ -72,6 +72,8 @@ xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_desc-preproc_design.j
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_desc-preproc_design.tsv
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_outliers.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_outliers.tsv
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_alff.json
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_alff.nii.gz
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_alff.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_alff.tsv
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_coverage.json
@@ -212,13 +214,11 @@ xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_reho.tsv
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_timeseries.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_timeseries.tsv
-xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-linc_qc.csv
-xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_alff.json
-xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_alff.nii.gz
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoisedSmoothed_bold.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoised_bold.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoised_bold.nii.gz
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-linc_qc.csv
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-smooth_alff.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-smooth_alff.nii.gz
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_reho.json

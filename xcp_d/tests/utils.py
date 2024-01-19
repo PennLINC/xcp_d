@@ -122,7 +122,7 @@ def check_affines(data_dir, out_dir, input_type):
             extension=".dtseries.nii",
         )
 
-    elif input_type == "nifti":  # Get the .nii.gz
+    elif input_type in ("nifti", "ukb"):  # Get the .nii.gz
         # Problem: it's collecting native-space data
         denoised_files = xcp_layout.get(
             datatype="func",
@@ -155,17 +155,18 @@ def check_affines(data_dir, out_dir, input_type):
 
     preproc_file = preproc_files[0].path
     denoised_file = denoised_files[0].path
+    img1 = nb.load(preproc_file)
+    img2 = nb.load(denoised_file)
 
     if input_type == "cifti":
-        assert (
-            nb.load(preproc_file)._nifti_header.get_intent()
-            == nb.load(denoised_file)._nifti_header.get_intent()
-        )
+        assert img1._nifti_header.get_intent() == img2._nifti_header.get_intent()
+        np.testing.assert_array_equal(img1.nifti_header.get_zooms(), img2.nifti_header.get_zooms())
     else:
-        if not np.array_equal(nb.load(preproc_file).affine, nb.load(denoised_file).affine):
-            raise AssertionError(f"Affines do not match:\n\t{preproc_file}\n\t{denoised_file}")
-
-    print("No affines changed.")
+        np.testing.assert_array_equal(img1.affine, img2.affine)
+        if input_type != "ukb":
+            # The UK Biobank test dataset has the wrong TR in the header.
+            # I'll fix it at some point, but it's not the software's fault.
+            np.testing.assert_array_equal(img1.header.get_zooms(), img2.header.get_zooms())
 
 
 def run_command(command, env=None):

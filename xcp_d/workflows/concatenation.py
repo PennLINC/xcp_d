@@ -27,6 +27,7 @@ def init_concatenate_data_wf(
     cifti,
     dcan_qc,
     fd_thresh,
+    atlases,
     mem_gb,
     omp_nthreads,
     name="concatenate_data_wf",
@@ -50,6 +51,7 @@ def init_concatenate_data_wf(
                 cifti=False,
                 dcan_qc=True,
                 fd_thresh=0.3,
+                atlases=[],
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="concatenate_data_wf",
@@ -65,7 +67,8 @@ def init_concatenate_data_wf(
     %(smoothing)s
     %(cifti)s
     %(dcan_qc)s
-    fd_thresh
+    %(fd_thresh)s
+    %(atlases)s
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -94,8 +97,6 @@ def init_concatenate_data_wf(
     anat_brainmask : :obj:`str`
     %(template_to_anat_xfm)s
     %(boldref)s
-    %(atlas_names)s
-        This will be a list of strings.
     %(timeseries)s
         This will be a list of lists, with one sublist for each run.
     %(timeseries_ciftis)s
@@ -123,7 +124,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "boldref",  # only for niftis, from postproc workflows
                 "anat_brainmask",  # only for niftis, from data collection
                 "template_to_anat_xfm",  # only for niftis, from data collection
-                "atlas_names",
                 "timeseries",
                 "timeseries_ciftis",  # only for ciftis, from postproc workflows
             ],
@@ -142,7 +142,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         name="filter_runs",
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, filter_runs, [
             ("preprocessed_bold", "preprocessed_bold"),
@@ -158,15 +157,13 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
         ])
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     concatenate_inputs = pe.Node(
         ConcatenateInputs(),
         name="concatenate_inputs",
     )
 
-    # fmt:off
     workflow.connect([
         (filter_runs, concatenate_inputs, [
             ("preprocessed_bold", "preprocessed_bold"),
@@ -180,8 +177,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     # Now, run the QC report workflow on the concatenated BOLD file.
     qc_report_wf = init_qc_report_wf(
@@ -197,7 +193,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     )
     qc_report_wf.inputs.inputnode.dummy_scans = 0
 
-    # fmt:off
     workflow.connect([
         (inputnode, qc_report_wf, [
             ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
@@ -219,8 +214,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("temporal_mask", "inputnode.temporal_mask"),
             ("run_index", "inputnode.run_index"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
@@ -234,16 +228,13 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         run_without_submitting=True,
         mem_gb=1,
     )
-
-    # fmt:off
     workflow.connect([
         (clean_name_source, ds_filtered_motion, [("name_source", "source_file")]),
         (concatenate_inputs, ds_filtered_motion, [("filtered_motion", "in_file")]),
         (filter_runs, ds_filtered_motion, [
             (("filtered_motion", _make_xcpd_uri, output_dir), "Sources"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
@@ -257,109 +248,13 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         mem_gb=1,
     )
 
-    # fmt:off
     workflow.connect([
         (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
         (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
         (filter_runs, ds_temporal_mask, [
             (("temporal_mask", _make_xcpd_uri, output_dir), "Sources"),
         ]),
-    ])
-    # fmt:on
-
-    make_timeseries_dict = pe.MapNode(
-        niu.Function(
-            function=_make_dictionary,
-            input_names=["Sources"],
-            output_names=["metadata"],
-        ),
-        run_without_submitting=True,
-        mem_gb=1,
-        name="make_timeseries_dict",
-        iterfield=["Sources"],
-    )
-    # fmt:off
-    workflow.connect([
-        (filter_runs, make_timeseries_dict, [
-            (("timeseries", _make_xcpd_uri_lol, output_dir), "Sources"),
-        ]),
-    ])
-    # fmt:on
-
-    ds_timeseries = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["desc"],
-            suffix="timeseries",
-            extension=".tsv",
-            # Metadata
-            SamplingFrequency="TR",
-        ),
-        name="ds_timeseries",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["atlas", "in_file", "meta_dict"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_timeseries, [("atlas_names", "atlas")]),
-        (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
-        (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
-    ])
-    # fmt:on
-
-    correlate_timeseries = pe.MapNode(
-        TSVConnect(),
-        run_without_submitting=True,
-        mem_gb=1,
-        name="correlate_timeseries",
-        iterfield=["timeseries"],
-    )
-    workflow.connect([(concatenate_inputs, correlate_timeseries, [("timeseries", "timeseries")])])
-
-    make_correlations_dict = pe.MapNode(
-        niu.Function(
-            function=_make_dictionary,
-            input_names=["Sources"],
-            output_names=["metadata"],
-        ),
-        run_without_submitting=True,
-        mem_gb=1,
-        name="make_correlations_dict",
-        iterfield=["Sources"],
-    )
-    # fmt:off
-    workflow.connect([
-        (ds_timeseries, make_correlations_dict, [
-            (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-        ]),
-    ])
-    # fmt:on
-
-    ds_correlations = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["desc"],
-            measure="pearsoncorrelation",
-            suffix="conmat",
-            extension=".tsv",
-        ),
-        name="ds_correlations",
-        run_without_submitting=True,
-        mem_gb=1,
-        iterfield=["atlas", "in_file", "meta_dict"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_correlations, [("atlas_names", "atlas")]),
-        (clean_name_source, ds_correlations, [("name_source", "source_file")]),
-        (correlate_timeseries, ds_correlations, [("correlations", "in_file")]),
-        (make_correlations_dict, ds_correlations, [("metadata", "meta_dict")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if cifti:
         ds_censored_filtered_bold = pe.Node(
@@ -374,49 +269,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             run_without_submitting=True,
             mem_gb=2,
         )
-
-        make_timeseries_ciftis_dict = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
-                input_names=["Sources"],
-                output_names=["metadata"],
-            ),
-            run_without_submitting=True,
-            mem_gb=1,
-            name="make_timeseries_ciftis_dict",
-            iterfield=["Sources"],
-        )
-        # fmt:off
-        workflow.connect([
-            (filter_runs, make_timeseries_ciftis_dict, [
-                (("timeseries_ciftis", _make_xcpd_uri_lol, output_dir), "Sources"),
-            ]),
-        ])
-        # fmt:on
-
-        ds_timeseries_cifti_files = pe.MapNode(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                check_hdr=False,
-                dismiss_entities=["desc", "den"],
-                den="91k",
-                suffix="timeseries",
-                extension=".ptseries.nii",
-            ),
-            name="ds_timeseries_cifti_files",
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
-        )
-
-        # fmt:off
-        workflow.connect([
-            (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
-            (inputnode, ds_timeseries_cifti_files, [("atlas_names", "atlas")]),
-            (concatenate_inputs, ds_timeseries_cifti_files, [("timeseries_ciftis", "in_file")]),
-            (make_timeseries_ciftis_dict, ds_timeseries_cifti_files, [("metadata", "meta_dict")]),
-        ])
-        # fmt:on
 
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
@@ -485,18 +337,15 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-    # fmt:off
     workflow.connect([
         (clean_name_source, ds_censored_filtered_bold, [("name_source", "source_file")]),
         (concatenate_inputs, ds_censored_filtered_bold, [("censored_denoised_bold", "in_file")]),
         (filter_runs, ds_censored_filtered_bold, [
             (("censored_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if smoothing:
-        # fmt:off
         workflow.connect([
             (clean_name_source, ds_smoothed_denoised_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_smoothed_denoised_bold, [
@@ -505,11 +354,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (filter_runs, ds_smoothed_denoised_bold, [
                 (("smoothed_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     if dcan_qc:
-        # fmt:off
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_interpolated_filtered_bold, [
@@ -518,7 +365,140 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (filter_runs, ds_interpolated_filtered_bold, [
                 (("interpolated_filtered_bold", _make_xcpd_uri, output_dir), "Sources"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
+
+    # Functional connectivity outputs
+    if atlases:
+        make_timeseries_dict = pe.MapNode(
+            niu.Function(
+                function=_make_dictionary,
+                input_names=["Sources"],
+                output_names=["metadata"],
+            ),
+            run_without_submitting=True,
+            mem_gb=1,
+            name="make_timeseries_dict",
+            iterfield=["Sources"],
+        )
+        workflow.connect([
+            (filter_runs, make_timeseries_dict, [
+                (("timeseries", _make_xcpd_uri_lol, output_dir), "Sources"),
+            ]),
+        ])  # fmt:skip
+
+        ds_timeseries = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["desc"],
+                suffix="timeseries",
+                extension=".tsv",
+                # Metadata
+                SamplingFrequency="TR",
+            ),
+            name="ds_timeseries",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file", "meta_dict"],
+        )
+        ds_timeseries.inputs.atlas = atlases
+
+        workflow.connect([
+            (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
+            (concatenate_inputs, ds_timeseries, [("timeseries", "in_file")]),
+            (make_timeseries_dict, ds_timeseries, [("metadata", "meta_dict")]),
+        ])  # fmt:skip
+
+        correlate_timeseries = pe.MapNode(
+            TSVConnect(),
+            run_without_submitting=True,
+            mem_gb=1,
+            name="correlate_timeseries",
+            iterfield=["timeseries"],
+        )
+        workflow.connect([
+            (concatenate_inputs, correlate_timeseries, [("timeseries", "timeseries")]),
+        ])  # fmt:skip
+
+        make_correlations_dict = pe.MapNode(
+            niu.Function(
+                function=_make_dictionary,
+                input_names=["Sources"],
+                output_names=["metadata"],
+            ),
+            run_without_submitting=True,
+            mem_gb=1,
+            name="make_correlations_dict",
+            iterfield=["Sources"],
+        )
+        workflow.connect([
+            (ds_timeseries, make_correlations_dict, [
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
+            ]),
+        ])  # fmt:skip
+
+        ds_correlations = pe.MapNode(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["desc"],
+                measure="pearsoncorrelation",
+                suffix="conmat",
+                extension=".tsv",
+            ),
+            name="ds_correlations",
+            run_without_submitting=True,
+            mem_gb=1,
+            iterfield=["atlas", "in_file", "meta_dict"],
+        )
+        ds_correlations.inputs.atlas = atlases
+
+        workflow.connect([
+            (clean_name_source, ds_correlations, [("name_source", "source_file")]),
+            (correlate_timeseries, ds_correlations, [("correlations", "in_file")]),
+            (make_correlations_dict, ds_correlations, [("metadata", "meta_dict")]),
+        ])  # fmt:skip
+
+        if cifti:
+            make_timeseries_ciftis_dict = pe.MapNode(
+                niu.Function(
+                    function=_make_dictionary,
+                    input_names=["Sources"],
+                    output_names=["metadata"],
+                ),
+                run_without_submitting=True,
+                mem_gb=1,
+                name="make_timeseries_ciftis_dict",
+                iterfield=["Sources"],
+            )
+            workflow.connect([
+                (filter_runs, make_timeseries_ciftis_dict, [
+                    (("timeseries_ciftis", _make_xcpd_uri_lol, output_dir), "Sources"),
+                ]),
+            ])  # fmt:skip
+
+            ds_timeseries_cifti_files = pe.MapNode(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    check_hdr=False,
+                    dismiss_entities=["desc", "den"],
+                    den="91k",
+                    suffix="timeseries",
+                    extension=".ptseries.nii",
+                ),
+                name="ds_timeseries_cifti_files",
+                run_without_submitting=True,
+                mem_gb=1,
+                iterfield=["atlas", "in_file", "meta_dict"],
+            )
+            ds_timeseries_cifti_files.inputs.atlas = atlases
+
+            workflow.connect([
+                (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
+                (concatenate_inputs, ds_timeseries_cifti_files, [
+                    ("timeseries_ciftis", "in_file"),
+                ]),
+                (make_timeseries_ciftis_dict, ds_timeseries_cifti_files, [
+                    ("metadata", "meta_dict"),
+                ]),
+            ])  # fmt:skip
 
     return workflow
