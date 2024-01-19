@@ -86,5 +86,10 @@ def test_write_ndata(ds001419_data, tmp_path_factory):
 
     # Try writing out a completely different filetype (should fail)
     out_file = os.path.join(tmpdir, "file.txt")
-    with pytest.raises(ValueError, match="Unknown extension"):
+    with pytest.raises(ValueError, match="Unsupported CIFTI extension"):
         write_save.write_ndata(cifti_data, template=orig_cifti, filename=out_file)
+
+    # Try using a txt file as a template
+    fake_template = os.path.join(tmpdir, "file.txt")
+    with pytest.raises(ValueError, match="Unknown extension"):
+        write_save.write_ndata(cifti_data, template=fake_template, filename=temp_cifti)
