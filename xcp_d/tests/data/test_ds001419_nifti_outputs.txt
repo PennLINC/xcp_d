@@ -56,6 +56,8 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_per
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_peraf.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_reho.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_reho.nii.gz
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_tsnr.json
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_tsnr.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.json
