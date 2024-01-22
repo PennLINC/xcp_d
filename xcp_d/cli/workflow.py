@@ -58,7 +58,8 @@ def build_workflow(config_file, retval):
 
     # First check that fmri_dir looks like a BIDS folder
     subject_list = collect_participants(
-        config.execution.fmri_dir, participant_label=config.execution.participant_label
+        bids_dir=config.execution.layout,
+        participant_label=config.execution.participant_label,
     )
 
     # Called with reports only
