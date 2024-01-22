@@ -393,6 +393,8 @@ class execution(_Config):
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
     notrack = False
     """Do not collect telemetry information for *XCP-D*."""
+    reports_only = False
+    """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
     """Folder where derivatives will be stored."""
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
