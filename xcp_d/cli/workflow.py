@@ -12,12 +12,11 @@ a hard-limited memory-scope.
 
 def build_workflow(config_file, retval):
     """Create the Nipype Workflow that supports the whole execution graph."""
-    from niworkflows.utils.bids import collect_participants
     from niworkflows.utils.misc import check_valid_fs_license
 
     from xcp_d import config, data
     from xcp_d.interfaces.report_core import generate_reports
-    from xcp_d.utils.bids import check_pipeline_version
+    from xcp_d.utils.bids import check_pipeline_version, collect_participants
     from xcp_d.utils.utils import check_deps
     from xcp_d.workflows.base import init_xcpd_wf
 

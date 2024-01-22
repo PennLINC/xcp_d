@@ -11,7 +11,6 @@ from pathlib import Path
 
 import nibabel as nb
 import yaml
-from bids import BIDSLayout
 from nipype import logging
 from packaging.version import Version
 
@@ -76,12 +75,12 @@ class BIDSWarning(RuntimeWarning):
     pass
 
 
-def collect_participants(bids_dir, participant_label=None, strict=False, bids_validate=False):
+def collect_participants(layout, participant_label=None, strict=False):
     """Collect a list of participants from a BIDS dataset.
 
     Parameters
     ----------
-    bids_dir : :obj:`str` or pybids.layout.BIDSLayout
+    bids_dir : pybids.layout.BIDSLayout
     participant_label : None, str, or list, optional
     strict : bool, optional
     bids_validate : bool, optional
@@ -102,11 +101,6 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     ['02', '04']
     ...
     """
-    if isinstance(bids_dir, BIDSLayout):
-        layout = bids_dir
-    else:
-        layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
-
     all_participants = set(layout.get_subjects())
 
     # Error: bids_dir does not contain subjects
@@ -114,7 +108,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
         raise BIDSError(
             "Could not find participants. Please make sure the BIDS derivatives "
             "are accessible to Docker/ are in BIDS directory structure.",
-            bids_dir,
+            layout,
         )
 
     # No --participant-label was set, return all
@@ -133,13 +127,13 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     if not found_label:
         raise BIDSError(
             f"Could not find participants [{', '.join(participant_label)}]",
-            bids_dir,
+            layout,
         )
 
     if notfound_label := sorted(set(participant_label) - all_participants):
         exc = BIDSError(
             f"Some participants were not found: {', '.join(notfound_label)}",
-            bids_dir,
+            layout,
         )
         if strict:
             raise exc
