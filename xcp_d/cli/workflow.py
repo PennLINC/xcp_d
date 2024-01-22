@@ -81,7 +81,6 @@ def build_workflow(config_file, retval):
         f"Preprocessing derivatives path: {config.execution.fmri_dir}.",
         f"Participant list: {subject_list}.",
         f"Run identifier: {config.execution.run_uuid}.",
-        f"Output spaces: {config.execution.output_spaces}.",
     ]
 
     if config.execution.derivatives:
