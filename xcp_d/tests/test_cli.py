@@ -367,7 +367,6 @@ def test_nibabies(data_dir, output_dir, working_dir):
 def _run_and_generate(test_name, parameters, input_type):
     from xcp_d import config
 
-    parameters.append("--stop-on-first-crash")
     parameters.append("--clean-workdir")
     parameters.append("-vv")
     parse_args(parameters)
