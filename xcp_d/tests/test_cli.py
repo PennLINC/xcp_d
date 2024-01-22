@@ -387,6 +387,6 @@ def _run_and_generate(test_name, parameters, input_type):
         packagename="xcp_d",
     )
 
-    output_list_file = os.path.join(get_test_data_path(), f"expected_outputs_{test_name}.txt")
+    output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
     check_generated_files(config.execution.xcp_d_dir, output_list_file)
     check_affines(config.execution.fmri_dir, config.execution.xcp_d_dir, input_type=input_type)
