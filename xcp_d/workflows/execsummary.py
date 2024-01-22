@@ -11,6 +11,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
@@ -28,14 +29,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_brainsprite_figures_wf(
-    output_dir,
-    t1w_available,
-    t2w_available,
-    mem_gb,
-    omp_nthreads,
-    name="init_brainsprite_figures_wf",
-):
+def init_brainsprite_figures_wf(t1w_available, t2w_available):
     """Create mosaic and PNG files for executive summary brainsprite.
 
     Workflow Graph
@@ -77,7 +71,11 @@ def init_brainsprite_figures_wf(
     lh_pial_surf
     rh_pial_surf
     """
-    workflow = Workflow(name=name)
+    workflow = Workflow(name="brainsprite_figures_wf")
+
+    output_dir = config.execution.xcp_d_dir
+    mem_gb = config.nipype.mem_gb
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -303,9 +301,6 @@ def init_execsummary_functional_plots_wf(
     preproc_nifti,
     t1w_available,
     t2w_available,
-    output_dir,
-    layout,
-    name="execsummary_functional_plots_wf",
 ):
     """Generate the functional figures for an executive summary.
 
@@ -350,7 +345,10 @@ def init_execsummary_functional_plots_wf(
     t2w
         T2w image in a standard space, taken from the output of init_postprocess_anat_wf.
     """
-    workflow = Workflow(name=name)
+    workflow = Workflow(name="execsummary_functional_plots_wf")
+
+    output_dir = config.execution.xcp_d_dir
+    layout = config.execution.layout
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -479,7 +477,6 @@ def init_execsummary_functional_plots_wf(
         # fmt:on
 
         plot_anat_on_task_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc=f"{anat[0].upper()}{anat[1:]}OnTask",
             name=f"plot_{anat}_on_task_wf",
         )
@@ -497,7 +494,6 @@ def init_execsummary_functional_plots_wf(
         # fmt:on
 
         plot_task_on_anat_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc=f"TaskOn{anat[0].upper()}{anat[1:]}",
             name=f"plot_task_on_{anat}_wf",
         )
@@ -518,12 +514,7 @@ def init_execsummary_functional_plots_wf(
 
 
 @fill_doc
-def init_execsummary_anatomical_plots_wf(
-    t1w_available,
-    t2w_available,
-    output_dir,
-    name="execsummary_anatomical_plots_wf",
-):
+def init_execsummary_anatomical_plots_wf(t1w_available, t2w_available):
     """Generate the anatomical figures for an executive summary.
 
     Workflow Graph
@@ -557,7 +548,7 @@ def init_execsummary_anatomical_plots_wf(
         T2w image, after warping to standard space.
     template
     """
-    workflow = Workflow(name=name)
+    workflow = Workflow(name="execsummary_anatomical_plots_wf")
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -590,7 +581,6 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:on
 
         plot_anat_on_atlas_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc="AnatOnAtlas",
             name=f"plot_{anat}_on_atlas_wf",
         )
@@ -606,7 +596,6 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:on
 
         plot_atlas_on_anat_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc="AtlasOnAnat",
             name=f"plot_atlas_on_{anat}_wf",
         )
@@ -735,15 +724,13 @@ def init_plot_custom_slices_wf(
     return workflow
 
 
-def init_plot_overlay_wf(
-    output_dir,
-    desc,
-    name="plot_overlay_wf",
-):
+def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
     """Use the default slices from slicesdir to make a plot."""
     from xcp_d.interfaces.plotting import SlicesDir
 
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(

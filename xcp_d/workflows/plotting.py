@@ -5,6 +5,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
@@ -16,14 +17,8 @@ from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
 
 @fill_doc
 def init_qc_report_wf(
-    output_dir,
     TR,
     head_radius,
-    params,
-    cifti,
-    dcan_qc,
-    mem_gb,
-    omp_nthreads,
     name="qc_report_wf",
 ):
     """Generate quality control figures and a QC file.
@@ -91,6 +86,13 @@ def init_qc_report_wf(
     qc_file
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    params = config.workflow.params
+    cifti = config.workflow.cifti
+    dcan_qc = config.workflow.dcan_qc
+    mem_gb = config.workflow.mem_gb
+    omp_nthreads = config.workflow.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(

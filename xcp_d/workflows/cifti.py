@@ -10,6 +10,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
+from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
@@ -30,34 +31,12 @@ LOGGER = logging.getLogger("nipype.workflow")
 @fill_doc
 def init_postprocess_cifti_wf(
     bold_file,
-    fmri_dir,
-    bandpass_filter,
-    high_pass,
-    low_pass,
-    bpf_order,
-    motion_filter_type,
-    motion_filter_order,
-    band_stop_min,
-    band_stop_max,
-    smoothing,
     head_radius,
-    params,
-    output_dir,
-    custom_confounds_folder,
-    dummy_scans,
-    fd_thresh,
-    despike,
-    dcan_qc,
     run_data,
     t1w_available,
     t2w_available,
     n_runs,
-    atlases,
-    min_coverage,
     exact_scans,
-    random_seed,
-    omp_nthreads,
-    layout=None,
     name="cifti_postprocess_wf",
 ):
     """Organize the cifti processing workflow.
@@ -204,6 +183,13 @@ def init_postprocess_cifti_wf(
     """
     workflow = Workflow(name=name)
 
+    bandpass_filter = config.workflow.bandpass_filter
+    custom_confounds_folder = config.workflow.custom_confounds
+    dummy_scans = config.workflow.dummy_scans
+    despike = config.workflow.despike
+    atlases = config.workflow.atlases
+    omp_nthreads = config.nipype.omp_nthreads
+
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
     inputnode = pe.Node(
@@ -289,22 +275,10 @@ def init_postprocess_cifti_wf(
     ])  # fmt:skip
 
     prepare_confounds_wf = init_prepare_confounds_wf(
-        output_dir=output_dir,
         TR=TR,
-        params=params,
-        dummy_scans=dummy_scans,
-        random_seed=random_seed,
         exact_scans=exact_scans,
-        motion_filter_type=motion_filter_type,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        motion_filter_order=motion_filter_order,
         head_radius=head_radius,
-        fd_thresh=fd_thresh,
         custom_confounds_file=custom_confounds_file,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
-        name="prepare_confounds_wf",
     )
 
     workflow.connect([
@@ -322,18 +296,7 @@ def init_postprocess_cifti_wf(
         ]),
     ])  # fmt:skip
 
-    denoise_bold_wf = init_denoise_bold_wf(
-        TR=TR,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        bpf_order=bpf_order,
-        bandpass_filter=bandpass_filter,
-        smoothing=smoothing,
-        cifti=True,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
-        name="denoise_bold_wf",
-    )
+    denoise_bold_wf = init_denoise_bold_wf(TR=TR)
 
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
@@ -346,13 +309,7 @@ def init_postprocess_cifti_wf(
     ])  # fmt:skip
 
     if despike:
-        despike_wf = init_despike_wf(
-            TR=TR,
-            cifti=True,
-            mem_gb=mem_gbx["timeseries"],
-            omp_nthreads=omp_nthreads,
-            name="despike_wf",
-        )
+        despike_wf = init_despike_wf(TR=TR)
 
         workflow.connect([
             (prepare_confounds_wf, despike_wf, [
@@ -371,19 +328,7 @@ def init_postprocess_cifti_wf(
         ])  # fmt:skip
 
     if bandpass_filter:
-        alff_wf = init_alff_wf(
-            name_source=bold_file,
-            output_dir=output_dir,
-            TR=TR,
-            low_pass=low_pass,
-            high_pass=high_pass,
-            fd_thresh=fd_thresh,
-            smoothing=smoothing,
-            cifti=True,
-            mem_gb=mem_gbx["timeseries"],
-            omp_nthreads=omp_nthreads,
-            name="alff_wf",
-        )
+        alff_wf = init_alff_wf(name_source=bold_file, TR=TR)
 
         workflow.connect([
             (prepare_confounds_wf, alff_wf, [
@@ -394,13 +339,7 @@ def init_postprocess_cifti_wf(
             ]),
         ])  # fmt:skip
 
-    reho_wf = init_reho_cifti_wf(
-        name_source=bold_file,
-        output_dir=output_dir,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
-        name="reho_wf",
-    )
+    reho_wf = init_reho_cifti_wf(name_source=bold_file)
 
     workflow.connect([
         (denoise_bold_wf, reho_wf, [
@@ -409,14 +348,8 @@ def init_postprocess_cifti_wf(
     ])  # fmt:skip
 
     qc_report_wf = init_qc_report_wf(
-        output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        params=params,
-        dcan_qc=dcan_qc,
-        cifti=True,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
         name="qc_report_wf",
     )
 
@@ -439,22 +372,8 @@ def init_postprocess_cifti_wf(
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         name_source=bold_file,
         source_metadata=run_data["bold_metadata"],
-        fmri_dir=fmri_dir,
-        bandpass_filter=bandpass_filter,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        bpf_order=bpf_order,
-        fd_thresh=fd_thresh,
-        motion_filter_type=motion_filter_type,
-        smoothing=smoothing,
-        params=params,
         exact_scans=exact_scans,
-        atlases=atlases,
-        cifti=True,
-        dcan_qc=dcan_qc,
-        output_dir=output_dir,
         custom_confounds_file=custom_confounds_file,
-        name="postproc_derivatives_wf",
     )
 
     workflow.connect([
@@ -497,14 +416,7 @@ def init_postprocess_cifti_wf(
         ])  # fmt:skip
 
     if atlases:
-        connectivity_wf = init_functional_connectivity_cifti_wf(
-            min_coverage=min_coverage,
-            alff_available=bandpass_filter,
-            output_dir=output_dir,
-            mem_gb=mem_gbx["timeseries"],
-            omp_nthreads=omp_nthreads,
-            name="connectivity_wf",
-        )
+        connectivity_wf = init_functional_connectivity_cifti_wf()
 
         workflow.connect([
             (inputnode, connectivity_wf, [
@@ -547,9 +459,6 @@ def init_postprocess_cifti_wf(
         preproc_nifti=run_data["nifti_file"],
         t1w_available=t1w_available,
         t2w_available=t2w_available,
-        output_dir=output_dir,
-        layout=layout,
-        name="execsummary_functional_plots_wf",
     )
 
     workflow.connect([

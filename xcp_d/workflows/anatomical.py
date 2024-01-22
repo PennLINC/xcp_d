@@ -10,6 +10,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.ants import (
     ApplyTransforms,
     CompositeInvTransformUtil,
@@ -41,16 +42,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_postprocess_anat_wf(
-    output_dir,
-    input_type,
-    t1w_available,
-    t2w_available,
-    target_space,
-    omp_nthreads,
-    mem_gb,
-    name="postprocess_anat_wf",
-):
+def init_postprocess_anat_wf(t1w_available, t2w_available, target_space):
     """Copy T1w, segmentation, and, optionally, T2w to the derivative directory.
 
     If necessary, this workflow will also warp the images to standard space.
@@ -110,7 +102,11 @@ def init_postprocess_anat_wf(
     t2w : :obj:`str` or None
         Path to the preprocessed T2w file in standard space.
     """
-    workflow = Workflow(name=name)
+    workflow = Workflow(name="postprocess_anat_wf")
+    output_dir = config.execution.xcp_d_dir
+    input_type = config.execution.input_type
+    omp_nthreads = config.nipype.omp_nthreads
+    mem_gb = config.nipype.mem_gb
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -120,7 +116,7 @@ def init_postprocess_anat_wf(
                 "anat_dseg",
                 "anat_to_template_xfm",
                 "template",
-            ]
+            ],
         ),
         name="inputnode",
     )
@@ -316,19 +312,12 @@ resolution.
 
 @fill_doc
 def init_postprocess_surfaces_wf(
-    fmri_dir,
     subject_id,
-    dcan_qc,
-    process_surfaces,
     mesh_available,
     standard_space_mesh,
     morphometry_files,
-    output_dir,
     t1w_available,
     t2w_available,
-    mem_gb,
-    omp_nthreads,
-    name="postprocess_surfaces_wf",
 ):
     """Postprocess surfaces.
 
@@ -391,7 +380,14 @@ def init_postprocess_surfaces_wf(
     myelin
     myelin_smoothed
     """
-    workflow = Workflow(name=name)
+    workflow = Workflow(name="postprocess_surface_wf")
+
+    fmri_dir = config.execution.fmri_dir
+    dcan_qc = config.execution.dcan_qc
+    process_surfaces = config.execution.process_surfaces
+    output_dir = config.execution.xcp_d_dir
+    mem_gb = config.nipype.mem_gb
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -418,11 +414,8 @@ def init_postprocess_surfaces_wf(
     if dcan_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
-            output_dir=output_dir,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
-            omp_nthreads=omp_nthreads,
-            mem_gb=mem_gb,
         )
         # fmt:off
         workflow.connect([

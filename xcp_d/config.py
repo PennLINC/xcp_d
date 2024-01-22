@@ -493,7 +493,7 @@ class workflow(_Config):
     """Postprocessing pipeline type."""
     despike = False
     """Despike the BOLD data before postprocessing."""
-    nuisance_regressors = "36P"
+    params = "36P"
     """Nuisance regressors to include in the postprocessing."""
     custom_confounds = None
     """A list of paths to custom confounds to include in the postprocessing."""
@@ -517,9 +517,9 @@ class workflow(_Config):
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
     bandpass_filter = True
     """Apply a band-pass filter to the data."""
-    lower_bpf = 0.01
+    high_pass = 0.01
     """Lower bound of the band-pass filter."""
-    upper_bpf = 0.1
+    low_pass = 0.1
     """Upper bound of the band-pass filter."""
     bpf_order = 2
     """Order of the band-pass filter."""
@@ -529,7 +529,7 @@ class workflow(_Config):
     """Coverage threshold to apply to parcels in each atlas."""
     exact_time = []
     """Produce correlation matrices limited to each requested amount of time."""
-    warp_surfaces_native2std = False
+    process_surfaces = False
     """Warp FreeSurfer's surfaces to the MNI space."""
     dcan_qc = False
     """Run DCAN QC."""

@@ -8,6 +8,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
@@ -25,16 +26,7 @@ from xcp_d.utils.utils import fwhm2sigma
 @fill_doc
 def init_alff_wf(
     name_source,
-    output_dir,
     TR,
-    low_pass,
-    high_pass,
-    fd_thresh,
-    smoothing,
-    cifti,
-    mem_gb,
-    omp_nthreads,
-    name="alff_wf",
 ):
     """Compute alff for both nifti and cifti.
 
@@ -103,7 +95,16 @@ def init_alff_wf(
     ----------
     .. footbibliography::
     """
-    workflow = Workflow(name=name)
+    workflow = Workflow(name="alff_wf")
+
+    output_dir = config.execution.xcp_d_dir
+    low_pass = config.workflow.low_pass
+    high_pass = config.workflow.high_pass
+    fd_thresh = config.workflow.fd_thresh
+    smoothing = config.workflow.smoothing
+    cifti = config.workflow.cifti
+    mem_gb = config.nipype.mem_gb
+    omp_nthreads = config.nipype.omp_nthreads
 
     periodogram_desc = ""
     if fd_thresh > 0:
@@ -400,13 +401,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 
 @fill_doc
-def init_reho_nifti_wf(
-    name_source,
-    output_dir,
-    mem_gb,
-    omp_nthreads,
-    name="nifti_reho_wf",
-):
+def init_reho_nifti_wf(name_source):
     """Compute ReHo on volumetric (NIFTI) data.
 
     Workflow Graph
@@ -445,7 +440,12 @@ def init_reho_nifti_wf(
     reho
         reho output
     """
-    workflow = Workflow(name=name)
+    workflow = Workflow(name="nifti_reho_wf")
+
+    output_dir = config.execution.xcp_d_dir
+    mem_gb = config.nipype.mem_gb
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow.__desc__ = """
 Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood voxels using
 *AFNI*'s *3dReHo* [@taylor2013fatcat].

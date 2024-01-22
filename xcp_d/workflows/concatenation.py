@@ -3,6 +3,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.concatenation import (
     CleanNameSource,
@@ -17,21 +18,7 @@ from xcp_d.workflows.plotting import init_qc_report_wf
 
 
 @fill_doc
-def init_concatenate_data_wf(
-    output_dir,
-    motion_filter_type,
-    TR,
-    head_radius,
-    params,
-    smoothing,
-    cifti,
-    dcan_qc,
-    fd_thresh,
-    atlases,
-    mem_gb,
-    omp_nthreads,
-    name="concatenate_data_wf",
-):
+def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     """Concatenate postprocessed data across runs and directions.
 
     Workflow Graph
@@ -103,6 +90,14 @@ def init_concatenate_data_wf(
         This will be a list of lists, with one sublist for each run.
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    motion_filter_type = config.workflow.motion_filter_type
+    smoothing = config.workflow.smoothing
+    cifti = config.workflow.cifti
+    dcan_qc = config.workflow.dcan_qc
+    fd_thresh = config.workflow.fd_thresh
+    atlases = config.workflow.atlases
 
     workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.
@@ -181,14 +176,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     # Now, run the QC report workflow on the concatenated BOLD file.
     qc_report_wf = init_qc_report_wf(
-        output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        params=params,
-        cifti=cifti,
-        dcan_qc=dcan_qc,
-        mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
         name="concat_qc_report_wf",
     )
     qc_report_wf.inputs.inputnode.dummy_scans = 0

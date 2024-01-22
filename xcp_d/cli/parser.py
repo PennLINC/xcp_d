@@ -223,7 +223,7 @@ def _build_parser():
         "-p",
         "--nuisance-regressors",
         "--nuisance_regressors",
-        dest="nuisance_regressors",
+        dest="params",
         required=False,
         choices=[
             "27P",

@@ -5,6 +5,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import (
@@ -128,22 +129,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
 def init_postproc_derivatives_wf(
     name_source,
     source_metadata,
-    fmri_dir,
-    bandpass_filter,
-    low_pass,
-    high_pass,
-    bpf_order,
-    fd_thresh,
-    motion_filter_type,
-    smoothing,
-    params,
     exact_scans,
-    atlases,
-    cifti,
-    dcan_qc,
-    output_dir,
     custom_confounds_file,
-    name="postproc_derivatives_wf",
 ):
     """Write out the xcp_d derivatives in BIDS format.
 
@@ -231,7 +218,21 @@ def init_postproc_derivatives_wf(
     temporal_mask_metadata
     %(dummy_scans)s
     """
-    workflow = Workflow(name=name)
+    workflow = Workflow(name="postproc_derivatives_wf")
+
+    fmri_dir = config.execution.fmri_dir
+    bandpass_filter = config.workflow.bandpass_filter
+    low_pass = config.workflow.low_pass
+    high_pass = config.workflow.high_pass
+    bpf_order = config.workflow.bpf_order
+    fd_thresh = config.workflow.fd_thresh
+    motion_filter_type = config.workflow.motion_filter_type
+    smoothing = config.workflow.smoothing
+    params = config.workflow.params
+    atlases = config.workflow.atlases
+    cifti = config.workflow.cifti
+    dcan_qc = config.workflow.dcan_qc
+    output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(
