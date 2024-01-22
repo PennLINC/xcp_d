@@ -19,7 +19,7 @@ from xcp_d.utils.utils import _make_dictionary
 
 
 @fill_doc
-def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf"):
+def init_copy_inputs_to_outputs_wf(name="copy_inputs_to_outputs_wf"):
     """Copy files from the preprocessing derivatives to the output folder, with no modifications.
 
     Workflow Graph
@@ -54,6 +54,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
     myelin_smoothed
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(

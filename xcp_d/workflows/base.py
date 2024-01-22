@@ -125,8 +125,8 @@ def init_single_subject_wf(subject_id: str):
         layout=config.execution.layout,
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
-        input_type=config.execution.input_type,
-        cifti=config.execution.cifti,
+        input_type=config.workflow.input_type,
+        cifti=config.workflow.cifti,
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
@@ -142,7 +142,7 @@ def init_single_subject_wf(subject_id: str):
 
     # determine the appropriate post-processing workflow
     init_postprocess_bold_wf = (
-        init_postprocess_cifti_wf if config.execution.cifti else init_postprocess_nifti_wf
+        init_postprocess_cifti_wf if config.workflow.cifti else init_postprocess_nifti_wf
     )
     preproc_files = subj_data["bold"]
 
@@ -197,12 +197,12 @@ def init_single_subject_wf(subject_id: str):
     workflow = Workflow(name=f"sub_{subject_id}_wf")
 
     info_dict = get_preproc_pipeline_info(
-        input_type=config.execution.input_type,
+        input_type=config.workflow.input_type,
         fmri_dir=config.execution.fmri_dir,
     )
 
     workflow.__desc__ = f"""
-### Post-processing of {config.execution.input_type} outputs
+### Post-processing of {config.workflow.input_type} outputs
 The eXtensible Connectivity Pipeline- DCAN (XCP-D) [@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of *{info_dict["name"]}* version {info_dict["version"]}
 {info_dict["references"]}.
@@ -213,7 +213,7 @@ XCP-D was built with *Nipype* version {nipype_ver} [@nipype1, RRID:SCR_002502].
 
 Many internal operations of *XCP-D* use
 *AFNI* [@cox1996afni;@cox1997software],
-{"*Connectome Workbench* [@marcus2011informatics], " if config.execution.cifti else ""}
+{"*Connectome Workbench* [@marcus2011informatics], " if config.workflow.cifti else ""}
 *ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
 *matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
@@ -286,12 +286,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])  # fmt:skip
 
     # Load the atlases, warping to the same space as the BOLD data if necessary.
-    if config.execution.atlases:
+    if config.workflow.atlases:
         load_atlases_wf = init_load_atlases_wf()
         load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
         load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
 
-    if config.execution.process_surfaces or (config.execution.dcan_qc and mesh_available):
+    if config.workflow.process_surfaces or (config.workflow.dcan_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
@@ -319,7 +319,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, postprocess_surfaces_wf, [(morph_file, f"inputnode.{morph_file}")]),
             ])  # fmt:skip
 
-        if config.execution.process_surfaces or standard_space_mesh:
+        if config.workflow.process_surfaces or standard_space_mesh:
             # Use standard-space structurals
             workflow.connect([
                 (postprocess_anat_wf, postprocess_surfaces_wf, [
@@ -337,7 +337,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
-        if morph_file_types and config.execution.atlases:
+        if morph_file_types and config.workflow.atlases:
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 files_to_parcellate=morph_file_types,
@@ -353,7 +353,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(
         mask_file=subj_data["anat_brainmask"],
-        head_radius=config.execution.head_radius,
+        head_radius=config.workflow.head_radius,
     )
 
     n_runs = len(preproc_files)
@@ -364,7 +364,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         TR = _get_tr(nb.load(task_files[0]))
 
         n_task_runs = len(task_files)
-        if config.execution.combineruns and (n_task_runs > 1):
+        if config.workflow.combineruns and (n_task_runs > 1):
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
@@ -392,27 +392,27 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             run_data = collect_run_data(
                 layout=config.execution.layout,
                 bold_file=bold_file,
-                cifti=config.execution.cifti,
+                cifti=config.workflow.cifti,
                 target_space=target_space,
             )
 
             post_scrubbing_duration = flag_bad_run(
                 fmriprep_confounds_file=run_data["confounds"],
-                dummy_scans=config.execution.dummy_scans,
+                dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
-                motion_filter_type=config.execution.motion_filter_type,
-                motion_filter_order=config.execution.motion_filter_order,
-                band_stop_min=config.execution.band_stop_min,
-                band_stop_max=config.execution.band_stop_max,
+                motion_filter_type=config.workflow.motion_filter_type,
+                motion_filter_order=config.workflow.motion_filter_order,
+                band_stop_min=config.workflow.band_stop_min,
+                band_stop_max=config.workflow.band_stop_max,
                 head_radius=head_radius,
-                fd_thresh=config.execution.fd_thresh,
+                fd_thresh=config.workflow.fd_thresh,
             )
             # Reduce exact_times to only include values greater than the post-scrubbing duration.
-            if (config.execution.min_time >= 0) and (
-                post_scrubbing_duration < config.execution.min_time
+            if (config.workflow.min_time >= 0) and (
+                post_scrubbing_duration < config.workflow.min_time
             ):
                 LOGGER.warning(
-                    f"Less than {config.execution.min_time} seconds in "
+                    f"Less than {config.workflow.min_time} seconds in "
                     f"{os.path.basename(bold_file)} survive "
                     f"high-motion outlier scrubbing ({post_scrubbing_duration}). "
                     "This run will not be processed."
@@ -420,12 +420,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 continue
 
             exact_scans = []
-            if config.execution.exact_time:
+            if config.workflow.exact_time:
                 retained_exact_times = [
-                    t for t in config.execution.exact_time if t <= post_scrubbing_duration
+                    t for t in config.workflow.exact_time if t <= post_scrubbing_duration
                 ]
                 dropped_exact_times = [
-                    t for t in config.execution.exact_time if t > post_scrubbing_duration
+                    t for t in config.workflow.exact_time if t > post_scrubbing_duration
                 ]
                 if dropped_exact_times:
                     LOGGER.warning(
@@ -461,7 +461,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
-            if config.execution.atlases:
+            if config.workflow.atlases:
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [
                         ("outputnode.atlas_files", "inputnode.atlas_files"),
@@ -469,7 +469,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-                if config.execution.cifti:
+                if config.workflow.cifti:
                     workflow.connect([
                         (load_atlases_wf, postprocess_bold_wf, [
                             (
@@ -479,7 +479,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                         ]),
                     ])  # fmt:skip
 
-            if not config.execution.cifti:
+            if not config.workflow.cifti:
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
                         ("anat_brainmask", "inputnode.anat_brainmask"),
@@ -487,13 +487,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-            if config.execution.combineruns and (n_task_runs > 1):
+            if config.workflow.combineruns and (n_task_runs > 1):
                 for io_name, node in merge_dict.items():
                     workflow.connect([
                         (postprocess_bold_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
                     ])  # fmt:skip
 
-        if config.execution.combineruns and (n_task_runs > 1):
+        if config.workflow.combineruns and (n_task_runs > 1):
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,

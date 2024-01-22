@@ -449,7 +449,6 @@ def init_postprocess_surfaces_wf(
         # At least some surfaces are already in fsLR space and must be copied,
         # without modification, to the output directory.
         copy_std_surfaces_to_datasink = init_copy_inputs_to_outputs_wf(
-            output_dir=output_dir,
             name="copy_std_surfaces_to_datasink",
         )
 
@@ -466,12 +465,7 @@ def init_postprocess_surfaces_wf(
     if mesh_available:
         # Generate and output HCP-style surface files.
         hcp_surface_wfs = {
-            hemi: init_generate_hcp_surfaces_wf(
-                output_dir=output_dir,
-                mem_gb=mem_gb,
-                omp_nthreads=omp_nthreads,
-                name=f"{hemi}_generate_hcp_surfaces_wf",
-            )
+            hemi: init_generate_hcp_surfaces_wf(name=f"{hemi}_generate_hcp_surfaces_wf")
             for hemi in ["lh", "rh"]
         }
         # fmt:off
@@ -767,9 +761,6 @@ def init_warp_surfaces_to_template_wf(
 
 @fill_doc
 def init_generate_hcp_surfaces_wf(
-    output_dir,
-    mem_gb,
-    omp_nthreads,
     name="generate_hcp_surfaces_wf",
 ):
     """Generate midthickness, inflated, and very-inflated HCP-style surfaces.
@@ -806,6 +797,10 @@ def init_generate_hcp_surfaces_wf(
         The surface file to inflate.
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    mem_gb = config.nipype.mem_gb
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
