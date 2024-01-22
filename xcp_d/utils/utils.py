@@ -12,6 +12,17 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger("nipype.utils")
 
 
+def check_deps(workflow):
+    """Make sure dependencies are present in this system."""
+    from nipype.utils.filemanip import which
+
+    return sorted(
+        (node.interface.__class__.__name__, node.interface._cmd)
+        for node in workflow._get_all_nodes()
+        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
+    )
+
+
 def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 

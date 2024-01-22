@@ -30,7 +30,6 @@ from xcp_d.utils.bids import (
     get_entity,
     get_preproc_pipeline_info,
     group_across_runs,
-    write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import flag_bad_run
@@ -195,8 +194,6 @@ def init_xcpd_wf(
     xcpd_wf = Workflow(name="xcpd_wf")
     xcpd_wf.base_dir = work_dir
     LOGGER.info(f"Beginning the {name} workflow")
-
-    write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
 
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
