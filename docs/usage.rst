@@ -49,7 +49,7 @@ Command-Line Arguments
 **********************
 
 .. argparse::
-   :ref: xcp_d.cli.run.get_parser
+   :ref: xcp_d.cli.parser.get_parser
    :prog: xcp_d
 
    --band-stop-min : @after

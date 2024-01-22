@@ -8,7 +8,7 @@ import pytest
 from nipype import logging
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.cli import combineqc, parser_utils, run
+from xcp_d.cli import combineqc, parser, parser_utils, run
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.tests.utils import (
     check_affines,
@@ -52,7 +52,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--skip-parcellation",
         "--random-seed=8675309",
     ]
-    opts = run.get_parser().parse_args(parameters)
+    opts = parser.get_parser().parse_args(parameters)
 
     retval = {}
     retval = run.build_workflow(opts, retval=retval)
@@ -116,7 +116,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "200",
         f"--fs-license-file={fs_license_file}",
     ]
-    opts = run.get_parser().parse_args(parameters)
+    opts = parser.get_parser().parse_args(parameters)
     retval = {}
     retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
@@ -170,7 +170,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         "--min-coverage=0.1",
         "--random-seed=8675309",
     ]
-    opts = run.get_parser().parse_args(parameters)
+    opts = parser.get_parser().parse_args(parameters)
 
     retval = {}
     retval = run.build_workflow(opts, retval=retval)
@@ -248,7 +248,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "Tian",
         "HCP",
     ]
-    opts = run.get_parser().parse_args(parameters)
+    opts = parser.get_parser().parse_args(parameters)
     retval = {}
     retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
@@ -333,7 +333,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "4S156Parcels",
         "Glasser",
     ]
-    opts = run.get_parser().parse_args(parameters)
+    opts = parser.get_parser().parse_args(parameters)
     retval = {}
     retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
@@ -468,7 +468,7 @@ def _run_and_generate(
     out_dir,
     input_type,
 ):
-    opts = run.get_parser().parse_args(parameters)
+    opts = parser.get_parser().parse_args(parameters)
     retval = {}
     retval = run.build_workflow(opts, retval=retval)
     run_uuid = retval.get("run_uuid", None)
