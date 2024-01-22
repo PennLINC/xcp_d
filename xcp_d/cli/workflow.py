@@ -49,16 +49,16 @@ def build_workflow(config_file, retval):
         build_log.warning(msg)
 
     # Please note this is the input folder's dataset_description.json
-    dset_desc_path = config.execution.bids_dir / "dataset_description.json"
+    dset_desc_path = config.execution.fmri_dir / "dataset_description.json"
     if dset_desc_path.exists():
         from hashlib import sha256
 
         desc_content = dset_desc_path.read_bytes()
         config.execution.bids_description_hash = sha256(desc_content).hexdigest()
 
-    # First check that bids_dir looks like a BIDS folder
+    # First check that fmri_dir looks like a BIDS folder
     subject_list = collect_participants(
-        config.execution.bids_dir, participant_label=config.execution.participant_label
+        config.execution.fmri_dir, participant_label=config.execution.participant_label
     )
 
     # Called with reports only
@@ -78,7 +78,7 @@ def build_workflow(config_file, retval):
     # Build main workflow
     init_msg = [
         "Building XCP-D's workflow:",
-        f"BIDS dataset path: {config.execution.bids_dir}.",
+        f"Preprocessing derivatives path: {config.execution.fmri_dir}.",
         f"Participant list: {subject_list}.",
         f"Run identifier: {config.execution.run_uuid}.",
         f"Output spaces: {config.execution.output_spaces}.",

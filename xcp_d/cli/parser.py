@@ -643,7 +643,7 @@ def parse_args(args=None, namespace=None):
             f"total threads (--nthreads/--n_cpus={config.nipype.nprocs})"
         )
 
-    bids_dir = config.execution.bids_dir
+    fmri_dir = config.execution.fmri_dir
     output_dir = config.execution.output_dir
     work_dir = config.execution.work_dir
     version = config.environment.version
@@ -666,14 +666,14 @@ def parse_args(args=None, namespace=None):
     config.from_dict({})
 
     # Ensure input and output folders are not the same
-    if output_dir == bids_dir:
-        rec_path = bids_dir / "derivatives" / f"xcp_d-{version.split('+')[0]}"
+    if output_dir == fmri_dir:
+        rec_path = fmri_dir / "derivatives" / f"xcp_d-{version.split('+')[0]}"
         parser.error(
             "The selected output folder is the same as the input BIDS folder. "
             f"Please modify the output path (suggestion: {rec_path})."
         )
 
-    if bids_dir in work_dir.parents:
+    if fmri_dir in work_dir.parents:
         parser.error(
             "The selected working directory is a subdirectory of the input BIDS folder. "
             "Please modify the output path."

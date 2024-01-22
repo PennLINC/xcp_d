@@ -375,6 +375,8 @@ class execution(_Config):
     """Checksum (SHA256) of the ``dataset_description.json`` of the BIDS dataset."""
     bids_filters = None
     """A dictionary of BIDS selection filters."""
+    debug = []
+    """Debug mode(s)."""
     xcp_d_dir = None
     """Root of XCP-D BIDS Derivatives dataset."""
     fs_license_file = _fs_license
