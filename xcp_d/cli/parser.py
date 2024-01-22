@@ -18,13 +18,13 @@ def _build_parser():
 
     from packaging.version import Version
 
-    from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.cli.parser_utils import (
         _float_or_auto,
         _int_or_auto,
         _restricted_float,
         json_file,
     )
+    from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases
 
     def _path_exists(path, parser):
