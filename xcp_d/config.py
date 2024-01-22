@@ -411,7 +411,7 @@ class execution(_Config):
     _layout = None
 
     _paths = (
-        "bids_dir",
+        "fmri_dir",
         "bids_database_dir",
         "xcp_d_dir",
         "fs_license_file",
@@ -451,7 +451,7 @@ class execution(_Config):
                 ),
             )
             cls._layout = BIDSLayout(
-                str(cls.bids_dir),
+                str(cls.fmri_dir),
                 database_path=_db_path,
                 reset_database=cls.bids_database_dir is None,
                 indexer=_indexer,
