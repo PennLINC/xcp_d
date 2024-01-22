@@ -72,7 +72,7 @@ def init_load_atlases_wf():
     atlases = config.execution.atlases
     output_dir = config.execution.xcp_d_dir
     cifti = config.execution.cifti
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -358,7 +358,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate):
     output_dir = config.execution.xcp_d_dir
     atlases = config.execution.atlases
     min_coverage = config.execution.min_coverage
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     SURF_DESCS = {
@@ -539,7 +539,7 @@ def init_functional_connectivity_nifti_wf():
     output_dir = config.execution.xcp_d_dir
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
 
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
@@ -764,7 +764,7 @@ def init_functional_connectivity_cifti_wf():
     output_dir = config.execution.xcp_d_dir
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = f"""

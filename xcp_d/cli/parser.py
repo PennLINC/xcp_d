@@ -611,7 +611,7 @@ def parse_args(args=None, namespace=None):
         config.load(opts.config_file, skip=False, init=False)
         config.loggers.cli.info(f"Loaded previous configuration file {opts.config_file}")
 
-    opts = _validate_parameters(opts, config.loggers.cli)
+    opts = _validate_parameters(opts=opts, build_log=config.loggers.cli, parser=parser)
 
     config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     config.from_dict(vars(opts), init=["nipype"])

@@ -120,7 +120,7 @@ def init_prepare_confounds_wf(
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
     fd_thresh = config.workflow.fd_thresh
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     dummy_scans_str = ""
@@ -448,7 +448,7 @@ def init_despike_wf(TR):
     """
     workflow = Workflow(name="despike_wf")
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
@@ -573,7 +573,7 @@ def init_denoise_bold_wf(TR):
     bandpass_filter = config.workflow.bandpass_filter
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = (
@@ -732,7 +732,7 @@ def init_resd_smoothing_wf():
     workflow = Workflow(name="resd_smoothing_wf")
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")

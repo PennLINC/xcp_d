@@ -103,7 +103,7 @@ def init_alff_wf(
     fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     periodogram_desc = ""
@@ -443,7 +443,7 @@ def init_reho_nifti_wf(name_source):
     workflow = Workflow(name="nifti_reho_wf")
 
     output_dir = config.execution.xcp_d_dir
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """

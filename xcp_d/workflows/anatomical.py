@@ -106,7 +106,7 @@ def init_postprocess_anat_wf(t1w_available, t2w_available, target_space):
     output_dir = config.execution.xcp_d_dir
     input_type = config.execution.input_type
     omp_nthreads = config.nipype.omp_nthreads
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -386,7 +386,7 @@ def init_postprocess_surfaces_wf(
     dcan_qc = config.execution.dcan_qc
     process_surfaces = config.execution.process_surfaces
     output_dir = config.execution.xcp_d_dir
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -799,7 +799,7 @@ def init_generate_hcp_surfaces_wf(
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
-    mem_gb = config.nipype.mem_gb
+    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
