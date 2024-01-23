@@ -67,9 +67,9 @@ def build_workflow(config_file, retval):
 
         build_log.log(25, "Running --reports-only on participants %s", ", ".join(subject_list))
         retval["return_code"] = generate_reports(
-            subject_list,
-            config.execution.xcp_d_dir,
-            config.execution.run_uuid,
+            subject_list=subject_list,
+            output_dir=config.execution.xcp_d_dir,
+            run_uuid=config.execution.run_uuid,
             config=load_data("reports-spec.yml"),
             packagename="xcp_d",
         )

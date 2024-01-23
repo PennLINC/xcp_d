@@ -379,9 +379,9 @@ def _run_and_generate(test_name, parameters, input_type):
     xcpd_wf.run()
     build_boilerplate(str(config_file), xcpd_wf)
     generate_reports(
-        config.execution.participant_label,
-        config.execution.xcp_d_dir,
-        config.execution.run_uuid,
+        subject_list=config.execution.participant_label,
+        output_dir=config.execution.xcp_d_dir,
+        run_uuid=config.execution.run_uuid,
         config=load_data("reports-spec.yml"),
         packagename="xcp_d",
     )
