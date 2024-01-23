@@ -245,7 +245,7 @@ def init_prepare_confounds_wf(
         remove_dummy_scans = pe.Node(
             RemoveDummyVolumes(),
             name="remove_dummy_scans",
-            mem_gb=2 * mem_gb,  # assume it takes a lot of memory
+            mem_gb=(2 * mem_gb) if mem_gb is not None else mem_gb,  # it takes a lot of memory
         )
 
         # fmt:off
