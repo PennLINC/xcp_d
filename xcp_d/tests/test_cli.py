@@ -375,9 +375,9 @@ def _run_and_generate(test_name, parameters, input_type):
     config.to_filename(config_file)
 
     retval = build_workflow(config_file, retval={})
-    aslprep_wf = retval["workflow"]
-    aslprep_wf.run()
-    build_boilerplate(str(config_file), aslprep_wf)
+    xcpd_wf = retval["workflow"]
+    xcpd_wf.run()
+    build_boilerplate(str(config_file), xcpd_wf)
     generate_reports(
         config.execution.participant_label,
         config.execution.xcp_d_dir,
