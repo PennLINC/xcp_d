@@ -448,7 +448,10 @@ class execution(_Config):
                     "models",
                     re.compile(r"\/\.\w+|^\.\w+"),
                     re.compile(
-                        r"sub-[a-zA-Z0-9]+(/ses-[a-zA-Z0-9]+)?/(beh|dwi|eeg|ieeg|meg|func)"
+                        (
+                            r"sub-[a-zA-Z0-9]+(/ses-[a-zA-Z0-9]+)?/"
+                            r"(beh|dwi|eeg|ieeg|meg|perf|pet|physio)"
+                        )
                     ),
                 ),
             )

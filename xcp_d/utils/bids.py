@@ -249,7 +249,6 @@ def collect_data(
             break
 
     if not bold_data:
-        raise ValueError(layout.get_files())
         raise FileNotFoundError(
             f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)})."
         )
