@@ -104,7 +104,7 @@ def init_postprocess_anat_wf(t1w_available, t2w_available, target_space):
     """
     workflow = Workflow(name="postprocess_anat_wf")
     output_dir = config.execution.xcp_d_dir
-    input_type = config.execution.input_type
+    input_type = config.workflow.input_type
     omp_nthreads = config.nipype.omp_nthreads
     mem_gb = config.nipype.memory_gb
 
