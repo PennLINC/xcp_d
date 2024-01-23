@@ -637,7 +637,7 @@ def init_denoise_bold_wf(TR):
             bandpass_filter=bandpass_filter,
         ),
         name="regress_and_filter_bold",
-        mem_gb=mem_gb * 2,
+        mem_gb=(2 * mem_gb) if mem_gb is not None else mem_gb,
         n_procs=omp_nthreads,
     )
 
