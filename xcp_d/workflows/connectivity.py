@@ -69,7 +69,7 @@ def init_load_atlases_wf():
     parcellated_atlas_files
     """
     workflow = Workflow(name="load_atlases_wf")
-    atlases = config.execution.atlases
+    atlases = config.workflow.atlases
     output_dir = config.execution.xcp_d_dir
     cifti = config.execution.cifti
     mem_gb = config.nipype.memory_gb
@@ -356,8 +356,8 @@ def init_parcellate_surfaces_wf(files_to_parcellate):
     workflow = Workflow(name="parcellate_surfaces_wf")
 
     output_dir = config.execution.xcp_d_dir
-    atlases = config.execution.atlases
-    min_coverage = config.execution.min_coverage
+    atlases = config.workflow.atlases
+    min_coverage = config.workflow.min_coverage
     mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
