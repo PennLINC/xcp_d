@@ -283,8 +283,6 @@ resolution.
     execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
         t1w_available=t1w_available,
         t2w_available=t2w_available,
-        output_dir=output_dir,
-        name="execsummary_anatomical_plots_wf",
     )
 
     # fmt:off

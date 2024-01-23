@@ -527,8 +527,6 @@ def init_execsummary_anatomical_plots_wf(t1w_available, t2w_available):
             wf = init_execsummary_anatomical_plots_wf(
                 t1w_available=True,
                 t2w_available=True,
-                output_dir=".",
-                name="execsummary_anatomical_plots_wf",
             )
 
     Parameters
