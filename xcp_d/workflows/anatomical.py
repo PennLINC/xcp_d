@@ -381,8 +381,8 @@ def init_postprocess_surfaces_wf(
     workflow = Workflow(name="postprocess_surface_wf")
 
     fmri_dir = config.execution.fmri_dir
-    dcan_qc = config.execution.dcan_qc
-    process_surfaces = config.execution.process_surfaces
+    dcan_qc = config.workflow.dcan_qc
+    process_surfaces = config.workflow.process_surfaces
     output_dir = config.execution.xcp_d_dir
     mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
