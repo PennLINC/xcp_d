@@ -591,7 +591,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name="parcellate_data",
         iterfield=["atlas", "atlas_labels"],
-        mem_gb=mem_gb * 3,
+        mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
     )
 
     # fmt:off
@@ -613,7 +613,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         TSVConnect(),
         name="functional_connectivity",
         iterfield=["timeseries"],
-        mem_gb=mem_gb * 3,
+        mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
     )
 
     # fmt:off
@@ -822,7 +822,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         CiftiParcellate(min_coverage=min_coverage),
         name="parcellate_data",
         iterfield=["atlas", "atlas_labels", "parcellated_atlas"],
-        mem_gb=mem_gb * 3,
+        mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
     )
 
     # fmt:off
@@ -846,7 +846,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         CiftiConnect(),
         name="functional_connectivity",
         iterfield=["timeseries", "parcellated_atlas"],
-        mem_gb=mem_gb * 3,
+        mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
     )
 
     # fmt:off

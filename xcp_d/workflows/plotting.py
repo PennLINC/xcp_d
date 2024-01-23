@@ -265,7 +265,7 @@ def init_qc_report_wf(
             ),
             name="warp_dseg_to_bold",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb * 3 * omp_nthreads,
+            mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
         )
 
         # fmt:off
