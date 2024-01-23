@@ -446,7 +446,7 @@ class execution(_Config):
                     "code",
                     "stimuli",
                     "models",
-                    re.compile(r"\/\.\w+|^\.\w+"),
+                    re.compile(r"\/\.\w+|^\.\w+"),  # hidden files
                     re.compile(
                         (
                             r"sub-[a-zA-Z0-9]+(/ses-[a-zA-Z0-9]+)?/"
