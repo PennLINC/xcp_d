@@ -91,8 +91,8 @@ def init_qc_report_wf(
     params = config.workflow.params
     cifti = config.workflow.cifti
     dcan_qc = config.workflow.dcan_qc
-    mem_gb = config.workflow.mem_gb
-    omp_nthreads = config.workflow.omp_nthreads
+    mem_gb = config.nipype.mem_gb
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
