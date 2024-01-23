@@ -71,7 +71,7 @@ def init_load_atlases_wf():
     workflow = Workflow(name="load_atlases_wf")
     atlases = config.workflow.atlases
     output_dir = config.execution.xcp_d_dir
-    cifti = config.execution.cifti
+    cifti = config.workflow.cifti
     mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
