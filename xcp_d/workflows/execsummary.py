@@ -29,7 +29,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_brainsprite_figures_wf(t1w_available, t2w_available):
+def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_figures_wf"):
     """Create mosaic and PNG files for executive summary brainsprite.
 
     Workflow Graph
@@ -71,7 +71,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available):
     lh_pial_surf
     rh_pial_surf
     """
-    workflow = Workflow(name="brainsprite_figures_wf")
+    workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
     mem_gb = config.nipype.memory_gb
@@ -301,6 +301,7 @@ def init_execsummary_functional_plots_wf(
     preproc_nifti,
     t1w_available,
     t2w_available,
+    name="execsummary_functional_plots_wf",
 ):
     """Generate the functional figures for an executive summary.
 
@@ -345,7 +346,7 @@ def init_execsummary_functional_plots_wf(
     t2w
         T2w image in a standard space, taken from the output of init_postprocess_anat_wf.
     """
-    workflow = Workflow(name="execsummary_functional_plots_wf")
+    workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
     layout = config.execution.layout
@@ -514,7 +515,11 @@ def init_execsummary_functional_plots_wf(
 
 
 @fill_doc
-def init_execsummary_anatomical_plots_wf(t1w_available, t2w_available):
+def init_execsummary_anatomical_plots_wf(
+    t1w_available,
+    t2w_available,
+    name="execsummary_anatomical_plots_wf",
+):
     """Generate the anatomical figures for an executive summary.
 
     Workflow Graph
@@ -546,7 +551,7 @@ def init_execsummary_anatomical_plots_wf(t1w_available, t2w_available):
         T2w image, after warping to standard space.
     template
     """
-    workflow = Workflow(name="execsummary_anatomical_plots_wf")
+    workflow = Workflow(name=name)
 
     inputnode = pe.Node(
         niu.IdentityInterface(

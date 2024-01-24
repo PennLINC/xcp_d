@@ -42,7 +42,12 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_postprocess_anat_wf(t1w_available, t2w_available, target_space):
+def init_postprocess_anat_wf(
+    t1w_available,
+    t2w_available,
+    target_space,
+    name="postprocess_anat_wf",
+):
     """Copy T1w, segmentation, and, optionally, T2w to the derivative directory.
 
     If necessary, this workflow will also warp the images to standard space.
@@ -102,7 +107,7 @@ def init_postprocess_anat_wf(t1w_available, t2w_available, target_space):
     t2w : :obj:`str` or None
         Path to the preprocessed T2w file in standard space.
     """
-    workflow = Workflow(name="postprocess_anat_wf")
+    workflow = Workflow(name=name)
     output_dir = config.execution.xcp_d_dir
     input_type = config.workflow.input_type
     omp_nthreads = config.nipype.omp_nthreads
@@ -316,6 +321,7 @@ def init_postprocess_surfaces_wf(
     morphometry_files,
     t1w_available,
     t2w_available,
+    name="postprocess_surfaces_wf",
 ):
     """Postprocess surfaces.
 
@@ -378,7 +384,7 @@ def init_postprocess_surfaces_wf(
     myelin
     myelin_smoothed
     """
-    workflow = Workflow(name="postprocess_surface_wf")
+    workflow = Workflow(name=name)
 
     fmri_dir = config.execution.fmri_dir
     dcan_qc = config.workflow.dcan_qc
@@ -758,9 +764,7 @@ def init_warp_surfaces_to_template_wf(
 
 
 @fill_doc
-def init_generate_hcp_surfaces_wf(
-    name="generate_hcp_surfaces_wf",
-):
+def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     """Generate midthickness, inflated, and very-inflated HCP-style surfaces.
 
     Workflow Graph

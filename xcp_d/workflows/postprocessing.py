@@ -32,6 +32,7 @@ def init_prepare_confounds_wf(
     exact_scans,
     head_radius,
     custom_confounds_file,
+    name="prepare_confounds_wf",
 ):
     """Prepare confounds.
 
@@ -109,7 +110,7 @@ def init_prepare_confounds_wf(
     %(temporal_mask)s
     temporal_mask_metadata : :obj:`dict`
     """
-    workflow = Workflow(name="prepare_confounds_wf")
+    workflow = Workflow(name=name)
 
     output_dir = config.execution.output_dir
     params = config.workflow.params
@@ -402,7 +403,7 @@ def init_prepare_confounds_wf(
 
 
 @fill_doc
-def init_despike_wf(TR):
+def init_despike_wf(TR, name="despike_wf"):
     """Despike BOLD data with AFNI's 3dDespike.
 
     Despiking truncates large spikes in the BOLD times series.
@@ -446,7 +447,7 @@ def init_despike_wf(TR):
     bold_file : :obj:`str`
         The despiked NIFTI or CIFTI BOLD file.
     """
-    workflow = Workflow(name="despike_wf")
+    workflow = Workflow(name=name)
     cifti = config.workflow.cifti
     mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
@@ -514,7 +515,7 @@ The BOLD data were despiked with *AFNI*'s *3dDespike*.
 
 
 @fill_doc
-def init_denoise_bold_wf(TR):
+def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     """Denoise BOLD data.
 
     Workflow Graph
@@ -565,7 +566,7 @@ def init_denoise_bold_wf(TR):
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     """
-    workflow = Workflow(name="denoise_bold_wf")
+    workflow = Workflow(name=name)
 
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
@@ -694,7 +695,7 @@ def init_denoise_bold_wf(TR):
 
 
 @fill_doc
-def init_resd_smoothing_wf():
+def init_resd_smoothing_wf(name="resd_smoothing_wf"):
     """Smooth BOLD residuals.
 
     Workflow Graph
@@ -729,7 +730,7 @@ def init_resd_smoothing_wf():
     -------
     smoothed_bold
     """
-    workflow = Workflow(name="resd_smoothing_wf")
+    workflow = Workflow(name=name)
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
     mem_gb = config.nipype.memory_gb

@@ -27,6 +27,7 @@ from xcp_d.utils.utils import fwhm2sigma
 def init_alff_wf(
     name_source,
     TR,
+    name="alff_wf",
 ):
     """Compute alff for both nifti and cifti.
 
@@ -95,7 +96,7 @@ def init_alff_wf(
     ----------
     .. footbibliography::
     """
-    workflow = Workflow(name="alff_wf")
+    workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
     low_pass = config.workflow.low_pass
@@ -248,9 +249,6 @@ series to retain the original scaling.
 @fill_doc
 def init_reho_cifti_wf(
     name_source,
-    output_dir,
-    mem_gb,
-    omp_nthreads,
     name="cifti_reho_wf",
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
@@ -264,18 +262,12 @@ def init_reho_cifti_wf(
 
             wf = init_reho_cifti_wf(
                 name_source="/path/to/bold.dtseries.nii",
-                output_dir=".",
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="cifti_reho_wf",
             )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "cifti_reho_wf".
 
@@ -300,6 +292,11 @@ was computed with nearest-neighbor vertices to yield ReHo.
 For the subcortical, volumetric data, ReHo was computed with neighborhood voxels using *AFNI*'s
 *3dReHo* [@taylor2013fatcat].
 """
+
+    output_dir = config.execution.xcp_d_dir
+    mem_gb = config.nipype.memory_gb
+    omp_nthreads = config.nipype.omp_nthreads
+
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["denoised_bold"]),
         name="inputnode",
@@ -401,7 +398,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 
 @fill_doc
-def init_reho_nifti_wf(name_source):
+def init_reho_nifti_wf(name_source, name="reho_nifti_wf"):
     """Compute ReHo on volumetric (NIFTI) data.
 
     Workflow Graph
@@ -440,7 +437,7 @@ def init_reho_nifti_wf(name_source):
     reho
         reho output
     """
-    workflow = Workflow(name="nifti_reho_wf")
+    workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
     mem_gb = config.nipype.memory_gb

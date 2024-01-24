@@ -35,7 +35,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_load_atlases_wf():
+def init_load_atlases_wf(name="load_atlases_wf"):
     """Load atlases and warp them to the same space as the BOLD file.
 
     Workflow Graph
@@ -68,7 +68,7 @@ def init_load_atlases_wf():
     atlas_labels_files
     parcellated_atlas_files
     """
-    workflow = Workflow(name="load_atlases_wf")
+    workflow = Workflow(name=name)
     atlases = config.workflow.atlases
     output_dir = config.execution.xcp_d_dir
     cifti = config.workflow.cifti
@@ -312,7 +312,7 @@ def init_load_atlases_wf():
 
 
 @fill_doc
-def init_parcellate_surfaces_wf(files_to_parcellate):
+def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_wf"):
     """Parcellate surface files and write them out to the output directory.
 
     Workflow Graph
@@ -353,7 +353,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate):
     myelin
     myelin_smoothed
     """
-    workflow = Workflow(name="parcellate_surfaces_wf")
+    workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
     atlases = config.workflow.atlases
@@ -486,7 +486,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate):
 
 
 @fill_doc
-def init_functional_connectivity_nifti_wf():
+def init_functional_connectivity_nifti_wf(name="connectivity_wf"):
     """Extract BOLD time series and compute functional connectivity.
 
     Workflow Graph
@@ -534,7 +534,7 @@ def init_functional_connectivity_nifti_wf():
     parcellated_alff
     parcellated_reho
     """
-    workflow = Workflow(name="connectivity_wf")
+    workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
     bandpass_filter = config.workflow.bandpass_filter
@@ -704,7 +704,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
 
 @fill_doc
-def init_functional_connectivity_cifti_wf():
+def init_functional_connectivity_cifti_wf(name="connectivity_wf"):
     """Extract CIFTI time series.
 
     Workflow Graph
@@ -759,7 +759,7 @@ def init_functional_connectivity_cifti_wf():
     parcellated_reho
     parcellated_alff
     """
-    workflow = Workflow(name="connectivity_wf")
+    workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
     bandpass_filter = config.workflow.bandpass_filter

@@ -133,6 +133,7 @@ def init_postproc_derivatives_wf(
     source_metadata,
     exact_scans,
     custom_confounds_file,
+    name="postproc_derivatives_wf",
 ):
     """Write out the xcp_d derivatives in BIDS format.
 
@@ -220,7 +221,7 @@ def init_postproc_derivatives_wf(
     temporal_mask_metadata
     %(dummy_scans)s
     """
-    workflow = Workflow(name="postproc_derivatives_wf")
+    workflow = Workflow(name=name)
 
     fmri_dir = config.execution.fmri_dir
     bandpass_filter = config.workflow.bandpass_filter
