@@ -129,7 +129,7 @@ def generate_reports(
             f"{subid} ({err})" for subid, err in zip(subject_list, report_errors) if err
         )
         LOGGER.error(
-            "Processsing did not finish successfully. Errors occurred while processing "
+            "Processing did not finish successfully. Errors occurred while processing "
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
         )
