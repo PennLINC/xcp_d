@@ -249,8 +249,12 @@ def collect_data(
             break
 
     if not bold_data:
+        filenames = "\n\t".join(
+            [f.path for f in layout.get(extension=[".nii.gz", ".dtseries.nii"])]
+        )
         raise FileNotFoundError(
-            f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)})."
+            f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)}).\n"
+            f"Found files:\n\n{filenames}"
         )
 
     if cifti:
