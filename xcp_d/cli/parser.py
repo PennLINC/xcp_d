@@ -38,10 +38,28 @@ def _build_parser():
     def _filter_pybids_none_any(dct):
         import bids
 
-        return {
-            k: bids.layout.Query.NONE if v is None else (bids.layout.Query.ANY if v == "*" else v)
-            for k, v in dct.items()
-        }
+        d = {}
+        for k, v in dct.items():
+            if isinstance(v, list):
+                updated_v = []
+                for val in v:
+                    if val is None:
+                        updated_val = bids.layout.Query.NONE
+                    elif val == "*":
+                        updated_val = bids.layout.Query.ANY
+                    else:
+                        updated_val = val
+                    updated_v.append(updated_val)
+                d[k] = updated_v
+            else:
+                if v is None:
+                    d[k] = bids.layout.Query.NONE
+                elif v == "*":
+                    d[k] = bids.layout.Query.ANY
+                else:
+                    d[k] = v
+
+        return d
 
     def _bids_filter(value, parser):
         from json import JSONDecodeError, loads
