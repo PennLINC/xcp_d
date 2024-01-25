@@ -253,7 +253,8 @@ def collect_data(
             [f.path for f in layout.get(extension=[".nii.gz", ".dtseries.nii"])]
         )
         raise FileNotFoundError(
-            f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)}).\n"
+            f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)}).\n\n"
+            f"Query: {queries['bold']}\n\n"
             f"Found files:\n\n{filenames}"
         )
 
