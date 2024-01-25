@@ -35,30 +35,23 @@ def _build_parser():
             raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
         return path
 
-    def _filter_pybids_none_any(dct):
+    def _process_value(value):
         import bids
 
+        if value is None:
+            return bids.layout.Query.NONE
+        elif value == "*":
+            return bids.layout.Query.ANY
+        else:
+            return value
+
+    def _filter_pybids_none_any(dct):
         d = {}
         for k, v in dct.items():
             if isinstance(v, list):
-                updated_v = []
-                for val in v:
-                    if val is None:
-                        updated_val = bids.layout.Query.NONE
-                    elif val == "*":
-                        updated_val = bids.layout.Query.ANY
-                    else:
-                        updated_val = val
-                    updated_v.append(updated_val)
-                d[k] = updated_v
+                d[k] = [_process_value(val) for val in v]
             else:
-                if v is None:
-                    d[k] = bids.layout.Query.NONE
-                elif v == "*":
-                    d[k] = bids.layout.Query.ANY
-                else:
-                    d[k] = v
-
+                d[k] = _process_value(v)
         return d
 
     def _bids_filter(value, parser):

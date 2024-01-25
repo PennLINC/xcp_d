@@ -468,26 +468,21 @@ class execution(_Config):
         if cls.bids_filters:
             from bids.layout import Query
 
+            def _process_value(value):
+                """Convert string with "Query" in it to Query object."""
+                if isinstance(value, list):
+                    return [_process_value(val) for val in value]
+                else:
+                    return (
+                        getattr(Query, value[7:-4])
+                        if not isinstance(value, Query) and "Query" in value
+                        else value
+                    )
+
             # unserialize pybids Query enum values
             for acq, filters in cls.bids_filters.items():
                 for k, v in filters.items():
-                    if isinstance(v, list):
-                        new_v = []
-                        for val in v:
-                            new_val = (
-                                getattr(Query, val[7:-4])
-                                if not isinstance(val, Query) and "Query" in val
-                                else val
-                            )
-                            new_v.append(new_val)
-                    else:
-                        new_v = (
-                            getattr(Query, v[7:-4])
-                            if not isinstance(v, Query) and "Query" in v
-                            else v
-                        )
-
-                    cls.bids_filters[acq][k] = new_v
+                    cls.bids_filters[acq][k] = _process_value(v)
 
         if "all" in cls.debug:
             cls.debug = list(DEBUG_MODES)
