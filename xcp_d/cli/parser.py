@@ -18,12 +18,7 @@ def _build_parser():
 
     from packaging.version import Version
 
-    from xcp_d.cli.parser_utils import (
-        _float_or_auto,
-        _int_or_auto,
-        _restricted_float,
-        json_file,
-    )
+    from xcp_d.cli.parser_utils import _float_or_auto, _int_or_auto, _restricted_float
     from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases
 
@@ -40,6 +35,26 @@ def _build_parser():
             raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
         return path
 
+    def _filter_pybids_none_any(dct):
+        import bids
+
+        return {
+            k: bids.layout.Query.NONE if v is None else (bids.layout.Query.ANY if v == "*" else v)
+            for k, v in dct.items()
+        }
+
+    def _bids_filter(value, parser):
+        from json import JSONDecodeError, loads
+
+        if value:
+            if Path(value).exists():
+                try:
+                    return loads(Path(value).read_text(), object_hook=_filter_pybids_none_any)
+                except JSONDecodeError:
+                    raise parser.error(f"JSON syntax error in: <{value}>.")
+            else:
+                raise parser.error(f"Path does not exist: <{value}>.")
+
     verstr = f"XCP-D v{config.environment.version}"
     currentv = Version(config.environment.version)
     is_release = not any((currentv.is_devrelease, currentv.is_prerelease, currentv.is_postrelease))
@@ -51,6 +66,7 @@ def _build_parser():
     )
     PathExists = partial(_path_exists, parser=parser)
     IsFile = partial(_is_file, parser=parser)
+    BIDSFilter = partial(_bids_filter, parser=parser)
 
     # important parameters required
     parser.add_argument(
@@ -111,7 +127,7 @@ def _build_parser():
         "--bids_filter_file",
         dest="bids_filters",
         action="store",
-        type=json_file,
+        type=BIDSFilter,
         default=None,
         metavar="FILE",
         help=(
