@@ -470,10 +470,24 @@ class execution(_Config):
 
             # unserialize pybids Query enum values
             for acq, filters in cls.bids_filters.items():
-                cls.bids_filters[acq] = {
-                    k: getattr(Query, v[7:-4]) if not isinstance(v, Query) and "Query" in v else v
-                    for k, v in filters.items()
-                }
+                for k, v in filters.items():
+                    if isinstance(v, list):
+                        new_v = []
+                        for val in v:
+                            new_val = (
+                                getattr(Query, val[7:-4])
+                                if not isinstance(val, Query) and "Query" in val
+                                else val
+                            )
+                            new_v.append(new_val)
+                    else:
+                        new_v = (
+                            getattr(Query, v[7:-4])
+                            if not isinstance(v, Query) and "Query" in v
+                            else v
+                        )
+
+                    cls.bids_filters[acq][k] = new_v
 
         if "all" in cls.debug:
             cls.debug = list(DEBUG_MODES)
