@@ -112,12 +112,12 @@ def generate_reports(
     # reportlets_dir = None
     report_errors = [
         run_reports(
-            Path(output_dir) / "xcp_d",
+            Path(output_dir),
             subject_label,
             run_uuid,
             config=config,
             packagename=packagename,
-            reportlets_dir=Path(output_dir) / "xcp_d",
+            reportlets_dir=Path(output_dir),
         )
         for subject_label in subject_list
     ]
@@ -139,12 +139,12 @@ def generate_reports(
             brainplotfile = glob.glob(
                 os.path.join(
                     output_dir,
-                    f"xcp_d/sub-{subject_label}",
+                    f"sub-{subject_label}",
                     "figures/*_bold.svg",
                 ),
             )[0]
             exsumm = ExecutiveSummary(
-                xcpd_path=os.path.join(output_dir, "xcp_d"),
+                xcpd_path=output_dir,
                 subject_id=subject_label,
                 session_id=get_entity(brainplotfile, "ses"),
             )

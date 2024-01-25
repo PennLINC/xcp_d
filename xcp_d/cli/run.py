@@ -157,7 +157,7 @@ def main():
         # Generate reports phase
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
-            output_dir=config.execution.output_dir,
+            output_dir=config.execution.xcp_d_dir,
             run_uuid=config.execution.run_uuid,
             config=data.load("reports-spec.yml"),
             packagename="xcp_d",

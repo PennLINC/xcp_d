@@ -649,7 +649,7 @@ def parse_args(args=None, namespace=None):
     version = config.environment.version
 
     if config.execution.xcp_d_dir is None:
-        config.execution.xcp_d_dir = output_dir
+        config.execution.xcp_d_dir = output_dir / "xcp_d"
 
     # Wipe out existing work_dir
     if opts.clean_workdir and work_dir.exists():
