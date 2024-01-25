@@ -21,6 +21,7 @@ def build_workflow(config_file, retval):
     from xcp_d.workflows.base import init_xcpd_wf
 
     config.load(config_file)
+    raise Exception(config.execution.bids_filters)
     build_log = config.loggers.workflow
 
     version = config.environment.version
