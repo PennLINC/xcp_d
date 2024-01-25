@@ -373,6 +373,7 @@ def _run_and_generate(test_name, parameters, input_type):
     config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
     config.loggers.cli.warning(f"Saving config file to {config_file}")
     config.to_filename(config_file)
+    raise Exception(config.execution.bids_filters)
 
     retval = build_workflow(config_file, retval={})
     xcpd_wf = retval["workflow"]
