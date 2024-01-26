@@ -105,8 +105,6 @@ class CollectRegistrationFiles(SimpleInterface):
         if not participant_id.startswith("sub-"):
             participant_id = f"sub-{participant_id}"
 
-        # NOTE: Why do we need the fsaverage mesh?
-        # TODO: Replace with appropriate files.
         if self.inputs.software == "FreeSurfer":
             # Find the subject's sphere in the FreeSurfer derivatives.
             # TODO: Collect from the preprocessing derivatives if they're a compliant version.
@@ -117,6 +115,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 "surf",
                 f"{hstr}.sphere.reg",
             )
+
             # Load the fsaverage-164k sphere
             # FreeSurfer: tpl-fsaverage_hemi-?_den-164k_sphere.surf.gii
             self._results["source_sphere"] = str(
@@ -129,7 +128,8 @@ class CollectRegistrationFiles(SimpleInterface):
                     suffix="sphere",
                 )
             )
-            # NOTE: Can we upload these to templateflow?
+
+            # TODO: Collect from templateflow once it's uploaded.
             # FreeSurfer: fs_?/fs_?-to-fs_LR_fsaverage.?_LR.spherical_std.164k_fs_?.surf.gii
             self._results["sphere_to_sphere"] = pkgrf(
                 "xcp_d",
@@ -139,6 +139,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     f"164k_fs_{hemisphere}.surf.gii"
                 ),
             )
+
             # FreeSurfer: tpl-fsLR_hemi-?_den-32k_sphere.surf.gii
             self._results["target_sphere"] = str(
                 get_template(
@@ -163,18 +164,24 @@ class CollectRegistrationFiles(SimpleInterface):
                 "surf",
                 f"{hstr}.sphere.reg2",
             )
+
+            # TODO: Collect from templateflow once it's uploaded.
             # MCRIBS: tpl-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
             self._results["source_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
                 "templates_fsLR",
                 f"tpl-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
             )
+
+            # TODO: Collect from templateflow once it's uploaded.
             # MCRIBS: tpl-dHCP_space-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
             self._results["sphere_to_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
                 "templates_fsLR",
                 f"tpl-dHCP_space-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
             )
+
+            # TODO: Collect from templateflow once it's uploaded.
             # MCRIBS: tpl-dHCP_space-fsLR_hemi-?_den-32k_desc-week42_sphere.surf.gii
             self._results["target_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
