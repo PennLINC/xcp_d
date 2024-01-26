@@ -1,4 +1,5 @@
 """Adapted interfaces from Niworkflows."""
+
 from json import loads
 from pathlib import Path
 
@@ -104,19 +105,18 @@ class CollectRegistrationFiles(SimpleInterface):
         if not participant_id.startswith("sub-"):
             participant_id = f"sub-{participant_id}"
 
-        # Find the subject's sphere in the segmentation derivatives.
-        # TODO: Collect from the preprocessing derivatives if they're a compliant version.
-        # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
-        self._results["subject_sphere"] = os.path.join(
-            self.inputs.segmentation_dir,
-            participant_id,
-            "surf",
-            f"{hstr}.sphere.reg",
-        )
-
         # NOTE: Why do we need the fsaverage mesh?
         # TODO: Replace with appropriate files.
         if self.inputs.software == "FreeSurfer":
+            # Find the subject's sphere in the FreeSurfer derivatives.
+            # TODO: Collect from the preprocessing derivatives if they're a compliant version.
+            # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
+            self._results["subject_sphere"] = os.path.join(
+                self.inputs.segmentation_dir,
+                participant_id,
+                "surf",
+                f"{hstr}.sphere.reg",
+            )
             # Load the fsaverage-164k sphere
             # FreeSurfer: tpl-fsaverage_hemi-?_den-164k_sphere.surf.gii
             self._results["source_sphere"] = str(
@@ -152,26 +152,34 @@ class CollectRegistrationFiles(SimpleInterface):
             )
 
         elif self.inputs.software == "MCRIBS":
+            # Find the subject's sphere in the MCRIBS derivatives.
+            # TODO: Collect from the preprocessing derivatives if they're a compliant version.
+            # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
+            self._results["subject_sphere"] = os.path.join(
+                self.inputs.segmentation_dir,
+                participant_id,
+                "freesurfer",
+                participant_id,
+                "surf",
+                f"{hstr}.sphere.reg2",
+            )
             # MCRIBS: tpl-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
             self._results["source_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
-                participant_id,
                 "templates_fsLR",
-                f"tpl-fsaverage_hemi-{hstr}_den-41k_desc-reg_sphere.surf.gii",
+                f"tpl-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
             )
             # MCRIBS: tpl-dHCP_space-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
             self._results["sphere_to_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
-                participant_id,
                 "templates_fsLR",
-                f"tpl-dHCP_space-fsaverage_hemi-{hstr}_den-41k_desc-reg_sphere.surf.gii",
+                f"tpl-dHCP_space-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
             )
             # MCRIBS: tpl-dHCP_space-fsLR_hemi-?_den-32k_desc-week42_sphere.surf.gii
             self._results["target_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
-                participant_id,
                 "templates_fsLR",
-                f"tpl-dHCP_space-fsLR_hemi-{hstr}_den-32k_desc-week42_sphere.surf.gii",
+                f"tpl-dHCP_space-fsLR_hemi-{hemisphere}_den-32k_desc-week42_sphere.surf.gii",
             )
 
         return runtime
