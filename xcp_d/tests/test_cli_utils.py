@@ -1,4 +1,5 @@
 """Tests for the xcp_d.cli.parser_utils module."""
+
 from argparse import ArgumentTypeError
 
 import pytest

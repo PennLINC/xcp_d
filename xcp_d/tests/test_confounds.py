@@ -1,4 +1,5 @@
 """Test confounds handling."""
+
 import os
 
 import numpy as np

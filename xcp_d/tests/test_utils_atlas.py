@@ -1,4 +1,5 @@
 """Tests for the xcp_d.utils.atlas module."""
+
 import os
 
 import pytest

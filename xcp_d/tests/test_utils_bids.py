@@ -1,4 +1,5 @@
 """Tests for the xcp_d.utils.bids module."""
+
 import json
 import os
 

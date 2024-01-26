@@ -1,4 +1,5 @@
 """Utility functions for xcp_d command-line interfaces."""
+
 import argparse
 import json
 import logging

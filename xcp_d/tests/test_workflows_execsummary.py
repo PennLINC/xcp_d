@@ -1,4 +1,5 @@
 """Test xcp_d.workflows.execsummary."""
+
 import os
 
 from nilearn import image

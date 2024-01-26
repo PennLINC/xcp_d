@@ -1,4 +1,5 @@
 """A method for calling the command-line interface."""
+
 from xcp_d.cli.run import main
 
 if __name__ == "__main__":

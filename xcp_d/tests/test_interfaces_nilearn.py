@@ -1,4 +1,5 @@
 """Tests for the xcp_d.interfaces.nilearn module."""
+
 import os
 
 import nibabel as nb

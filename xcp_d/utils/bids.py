@@ -737,9 +737,11 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
 
     info_dict = {
         "name": dataset_dict["GeneratedBy"][0]["Name"],
-        "version": dataset_dict["GeneratedBy"][0]["Version"]
-        if "Version" in dataset_dict["GeneratedBy"][0].keys()
-        else "unknown",
+        "version": (
+            dataset_dict["GeneratedBy"][0]["Version"]
+            if "Version" in dataset_dict["GeneratedBy"][0].keys()
+            else "unknown"
+        ),
     }
     if input_type == "fmriprep":
         info_dict["references"] = "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]"

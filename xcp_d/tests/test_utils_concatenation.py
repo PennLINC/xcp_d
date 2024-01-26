@@ -1,4 +1,5 @@
 """Tests for the xcp_d.utils.concatenation module."""
+
 import os
 
 import nibabel as nb

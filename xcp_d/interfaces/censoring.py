@@ -1,4 +1,5 @@
 """Interfaces for the post-processing workflows."""
+
 import os
 
 import nibabel as nb
@@ -104,9 +105,9 @@ class RemoveDummyVolumes(SimpleInterface):
         if dummy_scans == 0:
             # write the output out
             self._results["bold_file_dropped_TR"] = self.inputs.bold_file
-            self._results[
-                "fmriprep_confounds_file_dropped_TR"
-            ] = self.inputs.fmriprep_confounds_file
+            self._results["fmriprep_confounds_file_dropped_TR"] = (
+                self.inputs.fmriprep_confounds_file
+            )
             self._results["confounds_file_dropped_TR"] = self.inputs.confounds_file
             self._results["motion_file_dropped_TR"] = self.inputs.motion_file
             self._results["temporal_mask_dropped_TR"] = self.inputs.temporal_mask

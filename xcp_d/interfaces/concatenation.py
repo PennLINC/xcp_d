@@ -1,4 +1,5 @@
 """Interfaces for the concatenation workflow."""
+
 import itertools
 import os
 import re

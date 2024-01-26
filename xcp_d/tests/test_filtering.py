@@ -1,4 +1,5 @@
 """Tests for filtering methods."""
+
 import re
 
 import numpy as np

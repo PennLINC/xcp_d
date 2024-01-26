@@ -5,6 +5,7 @@ This file is an example of running pytests either locally or on circleci.
 Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
 """
+
 import os.path as op
 
 import nibabel as nb
