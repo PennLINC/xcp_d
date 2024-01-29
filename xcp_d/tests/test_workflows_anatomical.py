@@ -1,4 +1,5 @@
 """Tests for the xcp_d.workflows.anatomical module."""
+
 import os
 import shutil
 

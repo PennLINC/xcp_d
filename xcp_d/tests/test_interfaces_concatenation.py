@@ -1,4 +1,5 @@
 """Tests for the xcp_d.interfaces.concatenation module."""
+
 import os
 
 from nipype.interfaces.base import Undefined, isdefined

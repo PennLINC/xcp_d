@@ -1,4 +1,5 @@
 """Tests for the xcp_d.utils.write_save module."""
+
 import os
 
 import pytest

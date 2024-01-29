@@ -446,9 +446,9 @@ def denoise_with_nilearn(
                 f"Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) "
                 "will be replaced with first non-outlier volume's values."
             )
-            interpolated_unfiltered_bold[
-                : first_outliers[1] + 1, :
-            ] = interpolated_unfiltered_bold[first_outliers[1] + 1, :]
+            interpolated_unfiltered_bold[: first_outliers[1] + 1, :] = (
+                interpolated_unfiltered_bold[first_outliers[1] + 1, :]
+            )
 
         # Replace outliers at end of run
         if last_outliers[1] == n_volumes - 1:
