@@ -111,6 +111,7 @@ class CollectRegistrationFiles(SimpleInterface):
 
         if self.inputs.software == "FreeSurfer":
             # Find the subject's sphere in the FreeSurfer derivatives.
+            # In fMRIPrep derivatives, sub-<subject_label>_hemi-[LR]_desc-reg_sphere.surf.gii
             self._results["subject_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
                 participant_id,
