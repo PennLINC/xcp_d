@@ -1,4 +1,5 @@
 """Tests for framewise displacement calculation."""
+
 import json
 import os
 

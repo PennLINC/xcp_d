@@ -1,4 +1,5 @@
 """Tests for the xcp_d.utils.qcmetrics module."""
+
 import numpy as np
 
 from xcp_d.utils import qcmetrics

@@ -1,4 +1,5 @@
 """Tests for smoothing methods."""
+
 import os
 import re
 import tempfile
