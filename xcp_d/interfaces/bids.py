@@ -131,13 +131,15 @@ class CollectRegistrationFiles(SimpleInterface):
 
             # TODO: Collect from templateflow once it's uploaded.
             # FreeSurfer: fs_?/fs_?-to-fs_LR_fsaverage.?_LR.spherical_std.164k_fs_?.surf.gii
-            self._results["sphere_to_sphere"] = pkgrf(
-                "xcp_d",
-                (
-                    f"data/standard_mesh_atlases/fs_{hemisphere}/"
-                    f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
-                    f"164k_fs_{hemisphere}.surf.gii"
-                ),
+            self._results["sphere_to_sphere"] = str(
+                get_template(
+                    template="fsaverage",
+                    space="fsLR",
+                    hemi=hemisphere,
+                    density="164k",
+                    desc=None,
+                    suffix="sphere",
+                )
             )
 
             # FreeSurfer: tpl-fsLR_hemi-?_den-32k_sphere.surf.gii
@@ -165,28 +167,41 @@ class CollectRegistrationFiles(SimpleInterface):
                 f"{hstr}.sphere.reg2",
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
             # MCRIBS: tpl-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
-            self._results["source_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
+            self._results["source_sphere"] = str(
+                get_template(
+                    template="fsaverage",
+                    space=None,
+                    hemi=hemisphere,
+                    density="41k",
+                    desc="reg",
+                    suffix="sphere",
+                )
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
             # MCRIBS: tpl-dHCP_space-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
-            self._results["sphere_to_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-dHCP_space-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
+            self._results["sphere_to_sphere"] = str(
+                get_template(
+                    template="dHCP",
+                    space="fsaverage",
+                    hemi=hemisphere,
+                    density="41k",
+                    desc="reg",
+                    suffix="sphere",
+                )
             )
 
             # TODO: Collect from templateflow once it's uploaded.
             # MCRIBS: tpl-dHCP_space-fsLR_hemi-?_den-32k_desc-week42_sphere.surf.gii
-            self._results["target_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-dHCP_space-fsLR_hemi-{hemisphere}_den-32k_desc-week42_sphere.surf.gii",
+            self._results["target_sphere"] = str(
+                get_template(
+                    template="dHCP",
+                    space="fsLR",
+                    hemi=hemisphere,
+                    density="32k",
+                    desc="week42",
+                    suffix="sphere",
+                )
             )
 
         return runtime
