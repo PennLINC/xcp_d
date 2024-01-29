@@ -1,4 +1,5 @@
 """Fixtures for the CircleCI tests."""
+
 import base64
 import os
 

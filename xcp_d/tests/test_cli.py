@@ -1,4 +1,5 @@
 """Command-line interface tests."""
+
 import os
 import shutil
 

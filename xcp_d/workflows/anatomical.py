@@ -7,7 +7,6 @@ from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.interfaces.freesurfer import MRIsConvert
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.ants import (
@@ -15,7 +14,7 @@ from xcp_d.interfaces.ants import (
     CompositeInvTransformUtil,
     ConvertTransformFile,
 )
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.bids import CollectRegistrationFiles, DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
 from xcp_d.interfaces.workbench import (  # MB,TM
@@ -28,7 +27,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_sphere
+from xcp_d.utils.bids import get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import list_to_str
 from xcp_d.workflows.execsummary import (
@@ -414,6 +413,7 @@ def init_postprocess_surfaces_wf(
         ),
         name="inputnode",
     )
+    workflow.__desc__ = ""
 
     if dcan_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
@@ -461,6 +461,10 @@ def init_postprocess_surfaces_wf(
         )
 
     if morphometry_files:
+        workflow.__desc__ += (
+            " fsLR-space morphometry surfaces were copied from the preprocessing derivatives to "
+            "the XCP-D derivatives."
+        )
         for morphometry_file in morphometry_files:
             # fmt:off
             workflow.connect([
@@ -471,6 +475,10 @@ def init_postprocess_surfaces_wf(
             # fmt:on
 
     if mesh_available:
+        workflow.__desc__ += (
+            " HCP-style midthickness, inflated, and very-inflated surfaces were generated from "
+            "the white-matter and pial surface meshes."
+        )
         # Generate and output HCP-style surface files.
         hcp_surface_wfs = {
             hemi: init_generate_hcp_surfaces_wf(
@@ -489,6 +497,10 @@ def init_postprocess_surfaces_wf(
         # fmt:on
 
     if mesh_available and standard_space_mesh:
+        workflow.__desc__ += (
+            " All surface files were already in fsLR space, and were copied to the output "
+            "directory."
+        )
         # Mesh files are already in fsLR.
         # fmt:off
         workflow.connect([
@@ -510,6 +522,7 @@ def init_postprocess_surfaces_wf(
         # fmt:on
 
     elif mesh_available:
+        workflow.__desc__ += " fsnative-space surfaces were then warped to fsLR space."
         # Mesh files are in fsnative and must be warped to fsLR.
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
@@ -658,7 +671,7 @@ def init_warp_surfaces_to_template_wf(
         Function(
             function=get_freesurfer_dir,
             input_names=["fmri_dir"],
-            output_names=["freesurfer_path"],
+            output_names=["freesurfer_path", "segmentation_software"],
         ),
         name="get_freesurfer_dir_node",
     )
@@ -712,6 +725,7 @@ def init_warp_surfaces_to_template_wf(
         workflow.connect([
             (get_freesurfer_dir_node, apply_transforms_wf, [
                 ("freesurfer_path", "inputnode.freesurfer_path"),
+                ("segmentation_software", "inputnode.segmentation_software"),
             ]),
             (update_xfm_wf, apply_transforms_wf, [
                 ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
@@ -1242,6 +1256,8 @@ def init_warp_one_hemisphere_wf(
     merged_inv_warpfield
     freesurfer_path
         Path to FreeSurfer derivatives. Used to load the subject's sphere file.
+    segmentation_software : {"FreeSurfer", "MCRIBS"}
+        The software used for the segmentation.
     participant_id
         Set from parameters.
 
@@ -1259,6 +1275,7 @@ def init_warp_one_hemisphere_wf(
                 "merged_warpfield",
                 "merged_inv_warpfield",
                 "freesurfer_path",
+                "segmentation_software",
                 "participant_id",
             ],
         ),
@@ -1266,46 +1283,19 @@ def init_warp_one_hemisphere_wf(
     )
     inputnode.inputs.participant_id = participant_id
 
-    # Load the fsaverage-164k sphere
-    # NOTE: Why do we need the fsaverage mesh?
-    fsaverage_mesh = str(
-        get_template(
-            template="fsaverage",
-            space=None,
-            hemi=hemisphere,
-            density="164k",
-            desc=None,
-            suffix="sphere",
-        )
+    collect_registration_files = pe.Node(
+        CollectRegistrationFiles(hemisphere=hemisphere),
+        name="collect_registration_files",
+        mem_gb=0.1,
+        n_procs=1,
     )
-
-    # NOTE: Can we upload these to templateflow?
-    fs_hemisphere_to_fsLR = pkgrf(
-        "xcp_d",
-        (
-            f"data/standard_mesh_atlases/fs_{hemisphere}/"
-            f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
-            f"164k_fs_{hemisphere}.surf.gii"
-        ),
-    )
-    get_freesurfer_sphere_node = pe.Node(
-        Function(
-            function=get_freesurfer_sphere,
-            input_names=["freesurfer_path", "subject_id", "hemisphere"],
-            output_names=["sphere_raw"],
-        ),
-        name="get_freesurfer_sphere_node",
-    )
-    get_freesurfer_sphere_node.inputs.hemisphere = hemisphere
-
-    # fmt:off
     workflow.connect([
-        (inputnode, get_freesurfer_sphere_node, [
-            ("freesurfer_path", "freesurfer_path"),
-            ("participant_id", "subject_id"),
-        ])
-    ])
-    # fmt:on
+        (inputnode, collect_registration_files, [
+            ("freesurfer_path", "segmentation_dir"),
+            ("participant_id", "participant_id"),
+            ("segmentation_software", "software"),
+        ]),
+    ])  # fmt:skip
 
     # NOTE: What does this step do?
     sphere_to_surf_gii = pe.Node(
@@ -1314,58 +1304,37 @@ def init_warp_one_hemisphere_wf(
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
-    # fmt:off
     workflow.connect([
-        (get_freesurfer_sphere_node, sphere_to_surf_gii, [("sphere_raw", "in_file")]),
-    ])
-    # fmt:on
+        (collect_registration_files, sphere_to_surf_gii, [("subject_sphere", "in_file")]),
+    ])  # fmt:skip
 
     # NOTE: What does this step do?
     surface_sphere_project_unproject = pe.Node(
-        SurfaceSphereProjectUnproject(
-            sphere_project_to=fsaverage_mesh,
-            sphere_unproject_from=fs_hemisphere_to_fsLR,
-        ),
+        SurfaceSphereProjectUnproject(),
         name="surface_sphere_project_unproject",
     )
-
-    # fmt:off
     workflow.connect([
+        (collect_registration_files, surface_sphere_project_unproject, [
+            ("source_sphere", "sphere_project_to"),
+            ("sphere_to_sphere", "sphere_unproject_from"),
+        ]),
         (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
-    ])
-    # fmt:on
-
-    fsLR_sphere = str(
-        get_template(
-            template="fsLR",
-            space=None,
-            hemi=hemisphere,
-            density="32k",
-            desc=None,
-            suffix="sphere",
-        )
-    )
+    ])  # fmt:skip
 
     # resample the surfaces to fsLR-32k
     # NOTE: Does that mean the data are in fsLR-164k before this?
     resample_to_fsLR32k = pe.MapNode(
-        CiftiSurfaceResample(
-            new_sphere=fsLR_sphere,
-            metric=" BARYCENTRIC ",
-        ),
+        CiftiSurfaceResample(metric="BARYCENTRIC"),
         name="resample_to_fsLR32k",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, resample_to_fsLR32k, [("hemi_files", "in_file")]),
+        (collect_registration_files, resample_to_fsLR32k, [("target_sphere", "new_sphere")]),
         (surface_sphere_project_unproject, resample_to_fsLR32k, [("out_file", "current_sphere")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     # apply affine to 32k surfs
     # NOTE: What does this step do? Aren't the data in fsLR-32k from resample_to_fsLR32k?
@@ -1376,13 +1345,10 @@ def init_warp_one_hemisphere_wf(
         n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
-
-    # fmt:off
     workflow.connect([
-        (resample_to_fsLR32k, apply_affine_to_fsLR32k, [("out_file", "in_file")]),
         (inputnode, apply_affine_to_fsLR32k, [("world_xfm", "affine")]),
-    ])
-    # fmt:on
+        (resample_to_fsLR32k, apply_affine_to_fsLR32k, [("out_file", "in_file")]),
+    ])  # fmt:skip
 
     # apply FNIRT-format warpfield
     # NOTE: What does this step do?
@@ -1393,26 +1359,20 @@ def init_warp_one_hemisphere_wf(
         n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, apply_warpfield_to_fsLR32k, [
             ("merged_warpfield", "forward_warp"),
             ("merged_inv_warpfield", "warpfield"),
         ]),
         (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     outputnode = pe.Node(
         niu.IdentityInterface(fields=["warped_hemi_files"]),
         name="outputnode",
     )
-
-    # fmt:off
     workflow.connect([
         (apply_warpfield_to_fsLR32k, outputnode, [("out_file", "warped_hemi_files")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow

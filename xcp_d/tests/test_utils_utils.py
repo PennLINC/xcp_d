@@ -1,4 +1,5 @@
 """Test functions in xcp_d.utils.utils."""
+
 import os
 
 import numpy as np

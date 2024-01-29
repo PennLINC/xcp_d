@@ -1,4 +1,5 @@
 """Tests for connectivity matrix calculation."""
+
 import os
 import sys
 

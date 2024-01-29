@@ -1,4 +1,5 @@
 """Tests for the xcp_d.utils.bids module."""
+
 import json
 import os
 
@@ -196,31 +197,25 @@ def test_get_tr(ds001419_data):
 
 
 def test_get_freesurfer_dir(datasets):
-    """Test get_freesurfer_dir and get_freesurfer_sphere."""
-    with pytest.raises(NotADirectoryError, match="No FreeSurfer derivatives found."):
+    """Test get_freesurfer_dir."""
+    with pytest.raises(NotADirectoryError, match="No FreeSurfer/MCRIBS derivatives found"):
         xbids.get_freesurfer_dir(".")
 
-    fs_dir = xbids.get_freesurfer_dir(datasets["nibabies"])
+    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
     assert os.path.isdir(fs_dir)
+    assert software == "FreeSurfer"
 
-    # Create fake FreeSurfer folder so there are two possible folders
-    tmp_fs_dir = os.path.join(os.path.dirname(fs_dir), "freesurfer-fail")
-    os.mkdir(tmp_fs_dir)
-    with pytest.raises(ValueError, match="More than one candidate"):
-        xbids.get_freesurfer_dir(datasets["nibabies"])
+    # Create fake FreeSurfer folder so there are two possible folders and it grabs the closest
+    tmp_fs_dir = os.path.join(datasets["nibabies"], "sourcedata/mcribs")
+    os.makedirs(tmp_fs_dir, exist_ok=True)
+    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
+    assert os.path.isdir(fs_dir)
+    assert software == "MCRIBS"
     os.rmdir(tmp_fs_dir)
 
-    fs_dir = xbids.get_freesurfer_dir(datasets["pnc"])
+    fs_dir, software = xbids.get_freesurfer_dir(datasets["pnc"])
     assert os.path.isdir(fs_dir)
-
-    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "1648798153", "L")
-    assert os.path.isfile(sphere_file)
-
-    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "sub-1648798153", "L")
-    assert os.path.isfile(sphere_file)
-
-    with pytest.raises(FileNotFoundError, match="Sphere file not found at"):
-        sphere_file = xbids.get_freesurfer_sphere(fs_dir, "fail", "L")
+    assert software == "FreeSurfer"
 
 
 def test_get_entity(datasets):
