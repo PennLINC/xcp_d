@@ -96,7 +96,6 @@ class CollectRegistrationFiles(SimpleInterface):
     def _run_interface(self, runtime):
         import os
 
-        from pkg_resources import resource_filename as pkgrf
         from templateflow.api import get as get_template
 
         hemisphere = self.inputs.hemisphere
