@@ -88,7 +88,12 @@ class _CollectRegistrationFilesOutputSpec(TraitedSpec):
 
 
 class CollectRegistrationFiles(SimpleInterface):
-    """Collect registration files for fsnative-to-fsLR transformation."""
+    """Collect registration files for fsnative-to-fsLR transformation.
+
+    TODO: Collect from the preprocessing derivatives if they're a compliant version.
+    Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
+    XXX: Wait until the Config object is up and running, so we have access to the BIDSLayout.
+    """
 
     input_spec = _CollectRegistrationFilesInputSpec
     output_spec = _CollectRegistrationFilesOutputSpec
@@ -106,8 +111,6 @@ class CollectRegistrationFiles(SimpleInterface):
 
         if self.inputs.software == "FreeSurfer":
             # Find the subject's sphere in the FreeSurfer derivatives.
-            # TODO: Collect from the preprocessing derivatives if they're a compliant version.
-            # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
             self._results["subject_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
                 participant_id,
@@ -115,8 +118,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 f"{hstr}.sphere.reg",
             )
 
-            # Load the fsaverage-164k sphere
-            # FreeSurfer: tpl-fsaverage_hemi-?_den-164k_sphere.surf.gii
+            # Load the fsaverage-164k sphere.
             self._results["source_sphere"] = str(
                 get_template(
                     template="fsaverage",
@@ -128,8 +130,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # FreeSurfer: fs_?/fs_?-to-fs_LR_fsaverage.?_LR.spherical_std.164k_fs_?.surf.gii
+            # Load the fsaverage-to-fsLR warp sphere.
             self._results["sphere_to_sphere"] = str(
                 get_template(
                     template="fsaverage",
@@ -141,7 +142,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # FreeSurfer: tpl-fsLR_hemi-?_den-32k_sphere.surf.gii
+            # Load the fsLR-32k sphere.
             self._results["target_sphere"] = str(
                 get_template(
                     template="fsLR",
@@ -155,8 +156,6 @@ class CollectRegistrationFiles(SimpleInterface):
 
         elif self.inputs.software == "MCRIBS":
             # Find the subject's sphere in the MCRIBS derivatives.
-            # TODO: Collect from the preprocessing derivatives if they're a compliant version.
-            # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
             self._results["subject_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
                 participant_id,
@@ -166,7 +165,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 f"{hstr}.sphere.reg2",
             )
 
-            # MCRIBS: tpl-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
+            # Load the fsaverage-41k sphere.
             self._results["source_sphere"] = str(
                 get_template(
                     template="fsaverage",
@@ -178,7 +177,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # MCRIBS: tpl-dHCP_space-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
+            # Load the fsaverage-to-dHCP(?) warp sphere.
             self._results["sphere_to_sphere"] = str(
                 get_template(
                     template="dHCP",
@@ -190,8 +189,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # MCRIBS: tpl-dHCP_space-fsLR_hemi-?_den-32k_desc-week42_sphere.surf.gii
+            # Load the dHCP-32k-in-fsLR space sphere.
             self._results["target_sphere"] = str(
                 get_template(
                     template="dHCP",
