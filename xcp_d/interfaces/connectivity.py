@@ -76,6 +76,8 @@ class NiftiParcellate(SimpleInterface):
             node_labels_df = node_labels_df.drop(index=[0])
 
         node_labels = node_labels_df["label"].tolist()
+        # Add background label for nilearn 0.10.3 compatibility
+        node_labels = ["background"] + node_labels
 
         # Before anything, we need to measure coverage
         atlas_img = nb.load(atlas)
