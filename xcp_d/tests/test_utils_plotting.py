@@ -1,4 +1,5 @@
 """Tests for xcp_d.utils.plotting module."""
+
 import os
 
 from xcp_d.utils import plotting

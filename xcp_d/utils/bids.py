@@ -718,9 +718,11 @@ def get_preproc_pipeline_info(input_type, fmri_dir):
 
     info_dict = {
         "name": dataset_dict["GeneratedBy"][0]["Name"],
-        "version": dataset_dict["GeneratedBy"][0]["Version"]
-        if "Version" in dataset_dict["GeneratedBy"][0].keys()
-        else "unknown",
+        "version": (
+            dataset_dict["GeneratedBy"][0]["Version"]
+            if "Version" in dataset_dict["GeneratedBy"][0].keys()
+            else "unknown"
+        ),
     }
     if input_type == "fmriprep":
         info_dict["references"] = "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]"
@@ -760,7 +762,7 @@ def _get_tr(img):
 
 
 def get_freesurfer_dir(fmri_dir):
-    """Find FreeSurfer derivatives associated with preprocessing pipeline.
+    """Find FreeSurfer or MCRIBS derivatives associated with preprocessing pipeline.
 
     NOTE: This is a Node function.
 
@@ -771,8 +773,9 @@ def get_freesurfer_dir(fmri_dir):
 
     Returns
     -------
-    freesurfer_path : :obj:`str`
-        Path to FreeSurfer derivatives.
+    seg_path : :obj:`str`
+        Path to FreeSurfer or MCRIBS derivatives.
+    seg
 
     Raises
     ------
@@ -781,77 +784,52 @@ def get_freesurfer_dir(fmri_dir):
     NotADirectoryError
         If no FreeSurfer derivatives are found.
     """
-    import glob
     import os
 
-    # for fMRIPrep/Nibabies versions >=20.2.1
-    freesurfer_paths = sorted(glob.glob(os.path.join(fmri_dir, "sourcedata/*freesurfer*")))
-    if len(freesurfer_paths) == 0:
-        # for fMRIPrep/Nibabies versions <20.2.1
-        freesurfer_paths = sorted(
-            glob.glob(os.path.join(os.path.dirname(fmri_dir), "*freesurfer*"))
-        )
+    from nipype import logging
 
-    if len(freesurfer_paths) == 1:
-        freesurfer_path = freesurfer_paths[0]
+    LOGGER = logging.getLogger("nipype.utils")
 
-    elif len(freesurfer_paths) > 1:
-        freesurfer_paths_str = "\n\t".join(freesurfer_paths)
-        raise ValueError(
-            "More than one candidate for FreeSurfer derivatives found. "
-            "We recommend mounting only one FreeSurfer directory in your Docker/Singularity "
-            "image. "
-            f"Detected candidates:\n\t{freesurfer_paths_str}"
-        )
+    patterns = {
+        "Nibabies >= 24.0.0a1": (
+            os.path.join(fmri_dir, "sourcedata/mcribs"),
+            "MCRIBS",
+        ),
+        "fMRIPrep >= 20.2.1": (
+            os.path.join(fmri_dir, "sourcedata/freesurfer"),
+            "FreeSurfer",
+        ),
+        "Nibabies >= 21.0.0": (
+            os.path.join(fmri_dir, "sourcedata/infant-freesurfer"),
+            "FreeSurfer",
+        ),
+        "fMRIPrep < 20.2.1": (
+            os.path.join(os.path.dirname(fmri_dir), "freesurfer"),
+            "FreeSurfer",
+        ),
+        "Nibabies < 21.0.0": (
+            os.path.join(os.path.dirname(fmri_dir), "infant-freesurfer"),
+            "FreeSurfer",
+        ),
+    }
 
-    else:
-        raise NotADirectoryError("No FreeSurfer derivatives found.")
+    for desc, key in patterns.items():
+        pattern, software = key
+        if os.path.isdir(pattern):
+            LOGGER.info(
+                f"{software} derivatives associated with {desc} preprocessing derivatives found "
+                f"at {pattern}"
+            )
+            return pattern, software
 
-    return freesurfer_path
+        # Otherwise, continue to the next pattern
 
-
-def get_freesurfer_sphere(freesurfer_path, subject_id, hemisphere):
-    """Find FreeSurfer sphere file.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    freesurfer_path : :obj:`str`
-        Path to the FreeSurfer derivatives.
-    subject_id : :obj:`str`
-        Subject ID. This may or may not be prefixed with "sub-".
-    hemisphere : {"L", "R"}
-        The hemisphere to grab.
-
-    Returns
-    -------
-    sphere_raw : :obj:`str`
-        Sphere file for the requested subject and hemisphere.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the sphere file cannot be found.
-    """
-    import os
-
-    assert hemisphere in ("L", "R"), hemisphere
-
-    if not subject_id.startswith("sub-"):
-        subject_id = f"sub-{subject_id}"
-
-    sphere_raw = os.path.join(
-        freesurfer_path,
-        subject_id,
-        "surf",
-        f"{hemisphere.lower()}h.sphere.reg",
+    seg_patterns = [pattern[0] for pattern in patterns.values()]
+    patterns_str = "\n\t".join(seg_patterns)
+    raise NotADirectoryError(
+        "No FreeSurfer/MCRIBS derivatives found in any of the following locations:"
+        f"\n\t{patterns_str}"
     )
-
-    if not os.path.isfile(sphere_raw):
-        raise FileNotFoundError(f"Sphere file not found at '{sphere_raw}'")
-
-    return sphere_raw
 
 
 def get_entity(filename, entity):

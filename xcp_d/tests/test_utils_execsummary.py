@@ -1,4 +1,5 @@
 """Test functions in xcp_d.utils.execsummary."""
+
 import os
 
 import matplotlib.pyplot as plt

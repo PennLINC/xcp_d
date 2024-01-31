@@ -1,4 +1,5 @@
 """Interfaces for Nilearn code."""
+
 import os
 
 from nilearn import maskers

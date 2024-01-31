@@ -1,4 +1,5 @@
 """Workflows for concatenating postprocessed data."""
+
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow

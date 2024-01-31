@@ -1,4 +1,5 @@
 """Custom wb_command interfaces."""
+
 import os
 
 import nibabel as nb

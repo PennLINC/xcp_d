@@ -1,4 +1,5 @@
 """Tests for functions in the cli.run module."""
+
 import logging
 import os
 from copy import deepcopy
