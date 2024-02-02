@@ -85,6 +85,9 @@ def check_generated_files(xcpd_dir, output_list_file):
     # Ignore figures
     found_files = [f for f in found_files if "figures" not in f]
 
+    # Ignore logs
+    found_files = [f for f in found_files if "log" not in f.split(os.path.sep)]
+
     with open(output_list_file, "r") as fo:
         expected_files = fo.readlines()
         expected_files = [f.rstrip() for f in expected_files]
