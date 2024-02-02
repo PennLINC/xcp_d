@@ -59,6 +59,9 @@ dataset_description.json
 desc-linc_qc.json
 logs
 logs/CITATION.md
+logs/CITATION.bib
+logs/CITATION.html
+logs/CITATION.tex
 sub-0000001
 sub-0000001.html
 sub-0000001/ses-01

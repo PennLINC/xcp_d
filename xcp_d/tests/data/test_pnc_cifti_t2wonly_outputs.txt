@@ -11,6 +11,9 @@ dataset_description.json
 desc-linc_qc.json
 logs
 logs/CITATION.md
+logs/CITATION.bib
+logs/CITATION.html
+logs/CITATION.tex
 sub-1648798153
 sub-1648798153.html
 sub-1648798153/ses-PNC1
