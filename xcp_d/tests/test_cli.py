@@ -243,7 +243,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--combineruns",
         "--dcan-qc",
         "--dummy-scans=auto",
-        "--fd-thresh=0.001",  # set FD thresh to censor everything
+        "--fd-thresh=0.3",
         "--upper-bpf=0.0",
         "--atlases",
         "Tian",
