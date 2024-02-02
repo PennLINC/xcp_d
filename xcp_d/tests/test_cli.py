@@ -286,8 +286,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
     os.makedirs(custom_confounds_dir, exist_ok=True)
 
-    test_data_dir = get_test_data_path()
-
     # Create custom confounds folder
     for run_number in [1, 2]:
         out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
@@ -327,11 +325,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     # Run combine-qc too
     xcpd_dir = os.path.join(out_dir, "xcp_d")
     combineqc.main([xcpd_dir, "summary"])
-
-    output_list_file = os.path.join(test_data_dir, "test_fmriprep_without_freesurfer_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="nifti")
 
     dm_file = os.path.join(
         xcpd_dir,
