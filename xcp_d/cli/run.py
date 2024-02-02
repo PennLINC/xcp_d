@@ -22,6 +22,12 @@ def main():
 
     parse_args()
 
+    if "pdb" in config.execution.debug:
+        from xcp_d.utils.debug import setup_exceptionhook
+
+        setup_exceptionhook()
+        config.nipype.plugin = "Linear"
+
     sentry_sdk = None
     if not config.execution.notrack and not config.execution.debug:
         import sentry_sdk
@@ -40,15 +46,19 @@ def main():
     # CRITICAL Call build_workflow(config_file, retval) in a subprocess.
     # Because Python on Linux does not ever free virtual memory (VM), running the
     # workflow construction jailed within a process preempts excessive VM buildup.
-    with Manager() as mgr:
-        retval = mgr.dict()
-        p = Process(target=build_workflow, args=(str(config_file), retval))
-        p.start()
-        p.join()
-        retval = dict(retval.items())  # Convert to base dictionary
+    if "pdb" not in config.execution.debug:
+        with Manager() as mgr:
+            retval = mgr.dict()
+            p = Process(target=build_workflow, args=(str(config_file), retval))
+            p.start()
+            p.join()
+            retval = dict(retval.items())  # Convert to base dictionary
 
-        if p.exitcode:
-            retval["return_code"] = p.exitcode
+            if p.exitcode:
+                retval["return_code"] = p.exitcode
+
+    else:
+        retval = build_workflow(str(config_file), {})
 
     exitcode = retval.get("return_code", 0)
     xcpd_wf = retval.get("workflow", None)
@@ -132,7 +142,7 @@ def main():
                 "docker",
             ):
                 boiler_file = Path("<OUTPUT_PATH>") / boiler_file.relative_to(
-                    config.execution.output_dir
+                    config.execution.xcp_d_dir
                 )
             config.loggers.workflow.log(
                 25,
@@ -154,6 +164,9 @@ def main():
         from xcp_d import data
         from xcp_d.interfaces.report_core import generate_reports
 
+        # Write dataset description before generating reports
+        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+
         # Generate reports phase
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
@@ -162,7 +175,6 @@ def main():
             config=data.load("reports-spec.yml"),
             packagename="xcp_d",
         )
-        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
 
         if sentry_sdk is not None and failed_reports:
             sentry_sdk.capture_message(

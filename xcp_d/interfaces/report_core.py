@@ -142,11 +142,14 @@ def generate_reports(
                     f"sub-{subject_label}",
                     "figures/*_bold.svg",
                 ),
-            )[0]
+            )
+            if not brainplotfile:
+                raise ValueError(f"No plots in {output_dir}")
+
             exsumm = ExecutiveSummary(
                 xcpd_path=output_dir,
                 subject_id=subject_label,
-                session_id=get_entity(brainplotfile, "ses"),
+                session_id=get_entity(brainplotfile[0], "ses"),
             )
             exsumm.collect_inputs()
             exsumm.generate_report()

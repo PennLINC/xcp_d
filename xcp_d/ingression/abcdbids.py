@@ -335,7 +335,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     # Write the dataset description out last
     dataset_description_dict = {
         "Name": "ABCD-DCAN",
-        "BIDSVersion": "1.4.0",
+        "BIDSVersion": "1.9.0",
         "DatasetType": "derivative",
         "GeneratedBy": [
             {

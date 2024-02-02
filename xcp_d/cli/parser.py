@@ -5,6 +5,7 @@
 xcp_d preprocessing workflow
 ============================
 """
+import os
 import sys
 
 from xcp_d import config
@@ -188,6 +189,11 @@ def _build_parser():
         action="store",
         type=int,
         help="Upper bound memory limit, in gigabytes, for XCP-D processes.",
+    )
+    g_perfm.add_argument(
+        "--low-mem",
+        action="store_true",
+        help="Attempt to reduce memory usage (will increase disk usage in working directory).",
     )
     g_perfm.add_argument(
         "--use-plugin",
@@ -563,10 +569,29 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         ),
     )
     g_other.add_argument(
+        "--write-graph",
+        action="store_true",
+        default=False,
+        help="Write workflow graph.",
+    )
+    g_other.add_argument(
+        "--stop-on-first-crash",
+        action="store_true",
+        default=False,
+        help="Force stopping on first crash, even if a work directory was specified.",
+    )
+    g_other.add_argument(
         "--notrack",
         action="store_true",
         default=False,
         help="Opt out of sending tracking information.",
+    )
+    g_other.add_argument(
+        "--debug",
+        action="store",
+        nargs="+",
+        choices=config.DEBUG_MODES + ("all",),
+        help="Debug mode(s) to enable. 'all' is alias for all available modes.",
     )
     g_other.add_argument(
         "--fs-license-file",
@@ -575,6 +600,28 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help=(
             "Path to FreeSurfer license key file. Get it (for free) by registering "
             "at https://surfer.nmr.mgh.harvard.edu/registration.html."
+        ),
+    )
+    g_other.add_argument(
+        "--md-only-boilerplate",
+        action="store_true",
+        default=False,
+        help="Skip generation of HTML and LaTeX formatted citation with pandoc",
+    )
+    g_other.add_argument(
+        "--boilerplate-only",
+        "--boilerplate_only",
+        action="store_true",
+        default=False,
+        help="generate boilerplate only",
+    )
+    g_other.add_argument(
+        "--reports-only",
+        action="store_true",
+        default=False,
+        help=(
+            "only generate reports, don't run workflows. This will only rerun report "
+            "aggregation, not reportlet generation for specific nodes."
         ),
     )
 
@@ -635,13 +682,55 @@ def parse_args(args=None, namespace=None):
     parser = _build_parser()
     opts = parser.parse_args(args, namespace)
     if opts.config_file:
-        config.load(opts.config_file, skip=False, init=False)
+        skip = {} if opts.reports_only else {"execution": ("run_uuid",)}
+        config.load(opts.config_file, skip=skip, init=False)
         config.loggers.cli.info(f"Loaded previous configuration file {opts.config_file}")
 
     opts = _validate_parameters(opts=opts, build_log=config.loggers.cli, parser=parser)
 
+    # Wipe out existing work_dir
+    if opts.clean_workdir and opts.work_dir.exists():
+        from niworkflows.utils.misc import clean_directory
+
+        config.loggers.cli.info(f"Clearing previous XCP-D working directory: {opts.work_dir}")
+        if not clean_directory(opts.work_dir):
+            config.loggers.cli.warning(
+                f"Could not clear all contents of working directory: {opts.work_dir}"
+            )
+
+    # First check that fmriprep_dir looks like a BIDS folder
+    if opts.input_type in ("dcan", "hcp", "ukb"):
+        if opts.input_type == "dcan":
+            from xcp_d.ingression.abcdbids import convert_dcan2bids as convert_to_bids
+        elif opts.input_type == "hcp":
+            from xcp_d.ingression.hcpya import convert_hcp2bids as convert_to_bids
+        elif opts.input_type == "ukb":
+            from xcp_d.ingression.ukbiobank import convert_ukb2bids as convert_to_bids
+
+        converted_fmri_dir = opts.work_dir / f"dset_bids/derivatives/{opts.input_type}"
+        converted_fmri_dir.mkdir(exist_ok=True, parents=True)
+
+        convert_to_bids(
+            opts.fmri_dir,
+            out_dir=str(converted_fmri_dir),
+            participant_ids=opts.participant_label,
+        )
+
+        opts.fmri_dir = converted_fmri_dir
+        assert converted_fmri_dir.exists(), f"Conversion to BIDS failed: {converted_fmri_dir}"
+
+    if not os.path.isfile(os.path.join(opts.fmri_dir, "dataset_description.json")):
+        config.loggers.cli.error(
+            "No dataset_description.json file found in input directory. "
+            "Make sure to point to the specific pipeline's derivatives folder. "
+            "For example, use '/dset/derivatives/fmriprep', not /dset/derivatives'."
+        )
+
     config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     config.from_dict(vars(opts), init=["nipype"])
+    assert config.execution.fmri_dir.exists(), (
+        f"Conversion to BIDS failed: {config.execution.fmri_dir}",
+    )
 
     # Retrieve logging level
     build_log = config.loggers.cli
@@ -677,14 +766,6 @@ def parse_args(args=None, namespace=None):
 
     if config.execution.xcp_d_dir is None:
         config.execution.xcp_d_dir = output_dir / "xcp_d"
-
-    # Wipe out existing work_dir
-    if opts.clean_workdir and work_dir.exists():
-        from niworkflows.utils.misc import clean_directory
-
-        build_log.info(f"Clearing previous XCP-D working directory: {work_dir}")
-        if not clean_directory(work_dir):
-            build_log.warning(f"Could not clear all contents of working directory: {work_dir}")
 
     # Update the config with an empty dict to trigger initialization of all config
     # sections (we used `init=False` above).
@@ -749,6 +830,10 @@ def _validate_parameters(opts, build_log, parser):
 
         else:
             parser.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
+
+    # Resolve custom confounds folder
+    if opts.custom_confounds:
+        opts.custom_confounds = str(opts.custom_confounds.resolve())
 
     # Bandpass filter parameters
     if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:

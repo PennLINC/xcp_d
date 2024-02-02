@@ -49,11 +49,6 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     Parameters
     ----------
-    %(atlases)s
-    %(output_dir)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "load_atlases_wf".
 
@@ -323,25 +318,15 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             from xcp_d.workflows.connectivity import init_parcellate_surfaces_wf
 
             wf = init_parcellate_surfaces_wf(
-                output_dir=".",
-                atlases=["Glasser"],
                 files_to_parcellate=["sulcal_depth", "sulcal_curv", "cortical_thickness"],
-                min_coverage=0.5,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="parcellate_surfaces_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
-    atlases
     files_to_parcellate : :obj:`list` of :obj:`str`
         List of surface file types to parcellate
         (e.g., "sulcal_depth", "sulcal_curv", "cortical_thickness").
-    %(min_coverage)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
 
     Inputs
@@ -496,20 +481,10 @@ def init_functional_connectivity_nifti_wf(name="connectivity_wf"):
 
             from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 
-            wf = init_functional_connectivity_nifti_wf(
-                output_dir=".",
-                alff_available=True,
-                min_coverage=0.5,
-                mem_gb=0.1,
-                name="connectivity_wf",
-            )
+            wf = init_functional_connectivity_nifti_wf()
 
     Parameters
     ----------
-    %(output_dir)s
-    alff_available
-    %(min_coverage)s
-    %(mem_gb)s
     %(name)s
         Default is "connectivity_wf".
 
@@ -713,21 +688,10 @@ def init_functional_connectivity_cifti_wf(name="connectivity_wf"):
             :simple_form: yes
 
             from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
-            wf = init_functional_connectivity_cifti_wf(
-                output_dir=".",
-                alff_available=True,
-                min_coverage=0.5,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="connectivity_wf",
-            )
+            wf = init_functional_connectivity_cifti_wf()
 
     Parameters
     ----------
-    %(output_dir)s
-    %(min_coverage)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "connectivity_wf".
 

@@ -39,30 +39,14 @@ def init_alff_wf(
             from xcp_d.workflows.restingstate import init_alff_wf
             wf = init_alff_wf(
                 name_source="/path/to/file.nii.gz",
-                output_dir=".",
                 TR=2.,
-                low_pass=0.1,
-                high_pass=0.01,
-                fd_thresh=0,
-                smoothing=6,
-                cifti=False,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="alff_wf",
             )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
     %(TR)s
-    %(low_pass)s
-    %(high_pass)s
-    %(fd_thresh)s
-    %(smoothing)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "compute_alff_wf".
 
@@ -409,18 +393,12 @@ def init_reho_nifti_wf(name_source, name="reho_nifti_wf"):
             from xcp_d.workflows.restingstate import init_reho_nifti_wf
             wf = init_reho_nifti_wf(
                 name_source="/path/to/bold.nii.gz",
-                output_dir=".",
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="nifti_reho_wf",
             )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "nifti_reho_wf".
 

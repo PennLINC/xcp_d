@@ -18,8 +18,8 @@ from xcp_d.tests.utils import (
     check_generated_files,
     download_test_data,
     get_test_data_path,
-    run_command,
 )
+from xcp_d.utils.bids import write_dataset_description
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -297,25 +297,32 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
             data=np.random.random((16, 2)),
         )
         confounds_df.to_csv(out_file, sep="\t", index=False)
+        LOGGER.warning(f"Created custom confounds file at {out_file}.")
 
-    cmd = (
-        f"xcp_d {dataset_dir} {out_dir} participant "
-        f"-w {work_dir} "
-        "--nthreads 2 "
-        "--omp-nthreads 2 "
-        "--despike "
-        "--head_radius 40 "
-        "--smoothing 6 "
-        "-f 100 "
-        "--nuisance-regressors 27P "
-        "--disable-bandpass-filter "
-        "--min-time 20 "
-        "--dcan-qc "
-        "--dummy-scans 1 "
-        f"--custom_confounds={custom_confounds_dir}"
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        "--despike",
+        "--head_radius=40",
+        "--smoothing=6",
+        "-f=100",
+        "--nuisance-regressors=27P",
+        "--disable-bandpass-filter",
+        "--min-time=20",
+        "--dcan-qc",
+        "--dummy-scans=1",
+        f"--custom_confounds={custom_confounds_dir}",
+    ]
+
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="nifti",
     )
-
-    run_command(cmd)
 
     # Run combine-qc too
     xcpd_dir = os.path.join(out_dir, "xcp_d")
@@ -378,6 +385,7 @@ def _run_and_generate(test_name, parameters, input_type):
     retval = build_workflow(config_file, retval={})
     xcpd_wf = retval["workflow"]
     xcpd_wf.run()
+    write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
     build_boilerplate(str(config_file), xcpd_wf)
     generate_reports(
         subject_list=config.execution.participant_label,

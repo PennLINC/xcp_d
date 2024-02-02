@@ -30,35 +30,15 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
             from xcp_d.workflows.concatenation import init_concatenate_data_wf
 
             wf = init_concatenate_data_wf(
-                output_dir=".",
-                motion_filter_type=None,
                 TR=2,
                 head_radius=50,
-                params="none",
-                smoothing=None,
-                cifti=False,
-                dcan_qc=True,
-                fd_thresh=0.3,
-                atlases=[],
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="concatenate_data_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
-    %(motion_filter_type)s
     %(TR)s
     %(head_radius)s
-    %(params)s
-    %(smoothing)s
-    %(cifti)s
-    %(dcan_qc)s
-    %(fd_thresh)s
-    %(atlases)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "concatenate_data_wf".
 

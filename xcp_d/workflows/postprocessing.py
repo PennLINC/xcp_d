@@ -47,41 +47,20 @@ def init_prepare_confounds_wf(
             from xcp_d.workflows.postprocessing import init_prepare_confounds_wf
 
             wf = init_prepare_confounds_wf(
-                output_dir=".",
                 TR=0.8,
-                params="27P",
-                dummy_scans="auto",
-                random_seed=None,
                 exact_scans=[],
-                motion_filter_type="notch",
-                band_stop_min=12,
-                band_stop_max=20,
-                motion_filter_order=4,
                 head_radius=70,
-                fd_thresh=0.3,
                 custom_confounds_file=None,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="prepare_confounds_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
     %(TR)s
-    %(params)s
-    %(dummy_scans)s
-    %(random_seed)s
-    %(motion_filter_type)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(motion_filter_order)s
+    %(exact_scans)s
     %(head_radius)s
         This will already be estimated before this workflow.
-    %(fd_thresh)s
     %(custom_confounds_file)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "prepare_confounds_wf".
 
@@ -112,7 +91,7 @@ def init_prepare_confounds_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.output_dir
+    output_dir = config.execution.xcp_d_dir
     params = config.workflow.params
     dummy_scans = config.workflow.dummy_scans
     random_seed = config.seeds.master
@@ -422,18 +401,12 @@ def init_despike_wf(TR, name="despike_wf"):
 
             wf = init_despike_wf(
                 TR=0.8,
-                cifti=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="despike_wf",
             )
 
     Parameters
     ----------
     %(TR)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "despike_wf".
 
@@ -527,28 +500,12 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
 
             wf = init_denoise_bold_wf(
                 TR=0.8,
-                high_pass=0.01,
-                low_pass=0.08,
-                bpf_order=2,
-                bandpass_filter=True,
-                smoothing=6,
-                cifti=False,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="denoise_bold_wf",
             )
 
     Parameters
     ----------
     %(TR)s
-    %(low_pass)s
-    %(high_pass)s
-    %(bpf_order)s
-    %(bandpass_filter)s
-    %(smoothing)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "denoise_bold_wf".
 
@@ -705,20 +662,10 @@ def init_resd_smoothing_wf(name="resd_smoothing_wf"):
 
             from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
 
-            wf = init_resd_smoothing_wf(
-                smoothing=6,
-                cifti=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="resd_smoothing_wf",
-            )
+            wf = init_resd_smoothing_wf()
 
     Parameters
     ----------
-    %(smoothing)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "resd_smoothing_wf".
 

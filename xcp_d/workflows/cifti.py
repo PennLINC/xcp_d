@@ -74,34 +74,12 @@ def init_postprocess_cifti_wf(
 
             wf = init_postprocess_cifti_wf(
                 bold_file=bold_file,
-                fmri_dir=fmri_dir,
-                bandpass_filter=True,
-                high_pass=0.01,
-                low_pass=0.08,
-                bpf_order=2,
-                motion_filter_type="notch",
-                motion_filter_order=4,
-                band_stop_min=12,
-                band_stop_max=20,
-                smoothing=6,
                 head_radius=50.,
-                params="27P",
-                output_dir=".",
-                custom_confounds_folder=custom_confounds_folder,
-                dummy_scans=2,
-                fd_thresh=0.3,
-                despike=True,
-                dcan_qc=True,
                 run_data=run_data,
                 t1w_available=True,
                 t2w_available=True,
                 n_runs=1,
-                atlases=["Glasser"],
-                min_coverage=0.5,
                 exact_scans=[],
-                random_seed=None,
-                omp_nthreads=1,
-                layout=layout,
                 name="cifti_postprocess_wf",
             )
             wf.inputs.inputnode.t1w = subj_data["t1w"]
@@ -109,36 +87,15 @@ def init_postprocess_cifti_wf(
     Parameters
     ----------
     bold_file
-    %(bandpass_filter)s
-    %(high_pass)s
-    %(low_pass)s
-    %(bpf_order)s
-    %(motion_filter_type)s
-    %(motion_filter_order)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(smoothing)s
     %(head_radius)s
         This will already be estimated before this workflow.
-    %(params)s
-    %(output_dir)s
-    %(custom_confounds_folder)s
-    %(dummy_scans)s
-    %(fd_thresh)s
-    %(despike)s
-    %(dcan_qc)s
     run_data : dict
     t1w_available
     t2w_available
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
-    %(atlases)s
-    %(min_coverage)s
-    %(random_seed)s
     %(exact_scans)s
-    %(omp_nthreads)s
-    %(layout)s
     %(name)s
         Default is "cifti_postprocess_wf".
 

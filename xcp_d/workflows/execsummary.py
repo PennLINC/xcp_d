@@ -40,23 +40,17 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
 
             wf = init_brainsprite_figures_wf(
-                output_dir=".",
                 t1w_available=True,
                 t2w_available=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="brainsprite_figures_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
     t1w_available : bool
         True if a T1w image is available.
     t2w_available : bool
         True if a T2w image is available.
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "init_brainsprite_figures_wf".
 
@@ -316,8 +310,6 @@ def init_execsummary_functional_plots_wf(
                 preproc_nifti=None,
                 t1w_available=True,
                 t2w_available=True,
-                output_dir=".",
-                layout=None,
                 name="execsummary_functional_plots_wf",
             )
 
@@ -330,8 +322,6 @@ def init_execsummary_functional_plots_wf(
         Generally True.
     t2w_available : :obj:`bool`
         Generally False.
-    %(output_dir)s
-    %(layout)s
     %(name)s
 
     Inputs
@@ -540,7 +530,6 @@ def init_execsummary_anatomical_plots_wf(
         Generally True.
     t2w_available : bool
         Generally False.
-    %(output_dir)s
     %(name)s
 
     Inputs

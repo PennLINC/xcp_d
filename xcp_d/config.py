@@ -377,6 +377,8 @@ class execution(_Config):
     """Checksum (SHA256) of the ``dataset_description.json`` of the BIDS dataset."""
     bids_filters = None
     """A dictionary of BIDS selection filters."""
+    boilerplate_only = False
+    """Only generate a boilerplate."""
     debug = []
     """Debug mode(s)."""
     xcp_d_dir = None
@@ -389,6 +391,8 @@ class execution(_Config):
     """The path to a directory that contains execution logs."""
     log_level = 25
     """Output verbosity."""
+    low_mem = None
+    """Utilize uncompressed NIfTIs and other tricks to minimize memory allocation."""
     md_only_boilerplate = False
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
     notrack = False

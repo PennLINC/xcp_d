@@ -37,7 +37,7 @@ class DerivativesDataSink(BaseDerivativesDataSink):
     A child class of the niworkflows DerivativesDataSink, using xcp_d's configuration files.
     """
 
-    out_path_base = "xcp_d"
+    out_path_base = ""
     _allowed_entities = set(config_entities)
     _config_entities = config_entities
     _config_entities_dict = merged_entities

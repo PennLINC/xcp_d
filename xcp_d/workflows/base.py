@@ -517,6 +517,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     for node in workflow.list_node_names():
         if node.split(".")[-1].startswith("ds_"):
-            workflow.get_node(node).interface.out_path_base = "xcp_d"
+            workflow.get_node(node).interface.out_path_base = ""
 
     return workflow

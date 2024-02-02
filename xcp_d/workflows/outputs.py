@@ -29,14 +29,10 @@ def init_copy_inputs_to_outputs_wf(name="copy_inputs_to_outputs_wf"):
 
             from xcp_d.workflows.outputs import init_copy_inputs_to_outputs_wf
 
-            wf = init_copy_inputs_to_outputs_wf(
-                output_dir=".",
-                name="copy_inputs_to_outputs_wf",
-            )
+            wf = init_copy_inputs_to_outputs_wf()
 
     Parameters
     ----------
-    %(output_dir)s
     %(name)s
         Default is "copy_inputs_to_outputs_wf".
 
@@ -147,20 +143,7 @@ def init_postproc_derivatives_wf(
             wf = init_postproc_derivatives_wf(
                 name_source="/path/to/file.nii.gz",
                 source_metadata={},
-                fmri_dir="/path/to",
-                bandpass_filter=True,
-                low_pass=0.1,
-                high_pass=0.008,
-                bpf_order=2,
-                fd_thresh=0.3,
-                motion_filter_type=None,
-                smoothing=6,
-                params="36P",
                 exact_scans=[],
-                atlases=["Glasser"],
-                cifti=False,
-                dcan_qc=True,
-                output_dir=".",
                 custom_confounds_file=None,
                 name="postproc_derivatives_wf",
             )
@@ -170,23 +153,7 @@ def init_postproc_derivatives_wf(
     name_source : :obj:`str`
         bold or cifti files
     source_metadata : :obj:`dict`
-    fmri_dir : :obj:`str`
-        Path to the preprocessing derivatives.
-    low_pass : float
-        low pass filter
-    high_pass : float
-        high pass filter
-    bpf_order
-    %(fd_thresh)s
-    %(motion_filter_type)s
-    %(smoothing)s
-    %(params)s
     %(exact_scans)s
-    %(atlases)s
-    %(cifti)s
-    %(dcan_qc)s
-    output_dir : :obj:`str`
-        output directory
     custom_confounds_file
         Only used for Sources metadata.
     %(name)s

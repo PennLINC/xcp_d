@@ -347,6 +347,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     # Write the dataset description out last
     dataset_description_dict = {
         "Name": "HCP",
+        "BIDSVersion": "1.9.0",
         "DatasetType": "derivative",
         "GeneratedBy": [
             {

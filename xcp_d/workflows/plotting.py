@@ -31,27 +31,15 @@ def init_qc_report_wf(
 
             from xcp_d.workflows.plotting import init_qc_report_wf
             wf = init_qc_report_wf(
-                output_dir=".",
                 TR=0.5,
                 head_radius=50,
-                params="none",
-                cifti=False,
-                dcan_qc=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
                 name="qc_report_wf",
             )
 
     Parameters
     ----------
-    %(output_dir)s
     %(TR)s
     %(head_radius)s
-    %(params)s
-    %(cifti)s
-    %(dcan_qc)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "qc_report_wf".
 
