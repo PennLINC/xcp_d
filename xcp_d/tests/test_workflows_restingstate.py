@@ -6,6 +6,8 @@ import shutil
 import nibabel as nb
 import numpy as np
 
+from xcp_d import config
+from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.write_save import read_ndata, write_ndata
@@ -27,25 +29,30 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
-    alff_wf = restingstate.init_alff_wf(
-        name_source=bold_file,
-        output_dir=tempdir,
-        TR=TR,
-        low_pass=0.08,
-        high_pass=0.01,
-        fd_thresh=0,
-        cifti=False,
-        smoothing=6,
-        omp_nthreads=2,
-        mem_gb=4,
-        name="alff_wf",
-    )
 
-    # Let's move to a temporary directory before running
-    alff_wf.base_dir = tempdir
-    alff_wf.inputs.inputnode.bold_mask = bold_mask
-    alff_wf.inputs.inputnode.denoised_bold = bold_file
-    compute_alff_res = alff_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tempdir
+        config.workflow.cifti = False
+        config.workflow.low_pass = 0.08
+        config.workflow.high_pass = 0.01
+        config.workflow.fd_thresh = 0
+        config.workflow.smoothing = 6
+        config.nipype.omp_nthreads = 2
+        config.nipype.mem_gb = 4
+
+        alff_wf = restingstate.init_alff_wf(
+            name_source=bold_file,
+            output_dir=tempdir,
+            TR=TR,
+            name="alff_wf",
+        )
+
+        # Let's move to a temporary directory before running
+        alff_wf.base_dir = tempdir
+        alff_wf.inputs.inputnode.bold_mask = bold_mask
+        alff_wf.inputs.inputnode.denoised_bold = bold_file
+        compute_alff_res = alff_wf.run()
+
     nodes = get_nodes(compute_alff_res)
 
     # Let's get the mean of the ALFF for later comparison
@@ -104,23 +111,28 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
     tempdir = tmp_path_factory.mktemp("test_cifti_alff_01")
-    alff_wf = restingstate.init_alff_wf(
-        name_source=bold_file,
-        output_dir=tempdir,
-        TR=TR,
-        low_pass=0.08,
-        high_pass=0.01,
-        fd_thresh=0.1,
-        cifti=True,
-        smoothing=6,
-        omp_nthreads=2,
-        mem_gb=4,
-    )
 
-    alff_wf.base_dir = tempdir
-    alff_wf.inputs.inputnode.bold_mask = bold_mask
-    alff_wf.inputs.inputnode.denoised_bold = bold_file
-    compute_alff_res = alff_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tempdir
+        config.workflow.cifti = True
+        config.workflow.low_pass = 0.08
+        config.workflow.high_pass = 0.01
+        config.workflow.fd_thresh = 0.1
+        config.workflow.smoothing = 6
+        config.nipype.omp_nthreads = 2
+        config.nipype.mem_gb = 4
+
+        alff_wf = restingstate.init_alff_wf(
+            name_source=bold_file,
+            output_dir=tempdir,
+            TR=TR,
+        )
+
+        alff_wf.base_dir = tempdir
+        alff_wf.inputs.inputnode.bold_mask = bold_mask
+        alff_wf.inputs.inputnode.denoised_bold = bold_file
+        compute_alff_res = alff_wf.run()
+
     nodes = get_nodes(compute_alff_res)
 
     # Let's get the mean of the data for later comparison
@@ -193,16 +205,17 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
     bold_mask = ds001419_data["brain_mask_file"]
 
     # Set up and run the ReHo wf in a tempdir
-    reho_wf = restingstate.init_reho_nifti_wf(
-        name_source=bold_file,
-        output_dir=tempdir,
-        omp_nthreads=2,
-        mem_gb=4,
-    )
-    reho_wf.inputs.inputnode.bold_mask = bold_mask
-    reho_wf.base_dir = tempdir
-    reho_wf.inputs.inputnode.denoised_bold = bold_file
-    reho_res = reho_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tempdir
+        config.nipype.omp_nthreads = 2
+        config.nipype.mem_gb = 4
+
+        reho_wf = restingstate.init_reho_nifti_wf(name_source=bold_file)
+        reho_wf.inputs.inputnode.bold_mask = bold_mask
+        reho_wf.base_dir = tempdir
+        reho_wf.inputs.inputnode.denoised_bold = bold_file
+        reho_res = reho_wf.run()
+
     nodes = get_nodes(reho_res)
 
     # Get the original mean of the ReHo for later comparison
@@ -247,16 +260,19 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
     shutil.copyfile(source_file, orig_bold_file)
 
     # Set up and run the ReHo wf in a tempdir
-    reho_wf = restingstate.init_reho_cifti_wf(
-        name_source=source_file,
-        output_dir=tempdir,
-        omp_nthreads=2,
-        mem_gb=4,
-        name="orig_reho_wf",
-    )
-    reho_wf.base_dir = tempdir
-    reho_wf.inputs.inputnode.denoised_bold = orig_bold_file
-    reho_res = reho_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tempdir
+        config.nipype.omp_nthreads = 2
+        config.nipype.mem_gb = 4
+
+        reho_wf = restingstate.init_reho_cifti_wf(
+            name_source=source_file,
+            name="orig_reho_wf",
+        )
+        reho_wf.base_dir = tempdir
+        reho_wf.inputs.inputnode.denoised_bold = orig_bold_file
+        reho_res = reho_wf.run()
+
     nodes = get_nodes(reho_res)
 
     # Get the original mean of the ReHo for later comparison
@@ -273,16 +289,19 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
     assert os.path.isfile(noisy_bold_file)
 
     # Create a new workflow
-    reho_wf = restingstate.init_reho_cifti_wf(
-        name_source=source_file,
-        output_dir=tempdir,
-        omp_nthreads=2,
-        mem_gb=4,
-        name="noisy_reho_wf",
-    )
-    reho_wf.base_dir = tempdir
-    reho_wf.inputs.inputnode.denoised_bold = noisy_bold_file
-    reho_res = reho_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tempdir
+        config.nipype.omp_nthreads = 2
+        config.nipype.mem_gb = 4
+
+        reho_wf = restingstate.init_reho_cifti_wf(
+            name_source=source_file,
+            name="noisy_reho_wf",
+        )
+        reho_wf.base_dir = tempdir
+        reho_wf.inputs.inputnode.denoised_bold = noisy_bold_file
+        reho_res = reho_wf.run()
+
     nodes = get_nodes(reho_res)
 
     # Has the new ReHo's mean decreased?
