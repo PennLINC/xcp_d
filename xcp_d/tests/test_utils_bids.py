@@ -56,7 +56,6 @@ def test_collect_data_ds001419(datasets):
         bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=None,
     )
 
     assert len(subj_data["bold"]) == 5
@@ -75,7 +74,6 @@ def test_collect_data_ds001419(datasets):
         bids_validate=False,
         bids_filters=None,
         cifti=True,
-        layout=layout,
     )
 
     assert len(subj_data["bold"]) == 1
@@ -105,7 +103,6 @@ def test_collect_data_nibabies(datasets):
         bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=layout,
     )
 
     assert len(subj_data["bold"]) == 1
@@ -126,7 +123,6 @@ def test_collect_data_nibabies(datasets):
             bids_validate=False,
             bids_filters=None,
             cifti=True,
-            layout=layout,
         )
 
 
