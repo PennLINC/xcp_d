@@ -5,6 +5,8 @@ import shutil
 
 import pytest
 
+from xcp_d import config
+from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.workflows import anatomical
 
@@ -85,22 +87,26 @@ def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
     t2w = os.path.join(tmpdir, "sub-01_desc-preproc_T2w.nii.gz")  # pretend t1w is t2w
     shutil.copyfile(t1w, t2w)
 
-    wf = anatomical.init_postprocess_anat_wf(
-        output_dir=tmpdir,
-        input_type="fmriprep",
-        t1w_available=True,
-        t2w_available=True,
-        target_space="MNI152NLin2009cAsym",
-        omp_nthreads=1,
-        mem_gb=0.1,
-        name="postprocess_anat_wf",
-    )
-    wf.inputs.inputnode.anat_to_template_xfm = anat_to_template_xfm
-    wf.inputs.inputnode.t1w = t1w
-    wf.inputs.inputnode.anat_dseg = anat_dseg
-    wf.inputs.inputnode.t2w = t2w
-    wf.base_dir = tmpdir
-    wf_res = wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tmpdir
+        config.workflow.input_type = "fmriprep"
+        config.nipype.omp_nthreads = 1
+        config.nipype.mem_gb = 0.1
+
+        wf = anatomical.init_postprocess_anat_wf(
+            t1w_available=True,
+            t2w_available=True,
+            target_space="MNI152NLin2009cAsym",
+            name="postprocess_anat_wf",
+        )
+
+        wf.inputs.inputnode.anat_to_template_xfm = anat_to_template_xfm
+        wf.inputs.inputnode.t1w = t1w
+        wf.inputs.inputnode.anat_dseg = anat_dseg
+        wf.inputs.inputnode.t2w = t2w
+        wf.base_dir = tmpdir
+        wf_res = wf.run()
+
     wf_nodes = get_nodes(wf_res)
 
     out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
