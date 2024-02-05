@@ -50,10 +50,9 @@ def mock_config():
     config.nipype.omp_nthreads = 1
     config.nipype.init()
     config.loggers.init()
-    config.init_spaces()
 
     config.execution.work_dir = Path(mkdtemp())
-    config.execution.bids_dir = load_data("../tests/data/ds000240").absolute()
+    config.execution.fmri_dir = load_data("../tests/data/ds000240").absolute()
     config.execution.xcp_d_dir = Path(mkdtemp())
     config.execution.init()
 
