@@ -17,7 +17,7 @@ def test_collect_participants(datasets):
     bids_dir = datasets["ds001419"]
 
     bids_layout = BIDSLayout(bids_dir, validate=False)
-    nonbids_layout = BIDSLayout(os.path.pardir(bids_dir), validate=False)
+    nonbids_layout = BIDSLayout(os.path.dirname(bids_dir), validate=False)
 
     # Pass in non-BIDS folder to get BIDSError.
     with pytest.raises(xbids.BIDSError, match="Could not find participants"):
