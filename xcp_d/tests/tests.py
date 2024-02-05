@@ -42,8 +42,7 @@ def mock_config():
         os.environ["FREESURFER_HOME"] = mkdtemp()
 
     filename = Path(load_data("../tests/data/config.toml"))
-    text = filename.read_text()
-    settings = loads(text)
+    settings = loads(filename.read_text())
     for sectionname, configs in settings.items():
         if sectionname != "environment":
             section = getattr(config, sectionname)
