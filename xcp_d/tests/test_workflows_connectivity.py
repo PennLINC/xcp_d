@@ -40,7 +40,7 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.workflow.cifti = False
         config.workflow.atlases = ["4S156Parcels", "Glasser"]
         config.nipype.omp_nthreads = 1
-        config.nipype.mem_gb = 0.1
+        config.nipype.memory_gb = 0.1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
         load_atlases_wf.inputs.inputnode.name_source = bold_file
@@ -64,7 +64,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.workflow.cifti = True
         config.workflow.atlases = ["4S156Parcels", "Glasser"]
         config.nipype.omp_nthreads = 1
-        config.nipype.mem_gb = 0.1
+        config.nipype.memory_gb = 0.1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
         load_atlases_wf.inputs.inputnode.name_source = bold_file
