@@ -43,7 +43,6 @@ def mock_config():
 
     filename = Path(load_data("../tests/data/config.toml"))
     text = filename.read_text()
-    raise ValueError(text)
     settings = loads(text)
     for sectionname, configs in settings.items():
         if sectionname != "environment":
