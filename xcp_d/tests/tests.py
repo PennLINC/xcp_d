@@ -23,7 +23,6 @@
 """Utilities and mocks for testing and documentation building."""
 import os
 import shutil
-import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import mkdtemp
@@ -44,7 +43,7 @@ def mock_config():
 
     filename = Path(load_data("../tests/data/config.toml"))
     text = filename.read_text()
-    warnings.warn(text)
+    raise ValueError(text)
     settings = loads(text)
     for sectionname, configs in settings.items():
         if sectionname != "environment":
