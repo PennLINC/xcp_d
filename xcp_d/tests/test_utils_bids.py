@@ -52,8 +52,6 @@ def test_collect_data_ds001419(datasets):
         layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task=None,
-        bids_validate=False,
         bids_filters=None,
         cifti=False,
     )
@@ -70,8 +68,6 @@ def test_collect_data_ds001419(datasets):
         layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task="rest",
-        bids_validate=False,
         bids_filters=None,
         cifti=True,
     )
@@ -99,8 +95,6 @@ def test_collect_data_nibabies(datasets):
         layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task=None,
-        bids_validate=False,
         bids_filters=None,
         cifti=False,
     )
@@ -119,8 +113,6 @@ def test_collect_data_nibabies(datasets):
             layout=layout,
             input_type="fmriprep",
             participant_label="01",
-            task=None,
-            bids_validate=False,
             bids_filters=None,
             cifti=True,
         )
