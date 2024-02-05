@@ -1,4 +1,4 @@
-"""Tests for functions in the cli.run module."""
+"""Tests for functions in the cli.parser module."""
 
 import logging
 import os
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from xcp_d.cli import run
+from xcp_d.cli import parser
 
 build_log = logging.getLogger()
 build_log.setLevel(10)
@@ -47,40 +47,37 @@ def base_opts():
     return opts
 
 
-def test_validate_parameters_01(base_opts):
-    """Test run._validate_parameters."""
+def test_validate_parameters_01(base_opts, base_parser):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
-    assert return_code == 0
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
-def test_validate_parameters_02(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_02(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     # Set output to same as input
     opts.output_dir = opts.fmri_dir
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "The selected output folder is the same as the input" in caplog.text
-    assert return_code == 1
 
 
-def test_validate_parameters_03(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_03(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     # Set a bad analysis level
     opts.analysis_level = "group"
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert 'Please select analysis level "participant"' in caplog.text
     assert "The selected output folder is the same as the input" not in caplog.text
-    assert return_code == 1
 
 
-def test_validate_parameters_04(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_04(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     assert opts.bandpass_filter is True
@@ -89,43 +86,40 @@ def test_validate_parameters_04(base_opts, caplog):
     opts.lower_bpf = -1
     opts.upper_bpf = -1
 
-    opts, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.bandpass_filter is False
     assert "Bandpass filtering is disabled." in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_05(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_05(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set upper BPF below lower one
     opts.lower_bpf = 0.01
     opts.upper_bpf = 0.001
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "must be lower than" in caplog.text
-    assert return_code == 1
 
 
-def test_validate_parameters_06(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_06(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Disable censoring
     opts.fd_thresh = 0
 
-    opts, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.min_time == 0
     assert "Framewise displacement-based scrubbing is disabled." in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_07(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_07(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set notch filter with no min or max
@@ -133,14 +127,13 @@ def test_validate_parameters_07(base_opts, caplog):
     opts.band_stop_min = None
     opts.band_stop_max = None
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "Please set both" in caplog.text
-    assert return_code == 1
 
 
-def test_validate_parameters_08(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_08(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
@@ -148,28 +141,26 @@ def test_validate_parameters_08(base_opts, caplog):
     opts.band_stop_min = 18
     opts.band_stop_max = 12
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "must be lower than" in caplog.text
-    assert return_code == 1
 
 
-def test_validate_parameters_09(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_09(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min <1 for notch filter
     opts.motion_filter_type = "notch"
     opts.band_stop_min = 0.01
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "suspiciously low." in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_10(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_10(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set lp without min
@@ -177,14 +168,13 @@ def test_validate_parameters_10(base_opts, caplog):
     opts.band_stop_min = None
     opts.band_stop_max = None
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "Please set '--band-stop-min'" in caplog.text
-    assert return_code == 1
 
 
-def test_validate_parameters_11(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_11(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
@@ -192,14 +182,13 @@ def test_validate_parameters_11(base_opts, caplog):
     opts.band_stop_min = 0.01
     opts.band_stop_max = None
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "suspiciously low." in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_12(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_12(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
@@ -207,14 +196,13 @@ def test_validate_parameters_12(base_opts, caplog):
     opts.band_stop_min = 12
     opts.band_stop_max = 18
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "'--band-stop-max' is ignored" in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_13(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_13(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
@@ -222,112 +210,102 @@ def test_validate_parameters_13(base_opts, caplog):
     opts.band_stop_min = 12
     opts.band_stop_max = 18
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "'--band-stop-min' and '--band-stop-max' are ignored" in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_14(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_14(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
     opts.input_type = "dcan"
     opts.cifti = False
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "cifti processing (--cifti) will be enabled automatically." in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_15(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_15(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
     opts.input_type = "dcan"
     opts.process_surfaces = False
 
-    opts, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.cifti is True
     assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_16(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_16(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
     opts.input_type = "dcan"
     opts.process_surfaces = False
 
-    opts, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.process_surfaces is True
     assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_17(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_17(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
     opts.process_surfaces = True
     opts.cifti = False
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "you must enable cifti processing" in caplog.text
-    assert return_code == 1
 
 
-def test_validate_parameters_18(base_opts):
-    """Test run._validate_parameters."""
+def test_validate_parameters_18(base_opts, base_parser):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     opts.fs_license_file = None
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
-
-    assert return_code == 0
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
-def test_validate_parameters_19(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_19(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     opts.fs_license_file = Path("/path/to/missing/folder")
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "Freesurfer license DNE" in caplog.text
-    assert return_code == 1
 
 
-def test_validate_parameters_20(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_20(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     opts.atlases = []
     opts.min_coverage = 0.1
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "When no atlases are selected" in caplog.text
-    assert return_code == 0
 
 
-def test_validate_parameters_21(base_opts, caplog):
-    """Test run._validate_parameters."""
+def test_validate_parameters_21(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     opts.input_type = "ukb"
     opts.cifti = True
     opts.process_surfaces = True
 
-    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "cifti processing (--cifti) will be disabled automatically." in caplog.text
     assert "(--warp-surfaces-native2std) will be disabled automatically." in caplog.text
-    assert return_code == 0
