@@ -23,6 +23,7 @@
 """Utilities and mocks for testing and documentation building."""
 import os
 import shutil
+import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import mkdtemp
@@ -42,7 +43,9 @@ def mock_config():
         os.environ["FREESURFER_HOME"] = mkdtemp()
 
     filename = Path(load_data("../tests/data/config.toml"))
-    settings = loads(filename.read_text())
+    text = filename.read_text()
+    warnings.warn(text)
+    settings = loads(text)
     for sectionname, configs in settings.items():
         if sectionname != "environment":
             section = getattr(config, sectionname)
