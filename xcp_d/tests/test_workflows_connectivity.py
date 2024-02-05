@@ -8,11 +8,13 @@ import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
+from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiParcellateWorkbench,
 )
+from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
@@ -33,18 +35,19 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
 
     bold_file = ds001419_data["nifti_file"]
 
-    load_atlases_wf = init_load_atlases_wf(
-        atlases=["4S156Parcels", "Glasser"],
-        output_dir=tmpdir,
-        cifti=False,
-        mem_gb=1,
-        omp_nthreads=1,
-        name="load_atlases_wf",
-    )
-    load_atlases_wf.inputs.inputnode.name_source = bold_file
-    load_atlases_wf.inputs.inputnode.bold_file = bold_file
-    load_atlases_wf.base_dir = tmpdir
-    load_atlases_wf_res = load_atlases_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tmpdir
+        config.workflow.cifti = False
+        config.workflow.atlases = ["4S156Parcels", "Glasser"]
+        config.nipype.omp_nthreads = 1
+        config.nipype.mem_gb = 0.1
+
+        load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
+        load_atlases_wf.inputs.inputnode.name_source = bold_file
+        load_atlases_wf.inputs.inputnode.bold_file = bold_file
+        load_atlases_wf.base_dir = tmpdir
+        load_atlases_wf_res = load_atlases_wf.run()
+
     nodes = get_nodes(load_atlases_wf_res)
     atlas_names = nodes["load_atlases_wf.warp_atlases_to_bold_space"].get_output("output_image")
     assert len(atlas_names) == 2
@@ -56,18 +59,19 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
 
     bold_file = ds001419_data["cifti_file"]
 
-    load_atlases_wf = init_load_atlases_wf(
-        atlases=["4S156Parcels", "Glasser"],
-        output_dir=tmpdir,
-        cifti=True,
-        mem_gb=1,
-        omp_nthreads=1,
-        name="load_atlases_wf",
-    )
-    load_atlases_wf.inputs.inputnode.name_source = bold_file
-    load_atlases_wf.inputs.inputnode.bold_file = bold_file
-    load_atlases_wf.base_dir = tmpdir
-    load_atlases_wf_res = load_atlases_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tmpdir
+        config.workflow.cifti = True
+        config.workflow.atlases = ["4S156Parcels", "Glasser"]
+        config.nipype.omp_nthreads = 1
+        config.nipype.mem_gb = 0.1
+
+        load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
+        load_atlases_wf.inputs.inputnode.name_source = bold_file
+        load_atlases_wf.inputs.inputnode.bold_file = bold_file
+        load_atlases_wf.base_dir = tmpdir
+        load_atlases_wf_res = load_atlases_wf.run()
+
     nodes = get_nodes(load_atlases_wf_res)
     atlas_names = nodes["load_atlases_wf.ds_atlas"].get_output("out_file")
     assert len(atlas_names) == 2
