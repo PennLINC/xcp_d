@@ -52,7 +52,15 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         compute_alff_res = alff_wf.run()
 
     nodes = get_nodes(compute_alff_res)
-    raise Exception(nodes["alff_wf.alff_compt"])
+    error_str = ""
+    error_str += f"{tempdir}\n"
+    lst = "\n\t".join(os.listdir(tempdir))
+    error_str += f"\t{lst}\n"
+    wf_dir = os.path.join(tempdir, "alff_wf")
+    error_str += f"{wf_dir}\n"
+    lst = "\n\t".join(os.listdir(wf_dir))
+    error_str += f"\t{lst}\n"
+    raise ValueError(error_str)
 
     # Let's get the mean of the ALFF for later comparison
     original_alff = nodes["alff_wf.alff_compt"].get_output("alff")
