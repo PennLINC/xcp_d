@@ -69,7 +69,7 @@ def test_warp_surfaces_to_template_wf(
     wf.run()
 
     # All of the possible fsLR surfaces should be available.
-    out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
+    out_anat_dir = os.path.join(tmpdir, "sub-01", "anat")
     for key, filename in surface_files.items():
         if "fsLR" in key:
             out_fname = os.path.basename(filename)

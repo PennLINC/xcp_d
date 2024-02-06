@@ -67,16 +67,16 @@ def test_validate_parameters_02(base_opts, base_parser):
     parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
-def test_validate_parameters_03(base_opts, base_parser, capsys):
-    """Test parser._validate_parameters."""
+def test_validate_parameters_03(base_opts, base_parser):
+    """Test parser._validate_parameters.
+
+    analysis_level check dropped from _validate_parameters.
+    """
     opts = deepcopy(base_opts)
     # Set a bad analysis level
     opts.analysis_level = "group"
 
-    with pytest.raises(SystemExit, match="2"):
-        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "Please select analysis level 'participant'" in capsys.readouterr().err
+    parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_04(base_opts, base_parser, caplog):

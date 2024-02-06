@@ -290,12 +290,6 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
         # Run ReHo again
         assert os.path.isfile(noisy_bold_file)
 
-    # Create a new workflow
-    with mock_config():
-        config.execution.xcp_d_dir = tempdir
-        config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
-
         reho_wf = restingstate.init_reho_cifti_wf(
             name_source=source_file,
             name="noisy_reho_wf",
