@@ -54,31 +54,6 @@ def test_validate_parameters_01(base_opts, base_parser):
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
-def test_validate_parameters_02(base_opts, base_parser):
-    """Test parser._validate_parameters.
-
-    Error was moved out of _validate_parameters.
-    """
-    opts = deepcopy(base_opts)
-
-    # Set output to same as input
-    opts.output_dir = opts.fmri_dir
-
-    parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-
-def test_validate_parameters_03(base_opts, base_parser):
-    """Test parser._validate_parameters.
-
-    analysis_level check dropped from _validate_parameters.
-    """
-    opts = deepcopy(base_opts)
-    # Set a bad analysis level
-    opts.analysis_level = "group"
-
-    parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-
 def test_validate_parameters_04(base_opts, base_parser, caplog):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
