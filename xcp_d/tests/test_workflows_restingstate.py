@@ -52,7 +52,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         compute_alff_res = alff_wf.run()
 
     nodes = get_nodes(compute_alff_res)
-    raise Exception(nodes)
+    raise Exception(nodes["alff_wf.alff_compt"])
 
     # Let's get the mean of the ALFF for later comparison
     original_alff = nodes["alff_wf.alff_compt"].get_output("alff")

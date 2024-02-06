@@ -61,7 +61,10 @@ def test_validate_parameters_02(base_opts, base_parser):
     # Set output to same as input
     opts.output_dir = opts.fmri_dir
 
-    with pytest.raises(parser.error, match="The selected output folder is the same as the input"):
+    with pytest.raises(
+        base_parser.error,
+        match="The selected output folder is the same as the input",
+    ):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
@@ -71,7 +74,7 @@ def test_validate_parameters_03(base_opts, base_parser):
     # Set a bad analysis level
     opts.analysis_level = "group"
 
-    with pytest.raises(parser.error, match="Please select analysis level 'participant'"):
+    with pytest.raises(base_parser.error, match="Please select analysis level 'participant'"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
@@ -99,7 +102,7 @@ def test_validate_parameters_05(base_opts, base_parser):
     opts.lower_bpf = 0.01
     opts.upper_bpf = 0.001
 
-    with pytest.raises(parser.error, match="must be lower than"):
+    with pytest.raises(base_parser.error, match="must be lower than"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
@@ -125,7 +128,7 @@ def test_validate_parameters_07(base_opts, base_parser):
     opts.band_stop_min = None
     opts.band_stop_max = None
 
-    with pytest.raises(parser.error, match="Please set both"):
+    with pytest.raises(base_parser.error, match="Please set both"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
@@ -138,7 +141,7 @@ def test_validate_parameters_08(base_opts, base_parser):
     opts.band_stop_min = 18
     opts.band_stop_max = 12
 
-    with pytest.raises(parser.error, match="must be lower than"):
+    with pytest.raises(base_parser.error, match="must be lower than"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
@@ -164,7 +167,7 @@ def test_validate_parameters_10(base_opts, base_parser):
     opts.band_stop_min = None
     opts.band_stop_max = None
 
-    with pytest.raises(parser.error, match="Please set '--band-stop-min'"):
+    with pytest.raises(base_parser.error, match="Please set '--band-stop-min'"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
@@ -259,7 +262,7 @@ def test_validate_parameters_17(base_opts, base_parser):
     opts.process_surfaces = True
     opts.cifti = False
 
-    with pytest.raises(parser.error, match="you must enable cifti processing"):
+    with pytest.raises(base_parser.error, match="you must enable cifti processing"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
@@ -276,7 +279,7 @@ def test_validate_parameters_19(base_opts, base_parser):
     opts = deepcopy(base_opts)
     opts.fs_license_file = Path("/path/to/missing/folder")
 
-    with pytest.raises(parser.error, match="Freesurfer license DNE"):
+    with pytest.raises(base_parser.error, match="Freesurfer license DNE"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
