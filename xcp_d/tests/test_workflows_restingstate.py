@@ -42,9 +42,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
 
         alff_wf = restingstate.init_alff_wf(
             name_source=bold_file,
-            output_dir=tempdir,
             TR=TR,
-            name="alff_wf",
         )
 
         # Let's move to a temporary directory before running
@@ -124,7 +122,6 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
 
         alff_wf = restingstate.init_alff_wf(
             name_source=bold_file,
-            output_dir=tempdir,
             TR=TR,
         )
 
@@ -219,7 +216,7 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
     nodes = get_nodes(reho_res)
 
     # Get the original mean of the ReHo for later comparison
-    original_reho = nodes["nifti_reho_wf.reho_3d"].get_output("out_file")
+    original_reho = nodes["reho_nifti_wf.reho_3d"].get_output("out_file")
     original_reho_mean = nb.load(original_reho).get_fdata().mean()
     original_bold_data = read_ndata(bold_file, bold_mask)
 
@@ -240,7 +237,7 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
     nodes = get_nodes(reho_res)
 
     # Has the new ReHo's mean decreased?
-    new_reho = nodes["nifti_reho_wf.reho_3d"].get_output("out_file")
+    new_reho = nodes["reho_nifti_wf.reho_3d"].get_output("out_file")
     new_reho_mean = nb.load(new_reho).get_fdata().mean()
     assert new_reho_mean < original_reho_mean
 

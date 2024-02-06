@@ -134,23 +134,25 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         warped_atlases.append(warp_atlases_to_bold_space_results.outputs.output_image)
 
     # Let's define the inputs and create the workflow
-    connectivity_wf = init_functional_connectivity_nifti_wf(
-        output_dir=tmpdir,
-        min_coverage=0.5,
-        alff_available=False,
-        mem_gb=4,
-        name="connectivity_wf",
-    )
-    connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
-    connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
-    connectivity_wf.inputs.inputnode.name_source = bold_file
-    connectivity_wf.inputs.inputnode.bold_mask = bold_mask
-    connectivity_wf.inputs.inputnode.reho = fake_bold_file
-    connectivity_wf.inputs.inputnode.atlases = atlas_names
-    connectivity_wf.inputs.inputnode.atlas_files = warped_atlases
-    connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
-    connectivity_wf.base_dir = tmpdir
-    connectivity_wf_res = connectivity_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tmpdir
+        config.workflow.bandpass_filter = False
+        config.workflow.min_coverage = 0.5
+        config.nipype.memory_gb = 4
+        config.nipype.omp_nthreads = 2
+
+        connectivity_wf = init_functional_connectivity_nifti_wf(name="connectivity_wf")
+        connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
+        connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
+        connectivity_wf.inputs.inputnode.name_source = bold_file
+        connectivity_wf.inputs.inputnode.bold_mask = bold_mask
+        connectivity_wf.inputs.inputnode.reho = fake_bold_file
+        connectivity_wf.inputs.inputnode.atlases = atlas_names
+        connectivity_wf.inputs.inputnode.atlas_files = warped_atlases
+        connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
+        connectivity_wf.base_dir = tmpdir
+        connectivity_wf_res = connectivity_wf.run()
+
     nodes = get_nodes(connectivity_wf_res)
 
     n_parcels, n_parcels_in_atlas = 1056, 1056
@@ -274,24 +276,25 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         parcellated_atlases.append(parcellate_atlas_results.outputs.out_file)
 
     # Create the node and a tmpdir to write its results out to
-    connectivity_wf = init_functional_connectivity_cifti_wf(
-        output_dir=tmpdir,
-        min_coverage=0.5,
-        alff_available=False,
-        mem_gb=4,
-        omp_nthreads=2,
-        name="connectivity_wf",
-    )
-    connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
-    connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
-    connectivity_wf.inputs.inputnode.name_source = bold_file
-    connectivity_wf.inputs.inputnode.reho = fake_bold_file
-    connectivity_wf.inputs.inputnode.atlases = atlas_names
-    connectivity_wf.inputs.inputnode.atlas_files = atlas_files
-    connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
-    connectivity_wf.inputs.inputnode.parcellated_atlas_files = parcellated_atlases
-    connectivity_wf.base_dir = tmpdir
-    connectivity_wf_res = connectivity_wf.run()
+    with mock_config():
+        config.execution.xcp_d_dir = tmpdir
+        config.workflow.bandpass_filter = False
+        config.workflow.min_coverage = 0.5
+        config.nipype.memory_gb = 4
+        config.nipype.omp_nthreads = 2
+
+        connectivity_wf = init_functional_connectivity_cifti_wf(name="connectivity_wf")
+        connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
+        connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
+        connectivity_wf.inputs.inputnode.name_source = bold_file
+        connectivity_wf.inputs.inputnode.reho = fake_bold_file
+        connectivity_wf.inputs.inputnode.atlases = atlas_names
+        connectivity_wf.inputs.inputnode.atlas_files = atlas_files
+        connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
+        connectivity_wf.inputs.inputnode.parcellated_atlas_files = parcellated_atlases
+        connectivity_wf.base_dir = tmpdir
+        connectivity_wf_res = connectivity_wf.run()
+
     nodes = get_nodes(connectivity_wf_res)
 
     # Let's find the cifti files

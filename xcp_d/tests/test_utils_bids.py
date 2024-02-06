@@ -68,7 +68,7 @@ def test_collect_data_ds001419(datasets):
         layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        bids_filters=None,
+        bids_filters={"bold": {"task": "rest"}},
         cifti=True,
     )
 
