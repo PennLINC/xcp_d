@@ -30,6 +30,7 @@ from tempfile import mkdtemp
 from toml import loads
 
 from xcp_d.data import load as load_data
+from xcp_d.utils import doc
 
 
 @contextmanager
@@ -47,12 +48,13 @@ def mock_config():
         if sectionname != "environment":
             section = getattr(config, sectionname)
             section.load(configs, init=False)
+
     config.nipype.omp_nthreads = 1
     config.nipype.init()
     config.loggers.init()
 
     config.execution.work_dir = Path(mkdtemp())
-    config.execution.fmri_dir = load_data("../tests/data/ds000240").absolute()
+    config.execution.fmri_dir = Path(doc.download_example_data(out_dir=mkdtemp()))
     config.execution.xcp_d_dir = Path(mkdtemp())
     config.execution.init()
 
