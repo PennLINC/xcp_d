@@ -54,27 +54,25 @@ def test_validate_parameters_01(base_opts, base_parser):
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
-def test_validate_parameters_02(base_opts, base_parser, caplog):
+def test_validate_parameters_02(base_opts, base_parser):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
+
     # Set output to same as input
     opts.output_dir = opts.fmri_dir
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    with pytest.raises(parser.error, match="The selected output folder is the same as the input"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "The selected output folder is the same as the input" in caplog.text
 
-
-def test_validate_parameters_03(base_opts, base_parser, caplog):
+def test_validate_parameters_03(base_opts, base_parser):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     # Set a bad analysis level
     opts.analysis_level = "group"
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert 'Please select analysis level "participant"' in caplog.text
-    assert "The selected output folder is the same as the input" not in caplog.text
+    with pytest.raises(parser.error, match="Please select analysis level 'participant'"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_04(base_opts, base_parser, caplog):
@@ -93,7 +91,7 @@ def test_validate_parameters_04(base_opts, base_parser, caplog):
     assert "Bandpass filtering is disabled." in caplog.text
 
 
-def test_validate_parameters_05(base_opts, base_parser, caplog):
+def test_validate_parameters_05(base_opts, base_parser):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
@@ -101,9 +99,8 @@ def test_validate_parameters_05(base_opts, base_parser, caplog):
     opts.lower_bpf = 0.01
     opts.upper_bpf = 0.001
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "must be lower than" in caplog.text
+    with pytest.raises(parser.error, match="must be lower than"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_06(base_opts, base_parser, caplog):
@@ -119,7 +116,7 @@ def test_validate_parameters_06(base_opts, base_parser, caplog):
     assert "Framewise displacement-based scrubbing is disabled." in caplog.text
 
 
-def test_validate_parameters_07(base_opts, base_parser, caplog):
+def test_validate_parameters_07(base_opts, base_parser):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
@@ -128,12 +125,11 @@ def test_validate_parameters_07(base_opts, base_parser, caplog):
     opts.band_stop_min = None
     opts.band_stop_max = None
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    with pytest.raises(parser.error, match="Please set both"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "Please set both" in caplog.text
 
-
-def test_validate_parameters_08(base_opts, base_parser, caplog):
+def test_validate_parameters_08(base_opts, base_parser):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
@@ -142,9 +138,8 @@ def test_validate_parameters_08(base_opts, base_parser, caplog):
     opts.band_stop_min = 18
     opts.band_stop_max = 12
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "must be lower than" in caplog.text
+    with pytest.raises(parser.error, match="must be lower than"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_09(base_opts, base_parser, caplog):
@@ -160,7 +155,7 @@ def test_validate_parameters_09(base_opts, base_parser, caplog):
     assert "suspiciously low." in caplog.text
 
 
-def test_validate_parameters_10(base_opts, base_parser, caplog):
+def test_validate_parameters_10(base_opts, base_parser):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
@@ -169,9 +164,8 @@ def test_validate_parameters_10(base_opts, base_parser, caplog):
     opts.band_stop_min = None
     opts.band_stop_max = None
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "Please set '--band-stop-min'" in caplog.text
+    with pytest.raises(parser.error, match="Please set '--band-stop-min'"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_11(base_opts, base_parser, caplog):
@@ -257,7 +251,7 @@ def test_validate_parameters_16(base_opts, base_parser, caplog):
     assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
 
 
-def test_validate_parameters_17(base_opts, base_parser, caplog):
+def test_validate_parameters_17(base_opts, base_parser):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
@@ -265,9 +259,8 @@ def test_validate_parameters_17(base_opts, base_parser, caplog):
     opts.process_surfaces = True
     opts.cifti = False
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "you must enable cifti processing" in caplog.text
+    with pytest.raises(parser.error, match="you must enable cifti processing"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_18(base_opts, base_parser):
@@ -278,14 +271,13 @@ def test_validate_parameters_18(base_opts, base_parser):
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
-def test_validate_parameters_19(base_opts, base_parser, caplog):
+def test_validate_parameters_19(base_opts, base_parser):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     opts.fs_license_file = Path("/path/to/missing/folder")
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "Freesurfer license DNE" in caplog.text
+    with pytest.raises(parser.error, match="Freesurfer license DNE"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_20(base_opts, base_parser, caplog):
