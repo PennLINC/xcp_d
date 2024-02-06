@@ -48,9 +48,11 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         load_atlases_wf.base_dir = tmpdir
         load_atlases_wf_res = load_atlases_wf.run()
 
-    nodes = get_nodes(load_atlases_wf_res)
-    atlas_names = nodes["load_atlases_wf.warp_atlases_to_bold_space"].get_output("output_image")
-    assert len(atlas_names) == 2
+        nodes = get_nodes(load_atlases_wf_res)
+        atlas_names = nodes["load_atlases_wf.warp_atlases_to_bold_space"].get_output(
+            "output_image"
+        )
+        assert len(atlas_names) == 2
 
 
 def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
@@ -72,9 +74,9 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         load_atlases_wf.base_dir = tmpdir
         load_atlases_wf_res = load_atlases_wf.run()
 
-    nodes = get_nodes(load_atlases_wf_res)
-    atlas_names = nodes["load_atlases_wf.ds_atlas"].get_output("out_file")
-    assert len(atlas_names) == 2
+        nodes = get_nodes(load_atlases_wf_res)
+        atlas_names = nodes["load_atlases_wf.ds_atlas"].get_output("out_file")
+        assert len(atlas_names) == 2
 
 
 def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
@@ -153,68 +155,70 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.base_dir = tmpdir
         connectivity_wf_res = connectivity_wf.run()
 
-    nodes = get_nodes(connectivity_wf_res)
+        nodes = get_nodes(connectivity_wf_res)
 
-    n_parcels, n_parcels_in_atlas = 1056, 1056
+        n_parcels, n_parcels_in_atlas = 1056, 1056
 
-    # Let's find the correct workflow outputs
-    atlas_file = warped_atlases[0]
-    assert os.path.isfile(atlas_file)
-    coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
-    assert os.path.isfile(coverage)
-    timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
-    assert os.path.isfile(timeseries)
-    correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[0]
-    assert os.path.isfile(correlations)
+        # Let's find the correct workflow outputs
+        atlas_file = warped_atlases[0]
+        assert os.path.isfile(atlas_file)
+        coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
+        assert os.path.isfile(coverage)
+        timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
+        assert os.path.isfile(timeseries)
+        correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[
+            0
+        ]
+        assert os.path.isfile(correlations)
 
-    # Read that into a df
-    coverage_df = pd.read_table(coverage, index_col="Node")
-    coverage_arr = coverage_df.to_numpy()
-    assert coverage_arr.shape[0] == n_parcels
-    correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
-    assert correlations_arr.shape == (n_parcels, n_parcels)
+        # Read that into a df
+        coverage_df = pd.read_table(coverage, index_col="Node")
+        coverage_arr = coverage_df.to_numpy()
+        assert coverage_arr.shape[0] == n_parcels
+        correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
+        assert correlations_arr.shape == (n_parcels, n_parcels)
 
-    # Parcels with <50% coverage should have NaNs
-    assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
+        # Parcels with <50% coverage should have NaNs
+        assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
-    # Now to get ground truth correlations
-    # Masking img
-    masker = NiftiLabelsMasker(
-        labels_img=atlas_file,
-        labels=coverage_df.index.tolist(),
-        smoothing_fwhm=None,
-        standardize=False,
-    )
-    masker.fit(fake_bold_file)
-    signals = masker.transform(fake_bold_file)
+        # Now to get ground truth correlations
+        # Masking img
+        masker = NiftiLabelsMasker(
+            labels_img=atlas_file,
+            labels=coverage_df.index.tolist(),
+            smoothing_fwhm=None,
+            standardize=False,
+        )
+        masker.fit(fake_bold_file)
+        signals = masker.transform(fake_bold_file)
 
-    atlas_idx = np.arange(len(coverage_df.index.tolist()), dtype=int)
-    idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
-    idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
-    n_partial_parcels = np.where(coverage_df["coverage"] >= 0.5)[0].size
+        atlas_idx = np.arange(len(coverage_df.index.tolist()), dtype=int)
+        idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
+        idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
+        n_partial_parcels = np.where(coverage_df["coverage"] >= 0.5)[0].size
 
-    # Drop missing parcels
-    correlations_arr = correlations_arr[idx_in_atlas, :]
-    correlations_arr = correlations_arr[:, idx_in_atlas]
-    assert correlations_arr.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
+        # Drop missing parcels
+        correlations_arr = correlations_arr[idx_in_atlas, :]
+        correlations_arr = correlations_arr[:, idx_in_atlas]
+        assert correlations_arr.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
 
-    # The masker.labels_ attribute only contains the labels that were found
-    assert idx_not_in_atlas.size == 0
-    assert idx_in_atlas.size == n_parcels_in_atlas
+        # The masker.labels_ attribute only contains the labels that were found
+        assert idx_not_in_atlas.size == 0
+        assert idx_in_atlas.size == n_parcels_in_atlas
 
-    # The "ground truth" matrix
-    calculated_correlations = np.corrcoef(signals.T)
-    assert calculated_correlations.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
+        # The "ground truth" matrix
+        calculated_correlations = np.corrcoef(signals.T)
+        assert calculated_correlations.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
 
-    # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
-    # the resulting matrix should match the workflow-generated one.
-    bad_parcel_idx = np.where(np.isnan(np.diag(correlations_arr)))[0]
-    assert bad_parcel_idx.size == n_parcels_in_atlas - n_partial_parcels
-    calculated_correlations[bad_parcel_idx, :] = np.nan
-    calculated_correlations[:, bad_parcel_idx] = np.nan
+        # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
+        # the resulting matrix should match the workflow-generated one.
+        bad_parcel_idx = np.where(np.isnan(np.diag(correlations_arr)))[0]
+        assert bad_parcel_idx.size == n_parcels_in_atlas - n_partial_parcels
+        calculated_correlations[bad_parcel_idx, :] = np.nan
+        calculated_correlations[:, bad_parcel_idx] = np.nan
 
-    # pnc data doesn't have complete coverage, so we must allow NaNs here.
-    assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
+        # pnc data doesn't have complete coverage, so we must allow NaNs here.
+        assert np.allclose(correlations_arr, calculated_correlations, atol=0.01, equal_nan=True)
 
 
 def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
@@ -295,66 +299,71 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.base_dir = tmpdir
         connectivity_wf_res = connectivity_wf.run()
 
-    nodes = get_nodes(connectivity_wf_res)
+        nodes = get_nodes(connectivity_wf_res)
 
-    # Let's find the cifti files
-    pscalar = nodes["connectivity_wf.parcellate_data"].get_output("coverage_ciftis")[0]
-    assert os.path.isfile(pscalar)
-    timeseries_ciftis = nodes["connectivity_wf.parcellate_data"].get_output("timeseries_ciftis")[0]
-    assert os.path.isfile(timeseries_ciftis)
-    correlation_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
-        "correlation_ciftis"
-    )[0]
-    assert os.path.isfile(correlation_ciftis)
+        # Let's find the cifti files
+        pscalar = nodes["connectivity_wf.parcellate_data"].get_output("coverage_ciftis")[0]
+        assert os.path.isfile(pscalar)
+        timeseries_ciftis = nodes["connectivity_wf.parcellate_data"].get_output(
+            "timeseries_ciftis"
+        )[0]
+        assert os.path.isfile(timeseries_ciftis)
+        correlation_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
+            "correlation_ciftis"
+        )[0]
+        assert os.path.isfile(correlation_ciftis)
 
-    # Let's find the tsv files
-    coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
-    assert os.path.isfile(coverage)
-    timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
-    assert os.path.isfile(timeseries)
-    correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[0]
-    assert os.path.isfile(correlations)
+        # Let's find the tsv files
+        coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
+        assert os.path.isfile(coverage)
+        timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
+        assert os.path.isfile(timeseries)
+        correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[
+            0
+        ]
+        assert os.path.isfile(correlations)
 
-    # Let's read in the ciftis' data
-    pscalar_arr = nb.load(pscalar).get_fdata().T
-    assert pscalar_arr.shape == (1056, 1)
-    ptseries_arr = nb.load(timeseries_ciftis).get_fdata()
-    assert ptseries_arr.shape == (60, 1056)
-    pconn_arr = nb.load(correlation_ciftis).get_fdata()
-    assert pconn_arr.shape == (1056, 1056)
+        # Let's read in the ciftis' data
+        pscalar_arr = nb.load(pscalar).get_fdata().T
+        assert pscalar_arr.shape == (1056, 1)
+        ptseries_arr = nb.load(timeseries_ciftis).get_fdata()
+        assert ptseries_arr.shape == (60, 1056)
+        pconn_arr = nb.load(correlation_ciftis).get_fdata()
+        assert pconn_arr.shape == (1056, 1056)
 
-    # Read in the tsvs' data
-    coverage_arr = pd.read_table(coverage, index_col="Node").to_numpy()
-    timeseries_arr = pd.read_table(timeseries).to_numpy()
-    correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
+        # Read in the tsvs' data
+        coverage_arr = pd.read_table(coverage, index_col="Node").to_numpy()
+        timeseries_arr = pd.read_table(timeseries).to_numpy()
+        correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
 
-    assert coverage_arr.shape == pscalar_arr.shape
-    assert timeseries_arr.shape == ptseries_arr.shape
-    assert correlations_arr.shape == pconn_arr.shape
+        assert coverage_arr.shape == pscalar_arr.shape
+        assert timeseries_arr.shape == ptseries_arr.shape
+        assert correlations_arr.shape == pconn_arr.shape
 
-    assert np.allclose(coverage_arr, pscalar_arr)
-    assert np.allclose(timeseries_arr, ptseries_arr, equal_nan=True)
-    assert np.allclose(correlations_arr, pconn_arr, equal_nan=True)
+        assert np.allclose(coverage_arr, pscalar_arr)
+        assert np.allclose(timeseries_arr, ptseries_arr, equal_nan=True)
+        assert np.allclose(correlations_arr, pconn_arr, equal_nan=True)
 
-    # Calculate correlations from timeseries data
-    calculated_correlations = np.corrcoef(ptseries_arr.T)
-    assert calculated_correlations.shape == (1056, 1056)
-    bad_parcels_idx = np.where(np.isnan(np.diag(calculated_correlations)))[0]
-    good_parcels_idx = np.where(~np.isnan(np.diag(calculated_correlations)))[0]
+        # Calculate correlations from timeseries data
+        calculated_correlations = np.corrcoef(ptseries_arr.T)
+        assert calculated_correlations.shape == (1056, 1056)
+        bad_parcels_idx = np.where(np.isnan(np.diag(calculated_correlations)))[0]
+        good_parcels_idx = np.where(~np.isnan(np.diag(calculated_correlations)))[0]
 
-    # Parcels with <50% coverage should have NaNs
-    first_good_parcel_corrs = pconn_arr[good_parcels_idx[0], :]
+        # Parcels with <50% coverage should have NaNs
+        first_good_parcel_corrs = pconn_arr[good_parcels_idx[0], :]
 
-    # The number of NaNs for a good parcel's correlations should match the number of bad parcels.
-    assert np.sum(np.isnan(first_good_parcel_corrs)) == bad_parcels_idx.size
+        # The number of NaNs for a good parcel's correlations should match the number of bad
+        # parcels.
+        assert np.sum(np.isnan(first_good_parcel_corrs)) == bad_parcels_idx.size
 
-    # pnc data doesn't have complete coverage, so we must allow NaNs here.
-    if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations)):
-        mismatch_idx = np.vstack(
-            np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
-        ).T
-        raise ValueError(f"{mismatch_idx}\n\n{np.where(np.isnan(pconn_arr))}")
+        # pnc data doesn't have complete coverage, so we must allow NaNs here.
+        if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations)):
+            mismatch_idx = np.vstack(
+                np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
+            ).T
+            raise ValueError(f"{mismatch_idx}\n\n{np.where(np.isnan(pconn_arr))}")
 
-    if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):
-        diff = pconn_arr - calculated_correlations
-        raise ValueError(np.nanmax(np.abs(diff)))
+        if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):
+            diff = pconn_arr - calculated_correlations
+            raise ValueError(np.nanmax(np.abs(diff)))

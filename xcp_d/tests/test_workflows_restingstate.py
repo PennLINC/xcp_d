@@ -51,58 +51,54 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         alff_wf.inputs.inputnode.denoised_bold = bold_file
         compute_alff_res = alff_wf.run()
 
-    nodes = get_nodes(compute_alff_res)
-    error_str = ""
-    error_str += f"{tempdir}\n"
-    lst = "\n\t".join(os.listdir(tempdir))
-    error_str += f"\t{lst}\n"
-    wf_dir = os.path.join(tempdir, "alff_wf")
-    error_str += f"{wf_dir}\n"
-    lst = "\n\t".join(os.listdir(wf_dir))
-    error_str += f"\t{lst}\n"
-    raise ValueError(error_str)
+        nodes = get_nodes(compute_alff_res)
 
-    # Let's get the mean of the ALFF for later comparison
-    original_alff = nodes["alff_wf.alff_compt"].get_output("alff")
-    original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
+        # Let's get the mean of the ALFF for later comparison
+        original_alff = nodes["alff_wf.alff_compt"].get_output("alff")
+        original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
-    # Now let's do an FFT
-    original_bold_data = read_ndata(bold_file, bold_mask)
+        # Now let's do an FFT
+        original_bold_data = read_ndata(bold_file, bold_mask)
 
-    # Let's work with a single voxel
-    voxel_data = original_bold_data[2, :]
-    fft_data = np.fft.fft(voxel_data)
-    mean = fft_data.mean()
+        # Let's work with a single voxel
+        voxel_data = original_bold_data[2, :]
+        fft_data = np.fft.fft(voxel_data)
+        mean = fft_data.mean()
 
-    # Let's increase the values of the first few frequency's amplitudes
-    # to create fake data
-    fft_data[:11] += 300 * mean
+        # Let's increase the values of the first few frequency's amplitudes
+        # to create fake data
+        fft_data[:11] += 300 * mean
 
-    # Let's convert this back into time domain
-    changed_voxel_data = np.fft.ifft(fft_data)
-    # Let's replace the original value with the fake data
-    original_bold_data[2, :] = changed_voxel_data
-    # Let's write this out
-    filename = os.path.join(tempdir, "editedfile.nii.gz")
-    write_ndata(original_bold_data, template=bold_file, mask=bold_mask, filename=filename)
+        # Let's convert this back into time domain
+        changed_voxel_data = np.fft.ifft(fft_data)
+        # Let's replace the original value with the fake data
+        original_bold_data[2, :] = changed_voxel_data
+        # Let's write this out
+        filename = os.path.join(tempdir, "editedfile.nii.gz")
+        write_ndata(original_bold_data, template=bold_file, mask=bold_mask, filename=filename)
 
-    # Now let's compute ALFF for the new file and see how it compares
-    # to the original ALFF - it should increase since we increased
-    # the amplitude in low frequencies for a voxel
-    tempdir = tmp_path_factory.mktemp("test_nifti_alff_02")
-    alff_wf.base_dir = tempdir
-    alff_wf.inputs.inputnode.bold_mask = bold_mask
-    alff_wf.inputs.inputnode.denoised_bold = filename
-    compute_alff_res = alff_wf.run()
-    nodes = get_nodes(compute_alff_res)
+        # Now let's compute ALFF for the new file and see how it compares
+        # to the original ALFF - it should increase since we increased
+        # the amplitude in low frequencies for a voxel
+        tempdir = tmp_path_factory.mktemp("test_nifti_alff_02")
 
-    # Let's get the new ALFF mean
-    new_alff = nodes["alff_wf.alff_compt"].get_output("alff")
-    assert os.path.isfile(new_alff)
-    new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
+        alff_wf = restingstate.init_alff_wf(
+            name_source=bold_file,
+            TR=TR,
+        )
+        alff_wf.base_dir = tempdir
+        alff_wf.inputs.inputnode.bold_mask = bold_mask
+        alff_wf.inputs.inputnode.denoised_bold = filename
+        compute_alff_res = alff_wf.run()
+        nodes = get_nodes(compute_alff_res)
 
-    # Now let's make sure ALFF has increased ...
-    assert new_alff_data_mean > original_alff_data_mean
+        # Let's get the new ALFF mean
+        new_alff = nodes["alff_wf.alff_compt"].get_output("alff")
+        assert os.path.isfile(new_alff)
+        new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
+
+        # Now let's make sure ALFF has increased ...
+        assert new_alff_data_mean > original_alff_data_mean
 
 
 def test_cifti_alff(ds001419_data, tmp_path_factory):
@@ -139,46 +135,46 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         alff_wf.inputs.inputnode.denoised_bold = bold_file
         compute_alff_res = alff_wf.run()
 
-    nodes = get_nodes(compute_alff_res)
+        nodes = get_nodes(compute_alff_res)
 
-    # Let's get the mean of the data for later comparison
-    original_alff = nodes["alff_wf.alff_compt"].get_output("alff")
-    original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
+        # Let's get the mean of the data for later comparison
+        original_alff = nodes["alff_wf.alff_compt"].get_output("alff")
+        original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
-    # Now let's do an FFT
-    original_bold_data = read_ndata(bold_file, bold_mask)
+        # Now let's do an FFT
+        original_bold_data = read_ndata(bold_file, bold_mask)
 
-    # Let's work with a single voxel
-    voxel_data = original_bold_data[2, :]
-    fft_data = np.fft.fft(voxel_data)
-    mean = fft_data.mean()
-    # Let's increase the amplitudes for the lower frequencies
-    fft_data[:11] += 300 * mean
-    # Let's get this back into the time domain
-    changed_voxel_data = np.fft.ifft(fft_data)
-    # Let's replace the original value with the fake data
-    original_bold_data[2, :] = changed_voxel_data
+        # Let's work with a single voxel
+        voxel_data = original_bold_data[2, :]
+        fft_data = np.fft.fft(voxel_data)
+        mean = fft_data.mean()
+        # Let's increase the amplitudes for the lower frequencies
+        fft_data[:11] += 300 * mean
+        # Let's get this back into the time domain
+        changed_voxel_data = np.fft.ifft(fft_data)
+        # Let's replace the original value with the fake data
+        original_bold_data[2, :] = changed_voxel_data
 
-    # Let's write this out
-    filename = os.path.join(tempdir, "editedfile.dtseries.nii")
-    write_ndata(original_bold_data, template=bold_file, mask=bold_mask, filename=filename)
+        # Let's write this out
+        filename = os.path.join(tempdir, "editedfile.dtseries.nii")
+        write_ndata(original_bold_data, template=bold_file, mask=bold_mask, filename=filename)
 
-    # Now let's compute ALFF for the new file and see how it compares
-    tempdir = tmp_path_factory.mktemp("test_cifti_alff_02")
-    alff_wf.base_dir = tempdir
-    alff_wf.inputs.inputnode.bold_mask = bold_mask
-    alff_wf.inputs.inputnode.denoised_bold = filename
-    compute_alff_res = alff_wf.run()
-    nodes = get_nodes(compute_alff_res)
+        # Now let's compute ALFF for the new file and see how it compares
+        tempdir = tmp_path_factory.mktemp("test_cifti_alff_02")
+        alff_wf.base_dir = tempdir
+        alff_wf.inputs.inputnode.bold_mask = bold_mask
+        alff_wf.inputs.inputnode.denoised_bold = filename
+        compute_alff_res = alff_wf.run()
+        nodes = get_nodes(compute_alff_res)
 
-    # Let's get the new ALFF mean
-    new_alff = nodes["alff_wf.alff_compt"].get_output("alff")
-    assert os.path.isfile(new_alff)
-    new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
+        # Let's get the new ALFF mean
+        new_alff = nodes["alff_wf.alff_compt"].get_output("alff")
+        assert os.path.isfile(new_alff)
+        new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
 
-    # Now let's make sure ALFF has increased, as we added
-    # to the amplitude of the lower frequencies in a voxel
-    assert new_alff_data_mean > original_alff_data_mean
+        # Now let's make sure ALFF has increased, as we added
+        # to the amplitude of the lower frequencies in a voxel
+        assert new_alff_data_mean > original_alff_data_mean
 
 
 def _add_noise(image):
@@ -222,33 +218,33 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
         reho_wf.inputs.inputnode.denoised_bold = bold_file
         reho_res = reho_wf.run()
 
-    nodes = get_nodes(reho_res)
+        nodes = get_nodes(reho_res)
 
-    # Get the original mean of the ReHo for later comparison
-    original_reho = nodes["reho_nifti_wf.reho_3d"].get_output("out_file")
-    original_reho_mean = nb.load(original_reho).get_fdata().mean()
-    original_bold_data = read_ndata(bold_file, bold_mask)
+        # Get the original mean of the ReHo for later comparison
+        original_reho = nodes["reho_nifti_wf.reho_3d"].get_output("out_file")
+        original_reho_mean = nb.load(original_reho).get_fdata().mean()
+        original_bold_data = read_ndata(bold_file, bold_mask)
 
-    # Add some noise to the original data and write it out
-    noisy_bold_data = _add_noise(original_bold_data)
-    noisy_bold_file = os.path.join(tempdir, "test.nii.gz")
-    write_ndata(
-        noisy_bold_data,
-        template=bold_file,
-        mask=bold_mask,
-        filename=noisy_bold_file,
-    )
+        # Add some noise to the original data and write it out
+        noisy_bold_data = _add_noise(original_bold_data)
+        noisy_bold_file = os.path.join(tempdir, "test.nii.gz")
+        write_ndata(
+            noisy_bold_data,
+            template=bold_file,
+            mask=bold_mask,
+            filename=noisy_bold_file,
+        )
 
-    # Run ReHo again
-    assert os.path.isfile(noisy_bold_file)
-    reho_wf.inputs.inputnode.denoised_bold = noisy_bold_file
-    reho_res = reho_wf.run()
-    nodes = get_nodes(reho_res)
+        # Run ReHo again
+        assert os.path.isfile(noisy_bold_file)
+        reho_wf.inputs.inputnode.denoised_bold = noisy_bold_file
+        reho_res = reho_wf.run()
+        nodes = get_nodes(reho_res)
 
-    # Has the new ReHo's mean decreased?
-    new_reho = nodes["reho_nifti_wf.reho_3d"].get_output("out_file")
-    new_reho_mean = nb.load(new_reho).get_fdata().mean()
-    assert new_reho_mean < original_reho_mean
+        # Has the new ReHo's mean decreased?
+        new_reho = nodes["reho_nifti_wf.reho_3d"].get_output("out_file")
+        new_reho_mean = nb.load(new_reho).get_fdata().mean()
+        assert new_reho_mean < original_reho_mean
 
 
 def test_cifti_reho(ds001419_data, tmp_path_factory):
@@ -279,20 +275,20 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
         reho_wf.inputs.inputnode.denoised_bold = orig_bold_file
         reho_res = reho_wf.run()
 
-    nodes = get_nodes(reho_res)
+        nodes = get_nodes(reho_res)
 
-    # Get the original mean of the ReHo for later comparison
-    original_reho = nodes["orig_reho_wf.merge_cifti"].get_output("out_file")
-    original_reho_mean = nb.load(original_reho).get_fdata().mean()
+        # Get the original mean of the ReHo for later comparison
+        original_reho = nodes["orig_reho_wf.merge_cifti"].get_output("out_file")
+        original_reho_mean = nb.load(original_reho).get_fdata().mean()
 
-    # Add some noise to the original data and write it out
-    original_bold_data = read_ndata(orig_bold_file)
-    noisy_bold_data = _add_noise(original_bold_data)
-    noisy_bold_file = os.path.join(tempdir, "noisy.dtseries.nii")
-    write_ndata(noisy_bold_data, template=orig_bold_file, filename=noisy_bold_file)
+        # Add some noise to the original data and write it out
+        original_bold_data = read_ndata(orig_bold_file)
+        noisy_bold_data = _add_noise(original_bold_data)
+        noisy_bold_file = os.path.join(tempdir, "noisy.dtseries.nii")
+        write_ndata(noisy_bold_data, template=orig_bold_file, filename=noisy_bold_file)
 
-    # Run ReHo again
-    assert os.path.isfile(noisy_bold_file)
+        # Run ReHo again
+        assert os.path.isfile(noisy_bold_file)
 
     # Create a new workflow
     with mock_config():
@@ -308,9 +304,9 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
         reho_wf.inputs.inputnode.denoised_bold = noisy_bold_file
         reho_res = reho_wf.run()
 
-    nodes = get_nodes(reho_res)
+        nodes = get_nodes(reho_res)
 
-    # Has the new ReHo's mean decreased?
-    noisy_reho = nodes["noisy_reho_wf.merge_cifti"].get_output("out_file")
-    noisy_reho_mean = nb.load(noisy_reho).get_fdata().mean()
-    assert noisy_reho_mean < original_reho_mean
+        # Has the new ReHo's mean decreased?
+        noisy_reho = nodes["noisy_reho_wf.merge_cifti"].get_output("out_file")
+        noisy_reho_mean = nb.load(noisy_reho).get_fdata().mean()
+        assert noisy_reho_mean < original_reho_mean

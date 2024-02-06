@@ -107,14 +107,14 @@ def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
         wf.base_dir = tmpdir
         wf_res = wf.run()
 
-    wf_nodes = get_nodes(wf_res)
+        wf_nodes = get_nodes(wf_res)
 
-    out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
-    out_t1w = wf_nodes["postprocess_anat_wf.ds_t1w_std"].get_output("out_file")
-    assert os.path.isfile(out_t1w), os.listdir(out_anat_dir)
+        out_anat_dir = os.path.join(tmpdir, "xcp_d", "sub-01", "anat")
+        out_t1w = wf_nodes["postprocess_anat_wf.ds_t1w_std"].get_output("out_file")
+        assert os.path.isfile(out_t1w), os.listdir(out_anat_dir)
 
-    out_t2w = wf_nodes["postprocess_anat_wf.ds_t2w_std"].get_output("out_file")
-    assert os.path.isfile(out_t2w), os.listdir(out_anat_dir)
+        out_t2w = wf_nodes["postprocess_anat_wf.ds_t2w_std"].get_output("out_file")
+        assert os.path.isfile(out_t2w), os.listdir(out_anat_dir)
 
-    out_anat_dseg = wf_nodes["postprocess_anat_wf.ds_anat_dseg_std"].get_output("out_file")
-    assert os.path.isfile(out_anat_dseg), os.listdir(out_anat_dir)
+        out_anat_dseg = wf_nodes["postprocess_anat_wf.ds_anat_dseg_std"].get_output("out_file")
+        assert os.path.isfile(out_anat_dseg), os.listdir(out_anat_dir)
