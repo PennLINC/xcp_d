@@ -43,9 +43,12 @@ def init_load_atlases_wf(name="load_atlases_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.connectivity import init_load_atlases_wf
 
-            wf = init_load_atlases_wf()
+            with mock_config():
+                wf = init_load_atlases_wf()
 
     Parameters
     ----------
@@ -315,12 +318,15 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.connectivity import init_parcellate_surfaces_wf
 
-            wf = init_parcellate_surfaces_wf(
-                files_to_parcellate=["sulcal_depth", "sulcal_curv", "cortical_thickness"],
-                name="parcellate_surfaces_wf",
-            )
+            with mock_config():
+                wf = init_parcellate_surfaces_wf(
+                    files_to_parcellate=["sulcal_depth", "sulcal_curv", "cortical_thickness"],
+                    name="parcellate_surfaces_wf",
+                )
 
     Parameters
     ----------
@@ -479,9 +485,12 @@ def init_functional_connectivity_nifti_wf(name="connectivity_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 
-            wf = init_functional_connectivity_nifti_wf()
+            with mock_config():
+                wf = init_functional_connectivity_nifti_wf()
 
     Parameters
     ----------
@@ -687,8 +696,12 @@ def init_functional_connectivity_cifti_wf(name="connectivity_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
-            wf = init_functional_connectivity_cifti_wf()
+
+            with mock_config():
+                wf = init_functional_connectivity_cifti_wf()
 
     Parameters
     ----------

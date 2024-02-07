@@ -44,15 +44,18 @@ def init_prepare_confounds_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.postprocessing import init_prepare_confounds_wf
 
-            wf = init_prepare_confounds_wf(
-                TR=0.8,
-                exact_scans=[],
-                head_radius=70,
-                custom_confounds_file=None,
-                name="prepare_confounds_wf",
-            )
+            with mock_config():
+                wf = init_prepare_confounds_wf(
+                    TR=0.8,
+                    exact_scans=[],
+                    head_radius=70,
+                    custom_confounds_file=None,
+                    name="prepare_confounds_wf",
+                )
 
     Parameters
     ----------
@@ -397,12 +400,15 @@ def init_despike_wf(TR, name="despike_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.postprocessing import init_despike_wf
 
-            wf = init_despike_wf(
-                TR=0.8,
-                name="despike_wf",
-            )
+            with mock_config():
+                wf = init_despike_wf(
+                    TR=0.8,
+                    name="despike_wf",
+                )
 
     Parameters
     ----------
@@ -496,12 +502,15 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.postprocessing import init_denoise_bold_wf
 
-            wf = init_denoise_bold_wf(
-                TR=0.8,
-                name="denoise_bold_wf",
-            )
+            with mock_config():
+                wf = init_denoise_bold_wf(
+                    TR=0.8,
+                    name="denoise_bold_wf",
+                )
 
     Parameters
     ----------
@@ -660,9 +669,12 @@ def init_resd_smoothing_wf(name="resd_smoothing_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
 
-            wf = init_resd_smoothing_wf()
+            with mock_config():
+                wf = init_resd_smoothing_wf()
 
     Parameters
     ----------

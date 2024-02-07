@@ -37,13 +37,16 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
 
-            wf = init_brainsprite_figures_wf(
-                t1w_available=True,
-                t2w_available=True,
-                name="brainsprite_figures_wf",
-            )
+            with mock_config():
+                wf = init_brainsprite_figures_wf(
+                    t1w_available=True,
+                    t2w_available=True,
+                    name="brainsprite_figures_wf",
+                )
 
     Parameters
     ----------
@@ -304,14 +307,17 @@ def init_execsummary_functional_plots_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 
-            wf = init_execsummary_functional_plots_wf(
-                preproc_nifti=None,
-                t1w_available=True,
-                t2w_available=True,
-                name="execsummary_functional_plots_wf",
-            )
+            with mock_config():
+                wf = init_execsummary_functional_plots_wf(
+                    preproc_nifti=None,
+                    t1w_available=True,
+                    t2w_available=True,
+                    name="execsummary_functional_plots_wf",
+                )
 
     Parameters
     ----------
@@ -517,12 +523,15 @@ def init_execsummary_anatomical_plots_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.execsummary import init_execsummary_anatomical_plots_wf
 
-            wf = init_execsummary_anatomical_plots_wf(
-                t1w_available=True,
-                t2w_available=True,
-            )
+            with mock_config():
+                wf = init_execsummary_anatomical_plots_wf(
+                    t1w_available=True,
+                    t2w_available=True,
+                )
 
     Parameters
     ----------

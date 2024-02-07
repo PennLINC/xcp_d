@@ -36,12 +36,16 @@ def init_alff_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.restingstate import init_alff_wf
-            wf = init_alff_wf(
-                name_source="/path/to/file.nii.gz",
-                TR=2.,
-                name="alff_wf",
-            )
+
+            with mock_config():
+                wf = init_alff_wf(
+                    name_source="/path/to/file.nii.gz",
+                    TR=2.,
+                    name="alff_wf",
+                )
 
     Parameters
     ----------
@@ -242,12 +246,15 @@ def init_reho_cifti_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.restingstate import init_reho_cifti_wf
 
-            wf = init_reho_cifti_wf(
-                name_source="/path/to/bold.dtseries.nii",
-                name="cifti_reho_wf",
-            )
+            with mock_config():
+                wf = init_reho_cifti_wf(
+                    name_source="/path/to/bold.dtseries.nii",
+                    name="cifti_reho_wf",
+                )
 
     Parameters
     ----------
@@ -390,11 +397,15 @@ def init_reho_nifti_wf(name_source, name="reho_nifti_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.restingstate import init_reho_nifti_wf
-            wf = init_reho_nifti_wf(
-                name_source="/path/to/bold.nii.gz",
-                name="nifti_reho_wf",
-            )
+
+            with mock_config():
+                wf = init_reho_nifti_wf(
+                    name_source="/path/to/bold.nii.gz",
+                    name="nifti_reho_wf",
+                )
 
     Parameters
     ----------

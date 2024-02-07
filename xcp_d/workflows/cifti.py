@@ -48,41 +48,34 @@ def init_postprocess_cifti_wf(
 
             import os
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.utils.bids import collect_data, collect_run_data
             from xcp_d.workflows.cifti import init_postprocess_cifti_wf
-            from xcp_d.utils.doc import download_example_data
 
-            fmri_dir = download_example_data()
+            with mock_config():
+                bold_file = str(
+                    config.execution.fmri_dir / "sub-01" / "func" /
+                    "sub-01_task-imagery_run-01_space-fsLR_den-91k_bold.dtseries.nii"
+                )
 
-            layout, subj_data = collect_data(
-                bids_dir=fmri_dir,
-                input_type="fmriprep",
-                participant_label="01",
-                task="imagery",
-                bids_validate=False,
-                cifti=True,
-            )
+                run_data = collect_run_data(
+                    layout=layout,
+                    input_type="fmriprep",
+                    bold_file=bold_file,
+                    cifti=True,
+                )
 
-            bold_file = subj_data["bold"][0]
-            custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
-            run_data = collect_run_data(
-                layout=layout,
-                input_type="fmriprep",
-                bold_file=bold_file,
-                cifti=True,
-            )
-
-            wf = init_postprocess_cifti_wf(
-                bold_file=bold_file,
-                head_radius=50.,
-                run_data=run_data,
-                t1w_available=True,
-                t2w_available=True,
-                n_runs=1,
-                exact_scans=[],
-                name="cifti_postprocess_wf",
-            )
-            wf.inputs.inputnode.t1w = subj_data["t1w"]
+                wf = init_postprocess_cifti_wf(
+                    bold_file=bold_file,
+                    head_radius=50.,
+                    run_data=run_data,
+                    t1w_available=True,
+                    t2w_available=True,
+                    n_runs=1,
+                    exact_scans=[],
+                    name="cifti_postprocess_wf",
+                )
 
     Parameters
     ----------

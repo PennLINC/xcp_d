@@ -27,9 +27,12 @@ def init_copy_inputs_to_outputs_wf(name="copy_inputs_to_outputs_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.outputs import init_copy_inputs_to_outputs_wf
 
-            wf = init_copy_inputs_to_outputs_wf()
+            with mock_config():
+                wf = init_copy_inputs_to_outputs_wf()
 
     Parameters
     ----------
@@ -138,15 +141,18 @@ def init_postproc_derivatives_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 
-            wf = init_postproc_derivatives_wf(
-                name_source="/path/to/file.nii.gz",
-                source_metadata={},
-                exact_scans=[],
-                custom_confounds_file=None,
-                name="postproc_derivatives_wf",
-            )
+            with mock_config():
+                wf = init_postproc_derivatives_wf(
+                    name_source="/path/to/file.nii.gz",
+                    source_metadata={},
+                    exact_scans=[],
+                    custom_confounds_file=None,
+                    name="postproc_derivatives_wf",
+                )
 
     Parameters
     ----------

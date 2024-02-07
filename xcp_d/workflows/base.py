@@ -62,6 +62,7 @@ def init_xcpd_wf():
             :simple_form: yes
 
             from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.base import init_xcpd_wf
 
             with mock_config():
@@ -109,6 +110,7 @@ def init_single_subject_wf(subject_id: str):
             :simple_form: yes
 
             from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.base import init_single_subject_wf
 
             with mock_config():

@@ -27,13 +27,16 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.concatenation import init_concatenate_data_wf
 
-            wf = init_concatenate_data_wf(
-                TR=2,
-                head_radius=50,
-                name="concatenate_data_wf",
-            )
+            with mock_config():
+                wf = init_concatenate_data_wf(
+                    TR=2,
+                    head_radius=50,
+                    name="concatenate_data_wf",
+                )
 
     Parameters
     ----------

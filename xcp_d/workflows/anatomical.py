@@ -56,18 +56,17 @@ def init_postprocess_anat_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_postprocess_anat_wf
 
-            wf = init_postprocess_anat_wf(
-                output_dir=".",
-                input_type="fmriprep",
-                t1w_available=True,
-                t2w_available=True,
-                target_space="MNI152NLin6Asym",
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="postprocess_anat_wf",
-            )
+            with mock_config():
+                wf = init_postprocess_anat_wf(
+                    t1w_available=True,
+                    t2w_available=True,
+                    target_space="MNI152NLin6Asym",
+                    name="postprocess_anat_wf",
+                )
 
     Parameters
     ----------
@@ -329,23 +328,20 @@ def init_postprocess_surfaces_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_postprocess_surfaces_wf
 
-            wf = init_postprocess_surfaces_wf(
-                fmri_dir=".",
-                subject_id="01",
-                dcan_qc=True,
-                process_surfaces=True,
-                mesh_available=True,
-                standard_space_mesh=False,
-                morphometry_files=[],
-                output_dir=".",
-                t1w_available=True,
-                t2w_available=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="postprocess_surfaces_wf",
-            )
+            with mock_config():
+                wf = init_postprocess_surfaces_wf(
+                    subject_id="01",
+                    mesh_available=True,
+                    standard_space_mesh=False,
+                    morphometry_files=[],
+                    t1w_available=True,
+                    t2w_available=True,
+                    name="postprocess_surfaces_wf",
+                )
 
     Parameters
     ----------
@@ -786,14 +782,12 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_generate_hcp_surfaces_wf
 
-            wf = init_generate_hcp_surfaces_wf(
-                output_dir=".",
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="generate_hcp_surfaces_wf",
-            )
+            with mock_config():
+                wf = init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf")
 
     Parameters
     ----------

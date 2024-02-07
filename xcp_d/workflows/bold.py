@@ -48,44 +48,37 @@ def init_postprocess_nifti_wf(
 
             import os
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.utils.bids import collect_data, collect_run_data
             from xcp_d.workflows.bold import init_postprocess_nifti_wf
-            from xcp_d.utils.doc import download_example_data
 
-            fmri_dir = download_example_data()
+            with mock_config():
+                bold_file = str(
+                    config.execution.fmri_dir / "sub-01" / "func" /
+                    (
+                        "sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_"
+                        "desc-preproc_bold.nii.gz"
+                    )
+                )
 
-            layout, subj_data = collect_data(
-                bids_dir=fmri_dir,
-                input_type="fmriprep",
-                participant_label="01",
-                task="imagery",
-                bids_validate=False,
-                cifti=False,
-            )
+                run_data = collect_run_data(
+                    layout=layout,
+                    input_type="fmriprep",
+                    bold_file=bold_file,
+                    cifti=False,
+                )
 
-            bold_file = subj_data["bold"][0]
-
-            run_data = collect_run_data(
-                layout=layout,
-                input_type="fmriprep",
-                bold_file=bold_file,
-                cifti=False,
-            )
-
-            custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
-
-            wf = init_postprocess_nifti_wf(
-                bold_file=bold_file,
-                head_radius=50.,
-                run_data=run_data,
-                t1w_available=True,
-                t2w_available=True,
-                n_runs=1,
-                exact_scans=[],
-                name="nifti_postprocess_wf",
-            )
-            wf.inputs.inputnode.t1w = subj_data["t1w"]
-            wf.inputs.inputnode.template_to_anat_xfm = subj_data["template_to_anat_xfm"]
+                wf = init_postprocess_nifti_wf(
+                    bold_file=bold_file,
+                    head_radius=50.,
+                    run_data=run_data,
+                    t1w_available=True,
+                    t2w_available=True,
+                    n_runs=1,
+                    exact_scans=[],
+                    name="nifti_postprocess_wf",
+                )
 
     Parameters
     ----------
