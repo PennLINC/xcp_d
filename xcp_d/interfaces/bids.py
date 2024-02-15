@@ -79,7 +79,7 @@ class _CollectRegistrationFilesOutputSpec(TraitedSpec):
     )
     target_sphere = File(
         exists=True,
-        desc="Target-space sphere (fsLR for FreeSurfer, dHCP-in-fsLR for MCRIBS).",
+        desc="Target-space sphere (fsLR for FreeSurfer, dhcpSym-in-fsLR for MCRIBS).",
     )
     sphere_to_sphere = File(
         exists=True,
@@ -178,10 +178,10 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # Load the fsaverage-to-dHCP(?) warp sphere.
+            # Load the fsaverage-to-dhcpSym(?) warp sphere.
             self._results["sphere_to_sphere"] = str(
                 get_template(
-                    template="dHCP",
+                    template="dhcpSym",
                     space="fsaverage",
                     hemi=hemisphere,
                     density="41k",
@@ -190,10 +190,10 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # Load the dHCP-32k-in-fsLR space sphere.
+            # Load the dhcpSym-32k-in-fsLR space sphere.
             self._results["target_sphere"] = str(
                 get_template(
-                    template="dHCP",
+                    template="dhcpSym",
                     space="fsLR",
                     hemi=hemisphere,
                     density="32k",
