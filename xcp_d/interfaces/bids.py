@@ -178,7 +178,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # Load the fsaverage-to-dhcpSym(?) warp sphere.
+            # Load the fsaverage-to-dhcpSym warp sphere.
             self._results["sphere_to_sphere"] = str(
                 get_template(
                     template="dhcpSym",
