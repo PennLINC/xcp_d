@@ -182,6 +182,7 @@ class CollectRegistrationFiles(SimpleInterface):
             self._results["sphere_to_sphere"] = str(
                 get_template(
                     template="dhcpSym",
+                    cohort="42",
                     space="fsaverage",
                     hemi=hemisphere,
                     density="41k",
@@ -194,10 +195,10 @@ class CollectRegistrationFiles(SimpleInterface):
             self._results["target_sphere"] = str(
                 get_template(
                     template="dhcpSym",
+                    cohort="42",
                     space="fsLR",
                     hemi=hemisphere,
                     density="32k",
-                    desc="week42",
                     suffix="sphere",
                 )
             )
