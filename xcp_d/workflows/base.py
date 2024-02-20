@@ -808,6 +808,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             for io_name, node in merge_dict.items():
                 workflow.connect([(node, concatenate_data_wf, [("out", f"inputnode.{io_name}")])])
 
+    if run_counter == 0:
+        raise RuntimeError(
+            f"No runs survived high-motion outlier scrubbing for subject {subject_id}. "
+            "Quitting workflow."
+        )
+
     workflow.connect([
         (summary, ds_report_summary, [("out_report", "in_file")]),
         (about, ds_report_about, [("out_report", "in_file")]),

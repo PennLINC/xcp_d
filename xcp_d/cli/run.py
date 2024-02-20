@@ -505,6 +505,12 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help="Enable Nipype's resource monitoring to keep track of memory and CPU usage.",
     )
     g_other.add_argument(
+        "--stop-on-first-crash",
+        action="store_true",
+        default=False,
+        help="Force stopping on first crash, even if a work directory was specified.",
+    )
+    g_other.add_argument(
         "--notrack",
         action="store_true",
         default=False,
@@ -1015,6 +1021,7 @@ def build_workflow(opts, retval):
                 "crashdump_dir": str(log_dir),
                 "crashfile_format": "txt",
                 "get_linked_libs": False,
+                "stop_on_first_crash": opts.stop_on_first_crash,
             },
             "monitoring": {
                 "enabled": opts.resource_monitor,
