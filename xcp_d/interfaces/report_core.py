@@ -136,20 +136,27 @@ def generate_reports(
     else:
         LOGGER.info("Generating executive summary.")
         for subject_label in subject_list:
-            brainplotfile = glob.glob(
+            brainplotfiles = glob.glob(
                 os.path.join(
                     output_dir,
                     f"sub-{subject_label}",
                     "figures/*_bold.svg",
                 ),
             )
-            if not brainplotfile:
-                raise ValueError(f"No plots in {output_dir}")
+            if not brainplotfiles:
+                LOGGER.warning(
+                    "No postprocessing BOLD figures found for subject %s.",
+                    subject_label,
+                )
+                session_id = None
+            else:
+                brainplotfile = brainplotfiles[0]
+                session_id = get_entity(brainplotfile, "ses")
 
             exsumm = ExecutiveSummary(
                 xcpd_path=output_dir,
                 subject_id=subject_label,
-                session_id=get_entity(brainplotfile[0], "ses"),
+                session_id=session_id,
             )
             exsumm.collect_inputs()
             exsumm.generate_report()
