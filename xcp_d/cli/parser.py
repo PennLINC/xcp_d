@@ -300,7 +300,7 @@ def _build_parser():
         help=(
             "FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD "
             "data. "
-            "This may be set to 0."
+            "Set to 0 to disable smoothing."
         ),
     )
     g_param.add_argument(
