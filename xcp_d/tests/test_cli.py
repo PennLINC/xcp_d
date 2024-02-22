@@ -1,7 +1,6 @@
 """Command-line interface tests."""
 
 import os
-import shutil
 
 import numpy as np
 import pandas as pd
@@ -303,7 +302,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     for file_to_copy in files_to_copy:
         t2w_file = os.path.join(anat_dir, file_to_copy.replace("T1w", "T2w"))
         if not os.path.isfile(t2w_file):
-            shutil.copyfile(os.path.join(anat_dir, file_to_copy), t2w_file)
+            os.rename(os.path.join(anat_dir, file_to_copy), t2w_file)
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "pnc_cifti_t2wonly_filter.json")
