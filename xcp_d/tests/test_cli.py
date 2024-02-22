@@ -15,6 +15,7 @@ from xcp_d.tests.utils import (
     check_generated_files,
     download_test_data,
     get_test_data_path,
+    list_files,
     run_command,
 )
 
@@ -303,6 +304,9 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         t2w_file = os.path.join(anat_dir, file_to_copy.replace("T1w", "T2w"))
         if not os.path.isfile(t2w_file):
             os.rename(os.path.join(anat_dir, file_to_copy), t2w_file)
+
+    tree = list_files(dataset_dir)
+    LOGGER.info(f"Tree after adding T2w:\n{tree}")
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "pnc_cifti_t2wonly_filter.json")
