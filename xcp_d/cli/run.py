@@ -59,9 +59,9 @@ def get_parser():
         action="store",
         type=Path,
         help=(
-            "The output path for xcp_d. "
-            "This should not include the 'xcp_d' folder. "
-            "For example, '/path/to/dset/derivatives'."
+            "The output path for XCP-D derivatives. "
+            "For example, '/path/to/dset/derivatives/xcp_d'. "
+            "As of version 0.7.0, 'xcp_d' will not be appended to the output directory."
         ),
     )
     parser.add_argument(
