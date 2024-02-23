@@ -246,7 +246,7 @@ def get_parser():
         help=(
             "FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD "
             "data. "
-            "This may be set to 0."
+            "Set to 0 to disable smoothing."
         ),
     )
     g_param.add_argument(
@@ -503,6 +503,12 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         action="store_true",
         default=False,
         help="Enable Nipype's resource monitoring to keep track of memory and CPU usage.",
+    )
+    g_other.add_argument(
+        "--stop-on-first-crash",
+        action="store_true",
+        default=False,
+        help="Force stopping on first crash, even if a work directory was specified.",
     )
     g_other.add_argument(
         "--notrack",
@@ -1015,6 +1021,7 @@ def build_workflow(opts, retval):
                 "crashdump_dir": str(log_dir),
                 "crashfile_format": "txt",
                 "get_linked_libs": False,
+                "stop_on_first_crash": opts.stop_on_first_crash,
             },
             "monitoring": {
                 "enabled": opts.resource_monitor,
