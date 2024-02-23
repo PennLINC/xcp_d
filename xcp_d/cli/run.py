@@ -628,9 +628,7 @@ def main(args=None):
         if not opts.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
-            crashfolders = [
-                output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
-            ]
+            crashfolders = [output_dir / f"sub-{s}" / "log" / run_uuid for s in subject_list]
             for crashfolder in crashfolders:
                 for crashfile in crashfolder.glob("crash*.*"):
                     process_crashfile(crashfile)
@@ -656,8 +654,7 @@ def main(args=None):
         from xcp_d.interfaces.report_core import generate_reports
 
         citation_files = {
-            ext: output_dir / "xcp_d" / "logs" / f"CITATION.{ext}"
-            for ext in ("bib", "tex", "md", "html")
+            ext: output_dir / "logs" / f"CITATION.{ext}" for ext in ("bib", "tex", "md", "html")
         }
 
         if citation_files["md"].exists():
@@ -1000,7 +997,7 @@ def build_workflow(opts, retval):
     retval["plugin_settings"] = plugin_settings
 
     # Set up directories
-    log_dir = opts.output_dir / "xcp_d" / "logs"
+    log_dir = opts.output_dir / "logs"
 
     # Check and create output and working directories
     opts.output_dir.mkdir(exist_ok=True, parents=True)

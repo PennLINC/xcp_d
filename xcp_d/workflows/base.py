@@ -106,9 +106,6 @@ def init_xcpd_wf(
             fmri_dir = download_example_data()
             out_dir = tempfile.mkdtemp()
 
-            # Create xcp_d derivatives folder.
-            os.mkdir(os.path.join(out_dir, "xcp_d"))
-
             wf = init_xcpd_wf(
                 fmri_dir=fmri_dir,
                 output_dir=out_dir,
@@ -196,7 +193,7 @@ def init_xcpd_wf(
     xcpd_wf.base_dir = work_dir
     LOGGER.info(f"Beginning the {name} workflow")
 
-    write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
+    write_dataset_description(fmri_dir, output_dir)
 
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(
@@ -237,7 +234,6 @@ def init_xcpd_wf(
 
         single_subj_wf.config["execution"]["crashdump_dir"] = os.path.join(
             output_dir,
-            "xcp_d",
             f"sub-{subject_id}",
             "log",
         )
@@ -821,6 +817,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     for node in workflow.list_node_names():
         if node.split(".")[-1].startswith("ds_"):
-            workflow.get_node(node).interface.out_path_base = "xcp_d"
+            workflow.get_node(node).interface.out_path_base = ""
 
     return workflow

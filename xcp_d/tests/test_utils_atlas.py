@@ -50,7 +50,6 @@ def test_get_atlas_cifti():
 def test_copy_atlas(tmp_path_factory):
     """Test xcp_d.utils.atlas.copy_atlas."""
     tmpdir = tmp_path_factory.mktemp("test_copy_atlas")
-    os.makedirs(os.path.join(tmpdir, "xcp_d"), exist_ok=True)
 
     # NIfTI
     atlas_file, _, _ = atlas.get_atlas_nifti("Gordon")

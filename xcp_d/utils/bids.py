@@ -963,16 +963,12 @@ def _make_uri(in_file, dataset_name, dataset_path):
 
 def _make_xcpd_uri(out_file, output_dir):
     """Convert postprocessing derivative's path to BIDS URI."""
-    import os
-
     from xcp_d.utils.bids import _make_uri
 
-    dataset_path = os.path.join(output_dir, "xcp_d")
-
     if isinstance(out_file, list):
-        return [_make_uri(of, "xcp_d", dataset_path) for of in out_file]
+        return [_make_uri(of, "xcp_d", output_dir) for of in out_file]
     else:
-        return [_make_uri(out_file, "xcp_d", dataset_path)]
+        return [_make_uri(out_file, "xcp_d", output_dir)]
 
 
 def _make_xcpd_uri_lol(in_list, output_dir):
