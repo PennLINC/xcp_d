@@ -312,10 +312,10 @@ def test_make_uri():
 def test_make_xcpd_uri():
     """Test _make_xcpd_uri."""
     out_file = "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_bold.nii.gz"
-    uri = xbids._make_xcpd_uri(out_file, output_dir="/path/to/dset")
+    uri = xbids._make_xcpd_uri(out_file, output_dir="/path/to/dset/xcp_d")
     assert uri == ["bids:xcp_d:sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
-    xbids._make_xcpd_uri([out_file], output_dir="/path/to/dset")
+    xbids._make_xcpd_uri([out_file], output_dir="/path/to/dset/xcp_d")
     assert uri == ["bids:xcp_d:sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
 
@@ -333,7 +333,7 @@ def test_make_xcpd_uri_lol():
             "/path/to/dset/xcp_d/sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
         ],
     ]
-    uris = xbids._make_xcpd_uri_lol(in_list, output_dir="/path/to/dset/")
+    uris = xbids._make_xcpd_uri_lol(in_list, output_dir="/path/to/dset/xcp_d")
     assert uris == [
         [
             "bids:xcp_d:sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
