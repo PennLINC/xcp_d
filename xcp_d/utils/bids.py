@@ -579,13 +579,30 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     """
     bids_file = layout.get_file(bold_file)
     run_data, metadata = {}, {}
-    run_data["confounds"] = layout.get_nearest(
+
+    confounds_candidate = layout.get_nearest(
         bids_file.path,
         strict=False,
         desc="confounds",
         suffix="timeseries",
         extension=".tsv",
     )
+    # The confounds file won't match the BOLD file if the BOLD file doesn't have a confounds
+    # file and other runs do.
+    # The overlapping entities must match, except for "desc", "suffix", and "extension".
+    ignore_entities = ["desc", "suffix", "extension"]
+    confounds_entities = layout.get_file(confounds_candidate).get_entities()
+    data_entities = bids_file.get_entities()
+    entities_to_check = [k for k in confounds_entities.keys() if k in data_entities.keys()]
+    entities_to_check = [entity for entity in entities_to_check if entity not in ignore_entities]
+    for entity_to_check in entities_to_check:
+        if data_entities[entity_to_check] != confounds_entities[entity_to_check]:
+            raise FileNotFoundError(
+                f"Corresponding confounds file for {bids_file.path} not found. "
+                f"Closest candidate: {confounds_candidate}"
+            )
+
+    run_data["confounds"] = confounds_candidate
     run_data["confounds_json"] = layout.get_nearest(run_data["confounds"], extension=".json")
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
