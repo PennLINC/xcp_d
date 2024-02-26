@@ -273,18 +273,18 @@ data.
       sub-<label>/[ses-<label>/]
          func/
             # NIfTI
-            <source_entities>_space-<label>_reho.nii.gz
-            <source_entities>_space-<label>_alff.nii.gz
-            <source_entities>_space-<label>_desc-smooth_alff.nii.gz
-            <source_entities>_space-<label>_seg-<label>_alff.tsv
-            <source_entities>_space-<label>_seg-<label>_reho.tsv
+            <source_entities>_space-<label>_stat-reho_boldmap.nii.gz
+            <source_entities>_space-<label>_stat-alff_boldmap.nii.gz
+            <source_entities>_space-<label>_stat-alff_desc-smooth_boldmap.nii.gz
+            <source_entities>_space-<label>_seg-<label>_stat-alff_bold.tsv
+            <source_entities>_space-<label>_seg-<label>_stat-reho_bold.tsv
 
             # CIFTI
-            <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
-            <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
-            <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
-            <source_entities>_space-fsLR_seg-<label>_alff.tsv
-            <source_entities>_space-fsLR_seg-<label>_reho.tsv
+            <source_entities>_space-fsLR_den-91k_stat-reho_boldmap.dscalar.nii
+            <source_entities>_space-fsLR_den-91k_stat-alff_boldmap.dscalar.nii
+            <source_entities>_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.dscalar.nii
+            <source_entities>_space-fsLR_seg-<label>_stat-alff_bold.tsv
+            <source_entities>_space-fsLR_seg-<label>_stat-reho_bold.tsv
 
 
 Other outputs include quality control, framewise displacement, and confounds files

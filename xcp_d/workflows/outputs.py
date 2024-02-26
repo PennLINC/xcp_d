@@ -589,7 +589,8 @@ def init_postproc_derivatives_wf(
                 source_file=name_source,
                 dismiss_entities=["desc"],
                 cohort=cohort,
-                suffix="coverage",
+                statistic="coverage",
+                suffix="bold",
                 extension=".tsv",
             ),
             name="ds_coverage",
@@ -694,7 +695,8 @@ def init_postproc_derivatives_wf(
                     check_hdr=False,
                     dismiss_entities=["desc"],
                     cohort=cohort,
-                    suffix="coverage",
+                    statistic="coverage",
+                    suffix="boldmap",
                     extension=".pscalar.nii",
                 ),
                 name="ds_coverage_ciftis",
@@ -841,7 +843,8 @@ def init_postproc_derivatives_wf(
             dismiss_entities=["desc", "den"],
             cohort=cohort,
             den="91k" if cifti else None,
-            suffix="reho",
+            statistic="reho",
+            suffix="boldmap",
             extension=".dscalar.nii" if cifti else ".nii.gz",
             # Metadata
             SoftwareFilters=software_filters,
@@ -883,7 +886,8 @@ def init_postproc_derivatives_wf(
                 source_file=name_source,
                 dismiss_entities=["desc"],
                 cohort=cohort,
-                suffix="reho",
+                statistic="reho",
+                suffix="bold",
                 extension=".tsv",
                 # Metadata
                 SoftwareFilters=software_filters,
@@ -911,7 +915,8 @@ def init_postproc_derivatives_wf(
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
                 den="91k" if cifti else None,
-                suffix="alff",
+                statistic="alff",
+                suffix="boldmap",
                 extension=".dscalar.nii" if cifti else ".nii.gz",
                 # Metadata
                 SoftwareFilters=software_filters,
@@ -923,9 +928,7 @@ def init_postproc_derivatives_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_alff, [("alff", "in_file")]),
-            (ds_denoised_bold, ds_alff, [
-                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
+            (ds_denoised_bold, ds_alff, [(("out_file", _make_xcpd_uri, output_dir), "Sources")]),
         ])
         # fmt:on
 
@@ -938,7 +941,8 @@ def init_postproc_derivatives_wf(
                     cohort=cohort,
                     desc="smooth",
                     den="91k" if cifti else None,
-                    suffix="alff",
+                    statistic="alff",
+                    suffix="boldmap",
                     extension=".dscalar.nii" if cifti else ".nii.gz",
                     check_hdr=False,
                     # Metadata
@@ -985,7 +989,8 @@ def init_postproc_derivatives_wf(
                     source_file=name_source,
                     dismiss_entities=["desc"],
                     cohort=cohort,
-                    suffix="alff",
+                    statistic="alff",
+                    suffix="bold",
                     extension=".tsv",
                 ),
                 name="ds_parcellated_alff",
