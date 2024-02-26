@@ -220,7 +220,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=["seg", "den", "res", "space", "cohort", "desc"],
+            dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
             desc="filtered" if motion_filter_type else None,
             suffix="motion",
             extension=".tsv",
@@ -240,7 +240,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=["seg", "den", "res", "space", "cohort", "desc"],
+            dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
             suffix="outliers",
             extension=".tsv",
         ),
@@ -399,9 +399,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name="ds_timeseries",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["seg", "in_file", "meta_dict"],
+            iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_timeseries.inputs.seg = atlases
+        ds_timeseries.inputs.segmentation = atlases
 
         workflow.connect([
             (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
@@ -448,9 +448,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name="ds_correlations",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["seg", "in_file", "meta_dict"],
+            iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_correlations.inputs.seg = atlases
+        ds_correlations.inputs.segmentation = atlases
 
         workflow.connect([
             (clean_name_source, ds_correlations, [("name_source", "source_file")]),
@@ -488,9 +488,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 name="ds_timeseries_cifti_files",
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=["seg", "in_file", "meta_dict"],
+                iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_timeseries_cifti_files.inputs.seg = atlases
+            ds_timeseries_cifti_files.inputs.segmentation = atlases
 
             workflow.connect([
                 (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),
