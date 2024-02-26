@@ -442,7 +442,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 base_directory=output_dir,
                 dismiss_entities=["desc"],
                 statistic="pearsoncorrelation",
-                suffix="conmat",
+                suffix="relmat",
                 extension=".tsv",
             ),
             name="ds_correlations",

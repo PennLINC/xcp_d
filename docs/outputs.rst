@@ -237,17 +237,17 @@ This includes the atlases used to extract the timeseries.
             # NIfTI
             <source_entities>_space-<label>_atlas-<label>_coverage.tsv
             <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
-            <source_entities>_space-<label>_atlas-<label>_stat-pearsoncorrelation_conmat.tsv
-            <source_entities>_space-<label>_atlas-<label>_stat-pearsoncorrelation_desc-<INT>volumes_conmat.tsv
+            <source_entities>_space-<label>_atlas-<label>_stat-pearsoncorrelation_relmat.tsv
+            <source_entities>_space-<label>_atlas-<label>_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
 
             # CIFTI
             <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.tsv
             <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.pscalar.nii
             <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.tsv
             <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_conmat.tsv
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_conmat.pconn.nii
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_conmat.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_relmat.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_relmat.pconn.nii
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
 
 
 Resting-state metric derivatives (ReHo and ALFF)
