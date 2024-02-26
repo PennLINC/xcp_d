@@ -781,7 +781,7 @@ def init_postproc_derivatives_wf(
                     cohort=cohort,
                     den="91k" if cifti else None,
                     statistic="pearsoncorrelation",
-                    suffix="relmat",
+                    suffix="boldmap",
                     extension=".pconn.nii",
                 ),
                 name="ds_correlation_ciftis",
