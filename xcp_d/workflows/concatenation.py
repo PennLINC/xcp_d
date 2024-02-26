@@ -441,7 +441,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["desc"],
-                measure="pearsoncorrelation",
+                statistic="pearsoncorrelation",
                 suffix="conmat",
                 extension=".tsv",
             ),
