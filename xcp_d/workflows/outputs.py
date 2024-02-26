@@ -321,7 +321,7 @@ def init_postproc_derivatives_wf(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=name_source,
-            dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
+            dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
             desc="filtered" if motion_filter_type else None,
             suffix="motion",
             extension=".tsv",
@@ -353,7 +353,7 @@ def init_postproc_derivatives_wf(
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
+                dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
                 suffix="outliers",
                 extension=".tsv",
                 source_file=name_source,
@@ -595,9 +595,9 @@ def init_postproc_derivatives_wf(
             name="ds_coverage",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
+            iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_coverage.inputs.atlas = atlases
+        ds_coverage.inputs.segmentation = atlases
         # fmt:off
         workflow.connect([
             (inputnode, ds_coverage, [("coverage", "in_file")]),
@@ -639,9 +639,9 @@ def init_postproc_derivatives_wf(
             name="ds_timeseries",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
+            iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_timeseries.inputs.atlas = atlases
+        ds_timeseries.inputs.segmentation = atlases
         # fmt:off
         workflow.connect([
             (inputnode, ds_timeseries, [("timeseries", "in_file")]),
@@ -676,9 +676,9 @@ def init_postproc_derivatives_wf(
             name="ds_correlations",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
+            iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_correlations.inputs.atlas = atlases
+        ds_correlations.inputs.segmentation = atlases
         # fmt:off
         workflow.connect([
             (inputnode, ds_correlations, [("correlations", "in_file")]),
@@ -700,9 +700,9 @@ def init_postproc_derivatives_wf(
                 name="ds_coverage_ciftis",
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=["atlas", "in_file", "meta_dict"],
+                iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_coverage_ciftis.inputs.atlas = atlases
+            ds_coverage_ciftis.inputs.segmentation = atlases
             # fmt:off
             workflow.connect([
                 (inputnode, ds_coverage_ciftis, [("coverage_ciftis", "in_file")]),
@@ -744,9 +744,9 @@ def init_postproc_derivatives_wf(
                 name="ds_timeseries_ciftis",
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=["atlas", "in_file", "meta_dict"],
+                iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_timeseries_ciftis.inputs.atlas = atlases
+            ds_timeseries_ciftis.inputs.segmentation = atlases
             # fmt:off
             workflow.connect([
                 (inputnode, ds_timeseries_ciftis, [("timeseries_ciftis", "in_file")]),
@@ -787,9 +787,9 @@ def init_postproc_derivatives_wf(
                 name="ds_correlation_ciftis",
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=["atlas", "in_file", "meta_dict"],
+                iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_correlation_ciftis.inputs.atlas = atlases
+            ds_correlation_ciftis.inputs.segmentation = atlases
             # fmt:off
             workflow.connect([
                 (inputnode, ds_correlation_ciftis, [("correlation_ciftis", "in_file")]),
@@ -823,9 +823,9 @@ def init_postproc_derivatives_wf(
                 name=f"ds_correlations_exact_{i_exact_scan}",
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=["atlas", "in_file"],
+                iterfield=["segmentation", "in_file"],
             )
-            ds_correlations_exact.inputs.atlas = atlases
+            ds_correlations_exact.inputs.segmentation = atlases
             # fmt:off
             workflow.connect([
                 (select_exact_scan_files, ds_correlations_exact, [("out", "in_file")]),
@@ -892,9 +892,9 @@ def init_postproc_derivatives_wf(
             name="ds_parcellated_reho",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
+            iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_parcellated_reho.inputs.atlas = atlases
+        ds_parcellated_reho.inputs.segmentation = atlases
         # fmt:off
         workflow.connect([
             (inputnode, ds_parcellated_reho, [("parcellated_reho", "in_file")]),
@@ -991,9 +991,9 @@ def init_postproc_derivatives_wf(
                 name="ds_parcellated_alff",
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=["atlas", "in_file", "meta_dict"],
+                iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_parcellated_alff.inputs.atlas = atlases
+            ds_parcellated_alff.inputs.segmentation = atlases
             # fmt:off
             workflow.connect([
                 (inputnode, ds_parcellated_alff, [("parcellated_alff", "in_file")]),
