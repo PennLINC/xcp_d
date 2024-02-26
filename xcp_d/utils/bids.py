@@ -216,7 +216,7 @@ def collect_data(
         # "from" entity will be set later
         "template_to_anat_xfm": {
             "datatype": "anat",
-            "to": "T1w",
+            "to": ["T1w", "T2w"],
             "suffix": "xfm",
         },
         # native T1w-space brain mask
@@ -231,7 +231,7 @@ def collect_data(
         # "to" entity will be set later
         "anat_to_template_xfm": {
             "datatype": "anat",
-            "from": "T1w",
+            "from": ["T1w", "T2w"],
             "suffix": "xfm",
         },
     }
