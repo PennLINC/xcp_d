@@ -183,9 +183,9 @@ def copy_atlas(name_source, in_file, output_dir, atlas):
     res_str = f"_res-{res}" if res else ""
     den_str = f"_den-{den}" if den else ""
     if extension == ".dlabel.nii":
-        atlas_basename = f"space-{space}_atlas-{atlas}{den_str}{cohort_str}_dseg{extension}"
+        atlas_basename = f"atlas-{atlas}_space-{space}{den_str}{cohort_str}_dseg{extension}"
     elif extension == ".nii.gz":
-        atlas_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
+        atlas_basename = f"atlas-{atlas}_space-{space}{res_str}{cohort_str}_dseg{extension}"
 
     atlas_out_dir = os.path.join(output_dir, f"xcp_d/atlases/atlas-{atlas}")
     os.makedirs(atlas_out_dir, exist_ok=True)

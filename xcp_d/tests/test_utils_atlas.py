@@ -59,7 +59,7 @@ def test_copy_atlas(tmp_path_factory):
         name_source=name_source, in_file=atlas_file, output_dir=tmpdir, atlas="Y"
     )
     assert os.path.isfile(out_file)
-    assert os.path.basename(out_file) == "space-MNI152NLin2009cAsym_atlas-Y_res-2_dseg.nii.gz"
+    assert os.path.basename(out_file) == "atlas-Y_space-MNI152NLin2009cAsym_res-2_dseg.nii.gz"
 
     # CIFTI
     atlas_file, _, _ = atlas.get_atlas_cifti("Gordon")
@@ -68,4 +68,4 @@ def test_copy_atlas(tmp_path_factory):
         name_source=name_source, in_file=atlas_file, output_dir=tmpdir, atlas="Y"
     )
     assert os.path.isfile(out_file)
-    assert os.path.basename(out_file) == "space-fsLR_atlas-Y_den-91k_dseg.dlabel.nii"
+    assert os.path.basename(out_file) == "atlas-Y_space-fsLR_den-91k_dseg.dlabel.nii"
