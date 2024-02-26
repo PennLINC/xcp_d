@@ -391,6 +391,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["desc"],
+                statistic="mean",
                 suffix="timeseries",
                 extension=".tsv",
                 # Metadata
@@ -482,6 +483,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
                     den="91k",
+                    statistic="mean",
                     suffix="timeseries",
                     extension=".ptseries.nii",
                 ),

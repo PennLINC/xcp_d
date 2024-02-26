@@ -632,6 +632,7 @@ def init_postproc_derivatives_wf(
                 source_file=name_source,
                 dismiss_entities=["desc"],
                 cohort=cohort,
+                statistic="mean",
                 suffix="timeseries",
                 extension=".tsv",
                 # Metadata
@@ -740,6 +741,7 @@ def init_postproc_derivatives_wf(
                     dismiss_entities=["desc", "den"],
                     cohort=cohort,
                     den="91k" if cifti else None,
+                    statistic="mean",
                     suffix="timeseries",
                     extension=".ptseries.nii",
                 ),

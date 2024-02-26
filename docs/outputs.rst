@@ -235,16 +235,16 @@ This includes the atlases used to extract the timeseries.
       sub-<label>/[ses-<label>/]
          func/
             # NIfTI
-            <source_entities>_space-<label>_seg-<label>_coverage.tsv
-            <source_entities>_space-<label>_seg-<label>_timeseries.tsv
+            <source_entities>_space-<label>_seg-<label>_stat-coverage_bold.tsv
+            <source_entities>_space-<label>_seg-<label>_stat-mean_timeseries.tsv
             <source_entities>_space-<label>_seg-<label>_stat-pearsoncorrelation_relmat.tsv
             <source_entities>_space-<label>_seg-<label>_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
 
             # CIFTI
-            <source_entities>_space-fsLR_seg-<label>_den-91k_coverage.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-91k_coverage.pscalar.nii
-            <source_entities>_space-fsLR_seg-<label>_den-91k_timeseries.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-91k_timeseries.ptseries.nii
+            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-coverage_bold.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-coverage_boldmap.pscalar.nii
+            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-mean_timeseries.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-mean_timeseries.ptseries.nii
             <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_relmat.tsv
             <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
             <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
