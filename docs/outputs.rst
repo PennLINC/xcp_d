@@ -91,10 +91,10 @@ Atlases are written out to the ``atlases`` subfolder, following BEP038.
             atlas-<label>_dseg.tsv
 
             # NIfTI
-            space-<label>_atlas-<label>_dseg.nii.gz
+            atlas-<label>_space-<label>_dseg.nii.gz
 
             # CIFTI
-            space-<label>_atlas-<label>_dseg.dlabel.nii
+            atlas-<label>_space-<label>_dseg.dlabel.nii
 
 
 ******************
@@ -155,9 +155,9 @@ atlases it uses to parcellate the functional outputs.
    xcp_d/
       sub-<label>/[ses-<label>/]
          anat/
-            <source_entities>_space-fsLR_atlas-<atlas>_den-32k_desc-curv_morph.tsv
-            <source_entities>_space-fsLR_atlas-<atlas>_den-32k_desc-sulc_morph.tsv
-            <source_entities>_space-fsLR_atlas-<atlas>_den-32k_desc-thickness_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-32k_desc-curv_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-32k_desc-sulc_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-32k_desc-thickness_morph.tsv
 
 
 ******************
@@ -235,19 +235,19 @@ This includes the atlases used to extract the timeseries.
       sub-<label>/[ses-<label>/]
          func/
             # NIfTI
-            <source_entities>_space-<label>_atlas-<label>_coverage.tsv
-            <source_entities>_space-<label>_atlas-<label>_timeseries.tsv
-            <source_entities>_space-<label>_atlas-<label>_stat-pearsoncorrelation_relmat.tsv
-            <source_entities>_space-<label>_atlas-<label>_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
+            <source_entities>_space-<label>_seg-<label>_coverage.tsv
+            <source_entities>_space-<label>_seg-<label>_timeseries.tsv
+            <source_entities>_space-<label>_seg-<label>_stat-pearsoncorrelation_relmat.tsv
+            <source_entities>_space-<label>_seg-<label>_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
 
             # CIFTI
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.tsv
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_coverage.pscalar.nii
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.tsv
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_timeseries.ptseries.nii
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_relmat.tsv
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
-            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-91k_coverage.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-91k_coverage.pscalar.nii
+            <source_entities>_space-fsLR_seg-<label>_den-91k_timeseries.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-91k_timeseries.ptseries.nii
+            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_relmat.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
+            <source_entities>_space-fsLR_seg-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
 
 
 Resting-state metric derivatives (ReHo and ALFF)
@@ -276,15 +276,15 @@ data.
             <source_entities>_space-<label>_reho.nii.gz
             <source_entities>_space-<label>_alff.nii.gz
             <source_entities>_space-<label>_desc-smooth_alff.nii.gz
-            <source_entities>_space-<label>_atlas-<atlas>_alff.tsv
-            <source_entities>_space-<label>_atlas-<atlas>_reho.tsv
+            <source_entities>_space-<label>_seg-<label>_alff.tsv
+            <source_entities>_space-<label>_seg-<label>_reho.tsv
 
             # CIFTI
             <source_entities>_space-fsLR_den-91k_reho.dscalar.nii
             <source_entities>_space-fsLR_den-91k_alff.dscalar.nii
             <source_entities>_space-fsLR_den-91k_desc-smooth_alff.dscalar.nii
-            <source_entities>_space-fsLR_atlas-<atlas>_alff.tsv
-            <source_entities>_space-fsLR_atlas-<atlas>_reho.tsv
+            <source_entities>_space-fsLR_seg-<label>_alff.tsv
+            <source_entities>_space-fsLR_seg-<label>_reho.tsv
 
 
 Other outputs include quality control, framewise displacement, and confounds files
