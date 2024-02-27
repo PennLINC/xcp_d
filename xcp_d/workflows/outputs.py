@@ -499,7 +499,7 @@ def init_postproc_derivatives_wf(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=name_source,
-            dismiss_entities=["desc", "den"],
+            dismiss_entities=["desc", "den", "res"],
             cohort=cohort,
             den="91k" if cifti else None,
             desc="linc",
