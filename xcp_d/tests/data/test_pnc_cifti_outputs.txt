@@ -2,11 +2,11 @@ xcp_d/atlases
 xcp_d/atlases/atlas-HCP
 xcp_d/atlases/atlas-HCP/atlas-HCP_dseg.json
 xcp_d/atlases/atlas-HCP/atlas-HCP_dseg.tsv
-xcp_d/atlases/atlas-HCP/atlas-HCP_den-91k_space-fsLR_dseg.dlabel.nii
+xcp_d/atlases/atlas-HCP/atlas-HCP_space-fsLR_den-91k_dseg.dlabel.nii
 xcp_d/atlases/atlas-Tian
 xcp_d/atlases/atlas-Tian/atlas-Tian_dseg.json
 xcp_d/atlases/atlas-Tian/atlas-Tian_dseg.tsv
-xcp_d/atlases/atlas-Tian/atlas-Tian_den-91k_space-fsLR_dseg.dlabel.nii
+xcp_d/atlases/atlas-Tian/atlas-Tian_space-fsLR_den-91k_dseg.dlabel.nii
 xcp_d/dataset_description.json
 xcp_d/desc-linc_qc.json
 xcp_d/logs
@@ -46,8 +46,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_den-91k_stat-coverage_boldmap.pscalar.nii
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_den-91k_stat-pearsoncorrelation_boldmap.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
-xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_den-91k_stat-mean_timeseries.json
-xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_den-91k_stat-mean_timeseries.ptseries.nii
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_den-91k_stat-mean_bold.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_den-91k_stat-mean_bold.ptseries.nii
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_stat-pearsoncorrelation_relmat.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-HCP_stat-reho_bold.json
@@ -62,8 +62,8 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleb
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_den-91k_stat-coverage_boldmap.pscalar.nii
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_den-91k_stat-pearsoncorrelation_boldmap.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
-xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_den-91k_stat-mean_timeseries.json
-xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_den-91k_stat-mean_timeseries.ptseries.nii
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_den-91k_stat-mean_bold.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_den-91k_stat-mean_bold.ptseries.nii
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_stat-pearsoncorrelation_relmat.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_seg-Tian_stat-reho_bold.json
