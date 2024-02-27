@@ -79,7 +79,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-mean_timeseries.tsv
@@ -87,7 +87,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-mean_timeseries.tsv
@@ -95,7 +95,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-mean_timeseries.tsv
@@ -103,7 +103,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-mean_timeseries.tsv
@@ -111,7 +111,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-mean_timeseries.tsv
@@ -119,7 +119,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-mean_timeseries.tsv
@@ -127,7 +127,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-mean_timeseries.tsv
@@ -135,7 +135,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-mean_timeseries.tsv
@@ -143,7 +143,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-mean_timeseries.tsv
@@ -151,7 +151,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-mean_timeseries.tsv
@@ -159,7 +159,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Glasser_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Glasser_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Glasser_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Glasser_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Glasser_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Glasser_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Glasser_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Glasser_stat-mean_timeseries.tsv
@@ -167,7 +167,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Gordon_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Gordon_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Gordon_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Gordon_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Gordon_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Gordon_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Gordon_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Gordon_stat-mean_timeseries.tsv
@@ -175,7 +175,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-HCP_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-HCP_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-HCP_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-HCP_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-HCP_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-HCP_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-HCP_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-HCP_stat-mean_timeseries.tsv
@@ -183,7 +183,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-mean_timeseries.tsv
@@ -207,7 +207,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-mean_timeseries.tsv
@@ -215,7 +215,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-mean_timeseries.tsv
@@ -223,7 +223,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S256Parcels_stat-mean_timeseries.tsv
@@ -231,7 +231,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S356Parcels_stat-mean_timeseries.tsv
@@ -239,7 +239,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S456Parcels_stat-mean_timeseries.tsv
@@ -247,7 +247,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S556Parcels_stat-mean_timeseries.tsv
@@ -255,7 +255,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S656Parcels_stat-mean_timeseries.tsv
@@ -263,7 +263,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S756Parcels_stat-mean_timeseries.tsv
@@ -271,7 +271,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S856Parcels_stat-mean_timeseries.tsv
@@ -279,7 +279,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S956Parcels_stat-mean_timeseries.tsv
@@ -287,7 +287,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Glasser_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Glasser_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Glasser_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Glasser_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Glasser_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Glasser_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Glasser_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Glasser_stat-mean_timeseries.tsv
@@ -295,7 +295,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Gordon_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Gordon_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Gordon_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Gordon_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Gordon_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Gordon_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Gordon_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Gordon_stat-mean_timeseries.tsv
@@ -303,7 +303,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-HCP_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-HCP_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-HCP_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-HCP_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-HCP_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-HCP_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-HCP_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-HCP_stat-mean_timeseries.tsv
@@ -311,7 +311,7 @@ xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_s
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Tian_stat-coverage_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Tian_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Tian_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Tian_stat-reho_boldmap.json
+xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Tian_stat-reho_bold.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Tian_stat-reho_bold.tsv
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Tian_stat-mean_timeseries.json
 xcp_d/sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Tian_stat-mean_timeseries.tsv

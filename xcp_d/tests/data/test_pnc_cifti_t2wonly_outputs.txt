@@ -42,7 +42,7 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-filte
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-filtered_motion.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_outliers.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_outliers.tsv
-xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-alff_boldmap.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-alff_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-alff_bold.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-coverage_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-coverage_bold.tsv
@@ -54,11 +54,11 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_den-91k_stat-mean_timeseries.ptseries.nii
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-reho_boldmap.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-reho_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-reho_bold.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-mean_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-mean_timeseries.tsv
-xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-alff_boldmap.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-alff_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-alff_bold.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-coverage_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-coverage_bold.tsv
@@ -70,7 +70,7 @@ xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_den-91k_stat-mean_timeseries.ptseries.nii
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-pearsoncorrelation_relmat.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-pearsoncorrelation_relmat.tsv
-xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-reho_boldmap.json
+xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-reho_bold.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-reho_bold.tsv
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-mean_timeseries.json
 xcp_d/sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-Glasser_stat-mean_timeseries.tsv
