@@ -587,7 +587,7 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=name_source,
-                dismiss_entities=["desc"],
+                dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
                 statistic="coverage",
                 suffix="bold",
@@ -630,7 +630,7 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=name_source,
-                dismiss_entities=["desc"],
+                dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
                 statistic="mean",
                 suffix="timeseries",
@@ -669,7 +669,7 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=name_source,
-                dismiss_entities=["desc"],
+                dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
                 statistic="pearsoncorrelation",
                 suffix="relmat",
@@ -817,7 +817,7 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     source_file=name_source,
-                    dismiss_entities=["desc"],
+                    dismiss_entities=["desc", "den", "res"],
                     cohort=cohort,
                     statistic="pearsoncorrelation",
                     desc=f"{exact_scan}volumes",
@@ -886,7 +886,7 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=name_source,
-                dismiss_entities=["desc"],
+                dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
                 statistic="reho",
                 suffix="bold",
@@ -989,7 +989,7 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     base_directory=output_dir,
                     source_file=name_source,
-                    dismiss_entities=["desc"],
+                    dismiss_entities=["desc", "den", "res"],
                     cohort=cohort,
                     statistic="alff",
                     suffix="bold",
