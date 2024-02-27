@@ -1,7 +1,7 @@
 """Command-line interface tests."""
 
 import os
-import shutil
+from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from xcp_d.tests.utils import (
     check_generated_files,
     download_test_data,
     get_test_data_path,
+    list_files,
 )
 from xcp_d.utils.bids import write_dataset_description
 
@@ -208,28 +209,17 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    # Simulate a T2w image
+    # Rename all T1w-related files in anat folder to T2w.
+    # T1w-related files in func folder should not impact XCP-D.
     anat_dir = os.path.join(dataset_dir, "sub-1648798153/ses-PNC1/anat")
-    files_to_copy = [
-        "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.nii.gz",
-        "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.json",
-        (
-            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_res-2_desc-preproc_"
-            "T1w.nii.gz"
-        ),
-        (
-            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_res-2_desc-preproc_"
-            "T1w.json"
-        ),
-        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
-        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
-        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
-        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
-    ]
+    files_to_copy = sorted(glob(os.path.join(anat_dir, "*T1w*")))
     for file_to_copy in files_to_copy:
-        t2w_file = os.path.join(anat_dir, file_to_copy.replace("T1w", "T2w"))
+        t2w_file = file_to_copy.replace("T1w", "T2w")
         if not os.path.isfile(t2w_file):
-            shutil.copyfile(os.path.join(anat_dir, file_to_copy), t2w_file)
+            os.rename(os.path.join(anat_dir, file_to_copy), t2w_file)
+
+    tree = list_files(dataset_dir)
+    LOGGER.info(f"Tree after adding T2w:\n{tree}")
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "pnc_cifti_t2wonly_filter.json")

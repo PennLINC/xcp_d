@@ -228,3 +228,17 @@ def reorder_expected_outputs():
 
         with open(expected_output_file, "w") as fo:
             fo.writelines(file_contents)
+
+
+def list_files(startpath):
+    """List files in a directory."""
+    tree = ""
+    for root, _, files in os.walk(startpath):
+        level = root.replace(startpath, "").count(os.sep)
+        indent = " " * 4 * (level)
+        tree += f"{indent}{os.path.basename(root)}/\n"
+        subindent = " " * 4 * (level + 1)
+        for f in files:
+            tree += f"{subindent}{f}\n"
+
+    return tree
