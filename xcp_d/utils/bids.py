@@ -579,13 +579,18 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     """
     bids_file = layout.get_file(bold_file)
     run_data, metadata = {}, {}
+
     run_data["confounds"] = layout.get_nearest(
         bids_file.path,
-        strict=False,
+        strict=True,
+        ignore_strict_entities=["space", "res", "den", "desc", "suffix", "extension"],
         desc="confounds",
         suffix="timeseries",
         extension=".tsv",
     )
+    if not run_data["confounds"]:
+        raise FileNotFoundError(f"No confounds file detected for {bids_file.path}")
+
     run_data["confounds_json"] = layout.get_nearest(run_data["confounds"], extension=".json")
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
@@ -595,13 +600,15 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     if not cifti:
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
-            strict=False,
+            strict=True,
+            ignore_strict_entities=["desc", "suffix"],
             suffix="boldref",
             extension=[".nii", ".nii.gz"],
         )
         run_data["boldmask"] = layout.get_nearest(
             bids_file.path,
-            strict=False,
+            strict=True,
+            ignore_strict_entities=["desc", "suffix"],
             desc="brain",
             suffix="mask",
             extension=[".nii", ".nii.gz"],
@@ -614,7 +621,16 @@ def collect_run_data(layout, bold_file, cifti, target_space):
 
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
-            strict=False,
+            strict=True,
+            ignore_strict_entities=[
+                "cohort",
+                "space",
+                "res",
+                "den",
+                "desc",
+                "suffix",
+                "extension",
+            ],
             space=target_space,
             cohort=cohort,
             suffix="boldref",
@@ -623,7 +639,16 @@ def collect_run_data(layout, bold_file, cifti, target_space):
         )
         run_data["nifti_file"] = layout.get_nearest(
             bids_file.path,
-            strict=False,
+            strict=True,
+            ignore_strict_entities=[
+                "cohort",
+                "space",
+                "res",
+                "den",
+                "desc",
+                "suffix",
+                "extension",
+            ],
             space=target_space,
             cohort=cohort,
             desc="preproc",
