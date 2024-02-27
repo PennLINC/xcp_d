@@ -482,9 +482,9 @@ def init_parcellate_surfaces_wf(
             name=f"ds_parcellated_{file_to_parcellate}",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file"],
+            iterfield=["segmentation", "in_file"],
         )
-        ds_parcellated_surface.inputs.atlas = selected_atlases
+        ds_parcellated_surface.inputs.segmentation = selected_atlases
 
         # fmt:off
         workflow.connect([
