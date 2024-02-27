@@ -475,6 +475,7 @@ def init_parcellate_surfaces_wf(
                 base_directory=output_dir,
                 dismiss_entities=["hemi", "desc"],
                 desc=SURF_DESCS[file_to_parcellate],
+                statistic="mean",
                 suffix="morph",
                 extension=".tsv",
             ),
