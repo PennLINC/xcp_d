@@ -742,7 +742,7 @@ def init_postproc_derivatives_wf(
                     cohort=cohort,
                     den="91k" if cifti else None,
                     statistic="mean",
-                    suffix="timeseries",
+                    suffix="bold",
                     extension=".ptseries.nii",
                 ),
                 name="ds_timeseries_ciftis",
