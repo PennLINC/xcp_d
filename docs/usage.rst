@@ -419,7 +419,7 @@ generate the time series:
       -cifti-parcellate \
       {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii \
       your_parcels.dlabel \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii
+      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_timeseries.ptseries.nii
 
 After this, if one wishes to have a connectivity matrix:
 
@@ -427,7 +427,7 @@ After this, if one wishes to have a connectivity matrix:
 
    wb_command \
       -cifti-correlation \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.ptseries.nii \
+      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_timeseries.ptseries.nii \
       {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_boldmap.pconn.nii
 
 More information can be found at the HCP
