@@ -390,7 +390,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=["desc"],
+                dismiss_entities=["desc", "den", "res"],
                 statistic="mean",
                 suffix="timeseries",
                 extension=".tsv",
