@@ -746,7 +746,7 @@ def init_functional_connectivity_cifti_wf(name="connectivity_wf"):
 
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
-Connectome Workbench [@hcppipelines] for the following atlases:
+Connectome Workbench [@marcus2011informatics] for the following atlases:
 the Schaefer Supplemented with Subcortical Structures (4S) atlas
 [@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo,@glasser2013minimal] at
 10 different resolutions (156, 256, 356, 456, 556, 656, 756, 856, 956, and 1056 parcels),
