@@ -1,5 +1,57 @@
 # What's New
 
+## 0.6.2
+
+### 🐛 Bug Fixes
+
+* Raise interpretable error when no BOLD runs survive minimum-time threshold by @tsalo in https://github.com/PennLINC/xcp_d/pull/1048
+* Address bug with T2w-only processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1060
+* Use strict file-matching in collect_run_data by @tsalo in https://github.com/PennLINC/xcp_d/pull/1063
+* Fix potential atlas file race condition by @tsalo in https://github.com/PennLINC/xcp_d/pull/1066
+
+### Other Changes
+
+* Make description of `smoothing` parameter clearer when set to `0` by @psychelzh in https://github.com/PennLINC/xcp_d/pull/1056
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.1...0.6.2
+
+
+## 0.6.1
+
+### 🛠 Breaking Changes
+
+* Support ALFF for censored data by @tsalo in https://github.com/PennLINC/xcp_d/pull/1020
+* Move atlases into a subfolder by @tsalo in https://github.com/PennLINC/xcp_d/pull/1024
+
+### 🎉 Exciting New Features
+
+* Add colorbar to ALFF and ReHo plots by @tsalo in https://github.com/PennLINC/xcp_d/pull/1023
+* Add options for UK Biobank data by @tsalo in https://github.com/PennLINC/xcp_d/pull/1022
+* Add options to subset atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/1034
+* Support MCRIBS derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/1029
+* Add `--stop-on-first-crash` option to command-line interface by @tsalo in https://github.com/PennLINC/xcp_d/pull/1044
+
+### 🐛 Bug Fixes
+
+* Rescale ALFF based on original BOLD standard deviation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1033
+* Drop `dir` entity from concatenated filenames by @tsalo in https://github.com/PennLINC/xcp_d/pull/1037
+* Fix dscalar CIFTI generation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1036
+* Fix TR in denoised NIfTI headers by @tsalo in https://github.com/PennLINC/xcp_d/pull/1038
+
+### Other Changes
+
+* Add dependabot Action by @tsalo in https://github.com/PennLINC/xcp_d/pull/1006
+* Update to Python 3.10 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1016
+* Update docker image link by @psychelzh in https://github.com/PennLINC/xcp_d/pull/1045
+
+## New Contributors
+
+* @dependabot made their first contribution in https://github.com/PennLINC/xcp_d/pull/1007
+* @psychelzh made their first contribution in https://github.com/PennLINC/xcp_d/pull/1045
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.0...0.6.1
+
+
 ## 0.6.0
 
 ### 🛠 Breaking Changes
@@ -36,8 +88,8 @@
 * Try to reduce memory requirements of functional connectivity nodes by @tsalo in https://github.com/PennLINC/xcp_d/pull/982
 * Try to reduce memory requirements of denoising node by @tsalo in https://github.com/PennLINC/xcp_d/pull/989
 
-
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.5.0...0.6.0
+
 
 ## 0.5.1
 
@@ -59,8 +111,8 @@ The 0.5.1 fixes some bugs for the XCP-D manuscript.
 ### Other Changes
 * Update documentation for 0.5.0 release by @tsalo in https://github.com/PennLINC/xcp_d/pull/937
 
-
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.5.0...0.5.1
+
 
 ## 0.5.0
 
@@ -68,9 +120,12 @@ The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
 
 ### 🛠 Breaking Changes
+
 * Add CIFTI subcortical atlas to XCP-D by @tsalo in https://github.com/PennLINC/xcp_d/pull/864
 * Change "ciftiSubcortical" atlas name to "HCP" by @tsalo in https://github.com/PennLINC/xcp_d/pull/932
+
 ### 🎉 Exciting New Features
+
 * Write out top-level sidecar for PennLINC QC file by @tsalo in https://github.com/PennLINC/xcp_d/pull/894
 * Parcellate ReHo, ALFF, and surface morphometric maps by @tsalo in https://github.com/PennLINC/xcp_d/pull/839
 * Refactor dcan/hcp ingestion and add more surface files by @tsalo in https://github.com/PennLINC/xcp_d/pull/887
@@ -79,11 +134,15 @@ The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce 
 * Allow white matter surface suffix to be either "_smoothwm" or "_white" by @tsalo in https://github.com/PennLINC/xcp_d/pull/899
 * Add `--fs-license-file` parameter to command line interface by @tsalo in https://github.com/PennLINC/xcp_d/pull/930
 * Generate executive summary figures without `--dcan-qc` by @tsalo in https://github.com/PennLINC/xcp_d/pull/936
+
 ### 🐛 Bug Fixes
+
 * Standardize executive summary carpet if params is "none" by @tsalo in https://github.com/PennLINC/xcp_d/pull/916
 * Support CIFTI morphometry files and add PNC test data by @tsalo in https://github.com/PennLINC/xcp_d/pull/922
 * Correct ABCD/HCP surface ingression by @tsalo in https://github.com/PennLINC/xcp_d/pull/927
+
 ### Other Changes
+
 * Add contributing documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/893
 * Update changelog and CFF file for 0.4.0 by @tsalo in https://github.com/PennLINC/xcp_d/pull/896
 * Change packaging to use hatch-vcs and pyproject.toml by @tsalo in https://github.com/PennLINC/xcp_d/pull/897
@@ -99,12 +158,13 @@ The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce 
 * Test CLI parameter validation by @tsalo in https://github.com/PennLINC/xcp_d/pull/918
 * Refactor collection functions by @tsalo in https://github.com/PennLINC/xcp_d/pull/917
 
-
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/04.0...0.5.0
+
 
 ## 0.4.0
 
 ### 🛠 Breaking Changes
+
 * Change default highpass filter cutoff from 0.009 to 0.01 by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/755
 * Refactor anatomical workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/706
 * Do not require `--combineruns` to generate DCAN QC files by @tsalo in https://github.com/PennLINC/xcp_d/pull/753
@@ -121,7 +181,9 @@ The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce 
 * Remove deprecated `--dummytime` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/837
 * Change FD Threshold from 0.2 to 0.3 by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/854
 * Use filtered motion in nuisance regression by @tsalo in https://github.com/PennLINC/xcp_d/pull/871
+
 ### 🎉 Exciting New Features
+
 * Add option to estimate brain radius from brain mask by @tsalo in https://github.com/PennLINC/xcp_d/pull/754
 * Output warped atlases to derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/647
 * Add `min_coverage` parameter to threshold parcel coverage by @tsalo in https://github.com/PennLINC/xcp_d/pull/782
@@ -132,7 +194,9 @@ The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce 
 * Support fsLR-space shape files generated by preprocessing pipelines by @tsalo in https://github.com/PennLINC/xcp_d/pull/773
 * Support preprocessing derivatives with T2w, but no T1w by @tsalo in https://github.com/PennLINC/xcp_d/pull/838
 * Support high-pass or low-pass only filtering by @smeisler in https://github.com/PennLINC/xcp_d/pull/862
+
 ### 🐛 Bug Fixes
+
 * Replace missing vertices' values with NaNs by @tsalo in https://github.com/PennLINC/xcp_d/pull/743
 * Select MNI152NLin6Asym target space for T1w from CIFTI derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/759
 * Only generate brainsprite figures when the `--dcan_qc` flag is used by @tsalo in https://github.com/PennLINC/xcp_d/pull/766
@@ -144,7 +208,9 @@ The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce 
 * Allow for smoothing to be zero by @tsalo in https://github.com/PennLINC/xcp_d/pull/861
 * Use appropriate T1w/T2w in brainsprite workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/860
 * Test DCAN and HCP ingestion and fix related bugs by @tsalo in https://github.com/PennLINC/xcp_d/pull/848
+
 ### Other Changes
+
 * Add tests for cifti smoothness by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/659
 * Fix CIFTI downcasting test by @tsalo in https://github.com/PennLINC/xcp_d/pull/752
 * Use pytest to test command-line interface by @tsalo in https://github.com/PennLINC/xcp_d/pull/740
@@ -173,7 +239,6 @@ The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce 
 * Always generate the DCAN executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/888
 * Clean up testing framework and documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/889
 
-
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.3.2...04.0
 
 
@@ -182,25 +247,33 @@ The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce 
 This release adopts a workbench show-scene-based brainsprite for the executive summary. It also removes the brainsprite figure from the nipreps report.
 
 ### 🎉 Exciting New Features
+
 * Adopt executive summary's brainsprite using jinja templates by @tsalo in https://github.com/PennLINC/xcp_d/pull/702
+
 ### Other Changes
+
 * Remove example data and fix workflow graphs by @tsalo in https://github.com/PennLINC/xcp_d/pull/738
 * Replace CiftiDespike with connected nodes by @tsalo in https://github.com/PennLINC/xcp_d/pull/737
-
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.3.1...0.3.2
 
 
 ## 0.3.1
+
 ### 🛠 Breaking Changes
+
 * Remove `--nuissance-regressors` and `--bandpass_filter` by @tsalo in https://github.com/PennLINC/xcp_d/pull/658
+
 ### 🎉 Exciting New Features
+
 * Add `--dummy-scans` parameter and deprecate `--dummytime` by @tsalo in https://github.com/PennLINC/xcp_d/pull/616
 * Add `--bids-filter-file` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/686
 * Enable non-aggressive denoising with signal regressors by @tsalo in https://github.com/PennLINC/xcp_d/pull/697
 * Improve identification of FreeSurfer derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/719
 * Collect preprocessed surfaces in new function by @tsalo in https://github.com/PennLINC/xcp_d/pull/731
+
 ### 🐛 Bug Fixes
+
 * Remove dummy volumes from custom confounds files by @tsalo in https://github.com/PennLINC/xcp_d/pull/660
 * Remove dummy volumes from beginning of each run in concatenation workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/661
 * Retain noise components instead of dropping them in load_aroma by @tsalo in https://github.com/PennLINC/xcp_d/pull/670
@@ -215,7 +288,9 @@ This release adopts a workbench show-scene-based brainsprite for the executive s
 * Do not use downcasted files as name sources by @tsalo in https://github.com/PennLINC/xcp_d/pull/712
 * Warp segmentation file to appropriate space for carpet plots by @tsalo in https://github.com/PennLINC/xcp_d/pull/727
 * Use brain mask in NIFTI connectivity workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/733
+
 ### Other Changes
+
 * Consolidate confounds at beginning of denoising workflows by @tsalo in https://github.com/PennLINC/xcp_d/pull/664
 * Remove unused outputnodes from nifti and cifti workflows by @tsalo in https://github.com/PennLINC/xcp_d/pull/667
 * Move QC/censoring plots into new workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/668
@@ -228,7 +303,6 @@ This release adopts a workbench show-scene-based brainsprite for the executive s
 * Refactor executive summary workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/721
 * Track start of workflow with sentry by @tsalo in https://github.com/PennLINC/xcp_d/pull/732
 
-
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.3.0...0.3.1
 
 
@@ -239,30 +313,36 @@ We are happy to announce a new minor release, with several backwards-incompatibl
 Two big breaking changes are (1) there is a new `--dcan-qc` flag that determines if the executive summary and DCAN-format QC files will be generated, and (2) custom confounds should now have headers, should be tab-delimited, and should have the same names as the fMRIPrep confounds, for easier indexing.
 
 ### 🛠 Breaking Changes
+
 * Output ReHo as a CIFTI by @tsalo in https://github.com/PennLINC/xcp_d/pull/601
 * Add `--dcan-qc` flag by @tsalo in https://github.com/PennLINC/xcp_d/pull/650
 * Support custom confounds with headers by @tsalo in https://github.com/PennLINC/xcp_d/pull/642
+
 ### 🎉 Exciting New Features
+
 * Use BIDSLayout in concatenation code by @tsalo in https://github.com/PennLINC/xcp_d/pull/600
 * [ENH] Support Nibabies ingression into XCP by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/602
 * Add static ALFF and ReHo plots to report by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/604
 * Write confounds out to derivatives by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/634
 * Add column names to confounds df by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/641
+
 ### 🐛 Bug Fixes
+
 * Select BOLD files in a single space by @tsalo in https://github.com/PennLINC/xcp_d/pull/603
 * Censor data in executive summary plots correctly by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/614
 * Only generate ALFF derivatives if bandpass filtering is enabled by @tsalo in https://github.com/PennLINC/xcp_d/pull/628
 * Do not merge in concatenated files when re-running concatenation workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/633
 * Map abbreviated entities to full names for templateflow get call by @tsalo in https://github.com/PennLINC/xcp_d/pull/654
 * Ensure `dummyscans` is an integer in PlotSVGData by @tsalo in https://github.com/PennLINC/xcp_d/pull/655
+
 ### Other Changes
+
 * Use Nilearn for brainsprite generation by @tsalo in https://github.com/PennLINC/xcp_d/pull/607
 * Cache the downloaded test data by @tsalo in https://github.com/PennLINC/xcp_d/pull/629
 * Use BIDSLayout instead of globbing functions to collect necessary files by @tsalo in https://github.com/PennLINC/xcp_d/pull/621
 * Start to standardize interface parameter calls by @tsalo in https://github.com/PennLINC/xcp_d/pull/638
 * Simplify transform-getting functions by @tsalo in https://github.com/PennLINC/xcp_d/pull/623
 * Lint with black without linting workflow connections by @tsalo in https://github.com/PennLINC/xcp_d/pull/640
-
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.2.0...0.3.0
 
@@ -272,19 +352,23 @@ Two big breaking changes are (1) there is a new `--dcan-qc` flag that determines
 This is a patch release for the 0.2 series. The main bug being fixed is that using `--dummytime` was causing crashes in the executive summary workflow.
 
 ### 🎉 Exciting New Features
+
 * Write confounds out to derivatives by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/634
 * Add column names to confounds df by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/641
+
 ### 🐛 Bug Fixes
+
 * Do not merge in concatenated files when re-running concatenation workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/633
 * Map abbreviated entities to full names for templateflow get call by @tsalo in https://github.com/PennLINC/xcp_d/pull/654
 * Ensure `dummyscans` is an integer in PlotSVGData by @tsalo in https://github.com/PennLINC/xcp_d/pull/655
+
 ### Other Changes
+
 * Cache the downloaded test data by @tsalo in https://github.com/PennLINC/xcp_d/pull/629
 * Use BIDSLayout instead of globbing functions to collect necessary files by @tsalo in https://github.com/PennLINC/xcp_d/pull/621
 * Start to standardize interface parameter calls by @tsalo in https://github.com/PennLINC/xcp_d/pull/638
 * Simplify transform-getting functions by @tsalo in https://github.com/PennLINC/xcp_d/pull/623
 * Lint with black without linting workflow connections by @tsalo in https://github.com/PennLINC/xcp_d/pull/640
-
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.2.1...0.2.2
 
@@ -296,18 +380,24 @@ This is a patch release for 0.2.0.
 There is a known bug with the concatenation workflow, so we advise users not to use the `-m`/`--combineruns` option with this release.
 
 ### 🛠 Breaking Changes
+
 * Output ReHo as a CIFTI by @tsalo in https://github.com/PennLINC/xcp_d/pull/601
+
 ### 🎉 Exciting New Features
+
 * Use BIDSLayout in concatenation code by @tsalo in https://github.com/PennLINC/xcp_d/pull/600
 * [ENH] Support Nibabies ingression into XCP by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/602
 * Add static ALFF and ReHo plots to report by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/604
+
 ### 🐛 Bug Fixes
+
 * Select BOLD files in a single space by @tsalo in https://github.com/PennLINC/xcp_d/pull/603
 * Censor data in executive summary plots correctly by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/614
 * Only generate ALFF derivatives if bandpass filtering is enabled by @tsalo in https://github.com/PennLINC/xcp_d/pull/628
-### Other Changes
-* Use Nilearn for brainsprite generation by @tsalo in https://github.com/PennLINC/xcp_d/pull/607
 
+### Other Changes
+
+* Use Nilearn for brainsprite generation by @tsalo in https://github.com/PennLINC/xcp_d/pull/607
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.2.0...0.2.1
 
@@ -324,11 +414,14 @@ There is a full list of the changes made between 0.1.3 and 0.2.0 below. However,
 4. The HTML reports have been improved. The interactive segmentation image from the executive summary has been added to the main report, along with the BOLD-T1w coregistration figure. We have also added a new plot to show the impact of filtering motion parameters on censoring.
 
 ### 🛠 Breaking Changes
+
 * Ensure TSV files are tab-delimited by @tsalo in https://github.com/PennLINC/xcp_d/pull/541
 * Rename derivatives to be more BIDS-compliant by @tsalo in https://github.com/PennLINC/xcp_d/pull/553
 * Replace `--func-only` with `--warp-surfaces-native2std` by @tsalo in https://github.com/PennLINC/xcp_d/pull/562
 * Add headers to motion.tsv and outliers.tsv files by @tsalo in https://github.com/PennLINC/xcp_d/pull/587
+
 ### 🎉 Exciting New Features
+
 * Create dataset description file by @tsalo in https://github.com/PennLINC/xcp_d/pull/561
 * Distinguish preprocessed dataset formats by @tsalo in https://github.com/PennLINC/xcp_d/pull/567
 * Output temporal mask by @tsalo in https://github.com/PennLINC/xcp_d/pull/586
@@ -336,9 +429,13 @@ There is a full list of the changes made between 0.1.3 and 0.2.0 below. However,
 * Add existing SVG figures and brainplot HTML figure to HTML report by @tsalo in https://github.com/PennLINC/xcp_d/pull/590
 * Output all filtered motion parameters by @tsalo in https://github.com/PennLINC/xcp_d/pull/592
 * Deprecate `--bandpass_filter` in favor of `--disable-bandpass-filter` by @tsalo in https://github.com/PennLINC/xcp_d/pull/588
+
 ### 👎 Deprecations
+
 * Deprecate nuissance-regressors in favor of nuisance-regressors by @tsalo in https://github.com/PennLINC/xcp_d/pull/513
+
 ### 🐛 Bug Fixes
+
 * Fix fsLR32k reg and ApplyWarpfield issues by @madisoth in https://github.com/PennLINC/xcp_d/pull/442
 * Replace MIT license with BSD-3 by @tsalo in https://github.com/PennLINC/xcp_d/pull/457
 * Update utils.py to fix MNILin6 imports by @smeisler in https://github.com/PennLINC/xcp_d/pull/458
@@ -352,7 +449,9 @@ There is a full list of the changes made between 0.1.3 and 0.2.0 below. However,
 * Fix concatenation code w.r.t. recent output changes by @tsalo in https://github.com/PennLINC/xcp_d/pull/593
 * Use user-requested parameters in regression by @tsalo in https://github.com/PennLINC/xcp_d/pull/596
 * Update load_aroma so the correct file is being read in by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/599
+
 ### Other Changes
+
 * Rf/smoothing by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/415
 * Rf/misc. by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/421
 * Rf/fconts by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/424
@@ -410,6 +509,7 @@ There is a full list of the changes made between 0.1.3 and 0.2.0 below. However,
 * [FIX] Fcon workflow tests are incompatible with changes from main by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/584
 
 ### New Contributors
+
 * @tsalo made their first contribution in https://github.com/PennLINC/xcp_d/pull/457
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.1.3...0.2.0
@@ -432,17 +532,16 @@ There is a full list of the changes made between 0.1.3 and 0.2.0 below. However,
 * Rf/rename by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/401
 * [RF] Smoothing by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/404
 
-
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.1.1...0.1.2
 
 
 ## 0.1.1
+
 * Replace NiPype's filemanip.py by @madisoth in https://github.com/PennLINC/xcp_d/pull/383
 * [RF] Fix typos by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/386
 * ENH: Update filemanip.py "special_extensions" with the rest of the CIFTI-2 multi-part extensions by @madisoth in https://github.com/PennLINC/xcp_d/pull/388
 * [RF] Interpolation by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/387
 * FIX: reho / write_gii by @madisoth in https://github.com/PennLINC/xcp_d/pull/385
-
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.1.0...0.1.1
 
@@ -469,7 +568,6 @@ afni-reho-despike correction
 * Hcpdcan by @a3sha2 in https://github.com/PennLINC/xcp_abcd/pull/211
 * Hcpdcan by @a3sha2 in https://github.com/PennLINC/xcp_abcd/pull/212
 
-
 **Full Changelog**: https://github.com/PennLINC/xcp_abcd/compare/0.0.7...0.0.8
 
 
@@ -483,7 +581,6 @@ afni-reho-despike correction
 * remove labelled by @a3sha2 in https://github.com/PennLINC/xcp_abcd/pull/186
 * increased bold memgb size by @a3sha2 in https://github.com/PennLINC/xcp_abcd/pull/187
 * Hcpdcan by @a3sha2 in https://github.com/PennLINC/xcp_abcd/pull/194
-
 
 **Full Changelog**: https://github.com/PennLINC/xcp_abcd/compare/0.0.6...0.0.7
 
@@ -503,20 +600,24 @@ NIBABIES TEST
 - [x] anatomical workflow added including freesurfer/freesurfer*
 - [x] outputs  for cifti and nifti
 
+
 ## 0.0.4
 
 final release for hcp
+
 
 ## 0.0.3
 
 hcp
 Update cifti.py
 
+
 ## 0.0.2
 
 Merge pull request #113 from PennLINC/template
 
 Template
+
 
 ## 0.0.1
 
