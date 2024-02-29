@@ -238,65 +238,49 @@ def init_load_atlases_wf(
     ])  # fmt:skip
 
     ds_atlas_labels_file = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=[
-                "datatype",
-                "subject",
-                "session",
-                "task",
-                "run",
-                "desc",
-                "space",
-                "res",
-                "den",
-                "cohort",
+        Function(
+            function=copy_atlas,
+            input_names=[
+                "name_source",
+                "in_file",
+                "output_dir",
+                "atlas",
             ],
-            allowed_entities=["atlas"],
-            suffix="dseg",
-            extension=".tsv",
+            output_names=["out_file"],
         ),
         name="ds_atlas_labels_file",
-        iterfield=["atlas", "in_file"],
+        iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
+    ds_atlas_labels_file.inputs.output_dir = output_dir
     ds_atlas_labels_file.inputs.atlas = atlases
 
     workflow.connect([
-        (inputnode, ds_atlas_labels_file, [("name_source", "source_file")]),
+        (inputnode, ds_atlas_labels_file, [("name_source", "name_source")]),
         (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
-        (ds_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
+        (ds_atlas_labels_file, outputnode, [("out_file", "atlas_files")]),
     ])  # fmt:skip
 
     ds_atlas_metadata = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=[
-                "datatype",
-                "subject",
-                "session",
-                "task",
-                "run",
-                "desc",
-                "space",
-                "res",
-                "den",
-                "cohort",
+        Function(
+            function=copy_atlas,
+            input_names=[
+                "name_source",
+                "in_file",
+                "output_dir",
+                "atlas",
             ],
-            allowed_entities=["atlas"],
-            suffix="dseg",
-            extension=".json",
+            output_names=["out_file"],
         ),
         name="ds_atlas_metadata",
-        iterfield=["atlas", "in_file"],
+        iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
+    ds_atlas_metadata.inputs.output_dir = output_dir
     ds_atlas_metadata.inputs.atlas = atlases
 
     workflow.connect([
-        (inputnode, ds_atlas_metadata, [("name_source", "source_file")]),
+        (inputnode, ds_atlas_metadata, [("name_source", "name_source")]),
         (atlas_file_grabber, ds_atlas_metadata, [("atlas_metadata_file", "in_file")]),
     ])  # fmt:skip
 
