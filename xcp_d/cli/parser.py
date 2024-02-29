@@ -852,7 +852,7 @@ def _validate_parameters(opts, build_log, parser):
         build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
 
     # Scrubbing parameters
-    if opts.fd_thresh <= 0 and opts.min_time > 0::
+    if opts.fd_thresh <= 0 and opts.min_time > 0:
         ignored_params = "\n\t".join(["--min-time"])
         build_log.warning(
             "Framewise displacement-based scrubbing is disabled. "
