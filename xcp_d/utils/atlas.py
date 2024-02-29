@@ -160,6 +160,24 @@ def get_atlas_cifti(atlas):
 def copy_atlas(name_source, in_file, output_dir, atlas):
     """Copy atlas file to output directory.
 
+    Parameters
+    ----------
+    name_source : :obj:`str`
+        The source name of the atlas file.
+    in_file : :obj:`str`
+        The atlas file to copy.
+    output_dir : :obj:`str`
+        The output directory.
+    atlas : :obj:`str`
+        The name of the atlas.
+
+    Returns
+    -------
+    out_file : :obj:`str`
+        The path to the copied atlas file.
+
+    Notes
+    -----
     I can't use DerivativesDataSink because it has a problem with dlabel CIFTI files.
     It gives the following error:
     "AttributeError: 'Cifti2Header' object has no attribute 'set_data_dtype'"
@@ -167,31 +185,38 @@ def copy_atlas(name_source, in_file, output_dir, atlas):
     I can't override the CIFTI atlas's data dtype ahead of time because setting it to int8 or int16
     somehow converts all of the values in the data array to weird floats.
     This could be a version-specific nibabel issue.
+
+    I've also updated this function to handle JSON and TSV files as well.
     """
     import os
     import shutil
 
     from xcp_d.utils.bids import get_entity
 
-    extension = ".nii.gz" if name_source.endswith(".nii.gz") else ".dlabel.nii"
-    space = get_entity(name_source, "space")
-    res = get_entity(name_source, "res")
-    den = get_entity(name_source, "den")
-    cohort = get_entity(name_source, "cohort")
+    if in_file.endswith(".json"):
+        out_basename = f"atlas-{atlas}_dseg.json"
+    elif in_file.endswith(".tsv"):
+        out_basename = f"atlas-{atlas}_dseg.tsv"
+    else:
+        extension = ".nii.gz" if name_source.endswith(".nii.gz") else ".dlabel.nii"
+        space = get_entity(name_source, "space")
+        res = get_entity(name_source, "res")
+        den = get_entity(name_source, "den")
+        cohort = get_entity(name_source, "cohort")
 
-    cohort_str = f"_cohort-{cohort}" if cohort else ""
-    res_str = f"_res-{res}" if res else ""
-    den_str = f"_den-{den}" if den else ""
-    if extension == ".dlabel.nii":
-        atlas_basename = f"space-{space}_atlas-{atlas}{den_str}{cohort_str}_dseg{extension}"
-    elif extension == ".nii.gz":
-        atlas_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
+        cohort_str = f"_cohort-{cohort}" if cohort else ""
+        res_str = f"_res-{res}" if res else ""
+        den_str = f"_den-{den}" if den else ""
+        if extension == ".dlabel.nii":
+            out_basename = f"space-{space}_atlas-{atlas}{den_str}{cohort_str}_dseg{extension}"
+        elif extension == ".nii.gz":
+            out_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
 
     atlas_out_dir = os.path.join(output_dir, f"atlases/atlas-{atlas}")
     os.makedirs(atlas_out_dir, exist_ok=True)
-    out_atlas_file = os.path.join(atlas_out_dir, atlas_basename)
+    out_file = os.path.join(atlas_out_dir, out_basename)
     # Don't copy the file if it exists, to prevent any race conditions between parallel processes.
-    if not os.path.isfile(out_atlas_file):
-        shutil.copyfile(in_file, out_atlas_file)
+    if not os.path.isfile(out_file):
+        shutil.copyfile(in_file, out_file)
 
-    return out_atlas_file
+    return out_file
