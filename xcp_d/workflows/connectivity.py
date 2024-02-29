@@ -258,7 +258,7 @@ def init_load_atlases_wf(
     workflow.connect([
         (inputnode, ds_atlas_labels_file, [("name_source", "name_source")]),
         (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
-        (ds_atlas_labels_file, outputnode, [("out_file", "atlas_files")]),
+        (ds_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
     ])  # fmt:skip
 
     ds_atlas_metadata = pe.MapNode(
