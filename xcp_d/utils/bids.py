@@ -698,7 +698,16 @@ def write_dataset_description(fmri_dir, xcpd_dir, custom_confounds_folder=None):
     with open(orig_dset_description, "r") as fo:
         dset_desc = json.load(fo)
 
-    assert dset_desc["DatasetType"] == "derivative"
+    # Check if the dataset type is derivative
+    if "DatasetType" not in dset_desc.keys():
+        LOGGER.warning(f"DatasetType key not in {orig_dset_description}. Assuming 'derivative'.")
+        dset_desc["DatasetType"] = "derivative"
+
+    if dset_desc.get("DatasetType", "derivative") != "derivative":
+        raise ValueError(
+            f"DatasetType key in {orig_dset_description} is not 'derivative'. "
+            "XCP-D only works on derivative datasets."
+        )
 
     # Update dataset description
     dset_desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"

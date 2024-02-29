@@ -127,11 +127,9 @@ def init_load_atlases_wf(
             name="get_transforms_to_bold_space",
         )
 
-        # fmt:off
         workflow.connect([
             (inputnode, get_transforms_to_bold_space, [("name_source", "bold_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # ApplyTransforms needs a 3D image for the reference image.
         grab_first_volume = pe.Node(
@@ -154,7 +152,6 @@ def init_load_atlases_wf(
             n_procs=omp_nthreads,
         )
 
-        # fmt:off
         workflow.connect([
             (grab_first_volume, warp_atlases_to_bold_space, [("out_file", "reference_image")]),
             (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
@@ -162,8 +159,7 @@ def init_load_atlases_wf(
                 ("transformfile", "transforms"),
             ]),
             (warp_atlases_to_bold_space, atlas_buffer, [("output_image", "atlas_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     else:
         # Add empty vertices to atlas for locations in data, but not in atlas
@@ -175,13 +171,11 @@ def init_load_atlases_wf(
             iterfield=["label"],
         )
 
-        # fmt:off
         workflow.connect([
             (inputnode, resample_atlas_to_data, [("bold_file", "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
             (resample_atlas_to_data, atlas_buffer, [("cifti_out", "atlas_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # Change the atlas to a scalar file.
         convert_to_dscalar = pe.MapNode(
@@ -195,11 +189,9 @@ def init_load_atlases_wf(
             n_procs=omp_nthreads,
             iterfield=["data_cifti"],
         )
-        # fmt:off
         workflow.connect([
             (resample_atlas_to_data, convert_to_dscalar, [("cifti_out", "data_cifti")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # Convert atlas from dlabel to pscalar format.
         # The pscalar version of the atlas is later used for its ParcelAxis.
@@ -215,13 +207,11 @@ def init_load_atlases_wf(
             iterfield=["in_file", "atlas_label"],
         )
 
-        # fmt:off
         workflow.connect([
             (atlas_file_grabber, parcellate_atlas, [("atlas_file", "atlas_label")]),
             (convert_to_dscalar, parcellate_atlas, [("cifti_out", "in_file")]),
             (parcellate_atlas, outputnode, [("out_file", "parcellated_atlas_files")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     ds_atlas = pe.MapNode(
         Function(
@@ -241,80 +231,58 @@ def init_load_atlases_wf(
     ds_atlas.inputs.output_dir = output_dir
     ds_atlas.inputs.atlas = atlases
 
-    # fmt:off
     workflow.connect([
         (inputnode, ds_atlas, [("name_source", "name_source")]),
         (atlas_buffer, ds_atlas, [("atlas_file", "in_file")]),
         (ds_atlas, outputnode, [("out_file", "atlas_files")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     ds_atlas_labels_file = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=[
-                "datatype",
-                "subject",
-                "session",
-                "task",
-                "run",
-                "desc",
-                "space",
-                "res",
-                "den",
-                "cohort",
+        Function(
+            function=copy_atlas,
+            input_names=[
+                "name_source",
+                "in_file",
+                "output_dir",
+                "atlas",
             ],
-            allowed_entities=["atlas"],
-            suffix="dseg",
-            extension=".tsv",
+            output_names=["out_file"],
         ),
         name="ds_atlas_labels_file",
-        iterfield=["atlas", "in_file"],
+        iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
+    ds_atlas_labels_file.inputs.output_dir = output_dir
     ds_atlas_labels_file.inputs.atlas = atlases
 
-    # fmt:off
     workflow.connect([
-        (inputnode, ds_atlas_labels_file, [("name_source", "source_file")]),
+        (inputnode, ds_atlas_labels_file, [("name_source", "name_source")]),
         (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
         (ds_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     ds_atlas_metadata = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-            dismiss_entities=[
-                "datatype",
-                "subject",
-                "session",
-                "task",
-                "run",
-                "desc",
-                "space",
-                "res",
-                "den",
-                "cohort",
+        Function(
+            function=copy_atlas,
+            input_names=[
+                "name_source",
+                "in_file",
+                "output_dir",
+                "atlas",
             ],
-            allowed_entities=["atlas"],
-            suffix="dseg",
-            extension=".json",
+            output_names=["out_file"],
         ),
         name="ds_atlas_metadata",
-        iterfield=["atlas", "in_file"],
+        iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
+    ds_atlas_metadata.inputs.output_dir = output_dir
     ds_atlas_metadata.inputs.atlas = atlases
 
-    # fmt:off
     workflow.connect([
-        (inputnode, ds_atlas_metadata, [("name_source", "source_file")]),
+        (inputnode, ds_atlas_metadata, [("name_source", "name_source")]),
         (atlas_file_grabber, ds_atlas_metadata, [("atlas_metadata_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow
 
@@ -782,7 +750,7 @@ def init_functional_connectivity_cifti_wf(
     workflow = Workflow(name=name)
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
-Connectome Workbench [@hcppipelines] for the following atlases:
+Connectome Workbench [@marcus2011informatics] for the following atlases:
 the Schaefer Supplemented with Subcortical Structures (4S) atlas
 [@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo,@glasser2013minimal] at
 10 different resolutions (156, 256, 356, 456, 556, 656, 756, 856, 956, and 1056 parcels),
