@@ -253,7 +253,7 @@ def test_validate_parameters_17(base_opts, base_parser, capsys):
     assert "you must enable cifti processing" in capsys.readouterr().err
 
 
-def test_validate_parameters_18(base_opts, caplog, capsys):
+def test_validate_parameters_18(base_opts, base_parser, caplog, capsys):
     """Ensure parser._validate_parameters returns 0 when no fs_license_file is provided.
 
     This should work as long as the environment path exists.
@@ -262,19 +262,19 @@ def test_validate_parameters_18(base_opts, caplog, capsys):
     opts.fs_license_file = None
 
     # FS_LICENSE exists (set in conftest)
-    _, return_code = parser._validate_parameters(deepcopy(opts), build_log)
+    _, return_code = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert return_code == 0
     assert "A valid FreeSurfer license file is required." not in caplog.text
 
     # FS_LICENSE doesn't exist
     with pytest.raises(SystemExit, match="2"):
         with modified_environ(FS_LICENSE="/path/to/missing/file.txt"):
-            parser._validate_parameters(deepcopy(opts), build_log)
+            parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "A valid FreeSurfer license file is required." in capsys.readouterr().err
 
 
-def test_validate_parameters_19(base_opts, caplog, capsys, tmp_path_factory):
+def test_validate_parameters_19(base_opts, base_parser, caplog, capsys, tmp_path_factory):
     """Ensure parser._validate_parameters returns 1 when fs_license_file doesn't exist."""
     tmpdir = tmp_path_factory.mktemp("test_validate_parameters_19")
     license_file = os.path.join(tmpdir, "license.txt")
@@ -285,13 +285,14 @@ def test_validate_parameters_19(base_opts, caplog, capsys, tmp_path_factory):
 
     # If file exists, return_code should be 0
     opts.fs_license_file = Path(license_file)
-    _, return_code = parser._validate_parameters(deepcopy(opts), build_log)
+    _, return_code = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert "Freesurfer license DNE" not in caplog.text
     assert return_code == 0
 
     # If file doesn't exist, return_code should be 1
     with pytest.raises(SystemExit, match="2"):
         opts.fs_license_file = Path("/path/to/missing/file.txt")
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert "Freesurfer license DNE" in capsys.readouterr().err
 
