@@ -817,6 +817,7 @@ def _validate_parameters(opts, build_log, parser):
     This function was abstracted out of build_workflow to make testing easier.
     """
     import os
+    from pathlib import Path
 
     opts.fmri_dir = opts.fmri_dir.resolve()
     opts.output_dir = opts.output_dir.resolve()
@@ -830,6 +831,15 @@ def _validate_parameters(opts, build_log, parser):
 
         else:
             parser.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
+    else:
+        fs_license_file = os.environ.get("FS_LICENSE", "/opt/freesurfer/license.txt")
+        if not Path(fs_license_file).is_file():
+            parser.error(
+                "A valid FreeSurfer license file is required. "
+                "Set the FS_LICENSE environment variable or use the '--fs-license-file' flag."
+            )
+
+        os.environ["FS_LICENSE"] = str(fs_license_file)
 
     # Resolve custom confounds folder
     if opts.custom_confounds:
