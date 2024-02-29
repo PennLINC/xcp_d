@@ -44,7 +44,7 @@
 * Update to Python 3.10 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1016
 * Update docker image link by @psychelzh in https://github.com/PennLINC/xcp_d/pull/1045
 
-## New Contributors
+### New Contributors
 
 * @dependabot made their first contribution in https://github.com/PennLINC/xcp_d/pull/1007
 * @psychelzh made their first contribution in https://github.com/PennLINC/xcp_d/pull/1045
