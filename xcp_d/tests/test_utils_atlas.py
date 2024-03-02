@@ -62,10 +62,40 @@ def test_copy_atlas(tmp_path_factory):
     assert os.path.basename(out_file) == "space-MNI152NLin2009cAsym_atlas-Y_res-2_dseg.nii.gz"
 
     # CIFTI
-    atlas_file, _, _ = atlas.get_atlas_cifti("Gordon")
+    atlas_file, atlas_labels_file, atlas_metadata_file = atlas.get_atlas_cifti("Gordon")
     name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
     out_file = atlas.copy_atlas(
         name_source=name_source, in_file=atlas_file, output_dir=tmpdir, atlas="Y"
     )
     assert os.path.isfile(out_file)
     assert os.path.basename(out_file) == "space-fsLR_atlas-Y_den-91k_dseg.dlabel.nii"
+
+    # TSV
+    name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
+    out_file = atlas.copy_atlas(
+        name_source=name_source, in_file=atlas_labels_file, output_dir=tmpdir, atlas="Y"
+    )
+    assert os.path.isfile(out_file)
+    assert os.path.basename(out_file) == "atlas-Y_dseg.tsv"
+
+    # JSON
+    name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
+    out_file = atlas.copy_atlas(
+        name_source=name_source, in_file=atlas_metadata_file, output_dir=tmpdir, atlas="Y"
+    )
+    assert os.path.isfile(out_file)
+    assert os.path.basename(out_file) == "atlas-Y_dseg.json"
+
+    # Ensure that out_file isn't overwritten if it already exists
+    fake_in_file = os.path.join(tmpdir, "fake.json")
+    with open(fake_in_file, "w") as fo:
+        fo.write("fake")
+
+    out_file = atlas.copy_atlas(
+        name_source=name_source, in_file=fake_in_file, output_dir=tmpdir, atlas="Y"
+    )
+    assert os.path.isfile(out_file)
+    assert os.path.basename(out_file) == "atlas-Y_dseg.json"
+    # The file should not be overwritten, so the contents shouldn't be "fake"
+    with open(out_file, "r") as fo:
+        assert fo.read() != "fake"

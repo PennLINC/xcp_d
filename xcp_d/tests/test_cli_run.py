@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from xcp_d.cli import run
+from xcp_d.tests.utils import modified_environ
 
 build_log = logging.getLogger()
 build_log.setLevel(10)
@@ -286,21 +287,44 @@ def test_validate_parameters_17(base_opts, caplog):
     assert return_code == 1
 
 
-def test_validate_parameters_18(base_opts):
-    """Test run._validate_parameters."""
+def test_validate_parameters_18(base_opts, caplog):
+    """Ensure run._validate_parameters returns 0 when no fs_license_file is provided.
+
+    This should work as long as the environment path exists.
+    """
     opts = deepcopy(base_opts)
     opts.fs_license_file = None
 
+    # FS_LICENSE exists (set in conftest)
     _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    assert return_code == 0
+    assert "A valid FreeSurfer license file is required." not in caplog.text
 
+    # FS_LICENSE doesn't exist
+    with modified_environ(FS_LICENSE="/path/to/missing/file.txt"):
+        _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+
+    assert return_code == 1
+    assert "A valid FreeSurfer license file is required." in caplog.text
+
+
+def test_validate_parameters_19(base_opts, caplog, tmp_path_factory):
+    """Ensure run._validate_parameters returns 1 when fs_license_file doesn't exist."""
+    tmpdir = tmp_path_factory.mktemp("test_validate_parameters_19")
+    license_file = os.path.join(tmpdir, "license.txt")
+    with open(license_file, "w") as fo:
+        fo.write("TEMP")
+
+    opts = deepcopy(base_opts)
+
+    # If file exists, return_code should be 0
+    opts.fs_license_file = Path(license_file)
+    _, return_code = run._validate_parameters(deepcopy(opts), build_log)
+    assert "Freesurfer license DNE" not in caplog.text
     assert return_code == 0
 
-
-def test_validate_parameters_19(base_opts, caplog):
-    """Test run._validate_parameters."""
-    opts = deepcopy(base_opts)
-    opts.fs_license_file = Path("/path/to/missing/folder")
-
+    # If file doesn't exist, return_code should be 1
+    opts.fs_license_file = Path("/path/to/missing/file.txt")
     _, return_code = run._validate_parameters(deepcopy(opts), build_log)
 
     assert "Freesurfer license DNE" in caplog.text

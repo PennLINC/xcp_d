@@ -745,6 +745,16 @@ def _validate_parameters(opts, build_log):
         else:
             build_log.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
             return_code = 1
+    else:
+        fs_license_file = os.environ.get("FS_LICENSE", "/opt/freesurfer/license.txt")
+        if not Path(fs_license_file).is_file():
+            build_log.error(
+                "A valid FreeSurfer license file is required. "
+                "Set the FS_LICENSE environment variable or use the '--fs-license-file' flag."
+            )
+            return_code = 1
+
+        os.environ["FS_LICENSE"] = str(fs_license_file)
 
     # Check the validity of inputs
     if opts.output_dir == opts.fmri_dir:
@@ -778,7 +788,7 @@ def _validate_parameters(opts, build_log):
         build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
 
     # Scrubbing parameters
-    if opts.fd_thresh <= 0:
+    if opts.fd_thresh <= 0 and opts.min_time > 0:
         ignored_params = "\n\t".join(["--min-time"])
         build_log.warning(
             "Framewise displacement-based scrubbing is disabled. "
