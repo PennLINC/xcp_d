@@ -221,6 +221,12 @@ xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-linc_qc.csv
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-smooth_alff.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-smooth_alff.nii.gz
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_falff.json
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_falff.nii.gz
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_peraf.json
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_peraf.nii.gz
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_reho.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_reho.nii.gz
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_tsnr.json
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_tsnr.nii.gz
 xcp_d/sub-0000001_ses-01_executive_summary.html

@@ -45,6 +45,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
     alff_wf.base_dir = tempdir
     alff_wf.inputs.inputnode.bold_mask = bold_mask
     alff_wf.inputs.inputnode.denoised_bold = bold_file
+    alff_wf.inputs.inputnode.mean_bold = bold_mask
     compute_alff_res = alff_wf.run()
     nodes = get_nodes(compute_alff_res)
 
@@ -79,6 +80,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
     alff_wf.base_dir = tempdir
     alff_wf.inputs.inputnode.bold_mask = bold_mask
     alff_wf.inputs.inputnode.denoised_bold = filename
+    alff_wf.inputs.inputnode.mean_bold = bold_mask
     compute_alff_res = alff_wf.run()
     nodes = get_nodes(compute_alff_res)
 
@@ -104,6 +106,18 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
     tempdir = tmp_path_factory.mktemp("test_cifti_alff_01")
+
+    bold_img = nb.load(bold_file)
+    bold_data = bold_img.get_fdata()
+    mean_bold_data = np.mean(bold_data, axis=0)
+    mean_bold = os.path.join(tempdir, "mean_bold.dtseries.nii")
+    write_ndata(
+        mean_bold_data,
+        template=bold_file,
+        filename=mean_bold,
+        TR=TR,
+    )
+
     alff_wf = restingstate.init_alff_wf(
         name_source=bold_file,
         output_dir=tempdir,
@@ -120,6 +134,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
     alff_wf.base_dir = tempdir
     alff_wf.inputs.inputnode.bold_mask = bold_mask
     alff_wf.inputs.inputnode.denoised_bold = bold_file
+    alff_wf.inputs.inputnode.mean_bold = mean_bold
     compute_alff_res = alff_wf.run()
     nodes = get_nodes(compute_alff_res)
 
@@ -150,6 +165,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
     alff_wf.base_dir = tempdir
     alff_wf.inputs.inputnode.bold_mask = bold_mask
     alff_wf.inputs.inputnode.denoised_bold = filename
+    alff_wf.inputs.inputnode.mean_bold = mean_bold
     compute_alff_res = alff_wf.run()
     nodes = get_nodes(compute_alff_res)
 

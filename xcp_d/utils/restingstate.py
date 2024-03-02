@@ -91,13 +91,15 @@ def mesh_adjacency(hemi):
     return data_array + data_array.T  # transpose data_array and add it to itself
 
 
-def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
+def compute_alff(data_matrix, mean_matrix, low_pass, high_pass, TR, sample_mask=None):
     """Compute amplitude of low-frequency fluctuation (ALFF).
 
     Parameters
     ----------
     data_matrix : numpy.ndarray
         data matrix points by timepoints
+    mean_matrix : numpy.ndarray
+        Mean map.
     low_pass : float
         low pass frequency in Hz
     high_pass : float
@@ -109,8 +111,14 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
 
     Returns
     -------
-    alff : numpy.ndarray
+    alff : numpy.ndarray of shape (voxels, 1)
         ALFF values.
+    falff : numpy.ndarray of shape (voxels, 1)
+        fALFF values.
+    peraf : numpy.ndarray of shape (voxels, 1)
+        PerAF values.
+    tsnr : numpy.ndarray of shape (voxels, 1)
+        tSNR values.
 
     Notes
     -----
@@ -132,23 +140,25 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         sample_mask = sample_mask.astype(bool)
         assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
-    alff = np.zeros(n_voxels)
+    alff = np.zeros((n_voxels, 1))
+    falff = np.zeros((n_voxels, 1))
+    peraf = np.zeros((n_voxels, 1))
+    tsnr = np.zeros((n_voxels, 1))
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
         # Check if the voxel's data are all the same value (esp. zeros).
         # Set ALFF to 0 in that case and move on to the next voxel.
         if np.std(voxel_data) == 0:
-            alff[i_voxel] = 0
             continue
-
-        # We will normalize data matrix over time.
-        # This will ensure that the power spectra from the standard and Lomb-Scargle periodograms
-        # have the same scale.
-        # However, this also changes ALFF's scale, so we retain the SD to rescale ALFF.
-        sd_scale = np.std(voxel_data)
 
         if sample_mask is not None:
             voxel_data_censored = voxel_data[sample_mask]
+            sd_scale = np.std(voxel_data_censored)
+            voxel_data_unscaled = voxel_data_censored.copy()
+
+            # Normalize data matrix over time. This will ensure that the standard periodogram and
+            # Lomb-Scargle periodogram will have the same scale.
+            # However, this also changes ALFF's scale, so we retain the SD to rescale ALFF.
             voxel_data_censored -= np.mean(voxel_data_censored)
             voxel_data_censored /= np.std(voxel_data_censored)
 
@@ -164,11 +174,17 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
                 normalize=True,
             )
         else:
-            voxel_data -= np.mean(voxel_data)
-            voxel_data /= np.std(voxel_data)
+            sd_scale = np.std(voxel_data)
+            voxel_data_unscaled = voxel_data.copy()
+
+            # Normalize data matrix over time. This will ensure that the standard periodogram and
+            # Lomb-Scargle periodogram will have the same scale.
+            voxel_data_copy = voxel_data - np.mean(voxel_data)
+            voxel_data_copy /= np.std(voxel_data_copy)
+
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
-                voxel_data,
+                voxel_data_copy,
                 fs,
                 scaling="spectrum",
             )
@@ -180,16 +196,21 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
             np.argmin(np.abs(frequencies_hz - high_pass)),
             np.argmin(np.abs(frequencies_hz - low_pass)),
         ]
-        # alff for that voxel is 2 * the mean of the sqrt of the power spec
-        # from the value closest to the low pass cutoff, to the value closest
-        # to the high pass pass cutoff
-        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
-        # Rescale ALFF based on original BOLD scale
+        # ALFF is 2 * the mean of the sqrt of the power spec from the value closest to the
+        # low pass cutoff to the value closest to the high pass cutoff
+        power_spectrum_neural = power_spectrum_sqrt[ff_alff[0] : ff_alff[1]]
+        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_neural)
+        # Rescale ALFF by the SD of the BOLD data to reinstate original scale.
         alff[i_voxel] *= sd_scale
+
+        falff[i_voxel] = np.sum(power_spectrum_neural) / np.sum(power_spectrum_sqrt)
+        peraf[i_voxel] = (
+            np.mean(np.abs((voxel_data_unscaled - mean_matrix[i_voxel]) / mean_matrix[i_voxel]))
+            * 100
+        )
+
+        tsnr[i_voxel] = mean_matrix[i_voxel] / np.std(voxel_data_unscaled)
 
     assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
 
-    # Add second dimension to array
-    alff = alff[:, None]
-
-    return alff
+    return alff, falff, peraf, tsnr

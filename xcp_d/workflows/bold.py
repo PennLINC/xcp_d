@@ -408,7 +408,8 @@ def init_postprocess_nifti_wf(
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
+                ("outputnode.uncensored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.mean_bold", "inputnode.mean_bold"),
             ]),
         ])  # fmt:skip
 
@@ -517,6 +518,9 @@ def init_postprocess_nifti_wf(
             (alff_wf, postproc_derivatives_wf, [
                 ("outputnode.alff", "inputnode.alff"),
                 ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
+                ("outputnode.falff", "inputnode.falff"),
+                ("outputnode.peraf", "inputnode.peraf"),
+                ("outputnode.tsnr", "inputnode.tsnr"),
             ]),
         ])  # fmt:skip
 

@@ -625,6 +625,7 @@ def init_denoise_bold_wf(
                 "interpolated_filtered_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
+                "mean_bold",
             ],
         ),
         name="outputnode",
@@ -654,6 +655,7 @@ def init_denoise_bold_wf(
         (regress_and_filter_bold, outputnode, [
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
             ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("mean_bold", "mean_bold"),
         ]),
     ])
     if not cifti:

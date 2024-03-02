@@ -279,6 +279,10 @@ class _DenoiseImageOutputSpec(TraitedSpec):
             "followed by cubic spline interpolation and band-pass filtering."
         ),
     )
+    mean_bold = File(
+        exists=True,
+        desc="The mean of the BOLD data. Used for PerAF calculation.",
+    )
 
 
 class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
@@ -301,6 +305,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         (
             uncensored_denoised_bold,
             interpolated_filtered_bold,
+            mean_bold,
         ) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
@@ -334,6 +339,14 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             interpolated_filtered_bold,
             template=self.inputs.preprocessed_bold,
             filename=self._results["interpolated_filtered_bold"],
+            TR=self.inputs.TR,
+        )
+
+        self._results["mean_bold"] = os.path.join(runtime.cwd, "mean.dtseries.nii")
+        write_ndata(
+            mean_bold,
+            template=self.inputs.preprocessed_bold,
+            filename=self._results["mean_bold"],
             TR=self.inputs.TR,
         )
 
@@ -381,6 +394,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         (
             uncensored_denoised_bold,
             interpolated_filtered_bold,
+            mean_bold,
         ) = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
@@ -410,5 +424,9 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         pixdim[3] = self.inputs.TR
         filtered_denoised_img.header.set_zooms(pixdim)
         filtered_denoised_img.to_filename(self._results["interpolated_filtered_bold"])
+
+        self._results["mean_bold"] = os.path.join(runtime.cwd, "mean.nii.gz")
+        mean_bold_img = masker.inverse_transform(mean_bold)
+        mean_bold_img.to_filename(self._results["mean_bold"])
 
         return runtime

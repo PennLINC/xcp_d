@@ -8,6 +8,7 @@
 import os
 import shutil
 
+import numpy as np
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.afni.preprocess import Despike, DespikeInputSpec
@@ -86,7 +87,16 @@ class SurfaceReHo(SimpleInterface):
 
 
 class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="nifti, cifti or gifti")
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="nifti, cifti or gifti file containing denoised, but not band-pass filtered, data.",
+    )
+    mean_file = File(
+        exists=True,
+        mandatory=True,
+        desc="nifti, cifti or gifti file containing denoised, but not band-pass filtered, data.",
+    )
     TR = traits.Float(mandatory=True, desc="repetition time")
     low_pass = traits.Float(
         mandatory=True,
@@ -110,7 +120,13 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
-    alff = File(exists=True, mandatory=True, desc=" alff")
+    alff = File(exists=True, desc="Amplitude of low-frequency fluctuations.")
+    global_alff = traits.Float(desc="Mean ALFF value in brain.")
+    falff = File(exists=True, desc="Fractional amplitude of low-frequency fluctuations.")
+    global_falff = traits.Float(desc="Mean fALFF value in brain.")
+    peraf = File(exists=True, desc="Percent amplitude of fluctuation.")
+    global_peraf = traits.Float(desc="Mean PerAF value in brain.")
+    tsnr = File(exists=True, desc="Temporal signal to noise ratio image.")
 
 
 class ComputeALFF(SimpleInterface):
@@ -136,6 +152,7 @@ class ComputeALFF(SimpleInterface):
     def _run_interface(self, runtime):
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+        mean_matrix = read_ndata(datafile=self.inputs.mean_file, maskfile=self.inputs.mask)
 
         sample_mask = None
         temporal_mask = self.inputs.temporal_mask
@@ -145,8 +162,9 @@ class ComputeALFF(SimpleInterface):
             sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
 
         # compute the ALFF
-        alff_mat = compute_alff(
+        alff_mat, falff_mat, peraf_mat, tsnr_mat = compute_alff(
             data_matrix=data_matrix,
+            mean_matrix=mean_matrix,
             low_pass=self.inputs.low_pass,
             high_pass=self.inputs.high_pass,
             TR=self.inputs.TR,
@@ -171,6 +189,61 @@ class ComputeALFF(SimpleInterface):
             filename=self._results["alff"],
             mask=self.inputs.mask,
         )
+        self._results["global_alff"] = np.mean(alff_mat)
+
+        if self.inputs.in_file.endswith(".dtseries.nii"):
+            suffix = "_falff.dscalar.nii"
+        elif self.inputs.in_file.endswith(".nii.gz"):
+            suffix = "_falff.nii.gz"
+        self._results["falff"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=suffix,
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(
+            data_matrix=falff_mat,
+            template=self.inputs.in_file,
+            filename=self._results["falff"],
+            mask=self.inputs.mask,
+        )
+        self._results["global_falff"] = np.mean(falff_mat)
+
+        if self.inputs.in_file.endswith(".dtseries.nii"):
+            suffix = "_peraf.dscalar.nii"
+        elif self.inputs.in_file.endswith(".nii.gz"):
+            suffix = "_peraf.nii.gz"
+        self._results["peraf"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=suffix,
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(
+            data_matrix=peraf_mat,
+            template=self.inputs.in_file,
+            filename=self._results["peraf"],
+            mask=self.inputs.mask,
+        )
+        self._results["global_peraf"] = np.mean(peraf_mat)
+
+        if self.inputs.in_file.endswith(".dtseries.nii"):
+            suffix = "_tsnr.dscalar.nii"
+        elif self.inputs.in_file.endswith(".nii.gz"):
+            suffix = "_tsnr.nii.gz"
+        self._results["tsnr"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=suffix,
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(
+            data_matrix=tsnr_mat,
+            template=self.inputs.in_file,
+            filename=self._results["tsnr"],
+            mask=self.inputs.mask,
+        )
+
         return runtime
 
 
