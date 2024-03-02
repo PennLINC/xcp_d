@@ -262,8 +262,7 @@ def test_validate_parameters_18(base_opts, base_parser, caplog, capsys):
     opts.fs_license_file = None
 
     # FS_LICENSE exists (set in conftest)
-    _, return_code = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-    assert return_code == 0
+    parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert "A valid FreeSurfer license file is required." not in caplog.text
 
     # FS_LICENSE doesn't exist
@@ -285,9 +284,8 @@ def test_validate_parameters_19(base_opts, base_parser, caplog, capsys, tmp_path
 
     # If file exists, return_code should be 0
     opts.fs_license_file = Path(license_file)
-    _, return_code = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert "Freesurfer license DNE" not in caplog.text
-    assert return_code == 0
 
     # If file doesn't exist, return_code should be 1
     with pytest.raises(SystemExit, match="2"):
