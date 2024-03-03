@@ -8,6 +8,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import (
+    _make_atlas_uri,
     _make_custom_uri,
     _make_preproc_uri,
     _make_xcpd_uri,
@@ -289,7 +290,7 @@ def init_postproc_derivatives_wf(
 
     # Create dictionary of basic information
     cleaned_data_dictionary = {
-        "nuisance parameters": params,
+        "NuisanceParameters": params,
         **source_metadata,
     }
     software_filters = None
@@ -557,7 +558,7 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([
             (inputnode, make_atlas_dict, [
-                (("atlas_files", _make_xcpd_uri, output_dir), "Sources"),
+                (("atlas_files", _make_atlas_uri, output_dir), "Sources"),
             ]),
         ])  # fmt:skip
 
@@ -655,15 +656,22 @@ def init_postproc_derivatives_wf(
         make_corrs_meta_dict = pe.MapNode(
             niu.Function(
                 function=_make_dictionary,
-                input_names=["Sources"],
+                input_names=["Sources", "NodeFiles"],
                 output_names=["metadata"],
             ),
             run_without_submitting=True,
             mem_gb=1,
             name="make_corrs_meta_dict",
-            iterfield=["Sources"],
+            iterfield=["Sources", "NodeFiles"],
         )
-        workflow.connect([(ds_timeseries, make_corrs_meta_dict, [("out_file", "Sources")])])
+        workflow.connect([
+            (inputnode, make_corrs_meta_dict, [
+                (("atlas_files", _make_atlas_uri, output_dir), "NodeFiles"),
+            ]),
+            (ds_timeseries, make_corrs_meta_dict, [
+                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
+            ]),
+        ])  # fmt:skip
 
         ds_correlations = pe.MapNode(
             DerivativesDataSink(
@@ -674,6 +682,12 @@ def init_postproc_derivatives_wf(
                 statistic="pearsoncorrelation",
                 suffix="relmat",
                 extension=".tsv",
+                # Metadata
+                RelationshipMeasure="Pearson correlation coefficient",
+                Weighted=True,
+                Directed=False,
+                ValidDiagonal=False,
+                StorageFormat="Full",
             ),
             name="ds_correlations",
             run_without_submitting=True,
@@ -762,19 +776,22 @@ def init_postproc_derivatives_wf(
             make_ccorrs_meta_dict = pe.MapNode(
                 niu.Function(
                     function=_make_dictionary,
-                    input_names=["Sources"],
+                    input_names=["Sources", "NodeFiles"],
                     output_names=["metadata"],
                 ),
                 run_without_submitting=True,
                 mem_gb=1,
                 name="make_ccorrs_meta_dict",
-                iterfield=["Sources"],
+                iterfield=["Sources", "NodeFiles"],
             )
-            # fmt:off
             workflow.connect([
-                (ds_timeseries_ciftis, make_ccorrs_meta_dict, [("out_file", "Sources")]),
-            ])
-            # fmt:on
+                (inputnode, make_ccorrs_meta_dict, [
+                    (("atlas_files", _make_atlas_uri, output_dir), "NodeFiles"),
+                ]),
+                (ds_timeseries_ciftis, make_ccorrs_meta_dict, [
+                    (("out_file", _make_xcpd_uri, output_dir), "Sources"),
+                ]),
+            ])  # fmt:skip
 
             ds_correlation_ciftis = pe.MapNode(
                 DerivativesDataSink(
@@ -787,6 +804,12 @@ def init_postproc_derivatives_wf(
                     statistic="pearsoncorrelation",
                     suffix="boldmap",
                     extension=".pconn.nii",
+                    # Metadata
+                    RelationshipMeasure="Pearson correlation coefficient",
+                    Weighted=True,
+                    Directed=False,
+                    ValidDiagonal=False,
+                    StorageFormat="Full",
                 ),
                 name="ds_correlation_ciftis",
                 run_without_submitting=True,
@@ -796,7 +819,9 @@ def init_postproc_derivatives_wf(
             ds_correlation_ciftis.inputs.segmentation = atlases
             # fmt:off
             workflow.connect([
-                (inputnode, ds_correlation_ciftis, [("correlation_ciftis", "in_file")]),
+                (inputnode, ds_correlation_ciftis, [
+                    ("correlation_ciftis", "in_file"),
+                ]),
                 (make_ccorrs_meta_dict, ds_correlation_ciftis, [("metadata", "meta_dict")]),
             ])
             # fmt:on

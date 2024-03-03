@@ -9,23 +9,25 @@ The  *XCP-D* outputs are written out in BIDS format and consist of three main pa
 
 .. admonition:: A note on BIDS compliance
 
-   *XCP-D* attempts to follow the BIDS specification as best as possible.
+   *XCP-D* attempts to follow the BIDS specification as closely as possible.
    However, many *XCP-D* derivatives are not currently covered by the specification.
    In those instances, we attempt to follow recommendations from existing BIDS Extension Proposals
    (BEPs), which are in-progress proposals to add new features to BIDS.
+   However, we do not guarantee compliance with any BEP,
+   as they are not yet part of the official BIDS specification.
 
-   Three BEPs that are of particular use in *XCP-D* are
+   Four BEPs that are of particular use in *XCP-D* are
+   `BEP011: Structural preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/518>`_,
    `BEP012: Functional preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/519>`_,
-   `BEP017: BIDS connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_,
+   `BEP017: Relationship & connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_,
    and
-   `BEP038: Atlas Specification <https://docs.google.com/document/d/1RxW4cARr3-EiBEcXjLpSIVidvnUSHE7yJCUY91i5TfM/edit?usp=sharing>`_
-   (currently unnumbered).
+   `BEP038: Atlas Specification <https://docs.google.com/document/d/1RxW4cARr3-EiBEcXjLpSIVidvnUSHE7yJCUY91i5TfM/edit?usp=sharing>`_.
 
    In cases where a derivative type is not covered by an existing BEP,
    we have simply attempted to follow the general principles of BIDS.
 
-   If you discover a problem with the BIDS compliance of *XCP-D*'s derivatives, please open an
-   issue in the *XCP-D* repository.
+   If you discover a problem with the BIDS compliance of *XCP-D*'s derivatives,
+   please open an issue in the *XCP-D* repository.
 
 
 ***************
@@ -86,6 +88,7 @@ Atlases are written out to the ``atlases`` subfolder, following BEP038.
 
    xcp_d/
       atlases/
+         dataset_description.json
          atlas-<label>/
             atlas-<label>_dseg.json
             atlas-<label>_dseg.tsv
@@ -155,9 +158,9 @@ atlases it uses to parcellate the functional outputs.
    xcp_d/
       sub-<label>/[ses-<label>/]
          anat/
-            <source_entities>_space-fsLR_seg-<label>_den-32k_desc-curv_morph.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-32k_desc-sulc_morph.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-32k_desc-thickness_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-curv_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-sulc_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-thickness_morph.tsv
 
 
 ******************
@@ -208,15 +211,33 @@ Denoised or residual BOLD data
    and primarily exist for compatibility with DCAN-specific analysis tools.
 
 The sidecar json files contains parameters of the data and processing steps.
+The Sources field contains BIDS URIs pointing to the files used to create the derivative.
+The associated DatasetLinks are defined in the dataset_description.json.
 
    .. code-block:: json-object
 
       {
-         "Freq Band": [0.01, 0.08],
-         "RepetitionTime": 2.0,
-         "compression": true,
-         "dummy vols": 0,
-         "nuisance parameters": "27P",
+         "EchoTime": 0.0424,
+         "EffectiveEchoSpacing": 0.000639989,
+         "FlipAngle": 51,
+         "Manufacturer": "Siemens",
+         "ManufacturersModelName": "Skyra",
+         "NuisanceParameters": "gsr_only",
+         "PhaseEncodingDirection": "j-",
+         "RepetitionTime": 3,
+         "SoftwareFilters": {
+            "Bandpass filter": {
+               "Filter order": 2,
+               "High-pass cutoff (Hz)": 0.01,
+               "Low-pass cutoff (Hz)": 0.08
+            }
+         },
+         "Sources": [
+            "bids:preprocessed:sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz",
+            "bids:xcp_d:sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_outliers.tsv",
+            "bids:xcp_d:sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_desc-preproc_design.tsv"
+         ],
+         "TaskName": "resting state"
       }
 
 
@@ -300,12 +321,7 @@ Other outputs include quality control, framewise displacement, and confounds fil
             <source_entities>[_desc-filtered]_motion.tsv
             <source_entities>_outliers.tsv
             <source_entities>_design.tsv
-
-            # NIfTI
             <source_entities>_space-<label>_desc-linc_qc.csv
-
-            # CIFTI
-            <source_entities>_space-fsLR_desc-linc_qc.csv
 
 ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns:
 one for each of the six filtered motion parameters, as well as "framewise_displacement".

@@ -1,4 +1,5 @@
 xcp_d/atlases
+xcp_d/atlases/dataset_description.json
 xcp_d/atlases/atlas-HCP
 xcp_d/atlases/atlas-HCP/atlas-HCP_dseg.json
 xcp_d/atlases/atlas-HCP/atlas-HCP_dseg.tsv

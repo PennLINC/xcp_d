@@ -1,4 +1,5 @@
 xcp_d/atlases
+xcp_d/atlases/dataset_description.json
 xcp_d/atlases/atlas-4S156Parcels
 xcp_d/atlases/atlas-4S156Parcels/atlas-4S156Parcels_dseg.json
 xcp_d/atlases/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv
