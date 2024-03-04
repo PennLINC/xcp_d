@@ -220,10 +220,9 @@ def copy_atlas(name_source, in_file, output_dir, atlas):
     os.makedirs(atlas_out_dir, exist_ok=True)
     out_file = os.path.join(atlas_out_dir, out_basename)
 
-    if out_file.endswith(".nii.gz") and not res_str:
+    if out_file.endswith(".nii.gz") and os.path.isfile(out_file) and not res_str:
         # Check that native-resolution atlas doesn't have a different resolution from the last
         # run's atlas.
-        out_file = os.path.join(atlas_out_dir, out_basename)
         old_img = nb.load(in_file)
         new_img = nb.load(out_file)
         if not np.allclose(old_img.affine, new_img.affine):
