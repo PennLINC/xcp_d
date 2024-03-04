@@ -61,6 +61,17 @@ def test_copy_atlas(tmp_path_factory):
     assert os.path.isfile(out_file)
     assert os.path.basename(out_file) == "space-MNI152NLin2009cAsym_atlas-Y_res-2_dseg.nii.gz"
 
+    # Check that the NIfTI file raises an error if the resolution varies
+    # Gordon atlas is 1mm, HCP is 2mm
+    atlas_file_diff_affine, _, _ = atlas.get_atlas_nifti("HCP")
+    with pytest.raises(ValueError, match="is different from the input file affine"):
+        atlas.copy_atlas(
+            name_source=name_source,
+            in_file=atlas_file_diff_affine,
+            output_dir=tmpdir,
+            atlas="Y",
+        )
+
     # CIFTI
     atlas_file, atlas_labels_file, atlas_metadata_file = atlas.get_atlas_cifti("Gordon")
     name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
