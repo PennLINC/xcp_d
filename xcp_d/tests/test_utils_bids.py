@@ -169,7 +169,6 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         atlases=["Gordon"],
         custom_confounds_folder="/fake/path4",
     )
-
     assert "'preprocessed' is already a dataset link" in caplog.text
     assert "'xcp_d' is already a dataset link" in caplog.text
     assert "'custom_confounds' is already a dataset link" in caplog.text
@@ -189,7 +188,7 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         json.dump(desc, fo, indent=4)
 
     assert "DatasetType key not in" not in caplog.text
-    xbids.write_dataset_description(fmri_dir, tmpdir, atlases=None, custom_confounds_folder=None)
+    xbids.write_dataset_description(tmpdir, tmpdir, atlases=None, custom_confounds_folder=None)
     assert "DatasetType key not in" in caplog.text
 
     # Should raise an error if DatasetType is present, but isn't "derivative"
@@ -199,7 +198,7 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
 
     with pytest.raises(ValueError, match="XCP-D only works on derivative datasets."):
         xbids.write_dataset_description(
-            fmri_dir,
+            tmpdir,
             tmpdir,
             atlases=None,
             custom_confounds_folder=None,
@@ -374,7 +373,7 @@ def test_make_xcpd_uri():
 
 def test_make_atlas_uri():
     """Test _make_atlas_uri."""
-    out_file = "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    out_file = "/path/to/dset/xcp_d/atlases/sub-01/func/sub-01_task-rest_bold.nii.gz"
     uri = xbids._make_atlas_uri(out_file, output_dir="/path/to/dset")
     assert uri == ["bids:atlas:sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
