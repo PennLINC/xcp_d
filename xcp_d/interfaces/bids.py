@@ -307,6 +307,6 @@ class CopyAtlas(SimpleInterface):
         if not os.path.isfile(out_file):
             shutil.copyfile(in_file, out_file)
 
-        self._results["target_sphere"] = out_file
+        self._results["out_file"] = out_file
 
         return runtime
