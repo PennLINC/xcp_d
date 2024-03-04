@@ -21,11 +21,7 @@ from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiParcellateWorkbench,
 )
-from xcp_d.utils.atlas import (
-    get_atlas_cifti,
-    get_atlas_nifti,
-    select_atlases,
-)
+from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti, select_atlases
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
 
