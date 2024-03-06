@@ -510,7 +510,8 @@ def plot_fmri_es(
     standardize : :obj:`bool`
         Whether to standardize the data or not.
         If False, then the preferred DCAN version of the plot will be generated,
-        where the BOLD data are not rescaled, and the carpet plot has color limits of -600 and 600.
+        where the BOLD data are not rescaled, and the carpet plot has color limits from the
+        2.5th percentile to the 97.5th percentile.
         If True, then the BOLD data will be z-scored and the color limits will be -2 and 2.
     temporary_file_dir : :obj:`str`
         Path in which to store temporary files.
