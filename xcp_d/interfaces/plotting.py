@@ -84,6 +84,7 @@ class CensoringPlot(SimpleInterface):
         # The number of colors in the palette depends on whether there are random censors or not
         palette = sns.color_palette("colorblind", 4 + censoring_df.shape[1])
 
+        sns.set_style("whitegrid")
         fig, ax = plt.subplots(figsize=(16, 8))
 
         time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
