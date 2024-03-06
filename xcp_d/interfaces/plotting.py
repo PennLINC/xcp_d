@@ -85,7 +85,7 @@ class CensoringPlot(SimpleInterface):
         palette = sns.color_palette("colorblind", 4 + censoring_df.shape[1])
 
         sns.set_style("whitegrid")
-        fig, ax = plt.subplots(figsize=(16, 8))
+        fig, ax = plt.subplots(figsize=(8, 4))
 
         time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
 
