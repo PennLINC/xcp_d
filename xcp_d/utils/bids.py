@@ -319,7 +319,7 @@ def collect_data(
     resolutions = layout.get_res(**queries["bold"])
     if len(resolutions) >= 1:
         # This will also select res-* when there are both res-* and native-resolution files.
-        queries["bold"]["resolution"] = resolutions[0]
+        queries["bold"]["res"] = resolutions[0]
 
     densities = layout.get_den(**queries["bold"])
     if len(densities) >= 1:
