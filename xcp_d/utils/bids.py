@@ -317,11 +317,12 @@ def collect_data(
     # This probably works well for resolution (1 typically means 1x1x1,
     # 2 typically means 2x2x2, etc.), but probably doesn't work well for density.
     resolutions = layout.get_res(**queries["bold"])
-    densities = layout.get_den(**queries["bold"])
-    if len(resolutions) > 1:
+    if len(resolutions) >= 1:
+        # This will also select res-* when there are both res-* and native-resolution files.
         queries["bold"]["resolution"] = resolutions[0]
 
-    if len(densities) > 1:
+    densities = layout.get_den(**queries["bold"])
+    if len(densities) >= 1:
         queries["bold"]["den"] = densities[0]
 
     # Check for anatomical images, and determine if T2w xfms must be used.
