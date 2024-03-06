@@ -183,9 +183,9 @@ class CensoringPlot(SimpleInterface):
                 alpha=0.5,
             )
 
-        ax.set_xlabel("Time (seconds)", fontsize=20)
-        ax.set_ylabel("Movement (millimeters)", fontsize=20)
-        ax.legend(fontsize=20)
+        ax.set_xlabel("Time (seconds)", fontsize=10)
+        ax.set_ylabel("Movement (millimeters)", fontsize=10)
+        ax.legend(fontsize=10)
         fig.tight_layout()
 
         self._results["out_file"] = fname_presuffix(
