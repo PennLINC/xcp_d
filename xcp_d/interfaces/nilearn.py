@@ -13,7 +13,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.nilearn import NilearnBaseInterface
 
-from xcp_d.utils.utils import denoise_with_nilearn
+from xcp_d.utils.utils import denoise_hpmc
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
@@ -301,7 +301,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         (
             uncensored_denoised_bold,
             interpolated_filtered_bold,
-        ) = denoise_with_nilearn(
+        ) = denoise_hpmc(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             temporal_mask=self.inputs.temporal_mask,
@@ -381,7 +381,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         (
             uncensored_denoised_bold,
             interpolated_filtered_bold,
-        ) = denoise_with_nilearn(
+        ) = denoise_hpmc(
             preprocessed_bold=preprocessed_bold_arr,
             confounds_file=self.inputs.confounds_file,
             temporal_mask=self.inputs.temporal_mask,
