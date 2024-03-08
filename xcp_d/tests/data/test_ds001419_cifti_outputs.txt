@@ -324,7 +324,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bo
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolated_bold.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-linc_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-linc_qc.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.dscalar.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_stat-reho_boldmap.dscalar.nii
@@ -582,7 +582,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bo
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bold.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolated_bold.json
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-linc_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-linc_qc.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.dscalar.nii
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_stat-reho_boldmap.dscalar.nii

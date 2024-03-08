@@ -505,7 +505,7 @@ def init_postproc_derivatives_wf(
             den="91k" if cifti else None,
             desc="linc",
             suffix="qc",
-            extension=".csv",
+            extension=".tsv",
         ),
         name="ds_qc_file",
         run_without_submitting=True,

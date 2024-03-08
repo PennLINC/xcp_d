@@ -18,7 +18,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_desc-preproc_design.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_outliers.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_outliers.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_desc-linc_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_desc-linc_qc.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_stat-alff_boldmap.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_stat-alff_boldmap.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
@@ -35,7 +35,7 @@ xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_desc-preproc_design.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_outliers.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_outliers.tsv
-xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_desc-linc_qc.csv
+xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_desc-linc_qc.tsv
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_stat-alff_boldmap.json
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_stat-alff_boldmap.nii.gz
 xcp_d/sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json
@@ -56,7 +56,7 @@ xcp_d/sub-01/func/sub-01_task-rest_desc-preproc_design.json
 xcp_d/sub-01/func/sub-01_task-rest_desc-preproc_design.tsv
 xcp_d/sub-01/func/sub-01_task-rest_outliers.json
 xcp_d/sub-01/func/sub-01_task-rest_outliers.tsv
-xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-linc_qc.csv
+xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_desc-linc_qc.tsv
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_stat-alff_boldmap.json
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_stat-alff_boldmap.nii.gz
 xcp_d/sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-denoisedSmoothed_bold.json

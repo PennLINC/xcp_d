@@ -219,7 +219,7 @@ xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoisedSmoothed_bold.nii.gz
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoised_bold.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoised_bold.nii.gz
-xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-linc_qc.csv
+xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-linc_qc.tsv
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-alff_desc-smooth_boldmap.json
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-alff_desc-smooth_boldmap.nii.gz
 xcp_d/sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-reho_boldmap.json

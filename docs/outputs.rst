@@ -321,7 +321,7 @@ Other outputs include quality control, framewise displacement, and confounds fil
             <source_entities>[_desc-filtered]_motion.tsv
             <source_entities>_outliers.tsv
             <source_entities>_design.tsv
-            <source_entities>_space-<label>_desc-linc_qc.csv
+            <source_entities>_space-<label>_desc-linc_qc.tsv
 
 ``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns:
 one for each of the six filtered motion parameters, as well as "framewise_displacement".
