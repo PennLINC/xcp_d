@@ -480,11 +480,13 @@ def plot_framewise_displacement_es(
 
 @fill_doc
 def plot_fmri_es(
+    *,
     preprocessed_bold,
     uncensored_denoised_bold,
     interpolated_filtered_bold,
     TR,
     filtered_motion,
+    temporal_mask,
     preprocessed_bold_figure,
     denoised_bold_figure,
     standardize,
@@ -503,6 +505,7 @@ def plot_fmri_es(
     %(interpolated_filtered_bold)s
     %(TR)s
     %(filtered_motion)s
+    %(temporal_mask)s
     preprocessed_bold_figure : :obj:`str`
         output file svg before processing
     denoised_bold_figure : :obj:`str`
@@ -570,6 +573,7 @@ def plot_fmri_es(
     )
 
     fd_regressor = pd.read_table(filtered_motion)["framewise_displacement"].values
+    tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values
 
     # The mean and standard deviation of the preprocessed data,
     # after mean-centering and detrending.
@@ -669,11 +673,15 @@ def plot_fmri_es(
         plot_carpet(
             func=file_for_carpet,
             atlaslabels=atlaslabels,
-            TR=TR,
+            standardize=standardize,  # Data are already detrended if standardize is False
+            size=(950, 800),
+            labelsize=30,
             subplot=grid[2],  # Use grid for now.
-            detrend=standardize,  # Data are already detrended if standardize is False
-            legend=False,
+            output_file=None,
+            TR=TR,
             colorbar=True,
+            lut=None,
+            temporal_mask=tmask_arr,
         )
 
         # The FD plot at the bottom
@@ -811,29 +819,34 @@ class FMRIPlot:
 
         # Carpet plot
         plot_carpet(
-            self.func_file,
+            func=self.func_file,
             atlaslabels=self.seg_data,
-            subplot=grid[-1],
-            detrend=True,
-            TR=self.TR,
+            standardize=True,
+            size=(950, 800),
             labelsize=labelsize,
+            subplot=grid[-1],
+            output_file=None,
+            TR=self.TR,
             colorbar=False,
+            lut=None,
+            temporal_mask=None,
         )
         return figure
 
 
 def plot_carpet(
+    *,
     func,
-    atlaslabels=None,
-    detrend=True,
+    atlaslabels,
+    TR,
+    standardize,
+    temporal_mask=None,
     size=(950, 800),
     labelsize=30,
     subplot=None,
-    output_file=None,
-    legend=True,
-    TR=None,
     lut=None,
     colorbar=False,
+    output_file=None,
 ):
     """Plot an image representation of voxel intensities across time.
 
@@ -848,7 +861,7 @@ def plot_carpet(
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
         Required if ``func`` is a NIfTI image.
         Unused if ``func`` is a CIFTI.
-    detrend : bool, optional
+    standardize : bool, optional
         Detrend and standardize the data prior to plotting.
     size : tuple, optional
         Size of figure.
@@ -869,11 +882,9 @@ def plot_carpet(
     colorbar : bool, optional
         Default is False.
     """
-    epinii = None
-    segnii = None
     img = nb.load(func)
-    sns.set_style("whitegrid")
-    if isinstance(img, nb.Cifti2Image):  # Cifti
+
+    if isinstance(img, nb.Cifti2Image):  # CIFTI
         assert (
             img.nifti_header.get_intent()[0] == "ConnDenseSeries"
         ), f"Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}"
@@ -900,19 +911,6 @@ def plot_carpet(
             seg_data[brain_model.index_offset : index_final] = lidx
         assert len(seg_data[seg_data < 1]) == 0, "Unassigned labels"
 
-        # Decimate data
-        data, seg_data = _decimate_data(data, seg_data, size)
-        # Preserve continuity
-        order = seg_data.argsort(kind="stable")
-        # Get color maps
-        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
-        assert len(cmap.colors) == len(
-            struct_map
-        ), "Mismatch between expected # of structures and colors"
-
-        # ensure no legend for CIFTI
-        legend = False
-
     else:  # Volumetric NIfTI
         img_nii = check_niimg_4d(
             img,
@@ -933,61 +931,42 @@ def plot_carpet(
         # Apply lookup table
         seg_data = lut[oseg.astype(int)]
 
-        # Decimate data
-        data, seg_data = _decimate_data(data, seg_data, size)
+    if temporal_mask is not None:
+        temp_data = data[temporal_mask, :]
+
+    # Decimate data
+    data, seg_data = _decimate_data(data, seg_data, size)
+
+    if isinstance(img, nb.Cifti2Image):
+        # Preserve continuity
+        order = seg_data.argsort(kind="stable")
+        # Get color maps
+        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
+        assert len(cmap.colors) == len(
+            struct_map
+        ), "Mismatch between expected # of structures and colors"
+    else:
         # Order following segmentation labels
         order = np.argsort(seg_data)[::-1]
         # Set colormap
         cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
 
-        if legend:
-            epiavg = func_data.mean(3)
-            epinii = nb.Nifti1Image(epiavg, img_nii.affine, img_nii.header)
-            segnii = nb.Nifti1Image(lut[atlaslabels.astype(int)], epinii.affine, epinii.header)
-            segnii.set_data_dtype("uint8")
-
-    return _carpet(
-        func,
-        data,
-        seg_data,
-        order,
-        cmap,
-        labelsize,
-        TR=TR,
-        detrend=detrend,
-        colorbar=colorbar,
-        subplot=subplot,
-        output_file=output_file,
-    )
-
-
-def _carpet(
-    func,
-    data,
-    seg_data,
-    order,
-    cmap,
-    labelsize,
-    TR=None,
-    detrend=True,
-    colorbar=False,
-    subplot=None,
-    output_file=None,
-):
-    """Build carpetplot for volumetric / CIFTI plots."""
-    if TR is None:
-        TR = 1.0  # Default TR
-
-    sns.set_style("white")
-
     # Detrend and z-score data
-    if detrend:
-        data = clean(data.T, t_r=TR, detrend=True, filter=False).T
+    if standardize:
+        # This does not account for the temporal mask.
+        data = clean(data.T, t_r=TR, detrend=True, filter=False, standardize="zscore_sample").T
         vlimits = (-2, 2)
+    elif temporal_mask is not None:
+        # If standardize is False and a temporal mask is provided,
+        # then we use only low-motion timepoints to define the vlimits.
+        # The executive summary uses the following range for native BOLD units.
+        vlimits = tuple(np.percentile(temp_data, q=(2.5, 97.5)))
     else:
-        # If detrend is False, then the data are assumed to have native BOLD units.
+        # If standardize is False, then the data are assumed to have native BOLD units.
         # The executive summary uses the following range for native BOLD units.
         vlimits = tuple(np.percentile(data, q=(2.5, 97.5)))
+
+    sns.set_style("white")
 
     # If subplot is not defined
     if subplot is None:

@@ -370,6 +370,7 @@ def init_qc_report_wf(
             ("uncensored_denoised_bold", "uncensored_denoised_bold"),
             ("interpolated_filtered_bold", "interpolated_filtered_bold"),
             ("filtered_motion", "filtered_motion"),
+            ("temporal_mask", "temporal_mask"),
             ("run_index", "run_index"),
         ]),
     ])

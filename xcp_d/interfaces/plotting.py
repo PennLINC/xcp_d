@@ -574,6 +574,11 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
     )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc="TSV file with temporal mask.",
+    )
     TR = traits.Float(default_value=1, desc="Repetition time")
     standardize = traits.Bool(
         mandatory=True,
@@ -650,6 +655,7 @@ class QCPlotsES(SimpleInterface):
             interpolated_filtered_bold=self.inputs.interpolated_filtered_bold,
             TR=self.inputs.TR,
             filtered_motion=self.inputs.filtered_motion,
+            temporal_mask=self.inputs.temporal_mask,
             preprocessed_bold_figure=preprocessed_bold_figure,
             denoised_bold_figure=denoised_bold_figure,
             standardize=self.inputs.standardize,
