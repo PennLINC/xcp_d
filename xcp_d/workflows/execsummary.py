@@ -572,7 +572,7 @@ def init_execsummary_anatomical_plots_wf(
 
     # Start plotting the overlay figures
     # Atlas in T1w/T2w, T1w/T2w in Atlas
-    anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
+    anatomicals = (["t1w"] if t1w_available else []) + (["t2w"] if t2w_available else [])
     for anat in anatomicals:
         # Resample anatomical to match resolution of template data
         resample_anat = pe.Node(
