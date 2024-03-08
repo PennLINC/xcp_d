@@ -932,7 +932,7 @@ def plot_carpet(
         seg_data = lut[oseg.astype(int)]
 
     if temporal_mask is not None:
-        temp_data = data[temporal_mask, :]
+        temp_data = data[~temporal_mask, :]
 
     # Decimate data
     data, seg_data = _decimate_data(data, seg_data, size)
