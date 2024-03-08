@@ -573,7 +573,7 @@ def plot_fmri_es(
     )
 
     fd_regressor = pd.read_table(filtered_motion)["framewise_displacement"].values
-    tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values
+    tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values.astype(bool)
 
     # The mean and standard deviation of the preprocessed data,
     # after mean-centering and detrending.
