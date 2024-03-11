@@ -38,7 +38,7 @@ dependencies = [
     "scipy >= 1.8.0",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
     "sentry-sdk ~= 1.41.0",  # for usage reports
-    "templateflow ~= 23.1.0",
+    "templateflow ~= 24.0.0",
 ]
 dynamic = ["version"]
 
