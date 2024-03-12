@@ -82,13 +82,16 @@ class NiftiParcellate(SimpleInterface):
         # Before anything, we need to measure coverage
         atlas_img = nb.load(atlas)
         atlas_data = atlas_img.get_fdata()
-        atlas_data_bin = (atlas_data > 0).astype(np.float32)
+        atlas_img_int = nb.Nifti1Image(
+            atlas_data.astype(np.int32), atlas_img.affine, atlas_img.header
+        )
+        atlas_data_bin = (atlas_data > 0).astype(np.uint8)
         atlas_img_bin = nb.Nifti1Image(atlas_data_bin, atlas_img.affine, atlas_img.header)
         del atlas_img, atlas_data, atlas_data_bin
         gc.collect()
 
         sum_masker_masked = NiftiLabelsMasker(
-            labels_img=atlas,
+            labels_img=atlas_img_int,
             labels=node_labels,
             mask_img=mask,
             smoothing_fwhm=None,
@@ -97,7 +100,7 @@ class NiftiParcellate(SimpleInterface):
             resampling_target=None,  # they should be in the same space/resolution already
         )
         sum_masker_unmasked = NiftiLabelsMasker(
-            labels_img=atlas,
+            labels_img=atlas_img_int,
             labels=node_labels,
             smoothing_fwhm=None,
             standardize=False,
@@ -144,7 +147,7 @@ class NiftiParcellate(SimpleInterface):
             )
 
         masker = NiftiLabelsMasker(
-            labels_img=atlas,
+            labels_img=atlas_img_int,
             labels=node_labels,
             mask_img=mask,
             smoothing_fwhm=None,
