@@ -65,33 +65,22 @@ class NiftiParcellate(SimpleInterface):
         min_coverage = self.inputs.min_coverage
 
         node_labels_df = pd.read_table(self.inputs.atlas_labels, index_col="index")
-        node_labels_df.sort_index(inplace=True)  # ensure index is in order
 
-        # Explicitly remove label corresponding to background (index=0), if present.
-        if 0 in node_labels_df.index:
-            LOGGER.warning(
-                "Index value of 0 found in atlas labels file. "
-                "Will assume this describes the background and ignore it."
-            )
-            node_labels_df = node_labels_df.drop(index=[0])
-
+        # Fix any nonsequential values or mismatch between atlas and DataFrame.
+        atlas_img, node_labels_df = _sanitize_nifti_atlas(atlas, node_labels_df)
         node_labels = node_labels_df["label"].tolist()
-        # Add background label for nilearn 0.10.3 compatibility
-        node_labels = ["background"] + node_labels
 
         # Before anything, we need to measure coverage
-        atlas_img = nb.load(atlas)
-        atlas_data = atlas_img.get_fdata()
-        atlas_img_int = nb.Nifti1Image(
-            atlas_data.astype(np.int32), atlas_img.affine, atlas_img.header
+        atlas_img_bin = nb.Nifti1Image(
+            (atlas_img.get_fdata() > 0).astype(np.uint8),
+            atlas_img.affine,
+            atlas_img.header,
         )
-        atlas_data_bin = (atlas_data > 0).astype(np.uint8)
-        atlas_img_bin = nb.Nifti1Image(atlas_data_bin, atlas_img.affine, atlas_img.header)
-        del atlas_img, atlas_data, atlas_data_bin
+        del atlas_img
         gc.collect()
 
         sum_masker_masked = NiftiLabelsMasker(
-            labels_img=atlas_img_int,
+            labels_img=atlas_img,
             labels=node_labels,
             mask_img=mask,
             smoothing_fwhm=None,
@@ -100,7 +89,7 @@ class NiftiParcellate(SimpleInterface):
             resampling_target=None,  # they should be in the same space/resolution already
         )
         sum_masker_unmasked = NiftiLabelsMasker(
-            labels_img=atlas_img_int,
+            labels_img=atlas_img,
             labels=node_labels,
             smoothing_fwhm=None,
             standardize=False,
@@ -147,7 +136,7 @@ class NiftiParcellate(SimpleInterface):
             )
 
         masker = NiftiLabelsMasker(
-            labels_img=atlas_img_int,
+            labels_img=atlas_img,
             labels=node_labels,
             mask_img=mask,
             smoothing_fwhm=None,
