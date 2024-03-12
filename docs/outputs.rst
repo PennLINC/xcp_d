@@ -204,7 +204,7 @@ Denoised or residual BOLD data
 .. important::
 
    The interpolated denoised BOLD files (``desc-interpolated``) should NOT be used for analyses.
-   These files are only generated if ``--dcan-qc`` is used,
+   These files are only generated if ``--skip-dcan-qc`` is not used,
    and primarily exist for compatibility with DCAN-specific analysis tools.
 
 The sidecar json files contains parameters of the data and processing steps.
@@ -323,8 +323,8 @@ each of the high-motion outlier volumes.
 This file includes the high-motion volumes that are removed in most other derivatives.
 
 
-DCAN style scrubbing file (if ``--dcan-qc`` is used)
-====================================================
+DCAN style scrubbing file (if ``--skip-dcan-qc`` is not used)
+=============================================================
 
 This file is in hdf5 format (readable by h5py), and contains binary scrubbing masks from 0.0
 to 1mm FD in 0.01 steps.

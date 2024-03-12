@@ -444,7 +444,7 @@ Bandpass filtering [OPTIONAL]
 
 The ``interpolated, denoised BOLD`` is then bandpass filtered using a Butterworth filter.
 The resulting ``filtered, interpolated, denoised BOLD`` will only be written out to the output
-directory if the ``--dcan-qc`` flag is used, as users **should not** use interpolated data
+directory if the ``--skip-dcan-qc`` flag is not used, as users **should not** use interpolated data
 directly.
 
 Bandpass filtering can be disabled with the ``--disable-bandpass-filter`` flag.
