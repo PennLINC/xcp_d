@@ -76,8 +76,6 @@ class NiftiParcellate(SimpleInterface):
             atlas_img.affine,
             atlas_img.header,
         )
-        del atlas_img
-        gc.collect()
 
         sum_masker_masked = NiftiLabelsMasker(
             labels_img=atlas_img,
