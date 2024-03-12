@@ -43,7 +43,6 @@ def test_filteroutfailedruns(ds001419_data):
     fmriprep_confounds_file = [tsv_file] * n_runs
     filtered_motion = [tsv_file] * n_runs
     temporal_mask = [nifti_file] * n_runs
-    denoised_censored_bold = [nifti_file] * n_runs
     denoised_interpolated_bold = [nifti_file] * n_runs
 
     # Some can just be Undefined
@@ -61,7 +60,6 @@ def test_filteroutfailedruns(ds001419_data):
         fmriprep_confounds_file=fmriprep_confounds_file,
         filtered_motion=filtered_motion,
         temporal_mask=temporal_mask,
-        denoised_censored_bold=denoised_censored_bold,
         denoised_interpolated_bold=denoised_interpolated_bold,
         smoothed_denoised_bold=smoothed_denoised_bold,
         bold_mask=bold_mask,
@@ -76,7 +74,6 @@ def test_filteroutfailedruns(ds001419_data):
     assert len(out.fmriprep_confounds_file) == n_good_runs
     assert len(out.filtered_motion) == n_good_runs
     assert len(out.temporal_mask) == n_good_runs
-    assert len(out.denoised_censored_bold) == n_good_runs
     assert len(out.denoised_interpolated_bold) == n_good_runs
     assert len(out.smoothed_denoised_bold) == n_good_runs
     assert len(out.bold_mask) == n_good_runs
@@ -100,7 +97,6 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     fmriprep_confounds_file = [tsv_file] * n_runs
     filtered_motion = [tsv_file] * n_runs
     temporal_mask = [tsv_file] * n_runs
-    denoised_censored_bold = [nifti_file] * n_runs
     denoised_interpolated_bold = [nifti_file] * n_runs
 
     # Some can just be Undefined
@@ -113,7 +109,6 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     interface = concatenation.ConcatenateInputs(
         censored_denoised_bold=censored_denoised_bold,
         preprocessed_bold=preprocessed_bold,
-        denoised_censored_bold=denoised_censored_bold,
         denoised_interpolated_bold=denoised_interpolated_bold,
         smoothed_denoised_bold=smoothed_denoised_bold,
         timeseries_ciftis=timeseries_ciftis,
@@ -126,7 +121,6 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     out = results.outputs
     assert os.path.isfile(out.censored_denoised_bold)
     assert os.path.isfile(out.preprocessed_bold)
-    assert os.path.isfile(out.denoised_censored_bold)
     assert os.path.isfile(out.denoised_interpolated_bold)
     assert not isdefined(out.smoothed_denoised_bold)
     assert len(out.timeseries_ciftis) == n_atlases

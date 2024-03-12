@@ -94,14 +94,6 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV files with high-motion outliers indexed.",
     )
-    denoised_censored_bold = traits.List(
-        traits.Either(
-            File(exists=True),
-            Undefined,
-        ),
-        mandatory=True,
-        desc="Denoised BOLD data.",
-    )
     denoised_interpolated_bold = traits.List(
         traits.Either(
             File(exists=True),
@@ -161,10 +153,6 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         File(exists=True),
         desc="TSV files with high-motion outliers indexed.",
     )
-    denoised_censored_bold = traits.List(
-        File(exists=True),
-        desc="Denoised BOLD data.",
-    )
     denoised_interpolated_bold = traits.List(
         File(exists=True),
         desc="Denoised BOLD data.",
@@ -222,7 +210,6 @@ class FilterOutFailedRuns(SimpleInterface):
             "fmriprep_confounds_file": self.inputs.fmriprep_confounds_file,
             "filtered_motion": self.inputs.filtered_motion,
             "temporal_mask": self.inputs.temporal_mask,
-            "denoised_censored_bold": self.inputs.denoised_censored_bold,
             "denoised_interpolated_bold": self.inputs.denoised_interpolated_bold,
             "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
             "bold_mask": self.inputs.bold_mask,
@@ -279,11 +266,6 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV files with high-motion outliers indexed.",
     )
-    denoised_censored_bold = traits.List(
-        File(exists=True),
-        mandatory=True,
-        desc="Denoised BOLD data.",
-    )
     denoised_interpolated_bold = traits.List(
         File(exists=True),
         mandatory=True,
@@ -336,10 +318,6 @@ class _ConcatenateInputsOutputSpec(TraitedSpec):
         exists=True,
         desc="Concatenated TSV file with high-motion outliers indexed.",
     )
-    denoised_censored_bold = File(
-        exists=True,
-        desc="Concatenated denoised BOLD data.",
-    )
     denoised_interpolated_bold = File(
         exists=True,
         desc="Concatenated denoised BOLD data.",
@@ -377,7 +355,6 @@ class ConcatenateInputs(SimpleInterface):
         merge_inputs = {
             "censored_denoised_bold": self.inputs.censored_denoised_bold,
             "preprocessed_bold": self.inputs.preprocessed_bold,
-            "denoised_censored_bold": self.inputs.denoised_censored_bold,
             "denoised_interpolated_bold": self.inputs.denoised_interpolated_bold,
             "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
             "timeseries_ciftis": self.inputs.timeseries_ciftis,

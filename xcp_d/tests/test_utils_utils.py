@@ -80,10 +80,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # First, try out filtering
-    (
-        denoised_censored_bold,
-        denoised_interpolated_bold,
-    ) = utils.denoise_with_nilearn(
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
         temporal_mask=temporal_mask,
@@ -93,14 +90,10 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         TR=TR,
     )
 
-    assert denoised_censored_bold.shape == (n_volumes, n_voxels)
     assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
     # Now, no filtering
-    (
-        denoised_censored_bold,
-        denoised_interpolated_bold,
-    ) = utils.denoise_with_nilearn(
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
         temporal_mask=temporal_mask,
@@ -110,14 +103,10 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         TR=TR,
     )
 
-    assert denoised_censored_bold.shape == (n_volumes, n_voxels)
     assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
     # Finally, run without denoising
-    (
-        denoised_censored_bold,
-        denoised_interpolated_bold,
-    ) = utils.denoise_with_nilearn(
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,
         temporal_mask=temporal_mask,
@@ -126,7 +115,6 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
-    assert denoised_censored_bold.shape == (n_volumes, n_voxels)
     assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
     # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
@@ -141,7 +129,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # Run without denoising or filtering
-    _, denoised_interpolated_bold = utils.denoise_with_nilearn(
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,
         temporal_mask=temporal_mask,

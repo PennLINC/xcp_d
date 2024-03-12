@@ -181,21 +181,6 @@ def _check_denoising_outputs(preprocessed_img, outputs, cifti):
 
     preprocessed_img_header = getattr(preprocessed_img, hdr_attr)
 
-    # denoised_censored_bold is the size of the full run
-    assert os.path.isfile(outputs.denoised_censored_bold)
-    uncensored_denoised_img = nb.load(outputs.denoised_censored_bold)
-    uncensored_denoised_img_header = getattr(uncensored_denoised_img, hdr_attr)
-    assert uncensored_denoised_img.ndim == ndim
-    assert uncensored_denoised_img.shape == preprocessed_img.shape
-    assert np.array_equal(
-        preprocessed_img_header.get_sform(),
-        preprocessed_img_header.get_sform(),
-    )
-    assert np.array_equal(
-        uncensored_denoised_img_header.get_zooms()[:-1],
-        preprocessed_img_header.get_zooms()[:-1],
-    )
-
     # denoised_interpolated_bold is the censored, denoised, interpolated, and filtered data
     assert os.path.isfile(outputs.denoised_interpolated_bold)
     filtered_denoised_img = nb.load(outputs.denoised_interpolated_bold)

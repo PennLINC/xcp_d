@@ -346,8 +346,7 @@ def denoise_with_nilearn(
     3. Bandpass filter the interpolated data and confounds.
     4. Censor the data and confounds.
     5. Estimate betas using only the low-motion volumes.
-    6. Apply the betas to denoise the censored BOLD data.
-    7. Apply the betas to denoise the interpolated BOLD data. For the DCAN lab.
+    6. Apply the betas to denoise the interpolated BOLD data. This is re-censored in a later step.
 
     Parameters
     ----------
@@ -367,10 +366,6 @@ def denoise_with_nilearn(
 
     Returns
     -------
-    denoised_censored_bold
-        Returned as a :obj:`numpy.ndarray` of shape (C, S),
-        where C is the number of low-motion volumes.
-        This is the primary output.
     denoised_interpolated_bold
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
     """
@@ -450,11 +445,6 @@ def denoise_with_nilearn(
             rcond=None,
         )[0]
 
-        # Denoise the censored data.
-        denoised_censored_bold = censored_filtered_bold - np.dot(
-            censored_filtered_confounds, betas
-        )
-
         # Denoise the interpolated data.
         # The low-motion volumes of the denoised, interpolated data will be the same as the full
         # censored, denoised data.
@@ -462,10 +452,9 @@ def denoise_with_nilearn(
             filtered_interpolated_confounds, betas
         )
     else:
-        denoised_censored_bold = censored_filtered_bold
         denoised_interpolated_bold = filtered_interpolated_bold
 
-    return denoised_censored_bold, denoised_interpolated_bold
+    return denoised_interpolated_bold
 
 
 def _interpolate(*, arr, sample_mask, TR):

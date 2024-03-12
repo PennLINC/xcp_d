@@ -572,7 +572,6 @@ def init_denoise_bold_wf(
 
     Outputs
     -------
-    %(denoised_censored_bold)s
     %(denoised_interpolated_bold)s
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
@@ -621,7 +620,6 @@ def init_denoise_bold_wf(
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "denoised_censored_bold",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
@@ -652,7 +650,6 @@ def init_denoise_bold_wf(
             ("temporal_mask", "temporal_mask"),
         ]),
         (regress_and_filter_bold, outputnode, [
-            ("denoised_censored_bold", "denoised_censored_bold"),
             ("denoised_interpolated_bold", "denoised_interpolated_bold"),
         ]),
     ])

@@ -445,26 +445,6 @@ temporal_mask : :obj:`str`
 """
 
 docdict[
-    "denoised_censored_bold"
-] = """
-denoised_censored_bold : :obj:`str`
-    Path to the uncensored, denoised BOLD file.
-    This file is the result of denoising the full (uncensored) preprocessed BOLD data using
-    betas estimated using the *censored* BOLD data and nuisance regressors.
-
-    This output should not be used for analysis. It is primarily used for DCAN QC plots.
-"""
-
-docdict[
-    "interpolated_unfiltered_bold"
-] = """
-interpolated_unfiltered_bold : :obj:`str`
-    Path to the censored, denoised, and interpolated BOLD file.
-    This file is the result of denoising the censored preprocessed BOLD data,
-    followed by cubic spline interpolation.
-"""
-
-docdict[
     "denoised_interpolated_bold"
 ] = """
 denoised_interpolated_bold : :obj:`str`
