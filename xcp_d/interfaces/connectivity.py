@@ -862,3 +862,34 @@ class ConnectPlot(SimpleInterface):
         plt.close(fig)
 
         return runtime
+
+
+def _sanitize_nifti_atlas(atlas, df):
+    atlas_img = nb.load(atlas)
+    atlas_data = atlas_img.get_fdata()
+    atlas_data = atlas_data.astype(np.int16)
+
+    # Check that all labels in the DataFrame are present in the NIfTI file, and vice versa.
+    expected_values = df.index.values
+    if 0 not in expected_values:
+        df.loc[0, "label"] = "background"
+
+    df.sort_index(inplace=True)  # ensure index is in order
+    expected_values = df.index.values
+
+    found_values = np.unique(atlas_data)
+    if not np.all(np.isin(found_values, expected_values)):
+        raise ValueError("Atlas file contains values that are not present in the DataFrame.")
+
+    # Map the labels in the DataFrame to sequential values.
+    label_mapper = {value: i for i, value in enumerate(expected_values)}
+    df["sanitized_index"] = [label_mapper[i] for i in df.index.values]
+
+    # Map the values in the atlas image to sequential values.
+    new_atlas_data = np.zeros(atlas_data.shape, dtype=np.int16)
+    for old_value, new_value in label_mapper.items():
+        new_atlas_data[atlas_data == old_value] = new_value
+
+    new_atlas_img = nb.Nifti1Image(new_atlas_data, atlas_img.affine, atlas_img.header)
+
+    return new_atlas_img, df
