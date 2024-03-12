@@ -864,6 +864,7 @@ def _sanitize_nifti_atlas(atlas, df):
     expected_values = df.index.values
 
     found_values = np.unique(atlas_data)
+    found_values = found_values[found_values != 0]  # drop the background value
     if not np.all(np.isin(found_values, expected_values)):
         raise ValueError("Atlas file contains values that are not present in the DataFrame.")
 
