@@ -188,8 +188,8 @@ def init_postprocess_cifti_wf(
         After dummy scan removal.
     %(filtered_motion)s
     %(temporal_mask)s
-    %(uncensored_denoised_bold)s
-    %(interpolated_filtered_bold)s
+    %(denoised_censored_bold)s
+    %(denoised_interpolated_bold)s
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     %(boldref)s
@@ -257,8 +257,8 @@ def init_postprocess_cifti_wf(
                 "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
-                "uncensored_denoised_bold",
-                "interpolated_filtered_bold",
+                "denoised_censored_bold",
+                "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "boldref",
@@ -341,7 +341,7 @@ def init_postprocess_cifti_wf(
             ("outputnode.confounds_file", "inputnode.confounds_file"),
         ]),
         (denoise_bold_wf, outputnode, [
-            ("outputnode.uncensored_denoised_bold", "uncensored_denoised_bold"),
+            ("outputnode.denoised_censored_bold", "denoised_censored_bold"),
         ]),
     ])  # fmt:skip
 
@@ -390,7 +390,7 @@ def init_postprocess_cifti_wf(
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.interpolated_filtered_bold", "inputnode.denoised_bold"),
+                ("outputnode.denoised_interpolated_bold", "inputnode.denoised_bold"),
             ]),
         ])  # fmt:skip
 
@@ -430,8 +430,8 @@ def init_postprocess_cifti_wf(
             ("outputnode.filtered_motion", "inputnode.filtered_motion"),
         ]),
         (denoise_bold_wf, qc_report_wf, [
-            ("outputnode.uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
-            ("outputnode.interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
+            ("outputnode.denoised_censored_bold", "inputnode.denoised_censored_bold"),
+            ("outputnode.denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
             ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
         ]),
     ])  # fmt:skip
@@ -463,7 +463,7 @@ def init_postprocess_cifti_wf(
             ("atlas_files", "inputnode.atlas_files"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
-            ("outputnode.interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
+            ("outputnode.denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
             ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
             ("outputnode.smoothed_denoised_bold", "inputnode.smoothed_denoised_bold"),
         ]),
@@ -480,7 +480,7 @@ def init_postprocess_cifti_wf(
         (postproc_derivatives_wf, outputnode, [
             ("outputnode.filtered_motion", "filtered_motion"),
             ("outputnode.temporal_mask", "temporal_mask"),
-            ("outputnode.interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("outputnode.denoised_interpolated_bold", "denoised_interpolated_bold"),
             ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
             ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("outputnode.timeseries", "timeseries"),

@@ -86,9 +86,9 @@ def init_concatenate_data_wf(
         One list entry for each run.
     %(temporal_mask)s
         One list entry for each run.
-    %(uncensored_denoised_bold)s
+    %(denoised_censored_bold)s
         One list entry for each run.
-    %(interpolated_filtered_bold)s
+    %(denoised_interpolated_bold)s
         One list entry for each run.
     %(censored_denoised_bold)s
         One list entry for each run.
@@ -117,8 +117,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
-                "uncensored_denoised_bold",
-                "interpolated_filtered_bold",
+                "denoised_censored_bold",
+                "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "bold_mask",  # only for niftis, from postproc workflows
@@ -149,8 +149,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
-            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("denoised_censored_bold", "denoised_censored_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
             ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("bold_mask", "bold_mask"),
@@ -171,8 +171,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
-            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("denoised_censored_bold", "denoised_censored_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
             ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("timeseries", "timeseries"),
@@ -207,8 +207,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ]),
         (concatenate_inputs, qc_report_wf, [
             ("preprocessed_bold", "inputnode.preprocessed_bold"),
-            ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
+            ("denoised_censored_bold", "inputnode.denoised_censored_bold"),
+            ("denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
             ("censored_denoised_bold", "inputnode.censored_denoised_bold"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("filtered_motion", "inputnode.filtered_motion"),
@@ -361,10 +361,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_interpolated_filtered_bold, [
-                ("interpolated_filtered_bold", "in_file"),
+                ("denoised_interpolated_bold", "in_file"),
             ]),
             (filter_runs, ds_interpolated_filtered_bold, [
-                (("interpolated_filtered_bold", _make_xcpd_uri, output_dir), "Sources"),
+                (("denoised_interpolated_bold", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])  # fmt:skip
 
