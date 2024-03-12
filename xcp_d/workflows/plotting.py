@@ -66,7 +66,7 @@ def init_qc_report_wf(
     preprocessed_bold
         The preprocessed BOLD file, after dummy scan removal.
         Used for carpet plots.
-    %(denoised_censored_bold)s
+    denoised_censored_bold
         Used for carpet plots.
         Only used if dcan_qc is True.
     %(denoised_interpolated_bold)s

@@ -499,7 +499,7 @@ def plot_fmri_es(
     ----------
     preprocessed_bold : :obj:`str`
         Preprocessed BOLD file, dummy scan removal.
-    %(denoised_censored_bold)s
+    denoised_censored_bold
     %(denoised_interpolated_bold)s
     %(TR)s
     %(filtered_motion)s
