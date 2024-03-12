@@ -153,7 +153,7 @@ class NiftiParcellate(SimpleInterface):
         timeseries_arr[:, coverage_thresholded] = np.nan
 
         # Region indices in the atlas may not be sequential, so we map them to sequential ints.
-        seq_mapper = {idx: i for i, idx in enumerate(node_labels_df.index.tolist())}
+        seq_mapper = {idx: i for i, idx in enumerate(node_labels_df["sanitized_index"].tolist())}
 
         if n_found_nodes != n_nodes:  # parcels lost by warping/downsampling atlas
             # Fill in any missing nodes in the timeseries array with NaNs.
