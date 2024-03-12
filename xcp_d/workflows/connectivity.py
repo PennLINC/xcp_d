@@ -7,7 +7,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d.interfaces.ants import ApplyTransforms
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.bids import CopyAtlas, DerivativesDataSink
 from xcp_d.interfaces.connectivity import (
     CiftiConnect,
     CiftiParcellate,
@@ -21,12 +21,7 @@ from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiParcellateWorkbench,
 )
-from xcp_d.utils.atlas import (
-    copy_atlas,
-    get_atlas_cifti,
-    get_atlas_nifti,
-    select_atlases,
-)
+from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti, select_atlases
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
 
@@ -214,21 +209,11 @@ def init_load_atlases_wf(
         ])  # fmt:skip
 
     ds_atlas = pe.MapNode(
-        Function(
-            function=copy_atlas,
-            input_names=[
-                "name_source",
-                "in_file",
-                "output_dir",
-                "atlas",
-            ],
-            output_names=["out_file"],
-        ),
+        CopyAtlas(output_dir=output_dir),
         name="ds_atlas",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
-    ds_atlas.inputs.output_dir = output_dir
     ds_atlas.inputs.atlas = atlases
 
     workflow.connect([
@@ -238,21 +223,11 @@ def init_load_atlases_wf(
     ])  # fmt:skip
 
     ds_atlas_labels_file = pe.MapNode(
-        Function(
-            function=copy_atlas,
-            input_names=[
-                "name_source",
-                "in_file",
-                "output_dir",
-                "atlas",
-            ],
-            output_names=["out_file"],
-        ),
+        CopyAtlas(output_dir=output_dir),
         name="ds_atlas_labels_file",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
-    ds_atlas_labels_file.inputs.output_dir = output_dir
     ds_atlas_labels_file.inputs.atlas = atlases
 
     workflow.connect([
@@ -262,21 +237,11 @@ def init_load_atlases_wf(
     ])  # fmt:skip
 
     ds_atlas_metadata = pe.MapNode(
-        Function(
-            function=copy_atlas,
-            input_names=[
-                "name_source",
-                "in_file",
-                "output_dir",
-                "atlas",
-            ],
-            output_names=["out_file"],
-        ),
+        CopyAtlas(output_dir=output_dir),
         name="ds_atlas_metadata",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
-    ds_atlas_metadata.inputs.output_dir = output_dir
     ds_atlas_metadata.inputs.atlas = atlases
 
     workflow.connect([
