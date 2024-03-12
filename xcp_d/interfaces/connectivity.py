@@ -857,9 +857,8 @@ def _sanitize_nifti_atlas(atlas, df):
     atlas_data = atlas_data.astype(np.int16)
 
     # Check that all labels in the DataFrame are present in the NIfTI file, and vice versa.
-    expected_values = df.index.values
-    if 0 not in expected_values:
-        df.loc[0, "label"] = "background"
+    if 0 in df.index:
+        df = df.drop(index=[0])
 
     df.sort_index(inplace=True)  # ensure index is in order
     expected_values = df.index.values
@@ -869,7 +868,7 @@ def _sanitize_nifti_atlas(atlas, df):
         raise ValueError("Atlas file contains values that are not present in the DataFrame.")
 
     # Map the labels in the DataFrame to sequential values.
-    label_mapper = {value: i for i, value in enumerate(expected_values)}
+    label_mapper = {value: i + 1 for i, value in enumerate(expected_values)}
     df["sanitized_index"] = [label_mapper[i] for i in df.index.values]
 
     # Map the values in the atlas image to sequential values.
