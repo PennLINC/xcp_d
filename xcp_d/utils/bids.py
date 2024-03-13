@@ -1005,9 +1005,9 @@ def _make_xcpd_uri(out_file, output_dir):
     dataset_path = os.path.join(output_dir, "xcp_d")
 
     if isinstance(out_file, list):
-        return [_make_uri(of, "xcp_d", dataset_path) for of in out_file]
+        return [_make_uri(of, "", dataset_path) for of in out_file]
     else:
-        return [_make_uri(out_file, "xcp_d", dataset_path)]
+        return [_make_uri(out_file, "", dataset_path)]
 
 
 def _make_xcpd_uri_lol(in_list, output_dir):
