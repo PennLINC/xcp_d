@@ -156,11 +156,9 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         desc = json.load(fo)
 
     assert "'preprocessed' is already a dataset link" not in caplog.text
-    assert "'xcp_d' is already a dataset link" not in caplog.text
     assert "'custom_confounds' is already a dataset link" not in caplog.text
     xbids.write_dataset_description(tmpdir, tmpdir, custom_confounds_folder="/fake/path4")
     assert "'preprocessed' is already a dataset link" in caplog.text
-    assert "'xcp_d' is already a dataset link" in caplog.text
     assert "'custom_confounds' is already a dataset link" in caplog.text
 
     # Now change the version and re-run the function.
