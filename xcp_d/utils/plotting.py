@@ -12,7 +12,7 @@ import seaborn as sns
 from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
 from nilearn._utils import check_niimg_4d
-from nilearn._utils.niimg import _safe_get_data
+from nilearn._utils.niimg import safe_get_data
 from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
@@ -917,7 +917,7 @@ def plot_carpet(
             img,
             dtype="auto",
         )  # Check the image is in nifti format
-        func_data = _safe_get_data(img_nii, ensure_finite=True)
+        func_data = safe_get_data(img_nii, ensure_finite=True)
         ntsteps = func_data.shape[-1]
         data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
         oseg = atlaslabels[atlaslabels > 0].reshape(-1)

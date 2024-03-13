@@ -467,6 +467,7 @@ def _interpolate(*, arr, sample_mask, TR):
         arr,
         sample_mask=sample_mask,
         t_r=TR,
+        extrapolate=True,
     )
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
