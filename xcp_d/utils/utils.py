@@ -408,8 +408,8 @@ def denoise_with_nilearn(
         filtered_interpolated_bold = butterworth(
             signals=interpolated_bold,
             sampling_rate=1.0 / TR,
-            low_pass=low_pass,
-            high_pass=high_pass,
+            low_pass=low_pass if low_pass != 0 else None,
+            high_pass=high_pass if high_pass != 0 else None,
             order=filter_order,
             padtype="constant",
             padlen=interpolated_bold.shape[0] - 1,
@@ -418,8 +418,8 @@ def denoise_with_nilearn(
             filtered_interpolated_confounds = butterworth(
                 signals=interpolated_confounds,
                 sampling_rate=1.0 / TR,
-                low_pass=low_pass,
-                high_pass=high_pass,
+                low_pass=low_pass if low_pass != 0 else None,
+                high_pass=high_pass if high_pass != 0 else None,
                 order=filter_order,
                 padtype="constant",
                 padlen=interpolated_bold.shape[0] - 1,
