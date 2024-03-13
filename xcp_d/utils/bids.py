@@ -733,11 +733,6 @@ def write_dataset_description(fmri_dir, xcpd_dir, custom_confounds_folder=None):
 
     dset_desc["DatasetLinks"]["preprocessed"] = str(fmri_dir)
 
-    if "xcp_d" in dset_desc["DatasetLinks"].keys():
-        LOGGER.warning("'xcp_d' is already a dataset link. Overwriting.")
-
-    dset_desc["DatasetLinks"]["xcp_d"] = str(xcpd_dir)
-
     if custom_confounds_folder:
         if "custom_confounds" in dset_desc["DatasetLinks"].keys():
             LOGGER.warning("'custom_confounds' is already a dataset link. Overwriting.")
