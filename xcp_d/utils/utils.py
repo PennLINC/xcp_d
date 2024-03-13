@@ -406,19 +406,23 @@ def denoise_with_nilearn(
     # Now apply the bandpass filter to the interpolated data and confounds
     if (low_pass is not None) or (high_pass is not None):
         filtered_interpolated_bold = butterworth(
-            interpolated_bold,
+            signals=interpolated_bold,
             sampling_rate=1.0 / TR,
             low_pass=low_pass,
             high_pass=high_pass,
-            filter_order=filter_order,
+            order=filter_order,
+            padtype="constant",
+            padlen=interpolated_bold.shape[0] - 1,
         )
         if denoise:
             filtered_interpolated_confounds = butterworth(
-                interpolated_confounds,
+                signals=interpolated_confounds,
                 sampling_rate=1.0 / TR,
                 low_pass=low_pass,
                 high_pass=high_pass,
-                filter_order=filter_order,
+                order=filter_order,
+                padtype="constant",
+                padlen=interpolated_bold.shape[0] - 1,
             )
 
     else:
