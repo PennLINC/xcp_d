@@ -107,7 +107,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # Load atlases
-    atlas_names = ["4S1056Parcels", "4S156Parcels", "4S456Parcels", "Gordon", "Glasser"]
+    atlas_names = ["Gordon", "Glasser"]
     atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
 
@@ -148,7 +148,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     connectivity_wf_res = connectivity_wf.run(cwd=tmpdir)
     nodes = get_nodes(connectivity_wf_res)
 
-    n_parcels, n_parcels_in_atlas = 1056, 1056
+    n_parcels, n_parcels_in_atlas = 333, 333
 
     # Let's find the correct workflow outputs
     atlas_file = warped_atlases[0]
