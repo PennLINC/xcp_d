@@ -714,11 +714,6 @@ def write_dataset_description(fmri_dir, xcpd_dir, custom_confounds_folder=None):
 
     dset_desc["DatasetLinks"]["preprocessed"] = str(fmri_dir)
 
-    if "xcp_d" in dset_desc["DatasetLinks"].keys():
-        LOGGER.warning("'xcp_d' is already a dataset link. Overwriting.")
-
-    dset_desc["DatasetLinks"]["xcp_d"] = str(xcpd_dir)
-
     if custom_confounds_folder:
         if "custom_confounds" in dset_desc["DatasetLinks"].keys():
             LOGGER.warning("'custom_confounds' is already a dataset link. Overwriting.")
@@ -982,9 +977,9 @@ def _make_xcpd_uri(out_file, output_dir):
     from xcp_d.utils.bids import _make_uri
 
     if isinstance(out_file, list):
-        return [_make_uri(of, "xcp_d", output_dir) for of in out_file]
+        return [_make_uri(of, "", output_dir) for of in out_file]
     else:
-        return [_make_uri(out_file, "xcp_d", output_dir)]
+        return [_make_uri(out_file, "", output_dir)]
 
 
 def _make_xcpd_uri_lol(in_list, output_dir):
