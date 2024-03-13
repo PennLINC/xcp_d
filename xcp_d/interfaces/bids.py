@@ -1,8 +1,12 @@
 """Adapted interfaces from Niworkflows."""
 
+import os
+import shutil
 from json import loads
 from pathlib import Path
 
+import nibabel as nb
+import numpy as np
 from bids.layout import Config
 from nipype import logging
 from nipype.interfaces.base import (
@@ -15,6 +19,8 @@ from nipype.interfaces.base import (
 )
 from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
 from pkg_resources import resource_filename as pkgrf
+
+from xcp_d.utils.bids import get_entity
 
 # NOTE: Modified for xcpd's purposes
 xcp_d_spec = loads(Path(pkgrf("xcp_d", "data/xcp_d_bids_config.json")).read_text())
@@ -188,5 +194,119 @@ class CollectRegistrationFiles(SimpleInterface):
                 "templates_fsLR",
                 f"tpl-dHCP_space-fsLR_hemi-{hemisphere}_den-32k_desc-week42_sphere.surf.gii",
             )
+
+        return runtime
+
+
+class _CopyAtlasInputSpec(BaseInterfaceInputSpec):
+    name_source = traits.Str(
+        desc="The source file's name.",
+        mandatory=False,
+    )
+    in_file = File(
+        exists=True,
+        desc="The atlas file to copy.",
+        mandatory=True,
+    )
+    output_dir = Directory(
+        exists=True,
+        desc="The output directory.",
+        mandatory=True,
+    )
+    atlas = traits.Str(
+        desc="The atlas name.",
+        mandatory=True,
+    )
+
+
+class _CopyAtlasOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc="The copied atlas file.",
+    )
+
+
+class CopyAtlas(SimpleInterface):
+    """Copy atlas file to output directory.
+
+    Parameters
+    ----------
+    name_source : :obj:`str`
+        The source name of the atlas file.
+    in_file : :obj:`str`
+        The atlas file to copy.
+    output_dir : :obj:`str`
+        The output directory.
+    atlas : :obj:`str`
+        The name of the atlas.
+
+    Returns
+    -------
+    out_file : :obj:`str`
+        The path to the copied atlas file.
+
+    Notes
+    -----
+    I can't use DerivativesDataSink because it has a problem with dlabel CIFTI files.
+    It gives the following error:
+    "AttributeError: 'Cifti2Header' object has no attribute 'set_data_dtype'"
+
+    I can't override the CIFTI atlas's data dtype ahead of time because setting it to int8 or int16
+    somehow converts all of the values in the data array to weird floats.
+    This could be a version-specific nibabel issue.
+
+    I've also updated this function to handle JSON and TSV files as well.
+    """
+
+    input_spec = _CopyAtlasInputSpec
+    output_spec = _CopyAtlasOutputSpec
+
+    def _run_interface(self, runtime):
+        output_dir = self.inputs.output_dir
+        in_file = self.inputs.in_file
+        name_source = self.inputs.name_source
+        atlas = self.inputs.atlas
+
+        atlas_out_dir = os.path.join(output_dir, f"xcp_d/atlases/atlas-{atlas}")
+
+        if in_file.endswith(".json"):
+            out_basename = f"atlas-{atlas}_dseg.json"
+        elif in_file.endswith(".tsv"):
+            out_basename = f"atlas-{atlas}_dseg.tsv"
+        else:
+            extension = ".nii.gz" if name_source.endswith(".nii.gz") else ".dlabel.nii"
+            space = get_entity(name_source, "space")
+            res = get_entity(name_source, "res")
+            den = get_entity(name_source, "den")
+            cohort = get_entity(name_source, "cohort")
+
+            cohort_str = f"_cohort-{cohort}" if cohort else ""
+            res_str = f"_res-{res}" if res else ""
+            den_str = f"_den-{den}" if den else ""
+            if extension == ".dlabel.nii":
+                out_basename = f"space-{space}_atlas-{atlas}{den_str}{cohort_str}_dseg{extension}"
+            elif extension == ".nii.gz":
+                out_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
+
+        os.makedirs(atlas_out_dir, exist_ok=True)
+        out_file = os.path.join(atlas_out_dir, out_basename)
+
+        if out_file.endswith(".nii.gz") and os.path.isfile(out_file):
+            # Check that native-resolution atlas doesn't have a different resolution from the last
+            # run's atlas.
+            old_img = nb.load(out_file)
+            new_img = nb.load(in_file)
+            if not np.allclose(old_img.affine, new_img.affine):
+                raise ValueError(
+                    f"Existing '{atlas}' atlas affine ({out_file}) is different from the input "
+                    f"file affine ({in_file})."
+                )
+
+        # Don't copy the file if it exists, to prevent any race conditions between parallel
+        # processes.
+        if not os.path.isfile(out_file):
+            shutil.copyfile(in_file, out_file)
+
+        self._results["out_file"] = out_file
 
         return runtime
