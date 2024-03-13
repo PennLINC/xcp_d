@@ -195,17 +195,6 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         # Parcels with <50% coverage should have NaNs
         assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
-        # Now to get ground truth correlations
-        # Masking img
-        masker = NiftiLabelsMasker(
-            labels_img=atlas_file,
-            labels=coverage_df.index.tolist(),
-            smoothing_fwhm=None,
-            standardize=False,
-        )
-        masker.fit(fake_bold_file)
-        signals = masker.transform(fake_bold_file)
-
         atlas_idx = np.arange(len(coverage_df.index.tolist()), dtype=int)
         idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
         idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
