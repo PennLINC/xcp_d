@@ -29,7 +29,7 @@ np.set_printoptions(threshold=sys.maxsize)
 
 def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a nifti input."""
-    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
+    tmpdir = tmp_path_factory.mktemp("test_init_load_atlases_wf_nifti")
 
     bold_file = ds001419_data["nifti_file"]
 
@@ -145,8 +145,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     connectivity_wf.inputs.inputnode.atlases = atlas_names
     connectivity_wf.inputs.inputnode.atlas_files = warped_atlases
     connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
-    connectivity_wf.base_dir = tmpdir
-    connectivity_wf_res = connectivity_wf.run()
+    connectivity_wf_res = connectivity_wf.run(cwd=tmpdir)
     nodes = get_nodes(connectivity_wf_res)
 
     n_parcels, n_parcels_in_atlas = 1056, 1056
