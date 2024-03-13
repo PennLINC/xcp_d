@@ -150,10 +150,11 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     connectivity_wf_res = connectivity_wf.run()
     nodes = get_nodes(connectivity_wf_res)
 
+    atlas_file = warped_atlases[0]
+    atlas_labels_file = atlas_labels_files[0]
     n_parcels, n_parcels_in_atlas = 333, 333
 
     # Let's find the correct workflow outputs
-    atlas_file = warped_atlases[0]
     assert os.path.isfile(atlas_file)
     coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
     assert os.path.isfile(coverage)
@@ -173,9 +174,8 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
     # Now to get ground truth correlations
-    # Masking img
-    labels_df = pd.read_table(atlas_labels_files[-1])
-    atlas_img, _ = _sanitize_nifti_atlas(atlas_files[-1], labels_df)
+    labels_df = pd.read_table(atlas_labels_file, index_col="index")
+    atlas_img, _ = _sanitize_nifti_atlas(atlas_file, labels_df)
     masker = NiftiLabelsMasker(
         labels_img=atlas_img,
         labels=["background"] + coverage_df.index.tolist(),
