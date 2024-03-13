@@ -436,10 +436,13 @@ def denoise_with_nilearn(
         del censored_denoised_bold
         gc.collect()
 
+        # We enable extrapolation to retain the same time series length,
+        # but overwrite the affected volumes later.
         interpolated_unfiltered_bold = signal._interpolate_volumes(
             interpolated_unfiltered_bold,
             sample_mask=sample_mask,
             t_r=TR,
+            extrapolate=True,
         )
 
         # Replace any high-motion volumes at the beginning or end of the run with the closest
