@@ -9,6 +9,7 @@ import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d.interfaces.ants import ApplyTransforms
+from xcp_d.interfaces.connectivity import _sanitize_nifti_atlas
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiParcellateWorkbench,
@@ -173,9 +174,10 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
     # Now to get ground truth correlations
     # Masking img
+    atlas_img, _ = _sanitize_nifti_atlas(atlas_file, atlas_labels_files[0])
     masker = NiftiLabelsMasker(
-        labels_img=atlas_file,
-        labels=coverage_df.index.tolist(),
+        labels_img=atlas_img,
+        labels=["background"] + coverage_df.index.tolist(),
         smoothing_fwhm=None,
         standardize=False,
     )
