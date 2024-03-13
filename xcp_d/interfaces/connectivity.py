@@ -69,6 +69,9 @@ class NiftiParcellate(SimpleInterface):
         # Fix any nonsequential values or mismatch between atlas and DataFrame.
         atlas_img, node_labels_df = _sanitize_nifti_atlas(atlas, node_labels_df)
         node_labels = node_labels_df["label"].tolist()
+        # prepend "background" to node labels to satisfy NiftiLabelsMasker
+        # The background "label" won't be present in the output timeseries.
+        masker_labels = ["background"] + node_labels
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(
@@ -79,7 +82,8 @@ class NiftiParcellate(SimpleInterface):
 
         sum_masker_masked = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=node_labels,
+            labels=masker_labels,
+            background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
             standardize=False,
@@ -88,7 +92,8 @@ class NiftiParcellate(SimpleInterface):
         )
         sum_masker_unmasked = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=node_labels,
+            labels=masker_labels,
+            background_label=0,
             smoothing_fwhm=None,
             standardize=False,
             strategy="sum",
@@ -135,7 +140,8 @@ class NiftiParcellate(SimpleInterface):
 
         masker = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=node_labels,
+            labels=masker_labels,
+            background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
             standardize=False,
