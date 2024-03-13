@@ -156,11 +156,9 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         desc = json.load(fo)
 
     assert "'preprocessed' is already a dataset link" not in caplog.text
-    assert "'xcp_d' is already a dataset link" not in caplog.text
     assert "'custom_confounds' is already a dataset link" not in caplog.text
     xbids.write_dataset_description(tmpdir, tmpdir, custom_confounds_folder="/fake/path4")
     assert "'preprocessed' is already a dataset link" in caplog.text
-    assert "'xcp_d' is already a dataset link" in caplog.text
     assert "'custom_confounds' is already a dataset link" in caplog.text
 
     # Now change the version and re-run the function.
@@ -313,10 +311,10 @@ def test_make_xcpd_uri():
     """Test _make_xcpd_uri."""
     out_file = "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_bold.nii.gz"
     uri = xbids._make_xcpd_uri(out_file, output_dir="/path/to/dset")
-    assert uri == ["bids:xcp_d:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+    assert uri == ["bids::sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
     xbids._make_xcpd_uri([out_file], output_dir="/path/to/dset")
-    assert uri == ["bids:xcp_d:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+    assert uri == ["bids::sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
 
 def test_make_xcpd_uri_lol():
@@ -336,16 +334,16 @@ def test_make_xcpd_uri_lol():
     uris = xbids._make_xcpd_uri_lol(in_list, output_dir="/path/to/dset/")
     assert uris == [
         [
-            "bids:xcp_d:sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
-            "bids:xcp_d:sub-01/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "bids::sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-01/func/sub-01_task-rest_run-2_bold.nii.gz",
         ],
         [
-            "bids:xcp_d:sub-02/func/sub-01_task-rest_run-1_bold.nii.gz",
-            "bids:xcp_d:sub-02/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "bids::sub-02/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-02/func/sub-01_task-rest_run-2_bold.nii.gz",
         ],
         [
-            "bids:xcp_d:sub-03/func/sub-01_task-rest_run-1_bold.nii.gz",
-            "bids:xcp_d:sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "bids::sub-03/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
         ],
     ]
 
