@@ -267,7 +267,7 @@ class CopyAtlas(SimpleInterface):
         name_source = self.inputs.name_source
         atlas = self.inputs.atlas
 
-        atlas_out_dir = os.path.join(output_dir, f"xcp_d/atlases/atlas-{atlas}")
+        atlas_out_dir = os.path.join(output_dir, f"atlases/atlas-{atlas}")
 
         if in_file.endswith(".json"):
             out_basename = f"atlas-{atlas}_dseg.json"
