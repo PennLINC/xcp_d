@@ -174,8 +174,8 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
     # Now to get ground truth correlations
     # Masking img
-    labels_df = pd.read_table(atlas_labels_files[0])
-    atlas_img, _ = _sanitize_nifti_atlas(atlas_file, labels_df)
+    labels_df = pd.read_table(atlas_labels_files[-1])
+    atlas_img, _ = _sanitize_nifti_atlas(atlas_files[-1], labels_df)
     masker = NiftiLabelsMasker(
         labels_img=atlas_img,
         labels=["background"] + coverage_df.index.tolist(),
