@@ -421,9 +421,7 @@ class _GenerateConfoundsOutputSpec(TraitedSpec):
     confounds_file = traits.Either(
         File(exists=True),
         None,
-        desc=(
-            "The selected confounds. This may include custom confounds as well."
-        ),
+        desc="The selected confounds. This may include custom confounds as well.",
     )
     confounds_metadata = traits.Dict(desc="Metadata associated with the confounds_file output.")
     motion_file = File(
