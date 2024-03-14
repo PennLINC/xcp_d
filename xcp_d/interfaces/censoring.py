@@ -422,8 +422,7 @@ class _GenerateConfoundsOutputSpec(TraitedSpec):
         File(exists=True),
         None,
         desc=(
-            "The selected confounds. This may include custom confounds as well. "
-            "It will also always have the linear trend and a constant column."
+            "The selected confounds. This may include custom confounds as well."
         ),
     )
     confounds_metadata = traits.Dict(desc="Metadata associated with the confounds_file output.")
