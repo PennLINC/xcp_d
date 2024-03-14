@@ -401,7 +401,7 @@ def denoise_with_nilearn(
 
     if denoise:
         # Estimate the voxel-wise mean of the low-motion BOLD data, to be added back in later.
-        mean_bold = np.mean(preprocessed_bold[sample_mask, :], axis=1)
+        mean_bold = np.mean(preprocessed_bold[sample_mask, :], axis=0)
 
         # Detrend the interpolated data and confounds.
         # This also mean-centers the data and confounds.
