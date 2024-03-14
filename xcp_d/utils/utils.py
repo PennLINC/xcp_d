@@ -335,20 +335,22 @@ def denoise_with_nilearn(
 
     1.  Use :func:`numpy.linalg.lstsq` to estimate betas, instead of QR decomposition,
         in order to denoise the interpolated data as well.
-    2.  Return denoised, interpolated data.
-    3.  Set any leading or trailing high-motion volumes to the closest low-motion volume's values
+    2.  Set any leading or trailing high-motion volumes to the closest low-motion volume's values
         instead of disabling extrapolation.
+    3.  Return denoised, interpolated data.
 
     This function does the following:
 
     1.  Interpolate high-motion volumes in the BOLD data and confounds.
-    2.  Detrend interpolated BOLD and confounds.
+    2.  Estimate the mean of the low-motion BOLD data, to be added back in at a later step.
+    3.  Detrend interpolated BOLD and confounds.
         -   Only done if denoising is requested.
         -   This also mean-centers the data.
-    3.  Bandpass filter the interpolated data and confounds.
-    4.  Censor the data and confounds.
-    5.  Estimate betas using only the low-motion volumes.
-    6.  Apply the betas to denoise the interpolated BOLD data. This is re-censored in a later step.
+    4.  Bandpass filter the interpolated data and confounds.
+    5.  Censor the data and confounds.
+    6.  Estimate betas using only the low-motion volumes.
+    7.  Apply the betas to denoise the interpolated BOLD data. This is re-censored in a later step.
+    8.  Add the mean BOLD back in after denoising.
 
     Parameters
     ----------
@@ -397,11 +399,12 @@ def denoise_with_nilearn(
         if denoise:
             confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
 
-    # Detrend the interpolated data and confounds.
-    # This also mean-centers the data and confounds.
-    # NOTE: Nilearn calculates the mean BOLD at this point and adds it back in after denoising,
-    # but XCP-D does not.
     if denoise:
+        # Estimate the voxel-wise mean of the low-motion BOLD data, to be added back in later.
+        mean_bold = np.mean(preprocessed_bold[sample_mask, :], axis=1)
+
+        # Detrend the interpolated data and confounds.
+        # This also mean-centers the data and confounds.
         preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=False)
         confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
 
@@ -429,14 +432,9 @@ def denoise_with_nilearn(
 
     # Denoise the data using the censored data and confounds
     if denoise:
-        if censor_and_interpolate:
-            # Censor the data and confounds
-            censored_bold = preprocessed_bold[sample_mask, :]
-            censored_confounds = confounds_arr[sample_mask, :]
-        else:
-            # Use the full time series for denoising
-            censored_bold = preprocessed_bold
-            censored_confounds = confounds_arr
+        # Censor the data and confounds
+        censored_bold = preprocessed_bold[sample_mask, :]
+        censored_confounds = confounds_arr[sample_mask, :]
 
         # Estimate betas using only the censored data
         betas = np.linalg.lstsq(
@@ -446,9 +444,12 @@ def denoise_with_nilearn(
         )[0]
 
         # Denoise the interpolated data.
-        # The low-motion volumes of the denoised, interpolated data will be the same as the full
-        # censored, denoised data.
+        # The low-motion volumes of the denoised, interpolated data will be the same as the
+        # denoised, censored data.
         preprocessed_bold = preprocessed_bold - np.dot(confounds_arr, betas)
+
+        # Add the voxel-wise mean (estimated from low-motion volumes only) back in
+        preprocessed_bold += mean_bold[None, :]
 
     return preprocessed_bold
 

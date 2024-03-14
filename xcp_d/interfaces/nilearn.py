@@ -2,7 +2,7 @@
 
 import os
 
-from nilearn import maskers
+from nilearn import masking
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -275,7 +275,11 @@ class _DenoiseImageOutputSpec(TraitedSpec):
 
 
 class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
-    """Denoise a CIFTI BOLD file with Nilearn."""
+    """Denoise a CIFTI BOLD file with Nilearn.
+
+    For more information about the exact steps,
+    please see :py:func:`~xcp_d.utils.utils.denoise_with_nilearn`.
+    """
 
     input_spec = _DenoiseImageInputSpec
     output_spec = _DenoiseImageOutputSpec
@@ -326,7 +330,11 @@ class _DenoiseNiftiInputSpec(_DenoiseImageInputSpec):
 
 
 class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
-    """Denoise a NIfTI BOLD file with Nilearn."""
+    """Denoise a NIfTI BOLD file with Nilearn.
+
+    For more information about the exact steps,
+    please see :py:func:`~xcp_d.utils.utils.denoise_with_nilearn`.
+    """
 
     input_spec = _DenoiseNiftiInputSpec
     output_spec = _DenoiseImageOutputSpec
@@ -337,23 +345,11 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         else:
             low_pass, high_pass = self.inputs.low_pass, self.inputs.high_pass
 
-        # Use a NiftiMasker instead of apply_mask to retain TR in the image header.
-        # Note that this doesn't use any of the masker's denoising capabilities.
-        masker = maskers.NiftiMasker(
+        # Use nilearn.masking.apply_mask because it will do less to the data than NiftiMasker.
+        preprocessed_bold_arr = masking.apply_mask(
+            imgs=self.inputs.preprocessed_bold,
             mask_img=self.inputs.mask,
-            runs=None,
-            smoothing_fwhm=None,
-            standardize=False,
-            standardize_confounds=False,  # non-default
-            detrend=False,
-            high_variance_confounds=False,
-            low_pass=None,
-            high_pass=None,
-            t_r=None,
-            target_affine=None,
-            target_shape=None,
         )
-        preprocessed_bold_arr = masker.fit_transform(self.inputs.preprocessed_bold)
 
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
@@ -369,7 +365,12 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             runtime.cwd,
             "filtered_denoised.nii.gz",
         )
-        filtered_denoised_img = masker.inverse_transform(denoised_interpolated_bold)
+        filtered_denoised_img = masking.unmask(
+            X=denoised_interpolated_bold,
+            mask_img=self.inputs.mask,
+        )
+
+        # Explicitly set TR in the header
         pixdim = list(filtered_denoised_img.header.get_zooms())
         pixdim[3] = self.inputs.TR
         filtered_denoised_img.header.set_zooms(pixdim)

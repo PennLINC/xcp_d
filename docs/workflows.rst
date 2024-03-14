@@ -162,8 +162,6 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       - Global Signal
       - ACompCor
       - AROMA
-      - Linear Trend
-      - Intercept
    *  - 24P
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
       -
@@ -171,8 +169,6 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       -
       -
       -
-      - X
-      - X
    *  - 27P
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
       - X
@@ -180,8 +176,6 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       - X
       -
       -
-      - X
-      - X
    *  - 36P
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
@@ -189,8 +183,6 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
       -
       -
-      - X
-      - X
    *  - acompcor_gsr
       -  X, dX
       -
@@ -198,8 +190,6 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       - X
       - 10 com, 5WM, 5CSF
       -
-      - X
-      - X
    *  - acompcor
       - X, dX
       -
@@ -207,16 +197,12 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       -
       - 10 com, 5WM, 5CSF
       -
-      - X
-      - X
    *  - aroma_gsr
       - X, dX
       - X
       - X
       - X
       -
-      - X
-      - X
       - X
    *  - aroma
       - X, dX
@@ -225,11 +211,7 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       -
       -
       - X
-      - X
-      - X
    *  - none
-      -
-      -
       -
       -
       -
@@ -359,26 +341,77 @@ Denoising
 =========
 :class:`~xcp_d.interfaces.nilearn.DenoiseNifti`, :class:`~xcp_d.interfaces.nilearn.DenoiseCifti`
 
-Temporal censoring [OPTIONAL]
+The denoising approach in XCP-D is heavily based on Nilearn's :ref:`abraham2014machine` approach
+from :py:func:`~nilearn.signal.clean`, which was designed to follow recommendations made in
+:ref:`lindquist2019modular`.
+
+Specifically, temporal filtering and confound regression are performed in separate stages,
+but the confounds are orthogonalized with respect to the temporal filter prior to confound
+regression,
+so that no variance from the temporal filter is reintroduced by the confound regression.
+
+XCP-D modifies Nilearn's approach in the following ways:
+
+1. XCP-D uses :func:`numpy.linalg.lstsq` to estimate betas instead of QR decomposition,
+   in order to denoise the interpolated data as well.
+2. XCP-D sets any leading or trailing high-motion volumes to the closest low-motion volume's values
+   instead of extrapolating those volumes or removing them completely.
+
+Both of these modifications allow XCP-D to produce a denoised, interpolated BOLD time series,
+while Nilearn only produces the denoised, _censored_ BOLD time series.
+The interpolated BOLD time series is necessary for DCAN-specific tools.
+
+
+Interpolation
+-------------
+
+An interpolated version of the BOLD data is created by filling in the high-motion outlier volumes
+with cubic spline interpolated data, as implemented in ``nilearn``.
+Any outlier volumes at the beginning or end of the run are replaced with the closest non-outlier
+volume's data, in order to avoid extrapolation by the interpolation function.
+
+The same interpolation is applied to the confounds.
+
+Interpolation (and later censoring) can be disabled by setting ``--fd-thresh 0``.
+
+
+Detrending
+----------
+
+The interpolated BOLD data and confounds are then detrended with a linear model.
+This step also mean-centers the BOLD data and confounds over time.
+The mean will be added back into the BOLD data after nuisance regression,
+as the mean value drives the scale of the ALFF outputs.
+
+Detrending is only applied if confound regression is enabled
+(i.e., if ``--nuisance-regressors`` is not ``none``).
+
+
+Bandpass filtering [OPTIONAL]
 -----------------------------
 
-Prior to confound regression, high-motion volumes will be removed from the BOLD data.
-These volumes will also be removed from the nuisance regressors.
-Please refer to :footcite:t:`power2012spurious` for more information.
+The detrended BOLD data and confounds are then bandpass filtered using a Butterworth filter.
 
-.. tip::
-   Censoring can be disabled by setting ``--fd-thresh 0``.
+Bandpass filtering can be disabled with the ``--disable-bandpass-filter`` flag.
+If either ``--low-pass`` or ``--high-pass`` is set to 0, then the corresponding filter will be
+applied (e.g., if ``--high-pass`` is set to 0, then only the low-pass filter will be applied).
 
 
 Confound regression
 -------------------
 
-.. important::
-   Starting in version 0.4.0, if motion parameters were filtered earlier in the workflow,
-   the filtered motion parameters (including FD, and any squared or derivative regressors)
-   will be used in the confound regression step.
+The filtered BOLD data is then regressed on the filtered confounds using a linear least-squares
+approach with two steps.
 
-Prior to confound regression, all nuisance regressors will be mean-centered.
+In the first step, the linear model is fit to the low-motion volumes from both the BOLD data and
+the confounds, and the parameter estimates are retained.
+
+In the second step, the interpolated BOLD data are denoised using the parameter estimates from the
+first step, and the residuals are retained.
+The low-motion volumes in the residuals from this step are equivalent to the residuals from the
+first step,
+but we also retain the interpolated high-motion volumes in the residuals from this step in order
+to satisfy DCAN-specific tools.
 
 .. admonition:: Handling of signal regressors
 
@@ -404,49 +437,19 @@ Prior to confound regression, all nuisance regressors will be mean-centered.
    components, but users must manually add the ``signal__`` prefix to any signal regressors in
    their custom confounds files, if they choose to use them.
 
-After censoring, mean-centering, and potential orthogonalization,
-confound regression will be performed with a linear least-squares approach.
-The parameter estimates for each of the confounds will be retained, along with the residuals from
-the regression.
-The residuals from regressing the censored BOLD data on the censored confounds will be referred to
-as the ``denoised BOLD``.
+.. important::
 
-Additionally, the parameter estimates from each of the censored confounds will be used calculate
-residuals using the *full* (i.e., uncensored) confounds and BOLD data.
-The residuals from this step will be referred to as the ``uncensored, denoised BOLD``.
-The ``uncensored, denoised BOLD`` is later used for DCAN QC figures, but it is not written out to
-the output directory.
+   If you use the ``signal__`` approach, you must make sure that the signal regressors do not
+   reflect noise captured by the noise regressors.
+   Some ICA-based denoising methods, such as ME-ICA, can only distinguish specific types of noise,
+   so they may label other types of noise as "signal".
+   Since your confounds will be orthogonalized with respect to _all_ of your ``signal__``
+   regressors, this could lead to the imperfect removal of noise from your BOLD data.
 
-
-Interpolation
--------------
-
-An interpolated version of the ``denoised BOLD`` is then created by filling in the high-motion
-outlier volumes with cubic spline interpolated data, as implemented in ``Nilearn``.
-
-.. warning::
-   In versions 0.4.0rc2 - 0.5.0, XCP-D used cubic spline interpolation,
-   followed by bandpass filtering.
-
-   However, cubic spline interpolation can introduce large spikes and drops in the signal
-   when the censored volumes are at the beginning or end of the run,
-   which are then propagated to the filtered data.
-
-   To address this, XCP-D now replaces interpolated volumes at the edges of the run with the
-   closest non-outlier volume's data, as of 0.5.1.
-
-The resulting ``interpolated, denoised BOLD`` is primarily used for bandpass filtering.
-
-
-Bandpass filtering [OPTIONAL]
------------------------------
-
-The ``interpolated, denoised BOLD`` is then bandpass filtered using a Butterworth filter.
-The resulting ``filtered, interpolated, denoised BOLD`` will only be written out to the output
-directory if the ``--dcan-qc`` flag is used, as users **should not** use interpolated data
-directly.
-
-Bandpass filtering can be disabled with the ``--disable-bandpass-filter`` flag.
+The residuals from the second step are referred to as the ``denoised, interpolated BOLD``.
+The ``denoised, interpolated BOLD`` will only be written out to the output
+directory if the ``--dcan-qc`` flag is used,
+as users **should not** use interpolated data directly.
 
 
 Re-censoring
@@ -454,7 +457,7 @@ Re-censoring
 :class:`~xcp_d.interfaces.censoring.Censor`
 
 After bandpass filtering, high motion volumes are removed from the
-``filtered, interpolated, denoised BOLD`` once again, to produce ``filtered, denoised BOLD``.
+``denoised, interpolated BOLD`` once again, to produce ``denoised BOLD``.
 This is the primary output of XCP-D.
 
 
@@ -464,6 +467,7 @@ Resting-state derivative generation
 For each BOLD run, resting-state derivatives are generated.
 These include regional homogeneity (ReHo) and amplitude of low-frequency fluctuation (ALFF).
 
+
 ALFF
 ----
 :func:`~xcp_d.workflows.restingstate.init_alff_wf`
@@ -472,7 +476,7 @@ Amplitude of low-frequency fluctuation (ALFF) is a measure that ostensibly local
 spontaneous neural activity in resting-state BOLD data.
 It is calculated by the following:
 
-1. The ``filtered, interpolated, denoised BOLD`` is passed along to the ALFF workflow.
+1. The ``denoised, interpolated BOLD`` is passed along to the ALFF workflow.
 2. If censoring+interpolation was performed, then the interpolated time series is censored at this
    point.
 3. Voxel-wise BOLD time series are normalized (mean-centered and scaled to unit standard deviation)
@@ -488,7 +492,7 @@ It is calculated by the following:
    temporal filtering step are extracted from the full power spectrum.
 7. The mean of the within-band power spectrum is calculated and multiplied by 2.
 8. The ALFF value is multiplied by the standard deviation of the voxel-wise
-   ``filtered, interpolated, denoised BOLD`` time series.
+   ``denoised, interpolated BOLD`` time series.
    This brings ALFF back to its original scale, as if the time series was not normalized.
 
 ALFF will only be calculated if the bandpass filter is enabled
@@ -509,7 +513,7 @@ Parcellation and functional connectivity estimation [OPTIONAL]
 :func:`~xcp_d.workflows.connectivity.init_functional_connectivity_cifti_wf`
 
 If the user chooses,
-the ``filtered, denoised BOLD`` is fed into a functional connectivity workflow,
+the ``denoised BOLD`` is fed into a functional connectivity workflow,
 which extracts parcel-wise time series from the BOLD using several atlases.
 These atlases are documented in :doc:`outputs`.
 
@@ -552,7 +556,7 @@ Smoothing [OPTIONAL]
 ====================
 :func:`~xcp_d.workflows.postprocessing.init_resd_smoothing_wf`
 
-The ``filtered, denoised BOLD`` may optionally be smoothed with a Gaussian kernel.
+The ``denoised BOLD`` may optionally be smoothed with a Gaussian kernel.
 This smoothing kernel is set with the ``--smoothing`` parameter.
 
 
@@ -561,8 +565,8 @@ Concatenation of functional derivatives [OPTIONAL]
 :func:`~xcp_d.workflows.concatenation.init_concatenate_data_wf`
 
 If the ``--combineruns`` flag is included, then BOLD runs will be grouped by task and concatenated.
-Several concatenated derivatives will be generated, including the ``filtered, denoised BOLD``,
-the ``smoothed, filtered, denoised BOLD``, the temporal mask, and the filtered motion parameters.
+Several concatenated derivatives will be generated, including the ``denoised BOLD``,
+the ``denoised, interpolated BOLD``, the temporal mask, and the filtered motion parameters.
 
 .. important::
    If a run does not have enough low-motion data and is skipped, then the concatenation workflow
