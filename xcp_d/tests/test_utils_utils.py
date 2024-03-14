@@ -70,7 +70,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
 
     # Create the censoring file
-    censoring_df = confounds_df[["framewise_displacement"]]
+    censoring_df = confounds_df[["framewise_displacement"]].copy()
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
     n_censored_volumes = censoring_df["framewise_displacement"].sum()
     assert n_censored_volumes > 0
@@ -115,7 +115,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
 
     # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
     # Create an updated censoring file with outliers at first and last two volumes
-    censoring_df = confounds_df[["framewise_displacement"]]
+    censoring_df = confounds_df[["framewise_displacement"]].copy()
     censoring_df.loc[:, "framewise_displacement"] = False
     censoring_df.loc[:1, "framewise_displacement"] = True
     censoring_df.loc[58:, "framewise_displacement"] = True
