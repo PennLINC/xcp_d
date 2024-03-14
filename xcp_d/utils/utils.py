@@ -358,8 +358,11 @@ def denoise_with_nilearn(
         but without any additional censoring.
         May be None, if no denoising should be performed.
     %(temporal_mask)s
-    low_pass, high_pass : float or None
-        Lowpass and high_pass thresholds, in Hertz.
+    low_pass, high_pass : float
+        Low-pass and high-pass thresholds, in Hertz.
+        If 0, that bound will be skipped
+        (e.g., if low-pass is 0 and high-pass isn't,
+        then high-pass filtering will be performed instead of bnadpass filtering).
     filter_order : int
         Filter order.
     %(TR)s
@@ -376,15 +379,19 @@ def denoise_with_nilearn(
     # Only remove high-motion outliers in this step (not the random volumes for trimming).
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
     outlier_idx = list(np.where(~sample_mask)[0])
+    LOGGER.warning(f"Outliers: {outlier_idx}")
 
     denoise = bool(confounds_file)
     censor_and_interpolate = bool(outlier_idx)
     if denoise:
+        LOGGER.warning("Loading confounds.")
         confounds_df = pd.read_table(confounds_file)
 
     if censor_and_interpolate:
+        LOGGER.warning("Interpolating high-motion volumes in BOLD data.")
         interpolated_bold = _interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
         if denoise:
+            LOGGER.warning("Interpolating high-motion volumes in confounds.")
             interpolated_confounds = _interpolate(
                 arr=confounds_df.to_numpy(), sample_mask=sample_mask, TR=TR
             )
@@ -394,9 +401,14 @@ def denoise_with_nilearn(
         if denoise:
             interpolated_confounds = confounds_df.to_numpy()
 
-    # Detrend the interpolated data and confounds
+    # Detrend the interpolated data and confounds.
+    # This also mean-centered the data and confounds.
+    # NOTE: Nilearn calculates the mean at this point and adds it back in after denoising,
+    # but XCP-D does not.
+    LOGGER.warning("Detrending BOLD data.")
     interpolated_bold = standardize_signal(interpolated_bold, detrend=True, standardize=False)
     if denoise:
+        LOGGER.warning("Detrending confounds.")
         interpolated_confounds = standardize_signal(
             interpolated_confounds,
             detrend=True,
@@ -404,7 +416,8 @@ def denoise_with_nilearn(
         )
 
     # Now apply the bandpass filter to the interpolated data and confounds
-    if (low_pass is not None) or (high_pass is not None):
+    if (low_pass != 0) or (high_pass != 0):
+        LOGGER.warning("Applying Butterworth filter to BOLD data.")
         filtered_interpolated_bold = butterworth(
             signals=interpolated_bold,
             sampling_rate=1.0 / TR,
@@ -415,6 +428,7 @@ def denoise_with_nilearn(
             padlen=interpolated_bold.shape[0] - 1,
         )
         if denoise:
+            LOGGER.warning("Applying Butterworth filter to confounds.")
             filtered_interpolated_confounds = butterworth(
                 signals=interpolated_confounds,
                 sampling_rate=1.0 / TR,
@@ -430,18 +444,21 @@ def denoise_with_nilearn(
         if denoise:
             filtered_interpolated_confounds = interpolated_confounds.copy()
 
-    if censor_and_interpolate:
-        # Censor the data and confounds
-        censored_filtered_bold = filtered_interpolated_bold[sample_mask, :]
-        if denoise:
-            censored_filtered_confounds = filtered_interpolated_confounds[sample_mask, :]
-    else:
-        censored_filtered_bold = filtered_interpolated_bold
-        if denoise:
-            censored_filtered_confounds = filtered_interpolated_confounds
-
     # Denoise the data using the censored data and confounds
     if denoise:
+        if censor_and_interpolate:
+            LOGGER.warning("Censoring BOLD data.")
+            # Censor the data and confounds
+            censored_filtered_bold = filtered_interpolated_bold[sample_mask, :]
+            if denoise:
+                LOGGER.warning("Censoring confounds.")
+                censored_filtered_confounds = filtered_interpolated_confounds[sample_mask, :]
+        else:
+            censored_filtered_bold = filtered_interpolated_bold
+            if denoise:
+                censored_filtered_confounds = filtered_interpolated_confounds
+
+        LOGGER.warning("Estimating betas from censored BOLD data.")
         # Estimate betas using only the censored data
         betas = np.linalg.lstsq(
             censored_filtered_confounds,
@@ -452,6 +469,7 @@ def denoise_with_nilearn(
         # Denoise the interpolated data.
         # The low-motion volumes of the denoised, interpolated data will be the same as the full
         # censored, denoised data.
+        LOGGER.warning("Denoising interpolated BOLD data.")
         denoised_interpolated_bold = filtered_interpolated_bold - np.dot(
             filtered_interpolated_confounds, betas
         )

@@ -66,8 +66,6 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
     reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
-    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
     reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
     reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
 
@@ -89,10 +87,9 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
-
     assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
-    # Now, no filtering
+    # Now, no filtering (censoring + denoising + interpolation)
     denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
@@ -102,10 +99,9 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=None,
         TR=TR,
     )
-
     assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
-    # Finally, run without denoising
+    # Finally, run without denoising (censoring + interpolation + filtering)
     denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,
@@ -128,7 +124,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     temporal_mask = os.path.join(tmpdir, "censoring.tsv")
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
-    # Run without denoising or filtering
+    # Run without denoising or filtering (censoring + interpolation only)
     denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,

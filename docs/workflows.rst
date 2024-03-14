@@ -378,8 +378,7 @@ Confound regression
    the filtered motion parameters (including FD, and any squared or derivative regressors)
    will be used in the confound regression step.
 
-Prior to confound regression, all nuisance regressors, except the intercept regressor, will be
-mean-centered.
+Prior to confound regression, all nuisance regressors will be mean-centered.
 
 .. admonition:: Handling of signal regressors
 

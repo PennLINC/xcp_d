@@ -981,7 +981,7 @@ def _carpet(
 
     # Detrend and z-score data
     if detrend:
-        data = clean(data.T, t_r=TR, detrend=True, filter=False).T
+        data = clean(data.T, t_r=TR, detrend=True, filter=False, standardize="zscore_sample").T
         vlimits = (-2, 2)
     else:
         # If detrend is False, then the data are assumed to have native BOLD units.

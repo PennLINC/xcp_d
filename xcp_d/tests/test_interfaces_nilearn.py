@@ -102,8 +102,6 @@ def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
     reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
-    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
     reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
     reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
 
@@ -142,8 +140,6 @@ def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
     reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
-    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
     reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
     reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
 

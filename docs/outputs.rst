@@ -318,9 +318,10 @@ high-motion outliers.
 This file includes the high-motion volumes that are removed in most other derivatives.
 
 ``design.tsv`` is a tab-delimited file with one column for each nuisance regressor,
-including an intercept column, a linear trend column, and one-hot encoded regressors indicating
-each of the high-motion outlier volumes.
+including one-hot encoded regressors indicating each of the high-motion outlier volumes.
 This file includes the high-motion volumes that are removed in most other derivatives.
+Please note that the outlier columns are somewhat misleading, as volumes are removed by censoring,
+rather than regression.
 
 
 DCAN style scrubbing file (if ``--dcan-qc`` is used)
