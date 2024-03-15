@@ -372,7 +372,7 @@ class FormatForBrainSwipes(SimpleInterface):
 
             top_row = im[:, 0:350, :]
             mid_row = np.pad(im[:, 350:640, :], ((0, 0), (35, 25), (0, 0)), mode="constant")
-            bot_row = np.pad(im[:, 640:940, :], ((0, 0), (26, 25), (0, 0)), mode="constant")
+            bot_row = np.pad(im[:, 640:940, :], ((0, 0), (25, 25), (0, 0)), mode="constant")
         elif "Subcort" in os.path.basename(input_file):
             # orig_sizes = [321, 276, 276]
 
