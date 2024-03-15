@@ -16,8 +16,8 @@ from nipype.interfaces.base import (
     SimpleInterface,
     TraitedSpec,
 )
-from pkg_resources import resource_filename as pkgrf
 from PIL import Image
+from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.filemanip import fname_presuffix
 
