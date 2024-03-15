@@ -105,7 +105,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     if isinstance(bids_dir, BIDSLayout):
         layout = bids_dir
     else:
-        layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
+        layout = BIDSLayout(str(bids_dir), validate=bids_validate)
 
     all_participants = set(layout.get_subjects())
 
@@ -181,7 +181,6 @@ def collect_data(
         layout = BIDSLayout(
             str(bids_dir),
             validate=bids_validate,
-            derivatives=True,
             config=["bids", "derivatives"],
         )
 
