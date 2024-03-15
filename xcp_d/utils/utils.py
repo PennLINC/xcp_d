@@ -469,7 +469,7 @@ def _interpolate(*, arr, sample_mask, TR):
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
     # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
-    gaps = [[s, e] for s, e in zip(outlier_idx, outlier_idx[1:]) if s + 1 < e]
+    gaps = [[start, end] for start, end in zip(outlier_idx, outlier_idx[1:]) if start + 1 < end]
     edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
     consecutive_outliers_idx = list(zip(edges, edges))
     first_outliers = consecutive_outliers_idx[0]
