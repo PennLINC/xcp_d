@@ -10,7 +10,16 @@ from bids.layout import BIDSLayout, Query
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+)
 from pkg_resources import resource_filename as pkgrf
+from PIL import Image
+
+from xcp_d.utils.filemanip import fname_presuffix
 
 
 class ExecutiveSummary(object):
@@ -327,3 +336,66 @@ class ExecutiveSummary(object):
         )
 
         self.write_html(html, out_file)
+
+
+class _FormatForBrainSwipesInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        desc=(
+            "Figure file. Must be the derivative's filename, "
+            "not the file from the working directory."
+        ),
+    )
+
+
+class _FormatForBrainSwipesOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Reformatted png file.")
+
+
+class FormatForBrainSwipes(SimpleInterface):
+    """Reformat figure for Brain Swipes.
+
+    From https://github.com/DCAN-Labs/BrainSwipes/blob/cb2ce964bcae93c9a234e4421c07b88bcadf2908/\
+    tools/images/ingest_brainswipes_data.py#L113
+    Credit to @BarryTik.
+    """
+
+    input_spec = _FormatForBrainSwipesInputSpec
+    output_spec = _FormatForBrainSwipesOutputSpec
+
+    def _run_interface(self, runtime):
+        input_file = self.inputs.in_file
+        im = np.asarray(Image.open(input_file))
+
+        if "Task" in os.path.basename(input_file):
+            top_row = im[:, 0:350, :]
+            mid_row = np.pad(im[:, 350:640, :], ((0, 0), (35, 25), (0, 0)), mode="constant")
+            bot_row = np.pad(im[:, 640:, :], ((0, 0), (26, 25), (0, 0)), mode="constant")
+        elif "Subcort" in os.path.basename(input_file):
+            top_row = im[:, 0:321]
+            mid_row = np.pad(im[:, 321:597], ((0, 0), (20, 25)), mode="constant")
+            bot_row = np.pad(im[:, 597:], ((0, 0), (20, 25)), mode="constant")
+        elif "Atlas" in os.path.basename(input_file):
+            top_row = im[:, 0:655, :]
+            mid_row = np.pad(im[:, 653:1193, :], ((0, 0), (60, 55), (0, 0)), mode="constant")
+            bot_row = np.pad(im[:, 1193:, :], ((0, 0), (47, 55), (0, 0)), mode="constant")
+        else:
+            top_row = im[:, 0:640, :]
+            mid_row = np.pad(im[:, 640:1193, :], ((0, 0), (32, 55), (0, 0)), mode="constant")
+            bot_row = np.pad(im[:, 1193:, :], ((0, 0), (32, 55), (0, 0)), mode="constant")
+
+        x = np.concatenate((top_row, mid_row, bot_row), axis=0)
+        new_x = ((x - x.min()) * (1 / (x.max() - x.min()) * 255)).astype("uint8")
+        new_im = Image.fromarray(np.uint8(new_x))
+
+        output_file = fname_presuffix(
+            input_file,
+            newpath=runtime.cwd,
+            suffix="_reformatted.png",
+            use_ext=False,
+        )
+        # all images should have the a .png extension
+        new_im.save(output_file)
+        self._results["out_file"] = output_file
+
+        return runtime
