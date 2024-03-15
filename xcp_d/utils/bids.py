@@ -395,7 +395,7 @@ def collect_mesh_data(layout, participant_label):
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    queries = {
+    base_queries = {
         "pial_surf": "pial",
         "wm_surf": ["smoothwm", "white"],
     }
@@ -405,7 +405,7 @@ def collect_mesh_data(layout, participant_label):
     }
 
     standard_space_mesh = True
-    for name, suffixes in queries.items():
+    for name, suffixes in base_queries.items():
         # First, try to grab the first base surface file in standard space.
         # If it's not available, switch to native T1w-space data.
         for hemisphere in ["L", "R"]:
@@ -432,19 +432,19 @@ def collect_mesh_data(layout, participant_label):
         }
 
     initial_mesh_files = {}
-    for name, suffixes in queries.items():
+    queries = {}
+    for name, suffixes in base_queries.items():
         for hemisphere in ["L", "R"]:
             key = f"{hemisphere.lower()}h_{name}"
-            initial_mesh_files[key] = layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                hemi=hemisphere,
-                desc=None,
-                suffix=suffixes,
-                extension=".surf.gii",
+            queries[key] = {
+                "datatype": "anat",
+                "hemi": hemisphere,
+                "desc": None,
+                "suffix": suffixes,
+                "extension": ".surf.gii",
                 **query_extras,
-            )
+            }
+            initial_mesh_files[key] = layout.get(return_type="file", **queries[key])
 
     mesh_files = {}
     mesh_available = True
