@@ -368,21 +368,29 @@ class FormatForBrainSwipes(SimpleInterface):
         im = np.asarray(Image.open(input_file))
 
         if "Task" in os.path.basename(input_file):
+            # orig_sizes = [350, 290, 300]
+
             top_row = im[:, 0:350, :]
             mid_row = np.pad(im[:, 350:640, :], ((0, 0), (35, 25), (0, 0)), mode="constant")
-            bot_row = np.pad(im[:, 640:, :], ((0, 0), (26, 25), (0, 0)), mode="constant")
+            bot_row = np.pad(im[:, 640:940, :], ((0, 0), (26, 25), (0, 0)), mode="constant")
         elif "Subcort" in os.path.basename(input_file):
+            # orig_sizes = [321, 276, 276]
+
             top_row = im[:, 0:321]
             mid_row = np.pad(im[:, 321:597], ((0, 0), (20, 25)), mode="constant")
-            bot_row = np.pad(im[:, 597:], ((0, 0), (20, 25)), mode="constant")
+            bot_row = np.pad(im[:, 597:873], ((0, 0), (20, 25)), mode="constant")
         elif "Atlas" in os.path.basename(input_file):
+            # orig_sizes = [655, 540, 553]
+
             top_row = im[:, 0:655, :]
             mid_row = np.pad(im[:, 653:1193, :], ((0, 0), (60, 55), (0, 0)), mode="constant")
-            bot_row = np.pad(im[:, 1193:, :], ((0, 0), (47, 55), (0, 0)), mode="constant")
+            bot_row = np.pad(im[:, 1193:1746, :], ((0, 0), (47, 55), (0, 0)), mode="constant")
         else:
+            # orig_sizes = [640, 553, 553]
+
             top_row = im[:, 0:640, :]
             mid_row = np.pad(im[:, 640:1193, :], ((0, 0), (32, 55), (0, 0)), mode="constant")
-            bot_row = np.pad(im[:, 1193:, :], ((0, 0), (32, 55), (0, 0)), mode="constant")
+            bot_row = np.pad(im[:, 1193:1746, :], ((0, 0), (32, 55), (0, 0)), mode="constant")
 
         x = np.concatenate((top_row, mid_row, bot_row), axis=0)
         new_x = ((x - x.min()) * (1 / (x.max() - x.min()) * 255)).astype("uint8")
