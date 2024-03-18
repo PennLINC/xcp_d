@@ -380,8 +380,6 @@ Detrending
 
 The interpolated BOLD data and confounds are then detrended with a linear model.
 This step also mean-centers the BOLD data and confounds over time.
-The mean will be added back into the BOLD data after nuisance regression,
-as the mean value drives the scale of the ALFF outputs.
 
 Detrending is only applied if confound regression is enabled
 (i.e., if ``--nuisance-regressors`` is not ``none``).

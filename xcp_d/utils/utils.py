@@ -342,15 +342,13 @@ def denoise_with_nilearn(
     This function does the following:
 
     1.  Interpolate high-motion volumes in the BOLD data and confounds.
-    2.  Estimate the mean of the low-motion BOLD data, to be added back in at a later step.
-    3.  Detrend interpolated BOLD and confounds.
+    2.  Detrend interpolated BOLD and confounds.
         -   Only done if denoising is requested.
         -   This also mean-centers the data.
-    4.  Bandpass filter the interpolated data and confounds.
-    5.  Censor the data and confounds.
-    6.  Estimate betas using only the low-motion volumes.
-    7.  Apply the betas to denoise the interpolated BOLD data. This is re-censored in a later step.
-    8.  Add the mean BOLD back in after denoising.
+    3.  Bandpass filter the interpolated data and confounds.
+    4.  Censor the data and confounds.
+    5.  Estimate betas using only the low-motion volumes.
+    6.  Apply the betas to denoise the interpolated BOLD data. This is re-censored in a later step.
 
     Parameters
     ----------
@@ -375,41 +373,48 @@ def denoise_with_nilearn(
     -------
     denoised_interpolated_bold
         Returned as a :obj:`numpy.ndarray` of shape (T, S)
+
+    Notes
+    -----
+    This step only removes high-motion outliers in this step (not the random volumes for trimming).
     """
     import pandas as pd
     from nilearn.signal import butterworth, standardize_signal
+
+    n_volumes = preprocessed_bold.shape[0]
 
     # Coerce 0 filter values to None
     low_pass = low_pass if low_pass != 0 else None
     high_pass = high_pass if high_pass != 0 else None
 
     censoring_df = pd.read_table(temporal_mask)
-    # Only remove high-motion outliers in this step (not the random volumes for trimming).
+    # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
     outlier_idx = list(np.where(~sample_mask)[0])
 
-    denoise = bool(confounds_file)
+    # Determine which steps to apply
+    detrend_and_denoise = bool(confounds_file)
     censor_and_interpolate = bool(outlier_idx)
-    if denoise:
+
+    if detrend_and_denoise:
         confounds_df = pd.read_table(confounds_file)
         confounds_arr = confounds_df.to_numpy()
 
     if censor_and_interpolate:
+        # Replace high-motion volumes in the BOLD data and confounds with cubic-spline interpolated
+        # values.
         preprocessed_bold = _interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
-        if denoise:
+        if detrend_and_denoise:
             confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
 
-    if denoise:
-        # Estimate the voxel-wise mean of the low-motion BOLD data, to be added back in later.
-        # mean_bold = np.mean(preprocessed_bold[sample_mask, :], axis=0)
-
+    if detrend_and_denoise:
         # Detrend the interpolated data and confounds.
         # This also mean-centers the data and confounds.
         preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=False)
         confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
 
-    # Now apply the bandpass filter to the interpolated data and confounds
     if low_pass or high_pass:
+        # Now apply the bandpass filter to the interpolated data and confounds
         preprocessed_bold = butterworth(
             signals=preprocessed_bold,
             sampling_rate=1.0 / TR,
@@ -417,9 +422,9 @@ def denoise_with_nilearn(
             high_pass=high_pass,
             order=filter_order,
             padtype="constant",
-            padlen=preprocessed_bold.shape[0] - 1,
+            padlen=n_volumes - 1,  # maximum possible padding
         )
-        if denoise:
+        if detrend_and_denoise:
             confounds_arr = butterworth(
                 signals=confounds_arr,
                 sampling_rate=1.0 / TR,
@@ -427,34 +432,50 @@ def denoise_with_nilearn(
                 high_pass=high_pass,
                 order=filter_order,
                 padtype="constant",
-                padlen=confounds_arr.shape[0] - 1,
+                padlen=n_volumes - 1,  # maximum possible padding
             )
 
-    # Denoise the data using the censored data and confounds
-    if denoise:
+    if detrend_and_denoise:
         # Censor the data and confounds
         censored_bold = preprocessed_bold[sample_mask, :]
         censored_confounds = confounds_arr[sample_mask, :]
 
         # Estimate betas using only the censored data
-        betas = np.linalg.lstsq(
-            censored_confounds,
-            censored_bold,
-            rcond=None,
-        )[0]
+        betas = np.linalg.lstsq(censored_confounds, censored_bold, rcond=None)[0]
 
         # Denoise the interpolated data.
         # The low-motion volumes of the denoised, interpolated data will be the same as the
         # denoised, censored data.
         preprocessed_bold = preprocessed_bold - np.dot(confounds_arr, betas)
 
-        # Add the voxel-wise mean (estimated from low-motion volumes only) back in
-        # preprocessed_bold += mean_bold[None, :]
-
     return preprocessed_bold
 
 
 def _interpolate(*, arr, sample_mask, TR):
+    """Replace high-motion volumes with cubic-spline interpolated values.
+
+    This function applies Nilearn's :func:`~nilearn.signal._interpolate_volumes` function,
+    followed by an extra step that replaces extrapolated, high-motion values at the beginning and
+    end of the run with the closest low-motion volume's data.
+
+    Parameters
+    ----------
+    arr : :obj:`numpy.ndarray` of shape (T, S)
+        The data to interpolate.
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        The sample mask. True for low-motion volumes, False for high-motion volumes.
+    TR : float
+        The repetition time.
+
+    Returns
+    -------
+    interpolated_arr : :obj:`numpy.ndarray` of shape (T, S)
+        The interpolated data.
+
+    Notes
+    -----
+    This function won't work if sample_mask is all zeros, but that should never happen.
+    """
     from nilearn import signal
 
     outlier_idx = list(np.where(~sample_mask)[0])
