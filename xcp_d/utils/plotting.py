@@ -506,6 +506,8 @@ def plot_fmri_es(
     %(TR)s
     %(filtered_motion)s
     %(temporal_mask)s
+        Only non-outlier (low-motion) volumes in the temporal mask will be used to scale
+        the carpet plot.
     preprocessed_bold_figure : :obj:`str`
         output file svg before processing
     denoised_bold_figure : :obj:`str`
@@ -535,18 +537,6 @@ def plot_fmri_es(
     preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
     uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
     filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
-
-    if not (
-        preprocessed_bold_dvars.shape
-        == uncensored_denoised_bold_dvars.shape
-        == filtered_denoised_bold_dvars.shape
-    ):
-        raise ValueError(
-            "Shapes do not match:\n"
-            f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
-            f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{interpolated_filtered_bold}: {filtered_denoised_bold_arr.shape}\n\n"
-        )
 
     if not (
         preprocessed_bold_arr.shape
@@ -592,11 +582,12 @@ def plot_fmri_es(
         }
     )
 
+    atlaslabels = None
     if seg_data is not None:
         atlaslabels = nb.load(seg_data).get_fdata()
-    else:
-        atlaslabels = None
 
+    rm_temp_file = False
+    temp_preprocessed_file = preprocessed_bold
     if not standardize:
         # The plot going to carpet plot will be mean-centered and detrended,
         # but will not otherwise be rescaled.
@@ -623,9 +614,6 @@ def plot_fmri_es(
             mask=mask,
             TR=TR,
         )
-    else:
-        rm_temp_file = False
-        temp_preprocessed_file = preprocessed_bold
 
     files_for_carpet = [temp_preprocessed_file, uncensored_denoised_bold]
     figure_names = [preprocessed_bold_figure, denoised_bold_figure]
