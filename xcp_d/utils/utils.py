@@ -377,6 +377,14 @@ def denoise_with_nilearn(
     Notes
     -----
     This step only removes high-motion outliers in this step (not the random volumes for trimming).
+
+    The denoising method is designed to follow recommendations from
+    :footcite:t:`lindquist2019modular`.
+    The method is largely equivalent to Lindquist et al.'s HPMC with orthogonalization.
+
+    References
+    ----------
+    .. footbibliography::
     """
     import pandas as pd
     from nilearn.signal import butterworth, standardize_signal
@@ -388,6 +396,12 @@ def denoise_with_nilearn(
     high_pass = high_pass if high_pass != 0 else None
 
     censoring_df = pd.read_table(temporal_mask)
+    if censoring_df.shape[0] != n_volumes:
+        raise ValueError(
+            f"Temporal mask file has {censoring_df.shape[0]} rows, "
+            f"but BOLD data has {n_volumes} volumes."
+        )
+
     # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
     sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
     outlier_idx = list(np.where(~sample_mask)[0])
@@ -399,6 +413,11 @@ def denoise_with_nilearn(
     if detrend_and_denoise:
         confounds_df = pd.read_table(confounds_file)
         confounds_arr = confounds_df.to_numpy()
+        if confounds_arr.shape[0] != n_volumes:
+            raise ValueError(
+                f"Confounds file has {confounds_arr.shape[0]} rows, "
+                f"but BOLD data has {n_volumes} volumes."
+            )
 
     if censor_and_interpolate:
         # Replace high-motion volumes in the BOLD data and confounds with cubic-spline interpolated

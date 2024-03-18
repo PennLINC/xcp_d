@@ -341,9 +341,9 @@ Denoising
 =========
 :class:`~xcp_d.interfaces.nilearn.DenoiseNifti`, :class:`~xcp_d.interfaces.nilearn.DenoiseCifti`
 
-The denoising approach in XCP-D is heavily based on Nilearn's :ref:`abraham2014machine` approach
-from :py:func:`~nilearn.signal.clean`, which was designed to follow recommendations made in
-:ref:`lindquist2019modular`.
+The denoising approach in XCP-D is heavily based on Nilearn's :footcite:p:`abraham2014machine`
+approach from :py:func:`~nilearn.signal.clean`,
+which was designed to follow recommendations made in :footcite:t:`lindquist2019modular`.
 
 Specifically, temporal filtering and confound regression are performed in separate stages,
 but the confounds are orthogonalized with respect to the temporal filter prior to confound
