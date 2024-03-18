@@ -354,12 +354,15 @@ XCP-D modifies Nilearn's approach in the following ways:
 
 1. XCP-D uses :func:`numpy.linalg.lstsq` to estimate betas instead of QR decomposition,
    in order to denoise the interpolated data as well.
+   -  QR decomposition will not produce betas that can be applied to the interpolated data.
+
 2. XCP-D sets any leading or trailing high-motion volumes to the closest low-motion volume's values
    instead of extrapolating those volumes or removing them completely.
 
 Both of these modifications allow XCP-D to produce a denoised, interpolated BOLD time series,
 while Nilearn only produces the denoised, _censored_ BOLD time series.
-The interpolated BOLD time series is necessary for DCAN-specific tools.
+The interpolated BOLD time series is necessary for DCAN-specific tools,
+such as `biceps <https://biceps-cmdln.readthedocs.io/en/latest/>`_.
 
 
 Interpolation
