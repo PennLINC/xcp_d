@@ -24,9 +24,9 @@ dependencies = [
     "matplotlib ~= 3.8.2",
     "networkx ~= 3.2.1",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
-    "nilearn == 0.10.1",  # 0.10.2 raises error with compcor from fMRIPrep 23
+    "nilearn == 0.10.3",  # 0.10.2 raises error with compcor from fMRIPrep 23
     "nipype ~= 1.8.5",
-    "niworkflows == 1.10.0",
+    "niworkflows == 1.10.1",
     "num2words",  # for boilerplates
     "numpy ~= 1.19",
     "packaging",  # for version string parsing
@@ -37,8 +37,8 @@ dependencies = [
     "scikit-learn ~= 1.1",
     "scipy >= 1.8.0",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 1.40.0",  # for usage reports
-    "templateflow ~= 23.1.0",
+    "sentry-sdk ~= 1.42.0",  # for usage reports
+    "templateflow ~= 24.2.0",
 ]
 dynamic = ["version"]
 

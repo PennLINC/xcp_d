@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 
 import pytest
 from bids.layout import BIDSLayout
@@ -85,7 +86,6 @@ def test_collect_data_nibabies(datasets):
     layout = BIDSLayout(
         bids_dir,
         validate=False,
-        derivatives=True,
         config=["bids", "derivatives"],
     )
 
@@ -123,17 +123,64 @@ def test_collect_data_nibabies(datasets):
         )
 
 
-def test_collect_mesh_data(datasets):
+def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
-    layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False, derivatives=True)
+    # Dataset without mesh files
+    layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False)
     mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
     assert mesh_available is False
     assert standard_space_mesh is False
 
-    layout = BIDSLayout(datasets["ds001419"], validate=False, derivatives=True)
+    # Dataset with native-space mesh files (one file matching each query)
+    layout = BIDSLayout(datasets["ds001419"], validate=False)
     mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
     assert mesh_available is True
     assert standard_space_mesh is False
+
+    # Dataset with standard-space mesh files (one file matching each query)
+    std_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
+    shutil.copyfile(
+        os.path.join(datasets["ds001419"], "dataset_description.json"),
+        std_mesh_dir / "dataset_description.json",
+    )
+    os.makedirs(std_mesh_dir / "sub-01/anat", exist_ok=True)
+    files = [
+        "sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-R_white.surf.gii",
+    ]
+    for f in files:
+        (std_mesh_dir / "sub-01/anat").joinpath(f).touch()
+
+    layout = BIDSLayout(std_mesh_dir, validate=False)
+    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    assert mesh_available is True
+    assert standard_space_mesh is True
+
+    # Dataset with multiple files matching each query (raises an error)
+    bad_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
+    shutil.copyfile(
+        os.path.join(datasets["ds001419"], "dataset_description.json"),
+        bad_mesh_dir / "dataset_description.json",
+    )
+    os.makedirs(bad_mesh_dir / "sub-01/anat", exist_ok=True)
+    files = [
+        "sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-01_acq-test_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-01_acq-test_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-01_acq-test_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-01_acq-test_space-fsLR_den-32k_hemi-R_white.surf.gii",
+    ]
+    for f in files:
+        (std_mesh_dir / "sub-01/anat").joinpath(f).touch()
+
+    layout = BIDSLayout(std_mesh_dir, validate=False)
+    with pytest.raises(ValueError, match="More than one surface found"):
+        xbids.collect_mesh_data(layout, "01")
 
 
 def test_write_dataset_description(datasets, tmp_path_factory, caplog):
@@ -156,11 +203,9 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         desc = json.load(fo)
 
     assert "'preprocessed' is already a dataset link" not in caplog.text
-    assert "'xcp_d' is already a dataset link" not in caplog.text
     assert "'custom_confounds' is already a dataset link" not in caplog.text
     xbids.write_dataset_description(tmpdir, tmpdir, custom_confounds_folder="/fake/path4")
     assert "'preprocessed' is already a dataset link" in caplog.text
-    assert "'xcp_d' is already a dataset link" in caplog.text
     assert "'custom_confounds' is already a dataset link" in caplog.text
 
     # Now change the version and re-run the function.
@@ -313,10 +358,10 @@ def test_make_xcpd_uri():
     """Test _make_xcpd_uri."""
     out_file = "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_bold.nii.gz"
     uri = xbids._make_xcpd_uri(out_file, output_dir="/path/to/dset")
-    assert uri == ["bids:xcp_d:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+    assert uri == ["bids::sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
     xbids._make_xcpd_uri([out_file], output_dir="/path/to/dset")
-    assert uri == ["bids:xcp_d:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+    assert uri == ["bids::sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
 
 def test_make_xcpd_uri_lol():
@@ -336,16 +381,16 @@ def test_make_xcpd_uri_lol():
     uris = xbids._make_xcpd_uri_lol(in_list, output_dir="/path/to/dset/")
     assert uris == [
         [
-            "bids:xcp_d:sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
-            "bids:xcp_d:sub-01/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "bids::sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-01/func/sub-01_task-rest_run-2_bold.nii.gz",
         ],
         [
-            "bids:xcp_d:sub-02/func/sub-01_task-rest_run-1_bold.nii.gz",
-            "bids:xcp_d:sub-02/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "bids::sub-02/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-02/func/sub-01_task-rest_run-2_bold.nii.gz",
         ],
         [
-            "bids:xcp_d:sub-03/func/sub-01_task-rest_run-1_bold.nii.gz",
-            "bids:xcp_d:sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "bids::sub-03/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
         ],
     ]
 
