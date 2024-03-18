@@ -974,7 +974,7 @@ def build_workflow(opts, retval):
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4()}"
     retval["run_uuid"] = run_uuid
 
-    layout = BIDSLayout(str(opts.fmri_dir), validate=False, derivatives=True)
+    layout = BIDSLayout(str(opts.fmri_dir), validate=False)
     subject_list = collect_participants(layout, participant_label=opts.participant_label)
     retval["subject_list"] = subject_list
 
