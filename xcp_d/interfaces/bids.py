@@ -284,9 +284,9 @@ class CopyAtlas(SimpleInterface):
             res_str = f"_res-{res}" if res else ""
             den_str = f"_den-{den}" if den else ""
             if extension == ".dlabel.nii":
-                out_basename = f"space-{space}_atlas-{atlas}{den_str}{cohort_str}_dseg{extension}"
+                out_basename = f"atlas-{atlas}_space-{space}{den_str}{cohort_str}_dseg{extension}"
             elif extension == ".nii.gz":
-                out_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
+                out_basename = f"atlas-{atlas}_space-{space}{res_str}{cohort_str}_dseg{extension}"
 
         os.makedirs(atlas_out_dir, exist_ok=True)
         out_file = os.path.join(atlas_out_dir, out_basename)
