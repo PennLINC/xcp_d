@@ -145,7 +145,7 @@ class FunctionalSummary(SummaryInterface):
 
     def _generate_segment(self):
         space = get_entity(self.inputs.bold_file, "space")
-        qcfile = pd.read_csv(self.inputs.qc_file)
+        qcfile = pd.read_table(self.inputs.qc_file)
         mean_fd = str(round(qcfile["mean_fd"][0], 4))
         mean_relative_rms = str(round(qcfile["mean_relative_rms"][0], 4))
         max_relative_rms = str(round(qcfile["max_relative_rms"][0], 4))
