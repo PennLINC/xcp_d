@@ -18,7 +18,10 @@ def main():
 
     from xcp_d.cli.parser import parse_args
     from xcp_d.cli.workflow import build_workflow
-    from xcp_d.utils.bids import write_atlas_dataset_description, write_dataset_description
+    from xcp_d.utils.bids import (
+        write_atlas_dataset_description,
+        write_dataset_description,
+    )
 
     parse_args()
 
