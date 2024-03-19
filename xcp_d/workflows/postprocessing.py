@@ -572,8 +572,7 @@ def init_denoise_bold_wf(
 
     Outputs
     -------
-    %(uncensored_denoised_bold)s
-    %(interpolated_filtered_bold)s
+    %(denoised_interpolated_bold)s
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     """
@@ -621,8 +620,7 @@ def init_denoise_bold_wf(
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "uncensored_denoised_bold",
-                "interpolated_filtered_bold",
+                "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
             ],
@@ -652,8 +650,7 @@ def init_denoise_bold_wf(
             ("temporal_mask", "temporal_mask"),
         ]),
         (regress_and_filter_bold, outputnode, [
-            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
         ]),
     ])
     if not cifti:
@@ -671,7 +668,7 @@ def init_denoise_bold_wf(
     workflow.connect([
         (inputnode, censor_interpolated_data, [("temporal_mask", "temporal_mask")]),
         (regress_and_filter_bold, censor_interpolated_data, [
-            ("interpolated_filtered_bold", "in_file"),
+            ("denoised_interpolated_bold", "in_file"),
         ]),
         (censor_interpolated_data, outputnode, [
             ("censored_denoised_bold", "censored_denoised_bold"),

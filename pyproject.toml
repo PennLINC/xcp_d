@@ -37,8 +37,8 @@ dependencies = [
     "scikit-learn ~= 1.1",
     "scipy >= 1.8.0",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 1.41.0",  # for usage reports
-    "templateflow ~= 24.0.0",
+    "sentry-sdk ~= 1.42.0",  # for usage reports
+    "templateflow ~= 24.2.0",
 ]
 dynamic = ["version"]
 

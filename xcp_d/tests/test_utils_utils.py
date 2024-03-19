@@ -66,13 +66,11 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
     reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
-    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
     reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
     reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
 
     # Create the censoring file
-    censoring_df = confounds_df[["framewise_displacement"]]
+    censoring_df = confounds_df[["framewise_displacement"]].copy()
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
     n_censored_volumes = censoring_df["framewise_displacement"].sum()
     assert n_censored_volumes > 0
@@ -80,10 +78,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # First, try out filtering
-    (
-        uncensored_denoised_bold,
-        interpolated_filtered_bold,
-    ) = utils.denoise_with_nilearn(
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
         temporal_mask=temporal_mask,
@@ -92,15 +87,10 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
+    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
-    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
-
-    # Now, no filtering
-    (
-        uncensored_denoised_bold,
-        interpolated_filtered_bold,
-    ) = utils.denoise_with_nilearn(
+    # Now, no filtering (censoring + denoising + interpolation)
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
         temporal_mask=temporal_mask,
@@ -109,15 +99,10 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=None,
         TR=TR,
     )
+    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
-    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
-
-    # Finally, run without denoising
-    (
-        uncensored_denoised_bold,
-        interpolated_filtered_bold,
-    ) = utils.denoise_with_nilearn(
+    # Finally, run without denoising (censoring + interpolation + filtering)
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,
         temporal_mask=temporal_mask,
@@ -126,12 +111,11 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
-    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
+    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
     # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
     # Create an updated censoring file with outliers at first and last two volumes
-    censoring_df = confounds_df[["framewise_displacement"]]
+    censoring_df = confounds_df[["framewise_displacement"]].copy()
     censoring_df.loc[:, "framewise_displacement"] = False
     censoring_df.loc[:1, "framewise_displacement"] = True
     censoring_df.loc[58:, "framewise_displacement"] = True
@@ -140,8 +124,8 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     temporal_mask = os.path.join(tmpdir, "censoring.tsv")
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
-    # Run without denoising or filtering
-    _, interpolated_filtered_bold = utils.denoise_with_nilearn(
+    # Run without denoising or filtering (censoring + interpolation only)
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,
         temporal_mask=temporal_mask,
@@ -150,15 +134,15 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=0,
         TR=TR,
     )
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
+    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
     # The first two volumes should be the same as the third (first non-outlier) volume
-    assert np.allclose(interpolated_filtered_bold[0, :], interpolated_filtered_bold[2, :])
-    assert np.allclose(interpolated_filtered_bold[1, :], interpolated_filtered_bold[2, :])
-    assert not np.allclose(interpolated_filtered_bold[2, :], interpolated_filtered_bold[3, :])
+    assert np.allclose(denoised_interpolated_bold[0, :], denoised_interpolated_bold[2, :])
+    assert np.allclose(denoised_interpolated_bold[1, :], denoised_interpolated_bold[2, :])
+    assert not np.allclose(denoised_interpolated_bold[2, :], denoised_interpolated_bold[3, :])
     # The last volume should be the same as the third-to-last (last non-outlier) volume
-    assert np.allclose(interpolated_filtered_bold[-1, :], interpolated_filtered_bold[-3, :])
-    assert np.allclose(interpolated_filtered_bold[-2, :], interpolated_filtered_bold[-3, :])
-    assert not np.allclose(interpolated_filtered_bold[-3, :], interpolated_filtered_bold[-4, :])
+    assert np.allclose(denoised_interpolated_bold[-1, :], denoised_interpolated_bold[-3, :])
+    assert np.allclose(denoised_interpolated_bold[-2, :], denoised_interpolated_bold[-3, :])
+    assert not np.allclose(denoised_interpolated_bold[-3, :], denoised_interpolated_bold[-4, :])
 
 
 def test_list_to_str():

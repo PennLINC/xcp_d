@@ -553,17 +553,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
             "*using only the low-motion volumes*."
         ),
     )
-    uncensored_denoised_bold = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Data after regression and interpolation, but not filtering."
-            "The preprocessed BOLD data are censored, mean-centered, detrended, "
-            "and denoised to get the betas, and then the full, uncensored preprocessed BOLD data "
-            "are denoised using those betas."
-        ),
-    )
-    interpolated_filtered_bold = File(
+    denoised_interpolated_bold = File(
         exists=True,
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
@@ -645,8 +635,8 @@ class QCPlotsES(SimpleInterface):
 
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
-            uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
-            interpolated_filtered_bold=self.inputs.interpolated_filtered_bold,
+            denoised_censored_bold=self.inputs.denoised_interpolated_bold,
+            denoised_interpolated_bold=self.inputs.denoised_interpolated_bold,
             TR=self.inputs.TR,
             filtered_motion=self.inputs.filtered_motion,
             preprocessed_bold_figure=preprocessed_bold_figure,
