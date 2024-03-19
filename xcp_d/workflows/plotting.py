@@ -53,10 +53,7 @@ def init_qc_report_wf(
     preprocessed_bold
         The preprocessed BOLD file, after dummy scan removal.
         Used for carpet plots.
-    %(uncensored_denoised_bold)s
-        Used for carpet plots.
-        Only used if dcan_qc is True.
-    %(interpolated_filtered_bold)s
+    %(denoised_interpolated_bold)s
         Used for DCAN carpet plots.
         Only used if dcan_qc is True.
     %(censored_denoised_bold)s
@@ -92,8 +89,7 @@ def init_qc_report_wf(
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "uncensored_denoised_bold",
-                "interpolated_filtered_bold",
+                "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "dummy_scans",
                 "fmriprep_confounds_file",
@@ -361,8 +357,7 @@ def init_qc_report_wf(
     workflow.connect([
         (inputnode, plot_execsummary_carpets_dcan, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
             ("filtered_motion", "filtered_motion"),
             ("run_index", "run_index"),
         ]),

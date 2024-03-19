@@ -249,12 +249,6 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
             "from the BOLD data in the later regression."
         )
 
-    if params != "none":
-        desc += (
-            " Finally, linear trend and intercept terms were added to the regressors prior to "
-            "denoising."
-        )
-
     return desc
 
 
@@ -482,16 +476,6 @@ def load_confound_matrix(
     confounds_metadata = {
         k: v for k, v in full_confounds_metadata.items() if k in confounds_df.columns
     }
-    confounds_metadata["linear_trend"] = {
-        "Description": (
-            "Linear trend regressor, generated after dummy scan removal, "
-            "but before any censoring."
-        ),
-    }
-    confounds_metadata["intercept"] = {"Description": "Intercept regressor."}
-
-    confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
-    confounds_df["intercept"] = np.ones(confounds_df.shape[0])
 
     return confounds_df, confounds_metadata
 
