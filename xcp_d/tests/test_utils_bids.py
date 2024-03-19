@@ -419,10 +419,10 @@ def test_make_xcpd_uri():
 def test_make_atlas_uri():
     """Test _make_atlas_uri."""
     out_file = "/path/to/dset/xcp_d/atlases/sub-01/func/sub-01_task-rest_bold.nii.gz"
-    uri = xbids._make_atlas_uri(out_file, output_dir="/path/to/dset")
+    uri = xbids._make_atlas_uri(out_file, output_dir="/path/to/dset/xcp_d")
     assert uri == ["bids:atlas:sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
-    xbids._make_atlas_uri([out_file], output_dir="/path/to/dset")
+    xbids._make_atlas_uri([out_file], output_dir="/path/to/dset/xcp_d")
     assert uri == ["bids:atlas:sub-01/func/sub-01_task-rest_bold.nii.gz"]
 
 
