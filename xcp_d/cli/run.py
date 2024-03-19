@@ -18,7 +18,7 @@ def main():
 
     from xcp_d.cli.parser import parse_args
     from xcp_d.cli.workflow import build_workflow
-    from xcp_d.utils.bids import write_dataset_description
+    from xcp_d.utils.bids import write_atlas_dataset_description, write_dataset_description
 
     parse_args()
 
@@ -166,6 +166,9 @@ def main():
 
         # Write dataset description before generating reports
         write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+
+        if config.workflow.atlases:
+            write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
 
         # Generate reports phase
         failed_reports = generate_reports(
