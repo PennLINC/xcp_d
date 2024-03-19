@@ -46,7 +46,7 @@ def test_collect_participants(datasets):
 def test_collect_data_ds001419(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["ds001419"]
-    layout = BIDSLayout(bids_dir, validate=False, derivatives=True)
+    layout = BIDSLayout(bids_dir, validate=False)
 
     # NIFTI workflow, but also get a BIDSLayout
     subj_data = xbids.collect_data(
