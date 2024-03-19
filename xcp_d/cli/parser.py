@@ -641,13 +641,21 @@ By default, this workflow is disabled.
 **IMPORTANT**: This parameter can only be run if the --cifti flag is also enabled.
 """,
     )
-    g_experimental.add_argument(
+    g_dcan_qc = g_experimental.add_mutually_exclusive_group(required=False)
+    g_dcan_qc.add_argument(
         "--dcan-qc",
         "--dcan_qc",
         action="store_true",
         dest="dcan_qc",
-        default=False,
-        help="Run DCAN QC.",
+        default=True,
+        help="Run DCAN QC. This option is deprecated as of 0.6.4 and will be removed in 0.7.0.",
+    )
+    g_dcan_qc.add_argument(
+        "--skip-dcan-qc",
+        "--skip_dcan_qc",
+        action="store_false",
+        dest="dcan_qc",
+        help="Do not run DCAN QC.",
     )
 
     latest = check_latest()
