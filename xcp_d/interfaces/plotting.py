@@ -526,11 +526,11 @@ class QCPlots(SimpleInterface):
         df = pd.DataFrame(qc_values_dict)
         self._results["qc_file"] = fname_presuffix(
             self.inputs.cleaned_file,
-            suffix="qc_bold.csv",
+            suffix="qc_bold.tsv",
             newpath=runtime.cwd,
             use_ext=False,
         )
-        df.to_csv(self._results["qc_file"], index=False, header=True)
+        df.to_csv(self._results["qc_file"], index=False, header=True, sep="\t")
 
         # Write out the metadata file
         self._results["qc_metadata"] = fname_presuffix(

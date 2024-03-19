@@ -30,6 +30,7 @@ from xcp_d.utils.bids import (
     get_entity,
     get_preproc_pipeline_info,
     group_across_runs,
+    write_atlas_dataset_description,
     write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
@@ -196,7 +197,14 @@ def init_xcpd_wf(
     xcpd_wf.base_dir = work_dir
     LOGGER.info(f"Beginning the {name} workflow")
 
-    write_dataset_description(fmri_dir, os.path.join(output_dir, "xcp_d"))
+    write_dataset_description(
+        fmri_dir,
+        os.path.join(output_dir, "xcp_d"),
+        atlases=atlases,
+        custom_confounds_folder=custom_confounds_folder,
+    )
+    if atlases:
+        write_atlas_dataset_description(os.path.join(output_dir, "xcp_d", "atlases"))
 
     for subject_id in subject_list:
         single_subj_wf = init_subject_wf(

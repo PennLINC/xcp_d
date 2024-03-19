@@ -1,5 +1,28 @@
 # What's New
 
+## 0.6.4
+
+### 🎉 Exciting New Features
+
+* Replace `bids:xcp_d:` BIDS URI with `bids::` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1088
+
+### 👎 Deprecations
+
+* [DCAN] Enable DCAN QC by default by @tsalo in https://github.com/PennLINC/xcp_d/pull/1086
+
+### 🐛 Bug Fixes
+
+* Raise error if atlas affines don't match across participants by @tsalo in https://github.com/PennLINC/xcp_d/pull/1075
+* Fix query error report in `collect_mesh_data` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1092
+* Adopt Lindquist-compliant denoising method by @tsalo in https://github.com/PennLINC/xcp_d/pull/1087
+
+### Other Changes
+
+* Update changelog for 0.6.3 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1079
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.3...0.6.4
+
+
 ## 0.6.3
 
 ### 🎉 Exciting New Features
