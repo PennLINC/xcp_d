@@ -63,8 +63,8 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert os.path.isfile(results.outputs.temporal_mask)
     out_confounds_file = results.outputs.confounds_file
     out_df = pd.read_table(out_confounds_file)
-    assert out_df.shape[1] == 26  # 24(P) + linear trend + constant
-    assert sum(out_df.columns.str.endswith("_orth")) == 24  # all 24(P), not linear trend/constant
+    assert out_df.shape[1] == 24  # 24(P)
+    assert sum(out_df.columns.str.endswith("_orth")) == 24  # all 24(P)
 
 
 def test_random_censor(tmp_path_factory):
@@ -125,7 +125,7 @@ def test_random_censor(tmp_path_factory):
 
 def test_censor(ds001419_data, tmp_path_factory):
     """Test Censor interface."""
-    tmpdir = tmp_path_factory.mktemp("test_generate_confounds")
+    tmpdir = tmp_path_factory.mktemp("test_censor")
     nifti_file = ds001419_data["nifti_file"]
     cifti_file = ds001419_data["cifti_file"]
     in_img = nb.load(nifti_file)

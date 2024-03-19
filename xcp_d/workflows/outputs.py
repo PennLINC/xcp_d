@@ -213,7 +213,7 @@ def init_postproc_derivatives_wf(
     %(coverage_ciftis)s
     qc_file
         LINC-style quality control file
-    %(interpolated_filtered_bold)s
+    %(denoised_interpolated_bold)s
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     alff
@@ -249,7 +249,7 @@ def init_postproc_derivatives_wf(
                 "qc_file",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
-                "interpolated_filtered_bold",
+                "denoised_interpolated_bold",
                 "alff",
                 "parcellated_alff",
                 "smoothed_alff",
@@ -277,7 +277,7 @@ def init_postproc_derivatives_wf(
             fields=[
                 "filtered_motion",
                 "temporal_mask",
-                "interpolated_filtered_bold",
+                "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "timeseries",
@@ -475,13 +475,13 @@ def init_postproc_derivatives_wf(
         # fmt:off
         workflow.connect([
             (inputnode, ds_interpolated_denoised_bold, [
-                ("interpolated_filtered_bold", "in_file"),
+                ("denoised_interpolated_bold", "in_file"),
             ]),
             (ds_denoised_bold, ds_interpolated_denoised_bold, [
                 (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
             (ds_interpolated_denoised_bold, outputnode, [
-                ("out_file", "interpolated_filtered_bold"),
+                ("out_file", "denoised_interpolated_bold"),
             ]),
         ])
         # fmt:on
@@ -490,7 +490,7 @@ def init_postproc_derivatives_wf(
         # fmt:off
         workflow.connect([
             (inputnode, outputnode, [
-                ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+                ("denoised_interpolated_bold", "denoised_interpolated_bold"),
             ]),
         ])
         # fmt:on

@@ -421,10 +421,7 @@ class _GenerateConfoundsOutputSpec(TraitedSpec):
     confounds_file = traits.Either(
         File(exists=True),
         None,
-        desc=(
-            "The selected confounds. This may include custom confounds as well. "
-            "It will also always have the linear trend and a constant column."
-        ),
+        desc="The selected confounds. This may include custom confounds as well.",
     )
     confounds_metadata = traits.Dict(desc="Metadata associated with the confounds_file output.")
     motion_file = File(
@@ -518,20 +515,15 @@ class GenerateConfounds(SimpleInterface):
                 )
                 noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
 
-                # Don't orthogonalize the intercept or linear trend regressors
-                untouched_cols = ["linear_trend", "intercept"]
-                cols_to_orth = [c for c in noise_columns if c not in untouched_cols]
-                orth_confounds_df = confounds_df[noise_columns].copy()
-                orth_cols = [f"{c}_orth" for c in cols_to_orth]
+                orth_cols = [f"{c}_orth" for c in noise_columns]
                 orth_confounds_df = pd.DataFrame(
                     index=confounds_df.index,
-                    columns=orth_cols + untouched_cols,
+                    columns=orth_cols,
                 )
-                orth_confounds_df.loc[:, untouched_cols] = confounds_df[untouched_cols]
 
                 # Do the orthogonalization
                 signal_regressors = confounds_df[signal_columns].to_numpy()
-                noise_regressors = confounds_df[cols_to_orth].to_numpy()
+                noise_regressors = confounds_df[noise_columns].to_numpy()
                 signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
                 pred_noise_regressors = np.dot(signal_regressors, signal_betas)
                 orth_noise_regressors = noise_regressors - pred_noise_regressors
@@ -540,7 +532,7 @@ class GenerateConfounds(SimpleInterface):
                 orth_confounds_df.loc[:, orth_cols] = orth_noise_regressors
                 confounds_df = orth_confounds_df
 
-                for col in cols_to_orth:
+                for col in noise_columns:
                     desc_str = (
                         "This regressor is orthogonalized with respect to the 'signal' regressors "
                         f"({', '.join(signal_columns)}) after dummy scan removal, "
