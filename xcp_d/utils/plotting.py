@@ -835,7 +835,7 @@ def plot_carpet(
     func,
     atlaslabels,
     TR,
-    detrend,
+    standardize,
     temporal_mask=None,
     size=(950, 800),
     labelsize=30,
@@ -857,7 +857,7 @@ def plot_carpet(
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
         Required if ``func`` is a NIfTI image.
         Unused if ``func`` is a CIFTI.
-    detrend : bool, optional
+    standardize : bool, optional
         Detrend and standardize the data prior to plotting.
     size : tuple, optional
         Size of figure.
@@ -942,7 +942,7 @@ def plot_carpet(
         cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
 
     # Detrend and z-score data
-    if detrend:
+    if standardize:
         # This does not account for the temporal mask.
         data = clean(data.T, t_r=TR, detrend=True, filter=False, standardize="zscore_sample").T
         vlimits = (-2, 2)
