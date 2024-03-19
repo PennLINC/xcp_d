@@ -482,8 +482,8 @@ def plot_framewise_displacement_es(
 def plot_fmri_es(
     *,
     preprocessed_bold,
-    uncensored_denoised_bold,
-    interpolated_filtered_bold,
+    denoised_censored_bold,
+    denoised_interpolated_bold,
     TR,
     filtered_motion,
     temporal_mask,
@@ -501,8 +501,8 @@ def plot_fmri_es(
     ----------
     preprocessed_bold : :obj:`str`
         Preprocessed BOLD file, dummy scan removal.
-    %(uncensored_denoised_bold)s
-    %(interpolated_filtered_bold)s
+    denoised_censored_bold
+    %(denoised_interpolated_bold)s
     %(TR)s
     %(filtered_motion)s
     %(temporal_mask)s
@@ -531,8 +531,8 @@ def plot_fmri_es(
     """
     # Compute dvars correctly if not already done
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
-    uncensored_denoised_bold_arr = read_ndata(datafile=uncensored_denoised_bold, maskfile=mask)
-    filtered_denoised_bold_arr = read_ndata(datafile=interpolated_filtered_bold, maskfile=mask)
+    uncensored_denoised_bold_arr = read_ndata(datafile=denoised_censored_bold, maskfile=mask)
+    filtered_denoised_bold_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
 
     preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
     uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
@@ -546,8 +546,8 @@ def plot_fmri_es(
         raise ValueError(
             "Shapes do not match:\n"
             f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
-            f"\t{uncensored_denoised_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{interpolated_filtered_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{denoised_censored_bold}: {uncensored_denoised_bold_arr.shape}\n"
+            f"\t{denoised_interpolated_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
     # Formatting & setting of files
@@ -609,13 +609,13 @@ def plot_fmri_es(
         # Write out the scaled data
         temp_preprocessed_file = write_ndata(
             data_matrix=detrended_preprocessed_bold_arr,
-            template=uncensored_denoised_bold,  # residuals file is censored, so length matches
+            template=denoised_censored_bold,  # residuals file is censored, so length matches
             filename=temp_preprocessed_file,
             mask=mask,
             TR=TR,
         )
 
-    files_for_carpet = [temp_preprocessed_file, uncensored_denoised_bold]
+    files_for_carpet = [temp_preprocessed_file, denoised_censored_bold]
     figure_names = [preprocessed_bold_figure, denoised_bold_figure]
     data_arrays = [preprocessed_bold_timeseries, uncensored_denoised_bold_timeseries]
     for i_fig, figure_name in enumerate(figure_names):
@@ -827,7 +827,7 @@ def plot_carpet(
     func,
     atlaslabels,
     TR,
-    standardize,
+    detrend,
     temporal_mask=None,
     size=(950, 800),
     labelsize=30,
@@ -849,7 +849,7 @@ def plot_carpet(
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
         Required if ``func`` is a NIfTI image.
         Unused if ``func`` is a CIFTI.
-    standardize : bool, optional
+    detrend : bool, optional
         Detrend and standardize the data prior to plotting.
     size : tuple, optional
         Size of figure.
@@ -940,7 +940,7 @@ def plot_carpet(
         cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
 
     # Detrend and z-score data
-    if standardize:
+    if detrend:
         # This does not account for the temporal mask.
         data = clean(data.T, t_r=TR, detrend=True, filter=False, standardize="zscore_sample").T
         vlimits = (-2, 2)
