@@ -52,6 +52,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--skip-parcellation",
+        "--skip-dcan-qc",
         "--random-seed=8675309",
     ]
     opts = run.get_parser().parse_args(parameters)
@@ -109,7 +110,6 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--band-stop-max=18",
         "--cifti",
         "--combineruns",
-        "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
@@ -169,6 +169,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
+        "--skip-dcan-qc",
         "--min-coverage=0.1",
         "--random-seed=8675309",
     ]
@@ -242,7 +243,6 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--warp-surfaces-native2std",
         "--cifti",
         "--combineruns",
-        "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
@@ -316,7 +316,6 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--warp-surfaces-native2std",
         "--cifti",
         "--combineruns",
-        "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
@@ -392,7 +391,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--nuisance-regressors 27P "
         "--disable-bandpass-filter "
         "--min-time 20 "
-        "--dcan-qc "
         "--dummy-scans 1 "
         f"--custom_confounds={custom_confounds_dir}"
     )
@@ -437,7 +435,6 @@ def test_nibabies(data_dir, output_dir, working_dir):
         "--head_radius=auto",
         "--smoothing=0",
         "--fd-thresh=0",
-        "--dcan-qc",
     ]
     _run_and_generate(
         test_name=test_name,

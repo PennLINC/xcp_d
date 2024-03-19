@@ -106,8 +106,8 @@ def check_generated_files(out_dir, output_list_file):
 
 def check_affines(data_dir, out_dir, input_type):
     """Confirm affines don't change across XCP-D runs."""
-    preproc_layout = BIDSLayout(str(data_dir), validate=False, derivatives=False)
-    xcp_layout = BIDSLayout(str(out_dir), validate=False, derivatives=False)
+    preproc_layout = BIDSLayout(str(data_dir), validate=False)
+    xcp_layout = BIDSLayout(str(out_dir), validate=False)
     if input_type == "cifti":  # Get the .dtseries.nii
         denoised_files = xcp_layout.get(
             invalid_filters="allow",

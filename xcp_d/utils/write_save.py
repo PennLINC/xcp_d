@@ -170,7 +170,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
 
     else:
         # write nifti series
-        img = masking.unmask(data_matrix, mask)
+        img = masking.unmask(data_matrix.astype(np.float32), mask)
         # we'll override the default TR (1) in the header
         pixdim = list(img.header.get_zooms())
         pixdim[3] = TR
