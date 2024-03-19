@@ -1071,7 +1071,7 @@ def _make_atlas_uri(out_file, output_dir):
 
     from xcp_d.utils.bids import _make_uri
 
-    dataset_path = os.path.join(output_dir, "xcp_d", "atlases")
+    dataset_path = os.path.join(output_dir, "atlases")
 
     if isinstance(out_file, list):
         return [_make_uri(of, "atlas", dataset_path) for of in out_file]
