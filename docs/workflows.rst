@@ -449,7 +449,7 @@ to satisfy DCAN-specific tools.
 
 The residuals from the second step are referred to as the ``denoised, interpolated BOLD``.
 The ``denoised, interpolated BOLD`` will only be written out to the output
-directory if the ``--dcan-qc`` flag is used,
+directory if the ``--skip-dcan-qc`` flag is not used,
 as users **should not** use interpolated data directly.
 
 
