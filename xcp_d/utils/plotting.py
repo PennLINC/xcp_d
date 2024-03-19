@@ -21,26 +21,34 @@ from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
-def _decimate_data(data, seg_data, size):
+def _decimate_data(data, seg_data, temporal_mask, size):
     """Decimate timeseries data.
 
     Parameters
     ----------
     data : ndarray
-        2 element array of timepoints and samples
+        2D array of timepoints and samples
     seg_data : ndarray
-        1 element array of samples
+        1D array of samples
+    temporal_mask : ndarray or None
+        1D array of timepoints. May be None.
     size : tuple
         2 element for P/T decimation
     """
+    # Decimate the data in the spatial dimension
     p_dec = 1 + data.shape[0] // size[0]
     if p_dec:
         data = data[::p_dec, :]
         seg_data = seg_data[::p_dec]
+
+    # Decimate the data in the temporal dimension
     t_dec = 1 + data.shape[1] // size[1]
     if t_dec:
         data = data[:, ::t_dec]
-    return data, seg_data
+        if temporal_mask is not None:
+            temporal_mask = temporal_mask[::t_dec]
+
+    return data, seg_data, temporal_mask
 
 
 def plot_confounds(
@@ -900,10 +908,7 @@ def plot_carpet(
         assert len(seg_data[seg_data < 1]) == 0, "Unassigned labels"
 
     else:  # Volumetric NIfTI
-        img_nii = check_niimg_4d(
-            img,
-            dtype="auto",
-        )  # Check the image is in nifti format
+        img_nii = check_niimg_4d(img, dtype="auto")  # Check the image is in nifti format
         func_data = safe_get_data(img_nii, ensure_finite=True)
         ntsteps = func_data.shape[-1]
         data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
@@ -919,11 +924,8 @@ def plot_carpet(
         # Apply lookup table
         seg_data = lut[oseg.astype(int)]
 
-    if temporal_mask is not None:
-        temp_data = data[:, ~temporal_mask]
-
     # Decimate data
-    data, seg_data = _decimate_data(data, seg_data, size)
+    data, seg_data, temporal_mask = _decimate_data(data, seg_data, temporal_mask, size)
 
     if isinstance(img, nb.Cifti2Image):
         # Preserve continuity
@@ -948,7 +950,7 @@ def plot_carpet(
         # If standardize is False and a temporal mask is provided,
         # then we use only low-motion timepoints to define the vlimits.
         # The executive summary uses the following range for native BOLD units.
-        vlimits = tuple(np.percentile(temp_data, q=(2.5, 97.5)))
+        vlimits = tuple(np.percentile(data[:, ~temporal_mask], q=(2.5, 97.5)))
     else:
         # If standardize is False, then the data are assumed to have native BOLD units.
         # The executive summary uses the following range for native BOLD units.
@@ -1024,6 +1026,19 @@ def plot_carpet(
     ax1.set_xticks([])
     ax1.set_xticklabels([])
 
+    if temporal_mask is not None:
+        # Add color bands to the carpet plot corresponding to censored volumes
+        outlier_idx = list(np.where(temporal_mask)[0])
+        gaps = [
+            [start, end] for start, end in zip(outlier_idx, outlier_idx[1:]) if start + 1 < end
+        ]
+        edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
+        consecutive_outliers_idx = list(zip(edges, edges))
+        for band in consecutive_outliers_idx:
+            start = band[0] - 0.5
+            end = band[1] + 0.5
+            ax1.axvspan(start, end, color="red", alpha=0.5)
+
     # Remove and redefine spines
     for side in ["top", "right"]:
         # Toggle the spine objects
@@ -1043,11 +1058,7 @@ def plot_carpet(
         ax2.set_xticks([])
         ax2.set_yticks([])
         fig = ax2.get_figure()
-        cbar = fig.colorbar(
-            pos,
-            cax=ax2,
-            ticks=vlimits,
-        )
+        cbar = fig.colorbar(pos, cax=ax2, ticks=vlimits)
         cbar.ax.tick_params(size=0, labelsize=20)
 
     #  Write out file

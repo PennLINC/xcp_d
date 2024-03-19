@@ -11,7 +11,7 @@ from pathlib import Path
 
 import nibabel as nb
 import yaml
-from bids import BIDSLayout
+from bids.layout import BIDSLayout
 from nipype import logging
 from packaging.version import Version
 

@@ -904,7 +904,7 @@ def build_workflow(opts, retval):
     ``multiprocessing.Process`` that allows fmriprep to enforce
     a hard-limited memory-scope.
     """
-    from bids import BIDSLayout
+    from bids.layout import BIDSLayout
     from nipype import config as ncfg
     from nipype import logging as nlogging
 
