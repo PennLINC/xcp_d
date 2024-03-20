@@ -392,7 +392,7 @@ def plot_framewise_displacement_es(
     xticks = list(range(0, ntsteps)[::interval])
     ax.set_xticks(xticks)
 
-    # Set the x-axis labels
+    # Set the x-axis labels based on time, not index
     ax.set_xlabel("Time (s)")
     labels = TR * np.array(xticks)
     labels = labels.astype(int)
@@ -458,7 +458,7 @@ def plot_framewise_displacement_es(
     )
 
     if run_index is not None:
-        # run_index = run_index * TR
+        # FD plots use time series index, not time, as x-axis
         for run_location in run_index:
             ax.axvline(run_location, color="black", linestyle="--")
 
