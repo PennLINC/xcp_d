@@ -85,7 +85,6 @@ def plot_confounds(
     time_series_axis
     grid_specification
     """
-    sns.set_style("whitegrid")
     # Define TR and number of frames
     no_repetition_time = False
     if TR is None:  # Set default Repetition Time
@@ -256,8 +255,6 @@ def plot_confounds(
 
 def plot_dvars_es(time_series, ax, run_index=None):
     """Create DVARS plot for the executive summary."""
-    sns.set_style("whitegrid")
-
     ax.grid(False)
 
     ntsteps = time_series.shape[0]
@@ -312,8 +309,6 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
 def plot_global_signal_es(time_series, ax, run_index=None):
     """Create global signal plot for the executive summary."""
-    sns.set_style("whitegrid")
-
     ntsteps = time_series.shape[0]
 
     ax.grid(False)
@@ -390,8 +385,6 @@ def plot_framewise_displacement_es(
     run_index=None,
 ):
     """Create framewise displacement plot for the executive summary."""
-    sns.set_style("whitegrid")
-
     ntsteps = time_series.shape[0]
     ax.grid(axis="y")
 
@@ -557,9 +550,6 @@ def plot_fmri_es(
             f"\t{denoised_censored_bold}: {uncensored_denoised_bold_arr.shape}\n"
             f"\t{denoised_interpolated_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
-
-    # Formatting & setting of files
-    sns.set_style("whitegrid")
 
     # Create dataframes for the bold_data DVARS, FD
     dvars_regressors = pd.DataFrame(
@@ -742,7 +732,6 @@ class FMRIPlot:
         self.TR = TR or _get_tr(func_img)
         self.mask_data = None
         self.seg_data = None
-        sns.set_style("whitegrid")
 
         if not isinstance(func_img, nb.Cifti2Image):  # If Nifti
             self.mask_data = nb.fileslice.strided_scalar(func_img.shape[:3], np.uint8(1))
@@ -775,7 +764,6 @@ class FMRIPlot:
     def plot(self, labelsize, figure=None):
         """Perform main plotting step."""
         # Layout settings
-        sns.set_style("whitegrid")
         sns.set_context("paper", font_scale=1)
 
         if figure is None:
@@ -955,8 +943,6 @@ def plot_carpet(
         # If standardize is False, then the data are assumed to have native BOLD units.
         # The executive summary uses the following range for native BOLD units.
         vlimits = tuple(np.percentile(data, q=(2.5, 97.5)))
-
-    sns.set_style("white")
 
     # If subplot is not defined
     if subplot is None:

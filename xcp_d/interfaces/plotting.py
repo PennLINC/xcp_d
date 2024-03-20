@@ -84,18 +84,18 @@ class CensoringPlot(SimpleInterface):
         # The number of colors in the palette depends on whether there are random censors or not
         palette = sns.color_palette("colorblind", 4 + censoring_df.shape[1])
 
-        sns.set_style("whitegrid")
-        fig, ax = plt.subplots(figsize=(8, 4))
-
         time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
 
-        ax.plot(
-            time_array,
-            preproc_fd_timeseries,
-            label="Raw Framewise Displacement",
-            color=palette[0],
-        )
-        ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
+        with sns.axes_style("whitegrid"):
+            fig, ax = plt.subplots(figsize=(8, 4))
+
+            ax.plot(
+                time_array,
+                preproc_fd_timeseries,
+                label="Raw Framewise Displacement",
+                color=palette[0],
+            )
+            ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
 
         dummy_scans = self.inputs.dummy_scans
         # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
