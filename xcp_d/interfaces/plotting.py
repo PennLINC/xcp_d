@@ -730,7 +730,7 @@ class _SlicesDirInputSpec(FSLCommandInputSpec):
 
 class _SlicesDirOutputSpec(TraitedSpec):
     out_dir = Directory(exists=True, desc="Output directory.")
-    out_file = File(exists=True, desc="Concatenated PNG file.")
+    out_files = OutputMultiPath(File(exists=True), desc="Concatenated PNG files.")
     slicewise_files = OutputMultiPath(File(exists=True), desc="List of generated PNG files.")
 
 
