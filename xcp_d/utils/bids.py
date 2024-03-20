@@ -658,14 +658,14 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, xcpd_dir, atlases=None, custom_confounds_folder=None):
+def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confounds_folder=None):
     """Write dataset_description.json file for derivatives.
 
     Parameters
     ----------
     fmri_dir : :obj:`str`
         Path to the BIDS derivative dataset being ingested.
-    xcpd_dir : :obj:`str`
+    output_dir : :obj:`str`
         Path to the output xcp-d dataset.
     atlases : :obj:`list` of :obj:`str`, optional
         Names of requested XCP-D atlases.
@@ -722,7 +722,7 @@ def write_dataset_description(fmri_dir, xcpd_dir, atlases=None, custom_confounds
         if "atlases" in dset_desc["DatasetLinks"].keys():
             LOGGER.warning("'atlases' is already a dataset link. Overwriting.")
 
-        dset_desc["DatasetLinks"]["atlases"] = os.path.join(xcpd_dir, "atlases")
+        dset_desc["DatasetLinks"]["atlases"] = os.path.join(output_dir, "atlases")
 
     if custom_confounds_folder:
         if "custom_confounds" in dset_desc["DatasetLinks"].keys():
@@ -730,7 +730,7 @@ def write_dataset_description(fmri_dir, xcpd_dir, atlases=None, custom_confounds
 
         dset_desc["DatasetLinks"]["custom_confounds"] = str(custom_confounds_folder)
 
-    xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
+    xcpd_dset_description = os.path.join(output_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
         with open(xcpd_dset_description, "r") as fo:
             old_dset_desc = json.load(fo)

@@ -137,11 +137,7 @@ def generate_reports(
         LOGGER.info("Generating executive summary.")
         for subject_label in subject_list:
             brainplotfiles = glob.glob(
-                os.path.join(
-                    output_dir,
-                    f"sub-{subject_label}",
-                    "figures/*_bold.svg",
-                ),
+                os.path.join(output_dir, f"sub-{subject_label}/figures/*_bold.svg"),
             )
             if not brainplotfiles:
                 LOGGER.warning(
