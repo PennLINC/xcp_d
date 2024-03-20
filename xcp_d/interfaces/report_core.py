@@ -117,12 +117,12 @@ def generate_reports(
 
     report_errors = [
         run_reports(
-            Path(output_dir) / "xcp_d",
+            Path(output_dir),
             subject_label,
             run_uuid,
             config=config,
             packagename=packagename,
-            reportlets_dir=Path(output_dir) / "xcp_d",
+            reportlets_dir=Path(output_dir),
         )
         for subject_label in subject_list
     ]
@@ -143,11 +143,7 @@ def generate_reports(
         LOGGER.info("Generating executive summary.")
         for subject_label in subject_list:
             brainplotfiles = glob.glob(
-                os.path.join(
-                    output_dir,
-                    f"xcp_d/sub-{subject_label}",
-                    "figures/*_bold.svg",
-                ),
+                os.path.join(output_dir, f"sub-{subject_label}/figures/*_bold.svg"),
             )
             if not brainplotfiles:
                 LOGGER.warning(
@@ -160,7 +156,7 @@ def generate_reports(
                 session_id = get_entity(brainplotfile, "ses")
 
             exsumm = ExecutiveSummary(
-                xcpd_path=os.path.join(output_dir, "xcp_d"),
+                xcpd_path=output_dir,
                 subject_id=subject_label,
                 session_id=session_id,
             )

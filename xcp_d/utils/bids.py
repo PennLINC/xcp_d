@@ -105,7 +105,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     if isinstance(bids_dir, BIDSLayout):
         layout = bids_dir
     else:
-        layout = BIDSLayout(str(bids_dir), validate=bids_validate, derivatives=True)
+        layout = BIDSLayout(str(bids_dir), validate=bids_validate)
 
     all_participants = set(layout.get_subjects())
 
@@ -181,7 +181,6 @@ def collect_data(
         layout = BIDSLayout(
             str(bids_dir),
             validate=bids_validate,
-            derivatives=True,
             config=["bids", "derivatives"],
         )
 
@@ -395,7 +394,7 @@ def collect_mesh_data(layout, participant_label):
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    queries = {
+    base_queries = {
         "pial_surf": "pial",
         "wm_surf": ["smoothwm", "white"],
     }
@@ -405,7 +404,7 @@ def collect_mesh_data(layout, participant_label):
     }
 
     standard_space_mesh = True
-    for name, suffixes in queries.items():
+    for name, suffixes in base_queries.items():
         # First, try to grab the first base surface file in standard space.
         # If it's not available, switch to native T1w-space data.
         for hemisphere in ["L", "R"]:
@@ -432,19 +431,19 @@ def collect_mesh_data(layout, participant_label):
         }
 
     initial_mesh_files = {}
-    for name, suffixes in queries.items():
+    queries = {}
+    for name, suffixes in base_queries.items():
         for hemisphere in ["L", "R"]:
             key = f"{hemisphere.lower()}h_{name}"
-            initial_mesh_files[key] = layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                hemi=hemisphere,
-                desc=None,
-                suffix=suffixes,
-                extension=".surf.gii",
+            queries[key] = {
+                "datatype": "anat",
+                "hemi": hemisphere,
+                "desc": None,
+                "suffix": suffixes,
+                "extension": ".surf.gii",
                 **query_extras,
-            )
+            }
+            initial_mesh_files[key] = layout.get(return_type="file", **queries[key])
 
     mesh_files = {}
     mesh_available = True
@@ -677,15 +676,19 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, xcpd_dir, custom_confounds_folder=None):
+def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confounds_folder=None):
     """Write dataset_description.json file for derivatives.
 
     Parameters
     ----------
     fmri_dir : :obj:`str`
         Path to the BIDS derivative dataset being ingested.
-    xcpd_dir : :obj:`str`
+    output_dir : :obj:`str`
         Path to the output xcp-d dataset.
+    atlases : :obj:`list` of :obj:`str`, optional
+        Names of requested XCP-D atlases.
+    custom_confounds_folder : :obj:`str`, optional
+        Path to the folder containing custom confounds files.
     """
     import json
     import os
@@ -733,13 +736,19 @@ def write_dataset_description(fmri_dir, xcpd_dir, custom_confounds_folder=None):
 
     dset_desc["DatasetLinks"]["preprocessed"] = str(fmri_dir)
 
+    if atlases:
+        if "atlases" in dset_desc["DatasetLinks"].keys():
+            LOGGER.warning("'atlases' is already a dataset link. Overwriting.")
+
+        dset_desc["DatasetLinks"]["atlases"] = os.path.join(output_dir, "atlases")
+
     if custom_confounds_folder:
         if "custom_confounds" in dset_desc["DatasetLinks"].keys():
             LOGGER.warning("'custom_confounds' is already a dataset link. Overwriting.")
 
         dset_desc["DatasetLinks"]["custom_confounds"] = str(custom_confounds_folder)
 
-    xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
+    xcpd_dset_description = os.path.join(output_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
         with open(xcpd_dset_description, "r") as fo:
             old_dset_desc = json.load(fo)
@@ -750,6 +759,47 @@ def write_dataset_description(fmri_dir, xcpd_dir, custom_confounds_folder=None):
 
     else:
         with open(xcpd_dset_description, "w") as fo:
+            json.dump(dset_desc, fo, indent=4, sort_keys=True)
+
+
+def write_atlas_dataset_description(atlas_dir):
+    """Write dataset_description.json file for Atlas derivatives.
+
+    Parameters
+    ----------
+    atlas_dir : :obj:`str`
+        Path to the output XCP-D Atlases dataset.
+    """
+    import json
+    import os
+
+    from xcp_d.__about__ import DOWNLOAD_URL, __version__
+
+    dset_desc = {
+        "Name": "XCP-D Atlases",
+        "DatasetType": "atlas",
+        "GeneratedBy": [
+            {
+                "Name": "xcp_d",
+                "Version": __version__,
+                "CodeURL": DOWNLOAD_URL,
+            },
+        ],
+        "HowToAcknowledge": "Include the generated boilerplate in the methods section.",
+    }
+    os.makedirs(atlas_dir, exist_ok=True)
+
+    atlas_dset_description = os.path.join(atlas_dir, "dataset_description.json")
+    if os.path.isfile(atlas_dset_description):
+        with open(atlas_dset_description, "r") as fo:
+            old_dset_desc = json.load(fo)
+
+        old_version = old_dset_desc["GeneratedBy"][0]["Version"]
+        if Version(__version__).public != Version(old_version).public:
+            LOGGER.warning(f"Previous output generated by version {old_version} found.")
+
+    else:
+        with open(atlas_dset_description, "w") as fo:
             json.dump(dset_desc, fo, indent=4, sort_keys=True)
 
 
@@ -993,16 +1043,12 @@ def _make_uri(in_file, dataset_name, dataset_path):
 
 def _make_xcpd_uri(out_file, output_dir):
     """Convert postprocessing derivative's path to BIDS URI."""
-    import os
-
     from xcp_d.utils.bids import _make_uri
 
-    dataset_path = os.path.join(output_dir, "xcp_d")
-
     if isinstance(out_file, list):
-        return [_make_uri(of, "", dataset_path) for of in out_file]
+        return [_make_uri(of, "", output_dir) for of in out_file]
     else:
-        return [_make_uri(out_file, "", dataset_path)]
+        return [_make_uri(out_file, "", output_dir)]
 
 
 def _make_xcpd_uri_lol(in_list, output_dir):
@@ -1017,6 +1063,20 @@ def _make_xcpd_uri_lol(in_list, output_dir):
 
     out_lol = _transpose_lol(out)
     return out_lol
+
+
+def _make_atlas_uri(out_file, output_dir):
+    """Convert postprocessing atlas derivative's path to BIDS URI."""
+    import os
+
+    from xcp_d.utils.bids import _make_uri
+
+    dataset_path = os.path.join(output_dir, "atlases")
+
+    if isinstance(out_file, list):
+        return [_make_uri(of, "atlas", dataset_path) for of in out_file]
+    else:
+        return [_make_uri(out_file, "atlas", dataset_path)]
 
 
 def _make_preproc_uri(out_file, fmri_dir):

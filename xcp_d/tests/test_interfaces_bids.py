@@ -23,7 +23,7 @@ def test_copy_atlas(tmp_path_factory):
     assert os.path.isfile(result.outputs.out_file)
     assert (
         os.path.basename(result.outputs.out_file)
-        == "space-MNI152NLin2009cAsym_atlas-Y_res-2_dseg.nii.gz"
+        == "atlas-Y_space-MNI152NLin2009cAsym_res-2_dseg.nii.gz"
     )
 
     # Check that the NIfTI file raises an error if the resolution varies
@@ -47,7 +47,7 @@ def test_copy_atlas(tmp_path_factory):
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
     assert (
-        os.path.basename(result.outputs.out_file) == "space-fsLR_atlas-Y_den-91k_dseg.dlabel.nii"
+        os.path.basename(result.outputs.out_file) == "atlas-Y_space-fsLR_den-91k_dseg.dlabel.nii"
     )
 
     # TSV

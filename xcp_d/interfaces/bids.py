@@ -43,7 +43,7 @@ class DerivativesDataSink(BaseDerivativesDataSink):
     A child class of the niworkflows DerivativesDataSink, using xcp_d's configuration files.
     """
 
-    out_path_base = "xcp_d"
+    out_path_base = ""
     _allowed_entities = set(config_entities)
     _config_entities = config_entities
     _config_entities_dict = merged_entities
@@ -267,7 +267,7 @@ class CopyAtlas(SimpleInterface):
         name_source = self.inputs.name_source
         atlas = self.inputs.atlas
 
-        atlas_out_dir = os.path.join(output_dir, f"xcp_d/atlases/atlas-{atlas}")
+        atlas_out_dir = os.path.join(output_dir, f"atlases/atlas-{atlas}")
 
         if in_file.endswith(".json"):
             out_basename = f"atlas-{atlas}_dseg.json"
@@ -284,9 +284,9 @@ class CopyAtlas(SimpleInterface):
             res_str = f"_res-{res}" if res else ""
             den_str = f"_den-{den}" if den else ""
             if extension == ".dlabel.nii":
-                out_basename = f"space-{space}_atlas-{atlas}{den_str}{cohort_str}_dseg{extension}"
+                out_basename = f"atlas-{atlas}_space-{space}{den_str}{cohort_str}_dseg{extension}"
             elif extension == ".nii.gz":
-                out_basename = f"space-{space}_atlas-{atlas}{res_str}{cohort_str}_dseg{extension}"
+                out_basename = f"atlas-{atlas}_space-{space}{res_str}{cohort_str}_dseg{extension}"
 
         os.makedirs(atlas_out_dir, exist_ok=True)
         out_file = os.path.join(atlas_out_dir, out_basename)
