@@ -376,7 +376,7 @@ jobs:
           paths:
             - .coverage.pytests
       - store_artifacts:
-          path: /src/xcp_d/.circleci/out/
+          path: /src/xcp_d/.circleci/out/test_nibabies
 
   merge_coverage:
     <<: *dockersetup
