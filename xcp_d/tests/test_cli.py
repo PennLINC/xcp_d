@@ -479,3 +479,4 @@ def _run_and_generate(
     check_generated_files(out_dir, output_list_file)
 
     check_affines(data_dir, out_dir, input_type=input_type)
+    raise Exception(out_dir)
