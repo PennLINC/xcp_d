@@ -486,8 +486,8 @@ def plot_fmri_es(
     TR,
     filtered_motion,
     temporal_mask,
-    preprocessed_bold_figure,
-    denoised_bold_figure,
+    preprocessed_figure,
+    denoised_figure,
     standardize,
     temporary_file_dir,
     mask=None,
@@ -506,9 +506,9 @@ def plot_fmri_es(
     %(temporal_mask)s
         Only non-outlier (low-motion) volumes in the temporal mask will be used to scale
         the carpet plot.
-    preprocessed_bold_figure : :obj:`str`
+    preprocessed_figure : :obj:`str`
         output file svg before processing
-    denoised_bold_figure : :obj:`str`
+    denoised_figure : :obj:`str`
         output file svg after processing
     standardize : :obj:`bool`
         Whether to standardize the data or not.
@@ -528,24 +528,24 @@ def plot_fmri_es(
         If not None, this should be an array/list of integers, indicating the volumes.
     """
     # Compute dvars correctly if not already done
-    preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
-    filtered_denoised_bold_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
+    preprocessed_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
+    denoised_interpolated_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
 
-    preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
-    filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
+    preprocessed_dvars = compute_dvars(preprocessed_arr)
+    denoised_interpolated_dvars = compute_dvars(denoised_interpolated_arr)
 
-    if preprocessed_bold_arr.shape != filtered_denoised_bold_arr.shape:
+    if preprocessed_arr.shape != denoised_interpolated_arr.shape:
         raise ValueError(
             "Shapes do not match:\n"
-            f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
-            f"\t{denoised_interpolated_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{preprocessed_bold}: {preprocessed_arr.shape}\n"
+            f"\t{denoised_interpolated_bold}: {denoised_interpolated_arr.shape}\n\n"
         )
 
     # Create dataframes for the bold_data DVARS, FD
     dvars_regressors = pd.DataFrame(
         {
-            "Pre regression": preprocessed_bold_dvars,
-            "Post all": filtered_denoised_bold_dvars,
+            "Pre regression": preprocessed_dvars,
+            "Post all": denoised_interpolated_dvars,
         }
     )
 
@@ -554,18 +554,18 @@ def plot_fmri_es(
 
     # The mean and standard deviation of the preprocessed data,
     # after mean-centering and detrending.
-    preprocessed_bold_timeseries = pd.DataFrame(
+    preprocessed_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(preprocessed_bold_arr, axis=0),
-            "Std": np.nanstd(preprocessed_bold_arr, axis=0),
+            "Mean": np.nanmean(preprocessed_arr, axis=0),
+            "Std": np.nanstd(preprocessed_arr, axis=0),
         }
     )
 
     # The mean and standard deviation of the denoised data, with bad volumes included.
-    filtered_denoised_bold_timeseries = pd.DataFrame(
+    denoised_interpolated_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(filtered_denoised_bold_dvars, axis=0),
-            "Std": np.nanstd(filtered_denoised_bold_dvars, axis=0),
+            "Mean": np.nanmean(denoised_interpolated_dvars, axis=0),
+            "Std": np.nanstd(denoised_interpolated_dvars, axis=0),
         }
     )
 
@@ -578,8 +578,8 @@ def plot_fmri_es(
     if not standardize:
         # The plot going to carpet plot will be mean-centered and detrended,
         # but will not otherwise be rescaled.
-        detrended_preprocessed_bold_arr = clean(
-            preprocessed_bold_arr.T,
+        detrended_preprocessed_arr = clean(
+            preprocessed_arr.T,
             t_r=TR,
             detrend=True,
             filter=False,
@@ -595,7 +595,7 @@ def plot_fmri_es(
 
         # Write out the scaled data
         temp_preprocessed_file = write_ndata(
-            data_matrix=detrended_preprocessed_bold_arr,
+            data_matrix=detrended_preprocessed_arr,
             template=preprocessed_bold,
             filename=temp_preprocessed_file,
             mask=mask,
@@ -603,8 +603,8 @@ def plot_fmri_es(
         )
 
     files_for_carpet = [temp_preprocessed_file, denoised_interpolated_bold]
-    figure_names = [preprocessed_bold_figure, denoised_bold_figure]
-    data_arrays = [preprocessed_bold_timeseries, filtered_denoised_bold_timeseries]
+    figure_names = [preprocessed_figure, denoised_figure]
+    data_arrays = [preprocessed_timeseries, denoised_interpolated_timeseries]
     for i_fig, figure_name in enumerate(figure_names):
         file_for_carpet = files_for_carpet[i_fig]
         data_arr = data_arrays[i_fig]
@@ -679,7 +679,7 @@ def plot_fmri_es(
         os.remove(temp_preprocessed_file)
 
     # Save out the after processing file
-    return preprocessed_bold_figure, denoised_bold_figure
+    return preprocessed_figure, denoised_figure
 
 
 @fill_doc
