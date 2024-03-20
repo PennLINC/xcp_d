@@ -788,7 +788,7 @@ def init_plot_overlay_wf(
 
     reformat_for_brain_swipes = pe.Node(FormatForBrainSwipes(), name="reformat_for_brain_swipes")
     workflow.connect([
-        (plot_overlay_figure, reformat_for_brain_swipes, [("slicewise_files", "in_file")]),
+        (plot_overlay_figure, reformat_for_brain_swipes, [("slicewise_files", "in_files")]),
     ])  # fmt:skip
 
     ds_reformatted_figure = pe.Node(
