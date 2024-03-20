@@ -13,7 +13,6 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
     tmpdir = tmp_path_factory.mktemp("test_plot_fmri_es")
 
     preprocessed_bold = ds001419_data["cifti_file"]
-    denoised_censored_bold = ds001419_data["cifti_file"]
     denoised_interpolated_bold = ds001419_data["cifti_file"]
 
     # Using unfiltered FD instead of calculating filtered version.
@@ -32,7 +31,6 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
 
     out_file1, out_file2 = plotting.plot_fmri_es(
         preprocessed_bold=preprocessed_bold,
-        denoised_censored_bold=denoised_censored_bold,
         denoised_interpolated_bold=denoised_interpolated_bold,
         filtered_motion=filtered_motion,
         preprocessed_bold_figure=preprocessed_bold_figure,
@@ -50,7 +48,6 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
 
     out_file1, out_file2 = plotting.plot_fmri_es(
         preprocessed_bold=preprocessed_bold,
-        denoised_censored_bold=denoised_censored_bold,
         denoised_interpolated_bold=denoised_interpolated_bold,
         filtered_motion=filtered_motion,
         preprocessed_bold_figure=preprocessed_bold_figure,

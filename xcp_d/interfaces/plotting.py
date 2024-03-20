@@ -95,7 +95,7 @@ class CensoringPlot(SimpleInterface):
                 label="Raw Framewise Displacement",
                 color=palette[0],
             )
-            ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
+            ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="salmon", alpha=0.5)
 
         dummy_scans = self.inputs.dummy_scans
         # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
@@ -641,7 +641,6 @@ class QCPlotsES(SimpleInterface):
 
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
-            denoised_censored_bold=self.inputs.denoised_interpolated_bold,
             denoised_interpolated_bold=self.inputs.denoised_interpolated_bold,
             TR=self.inputs.TR,
             filtered_motion=self.inputs.filtered_motion,

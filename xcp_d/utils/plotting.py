@@ -274,7 +274,6 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
     colors = {
         "Pre regression": "#68AC57",
-        "Post regression": "#8E549F",
         "Post all": "#EF8532",
     }
     for c in columns:
@@ -483,7 +482,6 @@ def plot_framewise_displacement_es(
 def plot_fmri_es(
     *,
     preprocessed_bold,
-    denoised_censored_bold,
     denoised_interpolated_bold,
     TR,
     filtered_motion,
@@ -502,7 +500,6 @@ def plot_fmri_es(
     ----------
     preprocessed_bold : :obj:`str`
         Preprocessed BOLD file, dummy scan removal.
-    denoised_censored_bold
     %(denoised_interpolated_bold)s
     %(TR)s
     %(filtered_motion)s
@@ -532,22 +529,15 @@ def plot_fmri_es(
     """
     # Compute dvars correctly if not already done
     preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
-    uncensored_denoised_bold_arr = read_ndata(datafile=denoised_censored_bold, maskfile=mask)
     filtered_denoised_bold_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
 
     preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
-    uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
     filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
 
-    if not (
-        preprocessed_bold_arr.shape
-        == uncensored_denoised_bold_arr.shape
-        == filtered_denoised_bold_arr.shape
-    ):
+    if preprocessed_bold_arr.shape != filtered_denoised_bold_arr.shape:
         raise ValueError(
             "Shapes do not match:\n"
             f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
-            f"\t{denoised_censored_bold}: {uncensored_denoised_bold_arr.shape}\n"
             f"\t{denoised_interpolated_bold}: {filtered_denoised_bold_arr.shape}\n\n"
         )
 
@@ -555,7 +545,6 @@ def plot_fmri_es(
     dvars_regressors = pd.DataFrame(
         {
             "Pre regression": preprocessed_bold_dvars,
-            "Post regression": uncensored_denoised_bold_dvars,
             "Post all": filtered_denoised_bold_dvars,
         }
     )
@@ -573,10 +562,10 @@ def plot_fmri_es(
     )
 
     # The mean and standard deviation of the denoised data, with bad volumes included.
-    uncensored_denoised_bold_timeseries = pd.DataFrame(
+    filtered_denoised_bold_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(uncensored_denoised_bold_arr, axis=0),
-            "Std": np.nanstd(uncensored_denoised_bold_arr, axis=0),
+            "Mean": np.nanmean(filtered_denoised_bold_dvars, axis=0),
+            "Std": np.nanstd(filtered_denoised_bold_dvars, axis=0),
         }
     )
 
@@ -607,15 +596,15 @@ def plot_fmri_es(
         # Write out the scaled data
         temp_preprocessed_file = write_ndata(
             data_matrix=detrended_preprocessed_bold_arr,
-            template=denoised_censored_bold,  # residuals file is censored, so length matches
+            template=preprocessed_bold,
             filename=temp_preprocessed_file,
             mask=mask,
             TR=TR,
         )
 
-    files_for_carpet = [temp_preprocessed_file, denoised_censored_bold]
+    files_for_carpet = [temp_preprocessed_file, denoised_interpolated_bold]
     figure_names = [preprocessed_bold_figure, denoised_bold_figure]
-    data_arrays = [preprocessed_bold_timeseries, uncensored_denoised_bold_timeseries]
+    data_arrays = [preprocessed_bold_timeseries, filtered_denoised_bold_timeseries]
     for i_fig, figure_name in enumerate(figure_names):
         file_for_carpet = files_for_carpet[i_fig]
         data_arr = data_arrays[i_fig]
