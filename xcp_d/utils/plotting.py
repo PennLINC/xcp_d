@@ -21,26 +21,34 @@ from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
-def _decimate_data(data, seg_data, size):
+def _decimate_data(data, seg_data, temporal_mask, size):
     """Decimate timeseries data.
 
     Parameters
     ----------
     data : ndarray
-        2 element array of timepoints and samples
+        2D array of timepoints and samples
     seg_data : ndarray
-        1 element array of samples
+        1D array of samples
+    temporal_mask : ndarray or None
+        1D array of timepoints. May be None.
     size : tuple
         2 element for P/T decimation
     """
+    # Decimate the data in the spatial dimension
     p_dec = 1 + data.shape[0] // size[0]
     if p_dec:
         data = data[::p_dec, :]
         seg_data = seg_data[::p_dec]
+
+    # Decimate the data in the temporal dimension
     t_dec = 1 + data.shape[1] // size[1]
     if t_dec:
         data = data[:, ::t_dec]
-    return data, seg_data
+        if temporal_mask is not None:
+            temporal_mask = temporal_mask[::t_dec]
+
+    return data, seg_data, temporal_mask
 
 
 def plot_confounds(
@@ -77,7 +85,6 @@ def plot_confounds(
     time_series_axis
     grid_specification
     """
-    sns.set_style("whitegrid")
     # Define TR and number of frames
     no_repetition_time = False
     if TR is None:  # Set default Repetition Time
@@ -248,8 +255,6 @@ def plot_confounds(
 
 def plot_dvars_es(time_series, ax, run_index=None):
     """Create DVARS plot for the executive summary."""
-    sns.set_style("whitegrid")
-
     ax.grid(False)
 
     ntsteps = time_series.shape[0]
@@ -269,7 +274,6 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
     colors = {
         "Pre regression": "#68AC57",
-        "Post regression": "#8E549F",
         "Post all": "#EF8532",
     }
     for c in columns:
@@ -280,7 +284,7 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
     if run_index is not None:
         for run_location in run_index:
-            ax.axvline(run_location, color="yellow")
+            ax.axvline(run_location, color="black", linestyle="--")
 
     # Set limits and format
     minimum_x_value = [abs(x) for x in minimum_values]
@@ -304,8 +308,6 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
 def plot_global_signal_es(time_series, ax, run_index=None):
     """Create global signal plot for the executive summary."""
-    sns.set_style("whitegrid")
-
     ntsteps = time_series.shape[0]
 
     ax.grid(False)
@@ -353,7 +355,7 @@ def plot_global_signal_es(time_series, ax, run_index=None):
 
     if run_index is not None:
         for run_location in run_index:
-            ax.axvline(run_location, color="yellow")
+            ax.axvline(run_location, color="black", linestyle="--")
 
     ax.set_xlim((0, ntsteps - 1))
 
@@ -382,8 +384,6 @@ def plot_framewise_displacement_es(
     run_index=None,
 ):
     """Create framewise displacement plot for the executive summary."""
-    sns.set_style("whitegrid")
-
     ntsteps = time_series.shape[0]
     ax.grid(axis="y")
 
@@ -392,7 +392,7 @@ def plot_framewise_displacement_es(
     xticks = list(range(0, ntsteps)[::interval])
     ax.set_xticks(xticks)
 
-    # Set the x-axis labels
+    # Set the x-axis labels based on time, not index
     ax.set_xlabel("Time (s)")
     labels = TR * np.array(xticks)
     labels = labels.astype(int)
@@ -458,9 +458,9 @@ def plot_framewise_displacement_es(
     )
 
     if run_index is not None:
-        run_index = run_index * TR
+        # FD plots use time series index, not time, as x-axis
         for run_location in run_index:
-            ax.axvline(run_location, color="yellow")
+            ax.axvline(run_location, color="black", linestyle="--")
 
     ax.set_xlim((0, ntsteps - 1))
     ax.set_ylim(0, ymax)
@@ -480,13 +480,14 @@ def plot_framewise_displacement_es(
 
 @fill_doc
 def plot_fmri_es(
+    *,
     preprocessed_bold,
-    denoised_censored_bold,
     denoised_interpolated_bold,
     TR,
     filtered_motion,
-    preprocessed_bold_figure,
-    denoised_bold_figure,
+    temporal_mask,
+    preprocessed_figure,
+    denoised_figure,
     standardize,
     temporary_file_dir,
     mask=None,
@@ -499,18 +500,21 @@ def plot_fmri_es(
     ----------
     preprocessed_bold : :obj:`str`
         Preprocessed BOLD file, dummy scan removal.
-    denoised_censored_bold
     %(denoised_interpolated_bold)s
     %(TR)s
     %(filtered_motion)s
-    preprocessed_bold_figure : :obj:`str`
+    %(temporal_mask)s
+        Only non-outlier (low-motion) volumes in the temporal mask will be used to scale
+        the carpet plot.
+    preprocessed_figure : :obj:`str`
         output file svg before processing
-    denoised_bold_figure : :obj:`str`
+    denoised_figure : :obj:`str`
         output file svg after processing
     standardize : :obj:`bool`
         Whether to standardize the data or not.
         If False, then the preferred DCAN version of the plot will be generated,
-        where the BOLD data are not rescaled, and the carpet plot has color limits of -600 and 600.
+        where the BOLD data are not rescaled, and the carpet plot has color limits from the
+        2.5th percentile to the 97.5th percentile.
         If True, then the BOLD data will be z-scored and the color limits will be -2 and 2.
     temporary_file_dir : :obj:`str`
         Path in which to store temporary files.
@@ -524,79 +528,58 @@ def plot_fmri_es(
         If not None, this should be an array/list of integers, indicating the volumes.
     """
     # Compute dvars correctly if not already done
-    preprocessed_bold_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
-    uncensored_denoised_bold_arr = read_ndata(datafile=denoised_censored_bold, maskfile=mask)
-    filtered_denoised_bold_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
+    preprocessed_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
+    denoised_interpolated_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
 
-    preprocessed_bold_dvars = compute_dvars(preprocessed_bold_arr)
-    uncensored_denoised_bold_dvars = compute_dvars(uncensored_denoised_bold_arr)
-    filtered_denoised_bold_dvars = compute_dvars(filtered_denoised_bold_arr)
+    preprocessed_dvars = compute_dvars(preprocessed_arr)
+    denoised_interpolated_dvars = compute_dvars(denoised_interpolated_arr)
 
-    if not (
-        preprocessed_bold_dvars.shape
-        == uncensored_denoised_bold_dvars.shape
-        == filtered_denoised_bold_dvars.shape
-    ):
+    if preprocessed_arr.shape != denoised_interpolated_arr.shape:
         raise ValueError(
             "Shapes do not match:\n"
-            f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
-            f"\t{denoised_censored_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{denoised_interpolated_bold}: {filtered_denoised_bold_arr.shape}\n\n"
+            f"\t{preprocessed_bold}: {preprocessed_arr.shape}\n"
+            f"\t{denoised_interpolated_bold}: {denoised_interpolated_arr.shape}\n\n"
         )
-
-    if not (
-        preprocessed_bold_arr.shape
-        == uncensored_denoised_bold_arr.shape
-        == filtered_denoised_bold_arr.shape
-    ):
-        raise ValueError(
-            "Shapes do not match:\n"
-            f"\t{preprocessed_bold}: {preprocessed_bold_arr.shape}\n"
-            f"\t{denoised_censored_bold}: {uncensored_denoised_bold_arr.shape}\n"
-            f"\t{denoised_interpolated_bold}: {filtered_denoised_bold_arr.shape}\n\n"
-        )
-
-    # Formatting & setting of files
-    sns.set_style("whitegrid")
 
     # Create dataframes for the bold_data DVARS, FD
     dvars_regressors = pd.DataFrame(
         {
-            "Pre regression": preprocessed_bold_dvars,
-            "Post regression": uncensored_denoised_bold_dvars,
-            "Post all": filtered_denoised_bold_dvars,
+            "Pre regression": preprocessed_dvars,
+            "Post all": denoised_interpolated_dvars,
         }
     )
 
     fd_regressor = pd.read_table(filtered_motion)["framewise_displacement"].values
+    tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values.astype(bool)
 
     # The mean and standard deviation of the preprocessed data,
     # after mean-centering and detrending.
-    preprocessed_bold_timeseries = pd.DataFrame(
+    preprocessed_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(preprocessed_bold_arr, axis=0),
-            "Std": np.nanstd(preprocessed_bold_arr, axis=0),
+            "Mean": np.nanmean(preprocessed_arr, axis=0),
+            "Std": np.nanstd(preprocessed_arr, axis=0),
         }
     )
 
     # The mean and standard deviation of the denoised data, with bad volumes included.
-    uncensored_denoised_bold_timeseries = pd.DataFrame(
+    denoised_interpolated_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(uncensored_denoised_bold_arr, axis=0),
-            "Std": np.nanstd(uncensored_denoised_bold_arr, axis=0),
+            "Mean": np.nanmean(denoised_interpolated_arr, axis=0),
+            "Std": np.nanstd(denoised_interpolated_arr, axis=0),
         }
     )
 
+    atlaslabels = None
     if seg_data is not None:
         atlaslabels = nb.load(seg_data).get_fdata()
-    else:
-        atlaslabels = None
 
+    rm_temp_file = False
+    temp_preprocessed_file = preprocessed_bold
     if not standardize:
         # The plot going to carpet plot will be mean-centered and detrended,
         # but will not otherwise be rescaled.
-        detrended_preprocessed_bold_arr = clean(
-            preprocessed_bold_arr.T,
+        detrended_preprocessed_arr = clean(
+            preprocessed_arr.T,
             t_r=TR,
             detrend=True,
             filter=False,
@@ -612,19 +595,16 @@ def plot_fmri_es(
 
         # Write out the scaled data
         temp_preprocessed_file = write_ndata(
-            data_matrix=detrended_preprocessed_bold_arr,
-            template=denoised_censored_bold,  # residuals file is censored, so length matches
+            data_matrix=detrended_preprocessed_arr,
+            template=preprocessed_bold,
             filename=temp_preprocessed_file,
             mask=mask,
             TR=TR,
         )
-    else:
-        rm_temp_file = False
-        temp_preprocessed_file = preprocessed_bold
 
-    files_for_carpet = [temp_preprocessed_file, denoised_censored_bold]
-    figure_names = [preprocessed_bold_figure, denoised_bold_figure]
-    data_arrays = [preprocessed_bold_timeseries, uncensored_denoised_bold_timeseries]
+    files_for_carpet = [temp_preprocessed_file, denoised_interpolated_bold]
+    figure_names = [preprocessed_figure, denoised_figure]
+    data_arrays = [preprocessed_timeseries, denoised_interpolated_timeseries]
     for i_fig, figure_name in enumerate(figure_names):
         file_for_carpet = files_for_carpet[i_fig]
         data_arr = data_arrays[i_fig]
@@ -668,11 +648,15 @@ def plot_fmri_es(
         plot_carpet(
             func=file_for_carpet,
             atlaslabels=atlaslabels,
-            TR=TR,
+            standardize=standardize,  # Data are already detrended if standardize is False
+            size=(950, 800),
+            labelsize=30,
             subplot=grid[2],  # Use grid for now.
-            detrend=standardize,  # Data are already detrended if standardize is False
-            legend=False,
+            output_file=None,
+            TR=TR,
             colorbar=True,
+            lut=None,
+            temporal_mask=tmask_arr,
         )
 
         # The FD plot at the bottom
@@ -684,7 +668,7 @@ def plot_fmri_es(
             wspace=0.0,
         )
         ax3 = plt.subplot(gridspec3[1])
-        plot_framewise_displacement_es(fd_regressor, ax3, run_index=run_index, TR=TR)
+        plot_framewise_displacement_es(fd_regressor, ax3, TR=TR, run_index=run_index)
 
         # Save out the before processing file
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
@@ -695,7 +679,7 @@ def plot_fmri_es(
         os.remove(temp_preprocessed_file)
 
     # Save out the after processing file
-    return preprocessed_bold_figure, denoised_bold_figure
+    return preprocessed_figure, denoised_figure
 
 
 @fill_doc
@@ -737,7 +721,6 @@ class FMRIPlot:
         self.TR = TR or _get_tr(func_img)
         self.mask_data = None
         self.seg_data = None
-        sns.set_style("whitegrid")
 
         if not isinstance(func_img, nb.Cifti2Image):  # If Nifti
             self.mask_data = nb.fileslice.strided_scalar(func_img.shape[:3], np.uint8(1))
@@ -770,7 +753,6 @@ class FMRIPlot:
     def plot(self, labelsize, figure=None):
         """Perform main plotting step."""
         # Layout settings
-        sns.set_style("whitegrid")
         sns.set_context("paper", font_scale=1)
 
         if figure is None:
@@ -810,29 +792,34 @@ class FMRIPlot:
 
         # Carpet plot
         plot_carpet(
-            self.func_file,
+            func=self.func_file,
             atlaslabels=self.seg_data,
-            subplot=grid[-1],
-            detrend=True,
-            TR=self.TR,
+            standardize=True,
+            size=(950, 800),
             labelsize=labelsize,
+            subplot=grid[-1],
+            output_file=None,
+            TR=self.TR,
             colorbar=False,
+            lut=None,
+            temporal_mask=None,
         )
         return figure
 
 
 def plot_carpet(
+    *,
     func,
-    atlaslabels=None,
-    detrend=True,
+    atlaslabels,
+    TR,
+    standardize,
+    temporal_mask=None,
     size=(950, 800),
     labelsize=30,
     subplot=None,
-    output_file=None,
-    legend=True,
-    TR=None,
     lut=None,
     colorbar=False,
+    output_file=None,
 ):
     """Plot an image representation of voxel intensities across time.
 
@@ -847,7 +834,7 @@ def plot_carpet(
         A 3D array of integer labels from an atlas, resampled into ``img`` space.
         Required if ``func`` is a NIfTI image.
         Unused if ``func`` is a CIFTI.
-    detrend : bool, optional
+    standardize : bool, optional
         Detrend and standardize the data prior to plotting.
     size : tuple, optional
         Size of figure.
@@ -868,11 +855,9 @@ def plot_carpet(
     colorbar : bool, optional
         Default is False.
     """
-    epinii = None
-    segnii = None
     img = nb.load(func)
-    sns.set_style("whitegrid")
-    if isinstance(img, nb.Cifti2Image):  # Cifti
+
+    if isinstance(img, nb.Cifti2Image):  # CIFTI
         assert (
             img.nifti_header.get_intent()[0] == "ConnDenseSeries"
         ), f"Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}"
@@ -899,24 +884,8 @@ def plot_carpet(
             seg_data[brain_model.index_offset : index_final] = lidx
         assert len(seg_data[seg_data < 1]) == 0, "Unassigned labels"
 
-        # Decimate data
-        data, seg_data = _decimate_data(data, seg_data, size)
-        # Preserve continuity
-        order = seg_data.argsort(kind="stable")
-        # Get color maps
-        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
-        assert len(cmap.colors) == len(
-            struct_map
-        ), "Mismatch between expected # of structures and colors"
-
-        # ensure no legend for CIFTI
-        legend = False
-
     else:  # Volumetric NIfTI
-        img_nii = check_niimg_4d(
-            img,
-            dtype="auto",
-        )  # Check the image is in nifti format
+        img_nii = check_niimg_4d(img, dtype="auto")  # Check the image is in nifti format
         func_data = safe_get_data(img_nii, ensure_finite=True)
         ntsteps = func_data.shape[-1]
         data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
@@ -932,59 +901,35 @@ def plot_carpet(
         # Apply lookup table
         seg_data = lut[oseg.astype(int)]
 
-        # Decimate data
-        data, seg_data = _decimate_data(data, seg_data, size)
+    # Decimate data
+    data, seg_data, temporal_mask = _decimate_data(data, seg_data, temporal_mask, size)
+
+    if isinstance(img, nb.Cifti2Image):
+        # Preserve continuity
+        order = seg_data.argsort(kind="stable")
+        # Get color maps
+        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
+        assert len(cmap.colors) == len(
+            struct_map
+        ), "Mismatch between expected # of structures and colors"
+    else:
         # Order following segmentation labels
         order = np.argsort(seg_data)[::-1]
         # Set colormap
         cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
 
-        if legend:
-            epiavg = func_data.mean(3)
-            epinii = nb.Nifti1Image(epiavg, img_nii.affine, img_nii.header)
-            segnii = nb.Nifti1Image(lut[atlaslabels.astype(int)], epinii.affine, epinii.header)
-            segnii.set_data_dtype("uint8")
-
-    return _carpet(
-        func,
-        data,
-        seg_data,
-        order,
-        cmap,
-        labelsize,
-        TR=TR,
-        detrend=detrend,
-        colorbar=colorbar,
-        subplot=subplot,
-        output_file=output_file,
-    )
-
-
-def _carpet(
-    func,
-    data,
-    seg_data,
-    order,
-    cmap,
-    labelsize,
-    TR=None,
-    detrend=True,
-    colorbar=False,
-    subplot=None,
-    output_file=None,
-):
-    """Build carpetplot for volumetric / CIFTI plots."""
-    if TR is None:
-        TR = 1.0  # Default TR
-
-    sns.set_style("white")
-
     # Detrend and z-score data
-    if detrend:
+    if standardize:
+        # This does not account for the temporal mask.
         data = clean(data.T, t_r=TR, detrend=True, filter=False, standardize="zscore_sample").T
         vlimits = (-2, 2)
+    elif temporal_mask is not None:
+        # If standardize is False and a temporal mask is provided,
+        # then we use only low-motion timepoints to define the vlimits.
+        # The executive summary uses the following range for native BOLD units.
+        vlimits = tuple(np.percentile(data[:, ~temporal_mask], q=(2.5, 97.5)))
     else:
-        # If detrend is False, then the data are assumed to have native BOLD units.
+        # If standardize is False, then the data are assumed to have native BOLD units.
         # The executive summary uses the following range for native BOLD units.
         vlimits = tuple(np.percentile(data, q=(2.5, 97.5)))
 
@@ -1056,6 +1001,19 @@ def _carpet(
     ax1.set_xticks([])
     ax1.set_xticklabels([])
 
+    if temporal_mask is not None:
+        # Add color bands to the carpet plot corresponding to censored volumes
+        outlier_idx = list(np.where(temporal_mask)[0])
+        gaps = [
+            [start, end] for start, end in zip(outlier_idx, outlier_idx[1:]) if start + 1 < end
+        ]
+        edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
+        consecutive_outliers_idx = list(zip(edges, edges))
+        for band in consecutive_outliers_idx:
+            start = band[0] - 0.5
+            end = band[1] + 0.5
+            ax1.axvspan(start, end, color="red", alpha=0.5)
+
     # Remove and redefine spines
     for side in ["top", "right"]:
         # Toggle the spine objects
@@ -1075,11 +1033,7 @@ def _carpet(
         ax2.set_xticks([])
         ax2.set_yticks([])
         fig = ax2.get_figure()
-        cbar = fig.colorbar(
-            pos,
-            cax=ax2,
-            ticks=vlimits,
-        )
+        cbar = fig.colorbar(pos, cax=ax2, ticks=vlimits)
         cbar.ax.tick_params(size=0, labelsize=20)
 
     #  Write out file
