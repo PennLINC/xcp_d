@@ -366,18 +366,9 @@ class FormatForBrainSwipes(SimpleInterface):
     def _run_interface(self, runtime):
         input_file = self.inputs.in_file
         im = np.asarray(Image.open(input_file))
-        if "Task" in os.path.basename(input_file):
-            top_row = im[:, 0:654, :]
-            mid_row = np.pad(im[:, 654:1200, :], ((0, 0), (54, 54), (0, 0)), mode="constant")
-            bot_row = np.pad(im[:, 1200:, :], ((0, 0), (54, 54), (0, 0)), mode="constant")
-        elif "Atlas" in os.path.basename(input_file):
-            top_row = im[:, 0:655, :]
-            mid_row = np.pad(im[:, 653:1193, :], ((0, 0), (60, 55), (0, 0)), mode="constant")
-            bot_row = np.pad(im[:, 1193:, :], ((0, 0), (47, 55), (0, 0)), mode="constant")
-        else:
-            top_row = im[:, 0:640, :]
-            mid_row = np.pad(im[:, 640:1193, :], ((0, 0), (32, 55), (0, 0)), mode="constant")
-            bot_row = np.pad(im[:, 1193:, :], ((0, 0), (32, 55), (0, 0)), mode="constant")
+        top_row = im[:,0:655,:]
+        mid_row = np.pad(im[:,653:1193,:], ((0,0),(60,55),(0,0)), mode='constant')
+        bot_row = np.pad(im[:,1193:1746,:], ((0,0), (47,55), (0,0)), mode='constant')
 
         x = np.concatenate((top_row, mid_row, bot_row), axis=0)
         new_x = ((x - x.min()) * (1 / (x.max() - x.min()) * 255)).astype("uint8")
