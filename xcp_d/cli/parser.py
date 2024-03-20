@@ -765,7 +765,7 @@ def parse_args(args=None, namespace=None):
     version = config.environment.version
 
     if config.execution.xcp_d_dir is None:
-        config.execution.xcp_d_dir = output_dir / "xcp_d"
+        config.execution.xcp_d_dir = output_dir
 
     # Update the config with an empty dict to trigger initialization of all config
     # sections (we used `init=False` above).
