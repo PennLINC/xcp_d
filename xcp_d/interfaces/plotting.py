@@ -616,14 +616,14 @@ class QCPlotsES(SimpleInterface):
     output_spec = _QCPlotsESOutputSpec
 
     def _run_interface(self, runtime):
-        preprocessed_bold_figure = fname_presuffix(
+        preprocessed_figure = fname_presuffix(
             "carpetplot_before_",
             suffix="file.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        denoised_bold_figure = fname_presuffix(
+        denoised_figure = fname_presuffix(
             "carpetplot_after_",
             suffix="file.svg",
             newpath=runtime.cwd,
@@ -645,8 +645,8 @@ class QCPlotsES(SimpleInterface):
             TR=self.inputs.TR,
             filtered_motion=self.inputs.filtered_motion,
             temporal_mask=self.inputs.temporal_mask,
-            preprocessed_bold_figure=preprocessed_bold_figure,
-            denoised_bold_figure=denoised_bold_figure,
+            preprocessed_figure=preprocessed_figure,
+            denoised_figure=denoised_figure,
             standardize=self.inputs.standardize,
             temporary_file_dir=runtime.cwd,
             mask=mask_file,

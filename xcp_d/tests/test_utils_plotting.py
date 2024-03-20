@@ -17,8 +17,8 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
 
     # Using unfiltered FD instead of calculating filtered version.
     filtered_motion = ds001419_data["confounds_file"]
-    preprocessed_bold_figure = os.path.join(tmpdir, "unprocessed.svg")
-    denoised_bold_figure = os.path.join(tmpdir, "processed.svg")
+    preprocessed_figure = os.path.join(tmpdir, "unprocessed.svg")
+    denoised_figure = os.path.join(tmpdir, "processed.svg")
     t_r = 2
     n_volumes = pd.read_table(filtered_motion).shape[0]
     tmask_arr = np.zeros(n_volumes, dtype=bool)
@@ -33,8 +33,8 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
         preprocessed_bold=preprocessed_bold,
         denoised_interpolated_bold=denoised_interpolated_bold,
         filtered_motion=filtered_motion,
-        preprocessed_bold_figure=preprocessed_bold_figure,
-        denoised_bold_figure=denoised_bold_figure,
+        preprocessed_figure=preprocessed_figure,
+        denoised_figure=denoised_figure,
         TR=t_r,
         standardize=False,
         temporary_file_dir=tmpdir,
@@ -50,8 +50,8 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
         preprocessed_bold=preprocessed_bold,
         denoised_interpolated_bold=denoised_interpolated_bold,
         filtered_motion=filtered_motion,
-        preprocessed_bold_figure=preprocessed_bold_figure,
-        denoised_bold_figure=denoised_bold_figure,
+        preprocessed_figure=preprocessed_figure,
+        denoised_figure=denoised_figure,
         TR=t_r,
         standardize=True,
         temporary_file_dir=tmpdir,
