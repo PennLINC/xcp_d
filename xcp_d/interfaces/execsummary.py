@@ -13,6 +13,7 @@ from markupsafe import Markup
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
+    InputMultiPath,
     SimpleInterface,
     TraitedSpec,
 )
@@ -339,10 +340,10 @@ class ExecutiveSummary(object):
 
 
 class _FormatForBrainSwipesInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
+    in_files = InputMultiPath(
+        File(exists=True),
         desc=(
-            "Figure file. Must be the derivative's filename, "
+            "Figure files. Must be the derivative's filename, "
             "not the file from the working directory."
         ),
     )
@@ -364,18 +365,34 @@ class FormatForBrainSwipes(SimpleInterface):
     output_spec = _FormatForBrainSwipesOutputSpec
 
     def _run_interface(self, runtime):
-        input_file = self.inputs.in_file
-        im = np.asarray(Image.open(input_file))
-        top_row = im[:, 0:655, :]
-        mid_row = np.pad(im[:, 653:1193, :], ((0, 0), (60, 55), (0, 0)), mode="constant")
-        bot_row = np.pad(im[:, 1193:1746, :], ((0, 0), (47, 55), (0, 0)), mode="constant")
+        input_files = self.inputs.in_files
+        assert len(input_files) == 9, "There must be 9 input files."
+        idx = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+        widths, rows = [], []
+        for i_row in range(3):
+            row_idx = idx[i_row]
+            row_files = [input_files[j_col] for j_col in row_idx]
+            row = [np.asarray(Image.open(row_file)) for row_file in row_files]
+            row = np.concatenate(row, axis=1)
+            widths.append(row.shape[1])
+            rows.append(row)
 
-        x = np.concatenate((top_row, mid_row, bot_row), axis=0)
+        max_width = np.max(widths)
+
+        for i_row, row in enumerate(rows):
+            width = widths[i_row]
+            if width < max_width:
+                pad = max_width - width
+                prepad = pad // 2
+                postpad = pad - prepad
+                rows[i_row] = np.pad(row, ((0, 0), (prepad, postpad), (0, 0)), mode="constant")
+
+        x = np.concatenate(rows, axis=0)
         new_x = ((x - x.min()) * (1 / (x.max() - x.min()) * 255)).astype("uint8")
         new_im = Image.fromarray(np.uint8(new_x))
 
         output_file = fname_presuffix(
-            input_file,
+            input_files[0],
             newpath=runtime.cwd,
             suffix="_reformatted.png",
             use_ext=False,
