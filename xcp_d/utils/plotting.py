@@ -564,8 +564,8 @@ def plot_fmri_es(
     # The mean and standard deviation of the denoised data, with bad volumes included.
     denoised_interpolated_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(denoised_interpolated_dvars, axis=0),
-            "Std": np.nanstd(denoised_interpolated_dvars, axis=0),
+            "Mean": np.nanmean(denoised_interpolated_arr, axis=0),
+            "Std": np.nanstd(denoised_interpolated_arr, axis=0),
         }
     )
 
