@@ -59,9 +59,9 @@ def get_parser():
         action="store",
         type=Path,
         help=(
-            "The output path for xcp_d. "
-            "This should not include the 'xcp_d' folder. "
-            "For example, '/path/to/dset/derivatives'."
+            "The output path for XCP-D derivatives. "
+            "For example, '/path/to/dset/derivatives/xcp_d'. "
+            "As of version 0.7.0, 'xcp_d' will not be appended to the output directory."
         ),
     )
     parser.add_argument(
@@ -628,9 +628,7 @@ def main(args=None):
         if not opts.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
-            crashfolders = [
-                output_dir / "xcp_d" / f"sub-{s}" / "log" / run_uuid for s in subject_list
-            ]
+            crashfolders = [output_dir / f"sub-{s}" / "log" / run_uuid for s in subject_list]
             for crashfolder in crashfolders:
                 for crashfile in crashfolder.glob("crash*.*"):
                     process_crashfile(crashfile)
@@ -656,8 +654,7 @@ def main(args=None):
         from xcp_d.interfaces.report_core import generate_reports
 
         citation_files = {
-            ext: output_dir / "xcp_d" / "logs" / f"CITATION.{ext}"
-            for ext in ("bib", "tex", "md", "html")
+            ext: output_dir / "logs" / f"CITATION.{ext}" for ext in ("bib", "tex", "md", "html")
         }
 
         if citation_files["md"].exists():
@@ -1010,7 +1007,7 @@ def build_workflow(opts, retval):
     retval["plugin_settings"] = plugin_settings
 
     # Set up directories
-    log_dir = opts.output_dir / "xcp_d" / "logs"
+    log_dir = opts.output_dir / "logs"
 
     # Check and create output and working directories
     opts.output_dir.mkdir(exist_ok=True, parents=True)

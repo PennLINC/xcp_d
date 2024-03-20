@@ -43,7 +43,7 @@ class DerivativesDataSink(BaseDerivativesDataSink):
     A child class of the niworkflows DerivativesDataSink, using xcp_d's configuration files.
     """
 
-    out_path_base = "xcp_d"
+    out_path_base = ""
     _allowed_entities = set(config_entities)
     _config_entities = config_entities
     _config_entities_dict = merged_entities
@@ -267,7 +267,7 @@ class CopyAtlas(SimpleInterface):
         name_source = self.inputs.name_source
         atlas = self.inputs.atlas
 
-        atlas_out_dir = os.path.join(output_dir, f"xcp_d/atlases/atlas-{atlas}")
+        atlas_out_dir = os.path.join(output_dir, f"atlases/atlas-{atlas}")
 
         if in_file.endswith(".json"):
             out_basename = f"atlas-{atlas}_dseg.json"

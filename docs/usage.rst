@@ -216,7 +216,7 @@ A Docker container can be created using the following command:
    docker run --rm -it \
       -v /dset/derivatives/fmriprep:/fmriprep:ro \
       -v /tmp/wkdir:/work:rw \
-      -v /dset/derivatives:/out:rw \
+      -v /dset/derivatives/xcp_d:/out:rw \
       -v /dset/derivatives/freesurfer:/freesurfer:ro \  # Necessary for fMRIPrep versions <22.0.2
       pennlinc/xcp_d:latest \
       /fmriprep /out participant \
