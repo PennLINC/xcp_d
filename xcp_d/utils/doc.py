@@ -40,8 +40,9 @@ docdict[
 ] = """
 output_dir : :obj:`str`
     Path to the output directory for ``xcp_d`` derivatives.
-    This should not include the ``xcp_d`` folder.
-    For example, "/path/to/dset/derivatives/".
+    For example, "/path/to/dset/derivatives/xcp_d".
+
+    As of version 0.7.0, 'xcp_d' will not be appended to the output directory.
 """
 
 docdict[

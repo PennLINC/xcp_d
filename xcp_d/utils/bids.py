@@ -676,14 +676,14 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, xcpd_dir, atlases=None, custom_confounds_folder=None):
+def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confounds_folder=None):
     """Write dataset_description.json file for derivatives.
 
     Parameters
     ----------
     fmri_dir : :obj:`str`
         Path to the BIDS derivative dataset being ingested.
-    xcpd_dir : :obj:`str`
+    output_dir : :obj:`str`
         Path to the output xcp-d dataset.
     atlases : :obj:`list` of :obj:`str`, optional
         Names of requested XCP-D atlases.
@@ -740,7 +740,7 @@ def write_dataset_description(fmri_dir, xcpd_dir, atlases=None, custom_confounds
         if "atlases" in dset_desc["DatasetLinks"].keys():
             LOGGER.warning("'atlases' is already a dataset link. Overwriting.")
 
-        dset_desc["DatasetLinks"]["atlases"] = os.path.join(xcpd_dir, "atlases")
+        dset_desc["DatasetLinks"]["atlases"] = os.path.join(output_dir, "atlases")
 
     if custom_confounds_folder:
         if "custom_confounds" in dset_desc["DatasetLinks"].keys():
@@ -748,7 +748,7 @@ def write_dataset_description(fmri_dir, xcpd_dir, atlases=None, custom_confounds
 
         dset_desc["DatasetLinks"]["custom_confounds"] = str(custom_confounds_folder)
 
-    xcpd_dset_description = os.path.join(xcpd_dir, "dataset_description.json")
+    xcpd_dset_description = os.path.join(output_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
         with open(xcpd_dset_description, "r") as fo:
             old_dset_desc = json.load(fo)
@@ -1043,16 +1043,12 @@ def _make_uri(in_file, dataset_name, dataset_path):
 
 def _make_xcpd_uri(out_file, output_dir):
     """Convert postprocessing derivative's path to BIDS URI."""
-    import os
-
     from xcp_d.utils.bids import _make_uri
 
-    dataset_path = os.path.join(output_dir, "xcp_d")
-
     if isinstance(out_file, list):
-        return [_make_uri(of, "", dataset_path) for of in out_file]
+        return [_make_uri(of, "", output_dir) for of in out_file]
     else:
-        return [_make_uri(out_file, "", dataset_path)]
+        return [_make_uri(out_file, "", output_dir)]
 
 
 def _make_xcpd_uri_lol(in_list, output_dir):
@@ -1075,7 +1071,7 @@ def _make_atlas_uri(out_file, output_dir):
 
     from xcp_d.utils.bids import _make_uri
 
-    dataset_path = os.path.join(output_dir, "xcp_d", "atlases")
+    dataset_path = os.path.join(output_dir, "atlases")
 
     if isinstance(out_file, list):
         return [_make_uri(of, "atlas", dataset_path) for of in out_file]
