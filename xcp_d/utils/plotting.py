@@ -284,7 +284,7 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
     if run_index is not None:
         for run_location in run_index:
-            ax.axvline(run_location, color="yellow")
+            ax.axvline(run_location, color="black", linestyle="--")
 
     # Set limits and format
     minimum_x_value = [abs(x) for x in minimum_values]
@@ -355,7 +355,7 @@ def plot_global_signal_es(time_series, ax, run_index=None):
 
     if run_index is not None:
         for run_location in run_index:
-            ax.axvline(run_location, color="yellow")
+            ax.axvline(run_location, color="black", linestyle="--")
 
     ax.set_xlim((0, ntsteps - 1))
 
@@ -458,9 +458,9 @@ def plot_framewise_displacement_es(
     )
 
     if run_index is not None:
-        run_index = run_index * TR
+        # run_index = run_index * TR
         for run_location in run_index:
-            ax.axvline(run_location, color="yellow")
+            ax.axvline(run_location, color="black", linestyle="--")
 
     ax.set_xlim((0, ntsteps - 1))
     ax.set_ylim(0, ymax)
@@ -668,7 +668,7 @@ def plot_fmri_es(
             wspace=0.0,
         )
         ax3 = plt.subplot(gridspec3[1])
-        plot_framewise_displacement_es(fd_regressor, ax3, run_index=run_index, TR=TR)
+        plot_framewise_displacement_es(fd_regressor, ax3, TR=TR, run_index=run_index)
 
         # Save out the before processing file
         fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
