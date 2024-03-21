@@ -12,6 +12,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.execsummary import FormatForBrainSwipes
 from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
 from xcp_d.interfaces.workbench import ShowScene
@@ -761,14 +762,12 @@ def init_plot_overlay_wf(
         name="plot_overlay_figure",
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, plot_overlay_figure, [
             ("underlay_file", "in_files"),
             ("overlay_file", "outline_image"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     ds_overlay_figure = pe.Node(
         DerivativesDataSink(
@@ -782,11 +781,31 @@ def init_plot_overlay_wf(
         run_without_submitting=True,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, ds_overlay_figure, [("name_source", "source_file")]),
         (plot_overlay_figure, ds_overlay_figure, [("out_files", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
+
+    reformat_for_brain_swipes = pe.Node(FormatForBrainSwipes(), name="reformat_for_brain_swipes")
+    workflow.connect([
+        (plot_overlay_figure, reformat_for_brain_swipes, [("slicewise_files", "in_files")]),
+    ])  # fmt:skip
+
+    ds_reformatted_figure = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["den"],
+            datatype="figures",
+            desc=f"{desc}BrainSwipes",
+            extension=".png",
+        ),
+        name="ds_reformatted_figure",
+        run_without_submitting=True,
+    )
+
+    workflow.connect([
+        (inputnode, ds_reformatted_figure, [("name_source", "source_file")]),
+        (reformat_for_brain_swipes, ds_reformatted_figure, [("out_file", "in_file")]),
+    ])  # fmt:skip
 
     return workflow
