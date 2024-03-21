@@ -62,7 +62,7 @@ and `UK Biobank <https://doi.org/10.1016/j.neuroimage.2017.10.034>`_ data.
 
 *Please note that XCP is only compatible with HCP-YA versions downloaded c.a. Feb 2023 at the moment.*
 
-.. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/xcp_paper_fig_1.png
+.. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/xcp_figure_1.png
 
 See the `documentation <https://xcp-d.readthedocs.io/en/latest/>`_ for more details.
 

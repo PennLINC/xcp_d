@@ -86,9 +86,7 @@ def init_concatenate_data_wf(
         One list entry for each run.
     %(temporal_mask)s
         One list entry for each run.
-    %(uncensored_denoised_bold)s
-        One list entry for each run.
-    %(interpolated_filtered_bold)s
+    %(denoised_interpolated_bold)s
         One list entry for each run.
     %(censored_denoised_bold)s
         One list entry for each run.
@@ -117,8 +115,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
-                "uncensored_denoised_bold",
-                "interpolated_filtered_bold",
+                "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "bold_mask",  # only for niftis, from postproc workflows
@@ -149,8 +146,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
-            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
             ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("bold_mask", "bold_mask"),
@@ -171,8 +167,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
-            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
             ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("timeseries", "timeseries"),
@@ -207,8 +202,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ]),
         (concatenate_inputs, qc_report_wf, [
             ("preprocessed_bold", "inputnode.preprocessed_bold"),
-            ("uncensored_denoised_bold", "inputnode.uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "inputnode.interpolated_filtered_bold"),
+            ("denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
             ("censored_denoised_bold", "inputnode.censored_denoised_bold"),
             ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
             ("filtered_motion", "inputnode.filtered_motion"),
@@ -220,7 +214,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
+            dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
             desc="filtered" if motion_filter_type else None,
             suffix="motion",
             extension=".tsv",
@@ -240,7 +234,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     ds_temporal_mask = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
-            dismiss_entities=["atlas", "den", "res", "space", "cohort", "desc"],
+            dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
             suffix="outliers",
             extension=".tsv",
         ),
@@ -361,10 +355,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_interpolated_filtered_bold, [
-                ("interpolated_filtered_bold", "in_file"),
+                ("denoised_interpolated_bold", "in_file"),
             ]),
             (filter_runs, ds_interpolated_filtered_bold, [
-                (("interpolated_filtered_bold", _make_xcpd_uri, output_dir), "Sources"),
+                (("denoised_interpolated_bold", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])  # fmt:skip
 
@@ -390,7 +384,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=["desc"],
+                dismiss_entities=["desc", "den", "res"],
+                statistic="mean",
                 suffix="timeseries",
                 extension=".tsv",
                 # Metadata
@@ -399,9 +394,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name="ds_timeseries",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
+            iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_timeseries.inputs.atlas = atlases
+        ds_timeseries.inputs.segmentation = atlases
 
         workflow.connect([
             (clean_name_source, ds_timeseries, [("name_source", "source_file")]),
@@ -441,16 +436,16 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["desc"],
-                measure="pearsoncorrelation",
-                suffix="conmat",
+                statistic="pearsoncorrelation",
+                suffix="relmat",
                 extension=".tsv",
             ),
             name="ds_correlations",
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=["atlas", "in_file", "meta_dict"],
+            iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_correlations.inputs.atlas = atlases
+        ds_correlations.inputs.segmentation = atlases
 
         workflow.connect([
             (clean_name_source, ds_correlations, [("name_source", "source_file")]),
@@ -482,15 +477,16 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
                     den="91k",
+                    statistic="mean",
                     suffix="timeseries",
                     extension=".ptseries.nii",
                 ),
                 name="ds_timeseries_cifti_files",
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=["atlas", "in_file", "meta_dict"],
+                iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_timeseries_cifti_files.inputs.atlas = atlases
+            ds_timeseries_cifti_files.inputs.segmentation = atlases
 
             workflow.connect([
                 (clean_name_source, ds_timeseries_cifti_files, [("name_source", "source_file")]),

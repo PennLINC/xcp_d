@@ -53,7 +53,7 @@ def test_custom_confounds(ds001419_data, tmp_path_factory):
         custom_confounds=custom_confounds_file,
     )
     # We expect n params + 2 (one for each condition in custom confounds)
-    assert combined_confounds.shape == (N_VOLUMES, 28)
+    assert combined_confounds.shape == (N_VOLUMES, 26)
     assert "condition01" in combined_confounds.columns
     assert "condition02" in combined_confounds.columns
 
@@ -65,7 +65,7 @@ def test_custom_confounds(ds001419_data, tmp_path_factory):
         custom_confounds=custom_confounds_file,
     )
     # We expect 2 (one for each condition in custom confounds)
-    assert combined_confounds.shape == (N_VOLUMES, 28)
+    assert combined_confounds.shape == (N_VOLUMES, 26)
     assert "condition01" in combined_confounds.columns
     assert "condition02" in combined_confounds.columns
 
@@ -133,7 +133,7 @@ def test_load_confounds(ds001419_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 26)
+    assert confounds_df.shape == (N_VOLUMES, 24)
 
     confounds_df, _ = load_confound_matrix(
         params="27P",
@@ -141,7 +141,7 @@ def test_load_confounds(ds001419_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 29)
+    assert confounds_df.shape == (N_VOLUMES, 27)
 
     confounds_df, _ = load_confound_matrix(
         params="36P",
@@ -149,7 +149,7 @@ def test_load_confounds(ds001419_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 38)
+    assert confounds_df.shape == (N_VOLUMES, 36)
 
     confounds_df, _ = load_confound_matrix(
         params="acompcor",
@@ -157,7 +157,7 @@ def test_load_confounds(ds001419_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 30)
+    assert confounds_df.shape == (N_VOLUMES, 28)
 
     confounds_df, _ = load_confound_matrix(
         params="acompcor_gsr",
@@ -165,7 +165,7 @@ def test_load_confounds(ds001419_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 31)
+    assert confounds_df.shape == (N_VOLUMES, 29)
 
     confounds_df, _ = load_confound_matrix(
         params="aroma",
@@ -173,7 +173,7 @@ def test_load_confounds(ds001419_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 50)
+    assert confounds_df.shape == (N_VOLUMES, 48)
 
     confounds_df, _ = load_confound_matrix(
         params="aroma_gsr",
@@ -181,7 +181,7 @@ def test_load_confounds(ds001419_data):
         confounds_file=confounds_file,
         confounds_json_file=confounds_json,
     )
-    assert confounds_df.shape == (N_VOLUMES, 51)
+    assert confounds_df.shape == (N_VOLUMES, 49)
 
     confounds_df, _ = load_confound_matrix(
         params="none",

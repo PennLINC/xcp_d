@@ -84,17 +84,18 @@ class CensoringPlot(SimpleInterface):
         # The number of colors in the palette depends on whether there are random censors or not
         palette = sns.color_palette("colorblind", 4 + censoring_df.shape[1])
 
-        fig, ax = plt.subplots(figsize=(16, 8))
-
         time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
 
-        ax.plot(
-            time_array,
-            preproc_fd_timeseries,
-            label="Raw Framewise Displacement",
-            color=palette[0],
-        )
-        ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
+        with sns.axes_style("whitegrid"):
+            fig, ax = plt.subplots(figsize=(8, 4))
+
+            ax.plot(
+                time_array,
+                preproc_fd_timeseries,
+                label="Raw Framewise Displacement",
+                color=palette[0],
+            )
+            ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="salmon", alpha=0.5)
 
         dummy_scans = self.inputs.dummy_scans
         # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
@@ -182,9 +183,9 @@ class CensoringPlot(SimpleInterface):
                 alpha=0.5,
             )
 
-        ax.set_xlabel("Time (seconds)", fontsize=20)
-        ax.set_ylabel("Movement (millimeters)", fontsize=20)
-        ax.legend(fontsize=20)
+        ax.set_xlabel("Time (seconds)", fontsize=10)
+        ax.set_ylabel("Movement (millimeters)", fontsize=10)
+        ax.legend(fontsize=10)
         fig.tight_layout()
 
         self._results["out_file"] = fname_presuffix(
@@ -525,11 +526,11 @@ class QCPlots(SimpleInterface):
         df = pd.DataFrame(qc_values_dict)
         self._results["qc_file"] = fname_presuffix(
             self.inputs.cleaned_file,
-            suffix="qc_bold.csv",
+            suffix="qc_bold.tsv",
             newpath=runtime.cwd,
             use_ext=False,
         )
-        df.to_csv(self._results["qc_file"], index=False, header=True)
+        df.to_csv(self._results["qc_file"], index=False, header=True, sep="\t")
 
         # Write out the metadata file
         self._results["qc_metadata"] = fname_presuffix(
@@ -553,17 +554,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
             "*using only the low-motion volumes*."
         ),
     )
-    uncensored_denoised_bold = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Data after regression and interpolation, but not filtering."
-            "The preprocessed BOLD data are censored, mean-centered, detrended, "
-            "and denoised to get the betas, and then the full, uncensored preprocessed BOLD data "
-            "are denoised using those betas."
-        ),
-    )
-    interpolated_filtered_bold = File(
+    denoised_interpolated_bold = File(
         exists=True,
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
@@ -573,14 +564,19 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
     )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc="TSV file with temporal mask.",
+    )
     TR = traits.Float(default_value=1, desc="Repetition time")
     standardize = traits.Bool(
         mandatory=True,
         desc=(
             "Whether to standardize the data or not. "
             "If False, then the preferred DCAN version of the plot will be generated, "
-            "where the BOLD data are not rescaled, and the carpet plot has color limits of -600 "
-            "and 600. "
+            "where the BOLD data are not rescaled, and the carpet plot has color limits from "
+            "the 2.5th percentile to the 97.5th percentile. "
             "If True, then the BOLD data will be z-scored and the color limits will be -2 and 2."
         ),
     )
@@ -620,14 +616,14 @@ class QCPlotsES(SimpleInterface):
     output_spec = _QCPlotsESOutputSpec
 
     def _run_interface(self, runtime):
-        preprocessed_bold_figure = fname_presuffix(
+        preprocessed_figure = fname_presuffix(
             "carpetplot_before_",
             suffix="file.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        denoised_bold_figure = fname_presuffix(
+        denoised_figure = fname_presuffix(
             "carpetplot_after_",
             suffix="file.svg",
             newpath=runtime.cwd,
@@ -645,12 +641,12 @@ class QCPlotsES(SimpleInterface):
 
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
-            uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
-            interpolated_filtered_bold=self.inputs.interpolated_filtered_bold,
+            denoised_interpolated_bold=self.inputs.denoised_interpolated_bold,
             TR=self.inputs.TR,
             filtered_motion=self.inputs.filtered_motion,
-            preprocessed_bold_figure=preprocessed_bold_figure,
-            denoised_bold_figure=denoised_bold_figure,
+            temporal_mask=self.inputs.temporal_mask,
+            preprocessed_figure=preprocessed_figure,
+            denoised_figure=denoised_figure,
             standardize=self.inputs.standardize,
             temporary_file_dir=runtime.cwd,
             mask=mask_file,

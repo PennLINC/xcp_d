@@ -1,5 +1,48 @@
 # What's New
 
+## 0.6.4
+
+### 🎉 Exciting New Features
+
+* Replace `bids:xcp_d:` BIDS URI with `bids::` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1088
+
+### 👎 Deprecations
+
+* [DCAN] Enable DCAN QC by default by @tsalo in https://github.com/PennLINC/xcp_d/pull/1086
+
+### 🐛 Bug Fixes
+
+* Raise error if atlas affines don't match across participants by @tsalo in https://github.com/PennLINC/xcp_d/pull/1075
+* Fix query error report in `collect_mesh_data` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1092
+* Adopt Lindquist-compliant denoising method by @tsalo in https://github.com/PennLINC/xcp_d/pull/1087
+
+### Other Changes
+
+* Update changelog for 0.6.3 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1079
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.3...0.6.4
+
+
+## 0.6.3
+
+### 🎉 Exciting New Features
+
+* Make "DatasetType" key recommended, not required by @tsalo in https://github.com/PennLINC/xcp_d/pull/1068
+
+### 🐛 Bug Fixes
+
+* Do not warn if `fd-thresh` and `min-time` are both set to 0 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1071
+* Use `copy_atlas` to write out atlas tsv and json files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1073
+* Raise error if FS_LICENSE environment variable is not an existing file by @tsalo in https://github.com/PennLINC/xcp_d/pull/1072
+* Generate T2w executive summary plots when T1w is also available by @tsalo in https://github.com/PennLINC/xcp_d/pull/1078
+
+### Other Changes
+
+* Add release notes for releases 0.6.1 and 0.6.2 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1070
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.2...0.6.3
+
+
 ## 0.6.2
 
 ### 🐛 Bug Fixes

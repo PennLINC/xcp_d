@@ -463,7 +463,7 @@ def init_execsummary_functional_plots_wf(
 
     # Start plotting the overlay figures
     # T1 in Task, Task in T1, Task in T2, T2 in Task
-    anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
+    anatomicals = (["t1w"] if t1w_available else []) + (["t2w"] if t2w_available else [])
     for anat in anatomicals:
         # Resample BOLD to match resolution of T1w/T2w data
         resample_bold_to_anat = pe.Node(
@@ -572,7 +572,7 @@ def init_execsummary_anatomical_plots_wf(
 
     # Start plotting the overlay figures
     # Atlas in T1w/T2w, T1w/T2w in Atlas
-    anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
+    anatomicals = (["t1w"] if t1w_available else []) + (["t2w"] if t2w_available else [])
     for anat in anatomicals:
         # Resample anatomical to match resolution of template data
         resample_anat = pe.Node(
