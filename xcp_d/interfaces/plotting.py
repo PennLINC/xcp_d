@@ -730,7 +730,8 @@ class _SlicesDirInputSpec(FSLCommandInputSpec):
 
 class _SlicesDirOutputSpec(TraitedSpec):
     out_dir = Directory(exists=True, desc="Output directory.")
-    out_files = OutputMultiPath(File(exists=True), desc="List of generated PNG files.")
+    out_files = OutputMultiPath(File(exists=True), desc="Concatenated PNG files.")
+    slicewise_files = OutputMultiPath(File(exists=True), desc="List of generated PNG files.")
 
 
 class SlicesDir(FSLCommand):
@@ -775,6 +776,18 @@ class SlicesDir(FSLCommand):
             )
             for f in self.inputs.in_files
         ]
+        temp_files = [
+            "grota.png",
+            "grotb.png",
+            "grotc.png",
+            "grotd.png",
+            "grote.png",
+            "grotf.png",
+            "grotg.png",
+            "groth.png",
+            "groti.png",
+        ]
+        outputs["slicewise_files"] = [os.path.join(out_dir, f) for f in temp_files]
         return outputs
 
     def _gen_filename(self, name):
