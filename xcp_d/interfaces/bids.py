@@ -85,7 +85,7 @@ class _CollectRegistrationFilesOutputSpec(TraitedSpec):
     )
     target_sphere = File(
         exists=True,
-        desc="Target-space sphere (fsLR for FreeSurfer, dHCP-in-fsLR for MCRIBS).",
+        desc="Target-space sphere (fsLR for FreeSurfer, dhcpSym-in-fsLR for MCRIBS).",
     )
     sphere_to_sphere = File(
         exists=True,
@@ -94,7 +94,12 @@ class _CollectRegistrationFilesOutputSpec(TraitedSpec):
 
 
 class CollectRegistrationFiles(SimpleInterface):
-    """Collect registration files for fsnative-to-fsLR transformation."""
+    """Collect registration files for fsnative-to-fsLR transformation.
+
+    TODO: Collect from the preprocessing derivatives if they're a compliant version.
+    Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
+    XXX: Wait until the Config object is up and running, so we have access to the BIDSLayout.
+    """
 
     input_spec = _CollectRegistrationFilesInputSpec
     output_spec = _CollectRegistrationFilesOutputSpec
@@ -102,7 +107,6 @@ class CollectRegistrationFiles(SimpleInterface):
     def _run_interface(self, runtime):
         import os
 
-        from pkg_resources import resource_filename as pkgrf
         from templateflow.api import get as get_template
 
         hemisphere = self.inputs.hemisphere
@@ -113,8 +117,7 @@ class CollectRegistrationFiles(SimpleInterface):
 
         if self.inputs.software == "FreeSurfer":
             # Find the subject's sphere in the FreeSurfer derivatives.
-            # TODO: Collect from the preprocessing derivatives if they're a compliant version.
-            # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
+            # In fMRIPrep derivatives, sub-<subject_label>_hemi-[LR]_desc-reg_sphere.surf.gii
             self._results["subject_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
                 participant_id,
@@ -122,8 +125,7 @@ class CollectRegistrationFiles(SimpleInterface):
                 f"{hstr}.sphere.reg",
             )
 
-            # Load the fsaverage-164k sphere
-            # FreeSurfer: tpl-fsaverage_hemi-?_den-164k_sphere.surf.gii
+            # Load the fsaverage-164k sphere.
             self._results["source_sphere"] = str(
                 get_template(
                     template="fsaverage",
@@ -135,18 +137,19 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # FreeSurfer: fs_?/fs_?-to-fs_LR_fsaverage.?_LR.spherical_std.164k_fs_?.surf.gii
-            self._results["sphere_to_sphere"] = pkgrf(
-                "xcp_d",
-                (
-                    f"data/standard_mesh_atlases/fs_{hemisphere}/"
-                    f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
-                    f"164k_fs_{hemisphere}.surf.gii"
-                ),
+            # Load the fsaverage-to-fsLR warp sphere.
+            self._results["sphere_to_sphere"] = str(
+                get_template(
+                    template="fsaverage",
+                    space="fsLR",
+                    hemi=hemisphere,
+                    density="164k",
+                    desc=None,
+                    suffix="sphere",
+                )
             )
 
-            # FreeSurfer: tpl-fsLR_hemi-?_den-32k_sphere.surf.gii
+            # Load the fsLR-32k sphere.
             self._results["target_sphere"] = str(
                 get_template(
                     template="fsLR",
@@ -160,8 +163,6 @@ class CollectRegistrationFiles(SimpleInterface):
 
         elif self.inputs.software == "MCRIBS":
             # Find the subject's sphere in the MCRIBS derivatives.
-            # TODO: Collect from the preprocessing derivatives if they're a compliant version.
-            # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
             self._results["subject_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
                 participant_id,
@@ -171,28 +172,41 @@ class CollectRegistrationFiles(SimpleInterface):
                 f"{hstr}.sphere.reg2",
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # MCRIBS: tpl-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
-            self._results["source_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
+            # Load the fsaverage-41k sphere.
+            self._results["source_sphere"] = str(
+                get_template(
+                    template="fsaverage",
+                    space=None,
+                    hemi=hemisphere,
+                    density="41k",
+                    desc="reg",
+                    suffix="sphere",
+                )
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # MCRIBS: tpl-dHCP_space-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
-            self._results["sphere_to_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-dHCP_space-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
+            # Load the fsaverage-to-dhcpSym warp sphere.
+            self._results["sphere_to_sphere"] = str(
+                get_template(
+                    template="dhcpSym",
+                    cohort="42",
+                    space="fsaverage",
+                    hemi=hemisphere,
+                    density="41k",
+                    desc="reg",
+                    suffix="sphere",
+                )
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # MCRIBS: tpl-dHCP_space-fsLR_hemi-?_den-32k_desc-week42_sphere.surf.gii
-            self._results["target_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-dHCP_space-fsLR_hemi-{hemisphere}_den-32k_desc-week42_sphere.surf.gii",
+            # Load the dhcpSym-32k-in-fsLR space sphere.
+            self._results["target_sphere"] = str(
+                get_template(
+                    template="dhcpSym",
+                    cohort="42",
+                    space="fsLR",
+                    hemi=hemisphere,
+                    density="32k",
+                    suffix="sphere",
+                )
             )
 
         return runtime
