@@ -221,3 +221,18 @@ def fslicense(working_dir):
     )
     with open(FS_LICENSE, "w") as f:
         f.write(base64.b64decode(LICENSE_CODE).decode())
+
+
+@pytest.fixture(scope="session")
+def base_config():
+    from xcp_d.tests.tests import mock_config
+
+    return mock_config
+
+
+@pytest.fixture(scope="session")
+def base_parser():
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(description="Test parser")
+    return parser

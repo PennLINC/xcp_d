@@ -44,7 +44,7 @@ class ExecutiveSummary(object):
         else:
             self.session_id = None
 
-        self.layout = BIDSLayout(xcpd_path, validate=False)
+        self.layout = BIDSLayout(xcpd_path, config="figures", validate=False)
 
     def write_html(self, document, filename):
         """Write an html document to a filename.

@@ -87,8 +87,6 @@ def run_reports(
 @fill_doc
 def generate_reports(
     subject_list,
-    fmri_dir,
-    work_dir,
     output_dir,
     run_uuid,
     config=None,
@@ -112,9 +110,6 @@ def generate_reports(
         The name of the package.
     """
     # reportlets_dir = None
-    if work_dir is not None:
-        work_dir = work_dir
-
     report_errors = [
         run_reports(
             Path(output_dir),
@@ -127,7 +122,6 @@ def generate_reports(
         for subject_label in subject_list
     ]
 
-    fmri_dir = fmri_dir
     errno = sum(report_errors)
 
     if errno:
@@ -135,7 +129,7 @@ def generate_reports(
             f"{subid} ({err})" for subid, err in zip(subject_list, report_errors) if err
         )
         LOGGER.error(
-            "Processsing did not finish successfully. Errors occurred while processing "
+            "Processing did not finish successfully. Errors occurred while processing "
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
         )

@@ -17,40 +17,44 @@ def test_collect_participants(datasets):
     """
     bids_dir = datasets["ds001419"]
 
+    bids_layout = BIDSLayout(bids_dir, validate=False)
+    nonbids_layout = BIDSLayout(os.path.dirname(bids_dir), validate=False)
+
     # Pass in non-BIDS folder to get BIDSError.
     with pytest.raises(xbids.BIDSError, match="Could not find participants"):
-        xbids.collect_participants(os.path.dirname(bids_dir), participant_label="fail")
+        xbids.collect_participants(nonbids_layout, participant_label="fail")
 
+    # Pass in BIDS folder with no matching participants to get BIDSWarning.
     with pytest.raises(xbids.BIDSError, match="Could not find participants"):
-        xbids.collect_participants(bids_dir, participant_label="fail")
+        xbids.collect_participants(bids_layout, participant_label="fail")
 
+    # Pass in BIDS folder with only some participants to get BIDSWarning.
     with pytest.warns(xbids.BIDSWarning, match="Some participants were not found"):
-        xbids.collect_participants(bids_dir, participant_label=["01", "fail"])
+        xbids.collect_participants(bids_layout, participant_label=["01", "fail"])
 
+    # Pass in BIDS folder with only some participants to get BIDSError.
     with pytest.raises(xbids.BIDSError, match="Some participants were not found"):
-        xbids.collect_participants(bids_dir, participant_label=["01", "fail"], strict=True)
+        xbids.collect_participants(bids_layout, participant_label=["01", "fail"], strict=True)
 
-    found_labels = xbids.collect_participants(bids_dir, participant_label=None)
+    found_labels = xbids.collect_participants(bids_layout, participant_label=None)
     assert found_labels == ["01"]
 
-    found_labels = xbids.collect_participants(bids_dir, participant_label="01")
+    found_labels = xbids.collect_participants(bids_layout, participant_label="01")
     assert found_labels == ["01"]
 
 
 def test_collect_data_ds001419(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["ds001419"]
+    layout = BIDSLayout(bids_dir, validate=False)
 
     # NIFTI workflow, but also get a BIDSLayout
-    layout, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task=None,
-        bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=None,
     )
 
     assert len(subj_data["bold"]) == 5
@@ -61,15 +65,12 @@ def test_collect_data_ds001419(datasets):
     assert "from-MNI152NLin2009cAsym" in subj_data["template_to_anat_xfm"]
 
     # CIFTI workflow
-    _, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task="rest",
-        bids_validate=False,
-        bids_filters=None,
+        bids_filters={"bold": {"task": "rest"}},
         cifti=True,
-        layout=layout,
     )
 
     assert len(subj_data["bold"]) == 1
@@ -90,15 +91,12 @@ def test_collect_data_nibabies(datasets):
     )
 
     # NIFTI workflow
-    _, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task=None,
-        bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=layout,
     )
 
     assert len(subj_data["bold"]) == 1
@@ -111,15 +109,12 @@ def test_collect_data_nibabies(datasets):
 
     # CIFTI workflow
     with pytest.raises(FileNotFoundError):
-        _, subj_data = xbids.collect_data(
-            bids_dir=bids_dir,
+        subj_data = xbids.collect_data(
+            layout=layout,
             input_type="fmriprep",
             participant_label="01",
-            task=None,
-            bids_validate=False,
             bids_filters=None,
             cifti=True,
-            layout=layout,
         )
 
 

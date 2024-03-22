@@ -9,6 +9,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.ants import (
     ApplyTransforms,
     CompositeInvTransformUtil,
@@ -41,13 +42,9 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 @fill_doc
 def init_postprocess_anat_wf(
-    output_dir,
-    input_type,
     t1w_available,
     t2w_available,
     target_space,
-    omp_nthreads,
-    mem_gb,
     name="postprocess_anat_wf",
 ):
     """Copy T1w, segmentation, and, optionally, T2w to the derivative directory.
@@ -59,18 +56,17 @@ def init_postprocess_anat_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_postprocess_anat_wf
 
-            wf = init_postprocess_anat_wf(
-                output_dir=".",
-                input_type="fmriprep",
-                t1w_available=True,
-                t2w_available=True,
-                target_space="MNI152NLin6Asym",
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="postprocess_anat_wf",
-            )
+            with mock_config():
+                wf = init_postprocess_anat_wf(
+                    t1w_available=True,
+                    t2w_available=True,
+                    target_space="MNI152NLin6Asym",
+                    name="postprocess_anat_wf",
+                )
 
     Parameters
     ----------
@@ -110,6 +106,10 @@ def init_postprocess_anat_wf(
         Path to the preprocessed T2w file in standard space.
     """
     workflow = Workflow(name=name)
+    output_dir = config.execution.xcp_d_dir
+    input_type = config.workflow.input_type
+    omp_nthreads = config.nipype.omp_nthreads
+    mem_gb = config.nipype.memory_gb
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -119,7 +119,7 @@ def init_postprocess_anat_wf(
                 "anat_dseg",
                 "anat_to_template_xfm",
                 "template",
-            ]
+            ],
         ),
         name="inputnode",
     )
@@ -286,8 +286,6 @@ resolution.
     execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
         t1w_available=t1w_available,
         t2w_available=t2w_available,
-        output_dir=output_dir,
-        name="execsummary_anatomical_plots_wf",
     )
 
     # fmt:off
@@ -315,18 +313,12 @@ resolution.
 
 @fill_doc
 def init_postprocess_surfaces_wf(
-    fmri_dir,
     subject_id,
-    dcan_qc,
-    process_surfaces,
     mesh_available,
     standard_space_mesh,
     morphometry_files,
-    output_dir,
     t1w_available,
     t2w_available,
-    mem_gb,
-    omp_nthreads,
     name="postprocess_surfaces_wf",
 ):
     """Postprocess surfaces.
@@ -336,23 +328,20 @@ def init_postprocess_surfaces_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_postprocess_surfaces_wf
 
-            wf = init_postprocess_surfaces_wf(
-                fmri_dir=".",
-                subject_id="01",
-                dcan_qc=True,
-                process_surfaces=True,
-                mesh_available=True,
-                standard_space_mesh=False,
-                morphometry_files=[],
-                output_dir=".",
-                t1w_available=True,
-                t2w_available=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="postprocess_surfaces_wf",
-            )
+            with mock_config():
+                wf = init_postprocess_surfaces_wf(
+                    subject_id="01",
+                    mesh_available=True,
+                    standard_space_mesh=False,
+                    morphometry_files=[],
+                    t1w_available=True,
+                    t2w_available=True,
+                    name="postprocess_surfaces_wf",
+                )
 
     Parameters
     ----------
@@ -392,6 +381,13 @@ def init_postprocess_surfaces_wf(
     """
     workflow = Workflow(name=name)
 
+    fmri_dir = config.execution.fmri_dir
+    dcan_qc = config.workflow.dcan_qc
+    process_surfaces = config.workflow.process_surfaces
+    output_dir = config.execution.xcp_d_dir
+    mem_gb = config.nipype.memory_gb
+    omp_nthreads = config.nipype.omp_nthreads
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -418,11 +414,8 @@ def init_postprocess_surfaces_wf(
     if dcan_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
-            output_dir=output_dir,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
-            omp_nthreads=omp_nthreads,
-            mem_gb=mem_gb,
         )
         # fmt:off
         workflow.connect([
@@ -456,7 +449,6 @@ def init_postprocess_surfaces_wf(
         # At least some surfaces are already in fsLR space and must be copied,
         # without modification, to the output directory.
         copy_std_surfaces_to_datasink = init_copy_inputs_to_outputs_wf(
-            output_dir=output_dir,
             name="copy_std_surfaces_to_datasink",
         )
 
@@ -481,12 +473,7 @@ def init_postprocess_surfaces_wf(
         )
         # Generate and output HCP-style surface files.
         hcp_surface_wfs = {
-            hemi: init_generate_hcp_surfaces_wf(
-                output_dir=output_dir,
-                mem_gb=mem_gb,
-                omp_nthreads=omp_nthreads,
-                name=f"{hemi}_generate_hcp_surfaces_wf",
-            )
+            hemi: init_generate_hcp_surfaces_wf(name=f"{hemi}_generate_hcp_surfaces_wf")
             for hemi in ["lh", "rh"]
         }
         # fmt:off
@@ -787,12 +774,7 @@ def init_warp_surfaces_to_template_wf(
 
 
 @fill_doc
-def init_generate_hcp_surfaces_wf(
-    output_dir,
-    mem_gb,
-    omp_nthreads,
-    name="generate_hcp_surfaces_wf",
-):
+def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     """Generate midthickness, inflated, and very-inflated HCP-style surfaces.
 
     Workflow Graph
@@ -800,14 +782,12 @@ def init_generate_hcp_surfaces_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_generate_hcp_surfaces_wf
 
-            wf = init_generate_hcp_surfaces_wf(
-                output_dir=".",
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="generate_hcp_surfaces_wf",
-            )
+            with mock_config():
+                wf = init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf")
 
     Parameters
     ----------
@@ -827,6 +807,10 @@ def init_generate_hcp_surfaces_wf(
         The surface file to inflate.
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    mem_gb = config.nipype.memory_gb
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(

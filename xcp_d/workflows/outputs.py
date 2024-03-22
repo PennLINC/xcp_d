@@ -5,6 +5,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import (
@@ -19,7 +20,7 @@ from xcp_d.utils.utils import _make_dictionary
 
 
 @fill_doc
-def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf"):
+def init_copy_inputs_to_outputs_wf(name="copy_inputs_to_outputs_wf"):
     """Copy files from the preprocessing derivatives to the output folder, with no modifications.
 
     Workflow Graph
@@ -27,16 +28,15 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.outputs import init_copy_inputs_to_outputs_wf
 
-            wf = init_copy_inputs_to_outputs_wf(
-                output_dir=".",
-                name="copy_inputs_to_outputs_wf",
-            )
+            with mock_config():
+                wf = init_copy_inputs_to_outputs_wf()
 
     Parameters
     ----------
-    %(output_dir)s
     %(name)s
         Default is "copy_inputs_to_outputs_wf".
 
@@ -54,6 +54,8 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
     myelin_smoothed
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -129,20 +131,7 @@ def init_copy_inputs_to_outputs_wf(output_dir, name="copy_inputs_to_outputs_wf")
 def init_postproc_derivatives_wf(
     name_source,
     source_metadata,
-    fmri_dir,
-    bandpass_filter,
-    low_pass,
-    high_pass,
-    bpf_order,
-    fd_thresh,
-    motion_filter_type,
-    smoothing,
-    params,
     exact_scans,
-    atlases,
-    cifti,
-    dcan_qc,
-    output_dir,
     custom_confounds_file,
     name="postproc_derivatives_wf",
 ):
@@ -153,51 +142,25 @@ def init_postproc_derivatives_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.outputs import init_postproc_derivatives_wf
 
-            wf = init_postproc_derivatives_wf(
-                name_source="/path/to/file.nii.gz",
-                source_metadata={},
-                fmri_dir="/path/to",
-                bandpass_filter=True,
-                low_pass=0.1,
-                high_pass=0.008,
-                bpf_order=2,
-                fd_thresh=0.3,
-                motion_filter_type=None,
-                smoothing=6,
-                params="36P",
-                exact_scans=[],
-                atlases=["Glasser"],
-                cifti=False,
-                dcan_qc=True,
-                output_dir=".",
-                custom_confounds_file=None,
-                name="postproc_derivatives_wf",
-            )
+            with mock_config():
+                wf = init_postproc_derivatives_wf(
+                    name_source="/path/to/file.nii.gz",
+                    source_metadata={},
+                    exact_scans=[],
+                    custom_confounds_file=None,
+                    name="postproc_derivatives_wf",
+                )
 
     Parameters
     ----------
     name_source : :obj:`str`
         bold or cifti files
     source_metadata : :obj:`dict`
-    fmri_dir : :obj:`str`
-        Path to the preprocessing derivatives.
-    low_pass : float
-        low pass filter
-    high_pass : float
-        high pass filter
-    bpf_order
-    %(fd_thresh)s
-    %(motion_filter_type)s
-    %(smoothing)s
-    %(params)s
     %(exact_scans)s
-    %(atlases)s
-    %(cifti)s
-    %(dcan_qc)s
-    output_dir : :obj:`str`
-        output directory
     custom_confounds_file
         Only used for Sources metadata.
     %(name)s
@@ -233,6 +196,20 @@ def init_postproc_derivatives_wf(
     %(dummy_scans)s
     """
     workflow = Workflow(name=name)
+
+    fmri_dir = config.execution.fmri_dir
+    bandpass_filter = config.workflow.bandpass_filter
+    low_pass = config.workflow.low_pass
+    high_pass = config.workflow.high_pass
+    bpf_order = config.workflow.bpf_order
+    fd_thresh = config.workflow.fd_thresh
+    motion_filter_type = config.workflow.motion_filter_type
+    smoothing = config.workflow.smoothing
+    params = config.workflow.params
+    atlases = config.workflow.atlases
+    cifti = config.workflow.cifti
+    dcan_qc = config.workflow.dcan_qc
+    output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(
