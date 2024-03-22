@@ -8,6 +8,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
@@ -27,21 +28,10 @@ from xcp_d.utils.utils import fwhm2sigma
 
 @fill_doc
 def init_prepare_confounds_wf(
-    output_dir,
     TR,
-    params,
-    dummy_scans,
-    random_seed,
     exact_scans,
-    motion_filter_type,
-    band_stop_min,
-    band_stop_max,
-    motion_filter_order,
     head_radius,
-    fd_thresh,
     custom_confounds_file,
-    mem_gb,
-    omp_nthreads,
     name="prepare_confounds_wf",
 ):
     """Prepare confounds.
@@ -54,44 +44,26 @@ def init_prepare_confounds_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.postprocessing import init_prepare_confounds_wf
 
-            wf = init_prepare_confounds_wf(
-                output_dir=".",
-                TR=0.8,
-                params="27P",
-                dummy_scans="auto",
-                random_seed=None,
-                exact_scans=[],
-                motion_filter_type="notch",
-                band_stop_min=12,
-                band_stop_max=20,
-                motion_filter_order=4,
-                head_radius=70,
-                fd_thresh=0.3,
-                custom_confounds_file=None,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="prepare_confounds_wf",
-            )
+            with mock_config():
+                wf = init_prepare_confounds_wf(
+                    TR=0.8,
+                    exact_scans=[],
+                    head_radius=70,
+                    custom_confounds_file=None,
+                    name="prepare_confounds_wf",
+                )
 
     Parameters
     ----------
-    %(output_dir)s
     %(TR)s
-    %(params)s
-    %(dummy_scans)s
-    %(random_seed)s
-    %(motion_filter_type)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(motion_filter_order)s
+    %(exact_scans)s
     %(head_radius)s
         This will already be estimated before this workflow.
-    %(fd_thresh)s
     %(custom_confounds_file)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "prepare_confounds_wf".
 
@@ -121,6 +93,18 @@ def init_prepare_confounds_wf(
     temporal_mask_metadata : :obj:`dict`
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    params = config.workflow.params
+    dummy_scans = config.workflow.dummy_scans
+    random_seed = config.seeds.master
+    motion_filter_type = config.workflow.motion_filter_type
+    band_stop_min = config.workflow.band_stop_min
+    band_stop_max = config.workflow.band_stop_max
+    motion_filter_order = config.workflow.motion_filter_order
+    fd_thresh = config.workflow.fd_thresh
+    mem_gb = config.nipype.memory_gb
+    omp_nthreads = config.nipype.omp_nthreads
 
     dummy_scans_str = ""
     if dummy_scans == "auto":
@@ -244,7 +228,7 @@ def init_prepare_confounds_wf(
         remove_dummy_scans = pe.Node(
             RemoveDummyVolumes(),
             name="remove_dummy_scans",
-            mem_gb=2 * mem_gb,  # assume it takes a lot of memory
+            mem_gb=(2 * mem_gb) if mem_gb is not None else mem_gb,  # it takes a lot of memory
         )
 
         # fmt:off
@@ -401,13 +385,7 @@ def init_prepare_confounds_wf(
 
 
 @fill_doc
-def init_despike_wf(
-    TR,
-    cifti,
-    mem_gb,
-    omp_nthreads,
-    name="despike_wf",
-):
+def init_despike_wf(TR, name="despike_wf"):
     """Despike BOLD data with AFNI's 3dDespike.
 
     Despiking truncates large spikes in the BOLD times series.
@@ -422,22 +400,19 @@ def init_despike_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.postprocessing import init_despike_wf
 
-            wf = init_despike_wf(
-                TR=0.8,
-                cifti=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="despike_wf",
-            )
+            with mock_config():
+                wf = init_despike_wf(
+                    TR=0.8,
+                    name="despike_wf",
+                )
 
     Parameters
     ----------
     %(TR)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "despike_wf".
 
@@ -452,6 +427,10 @@ def init_despike_wf(
         The despiked NIFTI or CIFTI BOLD file.
     """
     workflow = Workflow(name=name)
+    cifti = config.workflow.cifti
+    mem_gb = config.nipype.memory_gb
+    omp_nthreads = config.nipype.omp_nthreads
+
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
     outputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="outputnode")
 
@@ -515,18 +494,7 @@ The BOLD data were despiked with *AFNI*'s *3dDespike*.
 
 
 @fill_doc
-def init_denoise_bold_wf(
-    TR,
-    low_pass,
-    high_pass,
-    bpf_order,
-    bandpass_filter,
-    smoothing,
-    cifti,
-    mem_gb,
-    omp_nthreads,
-    name="denoise_bold_wf",
-):
+def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     """Denoise BOLD data.
 
     Workflow Graph
@@ -534,32 +502,19 @@ def init_denoise_bold_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.postprocessing import init_denoise_bold_wf
 
-            wf = init_denoise_bold_wf(
-                TR=0.8,
-                high_pass=0.01,
-                low_pass=0.08,
-                bpf_order=2,
-                bandpass_filter=True,
-                smoothing=6,
-                cifti=False,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="denoise_bold_wf",
-            )
+            with mock_config():
+                wf = init_denoise_bold_wf(
+                    TR=0.8,
+                    name="denoise_bold_wf",
+                )
 
     Parameters
     ----------
     %(TR)s
-    %(low_pass)s
-    %(high_pass)s
-    %(bpf_order)s
-    %(bandpass_filter)s
-    %(smoothing)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "denoise_bold_wf".
 
@@ -577,6 +532,15 @@ def init_denoise_bold_wf(
     %(smoothed_denoised_bold)s
     """
     workflow = Workflow(name=name)
+
+    low_pass = config.workflow.low_pass
+    high_pass = config.workflow.high_pass
+    bpf_order = config.workflow.bpf_order
+    bandpass_filter = config.workflow.bandpass_filter
+    smoothing = config.workflow.smoothing
+    cifti = config.workflow.cifti
+    mem_gb = config.nipype.memory_gb
+    omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = (
         "Nuisance regressors were regressed from the BOLD data using linear regression, "
@@ -638,7 +602,7 @@ def init_denoise_bold_wf(
             bandpass_filter=bandpass_filter,
         ),
         name="regress_and_filter_bold",
-        mem_gb=mem_gb * 2,
+        mem_gb=(2 * mem_gb) if mem_gb is not None else mem_gb,
         n_procs=omp_nthreads,
     )
 
@@ -677,13 +641,7 @@ def init_denoise_bold_wf(
     # fmt:on
 
     if smoothing:
-        resd_smoothing_wf = init_resd_smoothing_wf(
-            smoothing=smoothing,
-            cifti=cifti,
-            mem_gb=mem_gb,
-            omp_nthreads=omp_nthreads,
-            name="resd_smoothing_wf",
-        )
+        resd_smoothing_wf = init_resd_smoothing_wf()
 
         # fmt:off
         workflow.connect([
@@ -700,13 +658,7 @@ def init_denoise_bold_wf(
 
 
 @fill_doc
-def init_resd_smoothing_wf(
-    smoothing,
-    cifti,
-    mem_gb,
-    omp_nthreads,
-    name="resd_smoothing_wf",
-):
+def init_resd_smoothing_wf(name="resd_smoothing_wf"):
     """Smooth BOLD residuals.
 
     Workflow Graph
@@ -714,22 +666,15 @@ def init_resd_smoothing_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
 
-            wf = init_resd_smoothing_wf(
-                smoothing=6,
-                cifti=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="resd_smoothing_wf",
-            )
+            with mock_config():
+                wf = init_resd_smoothing_wf()
 
     Parameters
     ----------
-    %(smoothing)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "resd_smoothing_wf".
 
@@ -742,6 +687,11 @@ def init_resd_smoothing_wf(
     smoothed_bold
     """
     workflow = Workflow(name=name)
+    smoothing = config.workflow.smoothing
+    cifti = config.workflow.cifti
+    mem_gb = config.nipype.memory_gb
+    omp_nthreads = config.nipype.omp_nthreads
+
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
     outputnode = pe.Node(niu.IdentityInterface(fields=["smoothed_bold"]), name="outputnode")
 
