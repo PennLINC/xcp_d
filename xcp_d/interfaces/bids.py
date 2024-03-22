@@ -2,6 +2,7 @@
 
 import os
 import shutil
+from copy import deepcopy
 from json import loads
 from pathlib import Path
 
@@ -21,11 +22,10 @@ from nipype.interfaces.base import (
     traits,
 )
 from nipype.interfaces.io import add_traits
-from nipype.interfaces.utility.base import _ravel
 from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils.bids import _find_nearest_path, get_entity
+from xcp_d.utils.bids import _get_bidsuris, get_entity
 
 
 # NOTE: Modified for xcpd's purposes
@@ -350,16 +350,8 @@ class BIDSURI(SimpleInterface):
 
     def _run_interface(self, runtime):
         inputs = [getattr(self.inputs, f"in{i + 1}") for i in range(self._numinputs)]
-        in_files = listify(inputs)
-        in_files = _ravel(in_files)
-        # Remove undefined inputs
-        in_files = [f for f in in_files if isdefined(f)]
-        # Convert the dataset links to BIDS URI prefixes
-        updated_keys = {f"bids:{k}:": Path(v) for k, v in self.inputs.dataset_links.items()}
-        updated_keys["bids::"] = Path(self.inputs.out_dir)
-        # Convert the paths to BIDS URIs
-        out = [_find_nearest_path(updated_keys, f) for f in in_files]
-        self._results["out"] = out
+        uris = _get_bidsuris(inputs, self.inputs.dataset_links, self.inputs.out_dir)
+        self._results["out"] = uris
 
         return runtime
 
@@ -384,30 +376,33 @@ class GenerateMetadata(SimpleInterface):
     input_spec = _GenerateMetadataInputSpec
     output_spec = _GenerateMetadataOutputSpec
 
-    def __init__(self, **inputs):
+    def __init__(self, input_names, **inputs):
         super().__init__(**inputs)
-        add_traits(self.inputs, list(inputs["metadata"].keys()))
+        add_traits(self.inputs, input_names)
 
     def _run_interface(self, runtime):
         metadata = self.inputs.metadata
         if not isdefined(metadata):
             metadata = {}
 
-        uri_inputs = ["Sources", "RawSources"]
-        for key in uri_inputs:
-            if hasattr(self.inputs, key):
-                inputs = getattr(self.inputs, key)
+        out_metadata = deepcopy(metadata)
 
-        inputs = [getattr(self.inputs, f"in{i + 1}") for i in range(self._numinputs)]
-        in_files = listify(inputs)
-        in_files = _ravel(in_files)
-        # Remove undefined inputs
-        in_files = [f for f in in_files if isdefined(f)]
-        # Convert the dataset links to BIDS URI prefixes
-        updated_keys = {f"bids:{k}:": Path(v) for k, v in self.inputs.dataset_links.items()}
-        updated_keys["bids::"] = Path(self.inputs.out_dir)
-        # Convert the paths to BIDS URIs
-        out = [_find_nearest_path(updated_keys, f) for f in in_files]
-        self._results["out"] = out
+        # For inputs that need to be converted to URIs, use the same steps as the BIDSURI interface
+        uri_inputs = ["Sources", "RawSources"]
+        for key in self.inputs.input_names:
+            value = getattr(self.inputs, key)
+            if key in uri_inputs:
+                value = _get_bidsuris(value, self.inputs.dataset_links, self.inputs.out_dir)
+
+            if key not in metadata.keys():
+                out_metadata[key] = value
+            elif isinstance(value, list) or isinstance(out_metadata[key], list):
+                # Append the values if they're a list
+                out_metadata[key] = listify(out_metadata[key]) + listify(value)
+            else:
+                # Overwrite the old value
+                out_metadata[key] = value
+
+        self._results["out"] = metadata
 
         return runtime

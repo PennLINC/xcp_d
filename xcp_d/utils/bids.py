@@ -11,7 +11,10 @@ from pathlib import Path
 
 import nibabel as nb
 import yaml
+from bids.utils import listify
 from nipype import logging
+from nipype.interfaces.base import isdefined
+from nipype.interfaces.utility.base import _ravel
 from packaging.version import Version
 
 from xcp_d.utils.doc import fill_doc
@@ -1110,3 +1113,17 @@ def _find_nearest_path(path_dict, input_path):
         matching_path = f"{matching_key}{matching_path}"
 
     return matching_path
+
+
+def _get_bidsuris(in_files, dataset_links, out_dir):
+    """Convert input paths to BIDS-URIs using a dictionary of dataset links."""
+    in_files = listify(in_files)
+    in_files = _ravel(in_files)
+    # Remove undefined inputs
+    in_files = [f for f in in_files if isdefined(f)]
+    # Convert the dataset links to BIDS URI prefixes
+    updated_keys = {f"bids:{k}:": Path(v) for k, v in dataset_links.items()}
+    updated_keys["bids::"] = Path(out_dir)
+    # Convert the paths to BIDS URIs
+    out = [_find_nearest_path(updated_keys, f) for f in in_files]
+    return out
