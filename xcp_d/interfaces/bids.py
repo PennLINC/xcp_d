@@ -362,3 +362,52 @@ class BIDSURI(SimpleInterface):
         self._results["out"] = out
 
         return runtime
+
+
+class _GenerateMetadataInputSpec(DynamicTraitedSpec):
+    dataset_links = traits.Dict(mandatory=True, desc="Dataset links")
+    out_dir = traits.Str(mandatory=True, desc="Output directory")
+    metadata = traits.Dict(mandatory=False, desc="Metadata dictionary")
+
+
+class _GenerateMetadataOutputSpec(TraitedSpec):
+    metadata = traits.Dict(desc="Updated metadata dictionary")
+
+
+class GenerateMetadata(SimpleInterface):
+    """Create or modify a metadata dictionary.
+
+    This will add kwargs to a metadata dictionary if the dictionary is provided,
+    or create a dictionary from scratch if not.
+    """
+
+    input_spec = _GenerateMetadataInputSpec
+    output_spec = _GenerateMetadataOutputSpec
+
+    def __init__(self, **inputs):
+        super().__init__(**inputs)
+        add_traits(self.inputs, list(inputs["metadata"].keys()))
+
+    def _run_interface(self, runtime):
+        metadata = self.inputs.metadata
+        if not isdefined(metadata):
+            metadata = {}
+
+        uri_inputs = ["Sources", "RawSources"]
+        for key in uri_inputs:
+            if hasattr(self.inputs, key):
+                inputs = getattr(self.inputs, key)
+
+        inputs = [getattr(self.inputs, f"in{i + 1}") for i in range(self._numinputs)]
+        in_files = listify(inputs)
+        in_files = _ravel(in_files)
+        # Remove undefined inputs
+        in_files = [f for f in in_files if isdefined(f)]
+        # Convert the dataset links to BIDS URI prefixes
+        updated_keys = {f"bids:{k}:": Path(v) for k, v in self.inputs.dataset_links.items()}
+        updated_keys["bids::"] = Path(self.inputs.out_dir)
+        # Convert the paths to BIDS URIs
+        out = [_find_nearest_path(updated_keys, f) for f in in_files]
+        self._results["out"] = out
+
+        return runtime
