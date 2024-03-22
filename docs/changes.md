@@ -1,5 +1,32 @@
 # What's New
 
+## 0.7.0
+
+This is a large, backwards-incompatible release.
+The changes in this release mostly stem from reviewer comments on the XCP-D manuscript.
+
+I expect to release 0.7.1, which will add the NiPreps Config object, very soon.
+
+### 🛠 Breaking Changes
+
+* [DCAN] Remove `--dcan-qc` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1096
+* Bring outputs up to date with BEPs 11, 12, 17, and 38 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1065
+* Stop appending "xcp_d" to output directory by @tsalo in https://github.com/PennLINC/xcp_d/pull/1061
+
+### 🎉 Exciting New Features
+
+* Create reformatted BrainSwipes figures for HBCD QC by @tsalo in https://github.com/PennLINC/xcp_d/pull/1091
+
+### Other Changes
+
+* Add information about ReHo to read-the-docs by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/1097
+* Update landing page figure by @kahinimehta in https://github.com/PennLINC/xcp_d/pull/1099
+* Add band over censored volumes in executive summary carpet plots by @tsalo in https://github.com/PennLINC/xcp_d/pull/1077
+* Fix image link by @psychelzh in https://github.com/PennLINC/xcp_d/pull/1100
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.4...0.7.0
+
+
 ## 0.6.4
 
 ### 🎉 Exciting New Features
