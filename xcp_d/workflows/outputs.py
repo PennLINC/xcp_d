@@ -206,7 +206,7 @@ def init_postproc_derivatives_wf(
     motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
     params = config.workflow.params
-    atlases = config.workflow.atlases
+    atlases = config.execution.atlases
     cifti = config.workflow.cifti
     dcan_qc = config.workflow.dcan_qc
     output_dir = config.execution.xcp_d_dir

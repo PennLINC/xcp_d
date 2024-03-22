@@ -39,7 +39,7 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     with mock_config():
         config.execution.xcp_d_dir = tmpdir
         config.workflow.cifti = False
-        config.workflow.atlases = ["4S156Parcels", "Glasser"]
+        config.execution.atlases = ["4S156Parcels", "Glasser"]
         config.nipype.omp_nthreads = 1
         config.nipype.memory_gb = 0.1
 
@@ -65,7 +65,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     with mock_config():
         config.execution.xcp_d_dir = tmpdir
         config.workflow.cifti = True
-        config.workflow.atlases = ["4S156Parcels", "Glasser"]
+        config.execution.atlases = ["4S156Parcels", "Glasser"]
         config.nipype.omp_nthreads = 1
         config.nipype.memory_gb = 0.1
 

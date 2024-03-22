@@ -170,7 +170,7 @@ def main():
         # Write dataset description before generating reports
         write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
 
-        if config.workflow.atlases:
+        if config.execution.atlases:
             write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
 
         # Generate reports phase
