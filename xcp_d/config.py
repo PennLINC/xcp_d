@@ -401,6 +401,10 @@ class execution(_Config):
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
     """Folder where derivatives will be stored."""
+    custom_confounds = None
+    """A path to a folder containing custom confounds to include in the postprocessing."""
+    atlases = []
+    """Selection of atlases to apply to the data."""
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
     """Unique identifier of this particular run."""
     participant_label = None
@@ -413,6 +417,8 @@ class execution(_Config):
     """Path to a working directory where intermediate results will be available."""
     write_graph = False
     """Write out the computational graph corresponding to the planned preprocessing."""
+    dataset_links = {}
+    """A dictionary of dataset links to be used to track Sources in sidecars."""
 
     _layout = None
 
@@ -426,6 +432,7 @@ class execution(_Config):
         "output_dir",
         "templateflow_home",
         "work_dir",
+        "dataset_links",
     )
 
     @classmethod
@@ -495,6 +502,15 @@ class execution(_Config):
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
 
+        dataset_links = {'preprocessed': cls.fmri_dir}
+        if cls.custom_confounds:
+            dataset_links['custom-confounds'] = cls.custom_confounds
+
+        if cls.atlases:
+            dataset_links['atlas'] = cls.xcp_d_dir / "atlases"
+
+        cls.dataset_links = dataset_links
+
         if "all" in cls.debug:
             cls.debug = list(DEBUG_MODES)
 
@@ -523,8 +539,6 @@ class workflow(_Config):
     """Despike the BOLD data before postprocessing."""
     params = "36P"
     """Nuisance regressors to include in the postprocessing."""
-    custom_confounds = None
-    """A list of paths to custom confounds to include in the postprocessing."""
     smoothing = 6
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     combineruns = False
@@ -551,8 +565,6 @@ class workflow(_Config):
     """Upper bound of the band-pass filter."""
     bpf_order = 2
     """Order of the band-pass filter."""
-    atlases = []
-    """Selection of atlases to apply to the data."""
     min_coverage = 0.5
     """Coverage threshold to apply to parcels in each atlas."""
     exact_time = []

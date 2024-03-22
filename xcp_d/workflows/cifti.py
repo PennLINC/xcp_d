@@ -133,10 +133,10 @@ def init_postprocess_cifti_wf(
     workflow = Workflow(name=name)
 
     bandpass_filter = config.workflow.bandpass_filter
-    custom_confounds_folder = config.workflow.custom_confounds
+    custom_confounds_folder = config.execution.custom_confounds
     dummy_scans = config.workflow.dummy_scans
     despike = config.workflow.despike
-    atlases = config.workflow.atlases
+    atlases = config.execution.atlases
     omp_nthreads = config.nipype.omp_nthreads
 
     TR = run_data["bold_metadata"]["RepetitionTime"]

@@ -366,7 +366,7 @@ def _run_and_generate(test_name, parameters, input_type):
     xcpd_wf = retval["workflow"]
     xcpd_wf.run()
     write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
-    if config.workflow.atlases:
+    if config.execution.atlases:
         write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
 
     build_boilerplate(str(config_file), xcpd_wf)

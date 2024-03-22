@@ -6,15 +6,9 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.bids import BIDSURI, DerivativesDataSink
 from xcp_d.interfaces.utils import FilterUndefined
-from xcp_d.utils.bids import (
-    _make_atlas_uri,
-    _make_custom_uri,
-    _make_preproc_uri,
-    _make_xcpd_uri,
-    get_entity,
-)
+from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _make_dictionary
 
@@ -206,7 +200,7 @@ def init_postproc_derivatives_wf(
     motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
     params = config.workflow.params
-    atlases = config.workflow.atlases
+    atlases = config.execution.atlases
     cifti = config.workflow.cifti
     dcan_qc = config.workflow.dcan_qc
     output_dir = config.execution.xcp_d_dir
@@ -293,7 +287,15 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
 
-    preproc_bold_src = _make_preproc_uri(name_source, fmri_dir)
+    filtered_motion_sources = BIDSURI(
+        numinputs=1,
+        dataset_links=config.execution.dataset_links,
+        out_dir=str(config.execution.xcp_d_dir.absolute()),
+    )
+
+    workflow.connect([
+        (inputnode, filtered_motion_sources, [("fmriprep_confounds_file", "in_file")]),
+    ])  # fmt:skip
 
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
@@ -308,16 +310,14 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
     )
-    # fmt:off
     workflow.connect([
         (inputnode, ds_filtered_motion, [
             ("motion_metadata", "meta_dict"),
             ("filtered_motion", "in_file"),
-            (("fmriprep_confounds_file", _make_preproc_uri, fmri_dir), "Sources"),
         ]),
+        (filtered_motion_sources, ds_filtered_motion, [("out", "Sources")]),
         (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     merge_dense_src = pe.Node(
         niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if params != "none" else 0))),

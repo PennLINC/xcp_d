@@ -79,7 +79,7 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     cifti = config.workflow.cifti
     dcan_qc = config.workflow.dcan_qc
     fd_thresh = config.workflow.fd_thresh
-    atlases = config.workflow.atlases
+    atlases = config.execution.atlases
 
     workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.

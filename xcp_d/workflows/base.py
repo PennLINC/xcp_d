@@ -288,7 +288,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])  # fmt:skip
 
     # Load the atlases, warping to the same space as the BOLD data if necessary.
-    if config.workflow.atlases:
+    if config.execution.atlases:
         load_atlases_wf = init_load_atlases_wf()
         load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
         load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
@@ -339,7 +339,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
-        if morph_file_types and config.workflow.atlases:
+        if morph_file_types and config.execution.atlases:
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
                 files_to_parcellate=morph_file_types,
@@ -462,7 +462,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
-            if config.workflow.atlases:
+            if config.execution.atlases:
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [
                         ("outputnode.atlas_files", "inputnode.atlas_files"),
