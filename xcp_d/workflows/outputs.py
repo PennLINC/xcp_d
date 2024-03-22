@@ -191,7 +191,6 @@ def init_postproc_derivatives_wf(
     """
     workflow = Workflow(name=name)
 
-    fmri_dir = config.execution.fmri_dir
     bandpass_filter = config.workflow.bandpass_filter
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
@@ -287,10 +286,13 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
 
-    filtered_motion_sources = BIDSURI(
-        numinputs=1,
-        dataset_links=config.execution.dataset_links,
-        out_dir=str(config.execution.xcp_d_dir.absolute()),
+    filtered_motion_sources = pe.Node(
+        BIDSURI(
+            numinputs=1,
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(config.execution.xcp_d_dir.absolute()),
+        ),
+        name="filtered_motion_sources",
     )
 
     workflow.connect([
@@ -320,14 +322,26 @@ def init_postproc_derivatives_wf(
     ])  # fmt:skip
 
     merge_dense_src = pe.Node(
-        niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if params != "none" else 0))),
+        BIDSURI(
+            numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if params != "none" else 0)),
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(config.execution.xcp_d_dir.absolute()),
+        ),
         name="merge_dense_src",
         run_without_submitting=True,
         mem_gb=1,
     )
-    merge_dense_src.inputs.in1 = preproc_bold_src
+    merge_dense_src.inputs.in1 = name_source
 
     if fd_thresh > 0:
+        temporal_mask_sources = pe.Node(
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(config.execution.xcp_d_dir.absolute()),
+            ),
+            name="temporal_mask_sources",
+        )
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -342,26 +356,23 @@ def init_postproc_derivatives_wf(
             run_without_submitting=True,
             mem_gb=1,
         )
-        # fmt:off
         workflow.connect([
             (inputnode, ds_temporal_mask, [
                 ("temporal_mask_metadata", "meta_dict"),
                 ("temporal_mask", "in_file"),
             ]),
-            (ds_filtered_motion, ds_temporal_mask, [
-                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
+            (ds_filtered_motion, temporal_mask_sources, [("out_file", "in1")]),
+            (temporal_mask_sources, ds_temporal_mask, [("out", "Sources")]),
             (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
-            (ds_temporal_mask, merge_dense_src, [
-                (("out_file", _make_xcpd_uri, output_dir), "in2"),
-            ]),
-        ])
-        # fmt:on
+            (ds_temporal_mask, merge_dense_src, [("out_file", "in2")]),
+        ])  # fmt:skip
 
     if params != "none":
         confounds_src = pe.Node(
-            niu.Merge(
-                numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if custom_confounds_file else 0))
+            BIDSURI(
+                numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if custom_confounds_file else 0)),
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(config.execution.xcp_d_dir.absolute()),
             ),
             name="confounds_src",
             run_without_submitting=True,
@@ -369,19 +380,13 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([(inputnode, confounds_src, [("fmriprep_confounds_file", "in1")])])
         if fd_thresh > 0:
-            # fmt:off
-            workflow.connect([
-                (ds_temporal_mask, confounds_src, [
-                    (("out_file", _make_xcpd_uri, output_dir), "in2"),
-                ]),
-            ])
-            # fmt:on
+            workflow.connect([(ds_temporal_mask, confounds_src, [("out_file", "in2")])])
 
             if custom_confounds_file:
-                confounds_src.inputs.in3 = _make_custom_uri(custom_confounds_file)
+                confounds_src.inputs.in3 = custom_confounds_file
 
         elif custom_confounds_file:
-            confounds_src.inputs.in2 = _make_custom_uri(custom_confounds_file)
+            confounds_src.inputs.in2 = custom_confounds_file
 
         ds_confounds = pe.Node(
             DerivativesDataSink(
@@ -395,18 +400,14 @@ def init_postproc_derivatives_wf(
             name="ds_confounds",
             run_without_submitting=False,
         )
-        # fmt:off
         workflow.connect([
             (inputnode, ds_confounds, [
                 ("confounds_file", "in_file"),
                 ("confounds_metadata", "meta_dict"),
             ]),
             (confounds_src, ds_confounds, [("out", "Sources")]),
-            (ds_confounds, merge_dense_src, [
-                (("out_file", _make_xcpd_uri, output_dir), f"in{3 if fd_thresh > 0 else 2}"),
-            ]),
-        ])
-        # fmt:on
+            (ds_confounds, merge_dense_src, [("out_file", f"in{3 if fd_thresh > 0 else 2}")]),
+        ])  # fmt:skip
 
     # Write out derivatives via DerivativesDataSink
     ds_denoised_bold = pe.Node(
