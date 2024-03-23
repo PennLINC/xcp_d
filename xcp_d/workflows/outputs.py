@@ -10,7 +10,6 @@ from xcp_d.interfaces.bids import BIDSURI, DerivativesDataSink, GenerateMetadata
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _make_dictionary
 
 
 @fill_doc
@@ -526,45 +525,25 @@ def init_postproc_derivatives_wf(
 
     # Connectivity workflow outputs
     if atlases:
-        atlas_sources = pe.MapNode(
-            BIDSURI(
-                numinputs=1,
+        make_atlas_dict = pe.MapNode(
+            GenerateMetadata(
                 dataset_links=config.execution.dataset_links,
                 out_dir=str(config.execution.xcp_d_dir.absolute()),
-            ),
-            name="atlas_sources",
-            iterfield=["in1"],
-        )
-        make_atlas_dict = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
                 input_names=["Sources"],
-                output_names=["metadata"],
             ),
             run_without_submitting=True,
             mem_gb=1,
             name="make_atlas_dict",
             iterfield=["Sources"],
         )
-        workflow.connect([
-            (inputnode, atlas_sources, [("atlas_files", "in1")]),
-            (atlas_sources, make_atlas_dict, [("out", "Sources")]),
-        ])  # fmt:skip
+        workflow.connect([(inputnode, make_atlas_dict, [("atlas_files", "Sources")])])
 
         # Convert Sources to a dictionary, to play well with parcellation MapNodes.
-        denoised_bold_source = pe.Node(
-            BIDSURI(
-                numinputs=1,
+        add_denoised_to_src = pe.MapNode(
+            GenerateMetadata(
                 dataset_links=config.execution.dataset_links,
                 out_dir=str(config.execution.xcp_d_dir.absolute()),
-            ),
-            name="denoised_bold_source",
-        )
-        add_denoised_to_src = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
-                input_names=["metadata", "Sources"],
-                output_names=["metadata"],
+                input_names=["Sources"],
             ),
             run_without_submitting=True,
             mem_gb=1,
@@ -572,9 +551,8 @@ def init_postproc_derivatives_wf(
             iterfield=["metadata"],
         )
         workflow.connect([
-            (ds_denoised_bold, denoised_bold_source, [("out_file", "in1")]),
+            (ds_denoised_bold, add_denoised_to_src, [("out_file", "Sources")]),
             (make_atlas_dict, add_denoised_to_src, [("metadata", "metadata")]),
-            (denoised_bold_source, add_denoised_to_src, [("out", "Sources")]),
         ])  # fmt:skip
 
         # TODO: Add brain mask to Sources (for NIfTIs).
