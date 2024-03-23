@@ -466,7 +466,7 @@ class execution(_Config):
             if cls.participant_label:
                 # Ignore any subjects who aren't the requested ones.
                 ignore_patterns.append(
-                    re.compile(r'sub-(?!' + '|'.join(cls.participant_label) + r')\w+')
+                    re.compile(r"sub-(?!" + "|".join(cls.participant_label) + r")\w+")
                 )
 
             _indexer = BIDSLayoutIndexer(
@@ -502,12 +502,12 @@ class execution(_Config):
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
 
-        dataset_links = {'preprocessed': cls.fmri_dir}
+        dataset_links = {"preprocessed": cls.fmri_dir}
         if cls.custom_confounds:
-            dataset_links['custom-confounds'] = cls.custom_confounds
+            dataset_links["custom-confounds"] = cls.custom_confounds
 
         if cls.atlases:
-            dataset_links['atlas'] = cls.xcp_d_dir / "atlases"
+            dataset_links["atlas"] = cls.xcp_d_dir / "atlases"
 
         cls.dataset_links = dataset_links
 
