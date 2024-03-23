@@ -1,4 +1,4 @@
-"""Tests for filtering methods."""
+"""Tests for xcp_d.utils.confounds."""
 
 import re
 
@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from scipy import signal
 
-from xcp_d.utils.confounds import motion_regression_filter
+from xcp_d.utils import confounds
 
 
 def test_motion_filtering_lp():
@@ -35,7 +35,7 @@ def test_motion_filtering_lp():
     # Confirm the LP filter runs with reasonable parameters
     raw_data = raw_data[:, None]  # add singleton row dimension
     with pytest.warns(match="The parameter 'band_stop_max' will be ignored."):
-        lowpass_data_test = motion_regression_filter(
+        lowpass_data_test = confounds.motion_regression_filter(
             raw_data,
             TR=TR,
             motion_filter_type="lp",
@@ -55,7 +55,7 @@ def test_motion_filtering_lp():
             "so it has been changed (0.7 --> 0.55 Hz)."
         ),
     ):
-        motion_regression_filter(
+        confounds.motion_regression_filter(
             raw_data,
             TR=TR,  # 1.25 Hz
             motion_filter_type="lp",
@@ -89,7 +89,7 @@ def test_motion_filtering_notch():
 
     # Repeat for notch filter
     raw_data = raw_data[:, None]  # add singleton row dimension
-    notch_data_test = motion_regression_filter(
+    notch_data_test = confounds.motion_regression_filter(
         raw_data,
         TR=TR,  # 1.25 Hz
         motion_filter_type="notch",
@@ -109,7 +109,7 @@ def test_motion_filtering_notch():
             "so they have been changed (0.7 --> 0.55, 0.75 --> 0.5 Hz)."
         ),
     ):
-        motion_regression_filter(
+        confounds.motion_regression_filter(
             raw_data,
             TR=TR,
             motion_filter_type="notch",
@@ -120,7 +120,7 @@ def test_motion_filtering_notch():
 
     # Using a filter type other than notch or lp should raise an exception.
     with pytest.raises(ValueError, match="Motion filter type 'fail' not supported."):
-        motion_regression_filter(
+        confounds.motion_regression_filter(
             raw_data,
             TR=TR,
             motion_filter_type="fail",
