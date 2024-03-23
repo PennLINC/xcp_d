@@ -27,7 +27,6 @@ from pkg_resources import resource_filename as pkgrf
 
 from xcp_d.utils.bids import _get_bidsuris, get_entity
 
-
 # NOTE: Modified for xcpd's purposes
 xcp_d_spec = loads(Path(pkgrf("xcp_d", "data/xcp_d_bids_config.json")).read_text())
 bids_config = Config.load("bids")
