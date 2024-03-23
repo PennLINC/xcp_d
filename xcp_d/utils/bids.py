@@ -661,7 +661,7 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confounds_folder=None):
+def write_dataset_description(fmri_dir, output_dir, dataset_links=None):
     """Write dataset_description.json file for derivatives.
 
     Parameters
@@ -670,10 +670,8 @@ def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confoun
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
         Path to the output xcp-d dataset.
-    atlases : :obj:`list` of :obj:`str`, optional
-        Names of requested XCP-D atlases.
-    custom_confounds_folder : :obj:`str`, optional
-        Path to the folder containing custom confounds files.
+    dataset_links : :obj:`dict`, optional
+        Dictionary of dataset links to include in the dataset description.
     """
     import json
     import os
@@ -713,25 +711,8 @@ def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confoun
     dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
 
     # Add DatasetLinks
-    if "DatasetLinks" not in dset_desc.keys():
-        dset_desc["DatasetLinks"] = {}
-
-    if "preprocessed" in dset_desc["DatasetLinks"].keys():
-        LOGGER.warning("'preprocessed' is already a dataset link. Overwriting.")
-
-    dset_desc["DatasetLinks"]["preprocessed"] = str(fmri_dir)
-
-    if atlases:
-        if "atlases" in dset_desc["DatasetLinks"].keys():
-            LOGGER.warning("'atlases' is already a dataset link. Overwriting.")
-
-        dset_desc["DatasetLinks"]["atlases"] = os.path.join(output_dir, "atlases")
-
-    if custom_confounds_folder:
-        if "custom-confounds" in dset_desc["DatasetLinks"].keys():
-            LOGGER.warning("'custom-confounds' is already a dataset link. Overwriting.")
-
-        dset_desc["DatasetLinks"]["custom-confounds"] = str(custom_confounds_folder)
+    if dataset_links:
+        dset_desc["DatasetLinks"] = {k: str(v) for k, v in dataset_links.items()}
 
     xcpd_dset_description = os.path.join(output_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):

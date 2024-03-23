@@ -388,7 +388,7 @@ class GenerateMetadata(SimpleInterface):
         out_metadata = deepcopy(metadata)
 
         # For inputs that need to be converted to URIs, use the same steps as the BIDSURI interface
-        uri_inputs = ["Sources", "RawSources"]
+        uri_inputs = ["Sources", "RawSources", "NodeFiles"]
         for key in self.inputs.input_names:
             value = getattr(self.inputs, key)
             if key in uri_inputs:

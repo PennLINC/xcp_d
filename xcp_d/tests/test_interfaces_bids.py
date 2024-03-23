@@ -82,3 +82,139 @@ def test_copy_atlas(tmp_path_factory):
     # The file should not be overwritten, so the contents shouldn't be "fake"
     with open(result.outputs.out_file, "r") as fo:
         assert fo.read() != "fake"
+
+
+def test_bids_uri():
+    """Test the BIDSURI interface."""
+    dataset_links = {
+        "preprocessed": "/data",
+        "custom-confounds": "/data/derivatives/source-1",
+    }
+    out_dir = "/data/derivatives/xcp_d"
+
+    # A single element as a string
+    interface = bids.BIDSURI(
+        numinputs=1,
+        dataset_links=dataset_links,
+        out_dir=out_dir,
+    )
+    interface.inputs.in1 = "/data/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    results = interface.run()
+    assert results.outputs.out == ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+    # A single element as a list
+    interface = bids.BIDSURI(
+        numinputs=1,
+        dataset_links=dataset_links,
+        out_dir=out_dir,
+    )
+    interface.inputs.in1 = ["/data/sub-01/func/sub-01_task-rest_bold.nii.gz"]
+    results = interface.run()
+    assert results.outputs.out == ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+    # Two inputs: a string and a list
+    interface = bids.BIDSURI(
+        numinputs=2,
+        dataset_links=dataset_links,
+        out_dir=out_dir,
+    )
+    interface.inputs.in1 = "/data/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    interface.inputs.in2 = [
+        "/data/derivatives/source-1/sub-01/func/sub-01_task-rest_bold.nii.gz",
+        "/out/sub-01/func/sub-01_task-rest_bold.nii.gz",
+    ]
+    results = interface.run()
+    assert results.outputs.out == [
+        "bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz",
+        "bids:custom-confounds:sub-01/func/sub-01_task-rest_bold.nii.gz",
+        "/out/sub-01/func/sub-01_task-rest_bold.nii.gz",  # No change
+    ]
+
+    # Two inputs as lists
+    interface = bids.BIDSURI(
+        numinputs=2,
+        dataset_links=dataset_links,
+        out_dir=out_dir,
+    )
+    interface.inputs.in1 = [
+        "/data/sub-01/func/sub-01_task-rest_bold.nii.gz",
+        "bids:preprocessed:sub-01/func/sub-01_task-rest_boldref.nii.gz",
+    ]
+    interface.inputs.in2 = [
+        "/data/derivatives/source-1/sub-01/func/sub-01_task-rest_bold.nii.gz",
+        "/data/derivatives/xcp_d/sub-01/func/sub-01_task-rest_bold.nii.gz",
+        "/out/sub-01/func/sub-01_task-rest_bold.nii.gz",
+    ]
+    results = interface.run()
+    assert results.outputs.out == [
+        "bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz",
+        "bids:preprocessed:sub-01/func/sub-01_task-rest_boldref.nii.gz",  # No change
+        "bids:custom-confounds:sub-01/func/sub-01_task-rest_bold.nii.gz",
+        "bids::sub-01/func/sub-01_task-rest_bold.nii.gz",  # Local dataset file
+        "/out/sub-01/func/sub-01_task-rest_bold.nii.gz",  # No change
+    ]
+
+
+def test_generate_metadata():
+    """Test xcp_d.interfaces.bids.GenerateMetadata."""
+    dataset_links = {
+        "preprocessed": "/data",
+        "custom-confounds": "/data/derivatives/customconfounds",
+    }
+    out_dir = "/data/derivatives/xcp_d"
+
+    # Test with a single input
+    interface = bids.GenerateMetadata(
+        dataset_links=dataset_links,
+        out_dir=out_dir,
+        input_names=["Sources"],
+    )
+    interface.inputs.Sources = ["/data/sub-01/func/sub-01_task-rest_bold.nii.gz"]
+    results = interface.run()
+    assert results.outputs.metadata == {
+        "Sources": ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"],
+    }
+
+    # Test with a single input added to an existing metadata dictionary
+    interface = bids.GenerateMetadata(
+        dataset_links=dataset_links,
+        out_dir=out_dir,
+        input_names=["Sources"],
+        metadata={
+            "RepetitionTime": 1.0,
+            "EchoTime": 0.01,
+        },
+    )
+    interface.inputs.Sources = ["/data/sub-01/func/sub-01_task-rest_bold.nii.gz"]
+    results = interface.run()
+    assert results.outputs.metadata == {
+        "RepetitionTime": 1.0,
+        "EchoTime": 0.01,
+        "Sources": ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"],
+    }
+
+    # Test with a list of inputs
+    interface = bids.GenerateMetadata(
+        dataset_links=dataset_links,
+        out_dir=out_dir,
+        input_names=["Sources"],
+        metadata={
+            "RepetitionTime": 1.0,
+            "EchoTime": 0.01,
+            "Sources": [
+                "bids:preprocessed:sub-01/func/sub-01_task-rest_boldref.nii.gz",
+                "bids:custom-confounds:sub-01/func/sub-01_task-rest_bold.nii.gz",
+            ],
+        },
+    )
+    interface.inputs.Sources = ["/data/sub-01/func/sub-01_task-rest_bold.nii.gz"]
+    results = interface.run()
+    assert results.outputs.metadata == {
+        "RepetitionTime": 1.0,
+        "EchoTime": 0.01,
+        "Sources": [
+            "bids:preprocessed:sub-01/func/sub-01_task-rest_boldref.nii.gz",
+            "bids:custom-confounds:sub-01/func/sub-01_task-rest_bold.nii.gz",
+            "bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz",
+        ],
+    }
