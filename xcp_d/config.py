@@ -117,8 +117,9 @@ finally:
 
 if not hasattr(sys, "_is_pytest_session"):
     sys._is_pytest_session = False  # Trick to avoid sklearn's FutureWarnings
+
 # Disable all warnings in main and children processes only on production versions
-if not any(
+if ("RUNNING_PYTEST" not in os.environ) and not any(
     (
         "+" in __version__,
         __version__.endswith(".dirty"),
@@ -463,7 +464,7 @@ class execution(_Config):
             if cls.participant_label:
                 # Ignore any subjects who aren't the requested ones.
                 ignore_patterns.append(
-                    re.compile(r'sub-(?!' + '|'.join(cls.participant_label) + r')\w+')
+                    re.compile(r"sub-(?!" + "|".join(cls.participant_label) + r")\w+")
                 )
 
             _indexer = BIDSLayoutIndexer(

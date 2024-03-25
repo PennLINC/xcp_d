@@ -178,7 +178,7 @@ markers = [
     "nibabies: mark integration test for nibabies derivatives",
 ]
 env = [
-    "PYTHONWARNINGS = default",
+    "RUNNING_PYTEST = 1",
 ]
 
 [tool.coverage.run]
