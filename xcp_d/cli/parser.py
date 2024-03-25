@@ -107,6 +107,20 @@ def _build_parser():
         help="The analysis level for xcp_d. Must be specified as 'participant'.",
     )
 
+    # Required "mode" argument
+    parser.add_argument(
+        "--mode",
+        action="store",
+        choices=["abcdbids", "hbcd", "linc", "none"],
+        required=True,
+        help=(
+            "The mode of operation for XCP-D. "
+            "The mode sets several parameters, with values specific to different pipelines. "
+            "For more information, see the documentation at "
+            "https://xcp-d.readthedocs.io/en/latest/workflows.html#modes"
+        ),
+    )
+
     # optional arguments
     parser.add_argument("--version", action="version", version=verstr)
 
@@ -844,6 +858,25 @@ def _validate_parameters(opts, build_log, parser):
     # Resolve custom confounds folder
     if opts.custom_confounds:
         opts.custom_confounds = str(opts.custom_confounds.resolve())
+
+    # Define parameters based on the mode
+    if opts.mode == "abcdbids":
+        opts.cifti = True
+        opts.process_surfaces = True
+        opts.dcan_qc = True
+        opts.exact_time = [300, 480]
+        opts.combineruns = True
+    elif opts.mode == "hbcd":
+        opts.cifti = True
+        opts.process_surfaces = True
+        opts.dcan_qc = True
+        opts.exact_time = [300, 480]
+        opts.combineruns = True
+    elif opts.mode == "linc":
+        opts.cifti = False or opts.cifti
+        opts.process_surfaces = True
+        opts.dcan_qc = False
+        opts.exact_time = []
 
     # Bandpass filter parameters
     if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
