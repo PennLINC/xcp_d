@@ -78,6 +78,7 @@ tests = [
     "pep8-naming",
     "pytest",
     "pytest-cov",
+    "pytest-env",
 ]
 maint = [
     "fuzzywuzzy",
@@ -175,6 +176,9 @@ markers = [
     "pnc_cifti_t2wonly: mark integration test for fMRIPrep derivatives with CIFTI settings and a simulated T2w file",
     "fmriprep_without_freesurfer: mark integration test for fMRIPrep derivatives without FreeSurfer",
     "nibabies: mark integration test for nibabies derivatives",
+]
+env = [
+    "RUNNING_PYTEST = 1",
 ]
 
 [tool.coverage.run]
