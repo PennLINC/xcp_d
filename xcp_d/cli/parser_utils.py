@@ -75,14 +75,14 @@ def _float_or_auto(string, is_parser=True):
 
 def _float_or_auto_or_none(string, is_parser=True):
     """Check if argument is a float >= 0 or the strings "auto" or "none"."""
-    if string == "auto":
+    if string in ("auto", "none"):
         return string
 
     error = argparse.ArgumentTypeError if is_parser else ValueError
     try:
         floatarg = float(string)
     except ValueError:
-        msg = "Argument must be a nonnegative float or 'auto'."
+        msg = f"Argument must be a nonnegative float, 'auto', or 'none', not '{string}'."
         raise error(msg)
 
     if floatarg < 0:
