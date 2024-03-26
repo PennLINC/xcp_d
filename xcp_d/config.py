@@ -117,8 +117,9 @@ finally:
 
 if not hasattr(sys, "_is_pytest_session"):
     sys._is_pytest_session = False  # Trick to avoid sklearn's FutureWarnings
+
 # Disable all warnings in main and children processes only on production versions
-if not any(
+if ("RUNNING_PYTEST" not in os.environ) and not any(
     (
         "+" in __version__,
         __version__.endswith(".dirty"),
