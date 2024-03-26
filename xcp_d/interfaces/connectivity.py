@@ -197,7 +197,7 @@ class NiftiParcellate(SimpleInterface):
 
         # Save out the coverage tsv
         coverage_df = pd.DataFrame(
-            data=parcel_coverage,
+            data=np.round(parcel_coverage, 4),
             index=node_labels,
             columns=["coverage"],
         )
@@ -473,7 +473,7 @@ class CiftiParcellate(SimpleInterface):
 
                 # Determine the percentage of vertices with good data
                 parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
-                coverage_df.loc[parcel_label, "coverage"] = parcel_coverage
+                coverage_df.loc[parcel_label, "coverage"] = np.round(parcel_coverage, 4)
 
                 if parcel_coverage < min_coverage:
                     # If the parcel has >=50% bad data, replace all of the values with zeros.
