@@ -690,7 +690,7 @@ def init_postproc_derivatives_wf(
                 GenerateMetadata(
                     dataset_links=config.execution.dataset_links,
                     out_dir=str(config.execution.xcp_d_dir.absolute()),
-                    input_names=["NodeFiles"],
+                    input_names=["Sources", "NodeFiles"],
                 ),
                 run_without_submitting=True,
                 mem_gb=1,
