@@ -921,7 +921,7 @@ def _validate_parameters(opts, build_log, parser):
     elif opts.mode == "linc":
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = False if opts.cifti == "auto" else opts.cifti
-        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         opts.dcan_qc = False if opts.dcan_qc == "auto" else opts.dcan_qc
         opts.exact_time = [] if opts.exact_time == "auto" else opts.exact_time
         opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns

@@ -27,8 +27,8 @@ The available modes are:
 
 -  ``abcdbids``: This mode is based on the processing pipeline developed by the DCAN team for the
    Adolescent Brain Cognitive Development (ABCD) study-
-   specifically the data in the ABCD-BIDS Community Collection (ABCC) dataset
-   :footcite:p:`feczko2021adolescent`.
+   specifically the data in the ABCD-BIDS Community Collection (ABCC) dataset.
+   :footcite:p:`feczko2021adolescent`
 -  ``hbcd``: This mode has been designed by the DCAN team for the
    HEALthy Brain and Child Development Study (HBCD).
 -  ``linc``: This mode was designed by the Lifespan Informatics and Neuroimaging Center (LINC) at
@@ -87,7 +87,7 @@ Motion parameter filtering [OPTIONAL]
 :class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
 :func:`~xcp_d.utils.confounds.load_motion`
 
-Motion parameters may be contaminated with respiratory effects :footcite:p:`power2019distinctions`.
+Motion parameters may be contaminated with respiratory effects.:footcite:p:`power2019distinctions`
 In order to address this issue, XCP-D optionally allows users to specify a band-stop or low-pass
 filter to remove respiration-related signals from the motion parameters, prior to framewise
 displacement calculation.
