@@ -422,7 +422,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             exact_scans = []
             if config.workflow.exact_time:
-                raise Exception(config.workflow.exact_time)
                 retained_exact_times = [
                     t for t in config.workflow.exact_time if t <= post_scrubbing_duration
                 ]
