@@ -110,6 +110,7 @@ def _build_parser():
     # Required "mode" argument
     parser.add_argument(
         "--mode",
+        desc="mode",
         action="store",
         choices=["abcdbids", "hbcd", "linc", "none"],
         required=True,
@@ -128,6 +129,7 @@ def _build_parser():
     g_bids.add_argument(
         "--participant-label",
         "--participant_label",
+        dest="participant_label",
         action="store",
         nargs="+",
         help=(
@@ -139,6 +141,7 @@ def _build_parser():
         "-t",
         "--task-id",
         "--task_id",
+        dest="task_id",
         action="store",
         help=(
             "The name of a specific task to postprocess. "
@@ -171,6 +174,7 @@ def _build_parser():
     g_target.add_argument(
         "-s",
         "--cifti",
+        dest="cifti",
         action="store_true",
         default="auto",
         help=(
@@ -181,6 +185,7 @@ def _build_parser():
     )
     g_target.add_argument(
         "--nifti",
+        dest="cifti",
         action="store_false",
         help="Postprocess NIfTI inputs instead of CIFTIs.",
     )
@@ -191,6 +196,7 @@ def _build_parser():
         "--nthreads",
         "--n-cpus",
         "--n_cpus",
+        dest="nprocs",
         action="store",
         type=int,
         default=2,
@@ -199,6 +205,7 @@ def _build_parser():
     g_perfm.add_argument(
         "--omp-nthreads",
         "--omp_nthreads",
+        dest="omp_nthreads",
         action="store",
         type=int,
         default=1,
@@ -207,12 +214,14 @@ def _build_parser():
     g_perfm.add_argument(
         "--mem-gb",
         "--mem_gb",
+        dest="mem_gb",
         action="store",
         type=int,
         help="Upper bound memory limit, in gigabytes, for XCP-D processes.",
     )
     g_perfm.add_argument(
         "--low-mem",
+        dest="low_mem",
         action="store_true",
         help="Attempt to reduce memory usage (will increase disk usage in working directory).",
     )
@@ -221,6 +230,7 @@ def _build_parser():
         "--use_plugin",
         "--nipype-plugin-file",
         "--nipype_plugin_file",
+        dest="use_plugin",
         action="store",
         default=None,
         type=IsFile,
@@ -242,6 +252,7 @@ def _build_parser():
     g_outputoption.add_argument(
         "--input-type",
         "--input_type",
+        dest="input_type",
         required=False,
         default="fmriprep",
         choices=["fmriprep", "dcan", "hcp", "nibabies", "ukb"],
@@ -271,12 +282,14 @@ def _build_parser():
     g_despike = g_param.add_mutually_exclusive_group(required=False)
     g_despike.add_argument(
         "--despike",
+        dest="despike",
         action="store_true",
         default="auto",
         help="Despike the BOLD data before postprocessing.",
     )
     g_despike.add_argument(
         "--no-despike",
+        dest="despike",
         action="store_false",
         help="Don't despike the BOLD data before postprocessing.",
     )
@@ -311,6 +324,7 @@ def _build_parser():
         "-c",
         "--custom-confounds",
         "--custom_confounds",
+        dest="custom_confounds",
         required=False,
         default=None,
         type=PathExists,
@@ -323,6 +337,7 @@ def _build_parser():
     )
     g_param.add_argument(
         "--smoothing",
+        dest="smoothing",
         default=6,
         action="store",
         type=float,
@@ -337,12 +352,14 @@ def _build_parser():
     g_combine.add_argument(
         "-m",
         "--combineruns",
+        dest="combineruns",
         action="store_true",
         default="auto",
         help="After denoising, concatenate each derivative from each task across runs.",
     )
     g_combine.add_argument(
         "--no-combineruns",
+        dest="combineruns",
         action="store_false",
         help="Do not concatenate each derivative from each task across runs.",
     )
@@ -359,6 +376,7 @@ def _build_parser():
     g_motion_filter.add_argument(
         "--motion-filter-type",
         "--motion_filter_type",
+        dest="motion_filter_type",
         action="store",
         type=str,
         default="none",
@@ -376,6 +394,7 @@ If the filter type is set to "none", then no filter will be applied.
     g_motion_filter.add_argument(
         "--band-stop-min",
         "--band_stop_min",
+        dest="band_stop_min",
         default=None,
         type=float,
         metavar="BPM",
@@ -393,6 +412,7 @@ this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020
     g_motion_filter.add_argument(
         "--band-stop-max",
         "--band_stop_max",
+        dest="band_stop_max",
         default=None,
         type=float,
         metavar="BPM",
@@ -406,6 +426,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_motion_filter.add_argument(
         "--motion-filter-order",
         "--motion_filter_order",
+        dest="motion_filter_order",
         default=4,
         type=int,
         help="Number of filter coeffecients for the motion parameter filter.",
@@ -416,6 +437,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-r",
         "--head-radius",
         "--head_radius",
+        dest="head_radius",
         default=50,
         type=_float_or_auto,
         help=(
@@ -430,6 +452,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-f",
         "--fd-thresh",
         "--fd_thresh",
+        dest="fd_thresh",
         default=0.3,
         type=float,
         help=(
@@ -442,6 +465,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "--min-time",
         "--min_time",
+        dest="min_time",
         required=False,
         default=100,
         type=float,
@@ -476,6 +500,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_temporal_filter.add_argument(
         "--lower-bpf",
         "--lower_bpf",
+        dest="lower_bpf",
         action="store",
         default=0.01,
         type=float,
@@ -488,6 +513,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_temporal_filter.add_argument(
         "--upper-bpf",
         "--upper_bpf",
+        dest="upper_bpf",
         action="store",
         default=0.08,
         type=float,
@@ -500,6 +526,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_temporal_filter.add_argument(
         "--bpf-order",
         "--bpf_order",
+        dest="bpf_order",
         action="store",
         default=2,
         type=int,
@@ -531,6 +558,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_parcellation.add_argument(
         "--min-coverage",
         "--min_coverage",
+        dest="min_coverage",
         required=False,
         default=0.5,
         type=_restricted_float,
@@ -544,6 +572,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_parcellation.add_argument(
         "--exact-time",
         "--exact_time",
+        dest="exact_time",
         required=False,
         default="auto",
         nargs="+",
@@ -573,6 +602,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-w",
         "--work-dir",
         "--work_dir",
+        dest="work_dir",
         action="store",
         type=Path,
         default=Path("working_dir"),
@@ -581,6 +611,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "--clean-workdir",
         "--clean_workdir",
+        dest="clean_workdir",
         action="store_true",
         default=False,
         help=(
@@ -591,6 +622,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "--resource-monitor",
         "--resource_monitor",
+        dest="resource_monitor",
         action="store_true",
         default=False,
         help="Enable Nipype's resource monitoring to keep track of memory and CPU usage.",
@@ -598,6 +630,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "--config-file",
         "--config_file",
+        dest="config_file",
         action="store",
         metavar="FILE",
         help=(
@@ -607,24 +640,28 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_other.add_argument(
         "--write-graph",
+        dest="write_graph",
         action="store_true",
         default=False,
         help="Write workflow graph.",
     )
     g_other.add_argument(
         "--stop-on-first-crash",
+        dest="stop_on_first_crash",
         action="store_true",
         default=False,
         help="Force stopping on first crash, even if a work directory was specified.",
     )
     g_other.add_argument(
         "--notrack",
+        dest="notrack",
         action="store_true",
         default=False,
         help="Opt out of sending tracking information.",
     )
     g_other.add_argument(
         "--debug",
+        dest="debug",
         action="store",
         nargs="+",
         choices=config.DEBUG_MODES + ("all",),
@@ -632,6 +669,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_other.add_argument(
         "--fs-license-file",
+        dest="fs_license_file",
         metavar="FILE",
         type=PathExists,
         help=(
@@ -641,6 +679,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_other.add_argument(
         "--md-only-boilerplate",
+        dest="md_only_boilerplate",
         action="store_true",
         default=False,
         help="Skip generation of HTML and LaTeX formatted citation with pandoc",
@@ -648,12 +687,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "--boilerplate-only",
         "--boilerplate_only",
+        dest="boilerplate_only",
         action="store_true",
         default=False,
         help="generate boilerplate only",
     )
     g_other.add_argument(
         "--reports-only",
+        dest="reports_only",
         action="store_true",
         default=False,
         help=(
