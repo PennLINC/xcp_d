@@ -955,7 +955,6 @@ def _validate_parameters(opts, build_log, parser):
 
     if opts.exact_time == "none":
         opts.exact_time = []
-        raise Exception(opts.exact_time)
 
     if opts.mode == "abcdbids":
         opts.despike = False if opts.despike == "auto" else opts.despike
