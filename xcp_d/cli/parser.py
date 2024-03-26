@@ -110,7 +110,7 @@ def _build_parser():
     # Required "mode" argument
     parser.add_argument(
         "--mode",
-        desc="mode",
+        dest="mode",
         action="store",
         choices=["abcdbids", "hbcd", "linc", "none"],
         required=True,
