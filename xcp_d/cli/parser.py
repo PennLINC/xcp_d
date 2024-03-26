@@ -19,7 +19,12 @@ def _build_parser():
 
     from packaging.version import Version
 
-    from xcp_d.cli.parser_utils import _float_or_auto, _int_or_auto, _restricted_float
+    from xcp_d.cli.parser_utils import (
+        _float_or_auto,
+        _float_or_auto_or_none,
+        _int_or_auto,
+        _restricted_float,
+    )
     from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases
 
@@ -576,7 +581,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         required=False,
         default="auto",
         nargs="+",
-        type=_float_or_auto,
+        type=_float_or_auto_or_none,
         help=(
             "If used, this parameter will produce correlation matrices limited to each requested "
             "amount of time. "
@@ -945,6 +950,9 @@ def _validate_parameters(opts, build_log, parser):
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
     # Define parameters based on the mode
+    if opts.exact_time == "none":
+        opts.exact_time = []
+
     if opts.mode == "abcdbids":
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = True if opts.cifti == "auto" else opts.cifti
