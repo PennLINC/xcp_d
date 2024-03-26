@@ -342,7 +342,6 @@ def _build_parser():
         help="After denoising, concatenate each derivative from each task across runs.",
     )
     g_combine.add_argument(
-        "-m",
         "--no-combineruns",
         action="store_false",
         help="Do not concatenate each derivative from each task across runs.",
