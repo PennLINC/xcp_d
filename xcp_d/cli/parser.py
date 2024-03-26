@@ -950,6 +950,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
     # Define parameters based on the mode
+    raise Exception(opts.exact_time)
     if opts.exact_time == "none":
         opts.exact_time = []
         raise Exception(opts.exact_time)
