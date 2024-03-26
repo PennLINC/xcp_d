@@ -378,6 +378,8 @@ class GenerateMetadata(SimpleInterface):
     def __init__(self, input_names, **inputs):
         super().__init__(**inputs)
         add_traits(self.inputs, input_names)
+        add_traits(self.inputs, "input_names")
+        self.inputs.input_names = input_names
 
     def _run_interface(self, runtime):
         metadata = self.inputs.metadata
@@ -402,6 +404,6 @@ class GenerateMetadata(SimpleInterface):
                 # Overwrite the old value
                 out_metadata[key] = value
 
-        self._results["out"] = metadata
+        self._results["metadata"] = out_metadata
 
         return runtime
