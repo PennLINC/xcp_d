@@ -928,12 +928,31 @@ def _validate_parameters(opts, build_log, parser):
         opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
     else:
         # Default all extra options to False
-        opts.despike = False if opts.despike == "auto" else opts.despike
-        opts.cifti = False if opts.cifti == "auto" else opts.cifti
-        opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
-        opts.dcan_qc = False if opts.dcan_qc == "auto" else opts.dcan_qc
+        bad_params = []
+        if opts.despike == "auto":
+            bad_params.append("--despike or --no-despike")
+
+        if opts.cifti == "auto":
+            bad_params.append("--cifti or --nifti")
+
+        if opts.process_surfaces == "auto":
+            bad_params.append("--warp-surfaces-native2std or --no-warp-surfaces-native2std")
+
+        if opts.dcan_qc == "auto":
+            bad_params.append("--dcan-qc or --skip-dcan-qc")
+
+        if opts.combineruns == "auto":
+            bad_params.append("--combineruns or --no-combineruns")
+
+        if bad_params:
+            bad_param_str = "\n\t".join(bad_params)
+            parser.error(
+                f"The following parameters are required with the selected mode ({opts.mode}):\n"
+                f"\t{bad_param_str}."
+            )
+
+        # Default for exact-time is None
         opts.exact_time = [] if opts.exact_time == "auto" else opts.exact_time
-        opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
 
     # Bandpass filter parameters
     if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
