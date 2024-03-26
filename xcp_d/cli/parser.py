@@ -166,16 +166,23 @@ def _build_parser():
     )
 
     g_surfx = parser.add_argument_group("Options for CIFTI processing")
-    g_surfx.add_argument(
+
+    g_target = g_surfx.add_mutually_exclusive_group(required=False)
+    g_target.add_argument(
         "-s",
         "--cifti",
         action="store_true",
-        default=False,
+        default="auto",
         help=(
             "Postprocess CIFTI inputs instead of NIfTIs. "
             "A preprocessing pipeline with CIFTI derivatives is required for this flag to work. "
             "This flag is enabled by default for the 'hcp' and 'dcan' input types."
         ),
+    )
+    g_target.add_argument(
+        "--nifti",
+        action="store_false",
+        help="Postprocess NIfTI inputs instead of CIFTIs.",
     )
 
     g_perfm = parser.add_argument_group("Options for resource management")
@@ -260,12 +267,20 @@ def _build_parser():
             "preprocessing derivatives' confounds file."
         ),
     )
-    g_param.add_argument(
+
+    g_despike = g_param.add_mutually_exclusive_group(required=False)
+    g_despike.add_argument(
         "--despike",
         action="store_true",
-        default=False,
+        default="auto",
         help="Despike the BOLD data before postprocessing.",
     )
+    g_despike.add_argument(
+        "--no-despike",
+        action="store_false",
+        help="Don't despike the BOLD data before postprocessing.",
+    )
+
     g_param.add_argument(
         "-p",
         "--nuisance-regressors",
@@ -317,12 +332,20 @@ def _build_parser():
             "Set to 0 to disable smoothing."
         ),
     )
-    g_param.add_argument(
+
+    g_combine = g_param.add_mutually_exclusive_group(required=False)
+    g_combine.add_argument(
         "-m",
         "--combineruns",
         action="store_true",
-        default=False,
+        default="auto",
         help="After denoising, concatenate each derivative from each task across runs.",
+    )
+    g_combine.add_argument(
+        "-m",
+        "--no-combineruns",
+        action="store_false",
+        help="Do not concatenate each derivative from each task across runs.",
     )
 
     g_motion_filter = parser.add_argument_group(
@@ -339,8 +362,8 @@ def _build_parser():
         "--motion_filter_type",
         action="store",
         type=str,
-        default=None,
-        choices=["lp", "notch"],
+        default="none",
+        choices=["lp", "notch", "none"],
         help="""\
 Type of filter to use for removing respiratory artifact from motion regressors.
 If not set, no filter will be applied.
@@ -348,6 +371,7 @@ If not set, no filter will be applied.
 If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
 must be defined.
 If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
+If the filter type is set to "none", then no filter will be applied.
 """,
     )
     g_motion_filter.add_argument(
@@ -522,7 +546,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--exact-time",
         "--exact_time",
         required=False,
-        default=[],
+        default="auto",
         nargs="+",
         type=float,
         help=(
@@ -640,12 +664,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
 
     g_experimental = parser.add_argument_group("Experimental options")
-    g_experimental.add_argument(
+
+    g_surface_warp = g_experimental.add_mutually_exclusive_group(required=False)
+    g_surface_warp.add_argument(
         "--warp-surfaces-native2std",
         "--warp_surfaces_native2std",
         action="store_true",
         dest="process_surfaces",
-        default=False,
+        default="auto",
         help="""\
 If used, a workflow will be run to warp native-space (``fsnative``) reconstructed cortical
 surfaces (``surf.gii`` files) produced by Freesurfer into standard (``fsLR``) space.
@@ -655,12 +681,31 @@ By default, this workflow is disabled.
 **IMPORTANT**: This parameter can only be run if the --cifti flag is also enabled.
 """,
     )
-    g_experimental.add_argument(
+    g_surface_warp.add_argument(
+        "--no-warp-surfaces-native2std",
+        "--no_warp_surfaces_native2std",
+        action="store_false",
+        dest="process_surfaces",
+        help=(
+            "If used, the workflow to warp native-space surfaces to standard space will be "
+            "skipped."
+        ),
+    )
+
+    g_dcan_qc = g_experimental.add_mutually_exclusive_group(required=False)
+    g_dcan_qc.add_argument(
+        "--dcan-qc",
+        "--dcan_qc",
+        action="store_true",
+        dest="dcan_qc",
+        default="auto",
+        help="Run DCAN QC.",
+    )
+    g_dcan_qc.add_argument(
         "--skip-dcan-qc",
         "--skip_dcan_qc",
         action="store_false",
         dest="dcan_qc",
-        default=True,
         help="Do not run DCAN QC.",
     )
 
@@ -861,22 +906,34 @@ def _validate_parameters(opts, build_log, parser):
 
     # Define parameters based on the mode
     if opts.mode == "abcdbids":
-        opts.cifti = True
-        opts.process_surfaces = True
-        opts.dcan_qc = True
-        opts.exact_time = [300, 480]
-        opts.combineruns = True
+        opts.despike = False if opts.despike == "auto" else opts.despike
+        opts.cifti = True if opts.cifti == "auto" else opts.cifti
+        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.dcan_qc = True if opts.dcan_qc == "auto" else opts.dcan_qc
+        opts.exact_time = [300, 480] if opts.exact_time == "auto" else opts.exact_time
+        opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
     elif opts.mode == "hbcd":
-        opts.cifti = True
-        opts.process_surfaces = True
-        opts.dcan_qc = True
-        opts.exact_time = [300, 480]
-        opts.combineruns = True
+        opts.despike = False if opts.despike == "auto" else opts.despike
+        opts.cifti = True if opts.cifti == "auto" else opts.cifti
+        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.dcan_qc = True if opts.dcan_qc == "auto" else opts.dcan_qc
+        opts.exact_time = [300, 480] if opts.exact_time == "auto" else opts.exact_time
+        opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
     elif opts.mode == "linc":
-        opts.cifti = False or opts.cifti
-        opts.process_surfaces = True
-        opts.dcan_qc = False
-        opts.exact_time = []
+        opts.despike = False if opts.despike == "auto" else opts.despike
+        opts.cifti = False if opts.cifti == "auto" else opts.cifti
+        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.dcan_qc = False if opts.dcan_qc == "auto" else opts.dcan_qc
+        opts.exact_time = [] if opts.exact_time == "auto" else opts.exact_time
+        opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
+    else:
+        # Default all extra options to False
+        opts.despike = False if opts.despike == "auto" else opts.despike
+        opts.cifti = False if opts.cifti == "auto" else opts.cifti
+        opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.dcan_qc = False if opts.dcan_qc == "auto" else opts.dcan_qc
+        opts.exact_time = [] if opts.exact_time == "auto" else opts.exact_time
+        opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
 
     # Bandpass filter parameters
     if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
@@ -904,6 +961,9 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_time = 0
 
     # Motion filtering parameters
+    if opts.motion_filter_type == "none":
+        opts.motion_filter_type = None
+
     if opts.motion_filter_type == "notch":
         if not (opts.band_stop_min and opts.band_stop_max):
             parser.error(
