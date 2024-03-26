@@ -193,6 +193,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--warp-surfaces-native2std",
         "--cifti",
         "--combineruns",
+        "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
@@ -300,6 +301,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         out_dir,
         "participant",
         "--mode=linc",
+        "--dcan-qc",
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
@@ -356,6 +358,7 @@ def test_nibabies(data_dir, output_dir, working_dir):
         "--head_radius=auto",
         "--smoothing=0",
         "--fd-thresh=0",
+        "--exact-time=none",
     ]
     _run_and_generate(
         test_name=test_name,
