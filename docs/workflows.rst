@@ -16,6 +16,28 @@ XCP-D can also postprocess ``HCP`` data (``--input-type hcp``).
 
 
 ****************
+Processing Modes
+****************
+
+Starting in version 0.8.0, XCP-D includes a required ``--mode`` parameter.
+The ``mode`` parameter automatically defines sets of other parameters,
+based on recommended processing pipelines for different studies.
+
+The available modes are:
+
+-  ``abcdbids``: This mode is based on the processing pipeline developed by the DCAN team for the
+   Adolescent Brain Cognitive Development (ABCD) study-
+   specifically the data in the ABCD-BIDS Community Collection (ABCC) dataset
+   :footcite:p:`feczko2021adolescent`.
+-  ``hbcd``: This mode has been designed by the DCAN team for the
+   HEALthy Brain and Child Development Study (HBCD).
+-  ``linc``: This mode was designed by the Lifespan Informatics and Neuroimaging Center (LINC) at
+   the University of Pennsylvania.
+-  ``none``: This mode is for users who want to specify all parameters manually.
+   Some parameters will be required if you use this mode.
+
+
+****************
 Processing Steps
 ****************
 
@@ -507,13 +529,13 @@ ReHo
 :func:`~xcp_d.workflows.restingstate.init_reho_nifti_wf`,
 :func:`~xcp_d.workflows.restingstate.init_reho_cifti_wf`
 
-Regional Homogeneity (ReHo) is a measure of local temporal uniformity in the BOLD signal computed at each voxel of the processed image. 
-Greater ReHo values correspond to greater synchrony among BOLD activity patterns measured in a local neighborhood of voxels, with neighborhood size determined by a user-specified radius of voxels. 
+Regional Homogeneity (ReHo) is a measure of local temporal uniformity in the BOLD signal computed at each voxel of the processed image.
+Greater ReHo values correspond to greater synchrony among BOLD activity patterns measured in a local neighborhood of voxels, with neighborhood size determined by a user-specified radius of voxels.
 ReHo is calculated as the coefficient of concordance among all voxels in a sphere centered on the target voxel.
 
-For NIfTIs, ReHo is always calculated via AFNI’s 3dReho with 27 voxels in each neighborhood, using Kendall's coefficient of concordance (KCC). 
-For CIFTIs, the left and right hemisphere are extracted into GIFTI format via Connectome Workbench’s CIFTISeparateMetric. Next, the mesh adjacency matrix is obtained,and Kendall's coefficient of concordance (KCC) is calculated, with each vertex having four neighbors. 
-For subcortical voxels in the CIFTIs, 3dReho is used with the same parameters that are used for NIfTIs. 
+For NIfTIs, ReHo is always calculated via AFNI’s 3dReho with 27 voxels in each neighborhood, using Kendall's coefficient of concordance (KCC).
+For CIFTIs, the left and right hemisphere are extracted into GIFTI format via Connectome Workbench’s CIFTISeparateMetric. Next, the mesh adjacency matrix is obtained,and Kendall's coefficient of concordance (KCC) is calculated, with each vertex having four neighbors.
+For subcortical voxels in the CIFTIs, 3dReho is used with the same parameters that are used for NIfTIs.
 
 
 Parcellation and functional connectivity estimation [OPTIONAL]
