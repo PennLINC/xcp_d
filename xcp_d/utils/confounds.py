@@ -631,20 +631,14 @@ def motion_regression_filter(
     if motion_filter_type not in ("lp", "notch"):
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
-    band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
-        motion_filter_type=motion_filter_type,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        TR=TR,
-    )
-    lowpass_hz_adjusted = band_stop_min_adjusted / 60
+    lowpass_hz = band_stop_min / 60
 
     sampling_frequency = 1 / TR
 
     if motion_filter_type == "lp":  # low-pass filter
         b, a = butter(
             motion_filter_order / 2,
-            lowpass_hz_adjusted,
+            lowpass_hz,
             btype="lowpass",
             output="ba",
             fs=sampling_frequency,
@@ -652,11 +646,11 @@ def motion_regression_filter(
         filtered_data = filtfilt(b, a, data, axis=0, padtype="constant", padlen=data.shape[0] - 1)
 
     elif motion_filter_type == "notch":  # notch filter
-        highpass_hz_adjusted = band_stop_max_adjusted / 60
-        stopband_hz_adjusted = np.array([lowpass_hz_adjusted, highpass_hz_adjusted])
+        highpass_hz = band_stop_max / 60
+        stopband_hz = np.array([lowpass_hz, highpass_hz])
         # Convert stopband to a single notch frequency.
-        freq_to_remove = np.mean(stopband_hz_adjusted)
-        bandwidth = np.abs(np.diff(stopband_hz_adjusted))
+        freq_to_remove = np.mean(stopband_hz)
+        bandwidth = np.abs(np.diff(stopband_hz))
 
         # Create filter coefficients.
         b, a = iirnotch(freq_to_remove, freq_to_remove / bandwidth, fs=sampling_frequency)
