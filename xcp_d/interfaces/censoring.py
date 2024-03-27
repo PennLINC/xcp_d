@@ -530,7 +530,7 @@ class GenerateConfounds(SimpleInterface):
             if self.inputs.motion_filter_type == "lp":
                 filters = col_metadata.get("SoftwareFilters", {})
                 filters["Butterworth low-pass filter"] = {
-                    "cutoff": band_stop_max_adjusted / 60,
+                    "cutoff": band_stop_min_adjusted / 60,
                     "order": self.inputs.motion_filter_order,
                     "cutoff units": "Hz",
                     "function": "scipy.signal.filtfilt",
@@ -541,8 +541,8 @@ class GenerateConfounds(SimpleInterface):
                 filters = col_metadata.get("SoftwareFilters", {})
                 filters["IIR notch digital filter"] = {
                     "cutoff": [
-                        band_stop_min_adjusted / 60,
                         band_stop_max_adjusted / 60,
+                        band_stop_min_adjusted / 60,
                     ],
                     "order": self.inputs.motion_filter_order,
                     "cutoff units": "Hz",
