@@ -553,10 +553,11 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
-    workflow.__desc__ = (
-        "Nuisance regressors were regressed from the BOLD data using a denoising method based on "
-        "*Nilearn*'s approach. "
-    )
+    workflow.__desc__ = """\
+
+Nuisance regressors were regressed from the BOLD data using a denoising method based on *Nilearn*'s
+approach.
+"""
     if bandpass_filter:
         if low_pass > 0 and high_pass > 0:
             btype = "band-pass"

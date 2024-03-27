@@ -103,6 +103,7 @@ def init_alff_wf(
         )
 
     workflow.__desc__ = f""" \
+
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming
 the mean-centered, standard deviation-normalized, denoised BOLD time series to the frequency
 domain{periodogram_desc}.
