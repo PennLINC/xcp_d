@@ -756,6 +756,8 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
             is_modified = True
 
         band_stop_min_adjusted, band_stop_max_adjusted = stopband_adjusted
+    else:
+        band_stop_min_adjusted, band_stop_max_adjusted, is_modified = None, None, False
 
     return band_stop_min_adjusted, band_stop_max_adjusted, is_modified
 
