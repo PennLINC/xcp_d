@@ -632,7 +632,10 @@ def motion_regression_filter(
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
-        motion_filter_type, band_stop_min, band_stop_max, TR
+        motion_filter_type=motion_filter_type,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        TR=TR,
     )
     lowpass_hz_adjusted = band_stop_min_adjusted / 60
 
@@ -681,18 +684,18 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
     motion_filter_type : str
         The type of motion filter to apply.
     band_stop_min : float
-        The minimum frequency to stop in the filter, in beats-per-minute.
+        The minimum frequency to stop in the filter, in breaths-per-minute.
     band_stop_max : float
-        The maximum frequency to stop in the filter, in beats-per-minute.
+        The maximum frequency to stop in the filter, in breaths-per-minute.
     TR : float
         The repetition time of the data.
 
     Returns
     -------
     band_stop_min_adjusted : float
-        The adjusted low-pass filter frequency, in beats-per-minute.
+        The adjusted low-pass filter frequency, in breaths-per-minute.
     band_stop_max_adjusted : float
-        The adjusted high-pass filter frequency, in beats-per-minute.
+        The adjusted high-pass filter frequency, in breaths-per-minute.
     is_modified : bool
         Whether the filter parameters were modified.
     """

@@ -558,6 +558,15 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
 Nuisance regressors were regressed from the BOLD data using a denoising method based on *Nilearn*'s
 approach.
 """
+    if fd_thresh > 0:
+        workflow.__desc__ += (
+            "Any volumes censored earlier in the workflow were first cubic spline interpolated in "
+            "the BOLD data. "
+            "Outlier volumes at the beginning or end of the time series were replaced with the "
+            "closest low-motion volume's values, "
+            "as cubic spline interpolation can produce extreme extrapolations. "
+        )
+
     if bandpass_filter:
         if low_pass > 0 and high_pass > 0:
             btype = "band-pass"
@@ -573,17 +582,15 @@ approach.
             filt_input = f"{low_pass}"
 
         workflow.__desc__ += (
-            "Any volumes censored earlier in the workflow were first cubic spline interpolated in "
-            "the BOLD data. "
-            "Outlier volumes at the beginning or end of the time series were replaced with the "
-            "closest low-motion volume's values, "
-            "as cubic spline interpolation can produce extreme extrapolations. "
-            f"The interpolated timeseries were then {btype} filtered using a(n) "
+            f"The timeseries were {btype} filtered using a(n) "
             f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
             f"in order to retain signals {preposition} {filt_input} Hz. "
             "The same filter was applied to the confounds."
-            "The filtered, interpolated time series were then denoised using linear regression."
         )
+
+    workflow.__desc__ += (
+        "The filtered time series were then denoised using linear regression."
+    )
 
     inputnode = pe.Node(
         niu.IdentityInterface(
