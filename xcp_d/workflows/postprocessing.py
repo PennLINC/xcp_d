@@ -590,7 +590,7 @@ approach.
         )
 
     workflow.__desc__ += (
-        "The filtered time series were then denoised using linear regression, "
+        " The filtered time series were then denoised using linear regression, "
         "using only the low-motion volumes. "
     )
 
