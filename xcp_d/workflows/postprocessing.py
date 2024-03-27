@@ -544,6 +544,7 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     """
     workflow = Workflow(name=name)
 
+    fd_thresh = config.workflow.fd_thresh
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
     bpf_order = config.workflow.bpf_order
@@ -589,7 +590,8 @@ approach.
         )
 
     workflow.__desc__ += (
-        "The filtered time series were then denoised using linear regression."
+        "The filtered time series were then denoised using linear regression, "
+        "using only the low-motion volumes. "
     )
 
     inputnode = pe.Node(
