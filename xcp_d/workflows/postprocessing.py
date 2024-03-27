@@ -20,7 +20,11 @@ from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
 from xcp_d.interfaces.plotting import CensoringPlot
 from xcp_d.interfaces.restingstate import DespikePatch
 from xcp_d.interfaces.workbench import CiftiConvert, FixCiftiIntent
-from xcp_d.utils.confounds import describe_censoring, describe_regression
+from xcp_d.utils.confounds import (
+    describe_censoring,
+    describe_motion_parameters,
+    describe_regression,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
 from xcp_d.utils.utils import fwhm2sigma
@@ -123,13 +127,18 @@ def init_prepare_confounds_wf(
             "regressors were discarded as non-steady-state volumes, or 'dummy scans'. "
         )
 
+    motion_description = describe_motion_parameters(
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        head_radius=head_radius,
+        TR=TR,
+    )
+
     if (fd_thresh > 0) or exact_scans:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
-            motion_filter_order=motion_filter_order,
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            head_radius=head_radius,
             fd_thresh=fd_thresh,
             exact_scans=exact_scans,
         )
@@ -142,7 +151,9 @@ def init_prepare_confounds_wf(
         motion_filter_type=motion_filter_type,
     )
 
-    workflow.__desc__ = f" {dummy_scans_str}{censoring_description} {confounds_description}"
+    workflow.__desc__ = (
+        f" {dummy_scans_str}{motion_description} {censoring_description} {confounds_description}"
+    )
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -543,8 +554,8 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = (
-        "Nuisance regressors were regressed from the BOLD data using linear regression, "
-        "as implemented in *Nilearn*."
+        "Nuisance regressors were regressed from the BOLD data using a denoising method based on "
+        "*Nilearn*'s approach. "
     )
     if bandpass_filter:
         if low_pass > 0 and high_pass > 0:
@@ -561,13 +572,16 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
             filt_input = f"{low_pass}"
 
         workflow.__desc__ += (
-            " Any volumes censored earlier in the workflow were then interpolated in the residual "
-            "time series produced by the regression. "
+            "Any volumes censored earlier in the workflow were first cubic spline interpolated in "
+            "the BOLD data. "
+            "Outlier volumes at the beginning or end of the time series were replaced with the "
+            "closest low-motion volume's values, "
+            "as cubic spline interpolation can produce extreme extrapolations. "
             f"The interpolated timeseries were then {btype} filtered using a(n) "
             f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
             f"in order to retain signals {preposition} {filt_input} Hz. "
-            "The filtered, interpolated time series were then re-censored to remove high-motion "
-            "outlier volumes."
+            "The same filter was applied to the confounds."
+            "The filtered, interpolated time series were then denoised using linear regression."
         )
 
     inputnode = pe.Node(
