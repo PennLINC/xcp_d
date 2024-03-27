@@ -557,8 +557,10 @@ class GenerateConfounds(SimpleInterface):
         if confounds_df is not None:
             # Update confounds metadata with modified motion metadata
             for col in motion_df.columns.tolist():
-                if col in confounds_metadata.keys():
-                    confounds_metadata[col] = motion_metadata[col]
+                if col in confounds_df.columns:
+                    base_metadata = confounds_metadata.get(col, {})
+                    base_metadata.update(motion_metadata[col])
+                    confounds_metadata[col] = base_metadata
 
             # Orthogonalize full nuisance regressors w.r.t. any signal regressors
             signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
