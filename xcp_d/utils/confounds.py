@@ -735,7 +735,7 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
         assert band_stop_min is not None
         assert band_stop_max > 0
         assert band_stop_min > 0
-        assert band_stop_min < band_stop_max
+        assert band_stop_min < band_stop_max, f"{band_stop_min} >= {band_stop_max}"
 
         stopband = np.array([band_stop_min, band_stop_max])
         stopband_hz = stopband / 60  # change BPM to Hertz
