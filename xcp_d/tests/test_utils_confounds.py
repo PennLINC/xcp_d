@@ -64,15 +64,6 @@ def test_modify_motion_filter():
     assert band_stop_max2 == 30.0
     assert is_modified is True
 
-    # Using a filter type other than notch or lp should raise an exception.
-    with pytest.raises(ValueError, match="Motion filter type 'fail' not supported."):
-        confounds._modify_motion_filter(
-            TR=TR,
-            motion_filter_type="fail",
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-        )
-
 
 def test_motion_filtering_lp():
     """Run low-pass filter on toy data, compare to simplified results."""
@@ -110,6 +101,17 @@ def test_motion_filtering_lp():
 
     # What's the difference from the verified data?
     assert np.allclose(np.squeeze(lowpass_data_test), lowpass_data_true)
+
+    # Using a filter type other than notch or lp should raise an exception.
+    with pytest.raises(ValueError, match="Motion filter type 'fail' not supported."):
+        confounds.motion_regression_filter(
+            raw_data,
+            TR=TR,
+            motion_filter_type="fail",
+            band_stop_min=band_stop_min,
+            band_stop_max=None,
+            motion_filter_order=2,
+        )
 
 
 def test_motion_filtering_notch():
