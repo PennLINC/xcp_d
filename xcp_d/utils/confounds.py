@@ -645,7 +645,7 @@ def motion_regression_filter(
         )
         filtered_data = filtfilt(b, a, data, axis=0, padtype="constant", padlen=data.shape[0] - 1)
 
-    elif motion_filter_type == "notch":  # notch filter
+    else:  # notch filter
         highpass_hz = band_stop_max / 60
         stopband_hz = np.array([lowpass_hz, highpass_hz])
         # Convert stopband to a single notch frequency.
