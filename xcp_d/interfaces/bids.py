@@ -2,25 +2,30 @@
 
 import os
 import shutil
+from copy import deepcopy
 from json import loads
 from pathlib import Path
 
 import nibabel as nb
 import numpy as np
 from bids.layout import Config
+from bids.utils import listify
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     Directory,
+    DynamicTraitedSpec,
     File,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
+from nipype.interfaces.io import add_traits
 from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
 from pkg_resources import resource_filename as pkgrf
 
-from xcp_d.utils.bids import get_entity
+from xcp_d.utils.bids import _get_bidsuris, get_entity
 
 # NOTE: Modified for xcpd's purposes
 xcp_d_spec = loads(Path(pkgrf("xcp_d", "data/xcp_d_bids_config.json")).read_text())
@@ -308,5 +313,97 @@ class CopyAtlas(SimpleInterface):
             shutil.copyfile(in_file, out_file)
 
         self._results["out_file"] = out_file
+
+        return runtime
+
+
+class _BIDSURIInputSpec(DynamicTraitedSpec):
+    dataset_links = traits.Dict(mandatory=True, desc="Dataset links")
+    out_dir = traits.Str(mandatory=True, desc="Output directory")
+
+
+class _BIDSURIOutputSpec(TraitedSpec):
+    out = traits.List(
+        traits.Str,
+        desc="BIDS URI(s) for file",
+    )
+
+
+class BIDSURI(SimpleInterface):
+    """Convert input filenames to BIDS URIs, based on links in the dataset.
+
+    This interface can combine multiple lists of inputs.
+    """
+
+    input_spec = _BIDSURIInputSpec
+    output_spec = _BIDSURIOutputSpec
+
+    def __init__(self, numinputs=0, **inputs):
+        super().__init__(**inputs)
+        self._numinputs = numinputs
+        if numinputs >= 1:
+            input_names = [f"in{i + 1}" for i in range(numinputs)]
+        else:
+            input_names = []
+        add_traits(self.inputs, input_names)
+
+    def _run_interface(self, runtime):
+        inputs = [getattr(self.inputs, f"in{i + 1}") for i in range(self._numinputs)]
+        uris = _get_bidsuris(inputs, self.inputs.dataset_links, self.inputs.out_dir)
+        self._results["out"] = uris
+
+        return runtime
+
+
+class _GenerateMetadataInputSpec(DynamicTraitedSpec):
+    dataset_links = traits.Dict(mandatory=True, desc="Dataset links")
+    out_dir = traits.Str(mandatory=True, desc="Output directory")
+    metadata = traits.Dict(mandatory=False, desc="Metadata dictionary")
+
+
+class _GenerateMetadataOutputSpec(TraitedSpec):
+    metadata = traits.Dict(desc="Updated metadata dictionary")
+
+
+class GenerateMetadata(SimpleInterface):
+    """Create or modify a metadata dictionary.
+
+    This will add kwargs to a metadata dictionary if the dictionary is provided,
+    or create a dictionary from scratch if not.
+    """
+
+    input_spec = _GenerateMetadataInputSpec
+    output_spec = _GenerateMetadataOutputSpec
+
+    def __init__(self, input_names, **inputs):
+        super().__init__(**inputs)
+        add_traits(self.inputs, input_names)
+        add_traits(self.inputs, "input_names")
+        self.inputs.input_names = input_names
+
+    def _run_interface(self, runtime):
+        metadata = self.inputs.metadata
+        if not isdefined(metadata):
+            metadata = {}
+
+        out_metadata = deepcopy(metadata)
+
+        # For inputs that need to be converted to URIs, use the same steps as the BIDSURI interface
+        uri_inputs = ["Sources", "RawSources", "NodeFiles"]
+        for key in self.inputs.input_names:
+            value = getattr(self.inputs, key)
+            if key in uri_inputs:
+                value = _get_bidsuris(value, self.inputs.dataset_links, self.inputs.out_dir)
+
+            if key not in metadata.keys():
+                out_metadata[key] = value
+            elif isinstance(value, list) or isinstance(out_metadata[key], list):
+                # Append the values if they're a list
+                out_metadata[key] = listify(out_metadata[key]) + listify(value)
+            else:
+                # Overwrite the old value
+                out_metadata[key] = value
+
+        self._results["metadata"] = out_metadata
 
         return runtime

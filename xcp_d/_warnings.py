@@ -1,4 +1,5 @@
 """Manipulate Python warnings."""
+
 import logging
 import warnings
 

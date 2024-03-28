@@ -418,6 +418,8 @@ class execution(_Config):
     """Path to a working directory where intermediate results will be available."""
     write_graph = False
     """Write out the computational graph corresponding to the planned preprocessing."""
+    dataset_links = {}
+    """A dictionary of dataset links to be used to track Sources in sidecars."""
 
     _layout = None
 
@@ -431,6 +433,7 @@ class execution(_Config):
         "output_dir",
         "templateflow_home",
         "work_dir",
+        "dataset_links",
     )
 
     @classmethod
@@ -499,6 +502,15 @@ class execution(_Config):
             for acq, filters in cls.bids_filters.items():
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
+
+        dataset_links = {"preprocessed": cls.fmri_dir}
+        if cls.custom_confounds:
+            dataset_links["custom-confounds"] = cls.custom_confounds
+
+        if cls.atlases:
+            dataset_links["atlas"] = cls.xcp_d_dir / "atlases"
+
+        cls.dataset_links = dataset_links
 
         if "all" in cls.debug:
             cls.debug = list(DEBUG_MODES)
