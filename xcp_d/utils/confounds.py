@@ -715,8 +715,9 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
         )
         band_stop_min_adjusted = lowpass_hz_adjusted * 60  # change Hertz back to BPM
         if band_stop_min_adjusted != band_stop_min:
+            nyquist_bpm = nyquist_frequency * 60
             warnings.warn(
-                f"Low-pass filter frequency is above Nyquist frequency ({nyquist_frequency} Hz), "
+                f"Low-pass filter frequency is above Nyquist frequency ({nyquist_bpm} BPM), "
                 f"so it has been changed ({band_stop_min} --> {band_stop_min_adjusted} BPM)."
             )
             is_modified = True

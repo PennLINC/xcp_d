@@ -28,8 +28,8 @@ def test_modify_motion_filter():
     with pytest.warns(
         UserWarning,
         match=re.escape(
-            "Low-pass filter frequency is above Nyquist frequency (0.625 Hz), "
-            "so it has been changed (0.7 --> 0.55 Hz)."
+            "Low-pass filter frequency is above Nyquist frequency (37.5 BPM), "
+            "so it has been changed (42 --> 33.0 BPM)."
         ),
     ):
         band_stop_min2, _, is_modified = confounds._modify_motion_filter(
@@ -38,7 +38,7 @@ def test_modify_motion_filter():
             band_stop_min=42,  # 0.7 Hz > (1.25 / 2)
             band_stop_max=None,
         )
-    assert band_stop_min2 == 0.55
+    assert band_stop_min2 == 33.0
     assert is_modified is True
 
     # Now test band-stop filter
@@ -49,8 +49,8 @@ def test_modify_motion_filter():
     with pytest.warns(
         UserWarning,
         match=re.escape(
-            "One or both filter frequencies are above Nyquist frequency (0.625 Hz), "
-            "so they have been changed (0.7 --> 0.55, 0.75 --> 0.5 Hz)."
+            "One or both filter frequencies are above Nyquist frequency (37.5 BPM), "
+            "so they have been changed (42 --> 33.0, 45 --> 30.0 BPM)."
         ),
     ):
         band_stop_min2, band_stop_max2, is_modified = confounds._modify_motion_filter(
@@ -60,8 +60,8 @@ def test_modify_motion_filter():
             band_stop_max=45,  # 0.7 Hz > (1.25 / 2)
         )
 
-    assert band_stop_min2 == 0.55
-    assert band_stop_max2 == 0.5
+    assert band_stop_min2 == 33.0
+    assert band_stop_max2 == 30.0
     assert is_modified is True
 
     # Using a filter type other than notch or lp should raise an exception.
