@@ -544,7 +544,7 @@ class workflow(_Config):
     """Radius of the head in mm."""
     fd_thresh = 0.3
     """Framewise displacement threshold for censoring."""
-    min_time = 100
+    min_time = 240
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
     bandpass_filter = True
     """Apply a band-pass filter to the data."""
