@@ -190,10 +190,12 @@ def init_postprocess_nifti_wf(
         run_data["confounds"],
     )
 
-    workflow.__desc__ = (
-        f"For each of the {num2words(n_runs)} BOLD runs found per subject "
-        "(across all tasks and sessions), the following post-processing was performed."
-    )
+    workflow.__desc__ = f"""\
+
+For each of the {num2words(n_runs)} BOLD runs found per subject (across all tasks and sessions),
+the following post-processing was performed.
+
+"""
 
     outputnode = pe.Node(
         niu.IdentityInterface(
