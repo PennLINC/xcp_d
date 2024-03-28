@@ -589,10 +589,18 @@ approach.
             "The same filter was applied to the confounds."
         )
 
-    workflow.__desc__ += (
-        " The filtered time series were then denoised using linear regression, "
-        "using only the low-motion volumes. "
-    )
+    if fd_thresh > 0:
+        workflow.__desc__ += (
+            " The resulting time series were then denoised via linear regression, "
+            "in which the low-motion volumes from the BOLD time series and confounds were used to "
+            "calculate parameter estimates, and then the interpolated time series were denoised "
+            "using the low-motion parameter estimates. "
+            "The interpolated time series were then censored using the temporal mask."
+        )
+    else:
+        workflow.__desc__ += (
+            " The resulting time series were then denoised using linear regression. "
+        )
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -630,7 +638,6 @@ approach.
         n_procs=omp_nthreads,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, regress_and_filter_bold, [
             ("preprocessed_bold", "preprocessed_bold"),
@@ -640,10 +647,9 @@ approach.
         (regress_and_filter_bold, outputnode, [
             ("denoised_interpolated_bold", "denoised_interpolated_bold"),
         ]),
-    ])
+    ])  # fmt:skip
     if not cifti:
         workflow.connect([(inputnode, regress_and_filter_bold, [("mask", "mask")])])
-    # fmt:on
 
     censor_interpolated_data = pe.Node(
         Censor(),
@@ -652,7 +658,6 @@ approach.
         omp_nthreads=omp_nthreads,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, censor_interpolated_data, [("temporal_mask", "temporal_mask")]),
         (regress_and_filter_bold, censor_interpolated_data, [
@@ -661,13 +666,11 @@ approach.
         (censor_interpolated_data, outputnode, [
             ("censored_denoised_bold", "censored_denoised_bold"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if smoothing:
         resd_smoothing_wf = init_resd_smoothing_wf()
 
-        # fmt:off
         workflow.connect([
             (censor_interpolated_data, resd_smoothing_wf, [
                 ("censored_denoised_bold", "inputnode.bold_file"),
@@ -675,8 +678,7 @@ approach.
             (resd_smoothing_wf, outputnode, [
                 ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     return workflow
 

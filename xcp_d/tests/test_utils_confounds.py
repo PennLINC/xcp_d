@@ -240,3 +240,11 @@ def test_describe_censoring():
         exact_scans=[],
     )
     assert isinstance(desc, str)
+
+    # no filter, no censoring, exact-scan
+    desc = confounds.describe_censoring(
+        motion_filter_type=None,
+        fd_thresh=0,
+        exact_scans=[100, 150],
+    )
+    assert isinstance(desc, str)
