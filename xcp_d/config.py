@@ -461,10 +461,10 @@ class execution(_Config):
                     )
                 ),
             ]
-            if cls.participant_label:
+            if cls.participant_label and cls.bids_database_dir is None:
                 # Ignore any subjects who aren't the requested ones.
                 ignore_patterns.append(
-                    re.compile(r"sub-(?!" + "|".join(cls.participant_label) + r")\w+")
+                    re.compile(r"sub-(?!(" + "|".join(cls.participant_label) + r")(\b|_))")
                 )
 
             _indexer = BIDSLayoutIndexer(
