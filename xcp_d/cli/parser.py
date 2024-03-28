@@ -19,7 +19,12 @@ def _build_parser():
 
     from packaging.version import Version
 
-    from xcp_d.cli.parser_utils import _float_or_auto, _int_or_auto, _restricted_float
+    from xcp_d.cli.parser_utils import (
+        _float_or_auto,
+        _float_or_auto_or_none,
+        _int_or_auto,
+        _restricted_float,
+    )
     from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases
 
@@ -107,6 +112,21 @@ def _build_parser():
         help="The analysis level for xcp_d. Must be specified as 'participant'.",
     )
 
+    # Required "mode" argument
+    parser.add_argument(
+        "--mode",
+        dest="mode",
+        action="store",
+        choices=["abcdbids", "hbcd", "linc", "none"],
+        required=True,
+        help=(
+            "The mode of operation for XCP-D. "
+            "The mode sets several parameters, with values specific to different pipelines. "
+            "For more information, see the documentation at "
+            "https://xcp-d.readthedocs.io/en/latest/workflows.html#modes"
+        ),
+    )
+
     # optional arguments
     parser.add_argument("--version", action="version", version=verstr)
 
@@ -114,6 +134,7 @@ def _build_parser():
     g_bids.add_argument(
         "--participant-label",
         "--participant_label",
+        dest="participant_label",
         action="store",
         nargs="+",
         help=(
@@ -125,6 +146,7 @@ def _build_parser():
         "-t",
         "--task-id",
         "--task_id",
+        dest="task_id",
         action="store",
         help=(
             "The name of a specific task to postprocess. "
@@ -152,16 +174,25 @@ def _build_parser():
     )
 
     g_surfx = parser.add_argument_group("Options for CIFTI processing")
-    g_surfx.add_argument(
+
+    g_target = g_surfx.add_mutually_exclusive_group(required=False)
+    g_target.add_argument(
         "-s",
         "--cifti",
+        dest="cifti",
         action="store_true",
-        default=False,
+        default="auto",
         help=(
             "Postprocess CIFTI inputs instead of NIfTIs. "
             "A preprocessing pipeline with CIFTI derivatives is required for this flag to work. "
             "This flag is enabled by default for the 'hcp' and 'dcan' input types."
         ),
+    )
+    g_target.add_argument(
+        "--nifti",
+        dest="cifti",
+        action="store_false",
+        help="Postprocess NIfTI inputs instead of CIFTIs.",
     )
 
     g_perfm = parser.add_argument_group("Options for resource management")
@@ -170,6 +201,7 @@ def _build_parser():
         "--nthreads",
         "--n-cpus",
         "--n_cpus",
+        dest="nprocs",
         action="store",
         type=int,
         default=2,
@@ -178,6 +210,7 @@ def _build_parser():
     g_perfm.add_argument(
         "--omp-nthreads",
         "--omp_nthreads",
+        dest="omp_nthreads",
         action="store",
         type=int,
         default=1,
@@ -186,12 +219,14 @@ def _build_parser():
     g_perfm.add_argument(
         "--mem-gb",
         "--mem_gb",
+        dest="mem_gb",
         action="store",
         type=int,
         help="Upper bound memory limit, in gigabytes, for XCP-D processes.",
     )
     g_perfm.add_argument(
         "--low-mem",
+        dest="low_mem",
         action="store_true",
         help="Attempt to reduce memory usage (will increase disk usage in working directory).",
     )
@@ -200,6 +235,7 @@ def _build_parser():
         "--use_plugin",
         "--nipype-plugin-file",
         "--nipype_plugin_file",
+        dest="use_plugin",
         action="store",
         default=None,
         type=IsFile,
@@ -221,6 +257,7 @@ def _build_parser():
     g_outputoption.add_argument(
         "--input-type",
         "--input_type",
+        dest="input_type",
         required=False,
         default="fmriprep",
         choices=["fmriprep", "dcan", "hcp", "nibabies", "ukb"],
@@ -246,12 +283,22 @@ def _build_parser():
             "preprocessing derivatives' confounds file."
         ),
     )
-    g_param.add_argument(
+
+    g_despike = g_param.add_mutually_exclusive_group(required=False)
+    g_despike.add_argument(
         "--despike",
+        dest="despike",
         action="store_true",
-        default=False,
+        default="auto",
         help="Despike the BOLD data before postprocessing.",
     )
+    g_despike.add_argument(
+        "--no-despike",
+        dest="despike",
+        action="store_false",
+        help="Don't despike the BOLD data before postprocessing.",
+    )
+
     g_param.add_argument(
         "-p",
         "--nuisance-regressors",
@@ -282,6 +329,7 @@ def _build_parser():
         "-c",
         "--custom-confounds",
         "--custom_confounds",
+        dest="custom_confounds",
         required=False,
         default=None,
         type=PathExists,
@@ -294,6 +342,7 @@ def _build_parser():
     )
     g_param.add_argument(
         "--smoothing",
+        dest="smoothing",
         default=6,
         action="store",
         type=float,
@@ -303,12 +352,21 @@ def _build_parser():
             "Set to 0 to disable smoothing."
         ),
     )
-    g_param.add_argument(
+
+    g_combine = g_param.add_mutually_exclusive_group(required=False)
+    g_combine.add_argument(
         "-m",
         "--combineruns",
+        dest="combineruns",
         action="store_true",
-        default=False,
+        default="auto",
         help="After denoising, concatenate each derivative from each task across runs.",
+    )
+    g_combine.add_argument(
+        "--no-combineruns",
+        dest="combineruns",
+        action="store_false",
+        help="Do not concatenate each derivative from each task across runs.",
     )
 
     g_motion_filter = parser.add_argument_group(
@@ -323,10 +381,11 @@ def _build_parser():
     g_motion_filter.add_argument(
         "--motion-filter-type",
         "--motion_filter_type",
+        dest="motion_filter_type",
         action="store",
         type=str,
-        default=None,
-        choices=["lp", "notch"],
+        default="none",
+        choices=["lp", "notch", "none"],
         help="""\
 Type of filter to use for removing respiratory artifact from motion regressors.
 If not set, no filter will be applied.
@@ -334,11 +393,13 @@ If not set, no filter will be applied.
 If the filter type is set to "notch", then both ``band-stop-min`` and ``band-stop-max``
 must be defined.
 If the filter type is set to "lp", then only ``band-stop-min`` must be defined.
+If the filter type is set to "none", then no filter will be applied.
 """,
     )
     g_motion_filter.add_argument(
         "--band-stop-min",
         "--band_stop_min",
+        dest="band_stop_min",
         default=None,
         type=float,
         metavar="BPM",
@@ -356,6 +417,7 @@ this parameter is 6 BPM (equivalent to 0.1 Hertz), based on Gratton et al. (2020
     g_motion_filter.add_argument(
         "--band-stop-max",
         "--band_stop_max",
+        dest="band_stop_max",
         default=None,
         type=float,
         metavar="BPM",
@@ -369,6 +431,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_motion_filter.add_argument(
         "--motion-filter-order",
         "--motion_filter_order",
+        dest="motion_filter_order",
         default=4,
         type=int,
         help="Number of filter coeffecients for the motion parameter filter.",
@@ -379,6 +442,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-r",
         "--head-radius",
         "--head_radius",
+        dest="head_radius",
         default=50,
         type=_float_or_auto,
         help=(
@@ -393,6 +457,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-f",
         "--fd-thresh",
         "--fd_thresh",
+        dest="fd_thresh",
         default=0.3,
         type=float,
         help=(
@@ -405,6 +470,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "--min-time",
         "--min_time",
+        dest="min_time",
         required=False,
         default=100,
         type=float,
@@ -439,6 +505,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_temporal_filter.add_argument(
         "--lower-bpf",
         "--lower_bpf",
+        dest="lower_bpf",
         action="store",
         default=0.01,
         type=float,
@@ -451,6 +518,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_temporal_filter.add_argument(
         "--upper-bpf",
         "--upper_bpf",
+        dest="upper_bpf",
         action="store",
         default=0.08,
         type=float,
@@ -463,6 +531,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_temporal_filter.add_argument(
         "--bpf-order",
         "--bpf_order",
+        dest="bpf_order",
         action="store",
         default=2,
         type=int,
@@ -494,6 +563,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_parcellation.add_argument(
         "--min-coverage",
         "--min_coverage",
+        dest="min_coverage",
         required=False,
         default=0.5,
         type=_restricted_float,
@@ -507,10 +577,11 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_parcellation.add_argument(
         "--exact-time",
         "--exact_time",
+        dest="exact_time",
         required=False,
-        default=[],
+        default="auto",
         nargs="+",
-        type=float,
+        type=_float_or_auto_or_none,
         help=(
             "If used, this parameter will produce correlation matrices limited to each requested "
             "amount of time. "
@@ -536,6 +607,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-w",
         "--work-dir",
         "--work_dir",
+        dest="work_dir",
         action="store",
         type=Path,
         default=Path("working_dir"),
@@ -544,6 +616,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "--clean-workdir",
         "--clean_workdir",
+        dest="clean_workdir",
         action="store_true",
         default=False,
         help=(
@@ -554,6 +627,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "--resource-monitor",
         "--resource_monitor",
+        dest="resource_monitor",
         action="store_true",
         default=False,
         help="Enable Nipype's resource monitoring to keep track of memory and CPU usage.",
@@ -561,6 +635,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "--config-file",
         "--config_file",
+        dest="config_file",
         action="store",
         metavar="FILE",
         help=(
@@ -570,24 +645,28 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_other.add_argument(
         "--write-graph",
+        dest="write_graph",
         action="store_true",
         default=False,
         help="Write workflow graph.",
     )
     g_other.add_argument(
         "--stop-on-first-crash",
+        dest="stop_on_first_crash",
         action="store_true",
         default=False,
         help="Force stopping on first crash, even if a work directory was specified.",
     )
     g_other.add_argument(
         "--notrack",
+        dest="notrack",
         action="store_true",
         default=False,
         help="Opt out of sending tracking information.",
     )
     g_other.add_argument(
         "--debug",
+        dest="debug",
         action="store",
         nargs="+",
         choices=config.DEBUG_MODES + ("all",),
@@ -595,6 +674,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_other.add_argument(
         "--fs-license-file",
+        dest="fs_license_file",
         metavar="FILE",
         type=PathExists,
         help=(
@@ -604,6 +684,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
     g_other.add_argument(
         "--md-only-boilerplate",
+        dest="md_only_boilerplate",
         action="store_true",
         default=False,
         help="Skip generation of HTML and LaTeX formatted citation with pandoc",
@@ -611,12 +692,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_other.add_argument(
         "--boilerplate-only",
         "--boilerplate_only",
+        dest="boilerplate_only",
         action="store_true",
         default=False,
         help="generate boilerplate only",
     )
     g_other.add_argument(
         "--reports-only",
+        dest="reports_only",
         action="store_true",
         default=False,
         help=(
@@ -626,12 +709,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     )
 
     g_experimental = parser.add_argument_group("Experimental options")
-    g_experimental.add_argument(
+
+    g_surface_warp = g_experimental.add_mutually_exclusive_group(required=False)
+    g_surface_warp.add_argument(
         "--warp-surfaces-native2std",
         "--warp_surfaces_native2std",
         action="store_true",
         dest="process_surfaces",
-        default=False,
+        default="auto",
         help="""\
 If used, a workflow will be run to warp native-space (``fsnative``) reconstructed cortical
 surfaces (``surf.gii`` files) produced by Freesurfer into standard (``fsLR``) space.
@@ -641,12 +726,31 @@ By default, this workflow is disabled.
 **IMPORTANT**: This parameter can only be run if the --cifti flag is also enabled.
 """,
     )
-    g_experimental.add_argument(
+    g_surface_warp.add_argument(
+        "--no-warp-surfaces-native2std",
+        "--no_warp_surfaces_native2std",
+        action="store_false",
+        dest="process_surfaces",
+        help=(
+            "If used, the workflow to warp native-space surfaces to standard space will be "
+            "skipped."
+        ),
+    )
+
+    g_dcan_qc = g_experimental.add_mutually_exclusive_group(required=False)
+    g_dcan_qc.add_argument(
+        "--dcan-qc",
+        "--dcan_qc",
+        action="store_true",
+        dest="dcan_qc",
+        default="auto",
+        help="Run DCAN QC.",
+    )
+    g_dcan_qc.add_argument(
         "--skip-dcan-qc",
         "--skip_dcan_qc",
         action="store_false",
         dest="dcan_qc",
-        default=True,
         help="Do not run DCAN QC.",
     )
 
@@ -845,6 +949,62 @@ def _validate_parameters(opts, build_log, parser):
     if opts.custom_confounds:
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
+    # Define parameters based on the mode
+    if isinstance(opts.exact_time, list) and isinstance(opts.exact_time[0], str):
+        opts.exact_time = opts.exact_time[0]
+
+    if opts.exact_time == "none":
+        opts.exact_time = []
+
+    if opts.mode == "abcdbids":
+        opts.despike = False if opts.despike == "auto" else opts.despike
+        opts.cifti = True if opts.cifti == "auto" else opts.cifti
+        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.dcan_qc = True if opts.dcan_qc == "auto" else opts.dcan_qc
+        opts.exact_time = [300, 480] if opts.exact_time == "auto" else opts.exact_time
+        opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
+    elif opts.mode == "hbcd":
+        opts.despike = False if opts.despike == "auto" else opts.despike
+        opts.cifti = True if opts.cifti == "auto" else opts.cifti
+        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.dcan_qc = True if opts.dcan_qc == "auto" else opts.dcan_qc
+        opts.exact_time = [300, 480] if opts.exact_time == "auto" else opts.exact_time
+        opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
+    elif opts.mode == "linc":
+        opts.despike = False if opts.despike == "auto" else opts.despike
+        opts.cifti = False if opts.cifti == "auto" else opts.cifti
+        opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.dcan_qc = False if opts.dcan_qc == "auto" else opts.dcan_qc
+        opts.exact_time = [] if opts.exact_time == "auto" else opts.exact_time
+        opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
+    else:
+        # Default all extra options to False
+        bad_params = []
+        if opts.despike == "auto":
+            bad_params.append("--despike or --no-despike")
+
+        if opts.cifti == "auto":
+            bad_params.append("--cifti or --nifti")
+
+        if opts.process_surfaces == "auto":
+            bad_params.append("--warp-surfaces-native2std or --no-warp-surfaces-native2std")
+
+        if opts.dcan_qc == "auto":
+            bad_params.append("--dcan-qc or --skip-dcan-qc")
+
+        if opts.combineruns == "auto":
+            bad_params.append("--combineruns or --no-combineruns")
+
+        if bad_params:
+            bad_param_str = "\n\t".join(bad_params)
+            parser.error(
+                f"The following parameters are required with the selected mode ({opts.mode}):\n"
+                f"\t{bad_param_str}."
+            )
+
+        # Default for exact-time is None
+        opts.exact_time = [] if opts.exact_time == "auto" else opts.exact_time
+
     # Bandpass filter parameters
     if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
         opts.bandpass_filter = False
@@ -871,6 +1031,9 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_time = 0
 
     # Motion filtering parameters
+    if opts.motion_filter_type == "none":
+        opts.motion_filter_type = None
+
     if opts.motion_filter_type == "notch":
         if not (opts.band_stop_min and opts.band_stop_max):
             parser.error(

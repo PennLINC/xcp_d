@@ -518,6 +518,8 @@ del _oc_policy
 class workflow(_Config):
     """Configure the particular execution graph of this workflow."""
 
+    mode = None
+    """Study- or pipeline-specific mode used to set other parameters."""
     cifti = False
     """Postprocess CIFTI inputs instead of NIfTIs."""
     dummy_scans = 0
