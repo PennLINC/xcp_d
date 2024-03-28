@@ -745,8 +745,7 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
         stopband_adjusted = stopband_hz_adjusted * 60  # change Hertz back to BPM
         if not np.array_equal(stopband_adjusted, stopband):
             warnings.warn(
-                "One or both filter frequencies are above Nyquist frequency "
-                f"({nyquist_frequency} Hz), "
+                f"One or both filter frequencies are above Nyquist frequency ({nyquist_bpm} BPM), "
                 "so they have been changed "
                 f"({stopband[0]} --> {stopband_adjusted[0]}, "
                 f"{stopband[1]} --> {stopband_adjusted[1]} BPM)."
