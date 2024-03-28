@@ -22,7 +22,7 @@ def test_modify_motion_filter():
             TR=TR,
         )
     assert band_stop_min2 == band_stop_min
-    assert is_modified is True
+    assert is_modified is False
 
     # Use freq above Nyquist, and function will automatically modify the filter.
     with pytest.warns(
@@ -104,6 +104,7 @@ def test_motion_filtering_lp():
         TR=TR,
         motion_filter_type="lp",
         band_stop_min=band_stop_min,
+        band_stop_max=None,
         motion_filter_order=2,
     )
 
