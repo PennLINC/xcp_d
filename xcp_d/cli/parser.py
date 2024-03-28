@@ -150,6 +150,16 @@ def _build_parser():
             "filtering-inputs-with-bids-filter-files"
         ),
     )
+    g_bids.add_argument(
+        "--bids-database-dir",
+        metavar="PATH",
+        type=Path,
+        help=(
+            "Path to a PyBIDS database folder, for faster indexing "
+            "(especially useful for large datasets). "
+            "Will be created if not present."
+        ),
+    )
 
     g_surfx = parser.add_argument_group("Options for CIFTI processing")
     g_surfx.add_argument(
