@@ -172,6 +172,16 @@ def _build_parser():
             "filtering-inputs-with-bids-filter-files"
         ),
     )
+    g_bids.add_argument(
+        "--bids-database-dir",
+        metavar="PATH",
+        type=Path,
+        help=(
+            "Path to a PyBIDS database folder, for faster indexing "
+            "(especially useful for large datasets). "
+            "Will be created if not present."
+        ),
+    )
 
     g_surfx = parser.add_argument_group("Options for CIFTI processing")
 
@@ -472,16 +482,18 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--min_time",
         dest="min_time",
         required=False,
-        default=100,
+        default=240,
         type=float,
-        help=(
-            "Post-scrubbing threshold to apply to individual runs in the dataset. "
-            "This threshold determines the minimum amount of time, in seconds, "
-            "needed to post-process a given run, once high-motion outlier volumes are removed. "
-            "This will have no impact if scrubbing is disabled "
-            "(i.e., if the FD threshold is zero or negative). "
-            "This parameter can be disabled by providing a zero or a negative value."
-        ),
+        help="""\
+Post-scrubbing threshold to apply to individual runs in the dataset.
+This threshold determines the minimum amount of time, in seconds,
+needed to post-process a given run, once high-motion outlier volumes are removed.
+This will have no impact if scrubbing is disabled
+(i.e., if the FD threshold is zero or negative).
+This parameter can be disabled by providing a zero or a negative value.
+
+The default is 240 (4 minutes).
+""",
     )
 
     g_temporal_filter = parser.add_argument_group(

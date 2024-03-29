@@ -54,6 +54,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--skip-parcellation",
+        "--min-time=100",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -94,6 +95,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
+        "--min-time=100",
         "--exact-time",
         "80",
         "200",
@@ -138,6 +140,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         "--skip-dcan-qc",
         "--min-coverage=0.1",
         "--random-seed=8675309",
+        "--min-time=100",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -245,6 +248,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--atlases",
         "4S156Parcels",
         "Glasser",
+        "--min-time=100",
     ]
     _run_and_generate(
         test_name=test_name,

@@ -461,10 +461,10 @@ class execution(_Config):
                     )
                 ),
             ]
-            if cls.participant_label:
+            if cls.participant_label and cls.bids_database_dir is None:
                 # Ignore any subjects who aren't the requested ones.
                 ignore_patterns.append(
-                    re.compile(r"sub-(?!" + "|".join(cls.participant_label) + r")\w+")
+                    re.compile(r"sub-(?!(" + "|".join(cls.participant_label) + r")(\b|_))")
                 )
 
             _indexer = BIDSLayoutIndexer(
@@ -546,7 +546,7 @@ class workflow(_Config):
     """Radius of the head in mm."""
     fd_thresh = 0.3
     """Framewise displacement threshold for censoring."""
-    min_time = 100
+    min_time = 240
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
     bandpass_filter = True
     """Apply a band-pass filter to the data."""

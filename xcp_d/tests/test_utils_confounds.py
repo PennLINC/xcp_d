@@ -9,6 +9,72 @@ from scipy import signal
 from xcp_d.utils import confounds
 
 
+def test_modify_motion_filter():
+    """Run a simple test of the motion filter modification function."""
+    band_stop_min = 6
+    TR = 0.8
+
+    with pytest.warns(match="The parameter 'band_stop_max' will be ignored."):
+        band_stop_min2, _, is_modified = confounds._modify_motion_filter(
+            motion_filter_type="lp",
+            band_stop_min=band_stop_min,
+            band_stop_max=18,
+            TR=TR,
+        )
+    assert band_stop_min2 == band_stop_min
+    assert is_modified is False
+
+    # Use freq above Nyquist, and function will automatically modify the filter.
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Low-pass filter frequency is above Nyquist frequency (37.5 BPM), "
+            "so it has been changed (42 --> 33.0 BPM)."
+        ),
+    ):
+        band_stop_min2, _, is_modified = confounds._modify_motion_filter(
+            TR=TR,  # 1.25 Hz
+            motion_filter_type="lp",
+            band_stop_min=42,  # 0.7 Hz > (1.25 / 2)
+            band_stop_max=None,
+        )
+    assert band_stop_min2 == 33.0
+    assert is_modified is True
+
+    # Now test band-stop filter
+    # Use band above Nyquist, and function will automatically modify the filter.
+    # NOTE: In this case, the min and max end up flipped for some reason.
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "One or both filter frequencies are above Nyquist frequency (37.5 BPM), "
+            "so they have been changed (42 --> 33.0, 45 --> 30.0 BPM)."
+        ),
+    ):
+        band_stop_min2, band_stop_max2, is_modified = confounds._modify_motion_filter(
+            TR=TR,
+            motion_filter_type="notch",
+            band_stop_min=42,
+            band_stop_max=45,  # 0.7 Hz > (1.25 / 2)
+        )
+
+    assert band_stop_min2 == 33.0
+    assert band_stop_max2 == 30.0
+    assert is_modified is True
+
+    # Notch without modification
+    band_stop_min2, band_stop_max2, is_modified = confounds._modify_motion_filter(
+        TR=TR,
+        motion_filter_type="notch",
+        band_stop_min=30,
+        band_stop_max=33,
+    )
+
+    assert band_stop_min2 == 30
+    assert band_stop_max2 == 33
+    assert is_modified is False
+
+
 def test_motion_filtering_lp():
     """Run low-pass filter on toy data, compare to simplified results."""
     raw_data = np.random.random(500)
@@ -34,32 +100,25 @@ def test_motion_filtering_lp():
 
     # Confirm the LP filter runs with reasonable parameters
     raw_data = raw_data[:, None]  # add singleton row dimension
-    with pytest.warns(match="The parameter 'band_stop_max' will be ignored."):
-        lowpass_data_test = confounds.motion_regression_filter(
-            raw_data,
-            TR=TR,
-            motion_filter_type="lp",
-            band_stop_min=band_stop_min,
-            band_stop_max=18,
-            motion_filter_order=2,
-        )
+    lowpass_data_test = confounds.motion_regression_filter(
+        raw_data,
+        TR=TR,
+        motion_filter_type="lp",
+        band_stop_min=band_stop_min,
+        band_stop_max=None,
+        motion_filter_order=2,
+    )
 
     # What's the difference from the verified data?
     assert np.allclose(np.squeeze(lowpass_data_test), lowpass_data_true)
 
-    # Use freq above Nyquist, and function will automatically modify the filter.
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "Low-pass filter frequency is above Nyquist frequency (0.625 Hz), "
-            "so it has been changed (0.7 --> 0.55 Hz)."
-        ),
-    ):
+    # Using a filter type other than notch or lp should raise an exception.
+    with pytest.raises(ValueError, match="Motion filter type 'fail' not supported."):
         confounds.motion_regression_filter(
             raw_data,
-            TR=TR,  # 1.25 Hz
-            motion_filter_type="lp",
-            band_stop_min=42,  # 0.7 Hz > (1.25 / 2)
+            TR=TR,
+            motion_filter_type="fail",
+            band_stop_min=band_stop_min,
             band_stop_max=None,
             motion_filter_order=2,
         )
@@ -100,31 +159,92 @@ def test_motion_filtering_notch():
     notch_data_test = np.squeeze(notch_data_test)
     assert np.allclose(notch_data_test, notch_data_true)
 
-    # Use band above Nyquist, and function will automatically modify the filter.
-    # NOTE: In this case, the min and max end up flipped for some reason.
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "One or both filter frequencies are above Nyquist frequency (0.625 Hz), "
-            "so they have been changed (0.7 --> 0.55, 0.75 --> 0.5 Hz)."
-        ),
-    ):
-        confounds.motion_regression_filter(
-            raw_data,
-            TR=TR,
-            motion_filter_type="notch",
-            band_stop_min=42,
-            band_stop_max=45,  # 0.7 Hz > (1.25 / 2)
-            motion_filter_order=2,
-        )
 
-    # Using a filter type other than notch or lp should raise an exception.
-    with pytest.raises(ValueError, match="Motion filter type 'fail' not supported."):
-        confounds.motion_regression_filter(
-            raw_data,
-            TR=TR,
-            motion_filter_type="fail",
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            motion_filter_order=2,
-        )
+def test_describe_motion_parameters():
+    """Test confounds.describe_motion_parameters."""
+    # notch with no modification
+    desc = confounds.describe_motion_parameters(
+        motion_filter_type="notch",
+        motion_filter_order=2,
+        band_stop_min=12,
+        band_stop_max=20,
+        head_radius=50,
+        TR=0.8,
+    )
+    assert isinstance(desc, str)
+
+    # notch with modification
+    desc = confounds.describe_motion_parameters(
+        motion_filter_type="notch",
+        motion_filter_order=2,
+        band_stop_min=42,
+        band_stop_max=45,
+        head_radius=50,
+        TR=0.8,
+    )
+    assert isinstance(desc, str)
+
+    # lowpass with no modification
+    desc = confounds.describe_motion_parameters(
+        motion_filter_type="lp",
+        motion_filter_order=2,
+        band_stop_min=12,
+        band_stop_max=None,
+        head_radius=50,
+        TR=0.8,
+    )
+    assert isinstance(desc, str)
+
+    # notch with modification
+    desc = confounds.describe_motion_parameters(
+        motion_filter_type="lp",
+        motion_filter_order=2,
+        band_stop_min=42,
+        band_stop_max=None,
+        head_radius=50,
+        TR=0.8,
+    )
+    assert isinstance(desc, str)
+
+
+def test_describe_censoring():
+    """Test confounds.describe_censoring."""
+    # notch filter, no censoring, no exact-scan
+    desc = confounds.describe_censoring(
+        motion_filter_type="notch",
+        fd_thresh=0,
+        exact_scans=[],
+    )
+    assert isinstance(desc, str)
+
+    # notch filter, censoring, no exact-scan
+    desc = confounds.describe_censoring(
+        motion_filter_type="notch",
+        fd_thresh=0.1,
+        exact_scans=[],
+    )
+    assert isinstance(desc, str)
+
+    # notch filter, censoring, exact-scan
+    desc = confounds.describe_censoring(
+        motion_filter_type="notch",
+        fd_thresh=0.1,
+        exact_scans=[100, 150],
+    )
+    assert isinstance(desc, str)
+
+    # no filter, no censoring, no exact-scan
+    desc = confounds.describe_censoring(
+        motion_filter_type=None,
+        fd_thresh=0,
+        exact_scans=[],
+    )
+    assert isinstance(desc, str)
+
+    # no filter, no censoring, exact-scan
+    desc = confounds.describe_censoring(
+        motion_filter_type=None,
+        fd_thresh=0,
+        exact_scans=[100, 150],
+    )
+    assert isinstance(desc, str)
