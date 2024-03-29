@@ -14,7 +14,12 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.confounds import _infer_dummy_scans, load_confound_matrix, load_motion
+from xcp_d.utils.confounds import (
+    _infer_dummy_scans,
+    _modify_motion_filter,
+    load_confound_matrix,
+    load_motion,
+)
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd
 
@@ -452,13 +457,20 @@ class GenerateConfounds(SimpleInterface):
 
     def _run_interface(self, runtime):
         fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
+            motion_filter_type=self.inputs.motion_filter_type,
+            band_stop_min=self.inputs.band_stop_min,
+            band_stop_max=self.inputs.band_stop_max,
+            TR=self.inputs.TR,
+        )
+
         motion_df = load_motion(
             fmriprep_confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
-            band_stop_min=self.inputs.band_stop_min,
-            band_stop_max=self.inputs.band_stop_max,
+            band_stop_min=band_stop_min_adjusted,
+            band_stop_max=band_stop_max_adjusted,
         )
 
         # Add in framewise displacement
@@ -504,7 +516,52 @@ class GenerateConfounds(SimpleInterface):
             custom_confounds=self.inputs.custom_confounds_file,
         )
 
+        # Compile motion metadata from confounds metadata, adding in filtering info
+        motion_metadata = {}
+        for col in motion_df.columns.tolist():
+            col_metadata = confounds_metadata.get(col, {})
+            if col == "framewise_displacement":
+                col_metadata["Description"] = (
+                    "Framewise displacement calculated according to Power et al. (2012)."
+                )
+                col_metadata["Units"] = "mm"
+                col_metadata["HeadRadius"] = self.inputs.head_radius
+
+            if self.inputs.motion_filter_type == "lp":
+                filters = col_metadata.get("SoftwareFilters", {})
+                filters["Butterworth low-pass filter"] = {
+                    "cutoff": band_stop_min_adjusted / 60,
+                    "order": self.inputs.motion_filter_order,
+                    "cutoff units": "Hz",
+                    "function": "scipy.signal.filtfilt",
+                }
+                col_metadata["SoftwareFilters"] = filters
+
+            elif self.inputs.motion_filter_type == "notch":
+                filters = col_metadata.get("SoftwareFilters", {})
+                filters["IIR notch digital filter"] = {
+                    "cutoff": [
+                        band_stop_max_adjusted / 60,
+                        band_stop_min_adjusted / 60,
+                    ],
+                    "order": self.inputs.motion_filter_order,
+                    "cutoff units": "Hz",
+                    "function": "scipy.signal.filtfilt",
+                }
+                col_metadata["SoftwareFilters"] = filters
+
+            motion_metadata[col] = col_metadata
+
+        self._results["motion_metadata"] = motion_metadata
+
         if confounds_df is not None:
+            # Update confounds metadata with modified motion metadata
+            for col in motion_df.columns.tolist():
+                if col in confounds_df.columns:
+                    base_metadata = confounds_metadata.get(col, {})
+                    base_metadata.update(motion_metadata[col])
+                    confounds_metadata[col] = base_metadata
+
             # Orthogonalize full nuisance regressors w.r.t. any signal regressors
             signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
             if signal_columns:
@@ -589,28 +646,6 @@ class GenerateConfounds(SimpleInterface):
             header=True,
             sep="\t",
         )
-
-        # Compile metadata to pass along to outputs.
-        motion_metadata = {
-            "framewise_displacement": {
-                "Description": (
-                    "Framewise displacement calculated according to Power et al. (2012)."
-                ),
-                "Units": "mm",
-                "HeadRadius": self.inputs.head_radius,
-            }
-        }
-        if self.inputs.motion_filter_type == "lp":
-            motion_metadata["LowpassFilter"] = self.inputs.band_stop_max
-            motion_metadata["LowpassFilterOrder"] = self.inputs.motion_filter_order
-        elif self.inputs.motion_filter_type == "notch":
-            motion_metadata["BandstopFilter"] = [
-                self.inputs.band_stop_min,
-                self.inputs.band_stop_max,
-            ]
-            motion_metadata["BandstopFilterOrder"] = self.inputs.motion_filter_order
-
-        self._results["motion_metadata"] = motion_metadata
 
         outliers_metadata = {
             "framewise_displacement": {

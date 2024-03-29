@@ -20,7 +20,11 @@ from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
 from xcp_d.interfaces.plotting import CensoringPlot
 from xcp_d.interfaces.restingstate import DespikePatch
 from xcp_d.interfaces.workbench import CiftiConvert, FixCiftiIntent
-from xcp_d.utils.confounds import describe_censoring, describe_regression
+from xcp_d.utils.confounds import (
+    describe_censoring,
+    describe_motion_parameters,
+    describe_regression,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
 from xcp_d.utils.utils import fwhm2sigma
@@ -123,13 +127,18 @@ def init_prepare_confounds_wf(
             "regressors were discarded as non-steady-state volumes, or 'dummy scans'. "
         )
 
+    motion_description = describe_motion_parameters(
+        motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        head_radius=head_radius,
+        TR=TR,
+    )
+
     if (fd_thresh > 0) or exact_scans:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
-            motion_filter_order=motion_filter_order,
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            head_radius=head_radius,
             fd_thresh=fd_thresh,
             exact_scans=exact_scans,
         )
@@ -142,7 +151,9 @@ def init_prepare_confounds_wf(
         motion_filter_type=motion_filter_type,
     )
 
-    workflow.__desc__ = f" {dummy_scans_str}{censoring_description} {confounds_description}"
+    workflow.__desc__ = (
+        f" {dummy_scans_str}{motion_description} {censoring_description} {confounds_description}"
+    )
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -533,6 +544,7 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     """
     workflow = Workflow(name=name)
 
+    fd_thresh = config.workflow.fd_thresh
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
     bpf_order = config.workflow.bpf_order
@@ -542,10 +554,20 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
-    workflow.__desc__ = (
-        "Nuisance regressors were regressed from the BOLD data using linear regression, "
-        "as implemented in *Nilearn*."
-    )
+    workflow.__desc__ = """\
+
+Nuisance regressors were regressed from the BOLD data using a denoising method based on *Nilearn*'s
+approach.
+"""
+    if fd_thresh > 0:
+        workflow.__desc__ += (
+            "Any volumes censored earlier in the workflow were first cubic spline interpolated in "
+            "the BOLD data. "
+            "Outlier volumes at the beginning or end of the time series were replaced with the "
+            "closest low-motion volume's values, "
+            "as cubic spline interpolation can produce extreme extrapolations. "
+        )
+
     if bandpass_filter:
         if low_pass > 0 and high_pass > 0:
             btype = "band-pass"
@@ -561,13 +583,23 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
             filt_input = f"{low_pass}"
 
         workflow.__desc__ += (
-            " Any volumes censored earlier in the workflow were then interpolated in the residual "
-            "time series produced by the regression. "
-            f"The interpolated timeseries were then {btype} filtered using a(n) "
+            f"The timeseries were {btype} filtered using a(n) "
             f"{num2words(bpf_order, ordinal=True)}-order Butterworth filter, "
             f"in order to retain signals {preposition} {filt_input} Hz. "
-            "The filtered, interpolated time series were then re-censored to remove high-motion "
-            "outlier volumes."
+            "The same filter was applied to the confounds."
+        )
+
+    if fd_thresh > 0:
+        workflow.__desc__ += (
+            " The resulting time series were then denoised via linear regression, "
+            "in which the low-motion volumes from the BOLD time series and confounds were used to "
+            "calculate parameter estimates, and then the interpolated time series were denoised "
+            "using the low-motion parameter estimates. "
+            "The interpolated time series were then censored using the temporal mask."
+        )
+    else:
+        workflow.__desc__ += (
+            " The resulting time series were then denoised using linear regression. "
         )
 
     inputnode = pe.Node(
@@ -606,7 +638,6 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
         n_procs=omp_nthreads,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, regress_and_filter_bold, [
             ("preprocessed_bold", "preprocessed_bold"),
@@ -616,10 +647,9 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
         (regress_and_filter_bold, outputnode, [
             ("denoised_interpolated_bold", "denoised_interpolated_bold"),
         ]),
-    ])
+    ])  # fmt:skip
     if not cifti:
         workflow.connect([(inputnode, regress_and_filter_bold, [("mask", "mask")])])
-    # fmt:on
 
     censor_interpolated_data = pe.Node(
         Censor(),
@@ -628,7 +658,6 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
         omp_nthreads=omp_nthreads,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, censor_interpolated_data, [("temporal_mask", "temporal_mask")]),
         (regress_and_filter_bold, censor_interpolated_data, [
@@ -637,13 +666,11 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
         (censor_interpolated_data, outputnode, [
             ("censored_denoised_bold", "censored_denoised_bold"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if smoothing:
         resd_smoothing_wf = init_resd_smoothing_wf()
 
-        # fmt:off
         workflow.connect([
             (censor_interpolated_data, resd_smoothing_wf, [
                 ("censored_denoised_bold", "inputnode.bold_file"),
@@ -651,8 +678,7 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
             (resd_smoothing_wf, outputnode, [
                 ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     return workflow
 
