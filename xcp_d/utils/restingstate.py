@@ -23,36 +23,42 @@ def compute_2d_reho(datat, adjacency_matrix):
 
     Returns
     -------
-    KCC : numpy.ndarray of shape (V,)
+    kcc : numpy.ndarray of shape (V,)
         ReHo values.
 
     Notes
     -----
     From https://www.sciencedirect.com/science/article/pii/S0165178119305384#bib0045.
     """
-    KCC = np.zeros(datat.shape[0])  # a zero for each voxel
+    n_vertices = datat.shape[0]
+    kcc = np.zeros(n_vertices)
 
-    for i in range(datat.shape[0]):  # loop through each voxel
-        neigbor_index = np.where(adjacency_matrix[i, :] > 0)[0]  # the index of 4 neightbouts
-        nn = np.hstack((neigbor_index, np.array(i)))  # stack those indexes with voxel number
-        neidata = datat[nn, :]  # pull out data for relevant voxels
+    for i_vertex in range(n_vertices):  # loop through each voxel
+        neighbor_idx = np.where(adjacency_matrix[i_vertex, :] > 0)[0]  # the index of 4 neighbors
+        nn = np.hstack((neighbor_idx, np.array(i_vertex)))  # stack those indexes with voxel number
 
-        rankeddata = np.zeros_like(neidata)  # TODO: Fix typos #create 0s in same shape
+        neighbor_data = datat[nn, :]  # pull out data for relevant voxels
+
+        rankeddata = np.zeros_like(neighbor_data)
         # pull out index of voxel, timepoint
-        neigbor, timepoint = neidata.shape[0], neidata.shape[1]
+        neighbor, timepoint = neighbor_data.shape[0], neighbor_data.shape[1]
 
-        for j in range(neidata.shape[0]):  # loop through each neighbour
-            rankeddata[j, :] = rankdata(neidata[j, :])  # assign ranks to timepoints for each voxel
+        for j_neighbor in range(neighbor_data.shape[0]):
+            # assign ranks to timepoints for each voxel
+            rankeddata[j_neighbor, :] = rankdata(neighbor_data[j_neighbor, :])
+
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
-        # KC is the sum of the squared rankmean minus the timepoints into
+        # kc is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared
-        KC = np.sum(np.power(rankmean, 2)) - timepoint * np.power(np.mean(rankmean), 2)
-        # square number of neighbours, multiply by (cubed timepoint - timepoint)
-        denom = np.power(neigbor, 2) * (np.power(timepoint, 3) - timepoint)
-        # the voxel value is 12*KC divided by denom
-        KCC[i] = 12 * KC / (denom)
+        kc = np.sum(np.power(rankmean, 2)) - timepoint * np.power(np.mean(rankmean), 2)
 
-    return KCC
+        # square number of neighbours, multiply by (cubed timepoint - timepoint)
+        denom = np.power(neighbor, 2) * (np.power(timepoint, 3) - timepoint)
+
+        # the voxel value is 12*kc divided by denom
+        kcc[i_vertex] = 12 * kc / (denom)
+
+    return kcc
 
 
 def mesh_adjacency(hemi):
@@ -69,24 +75,23 @@ def mesh_adjacency(hemi):
     numpy.ndarray
         Adjacency matrix.
     """
-    surf = str(
-        get_template("fsLR", space="fsaverage", hemi=hemi, suffix="sphere", density="32k")
-    )  # Get relevant template
-
+    surf = str(get_template("fsLR", space="fsaverage", hemi=hemi, suffix="sphere", density="32k"))
     surf = nb.load(surf)  # load via nibabel
-    #  Aggregate GIFTI data arrays into an ndarray or tuple of ndarray
-    # select the arrays in a specific order
+
+    # Aggregate GIFTI data arrays into an ndarray or tuple of ndarray select the arrays in a
+    # specific order
     vertices_faces = surf.agg_data(("pointset", "triangle"))
-    vertices = vertices_faces[0]  # the first array of the tuple
-    faces = vertices_faces[1]  # the second array in the tuples
+    vertices = vertices_faces[0]
+    faces = vertices_faces[1]
     # create an array of 0s = voxel*voxel
     data_array = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
 
-    for i in range(1, len(faces)):  # looping thorugh each value in faces
-        data_array[faces[i, 0], faces[i, 2]] = 1  # use to index into data_array and
+    for i_face in range(1, len(faces)):  # looping thorugh each value in faces
+        face = faces[i_face, :]  # pull out the face
+        data_array[face[0], face[2]] = 1  # use to index into data_array and
         # turn select values to 1
-        data_array[faces[i, 1], faces[i, 1]] = 1
-        data_array[faces[i, 2], faces[i, 0]] = 1
+        data_array[face[1], face[1]] = 1
+        data_array[face[2], face[0]] = 1
 
     return data_array + data_array.T  # transpose data_array and add it to itself
 
