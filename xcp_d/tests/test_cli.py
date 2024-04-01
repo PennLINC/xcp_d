@@ -55,6 +55,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--band-stop-min=6",
         "--skip-parcellation",
         "--min-time=100",
+        "--combineruns",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -86,6 +87,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=acompcor_gsr",
+        "--no_warp_surfaces_native2std",
         "--despike",
         "--head_radius=40",
         "--smoothing=6",
@@ -304,6 +306,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--min-time=20",
         "--dummy-scans=1",
         f"--custom_confounds={custom_confounds_dir}",
+        "--skip-dcan-qc",
     ]
 
     _run_and_generate(

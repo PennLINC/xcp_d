@@ -45,6 +45,7 @@ def base_opts():
         "fs_license_file": Path(os.environ["FS_LICENSE"]),
         "atlases": ["Glasser"],
         "custom_confounds": None,
+        "exact_time": [],
     }
     opts = FakeOptions(**opts_dict)
     return opts
