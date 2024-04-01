@@ -306,7 +306,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--min-time=20",
         "--dummy-scans=1",
         f"--custom_confounds={custom_confounds_dir}",
-        "--skip-dcan-qc",
+        "--dcan-qc",
     ]
 
     _run_and_generate(
