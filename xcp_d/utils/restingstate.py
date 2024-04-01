@@ -83,13 +83,11 @@ def mesh_adjacency(hemi):
     vertices_faces = surf.agg_data(("pointset", "triangle"))
     vertices = vertices_faces[0]
     faces = vertices_faces[1]
-    # create an array of 0s = voxel*voxel
-    data_array = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
 
-    for i_face in range(1, len(faces)):  # looping thorugh each value in faces
+    data_array = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
+    for i_face in range(1, len(faces)):
         face = faces[i_face, :]  # pull out the face
-        data_array[face[0], face[2]] = 1  # use to index into data_array and
-        # turn select values to 1
+        data_array[face[0], face[2]] = 1
         data_array[face[1], face[1]] = 1
         data_array[face[2], face[0]] = 1
 
