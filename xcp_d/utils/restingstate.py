@@ -35,9 +35,9 @@ def compute_2d_reho(datat, adjacency_matrix):
 
     for i_vertex in range(n_vertices):  # loop through each voxel
         neighbor_idx = np.where(adjacency_matrix[i_vertex, :] > 0)[0]  # the index of 4 neighbors
-        nn = np.hstack((neighbor_idx, np.array(i_vertex)))  # stack those indexes with voxel number
+        neighborhood_idx = np.hstack((neighbor_idx, np.array(i_vertex)))
 
-        neighbor_data = datat[nn, :]  # pull out data for relevant voxels
+        neighbor_data = datat[neighborhood_idx, :]  # pull out data for relevant voxels
 
         rankeddata = np.zeros_like(neighbor_data)
         # pull out index of voxel, timepoint
