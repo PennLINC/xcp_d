@@ -46,6 +46,7 @@ def base_opts():
         "atlases": ["Glasser"],
         "custom_confounds": None,
         "exact_time": "none",
+        "despike": False,
     }
     opts = FakeOptions(**opts_dict)
     return opts
