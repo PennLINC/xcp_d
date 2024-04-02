@@ -34,26 +34,26 @@ def compute_2d_reho(datat, adjacency_matrix):
     kcc = np.zeros(n_vertices)
 
     for i_vertex in range(n_vertices):  # loop through each voxel
-        neighbor_idx = np.where(adjacency_matrix[i_vertex, :] > 0)[0]  # the index of 4 neighbors
+        neighbor_idx = np.where(adjacency_matrix[i_vertex, :])[0]  # the index of neighbors
         neighborhood_idx = np.hstack((neighbor_idx, np.array(i_vertex)))
 
-        neighbor_data = datat[neighborhood_idx, :]  # pull out data for relevant voxels
+        neighborhood_data = datat[neighborhood_idx, :]
 
-        rankeddata = np.zeros_like(neighbor_data)
+        rankeddata = np.zeros_like(neighborhood_data)
         # pull out index of voxel, timepoint
-        neighbor, timepoint = neighbor_data.shape[0], neighbor_data.shape[1]
+        n_neighbors, n_volumes = neighborhood_data.shape[0], neighborhood_data.shape[1]
 
-        for j_neighbor in range(neighbor_data.shape[0]):
+        for j_neighbor in range(n_neighbors):
             # assign ranks to timepoints for each voxel
-            rankeddata[j_neighbor, :] = rankdata(neighbor_data[j_neighbor, :])
+            rankeddata[j_neighbor, :] = rankdata(neighborhood_data[j_neighbor, :])
 
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
         # kc is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared
-        kc = np.sum(np.power(rankmean, 2)) - timepoint * np.power(np.mean(rankmean), 2)
+        kc = np.sum(np.power(rankmean, 2)) - n_volumes * np.power(np.mean(rankmean), 2)
 
         # square number of neighbours, multiply by (cubed timepoint - timepoint)
-        denom = np.power(neighbor, 2) * (np.power(timepoint, 3) - timepoint)
+        denom = np.power(n_neighbors, 2) * (np.power(n_volumes, 3) - n_volumes)
 
         # the voxel value is 12*kc divided by denom
         kcc[i_vertex] = 12 * kc / (denom)
@@ -74,8 +74,12 @@ def mesh_adjacency(hemi):
     -------
     numpy.ndarray
         Adjacency matrix.
+
+    Notes
+    -----
+    Modified by Taylor Salo to loop over all vertices in faces.
     """
-    surf = str(get_template("fsLR", space="fsaverage", hemi=hemi, suffix="sphere", density="32k"))
+    surf = str(get_template("fsLR", space=None, hemi=hemi, suffix="sphere", density="32k"))
     surf = nb.load(surf)  # load via nibabel
 
     # Aggregate GIFTI data arrays into an ndarray or tuple of ndarray select the arrays in a
@@ -83,15 +87,18 @@ def mesh_adjacency(hemi):
     vertices_faces = surf.agg_data(("pointset", "triangle"))
     vertices = vertices_faces[0]
     faces = vertices_faces[1]
+    n_vertices = vertices.shape[0]
 
-    data_array = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
-    for i_face in range(1, len(faces)):
+    adjacency_matrix = np.zeros([n_vertices, n_vertices], dtype=bool)
+    for i_face in range(faces.shape[0]):
         face = faces[i_face, :]  # pull out the face
-        data_array[face[0], face[2]] = 1
-        data_array[face[1], face[1]] = 1
-        data_array[face[2], face[0]] = 1
+        for vertex1 in face:
+            for vertex2 in face:
+                if vertex1 != vertex2:  # don't include the vertex as its own neighbor
+                    adjacency_matrix[vertex1, vertex2] = True
 
-    return data_array + data_array.T  # transpose data_array and add it to itself
+    assert np.array_equal(adjacency_matrix, adjacency_matrix.T)
+    return adjacency_matrix
 
 
 def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
