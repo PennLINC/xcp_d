@@ -47,6 +47,7 @@ def base_opts():
         "custom_confounds": None,
         "exact_time": "none",
         "despike": False,
+        "dcan_qc": False,
     }
     opts = FakeOptions(**opts_dict)
     return opts
