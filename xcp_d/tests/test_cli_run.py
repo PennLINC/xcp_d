@@ -48,6 +48,7 @@ def base_opts():
         "exact_time": "none",
         "despike": False,
         "dcan_qc": False,
+        "combineruns": False,
     }
     opts = FakeOptions(**opts_dict)
     return opts
