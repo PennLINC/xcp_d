@@ -413,8 +413,7 @@ def init_execsummary_functional_plots_wf(
     calculate_mean_bold = pe.Node(
         BinaryMath(expression="np.mean(img, axis=3)"),
         name="calculate_mean_bold",
-        run_without_submitting=True,
-        mem_gb=mem_gb["resampled"],
+        mem_gb=mem_gb["timeseries"],
     )
     workflow.connect([(inputnode, calculate_mean_bold, [("preproc_nifti", "in_file")])])
 
