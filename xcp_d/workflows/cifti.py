@@ -1,9 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing CIFTI-format BOLD data."""
-import os
-
-import nibabel as nb
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -14,6 +11,7 @@ from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
 from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
@@ -246,7 +244,7 @@ the following post-processing was performed.
         ]),
     ])  # fmt:skip
 
-    denoise_bold_wf = init_denoise_bold_wf(TR=TR)
+    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb=mem_gbx)
 
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
@@ -275,7 +273,7 @@ the following post-processing was performed.
         ])  # fmt:skip
 
     if bandpass_filter:
-        alff_wf = init_alff_wf(name_source=bold_file, TR=TR)
+        alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
 
         workflow.connect([
             (prepare_confounds_wf, alff_wf, [
@@ -286,7 +284,7 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    reho_wf = init_reho_cifti_wf(name_source=bold_file)
+    reho_wf = init_reho_cifti_wf(name_source=bold_file, mem_gb=mem_gbx)
 
     workflow.connect([
         (denoise_bold_wf, reho_wf, [
@@ -362,7 +360,7 @@ the following post-processing was performed.
         ])  # fmt:skip
 
     if atlases:
-        connectivity_wf = init_functional_connectivity_cifti_wf()
+        connectivity_wf = init_functional_connectivity_cifti_wf(mem_gb=mem_gbx)
 
         workflow.connect([
             (inputnode, connectivity_wf, [
@@ -417,13 +415,3 @@ the following post-processing was performed.
     ])  # fmt:skip
 
     return workflow
-
-
-def _create_mem_gb(bold_fname):
-    bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    bold_tlen = nb.load(bold_fname).shape[-1]
-    return {
-        "derivative": bold_size_gb,
-        "resampled": bold_size_gb * 4,
-        "timeseries": bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
-    }

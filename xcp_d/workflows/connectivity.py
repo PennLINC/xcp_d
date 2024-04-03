@@ -65,7 +65,6 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     atlases = config.execution.atlases
     output_dir = config.execution.xcp_d_dir
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -133,7 +132,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
             ),
             name="warp_atlases_to_bold_space",
             iterfield=["input_image"],
-            mem_gb=mem_gb,
+            mem_gb=2,
             n_procs=omp_nthreads,
         )
 
@@ -170,7 +169,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
                 cifti_out="atlas.dscalar.nii",
             ),
             name="convert_to_dscalar",
-            mem_gb=mem_gb,
+            mem_gb=2,
             n_procs=omp_nthreads,
             iterfield=["data_cifti"],
         )
@@ -187,7 +186,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
                 out_file="parcellated_atlas.pscalar.nii",
             ),
             name="parcellate_atlas",
-            mem_gb=mem_gb,
+            mem_gb=2,
             n_procs=omp_nthreads,
             iterfield=["in_file", "atlas_label"],
         )
@@ -282,7 +281,6 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
     output_dir = config.execution.xcp_d_dir
     atlases = config.execution.atlases
     min_coverage = config.workflow.min_coverage
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     SURF_DESCS = {
@@ -353,7 +351,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
                 out_file="parcellated_atlas.pscalar.nii",
             ),
             name=f"parcellate_atlas_for_{file_to_parcellate}",
-            mem_gb=mem_gb,
+            mem_gb=2,
             n_procs=omp_nthreads,
             iterfield=["atlas_label"],
         )
@@ -368,7 +366,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
         # Parcellate the ciftis
         parcellate_surface = pe.MapNode(
             CiftiParcellate(min_coverage=min_coverage),
-            mem_gb=mem_gb,
+            mem_gb=2,
             name=f"parcellate_{file_to_parcellate}",
             n_procs=omp_nthreads,
             iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
@@ -411,7 +409,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
 
 @fill_doc
-def init_functional_connectivity_nifti_wf(name="connectivity_wf"):
+def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
     """Extract BOLD time series and compute functional connectivity.
 
     Workflow Graph
@@ -428,6 +426,8 @@ def init_functional_connectivity_nifti_wf(name="connectivity_wf"):
 
     Parameters
     ----------
+    mem_gb : :obj:`dict`
+        Dictionary of memory allocations.
     %(name)s
         Default is "connectivity_wf".
 
@@ -457,7 +457,6 @@ def init_functional_connectivity_nifti_wf(name="connectivity_wf"):
     output_dir = config.execution.xcp_d_dir
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
-    mem_gb = config.nipype.memory_gb
 
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
@@ -509,7 +508,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name="parcellate_data",
         iterfield=["atlas", "atlas_labels"],
-        mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
+        mem_gb=mem_gb["timeseries"],
     )
 
     # fmt:off
@@ -531,7 +530,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         TSVConnect(),
         name="functional_connectivity",
         iterfield=["timeseries"],
-        mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
+        mem_gb=mem_gb["timeseries"],
     )
 
     # fmt:off
@@ -549,7 +548,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name="parcellate_reho",
         iterfield=["atlas", "atlas_labels"],
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
     )
 
     # fmt:off
@@ -569,7 +568,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             NiftiParcellate(min_coverage=min_coverage),
             name="parcellate_alff",
             iterfield=["atlas", "atlas_labels"],
-            mem_gb=mem_gb,
+            mem_gb=mem_gb["resampled"],
         )
 
         # fmt:off
@@ -588,7 +587,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     connectivity_plot = pe.Node(
         ConnectPlot(),
         name="connectivity_plot",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
     )
 
     # fmt:off
@@ -622,7 +621,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
 
 @fill_doc
-def init_functional_connectivity_cifti_wf(name="connectivity_wf"):
+def init_functional_connectivity_cifti_wf(mem_gb, name="connectivity_wf"):
     """Extract CIFTI time series.
 
     Workflow Graph
@@ -639,6 +638,8 @@ def init_functional_connectivity_cifti_wf(name="connectivity_wf"):
 
     Parameters
     ----------
+    mem_gb : :obj:`dict`
+        Dictionary of memory allocations.
     %(name)s
         Default is "connectivity_wf".
 
@@ -675,7 +676,6 @@ def init_functional_connectivity_cifti_wf(name="connectivity_wf"):
     output_dir = config.execution.xcp_d_dir
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = f"""
@@ -733,7 +733,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         CiftiParcellate(min_coverage=min_coverage),
         name="parcellate_data",
         iterfield=["atlas", "atlas_labels", "parcellated_atlas"],
-        mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
+        mem_gb=mem_gb["timeseries"],
     )
 
     # fmt:off
@@ -757,7 +757,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         CiftiConnect(),
         name="functional_connectivity",
         iterfield=["timeseries", "parcellated_atlas"],
-        mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
+        mem_gb=mem_gb["timeseries"],
     )
 
     # fmt:off
@@ -779,7 +779,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
     parcellate_reho = pe.MapNode(
         CiftiParcellate(min_coverage=min_coverage),
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         name="parcellate_reho",
         n_procs=omp_nthreads,
         iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
@@ -800,7 +800,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     if bandpass_filter:
         parcellate_alff = pe.MapNode(
             CiftiParcellate(min_coverage=min_coverage),
-            mem_gb=mem_gb,
+            mem_gb=mem_gb["resampled"],
             name="parcellate_alff",
             n_procs=omp_nthreads,
             iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
@@ -822,7 +822,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     connectivity_plot = pe.Node(
         ConnectPlot(),
         name="connectivity_plot",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
     )
 
     # fmt:off
@@ -843,6 +843,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ),
         name="ds_connectivity_plot",
         run_without_submitting=False,
+        mem_gb=0.1,
     )
 
     # fmt:off

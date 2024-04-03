@@ -19,7 +19,7 @@ from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
-from xcp_d.utils.utils import get_std2bold_xfms
+from xcp_d.utils.utils import _create_mem_gb, get_std2bold_xfms
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows.connectivity import (
     init_functional_connectivity_cifti_wf,
@@ -100,6 +100,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         filename=fake_bold_file,
     )
     assert os.path.isfile(fake_bold_file)
+    mem_gbx = _create_mem_gb(bold_file)
 
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
@@ -148,7 +149,10 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         config.nipype.memory_gb = 4
         config.nipype.omp_nthreads = 2
 
-        connectivity_wf = init_functional_connectivity_nifti_wf(name="connectivity_wf")
+        connectivity_wf = init_functional_connectivity_nifti_wf(
+            mem_gb=mem_gbx,
+            name="connectivity_wf",
+        )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
         connectivity_wf.inputs.inputnode.name_source = bold_file
@@ -245,6 +249,8 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     )
     assert os.path.isfile(fake_bold_file)
 
+    mem_gbx = _create_mem_gb(bold_file)
+
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
@@ -290,7 +296,10 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         config.nipype.memory_gb = 4
         config.nipype.omp_nthreads = 2
 
-        connectivity_wf = init_functional_connectivity_cifti_wf(name="connectivity_wf")
+        connectivity_wf = init_functional_connectivity_cifti_wf(
+            mem_gb=mem_gbx,
+            name="connectivity_wf",
+        )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
         connectivity_wf.inputs.inputnode.name_source = bold_file
