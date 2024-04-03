@@ -107,7 +107,6 @@ def init_prepare_confounds_wf(
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
     fd_thresh = config.workflow.fd_thresh
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     dummy_scans_str = ""
@@ -200,7 +199,7 @@ def init_prepare_confounds_wf(
             head_radius=head_radius,
         ),
         name="generate_confounds",
-        mem_gb=mem_gb,
+        mem_gb=2,
         omp_nthreads=omp_nthreads,
     )
 
@@ -239,7 +238,7 @@ def init_prepare_confounds_wf(
         remove_dummy_scans = pe.Node(
             RemoveDummyVolumes(),
             name="remove_dummy_scans",
-            mem_gb=(2 * mem_gb) if mem_gb is not None else mem_gb,  # it takes a lot of memory
+            mem_gb=4,
         )
 
         # fmt:off
@@ -359,7 +358,7 @@ def init_prepare_confounds_wf(
             head_radius=head_radius,
         ),
         name="censor_report",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -439,7 +438,6 @@ def init_despike_wf(TR, name="despike_wf"):
     """
     workflow = Workflow(name=name)
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
@@ -448,7 +446,7 @@ def init_despike_wf(TR, name="despike_wf"):
     despike3d = pe.Node(
         DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
         name="despike3d",
-        mem_gb=mem_gb,
+        mem_gb=4,
         n_procs=omp_nthreads,
     )
 
@@ -462,7 +460,7 @@ and converted back to CIFTI format.
         convert_to_nifti = pe.Node(
             CiftiConvert(target="to"),
             name="convert_to_nifti",
-            mem_gb=mem_gb,
+            mem_gb=4,
             n_procs=omp_nthreads,
         )
 
@@ -477,7 +475,7 @@ and converted back to CIFTI format.
         convert_to_cifti = pe.Node(
             CiftiConvert(target="from", TR=TR),
             name="convert_to_cifti",
-            mem_gb=mem_gb,
+            mem_gb=4,
             n_procs=omp_nthreads,
         )
 
@@ -505,7 +503,7 @@ The BOLD data were despiked with *AFNI*'s *3dDespike*.
 
 
 @fill_doc
-def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
+def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     """Denoise BOLD data.
 
     Workflow Graph
@@ -526,6 +524,8 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     Parameters
     ----------
     %(TR)s
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "denoise_bold_wf".
 
@@ -551,7 +551,6 @@ def init_denoise_bold_wf(TR, name="denoise_bold_wf"):
     bandpass_filter = config.workflow.bandpass_filter
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """\
@@ -634,7 +633,7 @@ approach.
             bandpass_filter=bandpass_filter,
         ),
         name="regress_and_filter_bold",
-        mem_gb=(2 * mem_gb) if mem_gb is not None else mem_gb,
+        mem_gb=mem_gb["timeseries"],
         n_procs=omp_nthreads,
     )
 
@@ -654,7 +653,7 @@ approach.
     censor_interpolated_data = pe.Node(
         Censor(),
         name="censor_interpolated_data",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         omp_nthreads=omp_nthreads,
     )
 
@@ -669,7 +668,7 @@ approach.
     ])  # fmt:skip
 
     if smoothing:
-        resd_smoothing_wf = init_resd_smoothing_wf()
+        resd_smoothing_wf = init_resd_smoothing_wf(mem_gb=mem_gb)
 
         workflow.connect([
             (censor_interpolated_data, resd_smoothing_wf, [
@@ -684,7 +683,7 @@ approach.
 
 
 @fill_doc
-def init_resd_smoothing_wf(name="resd_smoothing_wf"):
+def init_resd_smoothing_wf(mem_gb, name="resd_smoothing_wf"):
     """Smooth BOLD residuals.
 
     Workflow Graph
@@ -701,6 +700,8 @@ def init_resd_smoothing_wf(name="resd_smoothing_wf"):
 
     Parameters
     ----------
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "resd_smoothing_wf".
 
@@ -715,7 +716,6 @@ def init_resd_smoothing_wf(name="resd_smoothing_wf"):
     workflow = Workflow(name=name)
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
@@ -751,7 +751,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                 ),
             ),
             name="cifti_smoothing",
-            mem_gb=mem_gb,
+            mem_gb=mem_gb["timeseries"],
             n_procs=omp_nthreads,
         )
 
@@ -759,7 +759,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
         fix_cifti_intent = pe.Node(
             FixCiftiIntent(),
             name="fix_cifti_intent",
-            mem_gb=mem_gb,
+            mem_gb=1,
             n_procs=omp_nthreads,
         )
 
@@ -778,7 +778,7 @@ The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str
         smooth_data = pe.Node(
             Smooth(fwhm=smoothing),  # FWHM = kernel size
             name="nifti_smoothing",
-            mem_gb=mem_gb,
+            mem_gb=mem_gb["timeseries"],
             n_procs=omp_nthreads,
         )
 

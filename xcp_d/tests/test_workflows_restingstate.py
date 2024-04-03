@@ -10,6 +10,7 @@ from xcp_d import config
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
+from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.utils.write_save import read_ndata, write_ndata
 from xcp_d.workflows import restingstate
 
@@ -29,6 +30,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
+    mem_gbx = _create_mem_gb(bold_file)
 
     with mock_config():
         config.execution.xcp_d_dir = tempdir
@@ -38,11 +40,11 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         config.workflow.fd_thresh = 0
         config.workflow.smoothing = 6
         config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
 
         alff_wf = restingstate.init_alff_wf(
             name_source=bold_file,
             TR=TR,
+            mem_gb=mem_gbx,
         )
 
         # Let's move to a temporary directory before running
@@ -86,6 +88,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         alff_wf = restingstate.init_alff_wf(
             name_source=bold_file,
             TR=TR,
+            mem_gb=mem_gbx,
         )
         alff_wf.base_dir = tempdir
         alff_wf.inputs.inputnode.bold_mask = bold_mask
@@ -115,6 +118,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
 
     # Let's initialize the ALFF node
     TR = _get_tr(nb.load(bold_file))
+    mem_gbx = _create_mem_gb(bold_file)
     tempdir = tmp_path_factory.mktemp("test_cifti_alff_01")
 
     with mock_config():
@@ -125,11 +129,11 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         config.workflow.fd_thresh = 0.1
         config.workflow.smoothing = 6
         config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
 
         alff_wf = restingstate.init_alff_wf(
             name_source=bold_file,
             TR=TR,
+            mem_gb=mem_gbx,
         )
 
         alff_wf.base_dir = tempdir
@@ -207,14 +211,14 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
     # Get the names of the files
     bold_file = ds001419_data["nifti_file"]
     bold_mask = ds001419_data["brain_mask_file"]
+    mem_gbx = _create_mem_gb(bold_file)
 
     # Set up and run the ReHo wf in a tempdir
     with mock_config():
         config.execution.xcp_d_dir = tempdir
         config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
 
-        reho_wf = restingstate.init_reho_nifti_wf(name_source=bold_file)
+        reho_wf = restingstate.init_reho_nifti_wf(name_source=bold_file, mem_gb=mem_gbx)
         reho_wf.inputs.inputnode.bold_mask = bold_mask
         reho_wf.base_dir = tempdir
         reho_wf.inputs.inputnode.denoised_bold = bold_file
@@ -263,14 +267,16 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
     orig_bold_file = os.path.join(tempdir, "original.dtseries.nii")
     shutil.copyfile(source_file, orig_bold_file)
 
+    mem_gbx = _create_mem_gb(orig_bold_file)
+
     # Set up and run the ReHo wf in a tempdir
     with mock_config():
         config.execution.xcp_d_dir = tempdir
         config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
 
         reho_wf = restingstate.init_reho_cifti_wf(
             name_source=source_file,
+            mem_gb=mem_gbx,
             name="orig_reho_wf",
         )
         reho_wf.base_dir = tempdir
@@ -294,6 +300,7 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
 
         reho_wf = restingstate.init_reho_cifti_wf(
             name_source=source_file,
+            mem_gb=mem_gbx,
             name="noisy_reho_wf",
         )
         reho_wf.base_dir = tempdir
