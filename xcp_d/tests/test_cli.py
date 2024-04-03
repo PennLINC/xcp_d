@@ -43,8 +43,6 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "participant",
         "--mode=linc",
         f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=aroma_gsr",
         "--dummy-scans=4",
@@ -364,6 +362,7 @@ def _run_and_generate(test_name, parameters, input_type):
     from xcp_d import config
 
     parameters.append("--clean-workdir")
+    parameters.append("--stop-on-first-crash")
     parameters.append("-vv")
     parse_args(parameters)
     config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"

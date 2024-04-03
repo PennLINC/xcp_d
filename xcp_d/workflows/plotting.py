@@ -81,7 +81,6 @@ def init_qc_report_wf(
     params = config.workflow.params
     cifti = config.workflow.cifti
     dcan_qc = config.workflow.dcan_qc
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -158,7 +157,7 @@ def init_qc_report_wf(
             ),
             name="warp_boldmask_to_t1w",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb,
+            mem_gb=1,
         )
 
         # fmt:off
@@ -182,7 +181,7 @@ def init_qc_report_wf(
             ),
             name="warp_boldmask_to_mni",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb,
+            mem_gb=1,
         )
 
         # fmt:off
@@ -254,7 +253,7 @@ def init_qc_report_wf(
             ),
             name="warp_dseg_to_bold",
             n_procs=omp_nthreads,
-            mem_gb=(3 * mem_gb) if mem_gb is not None else mem_gb,
+            mem_gb=3,
         )
 
         # fmt:off
@@ -271,7 +270,7 @@ def init_qc_report_wf(
             template_mask=nlin2009casym_brain_mask,
         ),
         name="qc_report",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -349,7 +348,7 @@ def init_qc_report_wf(
     plot_execsummary_carpets_dcan = pe.Node(
         QCPlotsES(TR=TR, standardize=params == "none"),
         name="plot_execsummary_carpets_dcan",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -434,7 +433,7 @@ def init_qc_report_wf(
         FunctionalSummary(TR=TR),
         name="qcsummary",
         run_without_submitting=False,
-        mem_gb=mem_gb,
+        mem_gb=2,
     )
 
     # fmt:off

@@ -418,6 +418,7 @@ def collect_mesh_data(layout, participant_label):
         for hemisphere in ["L", "R"]:
             key = f"{hemisphere.lower()}h_{name}"
             queries[key] = {
+                "subject": participant_label,
                 "datatype": "anat",
                 "hemi": hemisphere,
                 "desc": None,

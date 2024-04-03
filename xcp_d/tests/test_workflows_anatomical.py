@@ -54,7 +54,6 @@ def test_warp_surfaces_to_template_wf(
         subject_id=subject_id,
         output_dir=tmpdir,
         omp_nthreads=1,
-        mem_gb=0.1,
     )
 
     wf.inputs.inputnode.lh_pial_surf = surface_files["native_lh_pial"]
