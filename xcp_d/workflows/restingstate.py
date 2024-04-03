@@ -27,6 +27,7 @@ from xcp_d.utils.utils import fwhm2sigma
 def init_alff_wf(
     name_source,
     TR,
+    mem_gb,
     name="alff_wf",
 ):
     """Compute alff for both nifti and cifti.
@@ -44,6 +45,7 @@ def init_alff_wf(
                 wf = init_alff_wf(
                     name_source="/path/to/file.nii.gz",
                     TR=2.,
+                    mem_gb={"resampled": 0.1},
                     name="alff_wf",
                 )
 
@@ -51,6 +53,8 @@ def init_alff_wf(
     ----------
     name_source
     %(TR)s
+    mem_gb : :obj:`dict`
+        Memory allocation dictionary
     %(name)s
         Default is "compute_alff_wf".
 
@@ -92,7 +96,6 @@ def init_alff_wf(
     fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     periodogram_desc = ""
@@ -126,7 +129,7 @@ series to retain the original scaling.
     # compute alff
     alff_compt = pe.Node(
         ComputeALFF(TR=TR, low_pass=low_pass, high_pass=high_pass),
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         name="alff_compt",
         n_procs=omp_nthreads,
     )
@@ -197,7 +200,7 @@ series to retain the original scaling.
                     left_surf=lh_midthickness,
                 ),
                 name="ciftismoothing",
-                mem_gb=mem_gb,
+                mem_gb=mem_gb["resampled"],
                 n_procs=omp_nthreads,
             )
 
@@ -205,7 +208,7 @@ series to retain the original scaling.
             fix_cifti_intent = pe.Node(
                 FixCiftiIntent(),
                 name="fix_cifti_intent",
-                mem_gb=mem_gb,
+                mem_gb=mem_gb["resampled"],
                 n_procs=omp_nthreads,
             )
 
@@ -238,6 +241,7 @@ series to retain the original scaling.
 @fill_doc
 def init_reho_cifti_wf(
     name_source,
+    mem_gb,
     name="cifti_reho_wf",
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
@@ -260,6 +264,8 @@ def init_reho_cifti_wf(
     Parameters
     ----------
     name_source
+    mem_gb : :obj:`dict`
+        Memory allocation dictionary
     %(name)s
         Default is "cifti_reho_wf".
 
@@ -286,7 +292,6 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 """
 
     output_dir = config.execution.xcp_d_dir
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -302,19 +307,19 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     lh_surf = pe.Node(
         CiftiSeparateMetric(metric="CORTEX_LEFT", direction="COLUMN"),
         name="separate_lh",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     rh_surf = pe.Node(
         CiftiSeparateMetric(metric="CORTEX_RIGHT", direction="COLUMN"),
         name="separate_rh",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     subcortical_nifti = pe.Node(
         CiftiSeparateVolumeAll(direction="COLUMN"),
         name="separate_subcortical",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
 
@@ -322,19 +327,19 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     lh_reho = pe.Node(
         SurfaceReHo(surf_hemi="L"),
         name="reho_lh",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     rh_reho = pe.Node(
         SurfaceReHo(surf_hemi="R"),
         name="reho_rh",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
         ReHoNamePatch(neighborhood="vertices"),
         name="reho_subcortical",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
 
@@ -342,7 +347,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     merge_cifti = pe.Node(
         CiftiCreateDenseScalar(),
         name="merge_cifti",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     reho_plot = pe.Node(
@@ -390,7 +395,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 
 @fill_doc
-def init_reho_nifti_wf(name_source, name="reho_nifti_wf"):
+def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
     """Compute ReHo on volumetric (NIFTI) data.
 
     Workflow Graph
@@ -411,6 +416,8 @@ def init_reho_nifti_wf(name_source, name="reho_nifti_wf"):
     Parameters
     ----------
     name_source
+    mem_gb : :obj:`dict`
+        Memory allocation dictionary
     %(name)s
         Default is "nifti_reho_wf".
 
@@ -430,7 +437,6 @@ def init_reho_nifti_wf(name_source, name="reho_nifti_wf"):
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """
@@ -448,7 +454,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
     compute_reho = pe.Node(
         ReHoNamePatch(neighborhood="vertices"),
         name="reho_3d",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     # Get the svg

@@ -70,16 +70,12 @@ def init_postprocess_anat_wf(
 
     Parameters
     ----------
-    %(output_dir)s
-    %(input_type)s
     t1w_available : bool
         True if a preprocessed T1w is available, False if not.
     t2w_available : bool
         True if a preprocessed T2w is available, False if not.
     target_space : :obj:`str`
         Target NIFTI template for T1w.
-    %(omp_nthreads)s
-    %(mem_gb)s
     %(name)s
         Default is "postprocess_anat_wf".
 
@@ -109,7 +105,6 @@ def init_postprocess_anat_wf(
     output_dir = config.execution.xcp_d_dir
     input_type = config.workflow.input_type
     omp_nthreads = config.nipype.omp_nthreads
-    mem_gb = config.nipype.memory_gb
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -219,7 +214,7 @@ resolution.
                 dimension=3,
             ),
             name="warp_anat_dseg_to_template",
-            mem_gb=mem_gb,
+            mem_gb=2,
             n_procs=omp_nthreads,
         )
 
@@ -244,7 +239,7 @@ resolution.
                     dimension=3,
                 ),
                 name="warp_t1w_to_template",
-                mem_gb=mem_gb,
+                mem_gb=2,
                 n_procs=omp_nthreads,
             )
 
@@ -268,7 +263,7 @@ resolution.
                     dimension=3,
                 ),
                 name="warp_t2w_to_template",
-                mem_gb=mem_gb,
+                mem_gb=2,
                 n_procs=omp_nthreads,
             )
 
@@ -345,20 +340,14 @@ def init_postprocess_surfaces_wf(
 
     Parameters
     ----------
-    fmri_dir
     subject_id
-    %(dcan_qc)s
-    process_surfaces : bool
     mesh_available : bool
     standard_space_mesh : bool
     morphometry_files : list of str
-    %(output_dir)s
     t1w_available : bool
         True if a T1w image is available.
     t2w_available : bool
         True if a T2w image is available.
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "postprocess_surfaces_wf".
 
@@ -385,7 +374,6 @@ def init_postprocess_surfaces_wf(
     dcan_qc = config.workflow.dcan_qc
     process_surfaces = config.workflow.process_surfaces
     output_dir = config.execution.xcp_d_dir
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -516,7 +504,6 @@ def init_postprocess_surfaces_wf(
             subject_id=subject_id,
             output_dir=output_dir,
             omp_nthreads=omp_nthreads,
-            mem_gb=mem_gb,
             name="warp_surfaces_to_template_wf",
         )
 
@@ -569,7 +556,6 @@ def init_warp_surfaces_to_template_wf(
     subject_id,
     output_dir,
     omp_nthreads,
-    mem_gb,
     name="warp_surfaces_to_template_wf",
 ):
     """Transform surfaces from native to standard fsLR-32k space.
@@ -586,7 +572,6 @@ def init_warp_surfaces_to_template_wf(
                 subject_id="01",
                 output_dir=".",
                 omp_nthreads=1,
-                mem_gb=0.1,
                 name="warp_surfaces_to_template_wf",
             )
 
@@ -596,7 +581,6 @@ def init_warp_surfaces_to_template_wf(
     %(subject_id)s
     %(output_dir)s
     %(omp_nthreads)s
-    %(mem_gb)s
     %(name)s
         Default is "warp_surfaces_to_template_wf".
 
@@ -666,7 +650,7 @@ def init_warp_surfaces_to_template_wf(
 
     # First, we create the Connectome WorkBench-compatible transform files.
     update_xfm_wf = init_ants_xfm_to_fsl_wf(
-        mem_gb=mem_gb,
+        mem_gb=1,
         omp_nthreads=omp_nthreads,
         name="update_xfm_wf",
     )
@@ -703,7 +687,7 @@ def init_warp_surfaces_to_template_wf(
         apply_transforms_wf = init_warp_one_hemisphere_wf(
             participant_id=subject_id,
             hemisphere=hemi,
-            mem_gb=mem_gb,
+            mem_gb=2,
             omp_nthreads=omp_nthreads,
             name=f"{hemi_label}_apply_transforms_wf",
         )
@@ -791,9 +775,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     Parameters
     ----------
-    %(output_dir)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "generate_hcp_surfaces_wf".
 
@@ -809,7 +790,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -826,7 +806,7 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     generate_midthickness = pe.Node(
         SurfaceAverage(),
         name="generate_midthickness",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -864,7 +844,7 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     # Generate (very-)inflated surface from standard-space midthickness surface.
     inflate_surface = pe.Node(
         SurfaceGenerateInflated(iterations_scale_value=0.75),
-        mem_gb=mem_gb,
+        mem_gb=2,
         omp_nthreads=omp_nthreads,
         name="inflate_surface",
     )

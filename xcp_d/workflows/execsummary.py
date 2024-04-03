@@ -72,7 +72,6 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
-    mem_gb = config.nipype.memory_gb
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -113,7 +112,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
                 output_names=["frame_numbers"],
             ),
             name=f"get_number_of_frames_{image_type}",
-            mem_gb=mem_gb,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
             omp_nthreads=omp_nthreads,
         )
 
@@ -140,7 +139,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             ),
             name=f"modify_brainsprite_template_scene_{image_type}",
             iterfield=["slice_number"],
-            mem_gb=mem_gb,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
             omp_nthreads=omp_nthreads,
         )
         modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
@@ -168,7 +167,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             ),
             name=f"create_framewise_pngs_{image_type}",
             iterfield=["scene_file"],
-            mem_gb=mem_gb,
+            mem_gb=1,
             omp_nthreads=omp_nthreads,
         )
 
@@ -188,7 +187,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
                 output_names=["mosaic_file"],
             ),
             name=f"make_mosaic_{image_type}",
-            mem_gb=mem_gb,
+            mem_gb=1,
             omp_nthreads=omp_nthreads,
         )
 
@@ -228,7 +227,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
                 output_names=["out_file"],
             ),
             name=f"modify_pngs_template_scene_{image_type}",
-            mem_gb=mem_gb,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
             omp_nthreads=omp_nthreads,
         )
         modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
@@ -258,7 +257,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             ShowScene(image_width=900, image_height=800),
             name=f"create_scenewise_pngs_{image_type}",
             iterfield=["scene_name_or_number"],
-            mem_gb=mem_gb,
+            mem_gb=1,
             omp_nthreads=omp_nthreads,
         )
 
@@ -281,6 +280,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             name=f"ds_scenewise_pngs_{image_type}",
             run_without_submitting=False,
             iterfield=["desc", "in_file"],
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
 
         # fmt:off
@@ -299,6 +299,7 @@ def init_execsummary_functional_plots_wf(
     preproc_nifti,
     t1w_available,
     t2w_available,
+    mem_gb,
     name="execsummary_functional_plots_wf",
 ):
     """Generate the functional figures for an executive summary.
@@ -317,6 +318,7 @@ def init_execsummary_functional_plots_wf(
                     preproc_nifti=None,
                     t1w_available=True,
                     t2w_available=True,
+                    mem_gb={"resampled": 1},
                     name="execsummary_functional_plots_wf",
                 )
 
@@ -329,6 +331,8 @@ def init_execsummary_functional_plots_wf(
         Generally True.
     t2w_available : :obj:`bool`
         Generally False.
+    mem_gb : :obj:`dict`
+        Memory size in GB.
     %(name)s
 
     Inputs
@@ -400,6 +404,7 @@ def init_execsummary_functional_plots_wf(
             ),
             name="ds_registration_figure",
             run_without_submitting=True,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
 
         workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
@@ -408,6 +413,7 @@ def init_execsummary_functional_plots_wf(
     calculate_mean_bold = pe.Node(
         BinaryMath(expression="np.mean(img, axis=3)"),
         name="calculate_mean_bold",
+        mem_gb=mem_gb["timeseries"],
     )
     workflow.connect([(inputnode, calculate_mean_bold, [("preproc_nifti", "in_file")])])
 
@@ -425,6 +431,7 @@ def init_execsummary_functional_plots_wf(
         ),
         name="ds_meanbold_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     # fmt:off
@@ -448,6 +455,7 @@ def init_execsummary_functional_plots_wf(
         ),
         name="ds_boldref_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     # fmt:off
@@ -465,6 +473,7 @@ def init_execsummary_functional_plots_wf(
         resample_bold_to_anat = pe.Node(
             ResampleToImage(),
             name=f"resample_bold_to_{anat}",
+            mem_gb=mem_gb["resampled"],
         )
 
         # fmt:off
@@ -558,7 +567,7 @@ def init_execsummary_anatomical_plots_wf(
                 "t1w",
                 "t2w",
                 "template",
-            ]
+            ],
         ),
         name="inputnode",
     )
@@ -571,6 +580,7 @@ def init_execsummary_anatomical_plots_wf(
         resample_anat = pe.Node(
             ResampleToImage(),
             name=f"resample_{anat}",
+            mem_gb=1,
         )
 
         # fmt:off
@@ -678,6 +688,7 @@ def init_plot_custom_slices_wf(
     binarize_edges = pe.Node(
         BinaryMath(expression="img.astype(bool).astype(int)"),
         name="binarize_edges",
+        mem_gb=1,
     )
 
     workflow.connect([(inputnode, binarize_edges, [("overlay_file", "in_file")])])
@@ -686,6 +697,7 @@ def init_plot_custom_slices_wf(
         fsl.Slicer(show_orientation=True, label_slices=True),
         name="make_image",
         iterfield=["single_slice", "slice_number"],
+        mem_gb=1,
     )
     make_image.inputs.single_slice = SINGLE_SLICES
     make_image.inputs.slice_number = SLICE_NUMBERS
@@ -700,6 +712,7 @@ def init_plot_custom_slices_wf(
     combine_images = pe.Node(
         PNGAppend(out_file="out.png"),
         name="combine_images",
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([(make_image, combine_images, [("out_file", "in_files")])])
@@ -714,6 +727,7 @@ def init_plot_custom_slices_wf(
         ),
         name="ds_overlay_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     # fmt:off
@@ -748,6 +762,7 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
     plot_overlay_figure = pe.Node(
         SlicesDir(out_extension=".png"),
         name="plot_overlay_figure",
+        mem_gb=1,
     )
 
     workflow.connect([
@@ -767,6 +782,7 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
         ),
         name="ds_overlay_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([
@@ -789,6 +805,7 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
         ),
         name="ds_reformatted_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([
