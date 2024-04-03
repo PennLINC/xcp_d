@@ -41,7 +41,6 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.workflow.cifti = False
         config.execution.atlases = ["4S156Parcels", "Glasser"]
         config.nipype.omp_nthreads = 1
-        config.nipype.memory_gb = 0.1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
         load_atlases_wf.inputs.inputnode.name_source = bold_file
@@ -67,7 +66,6 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.workflow.cifti = True
         config.execution.atlases = ["4S156Parcels", "Glasser"]
         config.nipype.omp_nthreads = 1
-        config.nipype.memory_gb = 0.1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
         load_atlases_wf.inputs.inputnode.name_source = bold_file
@@ -146,7 +144,6 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         config.execution.xcp_d_dir = tmpdir
         config.workflow.bandpass_filter = False
         config.workflow.min_coverage = 0.5
-        config.nipype.memory_gb = 4
         config.nipype.omp_nthreads = 2
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
@@ -293,7 +290,6 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         config.execution.xcp_d_dir = tmpdir
         config.workflow.bandpass_filter = False
         config.workflow.min_coverage = 0.5
-        config.nipype.memory_gb = 4
         config.nipype.omp_nthreads = 2
 
         connectivity_wf = init_functional_connectivity_cifti_wf(

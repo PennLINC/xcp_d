@@ -299,6 +299,7 @@ def init_execsummary_functional_plots_wf(
     preproc_nifti,
     t1w_available,
     t2w_available,
+    mem_gb,
     name="execsummary_functional_plots_wf",
 ):
     """Generate the functional figures for an executive summary.
@@ -317,6 +318,7 @@ def init_execsummary_functional_plots_wf(
                     preproc_nifti=None,
                     t1w_available=True,
                     t2w_available=True,
+                    mem_gb={"resampled": 1},
                     name="execsummary_functional_plots_wf",
                 )
 
@@ -329,6 +331,8 @@ def init_execsummary_functional_plots_wf(
         Generally True.
     t2w_available : :obj:`bool`
         Generally False.
+    mem_gb : :obj:`dict`
+        Memory size in GB.
     %(name)s
 
     Inputs
@@ -409,7 +413,8 @@ def init_execsummary_functional_plots_wf(
     calculate_mean_bold = pe.Node(
         BinaryMath(expression="np.mean(img, axis=3)"),
         name="calculate_mean_bold",
-        mem_gb=1,
+        run_without_submitting=True,
+        mem_gb=mem_gb["resampled"],
     )
     workflow.connect([(inputnode, calculate_mean_bold, [("preproc_nifti", "in_file")])])
 
@@ -469,7 +474,7 @@ def init_execsummary_functional_plots_wf(
         resample_bold_to_anat = pe.Node(
             ResampleToImage(),
             name=f"resample_bold_to_{anat}",
-            mem_gb=1,
+            mem_gb=mem_gb["resampled"],
         )
 
         # fmt:off

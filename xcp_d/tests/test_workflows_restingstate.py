@@ -40,7 +40,6 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         config.workflow.fd_thresh = 0
         config.workflow.smoothing = 6
         config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
 
         alff_wf = restingstate.init_alff_wf(
             name_source=bold_file,
@@ -128,7 +127,6 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         config.workflow.fd_thresh = 0.1
         config.workflow.smoothing = 6
         config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
 
         alff_wf = restingstate.init_alff_wf(
             name_source=bold_file,
@@ -217,7 +215,6 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
     with mock_config():
         config.execution.xcp_d_dir = tempdir
         config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
 
         reho_wf = restingstate.init_reho_nifti_wf(name_source=bold_file, mem_gb=mem_gbx)
         reho_wf.inputs.inputnode.bold_mask = bold_mask
@@ -274,7 +271,6 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
     with mock_config():
         config.execution.xcp_d_dir = tempdir
         config.nipype.omp_nthreads = 2
-        config.nipype.memory_gb = 4
 
         reho_wf = restingstate.init_reho_cifti_wf(
             name_source=source_file,

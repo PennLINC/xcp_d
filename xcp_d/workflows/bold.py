@@ -421,6 +421,7 @@ the following post-processing was performed.
         preproc_nifti=bold_file,
         t1w_available=t1w_available,
         t2w_available=t2w_available,
+        mem_gb=mem_gbx,
     )
 
     workflow.connect([

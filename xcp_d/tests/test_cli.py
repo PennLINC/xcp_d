@@ -358,6 +358,7 @@ def _run_and_generate(test_name, parameters, input_type):
     from xcp_d import config
 
     parameters.append("--clean-workdir")
+    parameters.append("--stop-on-first-crash")
     parameters.append("-vv")
     parse_args(parameters)
     config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
