@@ -196,6 +196,7 @@ def _build_parser():
     g_perfm.add_argument(
         "--mem-gb",
         "--mem_gb",
+        dest="memory_gb",
         action="store",
         type=int,
         help="Upper bound memory limit, in gigabytes, for XCP-D processes.",
