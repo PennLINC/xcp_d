@@ -132,9 +132,9 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         sample_mask = sample_mask.astype(bool)
         assert sample_mask.sum() == n_volumes, f"{sample_mask.sum()} != {n_volumes}"
 
-        time_arr = np.arange(0, n_volumes * TR, TR)
-        assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
+        time_arr = np.arange(0, sample_mask.size * TR, TR)
         time_arr = time_arr[sample_mask]
+        assert time_arr.size == n_volumes, f"{time_arr.size} != {n_volumes}"
 
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
