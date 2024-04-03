@@ -144,7 +144,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         nodes = get_nodes(compute_alff_res)
 
         # Let's get the mean of the data for later comparison
-        original_alff = nodes["alff_wf.alff_compt"].get_output("alff")
+        original_alff = nodes["alff_wf.compute_alff"].get_output("alff")
         original_alff_data_mean = nb.load(original_alff).get_fdata().mean()
 
         # Now let's do an FFT
@@ -174,7 +174,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         nodes = get_nodes(compute_alff_res)
 
         # Let's get the new ALFF mean
-        new_alff = nodes["alff_wf.alff_compt"].get_output("alff")
+        new_alff = nodes["alff_wf.compute_alff"].get_output("alff")
         assert os.path.isfile(new_alff)
         new_alff_data_mean = nb.load(new_alff).get_fdata().mean()
 
