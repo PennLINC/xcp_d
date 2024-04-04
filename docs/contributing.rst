@@ -46,7 +46,7 @@ Workflows should largely be written just like other functions (which should go i
 except for a couple of elements.
 
 First, ``black`` tends to format workflow connections awkwardly, so contributors should add
-``# fmt:off`` before, and ``# fmt:on`` after, each workflow connection statement.
+``# fmt:skip`` after each workflow connection statement.
 
 Second, workflow connections should occur shortly after the associated nodes are defined,
 rather than all at once at the end of the function.
@@ -58,6 +58,7 @@ Here is an example of a basic workflow, written in the preferred style for *XCP-
    from nipype.interfaces import utility as niu
    from nipype.pipeline import engine as pe
    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
 
    def init_example_workflow_wf(name="example_workflow_wf"):
       """Create an example workflow.
@@ -95,14 +96,12 @@ Here is an example of a basic workflow, written in the preferred style for *XCP-
       inputnode = pe.Node(niu.IdentityInterface(fields=["a", "b"]), name="inputnode")
       outputnode = pe.Node(niu.IdentityInterface(fields=["a", "b"]), name="outputnode")
 
-      # fmt:off
       workflow.connect([
          (inputnode, outputnode, [
             ("a", "a"),
             ("b", "b"),
          ]),
-      ])
-      # fmt:on
+      ])  # fmt:skip
 
       return workflow
 
