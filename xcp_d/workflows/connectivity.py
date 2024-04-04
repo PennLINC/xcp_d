@@ -462,7 +462,7 @@ def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
 Processed functional timeseries were extracted from the residual BOLD signal
 with *Nilearn's* *NiftiLabelsMasker* for the following atlases:
 the Schaefer Supplemented with Subcortical Structures (4S) atlas
-[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo,@glasser2013minimal] at
+[@Schaefer_2017;@pauli2018high;@king2019functional;@najdenovska2018vivo;@glasser2013minimal] at
 10 different resolutions (156, 256, 356, 456, 556, 656, 756, 856, 956, and 1056 parcels),
 the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
 the Tian subcortical atlas [@tian2020topographic], and the HCP CIFTI subcortical atlas
@@ -682,7 +682,7 @@ def init_functional_connectivity_cifti_wf(mem_gb, name="connectivity_wf"):
 Processed functional timeseries were extracted from residual BOLD using
 Connectome Workbench [@marcus2011informatics] for the following atlases:
 the Schaefer Supplemented with Subcortical Structures (4S) atlas
-[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo,@glasser2013minimal] at
+[@Schaefer_2017;@pauli2018high;@king2019functional;@najdenovska2018vivo;@glasser2013minimal] at
 10 different resolutions (156, 256, 356, 456, 556, 656, 756, 856, 956, and 1056 parcels),
 the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
 the Tian subcortical atlas [@tian2020topographic], and the HCP CIFTI subcortical atlas
