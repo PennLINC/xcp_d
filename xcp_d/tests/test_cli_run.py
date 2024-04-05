@@ -29,7 +29,7 @@ def base_opts():
         "output_dir": Path("out"),
         "work_dir": Path("work"),
         "analysis_level": "participant",
-        "mode": "none",
+        "mode": "linc",
         "lower_bpf": 0.01,
         "upper_bpf": 0.1,
         "bandpass_filter": True,
