@@ -1,12 +1,164 @@
 """Tests for xcp_d.utils.confounds."""
 
+import os
 import re
 
 import numpy as np
+import pandas as pd
 import pytest
+from nilearn.glm.first_level import make_first_level_design_matrix
 from scipy import signal
 
 from xcp_d.utils import confounds
+
+
+def test_custom_confounds(ds001419_data, tmp_path_factory):
+    """Ensure that custom confounds can be loaded without issue."""
+    tempdir = tmp_path_factory.mktemp("test_custom_confounds")
+    bold_file = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+    confounds_json = ds001419_data["confounds_json"]
+
+    N_VOLUMES = 60
+    TR = 2.5
+
+    frame_times = np.arange(N_VOLUMES) * TR
+    events_df = pd.DataFrame(
+        {
+            "onset": [10, 30, 50],
+            "duration": [5, 10, 5],
+            "trial_type": (["condition01"] * 2) + (["condition02"] * 1),
+        },
+    )
+    custom_confounds = make_first_level_design_matrix(
+        frame_times,
+        events_df,
+        drift_model=None,
+        hrf_model="spm",
+        high_pass=None,
+    )
+    # The design matrix will include a constant column, which we should drop
+    custom_confounds = custom_confounds.drop(columns="constant")
+
+    # Save to file
+    custom_confounds_file = os.path.join(
+        tempdir,
+        "sub-01_task-rest_desc-confounds_timeseries.tsv",
+    )
+    custom_confounds.to_csv(custom_confounds_file, sep="\t", index=False)
+
+    combined_confounds, _ = confounds.load_confound_matrix(
+        params="24P",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+        custom_confounds=custom_confounds_file,
+    )
+    # We expect n params + 2 (one for each condition in custom confounds)
+    assert combined_confounds.shape == (N_VOLUMES, 26)
+    assert "condition01" in combined_confounds.columns
+    assert "condition02" in combined_confounds.columns
+
+    custom_confounds, _ = confounds.load_confound_matrix(
+        params="custom",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+        custom_confounds=custom_confounds_file,
+    )
+    # We expect 2 (one for each condition in custom confounds)
+    assert combined_confounds.shape == (N_VOLUMES, 26)
+    assert "condition01" in combined_confounds.columns
+    assert "condition02" in combined_confounds.columns
+
+
+def test_load_confounds(ds001419_data):
+    """Ensure that xcp_d loads the right confounds."""
+    bold_file = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+    confounds_json = ds001419_data["confounds_json"]
+
+    N_VOLUMES = 60
+
+    confounds_df, _ = confounds.load_confound_matrix(
+        params="24P",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert confounds_df.shape == (N_VOLUMES, 24)
+
+    confounds_df, _ = confounds.load_confound_matrix(
+        params="27P",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert confounds_df.shape == (N_VOLUMES, 27)
+
+    confounds_df, _ = confounds.load_confound_matrix(
+        params="36P",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert confounds_df.shape == (N_VOLUMES, 36)
+
+    confounds_df, _ = confounds.load_confound_matrix(
+        params="acompcor",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert confounds_df.shape == (N_VOLUMES, 28)
+
+    confounds_df, _ = confounds.load_confound_matrix(
+        params="acompcor_gsr",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert confounds_df.shape == (N_VOLUMES, 29)
+
+    confounds_df, _ = confounds.load_confound_matrix(
+        params="aroma",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert confounds_df.shape == (N_VOLUMES, 48)
+
+    confounds_df, _ = confounds.load_confound_matrix(
+        params="aroma_gsr",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert confounds_df.shape == (N_VOLUMES, 49)
+
+    confounds_df, _ = confounds.load_confound_matrix(
+        params="none",
+        img_file=bold_file,
+        confounds_file=confounds_file,
+        confounds_json_file=confounds_json,
+    )
+    assert not confounds_df
+
+    with pytest.raises(ValueError, match="Unrecognized parameter string"):
+        confounds.load_confound_matrix(
+            params="test",
+            img_file=bold_file,
+            confounds_file=confounds_file,
+            confounds_json_file=confounds_json,
+        )
+
+    with pytest.raises(ValueError):
+        confounds.load_confound_matrix(
+            params="custom",
+            img_file=bold_file,
+            confounds_file=confounds_file,
+            confounds_json_file=confounds_json,
+        )
 
 
 def test_modify_motion_filter():
@@ -158,93 +310,3 @@ def test_motion_filtering_notch():
     )
     notch_data_test = np.squeeze(notch_data_test)
     assert np.allclose(notch_data_test, notch_data_true)
-
-
-def test_describe_motion_parameters():
-    """Test confounds.describe_motion_parameters."""
-    # notch with no modification
-    desc = confounds.describe_motion_parameters(
-        motion_filter_type="notch",
-        motion_filter_order=2,
-        band_stop_min=12,
-        band_stop_max=20,
-        head_radius=50,
-        TR=0.8,
-    )
-    assert isinstance(desc, str)
-
-    # notch with modification
-    desc = confounds.describe_motion_parameters(
-        motion_filter_type="notch",
-        motion_filter_order=2,
-        band_stop_min=42,
-        band_stop_max=45,
-        head_radius=50,
-        TR=0.8,
-    )
-    assert isinstance(desc, str)
-
-    # lowpass with no modification
-    desc = confounds.describe_motion_parameters(
-        motion_filter_type="lp",
-        motion_filter_order=2,
-        band_stop_min=12,
-        band_stop_max=None,
-        head_radius=50,
-        TR=0.8,
-    )
-    assert isinstance(desc, str)
-
-    # notch with modification
-    desc = confounds.describe_motion_parameters(
-        motion_filter_type="lp",
-        motion_filter_order=2,
-        band_stop_min=42,
-        band_stop_max=None,
-        head_radius=50,
-        TR=0.8,
-    )
-    assert isinstance(desc, str)
-
-
-def test_describe_censoring():
-    """Test confounds.describe_censoring."""
-    # notch filter, no censoring, no exact-scan
-    desc = confounds.describe_censoring(
-        motion_filter_type="notch",
-        fd_thresh=0,
-        exact_scans=[],
-    )
-    assert isinstance(desc, str)
-
-    # notch filter, censoring, no exact-scan
-    desc = confounds.describe_censoring(
-        motion_filter_type="notch",
-        fd_thresh=0.1,
-        exact_scans=[],
-    )
-    assert isinstance(desc, str)
-
-    # notch filter, censoring, exact-scan
-    desc = confounds.describe_censoring(
-        motion_filter_type="notch",
-        fd_thresh=0.1,
-        exact_scans=[100, 150],
-    )
-    assert isinstance(desc, str)
-
-    # no filter, no censoring, no exact-scan
-    desc = confounds.describe_censoring(
-        motion_filter_type=None,
-        fd_thresh=0,
-        exact_scans=[],
-    )
-    assert isinstance(desc, str)
-
-    # no filter, no censoring, exact-scan
-    desc = confounds.describe_censoring(
-        motion_filter_type=None,
-        fd_thresh=0,
-        exact_scans=[100, 150],
-    )
-    assert isinstance(desc, str)
