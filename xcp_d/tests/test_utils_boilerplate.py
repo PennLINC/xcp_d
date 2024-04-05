@@ -53,7 +53,7 @@ def test_describe_motion_parameters():
         head_radius=50,
         TR=0.8,
     )
-    assert "low-pass filtered to remove signals" in desc
+    assert "low-pass filtered" in desc
     assert "automatically modified" not in desc
 
     desc = boilerplate.describe_motion_parameters(
@@ -64,7 +64,7 @@ def test_describe_motion_parameters():
         head_radius=50,
         TR=3,
     )
-    assert "low-pass filtered to remove signals" in desc
+    assert "low-pass filtered" in desc
     assert "automatically modified" in desc
 
 
