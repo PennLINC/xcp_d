@@ -134,7 +134,7 @@ image yourself.
 
 5. Make changes to the codebase that you want to try out.
 
-6. Test our your changes by running the Docker container.
+6. Test out your changes by running the Docker container.
    The trick here is to mount your modified version of *XCP-D* into the Docker container,
    overwriting the container's version.
    This way, your Docker container will run using your modified code,
