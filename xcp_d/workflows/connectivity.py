@@ -23,6 +23,7 @@ from xcp_d.interfaces.workbench import (
     CiftiParcellateWorkbench,
 )
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti, select_atlases
+from xcp_d.utils.boilerplate import describe_atlases
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
 
@@ -458,15 +459,11 @@ def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
+    atlas_str = describe_atlases(config.execution.atlases)
+
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
-with *Nilearn's* *NiftiLabelsMasker* for the following atlases:
-the Schaefer Supplemented with Subcortical Structures (4S) atlas
-[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo,@glasser2013minimal] at
-10 different resolutions (156, 256, 356, 456, 556, 656, 756, 856, 956, and 1056 parcels),
-the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
-the Tian subcortical atlas [@tian2020topographic], and the HCP CIFTI subcortical atlas
-[@glasser2013minimal].
+with *Nilearn's* *NiftiLabelsMasker* for the following atlases: {atlas_str}.
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
@@ -678,15 +675,11 @@ def init_functional_connectivity_cifti_wf(mem_gb, name="connectivity_wf"):
     min_coverage = config.workflow.min_coverage
     omp_nthreads = config.nipype.omp_nthreads
 
+    atlas_str = describe_atlases(config.execution.atlases)
+
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
-Connectome Workbench [@marcus2011informatics] for the following atlases:
-the Schaefer Supplemented with Subcortical Structures (4S) atlas
-[@Schaefer_2017,@pauli2018high,@king2019functional,@najdenovska2018vivo,@glasser2013minimal] at
-10 different resolutions (156, 256, 356, 456, 556, 656, 756, 856, 956, and 1056 parcels),
-the Glasser atlas [@Glasser_2016], the Gordon atlas [@Gordon_2014],
-the Tian subcortical atlas [@tian2020topographic], and the HCP CIFTI subcortical atlas
-[@glasser2013minimal].
+Connectome Workbench [@marcus2011informatics] for the following atlases: {atlas_str}.
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.

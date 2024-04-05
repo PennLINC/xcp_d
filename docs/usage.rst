@@ -15,7 +15,7 @@ Running XCP-D
 Execution and Input Formats
 ***************************
 
-The *XCP-D* workflow takes `fMRIPRep`_, `NiBabies`_, `HCP Pipelines`_, `ABCD-BIDS`_,
+The *XCP-D* workflow takes `fMRIPrep`_, `Nibabies`_, `HCP Pipelines`_, `ABCD-BIDS`_,
 and `UK Biobank` outputs in the form of BIDS derivatives.
 In these examples, we use an fmriprep output directory.
 

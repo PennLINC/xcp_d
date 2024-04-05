@@ -20,7 +20,7 @@ from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
 from xcp_d.interfaces.plotting import CensoringPlot
 from xcp_d.interfaces.restingstate import DespikePatch
 from xcp_d.interfaces.workbench import CiftiConvert, FixCiftiIntent
-from xcp_d.utils.confounds import (
+from xcp_d.utils.boilerplate import (
     describe_censoring,
     describe_motion_parameters,
     describe_regression,
