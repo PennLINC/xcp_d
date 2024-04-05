@@ -121,7 +121,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
-        "--mode=none",
+        "--mode=linc",
         "--nifti",
         "--no-warp-surfaces-native2std",
         "--no-combineruns",
