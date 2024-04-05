@@ -5,6 +5,7 @@
 from xcp_d.utils import (
     atlas,
     bids,
+    boilerplate,
     concatenation,
     confounds,
     doc,
@@ -22,6 +23,7 @@ from xcp_d.utils import (
 __all__ = [
     "atlas",
     "bids",
+    "boilerplate",
     "concatenation",
     "confounds",
     "doc",
