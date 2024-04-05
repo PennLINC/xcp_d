@@ -264,7 +264,9 @@ def describe_atlases(atlases):
     }
 
     atlas_strings = []
+    described_atlases = []
     atlases_4s = [atlas for atlas in atlases if atlas.startswith("4S")]
+    described_atlases += atlases_4s
     if atlases_4s:
         parcels = [int(atlas[2:-7]) for atlas in atlases_4s]
         s = (
@@ -278,5 +280,10 @@ def describe_atlases(atlases):
     for k, v in atlas_descriptions.items():
         if k in atlases:
             atlas_strings.append(v)
+            described_atlases.append(k)
+
+    undescribed_atlases = [atlas for atlas in atlases if atlas not in described_atlases]
+    if undescribed_atlases:
+        raise ValueError(f"Unrecognized atlas(es) in the list: {', '.join(undescribed_atlases)}.")
 
     return list_to_str(atlas_strings)

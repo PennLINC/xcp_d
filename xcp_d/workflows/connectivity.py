@@ -459,7 +459,7 @@ def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
-    atlas_str = describe_atlases(config.workflow.atlases)
+    atlas_str = describe_atlases(config.execution.atlases)
 
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
@@ -675,7 +675,7 @@ def init_functional_connectivity_cifti_wf(mem_gb, name="connectivity_wf"):
     min_coverage = config.workflow.min_coverage
     omp_nthreads = config.nipype.omp_nthreads
 
-    atlas_str = describe_atlases(config.workflow.atlases)
+    atlas_str = describe_atlases(config.execution.atlases)
 
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
