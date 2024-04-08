@@ -324,13 +324,13 @@ class QCPlots(SimpleInterface):
                 datafile=self.inputs.bold_file,
                 maskfile=self.inputs.mask_file,
             )
-        )
+        )[1]
         dvars_after_processing = compute_dvars(
             read_ndata(
                 datafile=self.inputs.cleaned_file,
                 maskfile=self.inputs.mask_file,
             ),
-        )
+        )[1]
         if preproc_fd_timeseries.size != dvars_before_processing.size:
             raise ValueError(
                 f"FD {preproc_fd_timeseries.size} != DVARS {dvars_before_processing.size}\n"

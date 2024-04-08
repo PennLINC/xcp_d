@@ -244,6 +244,9 @@ def compute_dvars(
     :obj:`numpy.ndarray`
         The calculated DVARS array.
         A (timepoints,) array.
+    :obj:`numpy.ndarray`
+        The calculated standardized DVARS array.
+        A (timepoints,) array.
     """
     from nipype.algorithms.confounds import _AR_est_YW, regress_poly
 
