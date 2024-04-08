@@ -225,7 +225,12 @@ def overlap(input1, input2):
     return intersection / smallv
 
 
-def compute_dvars(datat):
+def compute_dvars(
+    datat,
+    intensity_normalization=1000,
+    remove_zerovariance=True,
+    variance_tol=1e-7,
+):
     """Compute standard DVARS.
 
     Parameters
@@ -240,10 +245,35 @@ def compute_dvars(datat):
         The calculated DVARS array.
         A (timepoints,) array.
     """
-    firstcolumn = np.zeros((datat.shape[0]))[..., None]
-    datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
-    return np.sqrt(datax_ss)
+    if intensity_normalization != 0:
+        # Perform 1000 intensity normalization
+        datat = (datat / np.median(datat)) * intensity_normalization
+
+    # Robust standard deviation (we are using "lower" interpolation because this is what FSL does
+    try:
+        func_sd = (
+            np.percentile(datat, 75, axis=1, method="lower")
+            - np.percentile(datat, 25, axis=1, method="lower")
+        ) / 1.349
+    except TypeError:  # NP < 1.22
+        func_sd = (
+            np.percentile(datat, 75, axis=1, interpolation="lower")
+            - np.percentile(datat, 25, axis=1, interpolation="lower")
+        ) / 1.349
+
+    if remove_zerovariance:
+        zero_variance_voxels = func_sd > variance_tol
+        datat = datat[zero_variance_voxels, :]
+        func_sd = func_sd[zero_variance_voxels]
+
+    # DVARS (no standardization)
+    func_diff = np.diff(datat, axis=1)
+    dvars_nstd = np.sqrt(np.square(func_diff).mean(axis=0))
+
+    # Insert 0 at the beginning (fMRIPrep would add a NaN here)
+    dvars_nstd = np.insert(dvars_nstd, 0, 0)
+
+    return dvars_nstd
 
 
 def make_dcan_qc_file(filtered_motion, TR):
