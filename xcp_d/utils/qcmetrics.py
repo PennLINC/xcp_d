@@ -245,6 +245,8 @@ def compute_dvars(
         The calculated DVARS array.
         A (timepoints,) array.
     """
+    from nipype.algorithms.confounds import _AR_est_YW, regress_poly
+
     if intensity_normalization != 0:
         # Perform 1000 intensity normalization
         datat = (datat / np.median(datat)) * intensity_normalization
@@ -266,14 +268,32 @@ def compute_dvars(
         datat = datat[zero_variance_voxels, :]
         func_sd = func_sd[zero_variance_voxels]
 
-    # DVARS (no standardization)
+    # Compute (non-robust) estimate of lag-1 autocorrelation
+    ar1 = np.apply_along_axis(
+        _AR_est_YW,
+        1,
+        regress_poly(0, datat, remove_mean=True)[0].astype(np.float32),
+        1,
+    )
+
+    # Compute (predicted) standard deviation of temporal difference time series
+    diff_sdhat = np.squeeze(np.sqrt(((1 - ar1) * 2).tolist())) * func_sd
+    diff_sd_mean = diff_sdhat.mean()
+
+    # Compute temporal difference time series
     func_diff = np.diff(datat, axis=1)
+
+    # DVARS (no standardization)
     dvars_nstd = np.sqrt(np.square(func_diff).mean(axis=0))
+
+    # standardization
+    dvars_stdz = dvars_nstd / diff_sd_mean
 
     # Insert 0 at the beginning (fMRIPrep would add a NaN here)
     dvars_nstd = np.insert(dvars_nstd, 0, 0)
+    dvars_stdz = np.insert(dvars_stdz, 0, 0)
 
-    return dvars_nstd
+    return dvars_nstd, dvars_stdz
 
 
 def make_dcan_qc_file(filtered_motion, TR):
