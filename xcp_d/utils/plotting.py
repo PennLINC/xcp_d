@@ -531,6 +531,12 @@ def plot_fmri_es(
     preprocessed_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     denoised_interpolated_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
 
+    if np.any(np.isnan(denoised_interpolated_arr)):
+            raise ValueError(f"NaNs in the cleaned data: {denoised_interpolated_bold}")
+
+    if np.any(np.isinf(denoised_interpolated_arr)):
+        raise ValueError(f"Infs in the cleaned data: {denoised_interpolated_bold}")
+
     preprocessed_dvars = compute_dvars(preprocessed_arr)[1]
     denoised_interpolated_dvars = compute_dvars(denoised_interpolated_arr)[1]
 
