@@ -258,6 +258,8 @@ def compute_dvars(
 
     if intensity_normalization != 0:
         # Perform 1000 intensity normalization
+        data_median = np.median(datat)
+        LOGGER.warning(f"Data median: {data_median}")
         datat = (datat / np.median(datat)) * intensity_normalization
 
     if np.any(np.isnan(datat)):
