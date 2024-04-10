@@ -250,9 +250,21 @@ def compute_dvars(
     """
     from nipype.algorithms.confounds import _AR_est_YW, regress_poly
 
+    if np.any(np.isnan(datat)):
+        raise ValueError("NaNs found in data")
+
+    if np.any(np.isinf(datat)):
+        raise ValueError("Infs found in data")
+
     if intensity_normalization != 0:
         # Perform 1000 intensity normalization
         datat = (datat / np.median(datat)) * intensity_normalization
+
+    if np.any(np.isnan(datat)):
+        raise ValueError("NaNs found in data")
+
+    if np.any(np.isinf(datat)):
+        raise ValueError("Infs found in data")
 
     # Robust standard deviation (we are using "lower" interpolation because this is what FSL does
     try:
@@ -270,6 +282,12 @@ def compute_dvars(
         zero_variance_voxels = func_sd > variance_tol
         datat = datat[zero_variance_voxels, :]
         func_sd = func_sd[zero_variance_voxels]
+
+    if np.any(np.isnan(datat)):
+        raise ValueError("NaNs found in data")
+
+    if np.any(np.isinf(datat)):
+        raise ValueError("Infs found in data")
 
     # Compute (non-robust) estimate of lag-1 autocorrelation
     temp_data = regress_poly(0, datat, remove_mean=True)[0].astype(np.float32)
