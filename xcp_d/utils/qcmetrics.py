@@ -274,7 +274,11 @@ def compute_dvars(
     # Compute (non-robust) estimate of lag-1 autocorrelation
     temp_data = regress_poly(0, datat, remove_mean=True)[0].astype(np.float32)
     if np.any(np.isnan(temp_data)):
-        raise ValueError("NaNs found in data after detrending")
+        nan_idx = np.where(np.isnan(temp_data))[0]
+        nan_datat = datat[nan_idx, :]
+        raise ValueError(
+            f"NaNs found in data after detrending in {nan_idx.size} voxels: {nan_datat}"
+        )
 
     if np.any(np.isinf(temp_data)):
         raise ValueError("Infs found in data after detrending")
