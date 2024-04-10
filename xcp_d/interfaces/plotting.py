@@ -319,6 +319,16 @@ class QCPlots(SimpleInterface):
             use_ext=False,
         )
 
+        cleaned_data = read_ndata(
+            datafile=self.inputs.cleaned_file,
+            maskfile=self.inputs.mask_file,
+        )
+        if np.any(np.isnan(cleaned_data)):
+            raise ValueError(f"NaNs in the cleaned data: {self.inputs.cleaned_data}")
+
+        if np.any(np.isinf(cleaned_data)):
+            raise ValueError(f"Infs in the cleaned data: {self.inputs.cleaned_data}")
+
         dvars_before_processing = compute_dvars(
             read_ndata(
                 datafile=self.inputs.bold_file,
