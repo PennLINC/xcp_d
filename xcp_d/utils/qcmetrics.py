@@ -277,7 +277,7 @@ def compute_dvars(
         nan_idx = np.where(np.isnan(temp_data))[0]
         nan_datat = datat[nan_idx, :]
         raise ValueError(
-            f"NaNs found in data after detrending in {nan_idx.size} voxels: {nan_datat}"
+            f"NaNs found in data after detrending in {nan_idx.size} voxels"
         )
 
     if np.any(np.isinf(temp_data)):
