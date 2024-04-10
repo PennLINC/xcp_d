@@ -272,12 +272,14 @@ def compute_dvars(
         func_sd = func_sd[zero_variance_voxels]
 
     # Compute (non-robust) estimate of lag-1 autocorrelation
-    ar1 = np.apply_along_axis(
-        _AR_est_YW,
-        1,
-        regress_poly(0, datat, remove_mean=True)[0].astype(np.float32),
-        1,
-    )
+    temp_data = regress_poly(0, datat, remove_mean=True)[0].astype(np.float32)
+    if np.any(np.isnan(temp_data)):
+        raise ValueError("NaNs found in data after detrending")
+
+    if np.any(np.isinf(temp_data)):
+        raise ValueError("Infs found in data after detrending")
+
+    ar1 = np.apply_along_axis(_AR_est_YW, 1, temp_data, 1)
 
     # Compute (predicted) standard deviation of temporal difference time series
     diff_sdhat = np.squeeze(np.sqrt(((1 - ar1) * 2).tolist())) * func_sd
