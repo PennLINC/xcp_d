@@ -537,8 +537,14 @@ def plot_fmri_es(
     if np.any(np.isinf(denoised_interpolated_arr)):
         raise ValueError(f"Infs in the cleaned data: {denoised_interpolated_bold}")
 
-    preprocessed_dvars = compute_dvars(preprocessed_arr)[1]
-    denoised_interpolated_dvars = compute_dvars(denoised_interpolated_arr)[1]
+    preprocessed_dvars = compute_dvars(
+        preprocessed_arr,
+        intensity_normalization=0,
+    )[1]
+    denoised_interpolated_dvars = compute_dvars(
+        denoised_interpolated_arr,
+        intensity_normalization=0,
+    )[1]
 
     if preprocessed_arr.shape != denoised_interpolated_arr.shape:
         raise ValueError(
