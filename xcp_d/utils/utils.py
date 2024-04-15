@@ -508,7 +508,6 @@ def _interpolate(*, arr, sample_mask, TR):
     """
     from scipy import signal
 
-    outlier_idx = list(np.where(~sample_mask)[0])
     n_volumes = arr.shape[0]
     fs = 1 / TR
     time = np.arange(0, n_volumes * TR, TR)
@@ -535,39 +534,24 @@ def _interpolate(*, arr, sample_mask, TR):
             angular_frequencies,
             normalize=True,
         )
+        power_spectrum = np.sqrt(power_spectrum)
         interpolated_voxel_data = sum(
             pow * np.sin(hz * time) for hz, pow in zip(angular_frequencies, power_spectrum)
         )
+        # Use least squares to estimate the scaling factor
+        # XXX: AFAICT we shouldn't need a scaling factor, but this does help.
+        beta = np.linalg.lstsq(
+            interpolated_voxel_data[sample_mask, np.newaxis],
+            censored_voxel_data,
+            rcond=None,
+        )[0]
+        interpolated_voxel_data *= beta[0]
+
         # Rescale the interpolated data back to the original scale
         interpolated_voxel_data = interpolated_voxel_data * voxel_sd + voxel_mean
         # Replace low-motion volumes with the original data
         interpolated_voxel_data[sample_mask] = arr[sample_mask, i_voxel]
         interpolated_arr[:, i_voxel] = interpolated_voxel_data
-
-    # Replace any high-motion volumes at the beginning or end of the run with the closest
-    # low-motion volume's data.
-    # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
-    gaps = [[start, end] for start, end in zip(outlier_idx, outlier_idx[1:]) if start + 1 < end]
-    edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
-    consecutive_outliers_idx = list(zip(edges, edges))
-    first_outliers = consecutive_outliers_idx[0]
-    last_outliers = consecutive_outliers_idx[-1]
-
-    # Replace outliers at beginning of run
-    if first_outliers[0] == 0:
-        LOGGER.warning(
-            f"Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) "
-            "will be replaced with first non-outlier volume's values."
-        )
-        interpolated_arr[: first_outliers[1] + 1, :] = interpolated_arr[first_outliers[1] + 1, :]
-
-    # Replace outliers at end of run
-    if last_outliers[1] == n_volumes - 1:
-        LOGGER.warning(
-            f"Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) "
-            "will be replaced with last non-outlier volume's values."
-        )
-        interpolated_arr[last_outliers[0] :, :] = interpolated_arr[last_outliers[0] - 1, :]
 
     return interpolated_arr
 
