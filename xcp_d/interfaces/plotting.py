@@ -323,11 +323,6 @@ class QCPlots(SimpleInterface):
             datafile=self.inputs.cleaned_file,
             maskfile=self.inputs.mask_file,
         )
-        if np.any(np.isnan(cleaned_data)):
-            raise ValueError(f"NaNs in the cleaned data: {self.inputs.cleaned_data}")
-
-        if np.any(np.isinf(cleaned_data)):
-            raise ValueError(f"Infs in the cleaned data: {self.inputs.cleaned_data}")
 
         dvars_before_processing = compute_dvars(
             datat=read_ndata(
