@@ -531,6 +531,7 @@ def _interpolate(*, arr, sample_mask, TR):
             oversampling_factor=4,
             TR=TR,
         )
+        LOGGER.info(f"Interpolated voxel {i_voxel + 1}: {interpolated_voxel_data.shape}.")
 
         # Replace high-motion volumes in interpolated array with the modified data
         interpolated_arr[~sample_mask, i_voxel] = interpolated_voxel_data[~sample_mask, 0]
