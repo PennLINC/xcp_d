@@ -319,11 +319,6 @@ class QCPlots(SimpleInterface):
             use_ext=False,
         )
 
-        cleaned_data = read_ndata(
-            datafile=self.inputs.cleaned_file,
-            maskfile=self.inputs.mask_file,
-        )
-
         dvars_before_processing = compute_dvars(
             datat=read_ndata(
                 datafile=self.inputs.bold_file,
