@@ -114,6 +114,7 @@ finally:
     from templateflow import __version__ as _tf_ver
 
     from xcp_d import __version__
+    from xcp_d.data import load as load_data
 
 if not hasattr(sys, "_is_pytest_session"):
     sys._is_pytest_session = False  # Trick to avoid sklearn's FutureWarnings
@@ -471,12 +472,13 @@ class execution(_Config):
                 validate=False,
                 ignore=ignore_patterns,
             )
+            xcp_d_config = load_data("xcp_d_bids_config.json")
             cls._layout = BIDSLayout(
                 str(cls.fmri_dir),
                 database_path=_db_path,
                 reset_database=cls.bids_database_dir is None,
                 indexer=_indexer,
-                config=["bids", "derivatives"],
+                config=["bids", "derivatives", xcp_d_config],
             )
             cls.bids_database_dir = _db_path
 
