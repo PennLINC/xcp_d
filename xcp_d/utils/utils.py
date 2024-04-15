@@ -505,6 +505,14 @@ def _interpolate(*, arr, sample_mask, TR):
     Notes
     -----
     This function won't work if sample_mask is all zeros, but that should never happen.
+
+    The function uses the least squares spectral analysis method described in
+    :footcite:t:`power_fd_dvars`, which in turn is based on the method described in
+    :footcite:t:`mathias2004algorithms`.
+
+    References
+    ----------
+    .. footbibliography::
     """
     from xcp_d.utils.utils import get_transform
 
@@ -517,37 +525,43 @@ def _interpolate(*, arr, sample_mask, TR):
     for i_voxel in range(n_voxels):
         voxel_data = arr[:, i_voxel]
         interpolated_voxel_data = get_transform(
-            censored_time,
-            voxel_data[sample_mask, None],
-            time,
+            time=censored_time,
+            arr=voxel_data[sample_mask, None],
+            sample_mask=time,
             oversampling_factor=4,
             TR=TR,
         )
 
         # Replace high-motion volumes in interpolated array with the modified data
-        interpolated_arr[~sample_mask, i_voxel] = interpolated_voxel_data[~sample_mask]
+        interpolated_arr[~sample_mask, i_voxel] = interpolated_voxel_data[~sample_mask, 0]
 
     return interpolated_arr
 
 
-def get_transform(time, arr, sample_mask, oversampling_factor, TR):
+def get_transform(*, censored_time, arr, uncensored_time, oversampling_factor, TR):
     """Interpolate high-motion volumes in a time series using least squares spectral analysis.
 
     Parameters
     ----------
-    time : ndarray
+    censored_time : ndarray of shape (C,)
         Time points for which observations are present.
-    arr : ndarray
+        C = number of low-motion time points
+    arr : ndarray of shape (C, S)
         Observations in columns. The number of rows equals the number of time points.
-    sample_mask : ndarray
+        C = number of low-motion time points
+        S = number of voxels
+    uncensored_time : ndarray of shape (T,)
         Time points for which to reconstruct the original time series.
+        T = total number of time points
     oversampling_factor : int
         Oversampling frequency, generally >= 4.
 
     Returns
     -------
-    reconstructed_arr : ndarray
+    reconstructed_arr : ndarray of shape (T, S)
         The reconstructed time series.
+        T = number of time points in uncensored_time
+        S = number of voxels in arr
 
     Notes
     -----
@@ -568,7 +582,7 @@ def get_transform(time, arr, sample_mask, oversampling_factor, TR):
     fs = 1 / TR
     n_volumes = arr.shape[0]  # Number of time points in censored array
     n_voxels = arr.shape[1]  # Number of voxels
-    time_span = np.max(time) - np.min(time)  # Total time span
+    time_span = np.max(censored_time) - np.min(censored_time)  # Total time span
     n_oversampled_timepoints = int((time_span / TR) * oversampling_factor)
 
     # calculate sampling frequencies
@@ -582,12 +596,12 @@ def get_transform(time, arr, sample_mask, oversampling_factor, TR):
     # angular frequencies and constant offsets
     frequencies_angular = 2 * np.pi * frequencies_hz
     offsets = np.arctan2(
-        np.sum(np.sin(2 * np.dot(frequencies_angular[:, None], time[None, :])), axis=1),
-        np.sum(np.cos(2 * np.dot(frequencies_angular[:, None], time[None, :])), axis=1),
+        np.sum(np.sin(2 * np.dot(frequencies_angular[:, None], censored_time[None, :])), axis=1),
+        np.sum(np.cos(2 * np.dot(frequencies_angular[:, None], censored_time[None, :])), axis=1),
     ) / (2 * frequencies_angular)
 
     # spectral power sin and cosine terms
-    spectral_power = np.dot(frequencies_angular[:, None], time[None, :]) - (
+    spectral_power = np.dot(frequencies_angular[:, None], censored_time[None, :]) - (
         frequencies_angular[:, None] * offsets[:, None]
     )
     cterm = np.cos(spectral_power)
@@ -609,7 +623,7 @@ def get_transform(time, arr, sample_mask, oversampling_factor, TR):
     power_sin = numerator / denominator
 
     # The inverse function to re-construct the original time series
-    T_rep = np.repeat(sample_mask[None, :], repeats=len(frequencies_hz), axis=0)[:, :, None]
+    T_rep = np.repeat(uncensored_time[None, :], repeats=len(frequencies_hz), axis=0)[:, :, None]
     prod = T_rep * frequencies_angular[:, None, None]
     sin_t = np.sin(prod)
     cos_t = np.cos(prod)
@@ -618,7 +632,7 @@ def get_transform(time, arr, sample_mask, oversampling_factor, TR):
     S = np.sum(sw_p, axis=0)
     C = np.sum(cw_p, axis=0)
     reconstructed_arr = C + S
-    reconstructed_arr = reconstructed_arr.reshape((len(sample_mask), arr.shape[1]))
+    reconstructed_arr = reconstructed_arr.reshape((len(uncensored_time), arr.shape[1]))
 
     # Normalize the reconstructed spectrum, needed when oversampling_factor > 1
     Std_H = np.std(reconstructed_arr, axis=0)
