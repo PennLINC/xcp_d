@@ -472,7 +472,7 @@ class execution(_Config):
                 validate=False,
                 ignore=ignore_patterns,
             )
-            xcp_d_config = load_data("xcp_d_bids_config.json")
+            xcp_d_config = load_data("xcp_d_bids_config2.json")
             cls._layout = BIDSLayout(
                 str(cls.fmri_dir),
                 database_path=_db_path,
