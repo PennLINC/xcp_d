@@ -540,11 +540,16 @@ def _interpolate(*, arr, sample_mask, TR):
         )
         # Use least squares to estimate the scaling factor
         # XXX: AFAICT we shouldn't need a scaling factor, but this does help.
-        beta = np.linalg.lstsq(
-            interpolated_voxel_data[sample_mask, np.newaxis],
-            censored_voxel_data,
-            rcond=None,
-        )[0]
+        try:
+            beta = np.linalg.lstsq(
+                interpolated_voxel_data[sample_mask, np.newaxis],
+                censored_voxel_data,
+                rcond=None,
+            )[0]
+        except np.linalg.LinAlgError:
+            raise ValueError(
+                f"lstsq failed:\n\n{censored_voxel_data}\n\n{interpolated_voxel_data[sample_mask]}"
+            )
         interpolated_voxel_data *= beta[0]
 
         # Rescale the interpolated data back to the original scale
