@@ -506,7 +506,7 @@ def _interpolate(*, arr, sample_mask, TR):
     -----
     This function won't work if sample_mask is all zeros, but that should never happen.
     """
-    from nilearn import signal
+    from scipy import signal
 
     outlier_idx = list(np.where(~sample_mask)[0])
     n_volumes = arr.shape[0]
