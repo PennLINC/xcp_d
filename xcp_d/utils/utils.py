@@ -526,7 +526,7 @@ def _interpolate(*, arr, sample_mask, TR):
         voxel_data = arr[:, i_voxel]
         interpolated_voxel_data = get_transform(
             censored_time=censored_time,
-            arr=voxel_data[sample_mask, None],
+            arr=voxel_data[sample_mask],
             uncensored_time=time,
             oversampling_factor=4,
             TR=TR,
@@ -578,6 +578,12 @@ def get_transform(*, censored_time, arr, uncensored_time, oversampling_factor, T
     .. footbibliography::
     """
     import numpy as np
+
+    assert arr.ndim == 1
+    assert censored_time.ndim == 1
+    assert uncensored_time.ndim == 1
+    assert arr.shape[0] == censored_time.shape[0]
+    assert uncensored_time.shape[0] > censored_time.shape[0]
 
     arr = arr[:, None]
     fs = 1 / TR
