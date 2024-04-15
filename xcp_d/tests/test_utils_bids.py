@@ -85,7 +85,7 @@ def test_collect_data_ds001419(datasets):
 def test_collect_data_nibabies(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["nibabies"]
-    xcp_d_config = load_data("xcp_d_bids_config.json")
+    xcp_d_config = load_data("xcp_d_bids_config2.json")
     layout = BIDSLayout(
         bids_dir,
         validate=False,
