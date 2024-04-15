@@ -56,7 +56,6 @@ NiPreps = "https://www.nipreps.org/"
 [project.optional-dependencies]
 doc = [
     "doctest-ignore-unicode",
-    "nbsphinx",
     "pydot >=1.2.3",
     "pydotplus",
     "recommonmark",
