@@ -525,9 +525,9 @@ def _interpolate(*, arr, sample_mask, TR):
     for i_voxel in range(n_voxels):
         voxel_data = arr[:, i_voxel]
         interpolated_voxel_data = get_transform(
-            time=censored_time,
+            censored_time=censored_time,
             arr=voxel_data[sample_mask, None],
-            sample_mask=time,
+            uncensored_time=time,
             oversampling_factor=4,
             TR=TR,
         )
