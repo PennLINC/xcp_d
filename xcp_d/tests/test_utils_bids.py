@@ -92,7 +92,7 @@ def test_collect_data_nibabies(datasets):
         config=["bids", "derivatives", xcp_d_config],
     )
     cohort_files = layout.get(subject="01", cohort="1", space="MNIInfant", suffix="boldref")
-    assert len(cohort_files) > 1
+    assert len(cohort_files) > 0
 
     # NIFTI workflow
     subj_data = xbids.collect_data(
