@@ -10,6 +10,6 @@ def test_compute_dvars():
     n_volumes, n_vertices = 100, 10000
     data = np.random.random((n_vertices, n_volumes))
 
-    dvars, std_dvars = qcmetrics.compute_dvars(data)
+    dvars, std_dvars = qcmetrics.compute_dvars(datat=data)
     assert dvars.shape == (n_volumes,)
     assert std_dvars.shape == (n_volumes,)

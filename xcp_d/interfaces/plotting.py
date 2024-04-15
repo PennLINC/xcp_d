@@ -330,18 +330,16 @@ class QCPlots(SimpleInterface):
             raise ValueError(f"Infs in the cleaned data: {self.inputs.cleaned_data}")
 
         dvars_before_processing = compute_dvars(
-            read_ndata(
+            datat=read_ndata(
                 datafile=self.inputs.bold_file,
                 maskfile=self.inputs.mask_file,
             ),
-            intensity_normalization=0,
         )[1]
         dvars_after_processing = compute_dvars(
-            read_ndata(
+            datat=read_ndata(
                 datafile=self.inputs.cleaned_file,
                 maskfile=self.inputs.mask_file,
             ),
-            intensity_normalization=0,
         )[1]
         if preproc_fd_timeseries.size != dvars_before_processing.size:
             raise ValueError(

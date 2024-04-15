@@ -226,8 +226,8 @@ def overlap(input1, input2):
 
 
 def compute_dvars(
+    *,
     datat,
-    intensity_normalization=1000,
     remove_zerovariance=True,
     variance_tol=1e-7,
 ):
@@ -250,24 +250,6 @@ def compute_dvars(
     """
     from nipype.algorithms.confounds import _AR_est_YW, regress_poly
 
-    if np.any(np.isnan(datat)):
-        raise ValueError("NaNs found in data")
-
-    if np.any(np.isinf(datat)):
-        raise ValueError("Infs found in data")
-
-    if intensity_normalization != 0:
-        # Perform 1000 intensity normalization
-        data_median = np.median(datat)
-        LOGGER.warning(f"Data median: {data_median}")
-        datat = (datat / np.median(datat)) * intensity_normalization
-
-    if np.any(np.isnan(datat)):
-        raise ValueError("NaNs found in data")
-
-    if np.any(np.isinf(datat)):
-        raise ValueError("Infs found in data")
-
     # Robust standard deviation (we are using "lower" interpolation because this is what FSL does
     try:
         func_sd = (
@@ -285,23 +267,8 @@ def compute_dvars(
         datat = datat[zero_variance_voxels, :]
         func_sd = func_sd[zero_variance_voxels]
 
-    if np.any(np.isnan(datat)):
-        raise ValueError("NaNs found in data")
-
-    if np.any(np.isinf(datat)):
-        raise ValueError("Infs found in data")
-
     # Compute (non-robust) estimate of lag-1 autocorrelation
     temp_data = regress_poly(0, datat, remove_mean=True)[0].astype(np.float32)
-    if np.any(np.isnan(temp_data)):
-        nan_idx = np.where(np.any(np.isnan(temp_data), axis=0))[0]
-        nan_datat = datat[nan_idx, :]
-        raise ValueError(
-            f"NaNs found in data after detrending in {nan_idx.size} voxels: {nan_datat[0, :]}"
-        )
-
-    if np.any(np.isinf(temp_data)):
-        raise ValueError("Infs found in data after detrending")
 
     ar1 = np.apply_along_axis(_AR_est_YW, 1, temp_data, 1)
 
