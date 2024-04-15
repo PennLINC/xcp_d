@@ -506,59 +506,117 @@ def _interpolate(*, arr, sample_mask, TR):
     -----
     This function won't work if sample_mask is all zeros, but that should never happen.
     """
-    from scipy import signal
+    from xcp_d.utils.utils import get_transform
 
     n_volumes = arr.shape[0]
-    fs = 1 / TR
     time = np.arange(0, n_volumes * TR, TR)
     censored_time = time[sample_mask]
     n_voxels = arr.shape[1]
 
-    frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
-    angular_frequencies = 2 * np.pi * frequencies_hz
-
     interpolated_arr = arr.copy()
     for i_voxel in range(n_voxels):
         voxel_data = arr[:, i_voxel]
-        # z-score the data so Lomb-Scargle will work
-        voxel_mean = np.mean(voxel_data)
-        voxel_sd = np.std(voxel_data)
-        voxel_data = voxel_data - voxel_mean
-        voxel_data = voxel_data / voxel_sd
-
-        # Use Lomb-Scargle periodogram to estimate the power spectrum using the low-motion volumes
-        censored_voxel_data = voxel_data[sample_mask]
-        power_spectrum = signal.lombscargle(
+        interpolated_voxel_data = get_transform(
             censored_time,
-            censored_voxel_data,
-            angular_frequencies,
-            normalize=True,
+            voxel_data[sample_mask, None],
+            time,
+            oversampling_factor=4,
+            TR=TR,
         )
-        power_spectrum = np.sqrt(power_spectrum)
-        interpolated_voxel_data = sum(
-            pow * np.sin(hz * time) for hz, pow in zip(angular_frequencies, power_spectrum)
-        )
-        # Use least squares to estimate the scaling factor
-        # XXX: AFAICT we shouldn't need a scaling factor, but this does help.
-        try:
-            beta = np.linalg.lstsq(
-                interpolated_voxel_data[sample_mask, np.newaxis],
-                censored_voxel_data,
-                rcond=None,
-            )[0]
-        except np.linalg.LinAlgError:
-            raise ValueError(
-                f"lstsq failed:\n\n{censored_voxel_data}\n\n{interpolated_voxel_data[sample_mask]}"
-            )
-        interpolated_voxel_data *= beta[0]
 
-        # Rescale the interpolated data back to the original scale
-        interpolated_voxel_data = interpolated_voxel_data * voxel_sd + voxel_mean
-        # Replace low-motion volumes with the original data
-        interpolated_voxel_data[sample_mask] = arr[sample_mask, i_voxel]
-        interpolated_arr[:, i_voxel] = interpolated_voxel_data
+        # Replace high-motion volumes in interpolated array with the modified data
+        interpolated_arr[~sample_mask, i_voxel] = interpolated_voxel_data[~sample_mask]
 
     return interpolated_arr
+
+
+def get_transform(time, arr, sample_mask, oversampling_factor, max_freq, TR):
+    """Calculate the Lomb-Scargle periodogram for a time series.
+
+    Parameters
+    ----------
+    time : ndarray
+        Time points for which observations are present.
+    arr : ndarray
+        Observations in columns. The number of rows equals the number of time points.
+    sample_mask : ndarray
+        Time points for which to reconstruct the original time series.
+    oversampling_factor : int
+        Oversampling frequency, generally >= 4.
+    max_freq : float
+        Highest frequency allowed. max_freq = 1 means 1*nyquist limit is highest frequency sampled.
+
+    Returns
+    -------
+    reconstructed_arr : ndarray
+        The reconstructed time series.
+    """
+    import numpy as np
+
+    arr = arr[:, None]
+    fs = 1 / TR
+    n_volumes = arr.shape[0]  # Number of time points in censored array
+    n_voxels = arr.shape[1]  # Number of voxels
+    time_span = np.max(time) - np.min(time)  # Total time span
+    n_oversampled_timepoints = int((time_span / TR) * oversampling_factor)
+
+    # calculate sampling frequencies
+    max_freq = max_freq * 0.5 * fs
+    frequencies_hz = np.linspace(
+        1 / (time_span * oversampling_factor),
+        max_freq,
+        n_oversampled_timepoints,
+    )
+
+    # angular frequencies and constant offsets
+    frequencies_angular = 2 * np.pi * frequencies_hz
+    offsets = np.arctan2(
+        np.sum(np.sin(2 * np.dot(frequencies_angular[:, None], time[None, :])), axis=1),
+        np.sum(np.cos(2 * np.dot(frequencies_angular[:, None], time[None, :])), axis=1),
+    ) / (2 * frequencies_angular)
+
+    # spectral power sin and cosine terms
+    spectral_power = (
+        np.dot(frequencies_angular[:, None], time[None, :]) -
+        (frequencies_angular[:, None] * offsets[:, None])
+    )
+    cterm = np.cos(spectral_power)
+    sterm = np.sin(spectral_power)
+
+    D = arr.copy()
+    D = D.reshape((1, n_volumes, n_voxels))
+
+    # This calculation is done by separately for the numerator, denominator, and the division
+    cos_mult = cterm[:, :, None] * D
+    numerator = np.sum(cos_mult, axis=1)
+    denominator = np.sum(cterm**2, axis=1)[:, None]
+    power_cos = numerator / denominator
+
+    # Repeat the above for Sine term
+    sin_mult = sterm[:, :, None] * D
+    numerator = np.sum(sin_mult, axis=1)
+    denominator = np.sum(sterm**2, axis=1)[:, None]
+    power_sin = numerator / denominator
+
+    # The inverse function to re-construct the original time series
+    T_rep = np.repeat(sample_mask[None, :], repeats=len(frequencies_hz), axis=0)[:, :, None]
+    prod = T_rep * frequencies_angular[:, None, None]
+    sin_t = np.sin(prod)
+    cos_t = np.cos(prod)
+    sw_p = sin_t * power_sin[:, None, :]
+    cw_p = cos_t * power_cos[:, None, :]
+    S = np.sum(sw_p, axis=0)
+    C = np.sum(cw_p, axis=0)
+    reconstructed_arr = C + S
+    reconstructed_arr = reconstructed_arr.reshape((len(sample_mask), arr.shape[1]))
+
+    # Normalize the reconstructed spectrum, needed when oversampling_factor > 1
+    Std_H = np.std(reconstructed_arr, axis=0)
+    Std_h = np.std(arr, axis=0)
+    norm_fac = Std_H / Std_h
+    reconstructed_arr = reconstructed_arr / norm_fac[None, :]
+
+    return reconstructed_arr
 
 
 def _select_first(lst):
