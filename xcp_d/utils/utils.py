@@ -482,7 +482,7 @@ def denoise_with_nilearn(
 
 
 def _interpolate(*, arr, sample_mask, TR):
-    """Replace high-motion volumes with cubic-spline interpolated values.
+    """Replace high-motion volumes with a Lomb-Scargle periodogram-based interpolation method.
 
     This function applies Nilearn's :func:`~nilearn.signal._interpolate_volumes` function,
     followed by an extra step that replaces extrapolated, high-motion values at the beginning and
@@ -510,13 +510,40 @@ def _interpolate(*, arr, sample_mask, TR):
 
     outlier_idx = list(np.where(~sample_mask)[0])
     n_volumes = arr.shape[0]
+    fs = 1 / TR
+    time = np.arange(0, n_volumes * TR, TR)
+    censored_time = time[sample_mask]
+    n_voxels = arr.shape[1]
 
-    interpolated_arr = signal._interpolate_volumes(
-        arr,
-        sample_mask=sample_mask,
-        t_r=TR,
-        extrapolate=True,
-    )
+    frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
+    angular_frequencies = 2 * np.pi * frequencies_hz
+
+    interpolated_arr = arr.copy()
+    for i_voxel in range(n_voxels):
+        voxel_data = arr[:, i_voxel]
+        # z-score the data so Lomb-Scargle will work
+        voxel_mean = np.mean(voxel_data)
+        voxel_sd = np.std(voxel_data)
+        voxel_data = voxel_data - voxel_mean
+        voxel_data = voxel_data / voxel_sd
+
+        # Use Lomb-Scargle periodogram to estimate the power spectrum using the low-motion volumes
+        censored_voxel_data = voxel_data[sample_mask]
+        power_spectrum = signal.lombscargle(
+            censored_time,
+            censored_voxel_data,
+            angular_frequencies,
+            normalize=True,
+        )
+        interpolated_voxel_data = sum(
+            pow * np.sin(hz * time) for hz, pow in zip(angular_frequencies, power_spectrum)
+        )
+        # Rescale the interpolated data back to the original scale
+        interpolated_voxel_data = interpolated_voxel_data * voxel_sd + voxel_mean
+        # Replace low-motion volumes with the original data
+        interpolated_voxel_data[sample_mask] = arr[sample_mask, i_voxel]
+        interpolated_arr[:, i_voxel] = interpolated_voxel_data
+
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
     # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
