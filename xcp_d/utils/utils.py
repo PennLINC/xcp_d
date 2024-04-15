@@ -530,8 +530,8 @@ def _interpolate(*, arr, sample_mask, TR):
     return interpolated_arr
 
 
-def get_transform(time, arr, sample_mask, oversampling_factor, max_freq, TR):
-    """Calculate the Lomb-Scargle periodogram for a time series.
+def get_transform(time, arr, sample_mask, oversampling_factor, TR):
+    """Interpolate high-motion volumes in a time series using least squares spectral analysis.
 
     Parameters
     ----------
@@ -543,13 +543,24 @@ def get_transform(time, arr, sample_mask, oversampling_factor, max_freq, TR):
         Time points for which to reconstruct the original time series.
     oversampling_factor : int
         Oversampling frequency, generally >= 4.
-    max_freq : float
-        Highest frequency allowed. max_freq = 1 means 1*nyquist limit is highest frequency sampled.
 
     Returns
     -------
     reconstructed_arr : ndarray
         The reconstructed time series.
+
+    Notes
+    -----
+    This function is translated from Anish Mitra's MATLAB function ``getTransform``,
+    available at https://www.jonathanpower.net/2014-ni-motion-2.html.
+
+    The function implements the least squares spectral analysis method described in
+    :footcite:t:`power_fd_dvars`, which in turn is based on the method described in
+    :footcite:t:`mathias2004algorithms`.
+
+    References
+    ----------
+    .. footbibliography::
     """
     import numpy as np
 
@@ -561,7 +572,7 @@ def get_transform(time, arr, sample_mask, oversampling_factor, max_freq, TR):
     n_oversampled_timepoints = int((time_span / TR) * oversampling_factor)
 
     # calculate sampling frequencies
-    max_freq = max_freq * 0.5 * fs
+    max_freq = 0.5 * fs
     frequencies_hz = np.linspace(
         1 / (time_span * oversampling_factor),
         max_freq,
@@ -576,9 +587,8 @@ def get_transform(time, arr, sample_mask, oversampling_factor, max_freq, TR):
     ) / (2 * frequencies_angular)
 
     # spectral power sin and cosine terms
-    spectral_power = (
-        np.dot(frequencies_angular[:, None], time[None, :]) -
-        (frequencies_angular[:, None] * offsets[:, None])
+    spectral_power = np.dot(frequencies_angular[:, None], time[None, :]) - (
+        frequencies_angular[:, None] * offsets[:, None]
     )
     cterm = np.cos(spectral_power)
     sterm = np.sin(spectral_power)
