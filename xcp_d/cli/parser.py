@@ -586,23 +586,26 @@ The default is 240 (4 minutes).
             "Default is 0.5."
         ),
     )
-    g_parcellation.add_argument(
-        "--exact-time",
-        "--exact_time",
-        dest="exact_time",
+
+    g_dcan = parser.add_argument_group("abcd/hbcd mode options")
+    g_dcan.add_argument(
+        "--create-matrices",
+        "--create_matrices",
+        dest="create_matrices",
         required=False,
-        default="auto",
+        default="all",
         nargs="+",
         type=_float_or_auto_or_none,
-        help=(
-            "If used, this parameter will produce correlation matrices limited to each requested "
-            "amount of time. "
-            "If there is more than the required amount of low-motion data, "
-            "then volumes will be randomly selected to produce denoised outputs with the exact "
-            "amounts of time requested. "
-            "If there is less than the required amount of 'good' data, "
-            "then the corresponding correlation matrix will not be produced."
-        ),
+        help="""\
+If used, this parameter will produce correlation matrices limited to each requested amount of time.
+If there is more than the required amount of low-motion data,
+then volumes will be randomly selected to produce denoised outputs with the exact
+amounts of time requested.
+If there is less than the required amount of 'good' data,
+then the corresponding correlation matrix will not be produced.
+
+This option is only allowed for the "abcd" and "hbcd" modes.
+""",
     )
 
     g_other = parser.add_argument_group("Other options")
@@ -747,23 +750,6 @@ By default, this workflow is disabled.
             "If used, the workflow to warp native-space surfaces to standard space will be "
             "skipped."
         ),
-    )
-
-    g_dcan_qc = g_experimental.add_mutually_exclusive_group(required=False)
-    g_dcan_qc.add_argument(
-        "--dcan-qc",
-        "--dcan_qc",
-        action="store_true",
-        dest="dcan_qc",
-        default="auto",
-        help="Run DCAN QC.",
-    )
-    g_dcan_qc.add_argument(
-        "--skip-dcan-qc",
-        "--skip_dcan_qc",
-        action="store_false",
-        dest="dcan_qc",
-        help="Do not run DCAN QC.",
     )
 
     latest = check_latest()
@@ -939,6 +925,8 @@ def _validate_parameters(opts, build_log, parser):
     opts.output_dir = opts.output_dir.resolve()
     opts.work_dir = opts.work_dir.resolve()
 
+    error_messages = []
+
     # Set the FreeSurfer license
     if opts.fs_license_file is not None:
         opts.fs_license_file = opts.fs_license_file.resolve()
@@ -946,11 +934,11 @@ def _validate_parameters(opts, build_log, parser):
             os.environ["FS_LICENSE"] = str(opts.fs_license_file)
 
         else:
-            parser.error(f"Freesurfer license DNE: {opts.fs_license_file}.")
+            error_messages.append(f"Freesurfer license DNE: {opts.fs_license_file}.")
     else:
         fs_license_file = os.environ.get("FS_LICENSE", "/opt/freesurfer/license.txt")
         if not Path(fs_license_file).is_file():
-            parser.error(
+            error_messages.append(
                 "A valid FreeSurfer license file is required. "
                 "Set the FS_LICENSE environment variable or use the '--fs-license-file' flag."
             )
@@ -965,29 +953,36 @@ def _validate_parameters(opts, build_log, parser):
     if isinstance(opts.exact_time, list) and isinstance(opts.exact_time[0], str):
         opts.exact_time = opts.exact_time[0]
 
-    if opts.exact_time == "none":
-        opts.exact_time = []
+    # Check parameters based on the mode
+    if opts.mode not in ("abcd", "hbcd"):
+        if opts.exact_time != "auto":
+            error_messages.append(
+                "The '--create-matrices' parameter is not supported for the 'linc' mode. "
+                "Please remove this parameter."
+            )
+    else:
+        if (opts.lower_bpf is None) or (opts.upper_bpf is None):
+            error_messages.append(
+                "'--lower-bpf' and '--upper-bpf' must be set for the 'abcd' and 'hbcd' modes. "
+                "Please set these parameters."
+            )
 
     if opts.mode == "abcd":
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = True if opts.cifti == "auto" else opts.cifti
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
-        opts.dcan_qc = True if opts.dcan_qc == "auto" else opts.dcan_qc
-        opts.exact_time = [300, 480] if opts.exact_time == "auto" else opts.exact_time
+        opts.exact_time = ["all", 300, 480] if opts.exact_time == "auto" else opts.exact_time
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
     elif opts.mode == "hbcd":
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = True if opts.cifti == "auto" else opts.cifti
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
-        opts.dcan_qc = True if opts.dcan_qc == "auto" else opts.dcan_qc
-        opts.exact_time = [300, 480] if opts.exact_time == "auto" else opts.exact_time
+        opts.exact_time = ["all", 300, 480] if opts.exact_time == "auto" else opts.exact_time
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
     elif opts.mode == "linc":
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = False if opts.cifti == "auto" else opts.cifti
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
-        opts.dcan_qc = False if opts.dcan_qc == "auto" else opts.dcan_qc
-        opts.exact_time = [] if opts.exact_time == "auto" else opts.exact_time
         opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
     else:
         raise ValueError(f"Unsupported mode '{opts.mode}'")
@@ -1023,12 +1018,12 @@ def _validate_parameters(opts, build_log, parser):
 
     if opts.motion_filter_type == "notch":
         if not (opts.band_stop_min and opts.band_stop_max):
-            parser.error(
+            error_messages.append(
                 "Please set both '--band-stop-min' and '--band-stop-max' if you want to apply "
                 "the 'notch' motion filter."
             )
         elif opts.band_stop_min >= opts.band_stop_max:
-            parser.error(
+            error_messages.append(
                 f"'--band-stop-min' ({opts.band_stop_min}) must be lower than "
                 f"'--band-stop-max' ({opts.band_stop_max})."
             )
@@ -1041,7 +1036,7 @@ def _validate_parameters(opts, build_log, parser):
 
     elif opts.motion_filter_type == "lp":
         if not opts.band_stop_min:
-            parser.error(
+            error_messages.append(
                 "Please set '--band-stop-min' if you want to apply the 'lp' motion filter."
             )
         elif opts.band_stop_min < 1:
@@ -1099,9 +1094,15 @@ def _validate_parameters(opts, build_log, parser):
 
     # process_surfaces and nifti processing are incompatible.
     if opts.process_surfaces and not opts.cifti:
-        parser.error(
+        error_messages.append(
             "In order to perform surface normalization (--warp-surfaces-native2std), "
             "you must enable cifti processing (--cifti)."
         )
+
+    if error_messages:
+        error_message_str = "Errors detected in parameter parsing:\n\t- " + "\n\t- ".join(
+            error_messages
+        )
+        parser.error(error_message_str)
 
     return opts
