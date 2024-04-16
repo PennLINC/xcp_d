@@ -45,14 +45,11 @@ needs_sphinx = "4.2.0"
 # ones.
 extensions = [
     # "matplotlib.sphinxext.plot_directive",
-    "nbsphinx",
     "nipype.sphinxext.apidoc",
     # "nipype.sphinxext.documenter",
     "nipype.sphinxext.plot_workflow",
     "recommonmark",
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosectionlabel",
-    "sphinx.ext.autosummary",  # standard
     "sphinx.ext.coverage",
     "sphinx.ext.doctest",
     # "sphinx.ext.graphviz",
