@@ -76,12 +76,14 @@ def load_motion(
     columns = motion_confounds_df.columns.tolist()
     for col in columns:
         new_col = f"{col}_derivative1"
-        motion_confounds_df[new_col] = motion_confounds_df[col].diff()
+        col_series = motion_confounds_df[col].copy()
+        motion_confounds_df[new_col] = col_series.diff()
 
     columns = motion_confounds_df.columns.tolist()
     for col in columns:
         new_col = f"{col}_power2"
-        motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
+        col_series = motion_confounds_df[col].copy()
+        motion_confounds_df[new_col] = col_series**2
 
     return motion_confounds_df
 
