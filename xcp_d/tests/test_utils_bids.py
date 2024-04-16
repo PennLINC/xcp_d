@@ -8,6 +8,7 @@ import pytest
 from bids.layout import BIDSLayout
 
 import xcp_d.utils.bids as xbids
+from xcp_d.data import load as load_data
 
 
 def test_collect_participants(datasets):
@@ -84,11 +85,14 @@ def test_collect_data_ds001419(datasets):
 def test_collect_data_nibabies(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["nibabies"]
+    xcp_d_config = load_data("xcp_d_bids_config2.json")
     layout = BIDSLayout(
         bids_dir,
         validate=False,
-        config=["bids", "derivatives"],
+        config=["bids", "derivatives", xcp_d_config],
     )
+    cohort_files = layout.get(subject="01", cohort="1", space="MNIInfant", suffix="boldref")
+    assert len(cohort_files) > 0
 
     # NIFTI workflow
     subj_data = xbids.collect_data(

@@ -252,9 +252,12 @@ def collect_ukbiobank_confounds(
     rmsd_file = os.path.join(task_dir_orig, "mc", "prefiltered_func_data_mcf_abs.rms")
     assert os.path.isfile(rmsd_file)
 
+    tmpdir = os.path.join(work_dir, prefix)
+    os.makedirs(tmpdir, exist_ok=True)
+
     # Collect motion confounds and their expansions
     normalize_motion = NormalizeMotionParams(format="FSL", in_file=par_file)
-    normalize_motion_results = normalize_motion.run()
+    normalize_motion_results = normalize_motion.run(cwd=tmpdir)
     motion_data = np.loadtxt(normalize_motion_results.outputs.out_file)
     confounds_df = pd.DataFrame(
         data=motion_data,
