@@ -23,36 +23,42 @@ def compute_2d_reho(datat, adjacency_matrix):
 
     Returns
     -------
-    KCC : numpy.ndarray of shape (V,)
+    kcc : numpy.ndarray of shape (V,)
         ReHo values.
 
     Notes
     -----
     From https://www.sciencedirect.com/science/article/pii/S0165178119305384#bib0045.
     """
-    KCC = np.zeros(datat.shape[0])  # a zero for each voxel
+    n_vertices = datat.shape[0]
+    kcc = np.zeros(n_vertices)
 
-    for i in range(datat.shape[0]):  # loop through each voxel
-        neigbor_index = np.where(adjacency_matrix[i, :] > 0)[0]  # the index of 4 neightbouts
-        nn = np.hstack((neigbor_index, np.array(i)))  # stack those indexes with voxel number
-        neidata = datat[nn, :]  # pull out data for relevant voxels
+    for i_vertex in range(n_vertices):  # loop through each voxel
+        neighbor_idx = np.where(adjacency_matrix[i_vertex, :])[0]  # the index of neighbors
+        neighborhood_idx = np.hstack((neighbor_idx, np.array(i_vertex)))
 
-        rankeddata = np.zeros_like(neidata)  # TODO: Fix typos #create 0s in same shape
+        neighborhood_data = datat[neighborhood_idx, :]
+
+        rankeddata = np.zeros_like(neighborhood_data)
         # pull out index of voxel, timepoint
-        neigbor, timepoint = neidata.shape[0], neidata.shape[1]
+        n_neighbors, n_volumes = neighborhood_data.shape[0], neighborhood_data.shape[1]
 
-        for j in range(neidata.shape[0]):  # loop through each neighbour
-            rankeddata[j, :] = rankdata(neidata[j, :])  # assign ranks to timepoints for each voxel
+        for j_neighbor in range(n_neighbors):
+            # assign ranks to timepoints for each voxel
+            rankeddata[j_neighbor, :] = rankdata(neighborhood_data[j_neighbor, :])
+
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
-        # KC is the sum of the squared rankmean minus the timepoints into
+        # kc is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared
-        KC = np.sum(np.power(rankmean, 2)) - timepoint * np.power(np.mean(rankmean), 2)
-        # square number of neighbours, multiply by (cubed timepoint - timepoint)
-        denom = np.power(neigbor, 2) * (np.power(timepoint, 3) - timepoint)
-        # the voxel value is 12*KC divided by denom
-        KCC[i] = 12 * KC / (denom)
+        kc = np.sum(np.power(rankmean, 2)) - n_volumes * np.power(np.mean(rankmean), 2)
 
-    return KCC
+        # square number of neighbours, multiply by (cubed timepoint - timepoint)
+        denom = np.power(n_neighbors, 2) * (np.power(n_volumes, 3) - n_volumes)
+
+        # the voxel value is 12*kc divided by denom
+        kcc[i_vertex] = 12 * kc / (denom)
+
+    return kcc
 
 
 def mesh_adjacency(hemi):
@@ -68,30 +74,34 @@ def mesh_adjacency(hemi):
     -------
     numpy.ndarray
         Adjacency matrix.
+
+    Notes
+    -----
+    Modified by Taylor Salo to loop over all vertices in faces.
     """
-    surf = str(
-        get_template("fsLR", space="fsaverage", hemi=hemi, suffix="sphere", density="32k")
-    )  # Get relevant template
-
+    surf = str(get_template("fsLR", space=None, hemi=hemi, suffix="sphere", density="32k"))
     surf = nb.load(surf)  # load via nibabel
-    #  Aggregate GIFTI data arrays into an ndarray or tuple of ndarray
-    # select the arrays in a specific order
+
+    # Aggregate GIFTI data arrays into an ndarray or tuple of ndarray select the arrays in a
+    # specific order
     vertices_faces = surf.agg_data(("pointset", "triangle"))
-    vertices = vertices_faces[0]  # the first array of the tuple
-    faces = vertices_faces[1]  # the second array in the tuples
-    # create an array of 0s = voxel*voxel
-    data_array = np.zeros([len(vertices), len(vertices)], dtype=np.uint8)
+    vertices = vertices_faces[0]
+    faces = vertices_faces[1]
+    n_vertices = vertices.shape[0]
 
-    for i in range(1, len(faces)):  # looping thorugh each value in faces
-        data_array[faces[i, 0], faces[i, 2]] = 1  # use to index into data_array and
-        # turn select values to 1
-        data_array[faces[i, 1], faces[i, 1]] = 1
-        data_array[faces[i, 2], faces[i, 0]] = 1
+    adjacency_matrix = np.zeros([n_vertices, n_vertices], dtype=bool)
+    for i_face in range(faces.shape[0]):
+        face = faces[i_face, :]  # pull out the face
+        for vertex1 in face:
+            for vertex2 in face:
+                if vertex1 != vertex2:  # don't include the vertex as its own neighbor
+                    adjacency_matrix[vertex1, vertex2] = True
 
-    return data_array + data_array.T  # transpose data_array and add it to itself
+    assert np.array_equal(adjacency_matrix, adjacency_matrix.T)
+    return adjacency_matrix
 
 
-def compute_alff(data_matrix, low_pass, high_pass, TR):
+def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     """Compute amplitude of low-frequency fluctuation (ALFF).
 
     Parameters
@@ -104,6 +114,8 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
         high pass frequency in Hz
     TR : float
         repetition time in seconds
+    sample_mask : numpy.ndarray or None
+        (timepoints,) 1D array with 1s for good volumes and 0s for censored ones.
 
     Returns
     -------
@@ -112,27 +124,82 @@ def compute_alff(data_matrix, low_pass, high_pass, TR):
 
     Notes
     -----
-    Implementation based on https://pubmed.ncbi.nlm.nih.gov/16919409/.
+    Implementation based on :footcite:t:`yu2007altered`,
+    although the ALFF values are not scaled by the mean ALFF value across the brain.
+
+    If a ``sample_mask`` is provided, then the power spectrum will be estimated using a
+    Lomb-Scargle periodogram
+    :footcite:p:`lomb1976least,scargle1982studies,townsend2010fast,taylorlomb`.
+
+    References
+    ----------
+    .. footbibliography::
     """
     fs = 1 / TR  # sampling frequency
-    alff = np.zeros(data_matrix.shape[0])  # Create a matrix of zeros in the shape of
-    # number of voxels
-    for ii in range(data_matrix.shape[0]):  # Loop through the voxels
-        # get array of sample frequencies + power spectrum density
-        array_of_sample_frequencies, power_spec_density = signal.periodogram(
-            data_matrix[ii, :], fs, scaling="spectrum"
-        )
-        # square root of power spectrum density
-        power_spec_density_sqrt = np.sqrt(power_spec_density)
+    n_voxels, n_volumes = data_matrix.shape
+
+    if sample_mask is not None:
+        sample_mask = sample_mask.astype(bool)
+        assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
+
+    alff = np.zeros(n_voxels)
+    for i_voxel in range(n_voxels):
+        voxel_data = data_matrix[i_voxel, :]
+        # Check if the voxel's data are all the same value (esp. zeros).
+        # Set ALFF to 0 in that case and move on to the next voxel.
+        if np.std(voxel_data) == 0:
+            alff[i_voxel] = 0
+            continue
+
+        # We will normalize data matrix over time.
+        # This will ensure that the power spectra from the standard and Lomb-Scargle periodograms
+        # have the same scale.
+        # However, this also changes ALFF's scale, so we retain the SD to rescale ALFF.
+        sd_scale = np.std(voxel_data)
+
+        if sample_mask is not None:
+            voxel_data_censored = voxel_data[sample_mask]
+            voxel_data_censored -= np.mean(voxel_data_censored)
+            voxel_data_censored /= np.std(voxel_data_censored)
+
+            time_arr = np.arange(0, n_volumes * TR, TR)
+            assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
+            time_arr = time_arr[sample_mask]
+            frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
+            angular_frequencies = 2 * np.pi * frequencies_hz
+            power_spectrum = signal.lombscargle(
+                time_arr,
+                voxel_data_censored,
+                angular_frequencies,
+                normalize=True,
+            )
+        else:
+            voxel_data -= np.mean(voxel_data)
+            voxel_data /= np.std(voxel_data)
+            # get array of sample frequencies + power spectrum density
+            frequencies_hz, power_spectrum = signal.periodogram(
+                voxel_data,
+                fs,
+                scaling="spectrum",
+            )
+
+        # square root of power spectrum
+        power_spectrum_sqrt = np.sqrt(power_spectrum)
         # get the position of the arguments closest to high_pass and low_pass, respectively
         ff_alff = [
-            np.argmin(np.abs(array_of_sample_frequencies - high_pass)),
-            np.argmin(np.abs(array_of_sample_frequencies - low_pass)),
+            np.argmin(np.abs(frequencies_hz - high_pass)),
+            np.argmin(np.abs(frequencies_hz - low_pass)),
         ]
-        # alff for that voxel is 2 * the mean of the sqrt of the power spec density
+        # alff for that voxel is 2 * the mean of the sqrt of the power spec
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff[ii] = len(ff_alff) * np.mean(power_spec_density_sqrt[ff_alff[0] : ff_alff[1]])
-    # reshape alff so it's no longer 1 dimensional, but a #ofvoxels by 1 matrix
-    alff = np.reshape(alff, [len(alff), 1])
+        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+        # Rescale ALFF based on original BOLD scale
+        alff[i_voxel] *= sd_scale
+
+    assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
+
+    # Add second dimension to array
+    alff = alff[:, None]
+
     return alff

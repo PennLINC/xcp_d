@@ -1,4 +1,5 @@
 """Tests for the xcp_d.utils.atlas module."""
+
 import os
 
 import pytest
@@ -7,17 +8,18 @@ from xcp_d.utils import atlas
 
 
 def test_get_atlas_names():
-    """Test xcp_d.utils.atlas.get_atlas_names."""
-    atlas_names = atlas.get_atlas_names("all")
-    assert isinstance(atlas_names, list)
-    assert all(isinstance(name, str) for name in atlas_names)
+    """Test xcp_d.utils.atlas.select_atlases."""
+    selected_atlases = atlas.select_atlases(atlases=["4S156Parcels", "4S256Parcels"], subset="all")
+    assert isinstance(selected_atlases, list)
+    assert all(isinstance(name, str) for name in selected_atlases)
+    assert len(selected_atlases) == 2
 
 
 def test_get_atlas_nifti():
     """Test xcp_d.utils.atlas.get_atlas_nifti."""
-    atlas_names = atlas.get_atlas_names("all")
-    for atlas_name in atlas_names:
-        atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_nifti(atlas_name)
+    selected_atlases = atlas.select_atlases(atlases=["4S156Parcels", "4S256Parcels"], subset="all")
+    for selected_atlas in selected_atlases:
+        atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_nifti(selected_atlas)
         assert isinstance(atlas_file, str)
         assert isinstance(atlas_labels_file, str)
         assert isinstance(metadata_file, str)
@@ -31,9 +33,9 @@ def test_get_atlas_nifti():
 
 def test_get_atlas_cifti():
     """Test xcp_d.utils.atlas.get_atlas_cifti."""
-    atlas_names = atlas.get_atlas_names("all")
-    for atlas_name in atlas_names:
-        atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_cifti(atlas_name)
+    selected_atlases = atlas.select_atlases(atlases=["4S156Parcels", "4S256Parcels"], subset="all")
+    for selected_atlas in selected_atlases:
+        atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_cifti(selected_atlas)
         assert isinstance(atlas_file, str)
         assert isinstance(atlas_labels_file, str)
         assert isinstance(metadata_file, str)

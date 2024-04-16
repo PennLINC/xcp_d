@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from nipype import logging
 
-from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
+from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, load_motion
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
 
@@ -135,43 +135,6 @@ def downcast_to_32(in_file):
     return out_file
 
 
-def cast_cifti_to_int16(in_file):
-    """Cast a CIFTI file to int16 data.
-
-    This function serves as a temporary workaround for a bug in the
-    DerivativesDataSink class from niworkflows version 1.7.1.
-    For more information, see https://github.com/nipreps/niworkflows/issues/778.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    in_file : :obj:`str`
-        Path to input CIFTI file.
-
-    Returns
-    -------
-    out_file : :obj:`str`
-        Path to output CIFTI file.
-        The file will have the same filename, but will be written to the working directory.
-    """
-    import os
-
-    import nibabel as nb
-    import numpy as np
-
-    filename = os.path.basename(in_file)
-    out_file = os.path.abspath(filename)
-    if os.path.abspath(in_file) == out_file:
-        raise ValueError("This function must be run in a separate working directory!")
-
-    img = nb.load(in_file)
-    img.nifti_header.set_data_dtype(np.int16)
-    img.to_filename(out_file)
-
-    return out_file
-
-
 @fill_doc
 def flag_bad_run(
     fmriprep_confounds_file,
@@ -220,13 +183,19 @@ def flag_bad_run(
     fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
 
     # Calculate filtered FD
+    band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
+        motion_filter_type=motion_filter_type,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        TR=TR,
+    )
     motion_df = load_motion(
         fmriprep_confounds_df,
         TR=TR,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
+        band_stop_min=band_stop_min_adjusted,
+        band_stop_max=band_stop_max_adjusted,
     )
     fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
     return np.sum(fd_arr <= fd_thresh) * TR

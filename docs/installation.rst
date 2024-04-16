@@ -7,7 +7,7 @@ Installation
 There are two ways to install *XCP-D*:
 
 * using `Container Technologies`_ (RECOMMENDED)
-* within a `Manually Prepared Environment (Python 3.8+)`_, also known as *bare-metal installation*
+* within a `Manually Prepared Environment (Python 3.10)`_, also known as *bare-metal installation*
 
 .. _installation_container_technologies:
 
@@ -35,7 +35,7 @@ of the image: ::
 
     $ docker pull pennlinc/xcp_d:<latest-version>
 
-The image can also be found here: https://registry.hub.docker.com/r/pennlinc/xcp_d
+The image can also be found here: https://hub.docker.com/r/pennlinc/xcp_d
 
 *xcp_d* can be run interacting directly with the Docker Engine via the `docker run` command,
 or through a lightweight wrapper that was created for convenience.
@@ -60,7 +60,7 @@ download.
 .. _installation_manually_prepared_environment:
 
 *******************************************
-Manually Prepared Environment (Python 3.8+)
+Manually Prepared Environment (Python 3.10)
 *******************************************
 .. warning::
 
@@ -70,7 +70,7 @@ Manually Prepared Environment (Python 3.8+)
 XCP-D requires some `External Dependencies`_.
 These tools must be installed and their binaries available in the system's ``$PATH``.
 
-On a functional Python 3.8 (or above) environment with ``pip`` installed,
+On a functional Python 3.10 environment with ``pip`` installed,
 XCP-D can be installed using the habitual command
 ::
 
@@ -86,7 +86,7 @@ Check your installation with the ``--version`` argument
 External Dependencies
 *********************
 
-*XCP-D* is written using Python 3.8 (or above), is based on nipype_,
+*XCP-D* is written using Python 3.10, is based on nipype_,
 and requires some other neuroimaging software tools that are not handled by the Python's packaging
 system (PyPi) used to deploy the XCP-D package:
 

@@ -6,6 +6,7 @@ These tests can be run locally and on circleci.
 Arguments have to be passed to these functions because the data may be
 mounted in a container somewhere unintuitively.
 """
+
 import os
 
 import nibabel as nb

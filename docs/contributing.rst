@@ -46,7 +46,7 @@ Workflows should largely be written just like other functions (which should go i
 except for a couple of elements.
 
 First, ``black`` tends to format workflow connections awkwardly, so contributors should add
-``# fmt:off`` before, and ``# fmt:on`` after, each workflow connection statement.
+``# fmt:skip`` after each workflow connection statement.
 
 Second, workflow connections should occur shortly after the associated nodes are defined,
 rather than all at once at the end of the function.
@@ -58,6 +58,7 @@ Here is an example of a basic workflow, written in the preferred style for *XCP-
    from nipype.interfaces import utility as niu
    from nipype.pipeline import engine as pe
    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
 
    def init_example_workflow_wf(name="example_workflow_wf"):
       """Create an example workflow.
@@ -95,14 +96,12 @@ Here is an example of a basic workflow, written in the preferred style for *XCP-
       inputnode = pe.Node(niu.IdentityInterface(fields=["a", "b"]), name="inputnode")
       outputnode = pe.Node(niu.IdentityInterface(fields=["a", "b"]), name="outputnode")
 
-      # fmt:off
       workflow.connect([
          (inputnode, outputnode, [
             ("a", "a"),
             ("b", "b"),
          ]),
-      ])
-      # fmt:on
+      ])  # fmt:skip
 
       return workflow
 
@@ -135,7 +134,7 @@ image yourself.
 
 5. Make changes to the codebase that you want to try out.
 
-6. Test our your changes by running the Docker container.
+6. Test out your changes by running the Docker container.
    The trick here is to mount your modified version of *XCP-D* into the Docker container,
    overwriting the container's version.
    This way, your Docker container will run using your modified code,
@@ -147,7 +146,7 @@ image yourself.
    .. code-block:: bash
 
       docker run \
-         -v /path/to/local/xcp_d:/usr/local/miniconda/lib/python3.8/site-packages/xcp_d \
+         -v /path/to/local/xcp_d:/usr/local/miniconda/lib/python3.10/site-packages/xcp_d \
          pennlinc/xcp_d:unstable \
          ...  # see the usage documentation for info on what else to include in this command
 

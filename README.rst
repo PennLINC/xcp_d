@@ -52,15 +52,17 @@ connectivity matrices.
 
 XCP-D picks up right where `fMRIprep <https://fmriprep.org>`_ ends, directly consuming the outputs
 of fMRIPrep.
-XCP-D leverages the BIDS and NiPrep frameworks to automatically generate denoised BOLD images,
+XCP-D leverages the BIDS and NiPreps frameworks to automatically generate denoised BOLD images,
 parcellated time series, functional connectivity matrices, and quality assessment reports.
-XCP-D can also process outputs from: `NiBabies <https://nibabies.readthedocs.io>`_ and
-`Minimally preprocessed HCP data <https://www.humanconnectome.org/study/hcp-lifespan-development/\
-data-releases>`_.
+XCP-D can also process outputs from: `NiBabies <https://nibabies.readthedocs.io>`_,
+`ABCD-BIDS <https://github.com/DCAN-Labs/abcd-hcp-pipeline>`_,
+`Minimally preprocessed HCP <https://www.humanconnectome.org/study/hcp-lifespan-development/\
+data-releases>`_,
+and `UK Biobank <https://doi.org/10.1016/j.neuroimage.2017.10.034>`_ data.
 
 *Please note that XCP is only compatible with HCP-YA versions downloaded c.a. Feb 2023 at the moment.*
 
-.. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/xcp_paper_fig_1.png
+.. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/xcp_figure_1.png
 
 See the `documentation <https://xcp-d.readthedocs.io/en/latest/>`_ for more details.
 

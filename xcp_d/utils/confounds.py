@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Confound matrix selection based on Ciric et al. 2007."""
+import json
 import os
 import warnings
 
@@ -11,7 +12,6 @@ from nipype import logging
 from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import list_to_str
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -73,15 +73,17 @@ def load_motion(
         )
 
     # Volterra expansion
-    columns = motion_confounds_df.columns.tolist()
-    for col in columns:
-        new_col = f"{col}_derivative1"
-        motion_confounds_df[new_col] = motion_confounds_df[col].diff()
+    # Ignore pandas SettingWithCopyWarning
+    with pd.option_context("mode.chained_assignment", None):
+        columns = motion_confounds_df.columns.tolist()
+        for col in columns:
+            new_col = f"{col}_derivative1"
+            motion_confounds_df[new_col] = motion_confounds_df[col].diff()
 
-    columns = motion_confounds_df.columns.tolist()
-    for col in columns:
-        new_col = f"{col}_power2"
-        motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
+        columns = motion_confounds_df.columns.tolist()
+        for col in columns:
+            new_col = f"{col}_power2"
+            motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
 
     return motion_confounds_df
 
@@ -106,7 +108,9 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
         return None
 
     if not os.path.isdir(custom_confounds_folder):
-        raise ValueError(f"Custom confounds location does not exist: {custom_confounds_folder}")
+        raise FileNotFoundError(
+            f"Custom confounds location does not exist: {custom_confounds_folder}"
+        )
 
     custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
     custom_confounds_file = os.path.abspath(
@@ -120,210 +124,6 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
         raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
 
     return custom_confounds_file
-
-
-@fill_doc
-def describe_regression(params, custom_confounds_file, motion_filter_type):
-    """Build a text description of the regression that will be performed.
-
-    Parameters
-    ----------
-    %(params)s
-    %(custom_confounds_file)s
-    %(motion_filter_type)s
-
-    Returns
-    -------
-    desc : :obj:`str`
-        A text description of the regression.
-    """
-    import pandas as pd
-
-    use_custom_confounds, orth = False, False
-    if custom_confounds_file is not None:
-        use_custom_confounds = True
-        custom_confounds = pd.read_table(custom_confounds_file)
-        orth = any([c.startswith("signal__") for c in custom_confounds.columns])
-
-    fstr = "filtered " if motion_filter_type else ""
-
-    BASE_DESCRIPTIONS = {
-        "custom": "A custom set of regressors was used, with no other regressors from XCP-D.",
-        "none": "No nuisance regression was performed.",
-        "24P": (
-            "In total, 24 nuisance regressors were selected from the preprocessing confounds, "
-            "according to the '24P' strategy. "
-            "These nuisance regressors included "
-            f"six {fstr}motion parameters with their temporal derivatives, "
-            "and their quadratic expansion of those six motion parameters and their "
-            "temporal derivatives [@benchmarkp;@satterthwaite_2013]."
-        ),
-        "27P": (
-            "In total, 27 nuisance regressors were selected from the preprocessing confounds, "
-            "according to the '27P' strategy. "
-            "These nuisance regressors included "
-            f"six {fstr}motion parameters with their temporal derivatives, "
-            "quadratic expansion of those six motion parameters and their derivatives, "
-            "mean global signal, mean white matter signal, and mean cerebrospinal fluid signal "
-            "[@benchmarkp;@satterthwaite_2013]."
-        ),
-        "36P": (
-            "In total, 36 nuisance regressors were selected from the preprocessing confounds, "
-            "according to the '36P' strategy. "
-            "These nuisance regressors included "
-            f"six {fstr}motion parameters, mean global signal, mean white matter signal, "
-            "mean cerebrospinal fluid signal with their temporal derivatives, "
-            "and quadratic expansion of six motion parameters, tissue signals and "
-            "their temporal derivatives [@benchmarkp;@satterthwaite_2013]."
-        ),
-        "acompcor": (
-            "Nuisance regressors were selected according to the 'acompcor' strategy. "
-            "The top 5 aCompCor principal components from the white matter and "
-            "cerebrospinal fluid compartments were selected as nuisance regressors "
-            "[@behzadi2007component], "
-            f"along with the six {fstr}motion parameters and their temporal derivatives "
-            "[@benchmarkp;@satterthwaite_2013]. "
-            "As the aCompCor regressors were generated on high-pass filtered data, "
-            "the associated cosine basis regressors were included. "
-            "This has the effect of high-pass filtering the data as well."
-        ),
-        "acompcor_gsr": (
-            "Nuisance regressors were selected according to the 'acompcor_gsr' strategy. "
-            "The top 5 aCompCor principal components from the white matter and "
-            "cerebrospinal fluid compartments were selected as nuisance regressors "
-            "[@behzadi2007component], "
-            f"along with the six {fstr}motion parameters and their temporal derivatives, "
-            "mean white matter signal, mean cerebrospinal fluid signal, and mean global signal "
-            "[@benchmarkp;@satterthwaite_2013]. "
-            "As the aCompCor regressors were generated on high-pass filtered data, "
-            "the associated cosine basis regressors were included. "
-            "This has the effect of high-pass filtering the data as well."
-        ),
-        "aroma": (
-            "Nuisance regressors were selected according to the 'aroma' strategy. "
-            "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
-            "and mean cerebrospinal fluid signal were selected as nuisance regressors "
-            "[@benchmarkp;@satterthwaite_2013]."
-        ),
-        "aroma_gsr": (
-            "Nuisance regressors were selected according to the 'aroma_gsr' strategy. "
-            "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
-            "mean cerebrospinal fluid signal, and mean global signal were selected as "
-            "nuisance regressors [@benchmarkp;@satterthwaite_2013]."
-        ),
-    }
-
-    if params not in BASE_DESCRIPTIONS.keys():
-        raise ValueError(f"Unrecognized parameter string '{params}'")
-
-    desc = BASE_DESCRIPTIONS[params]
-    if use_custom_confounds and params != "custom":
-        desc += " Additionally, custom confounds were also included as nuisance regressors."
-
-    if "aroma" not in params and orth:
-        desc += (
-            " Custom confounds prefixed with 'signal__' were used to account for variance "
-            "explained by known signals. "
-            "Prior to denoising the BOLD data, the nuisance confounds were orthogonalized "
-            "with respect to the signal regressors."
-        )
-    elif "aroma" in params and not orth:
-        desc += (
-            " AROMA non-motion components (i.e., ones assumed to reflect signal) were used to "
-            "account for variance by known signals. "
-            "Prior to denoising the BOLD data, the nuisance confounds were orthogonalized "
-            "with respect to the non-motion components."
-        )
-
-    if "aroma" in params or orth:
-        desc += (
-            " In this way, the confound regressors were orthogonalized to produce regressors "
-            "without variance explained by known signals, so that signal would not be removed "
-            "from the BOLD data in the later regression."
-        )
-
-    if params != "none":
-        desc += (
-            " Finally, linear trend and intercept terms were added to the regressors prior to "
-            "denoising."
-        )
-
-    return desc
-
-
-@fill_doc
-def describe_censoring(
-    motion_filter_type,
-    motion_filter_order,
-    band_stop_min,
-    band_stop_max,
-    head_radius,
-    fd_thresh,
-    exact_scans,
-):
-    """Build a text description of the motion parameter filtering and FD censoring process.
-
-    Parameters
-    ----------
-    %(motion_filter_type)s
-    %(motion_filter_order)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(head_radius)s
-    %(fd_thresh)s
-    %(exact_scans)s
-
-    Returns
-    -------
-    desc : :obj:`str`
-        A text description of the censoring procedure.
-    """
-    from num2words import num2words
-
-    filter_str = ""
-    if motion_filter_type:
-        if motion_filter_type == "notch":
-            filter_sub_str = (
-                f"band-stop filtered to remove signals between {band_stop_min} and "
-                f"{band_stop_max} breaths-per-minute using a(n) "
-                f"{num2words(motion_filter_order, ordinal=True)}-order notch filter, "
-                "based on @fair2020correction"
-            )
-        else:  # lp
-            filter_sub_str = (
-                f"low-pass filtered below {band_stop_min} breaths-per-minute using a(n) "
-                f"{num2words(motion_filter_order, ordinal=True)}-order Butterworth filter, "
-                "based on @gratton2020removal"
-            )
-
-        filter_str = (
-            f"the six translation and rotation head motion traces were {filter_sub_str}. Next, "
-        )
-
-    outlier_str = ""
-    if fd_thresh > 0:
-        outlier_str = (
-            f"In order to identify high-motion outlier volumes, {filter_str}"
-            "framewise displacement was calculated using the formula from @power_fd_dvars, "
-            f"with a head radius of {head_radius} mm. "
-            f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
-            f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of "
-            "later censoring [@power_fd_dvars]."
-        )
-
-    exact_str = ""
-    if exact_scans and (fd_thresh > 0):
-        exact_str = (
-            " Additional sets of censoring volumes were randomly selected to produce additional "
-            f"correlation matrices limited to {list_to_str(exact_scans)} volumes."
-        )
-    elif exact_scans:
-        exact_str = (
-            "Volumes were randomly selected for censoring, to produce additional correlation "
-            f"matrices limited to {list_to_str(exact_scans)} volumes."
-        )
-
-    return outlier_str + exact_str
 
 
 def _get_acompcor_confounds(confounds_file):
@@ -371,6 +171,8 @@ def load_confound_matrix(
         If "AROMA" is requested, then this DataFrame will include signal components as well.
         These will be named something like "signal_[XX]".
         If ``params`` is "none", ``confounds_df`` will be None.
+    confounds_metadata : :obj:`dict`
+        Metadata for the columns in the confounds file.
     """
     PARAM_KWARGS = {
         # Get rot and trans values, as well as derivatives and square
@@ -424,10 +226,15 @@ def load_confound_matrix(
             "wm_csf": "basic",
             "global_signal": "basic",
         },
+        # Get global signal only
+        "gsr_only": {
+            "strategy": ["global_signal"],
+            "global_signal": "basic",
+        },
     }
 
     if params == "none":
-        return None
+        return None, {}
 
     if params in PARAM_KWARGS:
         kwargs = PARAM_KWARGS[params]
@@ -462,10 +269,14 @@ def load_confound_matrix(
         custom_confounds_df = pd.read_table(custom_confounds, sep="\t")
         confounds_df = pd.concat([custom_confounds_df, confounds_df], axis=1)
 
-    confounds_df["linear_trend"] = np.arange(confounds_df.shape[0])
-    confounds_df["intercept"] = np.ones(confounds_df.shape[0])
+    with open(confounds_json_file, "r") as fo:
+        full_confounds_metadata = json.load(fo)
 
-    return confounds_df
+    confounds_metadata = {
+        k: v for k, v in full_confounds_metadata.items() if k in confounds_df.columns
+    }
+
+    return confounds_df, confounds_metadata
 
 
 def _get_mixing_matrix(img_file):
@@ -572,70 +383,26 @@ def motion_regression_filter(
     if motion_filter_type not in ("lp", "notch"):
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
+    lowpass_hz = band_stop_min / 60
+
     sampling_frequency = 1 / TR
-    nyquist_frequency = sampling_frequency / 2
 
     if motion_filter_type == "lp":  # low-pass filter
-        # Remove any frequencies above band_stop_min.
-        assert band_stop_min is not None
-        assert band_stop_min > 0
-        if band_stop_max:
-            warnings.warn("The parameter 'band_stop_max' will be ignored.")
-
-        lowpass_hz = band_stop_min / 60  # change BPM to right time unit
-
-        # Adjust frequency in case Nyquist is below cutoff.
-        # This won't have an effect if the data have a fast enough sampling rate.
-        lowpass_hz_adjusted = np.abs(
-            lowpass_hz
-            - (np.floor((lowpass_hz + nyquist_frequency) / sampling_frequency))
-            * sampling_frequency
-        )
-        if lowpass_hz_adjusted != lowpass_hz:
-            warnings.warn(
-                f"Low-pass filter frequency is above Nyquist frequency ({nyquist_frequency} Hz), "
-                f"so it has been changed ({lowpass_hz} --> {lowpass_hz_adjusted} Hz)."
-            )
-
         b, a = butter(
             motion_filter_order / 2,
-            lowpass_hz_adjusted,
+            lowpass_hz,
             btype="lowpass",
             output="ba",
             fs=sampling_frequency,
         )
         filtered_data = filtfilt(b, a, data, axis=0, padtype="constant", padlen=data.shape[0] - 1)
 
-    elif motion_filter_type == "notch":  # notch filter
-        # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
-        assert band_stop_max is not None
-        assert band_stop_min is not None
-        assert band_stop_max > 0
-        assert band_stop_min > 0
-        assert band_stop_min < band_stop_max
-
-        stopband = np.array([band_stop_min, band_stop_max])
-        stopband_hz = stopband / 60  # change BPM to Hertz
-
-        # Adjust frequencies in case Nyquist is within/below band.
-        # This won't have an effect if the data have a fast enough sampling rate.
-        stopband_hz_adjusted = np.abs(
-            stopband_hz
-            - (np.floor((stopband_hz + nyquist_frequency) / sampling_frequency))
-            * sampling_frequency
-        )
-        if not np.array_equal(stopband_hz, stopband_hz_adjusted):
-            warnings.warn(
-                "One or both filter frequencies are above Nyquist frequency "
-                f"({nyquist_frequency} Hz), "
-                "so they have been changed "
-                f"({stopband_hz[0]} --> {stopband_hz_adjusted[0]}, "
-                f"{stopband_hz[1]} --> {stopband_hz_adjusted[1]} Hz)."
-            )
-
+    else:  # notch filter
+        highpass_hz = band_stop_max / 60
+        stopband_hz = np.array([lowpass_hz, highpass_hz])
         # Convert stopband to a single notch frequency.
-        freq_to_remove = np.mean(stopband_hz_adjusted)
-        bandwidth = np.abs(np.diff(stopband_hz_adjusted))
+        freq_to_remove = np.mean(stopband_hz)
+        bandwidth = np.abs(np.diff(stopband_hz))
 
         # Create filter coefficients.
         b, a = iirnotch(freq_to_remove, freq_to_remove / bandwidth, fs=sampling_frequency)
@@ -653,6 +420,95 @@ def motion_regression_filter(
             )
 
     return filtered_data
+
+
+def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
+    """Modify the motion filter parameters based on the TR.
+
+    Parameters
+    ----------
+    motion_filter_type : str
+        The type of motion filter to apply.
+    band_stop_min : float
+        The minimum frequency to stop in the filter, in breaths-per-minute.
+    band_stop_max : float
+        The maximum frequency to stop in the filter, in breaths-per-minute.
+    TR : float
+        The repetition time of the data.
+
+    Returns
+    -------
+    band_stop_min_adjusted : float
+        The adjusted low-pass filter frequency, in breaths-per-minute.
+    band_stop_max_adjusted : float
+        The adjusted high-pass filter frequency, in breaths-per-minute.
+    is_modified : bool
+        Whether the filter parameters were modified.
+    """
+    sampling_frequency = 1 / TR
+    nyquist_frequency = sampling_frequency / 2
+    nyquist_bpm = nyquist_frequency * 60
+
+    is_modified = False
+    if motion_filter_type == "lp":  # low-pass filter
+        # Remove any frequencies above band_stop_min.
+        assert band_stop_min is not None
+        assert band_stop_min > 0
+        if band_stop_max:
+            warnings.warn("The parameter 'band_stop_max' will be ignored.")
+
+        lowpass_hz = band_stop_min / 60  # change BPM to right time unit
+
+        # Adjust frequency in case Nyquist is below cutoff.
+        # This won't have an effect if the data have a fast enough sampling rate.
+        lowpass_hz_adjusted = np.abs(
+            lowpass_hz
+            - (np.floor((lowpass_hz + nyquist_frequency) / sampling_frequency))
+            * sampling_frequency
+        )
+        band_stop_min_adjusted = lowpass_hz_adjusted * 60  # change Hertz back to BPM
+        if band_stop_min_adjusted != band_stop_min:
+            warnings.warn(
+                f"Low-pass filter frequency is above Nyquist frequency ({nyquist_bpm} BPM), "
+                f"so it has been changed ({band_stop_min} --> {band_stop_min_adjusted} BPM)."
+            )
+            is_modified = True
+
+        band_stop_max_adjusted = None
+
+    elif motion_filter_type == "notch":  # notch filter
+        # Retain any frequencies *outside* the band_stop_min-band_stop_max range.
+        assert band_stop_max is not None
+        assert band_stop_min is not None
+        assert band_stop_max > 0
+        assert band_stop_min > 0
+        assert band_stop_min < band_stop_max, f"{band_stop_min} >= {band_stop_max}"
+
+        stopband = np.array([band_stop_min, band_stop_max])
+        stopband_hz = stopband / 60  # change BPM to Hertz
+
+        # Adjust frequencies in case Nyquist is within/below band.
+        # This won't have an effect if the data have a fast enough sampling rate.
+        stopband_hz_adjusted = np.abs(
+            stopband_hz
+            - (np.floor((stopband_hz + nyquist_frequency) / sampling_frequency))
+            * sampling_frequency
+        )
+        stopband_adjusted = stopband_hz_adjusted * 60  # change Hertz back to BPM
+        if not np.array_equal(stopband_adjusted, stopband):
+            warnings.warn(
+                f"One or both filter frequencies are above Nyquist frequency ({nyquist_bpm} BPM), "
+                "so they have been changed "
+                f"({stopband[0]} --> {stopband_adjusted[0]}, "
+                f"{stopband[1]} --> {stopband_adjusted[1]} BPM)."
+            )
+            is_modified = True
+
+        band_stop_min_adjusted, band_stop_max_adjusted = stopband_adjusted
+    else:
+        band_stop_min_adjusted, band_stop_max_adjusted, is_modified = None, None, False
+
+    return band_stop_min_adjusted, band_stop_max_adjusted, is_modified
 
 
 def _infer_dummy_scans(dummy_scans, confounds_file=None):

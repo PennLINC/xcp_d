@@ -7,15 +7,15 @@ from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.interfaces.freesurfer import MRIsConvert
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from pkg_resources import resource_filename as pkgrf
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.ants import (
     ApplyTransforms,
     CompositeInvTransformUtil,
     ConvertTransformFile,
 )
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.bids import CollectRegistrationFiles, DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
 from xcp_d.interfaces.workbench import (  # MB,TM
@@ -28,7 +28,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import get_freesurfer_dir, get_freesurfer_sphere
+from xcp_d.utils.bids import get_freesurfer_dir
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import list_to_str
 from xcp_d.workflows.execsummary import (
@@ -42,13 +42,9 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 @fill_doc
 def init_postprocess_anat_wf(
-    output_dir,
-    input_type,
     t1w_available,
     t2w_available,
     target_space,
-    omp_nthreads,
-    mem_gb,
     name="postprocess_anat_wf",
 ):
     """Copy T1w, segmentation, and, optionally, T2w to the derivative directory.
@@ -60,31 +56,26 @@ def init_postprocess_anat_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_postprocess_anat_wf
 
-            wf = init_postprocess_anat_wf(
-                output_dir=".",
-                input_type="fmriprep",
-                t1w_available=True,
-                t2w_available=True,
-                target_space="MNI152NLin6Asym",
-                omp_nthreads=1,
-                mem_gb=0.1,
-                name="postprocess_anat_wf",
-            )
+            with mock_config():
+                wf = init_postprocess_anat_wf(
+                    t1w_available=True,
+                    t2w_available=True,
+                    target_space="MNI152NLin6Asym",
+                    name="postprocess_anat_wf",
+                )
 
     Parameters
     ----------
-    %(output_dir)s
-    %(input_type)s
     t1w_available : bool
         True if a preprocessed T1w is available, False if not.
     t2w_available : bool
         True if a preprocessed T2w is available, False if not.
     target_space : :obj:`str`
         Target NIFTI template for T1w.
-    %(omp_nthreads)s
-    %(mem_gb)s
     %(name)s
         Default is "postprocess_anat_wf".
 
@@ -111,6 +102,9 @@ def init_postprocess_anat_wf(
         Path to the preprocessed T2w file in standard space.
     """
     workflow = Workflow(name=name)
+    output_dir = config.execution.xcp_d_dir
+    input_type = config.workflow.input_type
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -120,7 +114,7 @@ def init_postprocess_anat_wf(
                 "anat_dseg",
                 "anat_to_template_xfm",
                 "template",
-            ]
+            ],
         ),
         name="inputnode",
     )
@@ -191,7 +185,7 @@ def init_postprocess_anat_wf(
         ])
         # fmt:on
 
-    if input_type in ("dcan", "hcp"):
+    if input_type in ("dcan", "hcp", "ukb"):
         # Assume that the T1w, T1w segmentation, and T2w files are in standard space,
         # but don't have the "space" entity, for the "dcan" and "hcp" derivatives.
         # This is a bug, and the converted filenames are inaccurate, so we have this
@@ -220,7 +214,7 @@ resolution.
                 dimension=3,
             ),
             name="warp_anat_dseg_to_template",
-            mem_gb=mem_gb,
+            mem_gb=2,
             n_procs=omp_nthreads,
         )
 
@@ -245,7 +239,7 @@ resolution.
                     dimension=3,
                 ),
                 name="warp_t1w_to_template",
-                mem_gb=mem_gb,
+                mem_gb=2,
                 n_procs=omp_nthreads,
             )
 
@@ -269,7 +263,7 @@ resolution.
                     dimension=3,
                 ),
                 name="warp_t2w_to_template",
-                mem_gb=mem_gb,
+                mem_gb=2,
                 n_procs=omp_nthreads,
             )
 
@@ -288,8 +282,6 @@ resolution.
         input_type=input_type,
         t1w_available=t1w_available,
         t2w_available=t2w_available,
-        output_dir=output_dir,
-        name="execsummary_anatomical_plots_wf",
     )
 
     # fmt:off
@@ -317,18 +309,12 @@ resolution.
 
 @fill_doc
 def init_postprocess_surfaces_wf(
-    fmri_dir,
     subject_id,
-    dcan_qc,
-    process_surfaces,
     mesh_available,
     standard_space_mesh,
     morphometry_files,
-    output_dir,
     t1w_available,
     t2w_available,
-    mem_gb,
-    omp_nthreads,
     name="postprocess_surfaces_wf",
 ):
     """Postprocess surfaces.
@@ -338,40 +324,31 @@ def init_postprocess_surfaces_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_postprocess_surfaces_wf
 
-            wf = init_postprocess_surfaces_wf(
-                fmri_dir=".",
-                subject_id="01",
-                dcan_qc=True,
-                process_surfaces=True,
-                mesh_available=True,
-                standard_space_mesh=False,
-                morphometry_files=[],
-                output_dir=".",
-                t1w_available=True,
-                t2w_available=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="postprocess_surfaces_wf",
-            )
+            with mock_config():
+                wf = init_postprocess_surfaces_wf(
+                    subject_id="01",
+                    mesh_available=True,
+                    standard_space_mesh=False,
+                    morphometry_files=[],
+                    t1w_available=True,
+                    t2w_available=True,
+                    name="postprocess_surfaces_wf",
+                )
 
     Parameters
     ----------
-    fmri_dir
     subject_id
-    %(dcan_qc)s
-    process_surfaces : bool
     mesh_available : bool
     standard_space_mesh : bool
     morphometry_files : list of str
-    %(output_dir)s
     t1w_available : bool
         True if a T1w image is available.
     t2w_available : bool
         True if a T2w image is available.
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "postprocess_surfaces_wf".
 
@@ -394,6 +371,12 @@ def init_postprocess_surfaces_wf(
     """
     workflow = Workflow(name=name)
 
+    fmri_dir = config.execution.fmri_dir
+    dcan_qc = config.workflow.dcan_qc
+    process_surfaces = config.workflow.process_surfaces
+    output_dir = config.execution.xcp_d_dir
+    omp_nthreads = config.nipype.omp_nthreads
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -415,15 +398,13 @@ def init_postprocess_surfaces_wf(
         ),
         name="inputnode",
     )
+    workflow.__desc__ = ""
 
     if dcan_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
-            output_dir=output_dir,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
-            omp_nthreads=omp_nthreads,
-            mem_gb=mem_gb,
         )
         # fmt:off
         workflow.connect([
@@ -457,11 +438,14 @@ def init_postprocess_surfaces_wf(
         # At least some surfaces are already in fsLR space and must be copied,
         # without modification, to the output directory.
         copy_std_surfaces_to_datasink = init_copy_inputs_to_outputs_wf(
-            output_dir=output_dir,
             name="copy_std_surfaces_to_datasink",
         )
 
     if morphometry_files:
+        workflow.__desc__ += (
+            " fsLR-space morphometry surfaces were copied from the preprocessing derivatives to "
+            "the XCP-D derivatives."
+        )
         for morphometry_file in morphometry_files:
             # fmt:off
             workflow.connect([
@@ -472,14 +456,13 @@ def init_postprocess_surfaces_wf(
             # fmt:on
 
     if mesh_available:
+        workflow.__desc__ += (
+            " HCP-style midthickness, inflated, and very-inflated surfaces were generated from "
+            "the white-matter and pial surface meshes."
+        )
         # Generate and output HCP-style surface files.
         hcp_surface_wfs = {
-            hemi: init_generate_hcp_surfaces_wf(
-                output_dir=output_dir,
-                mem_gb=mem_gb,
-                omp_nthreads=omp_nthreads,
-                name=f"{hemi}_generate_hcp_surfaces_wf",
-            )
+            hemi: init_generate_hcp_surfaces_wf(name=f"{hemi}_generate_hcp_surfaces_wf")
             for hemi in ["lh", "rh"]
         }
         # fmt:off
@@ -490,6 +473,10 @@ def init_postprocess_surfaces_wf(
         # fmt:on
 
     if mesh_available and standard_space_mesh:
+        workflow.__desc__ += (
+            " All surface files were already in fsLR space, and were copied to the output "
+            "directory."
+        )
         # Mesh files are already in fsLR.
         # fmt:off
         workflow.connect([
@@ -511,13 +498,13 @@ def init_postprocess_surfaces_wf(
         # fmt:on
 
     elif mesh_available:
+        workflow.__desc__ += " fsnative-space surfaces were then warped to fsLR space."
         # Mesh files are in fsnative and must be warped to fsLR.
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             subject_id=subject_id,
             output_dir=output_dir,
             omp_nthreads=omp_nthreads,
-            mem_gb=mem_gb,
             name="warp_surfaces_to_template_wf",
         )
 
@@ -570,7 +557,6 @@ def init_warp_surfaces_to_template_wf(
     subject_id,
     output_dir,
     omp_nthreads,
-    mem_gb,
     name="warp_surfaces_to_template_wf",
 ):
     """Transform surfaces from native to standard fsLR-32k space.
@@ -587,7 +573,6 @@ def init_warp_surfaces_to_template_wf(
                 subject_id="01",
                 output_dir=".",
                 omp_nthreads=1,
-                mem_gb=0.1,
                 name="warp_surfaces_to_template_wf",
             )
 
@@ -597,7 +582,6 @@ def init_warp_surfaces_to_template_wf(
     %(subject_id)s
     %(output_dir)s
     %(omp_nthreads)s
-    %(mem_gb)s
     %(name)s
         Default is "warp_surfaces_to_template_wf".
 
@@ -659,7 +643,7 @@ def init_warp_surfaces_to_template_wf(
         Function(
             function=get_freesurfer_dir,
             input_names=["fmri_dir"],
-            output_names=["freesurfer_path"],
+            output_names=["freesurfer_path", "segmentation_software"],
         ),
         name="get_freesurfer_dir_node",
     )
@@ -667,7 +651,7 @@ def init_warp_surfaces_to_template_wf(
 
     # First, we create the Connectome WorkBench-compatible transform files.
     update_xfm_wf = init_ants_xfm_to_fsl_wf(
-        mem_gb=mem_gb,
+        mem_gb=1,
         omp_nthreads=omp_nthreads,
         name="update_xfm_wf",
     )
@@ -704,7 +688,7 @@ def init_warp_surfaces_to_template_wf(
         apply_transforms_wf = init_warp_one_hemisphere_wf(
             participant_id=subject_id,
             hemisphere=hemi,
-            mem_gb=mem_gb,
+            mem_gb=2,
             omp_nthreads=omp_nthreads,
             name=f"{hemi_label}_apply_transforms_wf",
         )
@@ -713,6 +697,7 @@ def init_warp_surfaces_to_template_wf(
         workflow.connect([
             (get_freesurfer_dir_node, apply_transforms_wf, [
                 ("freesurfer_path", "inputnode.freesurfer_path"),
+                ("segmentation_software", "inputnode.segmentation_software"),
             ]),
             (update_xfm_wf, apply_transforms_wf, [
                 ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
@@ -774,12 +759,7 @@ def init_warp_surfaces_to_template_wf(
 
 
 @fill_doc
-def init_generate_hcp_surfaces_wf(
-    output_dir,
-    mem_gb,
-    omp_nthreads,
-    name="generate_hcp_surfaces_wf",
-):
+def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     """Generate midthickness, inflated, and very-inflated HCP-style surfaces.
 
     Workflow Graph
@@ -787,20 +767,15 @@ def init_generate_hcp_surfaces_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.anatomical import init_generate_hcp_surfaces_wf
 
-            wf = init_generate_hcp_surfaces_wf(
-                output_dir=".",
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="generate_hcp_surfaces_wf",
-            )
+            with mock_config():
+                wf = init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf")
 
     Parameters
     ----------
-    %(output_dir)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "generate_hcp_surfaces_wf".
 
@@ -814,6 +789,9 @@ def init_generate_hcp_surfaces_wf(
         The surface file to inflate.
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -829,7 +807,7 @@ def init_generate_hcp_surfaces_wf(
     generate_midthickness = pe.Node(
         SurfaceAverage(),
         name="generate_midthickness",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -867,7 +845,7 @@ def init_generate_hcp_surfaces_wf(
     # Generate (very-)inflated surface from standard-space midthickness surface.
     inflate_surface = pe.Node(
         SurfaceGenerateInflated(iterations_scale_value=0.75),
-        mem_gb=mem_gb,
+        mem_gb=2,
         omp_nthreads=omp_nthreads,
         name="inflate_surface",
     )
@@ -1243,6 +1221,8 @@ def init_warp_one_hemisphere_wf(
     merged_inv_warpfield
     freesurfer_path
         Path to FreeSurfer derivatives. Used to load the subject's sphere file.
+    segmentation_software : {"FreeSurfer", "MCRIBS"}
+        The software used for the segmentation.
     participant_id
         Set from parameters.
 
@@ -1260,6 +1240,7 @@ def init_warp_one_hemisphere_wf(
                 "merged_warpfield",
                 "merged_inv_warpfield",
                 "freesurfer_path",
+                "segmentation_software",
                 "participant_id",
             ],
         ),
@@ -1267,46 +1248,19 @@ def init_warp_one_hemisphere_wf(
     )
     inputnode.inputs.participant_id = participant_id
 
-    # Load the fsaverage-164k sphere
-    # NOTE: Why do we need the fsaverage mesh?
-    fsaverage_mesh = str(
-        get_template(
-            template="fsaverage",
-            space=None,
-            hemi=hemisphere,
-            density="164k",
-            desc=None,
-            suffix="sphere",
-        )
+    collect_registration_files = pe.Node(
+        CollectRegistrationFiles(hemisphere=hemisphere),
+        name="collect_registration_files",
+        mem_gb=0.1,
+        n_procs=1,
     )
-
-    # NOTE: Can we upload these to templateflow?
-    fs_hemisphere_to_fsLR = pkgrf(
-        "xcp_d",
-        (
-            f"data/standard_mesh_atlases/fs_{hemisphere}/"
-            f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
-            f"164k_fs_{hemisphere}.surf.gii"
-        ),
-    )
-    get_freesurfer_sphere_node = pe.Node(
-        Function(
-            function=get_freesurfer_sphere,
-            input_names=["freesurfer_path", "subject_id", "hemisphere"],
-            output_names=["sphere_raw"],
-        ),
-        name="get_freesurfer_sphere_node",
-    )
-    get_freesurfer_sphere_node.inputs.hemisphere = hemisphere
-
-    # fmt:off
     workflow.connect([
-        (inputnode, get_freesurfer_sphere_node, [
-            ("freesurfer_path", "freesurfer_path"),
-            ("participant_id", "subject_id"),
-        ])
-    ])
-    # fmt:on
+        (inputnode, collect_registration_files, [
+            ("freesurfer_path", "segmentation_dir"),
+            ("participant_id", "participant_id"),
+            ("segmentation_software", "software"),
+        ]),
+    ])  # fmt:skip
 
     # NOTE: What does this step do?
     sphere_to_surf_gii = pe.Node(
@@ -1315,58 +1269,37 @@ def init_warp_one_hemisphere_wf(
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
-    # fmt:off
     workflow.connect([
-        (get_freesurfer_sphere_node, sphere_to_surf_gii, [("sphere_raw", "in_file")]),
-    ])
-    # fmt:on
+        (collect_registration_files, sphere_to_surf_gii, [("subject_sphere", "in_file")]),
+    ])  # fmt:skip
 
     # NOTE: What does this step do?
     surface_sphere_project_unproject = pe.Node(
-        SurfaceSphereProjectUnproject(
-            sphere_project_to=fsaverage_mesh,
-            sphere_unproject_from=fs_hemisphere_to_fsLR,
-        ),
+        SurfaceSphereProjectUnproject(),
         name="surface_sphere_project_unproject",
     )
-
-    # fmt:off
     workflow.connect([
+        (collect_registration_files, surface_sphere_project_unproject, [
+            ("source_sphere", "sphere_project_to"),
+            ("sphere_to_sphere", "sphere_unproject_from"),
+        ]),
         (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
-    ])
-    # fmt:on
-
-    fsLR_sphere = str(
-        get_template(
-            template="fsLR",
-            space=None,
-            hemi=hemisphere,
-            density="32k",
-            desc=None,
-            suffix="sphere",
-        )
-    )
+    ])  # fmt:skip
 
     # resample the surfaces to fsLR-32k
     # NOTE: Does that mean the data are in fsLR-164k before this?
     resample_to_fsLR32k = pe.MapNode(
-        CiftiSurfaceResample(
-            new_sphere=fsLR_sphere,
-            metric=" BARYCENTRIC ",
-        ),
+        CiftiSurfaceResample(metric="BARYCENTRIC"),
         name="resample_to_fsLR32k",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, resample_to_fsLR32k, [("hemi_files", "in_file")]),
+        (collect_registration_files, resample_to_fsLR32k, [("target_sphere", "new_sphere")]),
         (surface_sphere_project_unproject, resample_to_fsLR32k, [("out_file", "current_sphere")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     # apply affine to 32k surfs
     # NOTE: What does this step do? Aren't the data in fsLR-32k from resample_to_fsLR32k?
@@ -1377,13 +1310,10 @@ def init_warp_one_hemisphere_wf(
         n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
-
-    # fmt:off
     workflow.connect([
-        (resample_to_fsLR32k, apply_affine_to_fsLR32k, [("out_file", "in_file")]),
         (inputnode, apply_affine_to_fsLR32k, [("world_xfm", "affine")]),
-    ])
-    # fmt:on
+        (resample_to_fsLR32k, apply_affine_to_fsLR32k, [("out_file", "in_file")]),
+    ])  # fmt:skip
 
     # apply FNIRT-format warpfield
     # NOTE: What does this step do?
@@ -1394,26 +1324,20 @@ def init_warp_one_hemisphere_wf(
         n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, apply_warpfield_to_fsLR32k, [
             ("merged_warpfield", "forward_warp"),
             ("merged_inv_warpfield", "warpfield"),
         ]),
         (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     outputnode = pe.Node(
         niu.IdentityInterface(fields=["warped_hemi_files"]),
         name="outputnode",
     )
-
-    # fmt:off
     workflow.connect([
         (apply_warpfield_to_fsLR32k, outputnode, [("out_file", "warped_hemi_files")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow

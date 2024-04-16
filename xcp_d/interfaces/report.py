@@ -30,12 +30,13 @@ QC_TEMPLATE = """\t\t<h3 class="elem-title">Summary</h3>
 \t\t<ul class="elem-desc">
 \t\t\t<li>BOLD volume space: {space}</li>
 \t\t\t<li>Repetition Time (TR): {TR:.03g}</li>
-\t\t\t<li>Mean Framewise Displacement: {meanFD}</li>
-\t\t\t<li>Mean Relative RMS Motion: {meanRMS}</li>
-\t\t\t<li>Max Relative RMS Motion: {maxRMS}</li>
+\t\t\t<li>Mean Framewise Displacement: {mean_fd}</li>
+\t\t\t<li>Mean Relative RMS Motion: {mean_relative_rms}</li>
+\t\t\t<li>Max Relative RMS Motion: {max_relative_rms}</li>
 \t\t\t<li>DVARS Before and After Processing : {dvars_before_after}</li>
-\t\t\t<li>Correlation between DVARS and FD Before and After Processing : {corrfddv}</li>
-\t\t\t<li>Number of Volumes Censored : {volcensored}</li>
+\t\t\t<li>Correlation between DVARS and FD Before and After Processing :
+{fd_dvars_correlation}</li>
+\t\t\t<li>Number of Volumes Censored : {num_vols_censored}</li>
 \t\t</ul>
 """
 
@@ -144,26 +145,29 @@ class FunctionalSummary(SummaryInterface):
 
     def _generate_segment(self):
         space = get_entity(self.inputs.bold_file, "space")
-        qcfile = pd.read_csv(self.inputs.qc_file)
-        meanFD = str(round(qcfile["meanFD"][0], 4))
-        meanRMS = str(round(qcfile["relMeansRMSMotion"][0], 4))
-        maxRMS = str(round(qcfile["relMaxRMSMotion"][0], 4))
-        dvars = f"{round(qcfile['meanDVInit'][0], 4)}, {round(qcfile['meanDVFinal'][0], 4)}"
+        qcfile = pd.read_table(self.inputs.qc_file)
+        mean_fd = str(round(qcfile["mean_fd"][0], 4))
+        mean_relative_rms = str(round(qcfile["mean_relative_rms"][0], 4))
+        max_relative_rms = str(round(qcfile["max_relative_rms"][0], 4))
+        dvars = (
+            f"{round(qcfile['mean_dvars_initial'][0], 4)}, "
+            f"{round(qcfile['mean_dvars_final'][0], 4)}"
+        )
         fd_dvars_correlation = (
-            f"{round(qcfile['motionDVCorrInit'][0], 4)}, "
-            f"{round(qcfile['motionDVCorrFinal'][0], 4)}"
+            f"{round(qcfile['fd_dvars_correlation_initial'][0], 4)}, "
+            f"{round(qcfile['fd_dvars_correlation_final'][0], 4)}"
         )
         num_vols_censored = str(round(qcfile["num_censored_volumes"][0], 4))
 
         return QC_TEMPLATE.format(
             space=space,
             TR=self.inputs.TR,
-            meanFD=meanFD,
-            meanRMS=meanRMS,
-            maxRMS=maxRMS,
+            mean_fd=mean_fd,
+            mean_relative_rms=mean_relative_rms,
+            max_relative_rms=max_relative_rms,
             dvars_before_after=dvars,
-            corrfddv=fd_dvars_correlation,
-            volcensored=num_vols_censored,
+            fd_dvars_correlation=fd_dvars_correlation,
+            num_vols_censored=num_vols_censored,
         )
 
 

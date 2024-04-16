@@ -8,8 +8,19 @@ import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout, Query
 from bs4 import BeautifulSoup
-from jinja2 import Environment, FileSystemLoader, Markup
+from jinja2 import Environment, FileSystemLoader
+from markupsafe import Markup
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    InputMultiPath,
+    SimpleInterface,
+    TraitedSpec,
+)
+from PIL import Image
 from pkg_resources import resource_filename as pkgrf
+
+from xcp_d.utils.filemanip import fname_presuffix
 
 
 class ExecutiveSummary(object):
@@ -33,7 +44,7 @@ class ExecutiveSummary(object):
         else:
             self.session_id = None
 
-        self.layout = BIDSLayout(xcpd_path, validate=False, derivatives=True)
+        self.layout = BIDSLayout(xcpd_path, config="figures", validate=False)
 
     def write_html(self, document, filename):
         """Write an html document to a filename.
@@ -78,14 +89,14 @@ class ExecutiveSummary(object):
         ANAT_REGISTRATION_DESCS = [
             "AtlasOnAnat",
             "AnatOnAtlas",
-            "AtlasOnSubcorticals",
-            "SubcorticalsOnAtlas",
+            # "AtlasOnSubcorticals",
+            # "SubcorticalsOnAtlas",
         ]
         ANAT_REGISTRATION_TITLES = [
             "Atlas On {modality}",  # noqa: FS003
             "{modality} On Atlas",  # noqa: FS003
-            "Atlas On {modality} Subcorticals",  # noqa: FS003
-            "{modality} Subcorticals On Atlas",  # noqa: FS003
+            # "Atlas On {modality} Subcorticals",  # noqa: FS003
+            # "{modality} Subcorticals On Atlas",  # noqa: FS003
         ]
         TASK_REGISTRATION_DESCS = [
             "TaskOnT1w",
@@ -326,3 +337,68 @@ class ExecutiveSummary(object):
         )
 
         self.write_html(html, out_file)
+
+
+class _FormatForBrainSwipesInputSpec(BaseInterfaceInputSpec):
+    in_files = InputMultiPath(
+        File(exists=True),
+        desc=(
+            "Figure files. Must be the derivative's filename, "
+            "not the file from the working directory."
+        ),
+    )
+
+
+class _FormatForBrainSwipesOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Reformatted png file.")
+
+
+class FormatForBrainSwipes(SimpleInterface):
+    """Reformat figure for Brain Swipes.
+
+    From https://github.com/DCAN-Labs/BrainSwipes/blob/cb2ce964bcae93c9a234e4421c07b88bcadf2908/\
+    tools/images/ingest_brainswipes_data.py#L113
+    Credit to @BarryTik.
+    """
+
+    input_spec = _FormatForBrainSwipesInputSpec
+    output_spec = _FormatForBrainSwipesOutputSpec
+
+    def _run_interface(self, runtime):
+        input_files = self.inputs.in_files
+        assert len(input_files) == 9, "There must be 9 input files."
+        idx = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+        widths, rows = [], []
+        for i_row in range(3):
+            row_idx = idx[i_row]
+            row_files = [input_files[j_col] for j_col in row_idx]
+            row = [np.asarray(Image.open(row_file)) for row_file in row_files]
+            row = np.concatenate(row, axis=1)
+            widths.append(row.shape[1])
+            rows.append(row)
+
+        max_width = np.max(widths)
+
+        for i_row, row in enumerate(rows):
+            width = widths[i_row]
+            if width < max_width:
+                pad = max_width - width
+                prepad = pad // 2
+                postpad = pad - prepad
+                rows[i_row] = np.pad(row, ((0, 0), (prepad, postpad), (0, 0)), mode="constant")
+
+        x = np.concatenate(rows, axis=0)
+        new_x = ((x - x.min()) * (1 / (x.max() - x.min()) * 255)).astype("uint8")
+        new_im = Image.fromarray(np.uint8(new_x))
+
+        output_file = fname_presuffix(
+            input_files[0],
+            newpath=runtime.cwd,
+            suffix="_reformatted.png",
+            use_ext=False,
+        )
+        # all images should have the a .png extension
+        new_im.save(output_file)
+        self._results["out_file"] = output_file
+
+        return runtime

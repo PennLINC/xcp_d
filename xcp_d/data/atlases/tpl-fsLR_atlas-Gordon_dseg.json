@@ -15,5 +15,9 @@
     "cifti_label": {
         "Description": "The region label present in the CIFTI file.",
         "LongName": "CIFTI Label"
+    },
+    "community": {
+        "Description": "The name of the community 'network' with which each parcel is associated.",
+        "LongName": "Community Label"
     }
 }

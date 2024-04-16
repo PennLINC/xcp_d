@@ -1,4 +1,6 @@
 """Tests for framewise displacement calculation."""
+
+import json
 import os
 
 import nibabel as nb
@@ -16,15 +18,27 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     confounds_json = ds001419_data["confounds_json"]
 
     df = pd.read_table(confounds_file)
+    with open(confounds_json, "r") as fo:
+        metadata = json.load(fo)
 
     # Replace confounds tsv values with values that should be omitted
     df.loc[1:3, "trans_x"] = [6, 8, 9]
     df.loc[4:6, "trans_y"] = [7, 8, 9]
     df.loc[7:9, "trans_z"] = [12, 8, 9]
 
+    # Modify JSON file
+    metadata["trans_x"] = {"test": "hello"}
+    confounds_json = os.path.join(tmpdir, "edited_confounds.json")
+    with open(confounds_json, "w") as fo:
+        json.dump(metadata, fo)
+
     # Rename with same convention as initial confounds tsv
     confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
+
+    custom_confounds_file = os.path.join(tmpdir, "custom_confounds.tsv")
+    df2 = pd.DataFrame(columns=["signal__test"], data=np.random.random((df.shape[0], 1)))
+    df2.to_csv(custom_confounds_file, sep="\t", index=False, header=True)
 
     # Run workflow
     interface = censoring.GenerateConfounds(
@@ -35,7 +49,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
         head_radius=50,
         fmriprep_confounds_file=confounds_tsv,
         fmriprep_confounds_json=confounds_json,
-        custom_confounds_file=None,
+        custom_confounds_file=custom_confounds_file,
         motion_filter_type=None,
         motion_filter_order=4,
         band_stop_min=0,
@@ -47,6 +61,10 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert os.path.isfile(results.outputs.confounds_file)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    out_confounds_file = results.outputs.confounds_file
+    out_df = pd.read_table(out_confounds_file)
+    assert out_df.shape[1] == 24  # 24(P)
+    assert sum(out_df.columns.str.endswith("_orth")) == 24  # all 24(P)
 
 
 def test_random_censor(tmp_path_factory):
@@ -107,7 +125,7 @@ def test_random_censor(tmp_path_factory):
 
 def test_censor(ds001419_data, tmp_path_factory):
     """Test Censor interface."""
-    tmpdir = tmp_path_factory.mktemp("test_generate_confounds")
+    tmpdir = tmp_path_factory.mktemp("test_censor")
     nifti_file = ds001419_data["nifti_file"]
     cifti_file = ds001419_data["cifti_file"]
     in_img = nb.load(nifti_file)

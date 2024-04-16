@@ -1,10 +1,12 @@
 """Plotting workflows."""
+
 from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
@@ -16,14 +18,8 @@ from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
 
 @fill_doc
 def init_qc_report_wf(
-    output_dir,
     TR,
     head_radius,
-    params,
-    cifti,
-    dcan_qc,
-    mem_gb,
-    omp_nthreads,
     name="qc_report_wf",
 ):
     """Generate quality control figures and a QC file.
@@ -33,29 +29,21 @@ def init_qc_report_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.plotting import init_qc_report_wf
-            wf = init_qc_report_wf(
-                output_dir=".",
-                TR=0.5,
-                head_radius=50,
-                params="none",
-                cifti=False,
-                dcan_qc=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="qc_report_wf",
-            )
+
+            with mock_config():
+                wf = init_qc_report_wf(
+                    TR=0.5,
+                    head_radius=50,
+                    name="qc_report_wf",
+                )
 
     Parameters
     ----------
-    %(output_dir)s
     %(TR)s
     %(head_radius)s
-    %(params)s
-    %(cifti)s
-    %(dcan_qc)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "qc_report_wf".
 
@@ -65,10 +53,7 @@ def init_qc_report_wf(
     preprocessed_bold
         The preprocessed BOLD file, after dummy scan removal.
         Used for carpet plots.
-    %(uncensored_denoised_bold)s
-        Used for carpet plots.
-        Only used if dcan_qc is True.
-    %(interpolated_filtered_bold)s
+    %(denoised_interpolated_bold)s
         Used for DCAN carpet plots.
         Only used if dcan_qc is True.
     %(censored_denoised_bold)s
@@ -81,8 +66,6 @@ def init_qc_report_wf(
         Only used with non-CIFTI data.
     %(template_to_anat_xfm)s
         Only used with non-CIFTI data.
-    %(anat_to_native_xfm)s
-        Only used with non-CIFTI data.
     %(dummy_scans)s
     %(fmriprep_confounds_file)s
     %(temporal_mask)s
@@ -94,13 +77,18 @@ def init_qc_report_wf(
     """
     workflow = Workflow(name=name)
 
+    output_dir = config.execution.xcp_d_dir
+    params = config.workflow.params
+    cifti = config.workflow.cifti
+    dcan_qc = config.workflow.dcan_qc
+    omp_nthreads = config.nipype.omp_nthreads
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "uncensored_denoised_bold",
-                "interpolated_filtered_bold",
+                "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "dummy_scans",
                 "fmriprep_confounds_file",
@@ -112,7 +100,6 @@ def init_qc_report_wf(
                 "anat_brainmask",
                 "boldref",
                 "template_to_anat_xfm",
-                "anat_to_native_xfm",
             ],
         ),
         name="inputnode",
@@ -142,7 +129,7 @@ def init_qc_report_wf(
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
             Function(
-                input_names=["bold_file", "template_to_anat_xfm", "anat_to_native_xfm"],
+                input_names=["bold_file", "template_to_anat_xfm"],
                 output_names=[
                     "bold_to_std_xfms",
                     "bold_to_std_xfms_invert",
@@ -159,7 +146,6 @@ def init_qc_report_wf(
             (inputnode, get_native2space_transforms, [
                 ("name_source", "bold_file"),
                 ("template_to_anat_xfm", "template_to_anat_xfm"),
-                ("anat_to_native_xfm", "anat_to_native_xfm"),
             ]),
         ])
         # fmt:on
@@ -171,7 +157,7 @@ def init_qc_report_wf(
             ),
             name="warp_boldmask_to_t1w",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb,
+            mem_gb=1,
         )
 
         # fmt:off
@@ -195,7 +181,7 @@ def init_qc_report_wf(
             ),
             name="warp_boldmask_to_mni",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb,
+            mem_gb=1,
         )
 
         # fmt:off
@@ -267,7 +253,7 @@ def init_qc_report_wf(
             ),
             name="warp_dseg_to_bold",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb * 3 * omp_nthreads,
+            mem_gb=3,
         )
 
         # fmt:off
@@ -284,7 +270,7 @@ def init_qc_report_wf(
             template_mask=nlin2009casym_brain_mask,
         ),
         name="qc_report",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -362,7 +348,7 @@ def init_qc_report_wf(
     plot_execsummary_carpets_dcan = pe.Node(
         QCPlotsES(TR=TR, standardize=params == "none"),
         name="plot_execsummary_carpets_dcan",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -370,9 +356,9 @@ def init_qc_report_wf(
     workflow.connect([
         (inputnode, plot_execsummary_carpets_dcan, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("uncensored_denoised_bold", "uncensored_denoised_bold"),
-            ("interpolated_filtered_bold", "interpolated_filtered_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
             ("filtered_motion", "filtered_motion"),
+            ("temporal_mask", "temporal_mask"),
             ("run_index", "run_index"),
         ]),
     ])
@@ -447,7 +433,7 @@ def init_qc_report_wf(
         FunctionalSummary(TR=TR),
         name="qcsummary",
         run_without_submitting=False,
-        mem_gb=mem_gb,
+        mem_gb=2,
     )
 
     # fmt:off

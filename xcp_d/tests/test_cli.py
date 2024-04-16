@@ -1,21 +1,28 @@
 """Command-line interface tests."""
+
 import os
-import shutil
+from glob import glob
 
 import numpy as np
 import pandas as pd
 import pytest
-from pkg_resources import resource_filename as pkgrf
+from nipype import logging
 
-from xcp_d.cli import combineqc, parser_utils, run
+from xcp_d.cli import combineqc
+from xcp_d.cli.parser import parse_args
+from xcp_d.cli.workflow import build_boilerplate, build_workflow
+from xcp_d.data import load as load_data
 from xcp_d.interfaces.report_core import generate_reports
 from xcp_d.tests.utils import (
     check_affines,
     check_generated_files,
     download_test_data,
     get_test_data_path,
-    run_command,
+    list_files,
 )
+from xcp_d.utils.bids import write_atlas_dataset_description, write_dataset_description
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 @pytest.mark.ds001419_nifti
@@ -35,8 +42,6 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         out_dir,
         "participant",
         f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
         "--combineruns",
         "--nuisance-regressors=aroma_gsr",
@@ -46,36 +51,16 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
-        "--min-coverage=1",
-        "--exact-time",
-        "80",
-        "100",
-        "200",
+        "--skip-parcellation",
+        "--skip-dcan-qc",
         "--random-seed=8675309",
+        "--min-time=100",
     ]
-    opts = run.get_parser().parse_args(parameters)
-
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="nifti",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_ds001419_nifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="nifti")
 
 
 @pytest.mark.ds001419_cifti
@@ -108,47 +93,30 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--band-stop-max=18",
         "--cifti",
         "--combineruns",
-        "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
+        "--min-time=100",
+        "--exact-time",
+        "80",
+        "200",
         f"--fs-license-file={fs_license_file}",
     ]
-    opts = run.get_parser().parse_args(parameters)
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["01"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="cifti",
     )
 
-    output_list_file = os.path.join(test_data_dir, "test_ds001419_cifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
 
-    check_affines(dataset_dir, out_dir, input_type="cifti")
+@pytest.mark.ukbiobank
+def test_ukbiobank(data_dir, output_dir, working_dir):
+    """Run xcp_d on UK Biobank derivatives."""
+    test_name = "test_ukbiobank"
 
-
-@pytest.mark.pnc_nifti
-def test_pnc_nifti(data_dir, output_dir, working_dir):
-    """Run xcp_d on pnc fMRIPrep derivatives, with nifti options."""
-    test_name = "test_pnc_nifti"
-
-    dataset_dir = download_test_data("pnc", data_dir)
+    dataset_dir = download_test_data("ukbiobank", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
-
-    test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "pnc_nifti_filter.json")
 
     parameters = [
         dataset_dir,
@@ -157,8 +125,8 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
-        f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=36P",
+        "--input-type=ukb",
+        "--nuisance-regressors=gsr_only",
         "--despike",
         "--dummy-scans=4",
         "--fd-thresh=0.2",
@@ -166,36 +134,16 @@ def test_pnc_nifti(data_dir, output_dir, working_dir):
         "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
-        "--min-coverage=1",
-        "--exact-time",
-        "80",
-        "100",
-        "200",
+        "--skip-dcan-qc",
+        "--min-coverage=0.1",
         "--random-seed=8675309",
+        "--min-time=100",
     ]
-    opts = run.get_parser().parse_args(parameters)
-
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["1648798153"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="ukb",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_pnc_nifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="nifti")
 
 
 @pytest.mark.pnc_cifti
@@ -210,6 +158,17 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "pnc_cifti_filter.json")
 
+    # Make the last few volumes outliers to check https://github.com/PennLINC/xcp_d/issues/949
+    motion_file = os.path.join(
+        dataset_dir,
+        "sub-1648798153/ses-PNC1/func/"
+        "sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-confounds_timeseries.tsv",
+    )
+    motion_df = pd.read_table(motion_file)
+    motion_df.loc[56:, "trans_x"] = np.arange(1, 5) * 20
+    motion_df.to_csv(motion_file, sep="\t", index=False)
+    LOGGER.warning(f"Overwrote confounds file at {motion_file}.")
+
     parameters = [
         dataset_dir,
         out_dir,
@@ -218,9 +177,9 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
+        "--min-time=60",
         "--nuisance-regressors=acompcor_gsr",
-        "--despike",
-        "--head_radius=40",
+        "--head-radius=40",
         "--smoothing=6",
         "--motion-filter-type=notch",
         "--band-stop-min=12",
@@ -228,33 +187,18 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--warp-surfaces-native2std",
         "--cifti",
         "--combineruns",
-        "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
+        "--atlases",
+        "Tian",
+        "HCP",
     ]
-    opts = run.get_parser().parse_args(parameters)
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["1648798153"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="cifti",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_pnc_cifti_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.pnc_cifti_t2wonly
@@ -266,28 +210,17 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    # Simulate a T2w image
+    # Rename all T1w-related files in anat folder to T2w.
+    # T1w-related files in func folder should not impact XCP-D.
     anat_dir = os.path.join(dataset_dir, "sub-1648798153/ses-PNC1/anat")
-    files_to_copy = [
-        "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.nii.gz",
-        "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.json",
-        (
-            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_res-2_desc-preproc_"
-            "T1w.nii.gz"
-        ),
-        (
-            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_res-2_desc-preproc_"
-            "T1w.json"
-        ),
-        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
-        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
-        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
-        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
-    ]
+    files_to_copy = sorted(glob(os.path.join(anat_dir, "*T1w*")))
     for file_to_copy in files_to_copy:
-        t2w_file = os.path.join(anat_dir, file_to_copy.replace("T1w", "T2w"))
+        t2w_file = file_to_copy.replace("T1w", "T2w")
         if not os.path.isfile(t2w_file):
-            shutil.copyfile(os.path.join(anat_dir, file_to_copy), t2w_file)
+            os.rename(os.path.join(anat_dir, file_to_copy), t2w_file)
+
+    tree = list_files(dataset_dir)
+    LOGGER.info(f"Tree after adding T2w:\n{tree}")
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "pnc_cifti_t2wonly_filter.json")
@@ -310,33 +243,19 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--warp-surfaces-native2std",
         "--cifti",
         "--combineruns",
-        "--dcan-qc",
         "--dummy-scans=auto",
         "--fd-thresh=0.3",
         "--lower-bpf=0.0",
+        "--atlases",
+        "4S156Parcels",
+        "Glasser",
+        "--min-time=100",
     ]
-    opts = run.get_parser().parse_args(parameters)
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval.get("workflow", None)
-    plugin_settings = retval["plugin_settings"]
-    xcpd_wf.run(**plugin_settings)
-
-    generate_reports(
-        subject_list=["1648798153"],
-        fmri_dir=dataset_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
-        packagename="xcp_d",
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="cifti",
     )
-
-    output_list_file = os.path.join(test_data_dir, "test_pnc_cifti_t2wonly_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="cifti")
 
 
 @pytest.mark.fmriprep_without_freesurfer
@@ -353,12 +272,11 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     test_name = "test_fmriprep_without_freesurfer"
 
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
-    out_dir = os.path.join(output_dir, test_name)
+    temp_dir = os.path.join(output_dir, test_name)
+    out_dir = os.path.join(temp_dir, "xcp_d")
     work_dir = os.path.join(working_dir, test_name)
-    custom_confounds_dir = os.path.join(out_dir, "custom_confounds")
+    custom_confounds_dir = os.path.join(temp_dir, "custom_confounds")
     os.makedirs(custom_confounds_dir, exist_ok=True)
-
-    test_data_dir = get_test_data_path()
 
     # Create custom confounds folder
     for run_number in [1, 2]:
@@ -369,37 +287,37 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
             data=np.random.random((16, 2)),
         )
         confounds_df.to_csv(out_file, sep="\t", index=False)
+        LOGGER.warning(f"Created custom confounds file at {out_file}.")
 
-    cmd = (
-        f"xcp_d {dataset_dir} {out_dir} participant "
-        f"-w {work_dir} "
-        "--nthreads 2 "
-        "--omp-nthreads 2 "
-        "--despike "
-        "--head_radius 40 "
-        "--smoothing 6 "
-        "-f 100 "
-        "--nuisance-regressors 27P "
-        "--disable-bandpass-filter "
-        "--min-time 20 "
-        "--dcan-qc "
-        "--dummy-scans 1 "
-        f"--custom_confounds={custom_confounds_dir}"
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        "--despike",
+        "--head_radius=40",
+        "--smoothing=6",
+        "-f=100",
+        "--nuisance-regressors=27P",
+        "--disable-bandpass-filter",
+        "--min-time=20",
+        "--dummy-scans=1",
+        f"--custom_confounds={custom_confounds_dir}",
+    ]
+
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="nifti",
     )
 
-    run_command(cmd)
-
     # Run combine-qc too
-    xcpd_dir = os.path.join(out_dir, "xcp_d")
-    combineqc.main([xcpd_dir, "summary"])
-
-    output_list_file = os.path.join(test_data_dir, "test_fmriprep_without_freesurfer_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(dataset_dir, out_dir, input_type="nifti")
+    combineqc.main([out_dir, "summary"])
 
     dm_file = os.path.join(
-        xcpd_dir,
+        out_dir,
         "sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv",
     )
     dm_df = pd.read_table(dm_file)
@@ -428,48 +346,41 @@ def test_nibabies(data_dir, output_dir, working_dir):
         "--head_radius=auto",
         "--smoothing=0",
         "--fd-thresh=0",
-        "--dcan-qc",
     ]
     _run_and_generate(
         test_name=test_name,
-        participant_label="01",
         parameters=parameters,
-        data_dir=data_dir,
-        work_dir=work_dir,
-        out_dir=out_dir,
-        input_type=input_type,
+        input_type="nibabies",
     )
 
 
-def _run_and_generate(
-    test_name,
-    participant_label,
-    parameters,
-    data_dir,
-    work_dir,
-    out_dir,
-    input_type,
-):
-    opts = run.get_parser().parse_args(parameters)
-    retval = {}
-    retval = run.build_workflow(opts, retval=retval)
-    run_uuid = retval.get("run_uuid", None)
-    xcpd_wf = retval["workflow"]
-    missing = parser_utils.check_deps(xcpd_wf)
-    assert not missing
+def _run_and_generate(test_name, parameters, input_type):
+    from xcp_d import config
 
+    parameters.append("--clean-workdir")
+    parameters.append("--stop-on-first-crash")
+    parameters.append("-vv")
+    parse_args(parameters)
+    config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
+    config.loggers.cli.warning(f"Saving config file to {config_file}")
+    config.to_filename(config_file)
+
+    retval = build_workflow(config_file, retval={})
+    xcpd_wf = retval["workflow"]
     xcpd_wf.run()
+    write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+    if config.execution.atlases:
+        write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
+
+    build_boilerplate(str(config_file), xcpd_wf)
     generate_reports(
-        subject_list=[participant_label],
-        fmri_dir=data_dir,
-        work_dir=work_dir,
-        output_dir=out_dir,
-        run_uuid=run_uuid,
-        config=pkgrf("xcp_d", "data/reports.yml"),
+        subject_list=config.execution.participant_label,
+        output_dir=config.execution.xcp_d_dir,
+        run_uuid=config.execution.run_uuid,
+        config=load_data("reports-spec.yml"),
         packagename="xcp_d",
     )
 
     output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
-    check_generated_files(out_dir, output_list_file)
-
-    check_affines(data_dir, out_dir, input_type=input_type)
+    check_generated_files(config.execution.xcp_d_dir, output_list_file)
+    check_affines(config.execution.fmri_dir, config.execution.xcp_d_dir, input_type=input_type)

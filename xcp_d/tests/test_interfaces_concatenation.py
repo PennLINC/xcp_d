@@ -1,4 +1,5 @@
 """Tests for the xcp_d.interfaces.concatenation module."""
+
 import os
 
 from nipype.interfaces.base import Undefined, isdefined
@@ -42,14 +43,12 @@ def test_filteroutfailedruns(ds001419_data):
     fmriprep_confounds_file = [tsv_file] * n_runs
     filtered_motion = [tsv_file] * n_runs
     temporal_mask = [nifti_file] * n_runs
-    uncensored_denoised_bold = [nifti_file] * n_runs
-    interpolated_filtered_bold = [nifti_file] * n_runs
+    denoised_interpolated_bold = [nifti_file] * n_runs
 
     # Some can just be Undefined
     smoothed_denoised_bold = Undefined
     bold_mask = Undefined
     boldref = Undefined
-    anat_to_native_xfm = Undefined
 
     # Now the lists of lists
     timeseries = [[tsv_file, tsv_file, tsv_file]] * n_runs
@@ -61,12 +60,10 @@ def test_filteroutfailedruns(ds001419_data):
         fmriprep_confounds_file=fmriprep_confounds_file,
         filtered_motion=filtered_motion,
         temporal_mask=temporal_mask,
-        uncensored_denoised_bold=uncensored_denoised_bold,
-        interpolated_filtered_bold=interpolated_filtered_bold,
+        denoised_interpolated_bold=denoised_interpolated_bold,
         smoothed_denoised_bold=smoothed_denoised_bold,
         bold_mask=bold_mask,
         boldref=boldref,
-        anat_to_native_xfm=anat_to_native_xfm,
         timeseries=timeseries,
         timeseries_ciftis=timeseries_ciftis,
     )
@@ -77,12 +74,10 @@ def test_filteroutfailedruns(ds001419_data):
     assert len(out.fmriprep_confounds_file) == n_good_runs
     assert len(out.filtered_motion) == n_good_runs
     assert len(out.temporal_mask) == n_good_runs
-    assert len(out.uncensored_denoised_bold) == n_good_runs
-    assert len(out.interpolated_filtered_bold) == n_good_runs
+    assert len(out.denoised_interpolated_bold) == n_good_runs
     assert len(out.smoothed_denoised_bold) == n_good_runs
     assert len(out.bold_mask) == n_good_runs
     assert len(out.boldref) == n_good_runs
-    assert len(out.anat_to_native_xfm) == n_good_runs
     assert len(out.timeseries) == n_good_runs
     assert len(out.timeseries_ciftis) == n_good_runs
 
@@ -102,8 +97,7 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     fmriprep_confounds_file = [tsv_file] * n_runs
     filtered_motion = [tsv_file] * n_runs
     temporal_mask = [tsv_file] * n_runs
-    uncensored_denoised_bold = [nifti_file] * n_runs
-    interpolated_filtered_bold = [nifti_file] * n_runs
+    denoised_interpolated_bold = [nifti_file] * n_runs
 
     # Some can just be Undefined
     smoothed_denoised_bold = [Undefined] * n_runs
@@ -115,8 +109,7 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     interface = concatenation.ConcatenateInputs(
         censored_denoised_bold=censored_denoised_bold,
         preprocessed_bold=preprocessed_bold,
-        uncensored_denoised_bold=uncensored_denoised_bold,
-        interpolated_filtered_bold=interpolated_filtered_bold,
+        denoised_interpolated_bold=denoised_interpolated_bold,
         smoothed_denoised_bold=smoothed_denoised_bold,
         timeseries_ciftis=timeseries_ciftis,
         fmriprep_confounds_file=fmriprep_confounds_file,
@@ -128,8 +121,7 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     out = results.outputs
     assert os.path.isfile(out.censored_denoised_bold)
     assert os.path.isfile(out.preprocessed_bold)
-    assert os.path.isfile(out.uncensored_denoised_bold)
-    assert os.path.isfile(out.interpolated_filtered_bold)
+    assert os.path.isfile(out.denoised_interpolated_bold)
     assert not isdefined(out.smoothed_denoised_bold)
     assert len(out.timeseries_ciftis) == n_atlases
     assert all(os.path.isfile(f) for f in out.timeseries_ciftis)

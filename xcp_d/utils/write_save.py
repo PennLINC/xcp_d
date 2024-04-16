@@ -6,10 +6,13 @@ import os
 import nibabel as nb
 import numpy as np
 from nilearn import masking
+from nipype import logging
 from templateflow.api import get as get_template
 
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import split_filename
+
+LOGGER = logging.getLogger("nipype.utils")
 
 
 def read_ndata(datafile, maskfile=None):
@@ -29,7 +32,7 @@ def read_ndata(datafile, maskfile=None):
         Vertices or voxels by timepoints.
     """
     # read cifti series
-    cifti_extensions = [".dtseries.nii", ".dlabel.nii", ".ptseries.nii"]
+    cifti_extensions = [".dtseries.nii", ".dlabel.nii", ".ptseries.nii", ".dscalar.nii"]
     if any([datafile.endswith(ext) for ext in cifti_extensions]):
         data = nb.load(datafile).get_fdata()
 
@@ -81,6 +84,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         The array to save to a file.
     template : :obj:`str`
         Path to a template image, from which header and affine information will be used.
+        If the output file is a CIFTI, this *must* be a .dtseries.nii CIFTI.
     filename : :obj:`str`
         Name of the output file to be written.
     mask : :obj:`str` or None, optional
@@ -93,6 +97,10 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     -------
     filename : :obj:`str`
         The name of the generated output file. Same as the "filename" input.
+
+    Notes
+    -----
+    This function currently only works for NIfTIs and .dtseries.nii and .dscalar.nii CIFTIs.
     """
     assert data_matrix.ndim in (1, 2), f"Input data must be a 1-2D array, not {data_matrix.ndim}."
     assert os.path.isfile(template)
@@ -117,47 +125,52 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         template_img = nb.load(template)
 
         if data_matrix.ndim == 1:
-            n_volumes, n_vertices = 0, data_matrix.shape[0]
-        else:
-            n_volumes, n_vertices = data_matrix.shape
+            LOGGER.warning("1D data matrix provided. Adding singleton dimension.")
+            data_matrix = data_matrix[None, :]
 
-        if n_volumes == template_img.shape[0]:
-            # same number of volumes in data as original image
-            img = nb.Cifti2Image(
-                dataobj=data_matrix,
-                header=template_img.header,
-                file_map=template_img.file_map,
-                nifti_header=template_img.nifti_header,
-            )
+        n_volumes = data_matrix.shape[0]
+        _, _, out_extension = split_filename(filename)
 
-        else:
-            # different number of volumes in data from original image
-            # the time axis must be constructed manually based on its new length
+        if filename.endswith(".dscalar.nii"):
+            # Dense scalar files have (ScalarAxis, BrainModelAxis)
+            scalar_names = [f"#{i + 1}" for i in range(n_volumes)]
+            ax_0 = nb.cifti2.cifti2_axes.ScalarAxis(name=scalar_names)
             ax_1 = template_img.header.get_axis(1)
+            new_header = nb.Cifti2Header.from_axes((ax_0, ax_1))
+            img = nb.Cifti2Image(data_matrix, new_header)
 
-            if n_volumes > 0:
-                ax_0 = nb.cifti2.SeriesAxis(start=0, step=TR, size=data_matrix.shape[0])
+        elif filename.endswith(".dtseries.nii"):
+            # Dense series files have (SeriesAxis, BrainModelAxis)
+            if n_volumes == template_img.shape[0]:
+                # same number of volumes in data as original image,
+                # so we can just use the original axis
+                img = nb.Cifti2Image(
+                    dataobj=data_matrix,
+                    header=template_img.header,
+                    file_map=template_img.file_map,
+                    nifti_header=template_img.nifti_header,
+                )
+            else:
+                ax_1 = template_img.header.get_axis(1)
+
+                # different number of volumes in data from original image,
+                # so the time axis must be constructed manually based on its new length
+                ax_0 = nb.cifti2.SeriesAxis(start=0, step=TR, size=n_volumes)
 
                 # create new header and cifti object
                 new_header = nb.cifti2.Cifti2Header.from_axes((ax_0, ax_1))
+                img = nb.Cifti2Image(data_matrix, new_header)
 
-            else:
-                # create new header and cifti object
-                new_header = nb.cifti2.Cifti2Header.from_axes((ax_1,))
+        else:
+            raise ValueError(f"Unsupported CIFTI extension '{out_extension}'")
 
-            img = nb.Cifti2Image(data_matrix, new_header)
-
-        # Modify the intent code if it doesn't match the extension.
-        _, _, out_extension = split_filename(filename)
-        target_intent = cifti_intents.get(out_extension, None)
-        if target_intent is None:
-            raise ValueError(f"Unknown CIFTI extension '{out_extension}'")
-
+        # Modify the intent code
+        target_intent = cifti_intents[out_extension]
         img.nifti_header.set_intent(target_intent)
 
     else:
         # write nifti series
-        img = masking.unmask(data_matrix, mask)
+        img = masking.unmask(data_matrix.astype(np.float32), mask)
         # we'll override the default TR (1) in the header
         pixdim = list(img.header.get_zooms())
         pixdim[3] = TR

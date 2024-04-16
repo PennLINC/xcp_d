@@ -1,4 +1,5 @@
 """Tests for the xcp_d.interfaces.nilearn module."""
+
 import os
 
 import nibabel as nb
@@ -101,8 +102,6 @@ def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
     reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
-    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
     reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
     reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
 
@@ -141,8 +140,6 @@ def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
     reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
-    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
     reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
     reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
 
@@ -180,24 +177,9 @@ def _check_denoising_outputs(preprocessed_img, outputs, cifti):
 
     preprocessed_img_header = getattr(preprocessed_img, hdr_attr)
 
-    # uncensored_denoised_bold is the size of the full run
-    assert os.path.isfile(outputs.uncensored_denoised_bold)
-    uncensored_denoised_img = nb.load(outputs.uncensored_denoised_bold)
-    uncensored_denoised_img_header = getattr(uncensored_denoised_img, hdr_attr)
-    assert uncensored_denoised_img.ndim == ndim
-    assert uncensored_denoised_img.shape == preprocessed_img.shape
-    assert np.array_equal(
-        preprocessed_img_header.get_sform(),
-        preprocessed_img_header.get_sform(),
-    )
-    assert np.array_equal(
-        uncensored_denoised_img_header.get_zooms()[:-1],
-        preprocessed_img_header.get_zooms()[:-1],
-    )
-
-    # interpolated_filtered_bold is the censored, denoised, interpolated, and filtered data
-    assert os.path.isfile(outputs.interpolated_filtered_bold)
-    filtered_denoised_img = nb.load(outputs.interpolated_filtered_bold)
+    # denoised_interpolated_bold is the censored, denoised, interpolated, and filtered data
+    assert os.path.isfile(outputs.denoised_interpolated_bold)
+    filtered_denoised_img = nb.load(outputs.denoised_interpolated_bold)
     filtered_denoised_img_header = getattr(filtered_denoised_img, hdr_attr)
     assert filtered_denoised_img.ndim == ndim
     assert filtered_denoised_img.shape == preprocessed_img.shape

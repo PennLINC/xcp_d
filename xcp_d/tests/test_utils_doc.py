@@ -1,4 +1,5 @@
 """Tests for the xcp_d.utils.doc module."""
+
 import os
 
 from xcp_d.utils import doc

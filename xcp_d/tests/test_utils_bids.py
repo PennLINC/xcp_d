@@ -1,11 +1,14 @@
 """Tests for the xcp_d.utils.bids module."""
+
 import json
 import os
+import shutil
 
 import pytest
 from bids.layout import BIDSLayout
 
 import xcp_d.utils.bids as xbids
+from xcp_d.data import load as load_data
 
 
 def test_collect_participants(datasets):
@@ -15,40 +18,44 @@ def test_collect_participants(datasets):
     """
     bids_dir = datasets["ds001419"]
 
+    bids_layout = BIDSLayout(bids_dir, validate=False)
+    nonbids_layout = BIDSLayout(os.path.dirname(bids_dir), validate=False)
+
     # Pass in non-BIDS folder to get BIDSError.
     with pytest.raises(xbids.BIDSError, match="Could not find participants"):
-        xbids.collect_participants(os.path.dirname(bids_dir), participant_label="fail")
+        xbids.collect_participants(nonbids_layout, participant_label="fail")
 
+    # Pass in BIDS folder with no matching participants to get BIDSWarning.
     with pytest.raises(xbids.BIDSError, match="Could not find participants"):
-        xbids.collect_participants(bids_dir, participant_label="fail")
+        xbids.collect_participants(bids_layout, participant_label="fail")
 
+    # Pass in BIDS folder with only some participants to get BIDSWarning.
     with pytest.warns(xbids.BIDSWarning, match="Some participants were not found"):
-        xbids.collect_participants(bids_dir, participant_label=["01", "fail"])
+        xbids.collect_participants(bids_layout, participant_label=["01", "fail"])
 
+    # Pass in BIDS folder with only some participants to get BIDSError.
     with pytest.raises(xbids.BIDSError, match="Some participants were not found"):
-        xbids.collect_participants(bids_dir, participant_label=["01", "fail"], strict=True)
+        xbids.collect_participants(bids_layout, participant_label=["01", "fail"], strict=True)
 
-    found_labels = xbids.collect_participants(bids_dir, participant_label=None)
+    found_labels = xbids.collect_participants(bids_layout, participant_label=None)
     assert found_labels == ["01"]
 
-    found_labels = xbids.collect_participants(bids_dir, participant_label="01")
+    found_labels = xbids.collect_participants(bids_layout, participant_label="01")
     assert found_labels == ["01"]
 
 
 def test_collect_data_ds001419(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["ds001419"]
+    layout = BIDSLayout(bids_dir, validate=False)
 
     # NIFTI workflow, but also get a BIDSLayout
-    layout, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task=None,
-        bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=None,
     )
 
     assert len(subj_data["bold"]) == 5
@@ -59,15 +66,12 @@ def test_collect_data_ds001419(datasets):
     assert "from-MNI152NLin2009cAsym" in subj_data["template_to_anat_xfm"]
 
     # CIFTI workflow
-    _, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task="rest",
-        bids_validate=False,
-        bids_filters=None,
+        bids_filters={"bold": {"task": "rest"}},
         cifti=True,
-        layout=layout,
     )
 
     assert len(subj_data["bold"]) == 1
@@ -81,23 +85,22 @@ def test_collect_data_ds001419(datasets):
 def test_collect_data_nibabies(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["nibabies"]
+    xcp_d_config = load_data("xcp_d_bids_config2.json")
     layout = BIDSLayout(
         bids_dir,
         validate=False,
-        derivatives=True,
-        config=["bids", "derivatives"],
+        config=["bids", "derivatives", xcp_d_config],
     )
+    cohort_files = layout.get(subject="01", cohort="1", space="MNIInfant", suffix="boldref")
+    assert len(cohort_files) > 0
 
     # NIFTI workflow
-    _, subj_data = xbids.collect_data(
-        bids_dir=bids_dir,
+    subj_data = xbids.collect_data(
+        layout=layout,
         input_type="fmriprep",
         participant_label="01",
-        task=None,
-        bids_validate=False,
         bids_filters=None,
         cifti=False,
-        layout=layout,
     )
 
     assert len(subj_data["bold"]) == 1
@@ -110,29 +113,73 @@ def test_collect_data_nibabies(datasets):
 
     # CIFTI workflow
     with pytest.raises(FileNotFoundError):
-        _, subj_data = xbids.collect_data(
-            bids_dir=bids_dir,
+        subj_data = xbids.collect_data(
+            layout=layout,
             input_type="fmriprep",
             participant_label="01",
-            task=None,
-            bids_validate=False,
             bids_filters=None,
             cifti=True,
-            layout=layout,
         )
 
 
-def test_collect_mesh_data(datasets):
+def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
-    layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False, derivatives=True)
+    # Dataset without mesh files
+    layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False)
     mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
     assert mesh_available is False
     assert standard_space_mesh is False
 
-    layout = BIDSLayout(datasets["ds001419"], validate=False, derivatives=True)
+    # Dataset with native-space mesh files (one file matching each query)
+    layout = BIDSLayout(datasets["ds001419"], validate=False)
     mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
     assert mesh_available is True
     assert standard_space_mesh is False
+
+    # Dataset with standard-space mesh files (one file matching each query)
+    std_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
+    shutil.copyfile(
+        os.path.join(datasets["ds001419"], "dataset_description.json"),
+        std_mesh_dir / "dataset_description.json",
+    )
+    os.makedirs(std_mesh_dir / "sub-01/anat", exist_ok=True)
+    files = [
+        "sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-R_white.surf.gii",
+    ]
+    for f in files:
+        (std_mesh_dir / "sub-01/anat").joinpath(f).touch()
+
+    layout = BIDSLayout(std_mesh_dir, validate=False)
+    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    assert mesh_available is True
+    assert standard_space_mesh is True
+
+    # Dataset with multiple files matching each query (raises an error)
+    bad_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
+    shutil.copyfile(
+        os.path.join(datasets["ds001419"], "dataset_description.json"),
+        bad_mesh_dir / "dataset_description.json",
+    )
+    os.makedirs(bad_mesh_dir / "sub-01/anat", exist_ok=True)
+    files = [
+        "sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-01_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-01_acq-test_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-01_acq-test_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-01_acq-test_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-01_acq-test_space-fsLR_den-32k_hemi-R_white.surf.gii",
+    ]
+    for f in files:
+        (std_mesh_dir / "sub-01/anat").joinpath(f).touch()
+
+    layout = BIDSLayout(std_mesh_dir, validate=False)
+    with pytest.raises(ValueError, match="More than one surface found"):
+        xbids.collect_mesh_data(layout, "01")
 
 
 def test_write_dataset_description(datasets, tmp_path_factory, caplog):
@@ -142,16 +189,71 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
 
     # The function expects a description file in the fmri_dir.
     with pytest.raises(FileNotFoundError, match="Dataset description DNE"):
-        xbids.write_dataset_description(tmpdir, tmpdir)
+        xbids.write_dataset_description(tmpdir, tmpdir, atlases=None, custom_confounds_folder=None)
     assert not os.path.isfile(dset_description)
 
     # It will work when we give it a real fmri_dir.
     fmri_dir = datasets["ds001419"]
-    xbids.write_dataset_description(fmri_dir, tmpdir)
+    xbids.write_dataset_description(
+        fmri_dir,
+        tmpdir,
+        atlases=["Gordon"],
+        custom_confounds_folder="/fake/path4",
+    )
     assert os.path.isfile(dset_description)
 
     # Now overwrite the description.
-    xbids.write_dataset_description(fmri_dir, tmpdir)
+    with open(dset_description, "r") as fo:
+        desc = json.load(fo)
+
+    assert "'preprocessed' is already a dataset link" not in caplog.text
+    assert "'custom_confounds' is already a dataset link" not in caplog.text
+    xbids.write_dataset_description(
+        tmpdir,
+        tmpdir,
+        atlases=["Gordon"],
+        custom_confounds_folder="/fake/path4",
+    )
+    assert "'preprocessed' is already a dataset link" in caplog.text
+    assert "'custom_confounds' is already a dataset link" in caplog.text
+
+    # Now change the version and re-run the function.
+    desc["GeneratedBy"][0]["Version"] = "0.0.1"
+    with open(dset_description, "w") as fo:
+        json.dump(desc, fo, indent=4)
+
+    assert "Previous output generated by version" not in caplog.text
+    xbids.write_dataset_description(fmri_dir, tmpdir, atlases=None, custom_confounds_folder=None)
+    assert "Previous output generated by version" in caplog.text
+
+    # Should raise a warning if DatasetType is not in the description
+    desc.pop("DatasetType")
+    with open(dset_description, "w") as fo:
+        json.dump(desc, fo, indent=4)
+
+    assert "DatasetType key not in" not in caplog.text
+    xbids.write_dataset_description(tmpdir, tmpdir, atlases=None, custom_confounds_folder=None)
+    assert "DatasetType key not in" in caplog.text
+
+    # Should raise an error if DatasetType is present, but isn't "derivative"
+    desc["DatasetType"] = "raw"
+    with open(dset_description, "w") as fo:
+        json.dump(desc, fo, indent=4)
+
+    with pytest.raises(ValueError, match="XCP-D only works on derivative datasets."):
+        xbids.write_dataset_description(
+            tmpdir,
+            tmpdir,
+            atlases=None,
+            custom_confounds_folder=None,
+        )
+
+
+def test_write_atlas_dataset_description(tmp_path_factory, caplog):
+    """Test write_atlas_dataset_description."""
+    tmpdir = tmp_path_factory.mktemp("test_write_atlas_dataset_description")
+    dset_description = os.path.join(tmpdir, "dataset_description.json")
+    xbids.write_atlas_dataset_description(tmpdir)
     assert os.path.isfile(dset_description)
 
     # Now change the version and re-run the function.
@@ -163,13 +265,13 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         json.dump(desc, fo, indent=4)
 
     assert "Previous output generated by version" not in caplog.text
-    xbids.write_dataset_description(fmri_dir, tmpdir)
+    xbids.write_atlas_dataset_description(tmpdir)
     assert "Previous output generated by version" in caplog.text
 
 
 def test_get_preproc_pipeline_info(datasets):
     """Test get_preproc_pipeline_info."""
-    input_types = ["fmriprep", "nibabies", "hcp", "dcan"]
+    input_types = ["fmriprep", "nibabies", "hcp", "dcan", "ukb"]
     for input_type in input_types:
         info_dict = xbids.get_preproc_pipeline_info(input_type, datasets["ds001419"])
         assert "references" in info_dict.keys()
@@ -191,31 +293,25 @@ def test_get_tr(ds001419_data):
 
 
 def test_get_freesurfer_dir(datasets):
-    """Test get_freesurfer_dir and get_freesurfer_sphere."""
-    with pytest.raises(NotADirectoryError, match="No FreeSurfer derivatives found."):
+    """Test get_freesurfer_dir."""
+    with pytest.raises(NotADirectoryError, match="No FreeSurfer/MCRIBS derivatives found"):
         xbids.get_freesurfer_dir(".")
 
-    fs_dir = xbids.get_freesurfer_dir(datasets["nibabies"])
+    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
     assert os.path.isdir(fs_dir)
+    assert software == "FreeSurfer"
 
-    # Create fake FreeSurfer folder so there are two possible folders
-    tmp_fs_dir = os.path.join(os.path.dirname(fs_dir), "freesurfer-fail")
-    os.mkdir(tmp_fs_dir)
-    with pytest.raises(ValueError, match="More than one candidate"):
-        xbids.get_freesurfer_dir(datasets["nibabies"])
+    # Create fake FreeSurfer folder so there are two possible folders and it grabs the closest
+    tmp_fs_dir = os.path.join(datasets["nibabies"], "sourcedata/mcribs")
+    os.makedirs(tmp_fs_dir, exist_ok=True)
+    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
+    assert os.path.isdir(fs_dir)
+    assert software == "MCRIBS"
     os.rmdir(tmp_fs_dir)
 
-    fs_dir = xbids.get_freesurfer_dir(datasets["pnc"])
+    fs_dir, software = xbids.get_freesurfer_dir(datasets["pnc"])
     assert os.path.isdir(fs_dir)
-
-    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "1648798153", "L")
-    assert os.path.isfile(sphere_file)
-
-    sphere_file = xbids.get_freesurfer_sphere(fs_dir, "sub-1648798153", "L")
-    assert os.path.isfile(sphere_file)
-
-    with pytest.raises(FileNotFoundError, match="Sphere file not found at"):
-        sphere_file = xbids.get_freesurfer_sphere(fs_dir, "fail", "L")
+    assert software == "FreeSurfer"
 
 
 def test_get_entity(datasets):
@@ -245,3 +341,136 @@ def test_get_entity(datasets):
     )
     with pytest.raises(ValueError, match="Unknown space"):
         xbids.get_entity(fname, "space")
+
+
+def test_group_across_runs():
+    """Test group_across_runs."""
+    in_files = [
+        "/path/sub-01_task-axcpt_run-03_bold.nii.gz",
+        "/path/sub-01_task-rest_run-03_bold.nii.gz",
+        "/path/sub-01_task-rest_run-01_bold.nii.gz",
+        "/path/sub-01_task-axcpt_run-02_bold.nii.gz",
+        "/path/sub-01_task-rest_run-02_bold.nii.gz",
+        "/path/sub-01_task-axcpt_run-01_bold.nii.gz",
+    ]
+    grouped_files = xbids.group_across_runs(in_files)
+    assert isinstance(grouped_files, list)
+    assert len(grouped_files[0]) == 3
+    assert grouped_files[0] == [
+        "/path/sub-01_task-axcpt_run-01_bold.nii.gz",
+        "/path/sub-01_task-axcpt_run-02_bold.nii.gz",
+        "/path/sub-01_task-axcpt_run-03_bold.nii.gz",
+    ]
+    assert len(grouped_files[1]) == 3
+    assert grouped_files[1] == [
+        "/path/sub-01_task-rest_run-01_bold.nii.gz",
+        "/path/sub-01_task-rest_run-02_bold.nii.gz",
+        "/path/sub-01_task-rest_run-03_bold.nii.gz",
+    ]
+
+    in_files = [
+        "/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-RL_run-1_bold.nii.gz",
+        "/path/sub-01_task-axcpt_dir-LR_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-LR_run-1_bold.nii.gz",
+        "/path/sub-01_task-axcpt_dir-RL_bold.nii.gz",
+    ]
+    grouped_files = xbids.group_across_runs(in_files)
+    assert isinstance(grouped_files, list)
+    assert len(grouped_files[0]) == 2
+    assert grouped_files[0] == [
+        "/path/sub-01_task-axcpt_dir-LR_bold.nii.gz",
+        "/path/sub-01_task-axcpt_dir-RL_bold.nii.gz",
+    ]
+    assert len(grouped_files[1]) == 4
+    assert grouped_files[1] == [
+        "/path/sub-01_task-rest_dir-LR_run-1_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-RL_run-1_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz",
+        "/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz",
+    ]
+
+
+def test_make_uri():
+    """Test _make_uri."""
+    in_file = "/path/to/dset/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    dataset_name = "test"
+    dataset_path = "/path/to/dset"
+    uri = xbids._make_uri(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
+    assert uri == "bids:test:sub-01/func/sub-01_task-rest_bold.nii.gz"
+
+    dataset_path = "/another/path/haha"
+    with pytest.raises(ValueError, match="is not in the subpath of"):
+        xbids._make_uri(in_file, dataset_name=dataset_name, dataset_path=dataset_path)
+
+
+def test_make_xcpd_uri():
+    """Test _make_xcpd_uri."""
+    out_file = "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    uri = xbids._make_xcpd_uri(out_file, output_dir="/path/to/dset/xcp_d")
+    assert uri == ["bids::sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+    xbids._make_xcpd_uri([out_file], output_dir="/path/to/dset/xcp_d")
+    assert uri == ["bids::sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+
+def test_make_atlas_uri():
+    """Test _make_atlas_uri."""
+    out_file = "/path/to/dset/xcp_d/atlases/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    uri = xbids._make_atlas_uri(out_file, output_dir="/path/to/dset/xcp_d")
+    assert uri == ["bids:atlas:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+    xbids._make_atlas_uri([out_file], output_dir="/path/to/dset/xcp_d")
+    assert uri == ["bids:atlas:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+
+def test_make_xcpd_uri_lol():
+    """Test _make_xcpd_uri_lol."""
+    in_list = [
+        [
+            "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "/path/to/dset/xcp_d/sub-02/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "/path/to/dset/xcp_d/sub-03/func/sub-01_task-rest_run-1_bold.nii.gz",
+        ],
+        [
+            "/path/to/dset/xcp_d/sub-01/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "/path/to/dset/xcp_d/sub-02/func/sub-01_task-rest_run-2_bold.nii.gz",
+            "/path/to/dset/xcp_d/sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
+        ],
+    ]
+    uris = xbids._make_xcpd_uri_lol(in_list, output_dir="/path/to/dset/xcp_d")
+    assert uris == [
+        [
+            "bids::sub-01/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-01/func/sub-01_task-rest_run-2_bold.nii.gz",
+        ],
+        [
+            "bids::sub-02/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-02/func/sub-01_task-rest_run-2_bold.nii.gz",
+        ],
+        [
+            "bids::sub-03/func/sub-01_task-rest_run-1_bold.nii.gz",
+            "bids::sub-03/func/sub-01_task-rest_run-2_bold.nii.gz",
+        ],
+    ]
+
+
+def test_make_preproc_uri():
+    """Test _make_preproc_uri."""
+    out_file = "/path/to/dset/sub-01/func/sub-01_task-rest_bold.nii.gz"
+    uri = xbids._make_preproc_uri(out_file, fmri_dir="/path/to/dset")
+    assert uri == ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+    xbids._make_preproc_uri([out_file], fmri_dir="/path/to/dset")
+    assert uri == ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"]
+
+
+def test_make_custom_uri():
+    """Test _make_custom_uri."""
+    out_file = "/path/to/dset/sub-01_task-rest_bold.nii.gz"
+    uri = xbids._make_custom_uri(out_file)
+    assert uri == ["bids:custom_confounds:sub-01_task-rest_bold.nii.gz"]
+
+    xbids._make_custom_uri([out_file])
+    assert uri == ["bids:custom_confounds:sub-01_task-rest_bold.nii.gz"]

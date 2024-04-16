@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Handling functional connectvity."""
+import gc
 import warnings
 
 import matplotlib.pyplot as plt
@@ -8,7 +9,6 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
-from nilearn.plotting import plot_matrix
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -16,6 +16,7 @@ from nipype.interfaces.base import (
     InputMultiObject,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
 
@@ -25,14 +26,9 @@ from xcp_d.utils.write_save import get_cifti_intents
 LOGGER = logging.getLogger("nipype.interface")
 
 
-class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
+class _NiftiParcellateInputSpec(BaseInterfaceInputSpec):
     filtered_file = File(exists=True, mandatory=True, desc="filtered file")
     mask = File(exists=True, mandatory=True, desc="brain mask file")
-    temporal_mask = File(
-        exists=True,
-        mandatory=False,
-        desc="Temporal mask, after dummy scan removal. Only necessary if correlate is True.",
-    )
     atlas = File(exists=True, mandatory=True, desc="atlas file")
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
     min_coverage = traits.Float(
@@ -45,24 +41,14 @@ class _NiftiConnectInputSpec(BaseInterfaceInputSpec):
             "Default is 0.5."
         ),
     )
-    correlate = traits.Bool(
-        mandatory=True,
-        desc="Whether to return correlations (True) or not (False).",
-    )
 
 
-class _NiftiConnectOutputSpec(TraitedSpec):
+class _NiftiParcellateOutputSpec(TraitedSpec):
     coverage = File(exists=True, desc="Parcel-wise coverage file.")
     timeseries = File(exists=True, desc="Parcellated time series file.")
-    correlations = File(exists=True, desc="Correlation matrix file.")
-    correlations_exact = traits.Either(
-        None,
-        traits.List(File(exists=True)),
-        desc="Correlation matrix files limited to an exact number of volumes.",
-    )
 
 
-class NiftiConnect(SimpleInterface):
+class NiftiParcellate(SimpleInterface):
     """Extract timeseries and compute connectivity matrices.
 
     Write out time series using Nilearn's NiftiLabelMasker
@@ -70,39 +56,34 @@ class NiftiConnect(SimpleInterface):
     timeseries using numpy.
     """
 
-    input_spec = _NiftiConnectInputSpec
-    output_spec = _NiftiConnectOutputSpec
+    input_spec = _NiftiParcellateInputSpec
+    output_spec = _NiftiParcellateOutputSpec
 
     def _run_interface(self, runtime):
-        filtered_file = self.inputs.filtered_file
         mask = self.inputs.mask
         atlas = self.inputs.atlas
-        atlas_labels = self.inputs.atlas_labels
         min_coverage = self.inputs.min_coverage
-        correlate = self.inputs.correlate
 
-        node_labels_df = pd.read_table(atlas_labels, index_col="index")
-        node_labels_df.sort_index(inplace=True)  # ensure index is in order
+        node_labels_df = pd.read_table(self.inputs.atlas_labels, index_col="index")
 
-        # Explicitly remove label corresponding to background (index=0), if present.
-        if 0 in node_labels_df.index:
-            LOGGER.warning(
-                "Index value of 0 found in atlas labels file. "
-                "Will assume this describes the background and ignore it."
-            )
-            node_labels_df = node_labels_df.drop(index=[0])
-
+        # Fix any nonsequential values or mismatch between atlas and DataFrame.
+        atlas_img, node_labels_df = _sanitize_nifti_atlas(atlas, node_labels_df)
         node_labels = node_labels_df["label"].tolist()
+        # prepend "background" to node labels to satisfy NiftiLabelsMasker
+        # The background "label" won't be present in the output timeseries.
+        masker_labels = ["background"] + node_labels
 
         # Before anything, we need to measure coverage
-        atlas_img = nb.load(atlas)
-        atlas_data = atlas_img.get_fdata()
-        atlas_data_bin = (atlas_data > 0).astype(np.float32)
-        atlas_img_bin = nb.Nifti1Image(atlas_data_bin, atlas_img.affine, atlas_img.header)
+        atlas_img_bin = nb.Nifti1Image(
+            (atlas_img.get_fdata() > 0).astype(np.uint8),
+            atlas_img.affine,
+            atlas_img.header,
+        )
 
         sum_masker_masked = NiftiLabelsMasker(
-            labels_img=atlas,
-            labels=node_labels,
+            labels_img=atlas_img,
+            labels=masker_labels,
+            background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
             standardize=False,
@@ -110,8 +91,9 @@ class NiftiConnect(SimpleInterface):
             resampling_target=None,  # they should be in the same space/resolution already
         )
         sum_masker_unmasked = NiftiLabelsMasker(
-            labels_img=atlas,
-            labels=node_labels,
+            labels_img=atlas_img,
+            labels=masker_labels,
+            background_label=0,
             smoothing_fwhm=None,
             standardize=False,
             strategy="sum",
@@ -121,6 +103,8 @@ class NiftiConnect(SimpleInterface):
         n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
         parcel_coverage = np.squeeze(n_voxels_in_masked_parcels / n_voxels_in_parcels)
         coverage_thresholded = parcel_coverage < min_coverage
+        del sum_masker_masked, sum_masker_unmasked, n_voxels_in_masked_parcels, n_voxels_in_parcels
+        gc.collect()
 
         n_nodes = len(node_labels)
         n_found_nodes = coverage_thresholded.size
@@ -155,23 +139,27 @@ class NiftiConnect(SimpleInterface):
             )
 
         masker = NiftiLabelsMasker(
-            labels_img=atlas,
-            labels=node_labels,
+            labels_img=atlas_img,
+            labels=masker_labels,
+            background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
             standardize=False,
             resampling_target=None,  # they should be in the same space/resolution already
         )
 
-        # Use nilearn for time_series
-        timeseries_arr = masker.fit_transform(filtered_file)
+        # Use nilearn to parcellate the file
+        timeseries_arr = masker.fit_transform(self.inputs.filtered_file)
         assert timeseries_arr.shape[1] == n_found_nodes
+        masker_labels = masker.labels_[:]
+        del masker
+        gc.collect()
 
         # Apply the coverage mask
         timeseries_arr[:, coverage_thresholded] = np.nan
 
         # Region indices in the atlas may not be sequential, so we map them to sequential ints.
-        seq_mapper = {idx: i for i, idx in enumerate(node_labels_df.index.tolist())}
+        seq_mapper = {idx: i for i, idx in enumerate(node_labels_df["sanitized_index"].tolist())}
 
         if n_found_nodes != n_nodes:  # parcels lost by warping/downsampling atlas
             # Fill in any missing nodes in the timeseries array with NaNs.
@@ -181,18 +169,22 @@ class NiftiConnect(SimpleInterface):
                 dtype=timeseries_arr.dtype,
             )
             for col in range(timeseries_arr.shape[1]):
-                label_col = seq_mapper[masker.labels_[col]]
+                label_col = seq_mapper[masker_labels[col]]
                 new_timeseries_arr[:, label_col] = timeseries_arr[:, col]
 
             timeseries_arr = new_timeseries_arr
+            del new_timeseries_arr
+            gc.collect()
 
             # Fill in any missing nodes in the coverage array with zero.
             new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
             for row in range(parcel_coverage.shape[0]):
-                label_row = seq_mapper[masker.labels_[row]]
+                label_row = seq_mapper[masker_labels[row]]
                 new_parcel_coverage[label_row] = parcel_coverage[row]
 
             parcel_coverage = new_parcel_coverage
+            del new_parcel_coverage
+            gc.collect()
 
         # The time series file is tab-delimited, with node names included in the first row.
         self._results["timeseries"] = fname_presuffix(
@@ -203,60 +195,114 @@ class NiftiConnect(SimpleInterface):
         timeseries_df = pd.DataFrame(data=timeseries_arr, columns=node_labels)
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
 
-        self._results["correlations_exact"] = None
-        if correlate:
-            self._results["correlations"] = fname_presuffix(
-                "correlations.tsv",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            self._results["coverage"] = fname_presuffix(
-                "coverage.tsv",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            correlations_df = timeseries_df.corr()
-            coverage_df = pd.DataFrame(
-                data=parcel_coverage,
-                index=node_labels,
-                columns=["coverage"],
-            )
-            correlations_df.to_csv(
-                self._results["correlations"],
-                sep="\t",
-                na_rep="n/a",
-                index_label="Node",
-            )
-            coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
-
-            # Create correlation matrices limited to exact scan numbers
-            censoring_df = pd.read_table(self.inputs.temporal_mask)
-            censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
-            censored_censoring_df.reset_index(drop=True, inplace=True)
-            exact_columns = [c for c in censoring_df.columns if c.startswith("exact_")]
-            if exact_columns:
-                self._results["correlations_exact"] = []
-
-            for exact_column in exact_columns:
-                exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
-                exact_correlations_df = exact_timeseries_df.corr()
-                exact_correlations_file = fname_presuffix(
-                    f"correlations_{exact_column}.tsv",
-                    newpath=runtime.cwd,
-                    use_ext=True,
-                )
-                exact_correlations_df.to_csv(
-                    exact_correlations_file,
-                    sep="\t",
-                    na_rep="n/a",
-                    index_label="Node",
-                )
-                self._results["correlations_exact"].append(exact_correlations_file)
+        # Save out the coverage tsv
+        coverage_df = pd.DataFrame(
+            data=parcel_coverage.astype(np.float32),
+            index=node_labels,
+            columns=["coverage"],
+        )
+        self._results["coverage"] = fname_presuffix(
+            "coverage.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        coverage_df.to_csv(self._results["coverage"], sep="\t", na_rep="n/a", index_label="Node")
 
         return runtime
 
 
-class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
+class _TSVConnectInputSpec(BaseInterfaceInputSpec):
+    timeseries = File(exists=True, desc="Parcellated time series TSV file.")
+    temporal_mask = File(
+        exists=True,
+        mandatory=False,
+        desc="Temporal mask, after dummy scan removal.",
+    )
+
+
+class _TSVConnectOutputSpec(TraitedSpec):
+    correlations = File(exists=True, desc="Correlation matrix file.")
+    correlations_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc="Correlation matrix files limited to an exact number of volumes.",
+    )
+
+
+def correlate_timeseries(timeseries, temporal_mask):
+    """Correlate timeseries stored in a TSV file."""
+    timeseries_df = pd.read_table(timeseries)
+    correlations_df = timeseries_df.corr()
+
+    # Create correlation matrices limited to exact scan numbers
+    correlations_exact = {}
+    if isdefined(temporal_mask):
+        censoring_df = pd.read_table(temporal_mask)
+        censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
+        censored_censoring_df.reset_index(drop=True, inplace=True)
+        exact_columns = [c for c in censoring_df.columns if c.startswith("exact_")]
+        for exact_column in exact_columns:
+            exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
+            exact_correlations_df = exact_timeseries_df.corr()
+            correlations_exact[exact_column] = exact_correlations_df
+
+    return correlations_df, correlations_exact
+
+
+class TSVConnect(SimpleInterface):
+    """Extract timeseries and compute connectivity matrices.
+
+    Write out time series using Nilearn's NiftiLabelMasker
+    Then write out functional correlation matrix of
+    timeseries using numpy.
+    """
+
+    input_spec = _TSVConnectInputSpec
+    output_spec = _TSVConnectOutputSpec
+
+    def _run_interface(self, runtime):
+        correlations_df, correlations_exact = correlate_timeseries(
+            self.inputs.timeseries,
+            temporal_mask=self.inputs.temporal_mask,
+        )
+
+        self._results["correlations"] = fname_presuffix(
+            "correlations.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        correlations_df.to_csv(
+            self._results["correlations"],
+            sep="\t",
+            na_rep="n/a",
+            index_label="Node",
+        )
+        del correlations_df
+        gc.collect()
+
+        if not self.inputs.temporal_mask:
+            self._results["correlations_exact"] = None
+            return runtime
+
+        self._results["correlations_exact"] = []
+        for exact_column, exact_correlations_df in correlations_exact.items():
+            exact_correlations_file = fname_presuffix(
+                f"correlations_{exact_column}.tsv",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            exact_correlations_df.to_csv(
+                exact_correlations_file,
+                sep="\t",
+                na_rep="n/a",
+                index_label="Node",
+            )
+            self._results["correlations_exact"].append(exact_correlations_file)
+
+        return runtime
+
+
+class _CiftiParcellateInputSpec(BaseInterfaceInputSpec):
     min_coverage = traits.Float(
         default=0.5,
         usedefault=True,
@@ -272,12 +318,7 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Dense CIFTI time series file to parcellate.",
     )
-    temporal_mask = File(
-        exists=True,
-        mandatory=False,
-        desc="Temporal mask, after dummy scan removal. Only necessary if correlate is True.",
-    )
-    atlas_file = File(
+    atlas = File(
         exists=True,
         mandatory=True,
         desc=(
@@ -294,32 +335,16 @@ class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
         ),
     )
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
-    correlate = traits.Bool(
-        mandatory=True,
-        desc="Whether to return correlations (True) or not (False).",
-    )
 
 
-class _CiftiConnectOutputSpec(TraitedSpec):
+class _CiftiParcellateOutputSpec(TraitedSpec):
     coverage_ciftis = File(exists=True, desc="Coverage CIFTI file.")
     timeseries_ciftis = File(exists=True, desc="Parcellated data ptseries.nii file.")
-    correlation_ciftis = File(exists=True, desc="Correlation matrix pconn.nii file.")
-    correlation_ciftis_exact = traits.Either(
-        None,
-        traits.List(File(exists=True)),
-        desc="Correlation matrix files limited to an exact number of volumes.",
-    )
     coverage = File(exists=True, desc="Coverage tsv file.")
     timeseries = File(exists=True, desc="Parcellated data tsv file.")
-    correlations = File(exists=True, desc="Correlation matrix tsv file.")
-    correlations_exact = traits.Either(
-        None,
-        traits.List(File(exists=True)),
-        desc="Correlation matrix files limited to an exact number of volumes.",
-    )
 
 
-class CiftiConnect(SimpleInterface):
+class CiftiParcellate(SimpleInterface):
     """Extract timeseries and compute connectivity matrices.
 
     Write out time series using Nilearn's NiftiLabelMasker
@@ -327,25 +352,24 @@ class CiftiConnect(SimpleInterface):
     timeseries using numpy.
     """
 
-    input_spec = _CiftiConnectInputSpec
-    output_spec = _CiftiConnectOutputSpec
+    input_spec = _CiftiParcellateInputSpec
+    output_spec = _CiftiParcellateOutputSpec
 
     def _run_interface(self, runtime):
         min_coverage = self.inputs.min_coverage
         data_file = self.inputs.data_file
-        atlas_file = self.inputs.atlas_file
+        atlas = self.inputs.atlas
         pscalar_file = self.inputs.parcellated_atlas
         atlas_labels = self.inputs.atlas_labels
-        correlate = self.inputs.correlate
 
         cifti_intents = get_cifti_intents()
 
         assert data_file.endswith((".dtseries.nii", ".dscalar.nii")), data_file
-        assert atlas_file.endswith(".dlabel.nii"), atlas_file
+        assert atlas.endswith(".dlabel.nii"), atlas
         assert pscalar_file.endswith(".pscalar.nii"), pscalar_file
 
         data_img = nb.load(data_file)
-        atlas_img = nb.load(atlas_file)
+        atlas_img = nb.load(atlas)
         pscalar_img = nb.load(pscalar_file)
         node_labels_df = pd.read_table(atlas_labels, index_col="index")
         node_labels_df.sort_index(inplace=True)  # ensure index is in order
@@ -449,7 +473,7 @@ class CiftiConnect(SimpleInterface):
 
                 # Determine the percentage of vertices with good data
                 parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
-                coverage_df.loc[parcel_label, "coverage"] = parcel_coverage
+                coverage_df.loc[parcel_label, "coverage"] = np.float32(parcel_coverage)
 
                 if parcel_coverage < min_coverage:
                     # If the parcel has >=50% bad data, replace all of the values with zeros.
@@ -474,6 +498,9 @@ class CiftiConnect(SimpleInterface):
 
             timeseries_df[parcel_label] = label_timeseries
 
+        del data_arr
+        gc.collect()
+
         # Use parcel names from tsv file instead of internal CIFTI parcel names for tsvs.
         timeseries_df = timeseries_df.rename(columns=parcel_label_mapper)
 
@@ -485,132 +512,196 @@ class CiftiConnect(SimpleInterface):
         )
         timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
 
-        self._results["correlations_exact"] = None
-        self._results["correlation_ciftis_exact"] = None
-        if correlate:
-            # Save out the timeseries CIFTI
-            time_axis = data_img.header.get_axis(0)
-            new_header = nb.cifti2.Cifti2Header.from_axes((time_axis, parcels_axis))
-            nifti_header = data_img.nifti_header.copy()
-            nifti_header.set_intent(cifti_intents[".ptseries.nii"])
-            timeseries_img = nb.Cifti2Image(
-                timeseries_df.to_numpy(),  # (n_vols x n_parcels) array
-                new_header,
-                nifti_header=nifti_header,
-            )
-            self._results["timeseries_ciftis"] = fname_presuffix(
-                "timeseries.ptseries.nii",
+        self._results["coverage"] = fname_presuffix(
+            "coverage.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        coverage_df.to_csv(self._results["coverage"], sep="\t", na_rep="n/a", index_label="Node")
+
+        # Prepare to create output CIFTIs
+        time_axis = data_img.header.get_axis(0)
+        new_header = nb.cifti2.Cifti2Header.from_axes((time_axis, parcels_axis))
+        nifti_header = data_img.nifti_header.copy()
+        nifti_header.set_intent(cifti_intents[".ptseries.nii"])
+
+        # Save out the timeseries CIFTI
+        timeseries_img = nb.Cifti2Image(
+            timeseries_df.to_numpy(),  # (n_vols x n_parcels) array
+            new_header,
+            nifti_header=nifti_header,
+        )
+        self._results["timeseries_ciftis"] = fname_presuffix(
+            "timeseries.ptseries.nii",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        timeseries_img.to_filename(self._results["timeseries_ciftis"])
+
+        # Save out the coverage CIFTI
+        coverage_img = nb.Cifti2Image(
+            coverage_df.to_numpy().T,  # (1 x n_parcels) array
+            pscalar_img.header,
+            nifti_header=pscalar_img.nifti_header,
+        )
+        self._results["coverage_ciftis"] = fname_presuffix(
+            "coverage.pscalar.nii",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        coverage_img.to_filename(self._results["coverage_ciftis"])
+
+        return runtime
+
+
+class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
+    timeseries = File(exists=True, desc="Parcellated time series file.")
+    temporal_mask = File(
+        exists=True,
+        mandatory=False,
+        desc="Temporal mask, after dummy scan removal. Only necessary if correlate is True.",
+    )
+    data_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Dense CIFTI time series. Used to extract a NIfTI header for the output CIFTIs.",
+    )
+    parcellated_atlas = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Atlas CIFTI that has been parcellated with itself to make a .pscalar.nii file. "
+            "This is just used for its ParcelsAxis."
+        ),
+    )
+
+
+class _CiftiConnectOutputSpec(TraitedSpec):
+    correlation_ciftis = File(exists=True, desc="Correlation matrix pconn.nii file.")
+    correlation_ciftis_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc="Correlation matrix files limited to an exact number of volumes.",
+    )
+    correlations = File(exists=True, desc="Correlation matrix tsv file.")
+    correlations_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc="Correlation matrix files limited to an exact number of volumes.",
+    )
+
+
+class CiftiConnect(SimpleInterface):
+    """Extract timeseries and compute connectivity matrices.
+
+    Write out time series using Nilearn's NiftiLabelMasker
+    Then write out functional correlation matrix of
+    timeseries using numpy.
+    """
+
+    input_spec = _CiftiConnectInputSpec
+    output_spec = _CiftiConnectOutputSpec
+
+    def _run_interface(self, runtime):
+        data_file = self.inputs.data_file
+        pscalar_file = self.inputs.parcellated_atlas
+
+        assert data_file.endswith((".dtseries.nii", ".dscalar.nii")), data_file
+        assert pscalar_file.endswith(".pscalar.nii"), pscalar_file
+
+        correlations_df, correlations_exact = correlate_timeseries(
+            self.inputs.timeseries,
+            temporal_mask=self.inputs.temporal_mask,
+        )
+
+        # Save out the correlation matrix tsv
+        self._results["correlations"] = fname_presuffix(
+            "correlations.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        correlations_df.to_csv(
+            self._results["correlations"],
+            sep="\t",
+            na_rep="n/a",
+            index_label="Node",
+        )
+
+        # Save out the correlation matrix CIFTI
+        cifti_intents = get_cifti_intents()
+        nifti_header = nb.load(data_file).nifti_header.copy()
+        parcels_axis = nb.load(pscalar_file).header.get_axis(1)
+        cifti_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
+
+        nifti_header.set_intent(cifti_intents[".pconn.nii"])
+        conn_img = nb.Cifti2Image(
+            correlations_df.to_numpy(),
+            cifti_header,
+            nifti_header=nifti_header,
+        )
+        self._results["correlation_ciftis"] = fname_presuffix(
+            "correlations.pconn.nii",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        conn_img.to_filename(self._results["correlation_ciftis"])
+        del conn_img, correlations_df
+        gc.collect()
+
+        if not correlations_exact:
+            self._results["correlations_exact"] = None
+            self._results["correlation_ciftis_exact"] = None
+            return runtime
+
+        self._results["correlations_exact"] = []
+        self._results["correlation_ciftis_exact"] = []
+        for exact_column, exact_correlations_df in correlations_exact.items():
+            exact_correlations_file = fname_presuffix(
+                f"correlations_{exact_column}.tsv",
                 newpath=runtime.cwd,
                 use_ext=True,
             )
-            timeseries_img.to_filename(self._results["timeseries_ciftis"])
-
-            correlations_df = timeseries_df.corr()
-
-            # Save out the coverage tsv
-            self._results["coverage"] = fname_presuffix(
-                "coverage.tsv",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            coverage_df.to_csv(self._results["coverage"], sep="\t", index_label="Node")
-
-            # Save out the correlation matrix tsv
-            self._results["correlations"] = fname_presuffix(
-                "correlations.tsv",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            correlations_df.to_csv(
-                self._results["correlations"],
+            exact_correlations_df.to_csv(
+                exact_correlations_file,
                 sep="\t",
                 na_rep="n/a",
                 index_label="Node",
             )
+            self._results["correlations_exact"].append(exact_correlations_file)
 
-            # Save out the coverage CIFTI
-            coverage_img = nb.Cifti2Image(
-                coverage_df.to_numpy().T,  # (1 x n_parcels) array
-                pscalar_img.header,
-                nifti_header=pscalar_img.nifti_header,
-            )
-            self._results["coverage_ciftis"] = fname_presuffix(
-                "coverage.pscalar.nii",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            coverage_img.to_filename(self._results["coverage_ciftis"])
-
-            # Save out the correlation matrix CIFTI
-            new_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
-            nifti_header = nifti_header.copy()
-            nifti_header.set_intent(cifti_intents[".pconn.nii"])
-            conn_img = nb.Cifti2Image(
-                correlations_df.to_numpy(),
-                new_header,
+            exact_conn_img = nb.Cifti2Image(
+                exact_correlations_df.to_numpy(),
+                cifti_header,
                 nifti_header=nifti_header,
             )
-            self._results["correlation_ciftis"] = fname_presuffix(
-                "correlations.pconn.nii",
+            exact_correlations_cifti_file = fname_presuffix(
+                f"correlations_{exact_column}.pconn.nii",
                 newpath=runtime.cwd,
                 use_ext=True,
             )
-            conn_img.to_filename(self._results["correlation_ciftis"])
-
-            # Create correlation matrices limited to exact scan numbers
-            censoring_df = pd.read_table(self.inputs.temporal_mask)
-            censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
-            censored_censoring_df.reset_index(drop=True, inplace=True)
-            exact_columns = [c for c in censoring_df.columns if c.startswith("exact_")]
-            if exact_columns:
-                self._results["correlations_exact"] = []
-                self._results["correlation_ciftis_exact"] = []
-
-            for exact_column in exact_columns:
-                exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
-                exact_correlations_df = exact_timeseries_df.corr()
-                exact_correlations_file = fname_presuffix(
-                    f"correlations_{exact_column}.tsv",
-                    newpath=runtime.cwd,
-                    use_ext=True,
-                )
-                exact_correlations_df.to_csv(
-                    exact_correlations_file,
-                    sep="\t",
-                    na_rep="n/a",
-                    index_label="Node",
-                )
-                self._results["correlations_exact"].append(exact_correlations_file)
-
-                exact_conn_img = nb.Cifti2Image(
-                    exact_correlations_df.to_numpy(),
-                    new_header,
-                    nifti_header=nifti_header,
-                )
-                exact_correlations_cifti_file = fname_presuffix(
-                    f"correlations_{exact_column}.pconn.nii",
-                    newpath=runtime.cwd,
-                    use_ext=True,
-                )
-                exact_conn_img.to_filename(exact_correlations_cifti_file)
-                self._results["correlation_ciftis_exact"].append(exact_correlations_cifti_file)
+            exact_conn_img.to_filename(exact_correlations_cifti_file)
+            self._results["correlation_ciftis_exact"].append(exact_correlations_cifti_file)
 
         return runtime
 
 
 class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="bold file")
-    atlas_names = InputMultiObject(
+    atlases = InputMultiObject(
         traits.Str,
         mandatory=True,
         desc="List of atlases. Aligned with the list of time series in time_series_tsv.",
+    )
+    atlas_tsvs = InputMultiObject(
+        traits.Str,
+        mandatory=True,
+        desc="The dseg.tsv associated with each atlas.",
     )
     correlations_tsv = InputMultiObject(
         File(exists=True),
         mandatory=True,
         desc=(
             "List of TSV file with correlation matrices. "
-            "Aligned with the list of atlases in atlas_names"
+            "Aligned with the list of atlases in 'atlases'."
         ),
     )
 
@@ -629,14 +720,73 @@ class ConnectPlot(SimpleInterface):
     input_spec = _ConnectPlotInputSpec
     output_spec = _ConnectPlotOutputSpec
 
+    def plot_matrix(self, corr_mat, network_labels, ax):
+        """Plot matrix in subplot Axes."""
+        assert corr_mat.shape[0] == len(network_labels)
+        assert corr_mat.shape[1] == len(network_labels)
+
+        # Determine order of nodes while retaining original order of networks
+        unique_labels = []
+        for label in network_labels:
+            if label not in unique_labels:
+                unique_labels.append(label)
+
+        mapper = {label: f"{i:03d}_{label}" for i, label in enumerate(unique_labels)}
+        mapped_network_labels = [mapper[label] for label in network_labels]
+        community_order = np.argsort(mapped_network_labels)
+
+        # Sort parcels by community
+        corr_mat = corr_mat[community_order, :]
+        corr_mat = corr_mat[:, community_order]
+        np.fill_diagonal(corr_mat, 0)
+
+        # Get the community name associated with each network
+        labels = np.array(network_labels)[community_order]
+        unique_labels = sorted(list(set(labels)))
+        unique_labels = []
+        for label in labels:
+            if label not in unique_labels:
+                unique_labels.append(label)
+
+        # Find the locations for the community-separating lines
+        break_idx = [0]
+        end_idx = None
+        for label in unique_labels:
+            start_idx = np.where(labels == label)[0][0]
+            if end_idx:
+                break_idx.append(np.mean([start_idx, end_idx]))
+
+            end_idx = np.where(labels == label)[0][-1]
+
+        break_idx.append(len(labels))
+        break_idx = np.array(break_idx)
+
+        # Find the locations for the labels in the middles of the communities
+        label_idx = np.mean(np.vstack((break_idx[1:], break_idx[:-1])), axis=0)
+
+        # Plot the correlation matrix
+        ax.imshow(corr_mat, vmin=-1, vmax=1, cmap="seismic")
+
+        # Add lines separating networks
+        for idx in break_idx[1:-1]:
+            ax.axes.axvline(idx, color="black")
+            ax.axes.axhline(idx, color="black")
+
+        # Add network names
+        ax.axes.set_yticks(label_idx)
+        ax.axes.set_xticks(label_idx)
+        ax.axes.set_yticklabels(unique_labels)
+        ax.axes.set_xticklabels(unique_labels, rotation=90)
+        return ax
+
     def _run_interface(self, runtime):
         ATLAS_LOOKUP = {
-            "4S252Parcels": {
-                "title": "4S 252 Parcels",
+            "4S156Parcels": {
+                "title": "4S 156 Parcels",
                 "axes": [0, 0],
             },
-            "4S452Parcels": {
-                "title": "4S 452 Parcels",
+            "4S456Parcels": {
+                "title": "4S 456 Parcels",
                 "axes": [0, 1],
             },
             "Gordon": {
@@ -649,28 +799,49 @@ class ConnectPlot(SimpleInterface):
             },
         }
 
-        # Generate a plot of each matrix's correlation coefficients
-        fig, axes = plt.subplots(2, 2)
-        fig.set_size_inches(20, 20)
-        font = {"weight": "normal", "size": 20}
+        COMMUNITY_LOOKUP = {
+            "4S156Parcels": "network_label",
+            "4S456Parcels": "network_label",
+            "Glasser": "community_yeo",
+            "Gordon": "community",
+        }
 
-        for atlas_name, subdict in ATLAS_LOOKUP.items():
-            atlas_idx = self.inputs.atlas_names.index(atlas_name)
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
+        for atlas, subdict in ATLAS_LOOKUP.items():
+            if atlas not in self.inputs.atlases:
+                continue
+
+            atlas_idx = self.inputs.atlases.index(atlas)
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
+            dseg_file = self.inputs.atlas_tsvs[atlas_idx]
 
+            column_name = COMMUNITY_LOOKUP[atlas]
+            dseg_df = pd.read_table(dseg_file)
             corrs_df = pd.read_table(atlas_file, index_col="Node")
 
-            plot_matrix(
-                mat=corrs_df.to_numpy(),
-                colorbar=False,
-                vmax=1,
-                vmin=-1,
-                axes=axes[subdict["axes"][0], subdict["axes"][1]],
+            if atlas.startswith("4S"):
+                atlas_mapper = {
+                    "CIT168Subcortical": "Subcortical",
+                    "ThalamusHCP": "Thalamus",
+                    "SubcorticalHCP": "Subcortical",
+                }
+                network_labels = dseg_df[column_name].fillna(dseg_df["atlas_name"]).tolist()
+                network_labels = [atlas_mapper.get(network, network) for network in network_labels]
+            else:
+                network_labels = dseg_df[column_name].fillna("None").tolist()
+
+            ax = axes[subdict["axes"][0], subdict["axes"][1]]
+            ax = self.plot_matrix(
+                corr_mat=corrs_df.to_numpy(),
+                network_labels=network_labels,
+                ax=ax,
             )
-            axes[subdict["axes"][0], subdict["axes"][1]].set_title(
+            ax.set_title(
                 subdict["title"],
-                fontdict=font,
+                fontdict={"weight": "normal", "size": 20},
             )
+
+        fig.tight_layout()
 
         # Write the results out
         self._results["connectplot"] = fname_presuffix(
@@ -681,5 +852,37 @@ class ConnectPlot(SimpleInterface):
         )
 
         fig.savefig(self._results["connectplot"], bbox_inches="tight", pad_inches=None)
+        plt.close(fig)
 
         return runtime
+
+
+def _sanitize_nifti_atlas(atlas, df):
+    atlas_img = nb.load(atlas)
+    atlas_data = atlas_img.get_fdata()
+    atlas_data = atlas_data.astype(np.int16)
+
+    # Check that all labels in the DataFrame are present in the NIfTI file, and vice versa.
+    if 0 in df.index:
+        df = df.drop(index=[0])
+
+    df.sort_index(inplace=True)  # ensure index is in order
+    expected_values = df.index.values
+
+    found_values = np.unique(atlas_data)
+    found_values = found_values[found_values != 0]  # drop the background value
+    if not np.all(np.isin(found_values, expected_values)):
+        raise ValueError("Atlas file contains values that are not present in the DataFrame.")
+
+    # Map the labels in the DataFrame to sequential values.
+    label_mapper = {value: i + 1 for i, value in enumerate(expected_values)}
+    df["sanitized_index"] = [label_mapper[i] for i in df.index.values]
+
+    # Map the values in the atlas image to sequential values.
+    new_atlas_data = np.zeros(atlas_data.shape, dtype=np.int16)
+    for old_value, new_value in label_mapper.items():
+        new_atlas_data[atlas_data == old_value] = new_value
+
+    new_atlas_img = nb.Nifti1Image(new_atlas_data, atlas_img.affine, atlas_img.header)
+
+    return new_atlas_img, df

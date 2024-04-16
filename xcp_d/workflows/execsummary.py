@@ -11,7 +11,9 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from pkg_resources import resource_filename as pkgrf
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.execsummary import FormatForBrainSwipes
 from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, PNGAppend
 from xcp_d.interfaces.workbench import ShowScene
@@ -28,14 +30,7 @@ LOGGER = logging.getLogger("nipype.workflow")
 
 
 @fill_doc
-def init_brainsprite_figures_wf(
-    output_dir,
-    t1w_available,
-    t2w_available,
-    mem_gb,
-    omp_nthreads,
-    name="init_brainsprite_figures_wf",
-):
+def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_figures_wf"):
     """Create mosaic and PNG files for executive summary brainsprite.
 
     Workflow Graph
@@ -43,26 +38,23 @@ def init_brainsprite_figures_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
 
-            wf = init_brainsprite_figures_wf(
-                output_dir=".",
-                t1w_available=True,
-                t2w_available=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="brainsprite_figures_wf",
-            )
+            with mock_config():
+                wf = init_brainsprite_figures_wf(
+                    t1w_available=True,
+                    t2w_available=True,
+                    name="brainsprite_figures_wf",
+                )
 
     Parameters
     ----------
-    %(output_dir)s
     t1w_available : bool
         True if a T1w image is available.
     t2w_available : bool
         True if a T2w image is available.
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "init_brainsprite_figures_wf".
 
@@ -78,6 +70,9 @@ def init_brainsprite_figures_wf(
     rh_pial_surf
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -117,7 +112,7 @@ def init_brainsprite_figures_wf(
                 output_names=["frame_numbers"],
             ),
             name=f"get_number_of_frames_{image_type}",
-            mem_gb=mem_gb,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
             omp_nthreads=omp_nthreads,
         )
 
@@ -144,7 +139,7 @@ def init_brainsprite_figures_wf(
             ),
             name=f"modify_brainsprite_template_scene_{image_type}",
             iterfield=["slice_number"],
-            mem_gb=mem_gb,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
             omp_nthreads=omp_nthreads,
         )
         modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
@@ -172,7 +167,7 @@ def init_brainsprite_figures_wf(
             ),
             name=f"create_framewise_pngs_{image_type}",
             iterfield=["scene_file"],
-            mem_gb=mem_gb,
+            mem_gb=1,
             omp_nthreads=omp_nthreads,
         )
 
@@ -192,7 +187,7 @@ def init_brainsprite_figures_wf(
                 output_names=["mosaic_file"],
             ),
             name=f"make_mosaic_{image_type}",
-            mem_gb=mem_gb,
+            mem_gb=1,
             omp_nthreads=omp_nthreads,
         )
 
@@ -232,7 +227,7 @@ def init_brainsprite_figures_wf(
                 output_names=["out_file"],
             ),
             name=f"modify_pngs_template_scene_{image_type}",
-            mem_gb=mem_gb,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
             omp_nthreads=omp_nthreads,
         )
         modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
@@ -262,7 +257,7 @@ def init_brainsprite_figures_wf(
             ShowScene(image_width=900, image_height=800),
             name=f"create_scenewise_pngs_{image_type}",
             iterfield=["scene_name_or_number"],
-            mem_gb=mem_gb,
+            mem_gb=1,
             omp_nthreads=omp_nthreads,
         )
 
@@ -285,6 +280,7 @@ def init_brainsprite_figures_wf(
             name=f"ds_scenewise_pngs_{image_type}",
             run_without_submitting=False,
             iterfield=["desc", "in_file"],
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
 
         # fmt:off
@@ -303,8 +299,7 @@ def init_execsummary_functional_plots_wf(
     preproc_nifti,
     t1w_available,
     t2w_available,
-    output_dir,
-    layout,
+    mem_gb,
     name="execsummary_functional_plots_wf",
 ):
     """Generate the functional figures for an executive summary.
@@ -314,16 +309,18 @@ def init_execsummary_functional_plots_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 
-            wf = init_execsummary_functional_plots_wf(
-                preproc_nifti=None,
-                t1w_available=True,
-                t2w_available=True,
-                output_dir=".",
-                layout=None,
-                name="execsummary_functional_plots_wf",
-            )
+            with mock_config():
+                wf = init_execsummary_functional_plots_wf(
+                    preproc_nifti=None,
+                    t1w_available=True,
+                    t2w_available=True,
+                    mem_gb={"resampled": 1},
+                    name="execsummary_functional_plots_wf",
+                )
 
     Parameters
     ----------
@@ -334,8 +331,8 @@ def init_execsummary_functional_plots_wf(
         Generally True.
     t2w_available : :obj:`bool`
         Generally False.
-    %(output_dir)s
-    %(layout)s
+    mem_gb : :obj:`dict`
+        Memory size in GB.
     %(name)s
 
     Inputs
@@ -351,6 +348,9 @@ def init_execsummary_functional_plots_wf(
         T2w image in a standard space, taken from the output of init_postprocess_anat_wf.
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    layout = config.execution.layout
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -378,35 +378,42 @@ def init_execsummary_functional_plots_wf(
     else:
         bb_register_prefix = current_bold_file.split("_desc")[0]
 
+    # TODO: Switch to interface
     bold_t1w_registration_files = layout.get(
-        desc=["bbregister", "coreg", "bbr"],
+        desc=["bbregister", "coreg", "bbr", "flirtbbr", "flirtnobbr"],
         extension=".svg",
         suffix="bold",
         return_type="file",
     )
-    bold_t1w_registration_file = fnmatch.filter(
+    bold_t1w_registration_files = fnmatch.filter(
         bold_t1w_registration_files,
         f"*/{bb_register_prefix}*",
-    )[0]
-
-    ds_registration_figure = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            in_file=bold_t1w_registration_file,
-            dismiss_entities=["den"],
-            datatype="figures",
-            desc="bbregister",
-        ),
-        name="ds_registration_figure",
-        run_without_submitting=True,
     )
+    if not bold_t1w_registration_files:
+        LOGGER.warning("No coregistration figure found in preprocessing derivatives.")
+    else:
+        bold_t1w_registration_file = bold_t1w_registration_files[0]
 
-    workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
+        ds_registration_figure = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                in_file=bold_t1w_registration_file,
+                dismiss_entities=["den"],
+                datatype="figures",
+                desc="bbregister",
+            ),
+            name="ds_registration_figure",
+            run_without_submitting=True,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+        )
+
+        workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
 
     # Calculate the mean bold image
     calculate_mean_bold = pe.Node(
         BinaryMath(expression="np.mean(img, axis=3)"),
         name="calculate_mean_bold",
+        mem_gb=mem_gb["timeseries"],
     )
     workflow.connect([(inputnode, calculate_mean_bold, [("preproc_nifti", "in_file")])])
 
@@ -424,6 +431,7 @@ def init_execsummary_functional_plots_wf(
         ),
         name="ds_meanbold_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     # fmt:off
@@ -447,6 +455,7 @@ def init_execsummary_functional_plots_wf(
         ),
         name="ds_boldref_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     # fmt:off
@@ -458,12 +467,13 @@ def init_execsummary_functional_plots_wf(
 
     # Start plotting the overlay figures
     # T1 in Task, Task in T1, Task in T2, T2 in Task
-    anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
+    anatomicals = (["t1w"] if t1w_available else []) + (["t2w"] if t2w_available else [])
     for anat in anatomicals:
         # Resample BOLD to match resolution of T1w/T2w data
         resample_bold_to_anat = pe.Node(
             ResampleToImage(),
             name=f"resample_bold_to_{anat}",
+            mem_gb=mem_gb["resampled"],
         )
 
         # fmt:off
@@ -474,7 +484,6 @@ def init_execsummary_functional_plots_wf(
         # fmt:on
 
         plot_anat_on_task_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc=f"{anat[0].upper()}{anat[1:]}OnTask",
             name=f"plot_{anat}_on_task_wf",
         )
@@ -492,7 +501,6 @@ def init_execsummary_functional_plots_wf(
         # fmt:on
 
         plot_task_on_anat_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc=f"TaskOn{anat[0].upper()}{anat[1:]}",
             name=f"plot_task_on_{anat}_wf",
         )
@@ -517,7 +525,6 @@ def init_execsummary_anatomical_plots_wf(
     input_type,
     t1w_available,
     t2w_available,
-    output_dir,
     name="execsummary_anatomical_plots_wf",
 ):
     """Generate the anatomical figures for an executive summary.
@@ -527,15 +534,16 @@ def init_execsummary_anatomical_plots_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.execsummary import init_execsummary_anatomical_plots_wf
 
-            wf = init_execsummary_anatomical_plots_wf(
-                input_type="nibabies",
-                t1w_available=True,
-                t2w_available=True,
-                output_dir=".",
-                name="execsummary_anatomical_plots_wf",
-            )
+            with mock_config():
+                wf = init_execsummary_anatomical_plots_wf(
+                    input_type="nibabies",
+                    t1w_available=True,
+                    t2w_available=True,
+                )
 
     Parameters
     ----------
@@ -544,7 +552,6 @@ def init_execsummary_anatomical_plots_wf(
         Generally True.
     t2w_available : bool
         Generally False.
-    %(output_dir)s
     %(name)s
 
     Inputs
@@ -557,25 +564,28 @@ def init_execsummary_anatomical_plots_wf(
     """
     workflow = Workflow(name=name)
 
+    output_dir = config.execution.xcp_d_dir
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 "t1w",
                 "t2w",
                 "template",
-            ]
+            ],
         ),
         name="inputnode",
     )
 
     # Start plotting the overlay figures
     # Atlas in T1w/T2w, T1w/T2w in Atlas
-    anatomicals = ["t1w"] if t1w_available else [] + ["t2w"] if t2w_available else []
+    anatomicals = (["t1w"] if t1w_available else []) + (["t2w"] if t2w_available else [])
     for anat in anatomicals:
         # Resample anatomical to match resolution of template data
         resample_anat = pe.Node(
             ResampleToImage(),
             name=f"resample_{anat}",
+            mem_gb=1,
         )
 
         # fmt:off
@@ -588,7 +598,6 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:on
 
         plot_anat_on_atlas_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc="AnatOnAtlas",
             name=f"plot_{anat}_on_atlas_wf",
         )
@@ -604,7 +613,6 @@ def init_execsummary_anatomical_plots_wf(
         # fmt:on
 
         plot_atlas_on_anat_wf = init_plot_overlay_wf(
-            output_dir=output_dir,
             desc="AtlasOnAnat",
             name=f"plot_atlas_on_{anat}_wf",
         )
@@ -736,6 +744,7 @@ def init_plot_custom_slices_wf(
     binarize_edges = pe.Node(
         BinaryMath(expression="img.astype(bool).astype(int)"),
         name="binarize_edges",
+        mem_gb=1,
     )
 
     workflow.connect([(inputnode, binarize_edges, [("overlay_file", "in_file")])])
@@ -744,6 +753,7 @@ def init_plot_custom_slices_wf(
         fsl.Slicer(show_orientation=True, label_slices=True),
         name="make_image",
         iterfield=["single_slice", "slice_number"],
+        mem_gb=1,
     )
     make_image.inputs.single_slice = SINGLE_SLICES
     make_image.inputs.slice_number = SLICE_NUMBERS
@@ -758,6 +768,7 @@ def init_plot_custom_slices_wf(
     combine_images = pe.Node(
         PNGAppend(out_file="out.png"),
         name="combine_images",
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([(make_image, combine_images, [("out_file", "in_files")])])
@@ -772,6 +783,7 @@ def init_plot_custom_slices_wf(
         ),
         name="ds_overlay_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     # fmt:off
@@ -784,15 +796,13 @@ def init_plot_custom_slices_wf(
     return workflow
 
 
-def init_plot_overlay_wf(
-    output_dir,
-    desc,
-    name="plot_overlay_wf",
-):
+def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
     """Use the default slices from slicesdir to make a plot."""
     from xcp_d.interfaces.plotting import SlicesDir
 
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -808,16 +818,15 @@ def init_plot_overlay_wf(
     plot_overlay_figure = pe.Node(
         SlicesDir(out_extension=".png"),
         name="plot_overlay_figure",
+        mem_gb=1,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, plot_overlay_figure, [
             ("underlay_file", "in_files"),
             ("overlay_file", "outline_image"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     ds_overlay_figure = pe.Node(
         DerivativesDataSink(
@@ -829,13 +838,35 @@ def init_plot_overlay_wf(
         ),
         name="ds_overlay_figure",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, ds_overlay_figure, [("name_source", "source_file")]),
         (plot_overlay_figure, ds_overlay_figure, [("out_files", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
+
+    reformat_for_brain_swipes = pe.Node(FormatForBrainSwipes(), name="reformat_for_brain_swipes")
+    workflow.connect([
+        (plot_overlay_figure, reformat_for_brain_swipes, [("slicewise_files", "in_files")]),
+    ])  # fmt:skip
+
+    ds_reformatted_figure = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            dismiss_entities=["den"],
+            datatype="figures",
+            desc=f"{desc}BrainSwipes",
+            extension=".png",
+        ),
+        name="ds_reformatted_figure",
+        run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+    )
+
+    workflow.connect([
+        (inputnode, ds_reformatted_figure, [("name_source", "source_file")]),
+        (reformat_for_brain_swipes, ds_reformatted_figure, [("out_file", "in_file")]),
+    ])  # fmt:skip
 
     return workflow

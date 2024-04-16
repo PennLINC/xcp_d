@@ -84,17 +84,18 @@ class CensoringPlot(SimpleInterface):
         # The number of colors in the palette depends on whether there are random censors or not
         palette = sns.color_palette("colorblind", 4 + censoring_df.shape[1])
 
-        fig, ax = plt.subplots(figsize=(16, 8))
-
         time_array = np.arange(preproc_fd_timeseries.size) * self.inputs.TR
 
-        ax.plot(
-            time_array,
-            preproc_fd_timeseries,
-            label="Raw Framewise Displacement",
-            color=palette[0],
-        )
-        ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="gray", alpha=0.5)
+        with sns.axes_style("whitegrid"):
+            fig, ax = plt.subplots(figsize=(8, 4))
+
+            ax.plot(
+                time_array,
+                preproc_fd_timeseries,
+                label="Raw Framewise Displacement",
+                color=palette[0],
+            )
+            ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="salmon", alpha=0.5)
 
         dummy_scans = self.inputs.dummy_scans
         # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
@@ -122,7 +123,7 @@ class CensoringPlot(SimpleInterface):
 
             ax.plot(
                 time_array,
-                filtered_fd_timeseries,
+                filtered_fd_timeseries.values,
                 label="Filtered Framewise Displacement",
                 color=palette[2],
             )
@@ -182,9 +183,9 @@ class CensoringPlot(SimpleInterface):
                 alpha=0.5,
             )
 
-        ax.set_xlabel("Time (seconds)", fontsize=20)
-        ax.set_ylabel("Movement (millimeters)", fontsize=20)
-        ax.legend(fontsize=20)
+        ax.set_xlabel("Time (seconds)", fontsize=10)
+        ax.set_ylabel("Movement (millimeters)", fontsize=10)
+        ax.legend(fontsize=10)
         fig.tight_layout()
 
         self._results["out_file"] = fname_presuffix(
@@ -195,6 +196,7 @@ class CensoringPlot(SimpleInterface):
         )
 
         fig.savefig(self._results["out_file"])
+        plt.close(fig)
         return runtime
 
 
@@ -277,7 +279,7 @@ class QCPlots(SimpleInterface):
     output_spec = _QCPlotsOutputSpec
 
     def _run_interface(self, runtime):
-        # Load confound matrix and load motion with motion filtering
+        # Load confound matrix and load motion without motion filtering
         confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         preproc_motion_df = load_motion(
             confounds_df.copy(),
@@ -297,6 +299,7 @@ class QCPlots(SimpleInterface):
         censoring_df = pd.read_table(self.inputs.temporal_mask)
         tmask_arr = censoring_df["framewise_displacement"].values
         num_censored_volumes = int(tmask_arr.sum())
+        num_retained_volumes = int((tmask_arr == 0).sum())
 
         # Apply temporal mask to interpolated/full data
         rmsd_censored = rmsd[tmask_arr == 0]
@@ -350,6 +353,7 @@ class QCPlots(SimpleInterface):
             self._results["raw_qcplot"],
             bbox_inches="tight",
         )
+        plt.close(preproc_fig)
 
         postproc_confounds = pd.DataFrame(
             {
@@ -369,6 +373,7 @@ class QCPlots(SimpleInterface):
             self._results["clean_qcplot"],
             bbox_inches="tight",
         )
+        plt.close(postproc_fig)
 
         # Get the different components in the bold file name
         # eg: ['sub-colornest001', 'ses-1'], etc.
@@ -382,40 +387,57 @@ class QCPlots(SimpleInterface):
 
         # Calculate QC measures
         mean_fd = np.mean(preproc_fd_timeseries)
-        mean_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
+        mean_fd_post_censoring = np.mean(postproc_fd_timeseries)
+        mean_relative_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.mean(dvars_before_processing)
         mean_dvars_after_processing = np.mean(dvars_after_processing)
-        motionDVCorrInit = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[0][1]
-        motionDVCorrFinal = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[0][1]
+        fd_dvars_correlation_initial = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[
+            0, 1
+        ]
+        fd_dvars_correlation_final = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[
+            0, 1
+        ]
         rmsd_max_value = np.nanmax(rmsd_censored)
 
         # A summary of all the values
         qc_values_dict.update(
             {
-                "meanFD": [mean_fd],
-                "relMeansRMSMotion": [mean_rms],
-                "relMaxRMSMotion": [rmsd_max_value],
-                "meanDVInit": [mean_dvars_before_processing],
-                "meanDVFinal": [mean_dvars_after_processing],
+                "mean_fd": [mean_fd],
+                "mean_fd_post_censoring": [mean_fd_post_censoring],
+                "mean_relative_rms": [mean_relative_rms],
+                "max_relative_rms": [rmsd_max_value],
+                "mean_dvars_initial": [mean_dvars_before_processing],
+                "mean_dvars_final": [mean_dvars_after_processing],
+                "num_dummy_volumes": [dummy_scans],
                 "num_censored_volumes": [num_censored_volumes],
-                "nVolsRemoved": [dummy_scans],
-                "motionDVCorrInit": [motionDVCorrInit],
-                "motionDVCorrFinal": [motionDVCorrFinal],
+                "num_retained_volumes": [num_retained_volumes],
+                "fd_dvars_correlation_initial": [fd_dvars_correlation_initial],
+                "fd_dvars_correlation_final": [fd_dvars_correlation_final],
             }
         )
 
         qc_metadata = {
-            "meanFD": {
+            "mean_fd": {
                 "LongName": "Mean Framewise Displacement",
                 "Description": (
                     "Average framewise displacement without any motion parameter filtering. "
                     "This value includes high-motion outliers, but not dummy volumes. "
                     "FD is calculated according to the Power definition."
                 ),
-                "Units": "mm",
+                "Units": "mm / volume",
                 "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
             },
-            "relMeansRMSMotion": {
+            "mean_fd_post_censoring": {
+                "LongName": "Mean Framewise Displacement After Censoring",
+                "Description": (
+                    "Average framewise displacement without any motion parameter filtering. "
+                    "This value does not include high-motion outliers or dummy volumes. "
+                    "FD is calculated according to the Power definition."
+                ),
+                "Units": "mm / volume",
+                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
+            },
+            "mean_relative_rms": {
                 "LongName": "Mean Relative Root Mean Squared",
                 "Description": (
                     "Average relative root mean squared calculated from motion parameters, "
@@ -424,7 +446,7 @@ class QCPlots(SimpleInterface):
                 ),
                 "Units": "arbitrary",
             },
-            "relMaxRMSMotion": {
+            "max_relative_rms": {
                 "LongName": "Maximum Relative Root Mean Squared",
                 "Description": (
                     "Maximum relative root mean squared calculated from motion parameters, "
@@ -433,7 +455,7 @@ class QCPlots(SimpleInterface):
                 ),
                 "Units": "arbitrary",
             },
-            "meanDVInit": {
+            "mean_dvars_initial": {
                 "LongName": "Mean DVARS Before Postprocessing",
                 "Description": (
                     "Average DVARS (temporal derivative of root mean squared variance over "
@@ -441,13 +463,19 @@ class QCPlots(SimpleInterface):
                 ),
                 "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
             },
-            "meanDVFinal": {
+            "mean_dvars_final": {
                 "LongName": "Mean DVARS After Postprocessing",
                 "Description": (
                     "Average DVARS (temporal derivative of root mean squared variance over "
                     "voxels) calculated from the denoised BOLD file."
                 ),
                 "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
+            },
+            "num_dummy_volumes": {
+                "LongName": "Number of Dummy Volumes",
+                "Description": (
+                    "The number of non-steady state volumes removed from the time series by XCP-D."
+                ),
             },
             "num_censored_volumes": {
                 "LongName": "Number of Censored Volumes",
@@ -456,13 +484,14 @@ class QCPlots(SimpleInterface):
                     "This does not include dummy volumes."
                 ),
             },
-            "nVolsRemoved": {
-                "LongName": "Number of Dummy Volumes",
+            "num_retained_volumes": {
+                "LongName": "Number of Retained Volumes",
                 "Description": (
-                    "The number of non-steady state volumes removed from the time series by XCP-D."
+                    "The number of volumes retained in the denoised dataset. "
+                    "This does not include dummy volumes or high-motion outliers."
                 ),
             },
-            "motionDVCorrInit": {
+            "fd_dvars_correlation_initial": {
                 "LongName": "FD-DVARS Correlation Before Postprocessing",
                 "Description": (
                     "The Pearson correlation coefficient between framewise displacement and DVARS "
@@ -470,7 +499,7 @@ class QCPlots(SimpleInterface):
                     "after removal of dummy volumes, but before removal of high-motion outliers."
                 ),
             },
-            "motionDVCorrFinal": {
+            "fd_dvars_correlation_final": {
                 "LongName": "FD-DVARS Correlation After Postprocessing",
                 "Description": (
                     "The Pearson correlation coefficient between framewise displacement and DVARS "
@@ -497,11 +526,11 @@ class QCPlots(SimpleInterface):
         df = pd.DataFrame(qc_values_dict)
         self._results["qc_file"] = fname_presuffix(
             self.inputs.cleaned_file,
-            suffix="qc_bold.csv",
+            suffix="qc_bold.tsv",
             newpath=runtime.cwd,
             use_ext=False,
         )
-        df.to_csv(self._results["qc_file"], index=False, header=True)
+        df.to_csv(self._results["qc_file"], index=False, header=True, sep="\t")
 
         # Write out the metadata file
         self._results["qc_metadata"] = fname_presuffix(
@@ -525,17 +554,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
             "*using only the low-motion volumes*."
         ),
     )
-    uncensored_denoised_bold = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Data after regression and interpolation, but not filtering."
-            "The preprocessed BOLD data are censored, mean-centered, detrended, "
-            "and denoised to get the betas, and then the full, uncensored preprocessed BOLD data "
-            "are denoised using those betas."
-        ),
-    )
-    interpolated_filtered_bold = File(
+    denoised_interpolated_bold = File(
         exists=True,
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
@@ -545,14 +564,19 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
     )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc="TSV file with temporal mask.",
+    )
     TR = traits.Float(default_value=1, desc="Repetition time")
     standardize = traits.Bool(
         mandatory=True,
         desc=(
             "Whether to standardize the data or not. "
             "If False, then the preferred DCAN version of the plot will be generated, "
-            "where the BOLD data are not rescaled, and the carpet plot has color limits of -600 "
-            "and 600. "
+            "where the BOLD data are not rescaled, and the carpet plot has color limits from "
+            "the 2.5th percentile to the 97.5th percentile. "
             "If True, then the BOLD data will be z-scored and the color limits will be -2 and 2."
         ),
     )
@@ -592,14 +616,14 @@ class QCPlotsES(SimpleInterface):
     output_spec = _QCPlotsESOutputSpec
 
     def _run_interface(self, runtime):
-        preprocessed_bold_figure = fname_presuffix(
+        preprocessed_figure = fname_presuffix(
             "carpetplot_before_",
             suffix="file.svg",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
-        denoised_bold_figure = fname_presuffix(
+        denoised_figure = fname_presuffix(
             "carpetplot_after_",
             suffix="file.svg",
             newpath=runtime.cwd,
@@ -617,13 +641,14 @@ class QCPlotsES(SimpleInterface):
 
         self._results["before_process"], self._results["after_process"] = plot_fmri_es(
             preprocessed_bold=self.inputs.preprocessed_bold,
-            uncensored_denoised_bold=self.inputs.uncensored_denoised_bold,
-            interpolated_filtered_bold=self.inputs.interpolated_filtered_bold,
+            denoised_interpolated_bold=self.inputs.denoised_interpolated_bold,
             TR=self.inputs.TR,
             filtered_motion=self.inputs.filtered_motion,
-            preprocessed_bold_figure=preprocessed_bold_figure,
-            denoised_bold_figure=denoised_bold_figure,
+            temporal_mask=self.inputs.temporal_mask,
+            preprocessed_figure=preprocessed_figure,
+            denoised_figure=denoised_figure,
             standardize=self.inputs.standardize,
+            temporary_file_dir=runtime.cwd,
             mask=mask_file,
             seg_data=segmentation_file,
             run_index=run_index,
@@ -654,8 +679,17 @@ class AnatomicalPlot(SimpleInterface):
         arr = img.get_fdata()
 
         fig = plt.figure(constrained_layout=False, figsize=(25, 10))
-        plot_anat(img, draw_cross=False, figure=fig, vmin=np.min(arr), vmax=np.max(arr))
+        plot_anat(
+            img,
+            draw_cross=False,
+            figure=fig,
+            vmin=np.min(arr),
+            vmax=np.max(arr),
+            cut_coords=[0, 0, 0],
+            annotate=False,
+        )
         fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
+        plt.close(fig)
 
         return runtime
 
@@ -704,7 +738,8 @@ class _SlicesDirInputSpec(FSLCommandInputSpec):
 
 class _SlicesDirOutputSpec(TraitedSpec):
     out_dir = Directory(exists=True, desc="Output directory.")
-    out_files = OutputMultiPath(File(exists=True), desc="List of generated PNG files.")
+    out_files = OutputMultiPath(File(exists=True), desc="Concatenated PNG files.")
+    slicewise_files = OutputMultiPath(File(exists=True), desc="List of generated PNG files.")
 
 
 class SlicesDir(FSLCommand):
@@ -749,6 +784,18 @@ class SlicesDir(FSLCommand):
             )
             for f in self.inputs.in_files
         ]
+        temp_files = [
+            "grota.png",
+            "grotb.png",
+            "grotc.png",
+            "grotd.png",
+            "grote.png",
+            "grotf.png",
+            "grotg.png",
+            "groth.png",
+            "groti.png",
+        ]
+        outputs["slicewise_files"] = [os.path.join(out_dir, f) for f in temp_files]
         return outputs
 
     def _gen_filename(self, name):

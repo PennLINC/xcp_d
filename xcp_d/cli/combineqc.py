@@ -33,17 +33,17 @@ def main(args=None):
     opts = get_parser().parse_args(args)
 
     xcpd_dir = os.path.abspath(opts.xcpd_dir)
-    outputfile = os.path.join(os.getcwd(), f"{opts.output_prefix}_allsubjects_qc.csv")
+    outputfile = os.path.join(os.getcwd(), f"{opts.output_prefix}_allsubjects_qc.tsv")
 
     qc_files = []
     for dirpath, _, filenames in os.walk(xcpd_dir):
         for filename in filenames:
-            if filename.endswith("_desc-linc_qc.csv"):
+            if filename.endswith("_desc-linc_qc.tsv"):
                 qc_files.append(os.path.join(dirpath, filename))
 
-    dfs = [pd.read_csv(qc_file) for qc_file in qc_files]
+    dfs = [pd.read_table(qc_file) for qc_file in qc_files]
     df = pd.concat(dfs, axis=0)
-    df.to_csv(outputfile, index=False)
+    df.to_csv(outputfile, index=False, sep="\t")
 
 
 if __name__ == "__main__":

@@ -4,11 +4,14 @@
 .. _ANTs: https://stnava.github.io/ANTs/
 .. _AFNI: https://afni.nimh.nih.gov/
 .. _`Connectome Workbench`: https://www.humanconnectome.org/software/connectome-workbench.html
+.. _`ABCD-BIDS`: https://github.com/DCAN-Labs/abcd-hcp-pipeline
 .. _`HCP Pipelines`: https://humanconnectome.org/software/hcp-mr-pipelines/
 .. _`Docker Engine`: https://www.docker.com/products/container-runtime
 .. _`Docker`: https://docs.docker.com
 .. _`Docker installation`: https://docs.docker.com/install/
 .. _`Docker Hub`: https://hub.docker.com/r/pennlinc/xcp_d/tags
-.. _`Singularity`: https://sylabs.io/guides/3.5/user-guide/introduction.html
-.. _`QSIPrep`: https://qsiprep.readthedocs.io
-.. _`ASLPrep`: https://aslprep.readthedocs.io
+.. _Singularity: https://sylabs.io/guides/3.5/user-guide/introduction.html
+.. _QSIPrep: https://qsiprep.readthedocs.io
+.. _ASLPrep: https://aslprep.readthedocs.io
+.. _fMRIPrep: https://fmriprep.org
+.. _Nibabies: https://nibabies.readthedocs.io

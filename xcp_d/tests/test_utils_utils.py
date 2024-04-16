@@ -1,4 +1,5 @@
 """Test functions in xcp_d.utils.utils."""
+
 import os
 
 import numpy as np
@@ -65,13 +66,11 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
     reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_df["linear_trend"] = np.arange(reduced_confounds_df.shape[0])
-    reduced_confounds_df["intercept"] = np.ones(reduced_confounds_df.shape[0])
     reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
     reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
 
     # Create the censoring file
-    censoring_df = confounds_df[["framewise_displacement"]]
+    censoring_df = confounds_df[["framewise_displacement"]].copy()
     censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
     n_censored_volumes = censoring_df["framewise_displacement"].sum()
     assert n_censored_volumes > 0
@@ -79,10 +78,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # First, try out filtering
-    (
-        uncensored_denoised_bold,
-        interpolated_filtered_bold,
-    ) = utils.denoise_with_nilearn(
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
         temporal_mask=temporal_mask,
@@ -91,15 +87,10 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
+    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
-    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
-
-    # Now, no filtering
-    (
-        uncensored_denoised_bold,
-        interpolated_filtered_bold,
-    ) = utils.denoise_with_nilearn(
+    # Now, no filtering (censoring + denoising + interpolation)
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=reduced_confounds_file,
         temporal_mask=temporal_mask,
@@ -108,39 +99,10 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=None,
         TR=TR,
     )
+    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
 
-    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
-
-    # Next, do the orthogonalization
-    reduced_confounds_df["signal__test"] = confounds_df["global_signal"]
-
-    # Move intercept to end of dataframe
-    reduced_confounds_df = reduced_confounds_df[
-        [c for c in reduced_confounds_df.columns if c not in ["intercept"]] + ["intercept"]
-    ]
-    orth_confounds_file = os.path.join(tmpdir, "orth_confounds.tsv")
-    reduced_confounds_df.to_csv(orth_confounds_file, sep="\t", index=False)
-    (
-        uncensored_denoised_bold,
-        interpolated_filtered_bold,
-    ) = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=orth_confounds_file,
-        temporal_mask=temporal_mask,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        filter_order=filter_order,
-        TR=TR,
-    )
-    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
-
-    # Finally, run without denoising
-    (
-        uncensored_denoised_bold,
-        interpolated_filtered_bold,
-    ) = utils.denoise_with_nilearn(
+    # Finally, run without denoising (censoring + interpolation + filtering)
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
         preprocessed_bold=preprocessed_bold_arr,
         confounds_file=None,
         temporal_mask=temporal_mask,
@@ -149,8 +111,38 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
-    assert uncensored_denoised_bold.shape == (n_volumes, n_voxels)
-    assert interpolated_filtered_bold.shape == (n_volumes, n_voxels)
+    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+
+    # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
+    # Create an updated censoring file with outliers at first and last two volumes
+    censoring_df = confounds_df[["framewise_displacement"]].copy()
+    censoring_df.loc[:, "framewise_displacement"] = False
+    censoring_df.loc[:1, "framewise_displacement"] = True
+    censoring_df.loc[58:, "framewise_displacement"] = True
+    n_censored_volumes = censoring_df["framewise_displacement"].sum()
+    assert n_censored_volumes == 4
+    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
+    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+
+    # Run without denoising or filtering (censoring + interpolation only)
+    denoised_interpolated_bold = utils.denoise_with_nilearn(
+        preprocessed_bold=preprocessed_bold_arr,
+        confounds_file=None,
+        temporal_mask=temporal_mask,
+        low_pass=None,
+        high_pass=None,
+        filter_order=0,
+        TR=TR,
+    )
+    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+    # The first two volumes should be the same as the third (first non-outlier) volume
+    assert np.allclose(denoised_interpolated_bold[0, :], denoised_interpolated_bold[2, :])
+    assert np.allclose(denoised_interpolated_bold[1, :], denoised_interpolated_bold[2, :])
+    assert not np.allclose(denoised_interpolated_bold[2, :], denoised_interpolated_bold[3, :])
+    # The last volume should be the same as the third-to-last (last non-outlier) volume
+    assert np.allclose(denoised_interpolated_bold[-1, :], denoised_interpolated_bold[-3, :])
+    assert np.allclose(denoised_interpolated_bold[-2, :], denoised_interpolated_bold[-3, :])
+    assert not np.allclose(denoised_interpolated_bold[-3, :], denoised_interpolated_bold[-4, :])
 
 
 def test_list_to_str():
@@ -172,7 +164,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     """Test get_bold2std_and_t1w_xfms."""
     bold_file_nlin2009c = ds001419_data["nifti_file"]
     nlin2009c_to_anat_xfm = ds001419_data["template_to_anat_xfm"]
-    anat_to_native_xfm = ds001419_data["anat_to_native_xfm"]
 
     # MNI152NLin2009cAsym --> MNI152NLin2009cAsym/T1w
     (
@@ -183,7 +174,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_nlin2009c,
         nlin2009c_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 1
     assert len(xforms_to_mni_invert) == 1
@@ -207,7 +197,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_nlin6asym,
         nlin6asym_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 1
     assert len(xforms_to_mni_invert) == 1
@@ -231,7 +220,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     ) = utils.get_bold2std_and_t1w_xfms(
         bold_file_infant,
         infant_to_anat_xfm,
-        anat_to_native_xfm,
     )
     assert len(xforms_to_mni) == 1
     assert len(xforms_to_mni_invert) == 1
@@ -240,71 +228,35 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # T1w --> MNI152NLin2009cAsym/T1w
     bold_file_t1w = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-T1w_")
-    (
-        xforms_to_mni,
-        xforms_to_mni_invert,
-        xforms_to_t1w,
-        xforms_to_t1w_invert,
-    ) = utils.get_bold2std_and_t1w_xfms(
-        bold_file_t1w,
-        nlin2009c_to_anat_xfm,
-        anat_to_native_xfm,
-    )
-    assert len(xforms_to_mni) == 1
-    assert len(xforms_to_mni_invert) == 1
-    assert len(xforms_to_t1w) == 1
-    assert len(xforms_to_t1w_invert) == 1
+    with pytest.raises(ValueError, match="BOLD space 'T1w' not supported."):
+        utils.get_bold2std_and_t1w_xfms(
+            bold_file_t1w,
+            nlin2009c_to_anat_xfm,
+        )
 
     # T1w --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     bold_file_t1w = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-T1w_")
-    (
-        xforms_to_mni,
-        xforms_to_mni_invert,
-        xforms_to_t1w,
-        xforms_to_t1w_invert,
-    ) = utils.get_bold2std_and_t1w_xfms(
-        bold_file_t1w,
-        nlin6asym_to_anat_xfm,
-        anat_to_native_xfm,
-    )
-    assert len(xforms_to_mni) == 2
-    assert len(xforms_to_mni_invert) == 2
-    assert len(xforms_to_t1w) == 1
-    assert len(xforms_to_t1w_invert) == 1
+    with pytest.raises(ValueError, match="BOLD space 'T1w' not supported."):
+        utils.get_bold2std_and_t1w_xfms(
+            bold_file_t1w,
+            nlin6asym_to_anat_xfm,
+        )
 
     # native --> MNI152NLin2009cAsym/T1w
     bold_file_native = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "")
-    (
-        xforms_to_mni,
-        xforms_to_mni_invert,
-        xforms_to_t1w,
-        xforms_to_t1w_invert,
-    ) = utils.get_bold2std_and_t1w_xfms(
-        bold_file_native,
-        nlin2009c_to_anat_xfm,
-        anat_to_native_xfm,
-    )
-    assert len(xforms_to_mni) == 2
-    assert len(xforms_to_mni_invert) == 2
-    assert len(xforms_to_t1w) == 1
-    assert len(xforms_to_t1w_invert) == 1
+    with pytest.raises(ValueError, match="BOLD space 'native' not supported."):
+        utils.get_bold2std_and_t1w_xfms(
+            bold_file_native,
+            nlin2009c_to_anat_xfm,
+        )
 
     # native --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     bold_file_native = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "")
-    (
-        xforms_to_mni,
-        xforms_to_mni_invert,
-        xforms_to_t1w,
-        xforms_to_t1w_invert,
-    ) = utils.get_bold2std_and_t1w_xfms(
-        bold_file_native,
-        nlin6asym_to_anat_xfm,
-        anat_to_native_xfm,
-    )
-    assert len(xforms_to_mni) == 3
-    assert len(xforms_to_mni_invert) == 3
-    assert len(xforms_to_t1w) == 1
-    assert len(xforms_to_t1w_invert) == 1
+    with pytest.raises(ValueError, match="BOLD space 'native' not supported."):
+        utils.get_bold2std_and_t1w_xfms(
+            bold_file_native,
+            nlin6asym_to_anat_xfm,
+        )
 
     # tofail --> MNI152NLin2009cAsym/T1w
     bold_file_tofail = bold_file_nlin2009c.replace("space-MNI152NLin2009cAsym_", "space-tofail_")
@@ -312,7 +264,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_tofail,
             nlin2009c_to_anat_xfm,
-            anat_to_native_xfm,
         )
 
     tofail_to_anat_xfm = nlin2009c_to_anat_xfm.replace("from-MNI152NLin2009cAsym_", "from-tofail_")
@@ -320,7 +271,6 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_tofail,
             tofail_to_anat_xfm,
-            anat_to_native_xfm,
         )
 
 
@@ -371,3 +321,88 @@ def test_select_first():
 
     lst = "abc"
     assert utils._select_first(lst) == "a"
+
+
+def test_listify():
+    """Test _listify."""
+    inputs = [
+        1,
+        (1,),
+        "a",
+        ["a"],
+        ["a", ["b", "c"]],
+        ("a", "b"),
+    ]
+    outputs = [
+        [1],
+        (1,),
+        ["a"],
+        ["a"],
+        ["a", ["b", "c"]],
+        ("a", "b"),
+    ]
+    for i, input_ in enumerate(inputs):
+        expected_output = outputs[i]
+        output = utils._listify(input_)
+        assert output == expected_output
+
+
+def test_make_dictionary():
+    """Test _make_dictionary."""
+    metadata = {"Sources": ["a"]}
+    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
+    # Ensure the original dictionary isn't modified.
+    assert metadata["Sources"] == ["a"]
+    assert out_metadata["Sources"] == ["a", "b"]
+
+    metadata = {"Test": "a"}
+    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
+    assert out_metadata["Sources"] == ["b"]
+
+    metadata = {"Test": ["a"]}
+    out_metadata = utils._make_dictionary(metadata, Sources="b")
+    assert out_metadata["Sources"] == "b"
+
+    metadata = {"Sources": "a"}
+    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
+    # Ensure the original dictionary isn't modified.
+    assert metadata["Sources"] == "a"
+    assert out_metadata["Sources"] == ["a", "b"]
+
+    metadata = {"Sources": ["a"]}
+    out_metadata = utils._make_dictionary(metadata, Sources="b")
+    # Ensure the original dictionary isn't modified.
+    assert metadata["Sources"] == ["a"]
+    assert out_metadata["Sources"] == ["a", "b"]
+
+    out_metadata = utils._make_dictionary(metadata=None, Sources=["b"])
+    assert out_metadata["Sources"] == ["b"]
+
+
+def test_transpose_lol():
+    """Test _transpose_lol."""
+    inputs = [
+        [
+            ["a", "b", "c"],
+            [1, 2, 3],
+        ],
+        [
+            ["a", "b", "c", "d"],
+            [1, 2, 3],
+        ],
+    ]
+    outputs = [
+        [
+            ["a", 1],
+            ["b", 2],
+            ["c", 3],
+        ],
+        [
+            ["a", 1],
+            ["b", 2],
+            ["c", 3],
+        ],
+    ]
+    for i, input_ in enumerate(inputs):
+        expected_output = outputs[i]
+        assert utils._transpose_lol(input_) == expected_output
