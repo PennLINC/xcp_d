@@ -423,10 +423,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             exact_scans = []
             if config.workflow.dcan_correlation_lengths:
                 retained_exact_times = [
-                    t for t in config.workflow.dcan_correlation_lengths if t <= post_scrubbing_duration
+                    t
+                    for t in config.workflow.dcan_correlation_lengths
+                    if t <= post_scrubbing_duration
                 ]
                 dropped_exact_times = [
-                    t for t in config.workflow.dcan_correlation_lengths if t > post_scrubbing_duration
+                    t
+                    for t in config.workflow.dcan_correlation_lengths
+                    if t > post_scrubbing_duration
                 ]
                 if dropped_exact_times:
                     LOGGER.warning(
