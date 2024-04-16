@@ -290,7 +290,7 @@ def _build_parser():
         "--despike",
         dest="despike",
         action="store_true",
-        default="auto",
+        default=None,
         help="Despike the BOLD data before postprocessing.",
     )
     g_despike.add_argument(
@@ -970,6 +970,7 @@ def _validate_parameters(opts, build_log, parser):
     # Check parameters based on the mode
     if opts.mode in ("abcd", "hbcd"):
         opts.file_format = "cifti" if opts.file_format == "auto" else opts.file_format
+        opts.despike = False if opts.despike is None else opts.despike
         opts.dcan_qc = True
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
@@ -977,26 +978,24 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
     else:
         opts.file_format = "nifti" if opts.file_format == "auto" else opts.file_format
+        opts.despike = True if opts.despike is None else opts.despike
         opts.linc_qc = True
         if opts.dcan_correlation_lengths != "auto":
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
 
     if opts.mode == "abcd":
-        opts.despike = False if opts.despike == "auto" else opts.despike
         opts.dcan_correlation_lengths = (
             ["all", 300, 480]
             if opts.dcan_correlation_lengths == "auto"
             else opts.dcan_correlation_lengths
         )
     elif opts.mode == "hbcd":
-        opts.despike = False if opts.despike == "auto" else opts.despike
         opts.dcan_correlation_lengths = (
             ["all", 300, 480]
             if opts.dcan_correlation_lengths == "auto"
             else opts.dcan_correlation_lengths
         )
     elif opts.mode == "linc":
-        opts.despike = False if opts.despike == "auto" else opts.despike
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
     else:

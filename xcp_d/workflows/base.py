@@ -143,9 +143,11 @@ def init_single_subject_wf(subject_id: str):
     )
 
     # determine the appropriate post-processing workflow
-    init_postprocess_bold_wf = (
-        init_postprocess_cifti_wf if config.workflow.cifti else init_postprocess_nifti_wf
-    )
+    workflows = {
+        "nifti": init_postprocess_nifti_wf,
+        "cifti": init_postprocess_cifti_wf,
+    }
+    init_postprocess_bold_wf = workflows[config.workflow.file_format]
     preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
