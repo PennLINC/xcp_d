@@ -514,6 +514,8 @@ def _interpolate(*, arr, sample_mask, TR):
     ----------
     .. footbibliography::
     """
+    from tqdm import trange
+
     from xcp_d.utils.utils import get_transform
 
     n_volumes = arr.shape[0]
@@ -522,7 +524,7 @@ def _interpolate(*, arr, sample_mask, TR):
     n_voxels = arr.shape[1]
 
     interpolated_arr = arr.copy()
-    for i_voxel in range(n_voxels):
+    for i_voxel in trange(n_voxels, desc="Interpolating high-motion volumes"):
         voxel_data = arr[:, i_voxel]
         interpolated_voxel_data = get_transform(
             censored_time=censored_time,
