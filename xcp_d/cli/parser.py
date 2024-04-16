@@ -385,7 +385,7 @@ def _build_parser():
         dest="motion_filter_type",
         action="store",
         type=str,
-        default="none",
+        default=None,
         choices=["lp", "notch", "none"],
         help="""\
 Type of filter to use for removing respiratory artifact from motion regressors.
@@ -973,9 +973,9 @@ def _validate_parameters(opts, build_log, parser):
         opts.dcan_qc = True
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
-        if (opts.lower_bpf is None) or (opts.upper_bpf is None):
+        if opts.motion_filter_type is None:
             error_messages.append(
-                "'--lower-bpf' and '--upper-bpf' must be set for the 'abcd' and 'hbcd' modes. "
+                "'--motion-filter-type' must be set for the 'abcd' and 'hbcd' modes. "
                 "Please set these parameters."
             )
     else:
