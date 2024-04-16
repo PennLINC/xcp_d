@@ -182,27 +182,18 @@ def _build_parser():
             "Will be created if not present."
         ),
     )
-
-    g_surfx = parser.add_argument_group("Options for CIFTI processing")
-
-    g_target = g_surfx.add_mutually_exclusive_group(required=False)
-    g_target.add_argument(
-        "-s",
-        "--cifti",
-        dest="cifti",
-        action="store_true",
+    g_bids.add_argument(
+        "--file-format",
+        dest="file_format",
+        action="store",
         default="auto",
+        choices=["auto", "cifti", "nifti"],
         help=(
-            "Postprocess CIFTI inputs instead of NIfTIs. "
-            "A preprocessing pipeline with CIFTI derivatives is required for this flag to work. "
-            "This flag is enabled by default for the 'hcp' and 'dcan' input types."
+            "The file format of the input data. "
+            "If 'auto', the file format will be inferred from the processing mode. "
+            "If 'cifti', the input data are assumed to be in CIFTI format. "
+            "If 'nifti', the input data are assumed to be in NIfTI format."
         ),
-    )
-    g_target.add_argument(
-        "--nifti",
-        dest="cifti",
-        action="store_false",
-        help="Postprocess NIfTI inputs instead of CIFTIs.",
     )
 
     g_perfm = parser.add_argument_group("Options for resource management")
@@ -607,6 +598,33 @@ then the corresponding correlation matrix will not be produced.
 This option is only allowed for the "abcd" and "hbcd" modes.
 """,
     )
+    g_dcan.add_argument(
+        "--linc-qc",
+        "--linc_qc",
+        action="store_true",
+        default=None,
+        dest="linc_qc",
+        help="""\
+Run LINC QC.
+
+This will create the NiPreps-style HTML report and calculate QC metrics from the LINC pipeline.
+""",
+    )
+
+    g_linc = parser.add_argument_group("linc mode options")
+    g_linc.add_argument(
+        "--dcan-qc",
+        "--dcan_qc",
+        action="store_true",
+        default=None,
+        dest="dcan_qc",
+        help="""\
+Run DCAN QC.
+
+This will create the DCAN executive summary, including a brainsprite visualization of the
+anatomical tissue segmentation, and an HDF5 file containing motion thresholds.
+""",
+    )
 
     g_other = parser.add_argument_group("Other options")
     g_other.add_argument(
@@ -738,7 +756,7 @@ surfaces (``surf.gii`` files) produced by Freesurfer into standard (``fsLR``) sp
 These surface files are primarily used for visual quality assessment.
 By default, this workflow is disabled.
 
-**IMPORTANT**: This parameter can only be run if the --cifti flag is also enabled.
+**IMPORTANT**: This parameter can only be run if the --file-format flag is set to cifti.
 """,
     )
     g_surface_warp.add_argument(
@@ -949,46 +967,41 @@ def _validate_parameters(opts, build_log, parser):
     if opts.custom_confounds:
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
-    # Define parameters based on the mode
-    if isinstance(opts.dcan_correlation_lengths, list) and isinstance(
-        opts.dcan_correlation_lengths[0], str
-    ):
-        opts.dcan_correlation_lengths = opts.dcan_correlation_lengths[0]
-
     # Check parameters based on the mode
-    if opts.mode not in ("abcd", "hbcd"):
-        if opts.dcan_correlation_lengths != "auto":
-            error_messages.append(
-                "The '--create-matrices' parameter is not supported for the 'linc' mode. "
-                "Please remove this parameter."
-            )
-    else:
+    if opts.mode in ("abcd", "hbcd"):
+        opts.file_format = "cifti" if opts.file_format == "auto" else opts.file_format
+        opts.dcan_qc = True
+        opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
+        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
         if (opts.lower_bpf is None) or (opts.upper_bpf is None):
             error_messages.append(
                 "'--lower-bpf' and '--upper-bpf' must be set for the 'abcd' and 'hbcd' modes. "
                 "Please set these parameters."
             )
+    else:
+        opts.file_format = "nifti" if opts.file_format == "auto" else opts.file_format
+        opts.linc_qc = True
+        if opts.dcan_correlation_lengths != "auto":
+            error_messages.append(
+                "The '--create-matrices' parameter is not supported for the 'linc' mode. "
+                "Please remove this parameter."
+            )
 
     if opts.mode == "abcd":
         opts.despike = False if opts.despike == "auto" else opts.despike
-        opts.cifti = True if opts.cifti == "auto" else opts.cifti
-        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
         opts.dcan_correlation_lengths = (
             ["all", 300, 480]
             if opts.dcan_correlation_lengths == "auto"
             else opts.dcan_correlation_lengths
         )
-        opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
     elif opts.mode == "hbcd":
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = True if opts.cifti == "auto" else opts.cifti
-        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
         opts.dcan_correlation_lengths = (
             ["all", 300, 480]
             if opts.dcan_correlation_lengths == "auto"
             else opts.dcan_correlation_lengths
         )
-        opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
     elif opts.mode == "linc":
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = False if opts.cifti == "auto" else opts.cifti

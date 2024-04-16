@@ -522,8 +522,8 @@ class workflow(_Config):
 
     mode = None
     """Study- or pipeline-specific mode used to set other parameters."""
-    cifti = False
-    """Postprocess CIFTI inputs instead of NIfTIs."""
+    file_format = "auto"
+    """The file format to process. May be "auto", "cifti", or "nifti"."""
     dummy_scans = 0
     """Number of label-control volume pairs to delete before CBF computation."""
     input_type = "fmriprep"
