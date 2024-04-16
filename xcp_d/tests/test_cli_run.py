@@ -45,7 +45,7 @@ def base_opts():
         "fs_license_file": Path(os.environ["FS_LICENSE"]),
         "atlases": ["Glasser"],
         "custom_confounds": None,
-        "exact_time": "none",
+        "dcan_correlation_lengths": "none",
         "despike": False,
         "dcan_qc": False,
         "combineruns": False,

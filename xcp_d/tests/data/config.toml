@@ -50,7 +50,7 @@ low_pass = 0.1
 bpf_order = 2
 atlases = []
 min_coverage = 0.5
-exact_time = []
+dcan_correlation_lengths = []
 process_surfaces = false
 dcan_qc = false
 

@@ -591,7 +591,7 @@ The default is 240 (4 minutes).
     g_dcan.add_argument(
         "--create-matrices",
         "--create_matrices",
-        dest="create_matrices",
+        dest="dcan_correlation_lengths",
         required=False,
         default="all",
         nargs="+",
@@ -950,12 +950,14 @@ def _validate_parameters(opts, build_log, parser):
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
     # Define parameters based on the mode
-    if isinstance(opts.exact_time, list) and isinstance(opts.exact_time[0], str):
-        opts.exact_time = opts.exact_time[0]
+    if isinstance(opts.dcan_correlation_lengths, list) and isinstance(
+        opts.dcan_correlation_lengths[0], str
+    ):
+        opts.dcan_correlation_lengths = opts.dcan_correlation_lengths[0]
 
     # Check parameters based on the mode
     if opts.mode not in ("abcd", "hbcd"):
-        if opts.exact_time != "auto":
+        if opts.dcan_correlation_lengths != "auto":
             error_messages.append(
                 "The '--create-matrices' parameter is not supported for the 'linc' mode. "
                 "Please remove this parameter."
@@ -971,13 +973,21 @@ def _validate_parameters(opts, build_log, parser):
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = True if opts.cifti == "auto" else opts.cifti
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
-        opts.exact_time = ["all", 300, 480] if opts.exact_time == "auto" else opts.exact_time
+        opts.dcan_correlation_lengths = (
+            ["all", 300, 480]
+            if opts.dcan_correlation_lengths == "auto"
+            else opts.dcan_correlation_lengths
+        )
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
     elif opts.mode == "hbcd":
         opts.despike = False if opts.despike == "auto" else opts.despike
         opts.cifti = True if opts.cifti == "auto" else opts.cifti
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
-        opts.exact_time = ["all", 300, 480] if opts.exact_time == "auto" else opts.exact_time
+        opts.dcan_correlation_lengths = (
+            ["all", 300, 480]
+            if opts.dcan_correlation_lengths == "auto"
+            else opts.dcan_correlation_lengths
+        )
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
     elif opts.mode == "linc":
         opts.despike = False if opts.despike == "auto" else opts.despike

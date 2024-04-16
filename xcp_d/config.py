@@ -560,7 +560,7 @@ class workflow(_Config):
     """Order of the band-pass filter."""
     min_coverage = 0.5
     """Coverage threshold to apply to parcels in each atlas."""
-    exact_time = []
+    dcan_correlation_lengths = []
     """Produce correlation matrices limited to each requested amount of time."""
     process_surfaces = False
     """Warp FreeSurfer's surfaces to the MNI space."""
