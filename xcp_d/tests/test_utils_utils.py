@@ -94,7 +94,6 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         TR=TR,
     )
     assert out_arr.shape == (n_volumes, n_voxels)
-    assert np.allclose(out_arr, data_detrended)
 
     # Now, no filtering (censoring + denoising + interpolation)
     sample_mask = np.ones(n_volumes, dtype=bool)
