@@ -1,11 +1,8 @@
 """Test functions in xcp_d.utils.utils."""
 
-import os
-
 import numpy as np
 import pandas as pd
 import pytest
-from nilearn import masking
 from scipy import signal
 
 from xcp_d.utils import utils
@@ -51,56 +48,59 @@ def test_butter_bandpass():
 
 def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
-    tmpdir = tmp_path_factory.mktemp("test_denoise_with_nilearn")
-
     high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
     n_voxels, n_volumes, n_signals, n_confounds = 100, 200, 2, 5
 
     data_arr = np.empty((n_volumes, n_voxels))
-    confound_arr = np.empty((n_volumes, n_voxels))
-    signal_arr = np.empty((n_volumes, n_voxels))
 
-    confound_timeseries = np.empty((n_volumes, n_confounds))
-    signal_timeseries = np.empty((n_volumes, n_signals))
+    # Create confounds and add them to the data
+    rng = np.random.default_rng(0)
+    confound_timeseries = rng.standard_normal(size=(n_volumes, n_confounds))
+    confound_timeseries = signal.detrend(confound_timeseries, axis=0)
+    confound_weights = rng.standard_normal(size=(n_confounds, n_voxels))
+    confound_arr = np.dot(confound_timeseries, confound_weights)
+    data_arr += confound_arr
 
-    rng = np.random.default_rng(11)
-    for i_confounds in range(n_confounds):
-        confound = rng.standard_normal(size=n_volumes)
-        confound = signal.detrend(confound)
-        weights = rng.standard_normal(size=n_voxels)
-        confound_arr += np.outer(confound, weights)
-        data_arr += np.outer(confound, weights)
-        confound_timeseries[:, i_confounds] = confound
+    # Create signals and add them to the data
+    rng = np.random.default_rng(1)
+    signal_timeseries = rng.standard_normal(size=(n_volumes, n_signals))
+    signal_timeseries = signal.detrend(signal_timeseries, axis=0)
+    signal_weights = rng.standard_normal(size=(n_signals, n_voxels))
+    signal_arr = np.dot(signal_timeseries, signal_weights)
+    data_arr += signal_arr
+    data_detrended = data_arr.copy()
 
-    for i_signal in range(n_signals):
-        signal_ = rng.standard_normal(size=n_volumes)
-        signal_ = signal.detrend(signal_)
-        weights = rng.standard_normal(size=n_voxels)
-        signal_arr += np.outer(signal_, weights)
-        data_arr += np.outer(signal_, weights)
-        signal_timeseries[:, i_signal] = signal_
+    # Now add trends
+    rng = np.random.default_rng(2)
+    trend = np.arange(n_volumes)
+    trend -= trend.mean()
+    trend_weights = rng.standard_normal(size=(1, n_voxels))
+    data_arr += np.dot(trend[:, np.newaxis], trend_weights)
 
     confounds_df = pd.DataFrame(
         confound_timeseries,
         columns=[f"confound_{i}" for i in range(n_confounds)],
     )
-    sample_mask = np.ones(n_volumes, dtype=bool)
 
-    # First, try out filtering
-    denoised_interpolated_bold = utils.denoise_with_nilearn(
+    # First, try out filtering without censoring or denoising
+    out_arr = utils.denoise_with_nilearn(
         preprocessed_bold=data_arr,
-        confounds=confounds_df,
-        sample_mask=sample_mask,
+        confounds=None,
+        sample_mask=np.ones(n_volumes, dtype=bool),
         low_pass=low_pass,
         high_pass=high_pass,
         filter_order=filter_order,
         TR=TR,
     )
-    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+    assert out_arr.shape == (n_volumes, n_voxels)
+    assert np.allclose(out_arr, data_detrended)
 
     # Now, no filtering (censoring + denoising + interpolation)
-    denoised_interpolated_bold = utils.denoise_with_nilearn(
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[10:20] = False
+    sample_mask[150:160] = False
+    out_arr = utils.denoise_with_nilearn(
         preprocessed_bold=data_arr,
         confounds=confounds_df,
         sample_mask=sample_mask,
@@ -109,10 +109,10 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=None,
         TR=TR,
     )
-    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+    assert out_arr.shape == (n_volumes, n_voxels)
 
     # Finally, run without denoising (censoring + interpolation + filtering)
-    denoised_interpolated_bold = utils.denoise_with_nilearn(
+    out_arr = utils.denoise_with_nilearn(
         preprocessed_bold=data_arr,
         confounds=None,
         sample_mask=sample_mask,
@@ -121,7 +121,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=filter_order,
         TR=TR,
     )
-    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+    assert out_arr.shape == (n_volumes, n_voxels)
 
     # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
     # Create an updated censoring file with outliers at first and last two volumes
@@ -131,7 +131,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     assert n_censored_volumes == 4
 
     # Run without denoising or filtering (censoring + interpolation only)
-    denoised_interpolated_bold = utils.denoise_with_nilearn(
+    out_arr = utils.denoise_with_nilearn(
         preprocessed_bold=data_arr,
         confounds_file=None,
         sample_mask=sample_mask,
@@ -140,15 +140,15 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         filter_order=0,
         TR=TR,
     )
-    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+    assert out_arr.shape == (n_volumes, n_voxels)
     # The first two volumes should be the same as the third (first non-outlier) volume
-    assert np.allclose(denoised_interpolated_bold[0, :], denoised_interpolated_bold[2, :])
-    assert np.allclose(denoised_interpolated_bold[1, :], denoised_interpolated_bold[2, :])
-    assert not np.allclose(denoised_interpolated_bold[2, :], denoised_interpolated_bold[3, :])
+    assert np.allclose(out_arr[0, :], out_arr[2, :])
+    assert np.allclose(out_arr[1, :], out_arr[2, :])
+    assert not np.allclose(out_arr[2, :], out_arr[3, :])
     # The last volume should be the same as the third-to-last (last non-outlier) volume
-    assert np.allclose(denoised_interpolated_bold[-1, :], denoised_interpolated_bold[-3, :])
-    assert np.allclose(denoised_interpolated_bold[-2, :], denoised_interpolated_bold[-3, :])
-    assert not np.allclose(denoised_interpolated_bold[-3, :], denoised_interpolated_bold[-4, :])
+    assert np.allclose(out_arr[-1, :], out_arr[-3, :])
+    assert np.allclose(out_arr[-2, :], out_arr[-3, :])
+    assert not np.allclose(out_arr[-3, :], out_arr[-4, :])
 
 
 def test_list_to_str():
