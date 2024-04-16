@@ -182,19 +182,6 @@ def _build_parser():
             "Will be created if not present."
         ),
     )
-    g_bids.add_argument(
-        "--file-format",
-        dest="file_format",
-        action="store",
-        default="auto",
-        choices=["auto", "cifti", "nifti"],
-        help=(
-            "The file format of the input data. "
-            "If 'auto', the file format will be inferred from the processing mode. "
-            "If 'cifti', the input data are assumed to be in CIFTI format. "
-            "If 'nifti', the input data are assumed to be in NIfTI format."
-        ),
-    )
 
     g_perfm = parser.add_argument_group("Options for resource management")
     g_perfm.add_argument(
@@ -267,6 +254,19 @@ def _build_parser():
             "The default pipeline is 'fmriprep'. "
             "The 'dcan', 'hcp', 'nibabies', and 'ukb' pipelines are also supported. "
             "'nibabies' assumes the same structure as 'fmriprep'."
+        ),
+    )
+    g_outputoption.add_argument(
+        "--file-format",
+        dest="file_format",
+        action="store",
+        default="auto",
+        choices=["auto", "cifti", "nifti"],
+        help=(
+            "The file format of the input data. "
+            "If 'auto', the file format will be inferred from the processing mode. "
+            "If 'cifti', the input data are assumed to be in CIFTI format. "
+            "If 'nifti', the input data are assumed to be in NIfTI format."
         ),
     )
 
