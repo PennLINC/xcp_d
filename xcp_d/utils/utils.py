@@ -332,8 +332,8 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
 @fill_doc
 def denoise_with_nilearn(
     preprocessed_bold,
-    confounds_file,
-    temporal_mask,
+    confounds,
+    sample_mask,
     low_pass,
     high_pass,
     filter_order,
@@ -366,11 +366,12 @@ def denoise_with_nilearn(
     preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
         Preprocessed BOLD data, after dummy volume removal,
         but without any additional censoring.
-    confounds_file : :obj:`str` or None
-        Path to TSV file containing selected confounds, after dummy volume removal,
+    confounds : :obj:`pandas.DataFrame` of shape (T, C) or None
+        DataFrame containing selected confounds, after dummy volume removal,
         but without any additional censoring.
         May be None, if no denoising should be performed.
-    %(temporal_mask)s
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        Low-motion volumes are True and high-motion volumes are False.
     low_pass, high_pass : float
         Low-pass and high-pass thresholds, in Hertz.
         If 0, that bound will be skipped
@@ -397,7 +398,6 @@ def denoise_with_nilearn(
     ----------
     .. footbibliography::
     """
-    import pandas as pd
     from nilearn.signal import butterworth, standardize_signal
 
     n_volumes = preprocessed_bold.shape[0]
@@ -406,29 +406,14 @@ def denoise_with_nilearn(
     low_pass = low_pass if low_pass != 0 else None
     high_pass = high_pass if high_pass != 0 else None
 
-    censoring_df = pd.read_table(temporal_mask)
-    if censoring_df.shape[0] != n_volumes:
-        raise ValueError(
-            f"Temporal mask file has {censoring_df.shape[0]} rows, "
-            f"but BOLD data has {n_volumes} volumes."
-        )
-
-    # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-    sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
     outlier_idx = list(np.where(~sample_mask)[0])
 
     # Determine which steps to apply
-    detrend_and_denoise = bool(confounds_file)
+    detrend_and_denoise = bool(confounds)
     censor_and_interpolate = bool(outlier_idx)
 
     if detrend_and_denoise:
-        confounds_df = pd.read_table(confounds_file)
-        confounds_arr = confounds_df.to_numpy()
-        if confounds_arr.shape[0] != n_volumes:
-            raise ValueError(
-                f"Confounds file has {confounds_arr.shape[0]} rows, "
-                f"but BOLD data has {n_volumes} volumes."
-            )
+        confounds_arr = confounds.to_numpy()
 
     if censor_and_interpolate:
         # Replace high-motion volumes in the BOLD data and confounds with cubic-spline interpolated

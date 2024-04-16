@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from nilearn import masking
+from scipy import signal
 
 from xcp_d.utils import utils
 
@@ -54,34 +55,43 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
 
     high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
-    preprocessed_bold = ds001419_data["nifti_file"]
-    confounds_file = ds001419_data["confounds_file"]
-    bold_mask = ds001419_data["brain_mask_file"]
+    n_voxels, n_volumes, n_signals, n_confounds = 100, 200, 2, 5
 
-    preprocessed_bold_arr = masking.apply_mask(preprocessed_bold, bold_mask)
-    # Reduce the size of the data for the test
-    preprocessed_bold_arr = preprocessed_bold_arr[:, ::3]
-    n_volumes, n_voxels = preprocessed_bold_arr.shape
+    data_arr = np.empty((n_volumes, n_voxels))
+    confound_arr = np.empty((n_volumes, n_voxels))
+    signal_arr = np.empty((n_volumes, n_voxels))
 
-    # Select some confounds to use for denoising
-    confounds_df = pd.read_table(confounds_file)
-    reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
-    reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
+    confound_timeseries = np.empty((n_volumes, n_confounds))
+    signal_timeseries = np.empty((n_volumes, n_signals))
 
-    # Create the censoring file
-    censoring_df = confounds_df[["framewise_displacement"]].copy()
-    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
-    n_censored_volumes = censoring_df["framewise_displacement"].sum()
-    assert n_censored_volumes > 0
-    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    rng = np.random.default_rng(11)
+    for i_confounds in range(n_confounds):
+        confound = rng.standard_normal(size=n_volumes)
+        confound = signal.detrend(confound)
+        weights = rng.standard_normal(size=n_voxels)
+        confound_arr += np.outer(confound, weights)
+        data_arr += np.outer(confound, weights)
+        confound_timeseries[:, i_confounds] = confound
+
+    for i_signal in range(n_signals):
+        signal_ = rng.standard_normal(size=n_volumes)
+        signal_ = signal.detrend(signal_)
+        weights = rng.standard_normal(size=n_voxels)
+        signal_arr += np.outer(signal_, weights)
+        data_arr += np.outer(signal_, weights)
+        signal_timeseries[:, i_signal] = signal_
+
+    confounds_df = pd.DataFrame(
+        confound_timeseries,
+        columns=[f"confound_{i}" for i in range(n_confounds)],
+    )
+    sample_mask = np.ones(n_volumes, dtype=bool)
 
     # First, try out filtering
     denoised_interpolated_bold = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=reduced_confounds_file,
-        temporal_mask=temporal_mask,
+        preprocessed_bold=data_arr,
+        confounds=confounds_df,
+        sample_mask=sample_mask,
         low_pass=low_pass,
         high_pass=high_pass,
         filter_order=filter_order,
@@ -91,9 +101,9 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
 
     # Now, no filtering (censoring + denoising + interpolation)
     denoised_interpolated_bold = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=reduced_confounds_file,
-        temporal_mask=temporal_mask,
+        preprocessed_bold=data_arr,
+        confounds=confounds_df,
+        sample_mask=sample_mask,
         low_pass=None,
         high_pass=None,
         filter_order=None,
@@ -103,9 +113,9 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
 
     # Finally, run without denoising (censoring + interpolation + filtering)
     denoised_interpolated_bold = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=None,
-        temporal_mask=temporal_mask,
+        preprocessed_bold=data_arr,
+        confounds=None,
+        sample_mask=sample_mask,
         low_pass=low_pass,
         high_pass=high_pass,
         filter_order=filter_order,
@@ -115,20 +125,16 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
 
     # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
     # Create an updated censoring file with outliers at first and last two volumes
-    censoring_df = confounds_df[["framewise_displacement"]].copy()
-    censoring_df.loc[:, "framewise_displacement"] = False
-    censoring_df.loc[:1, "framewise_displacement"] = True
-    censoring_df.loc[58:, "framewise_displacement"] = True
-    n_censored_volumes = censoring_df["framewise_displacement"].sum()
+    sample_mask[:1] = False
+    sample_mask[-2:] = False
+    n_censored_volumes = np.sum(sample_mask)
     assert n_censored_volumes == 4
-    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # Run without denoising or filtering (censoring + interpolation only)
     denoised_interpolated_bold = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
+        preprocessed_bold=data_arr,
         confounds_file=None,
-        temporal_mask=temporal_mask,
+        sample_mask=sample_mask,
         low_pass=None,
         high_pass=None,
         filter_order=0,
