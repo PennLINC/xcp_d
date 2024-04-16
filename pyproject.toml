@@ -19,7 +19,7 @@ dependencies = [
     'importlib_resources; python_version < "3.11"',
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
     "bids-validator <= 1.14.4",
-    "h5py <= 3.10.0",  # for DCAN motion file
+    "h5py <= 3.11.0",  # for DCAN motion file
     "indexed_gzip ~= 1.8.7",  # for loading imgs in nibabel
     "jinja2 ~= 3.1.2",  # for executive summary
     "joblib <= 1.4.0",
