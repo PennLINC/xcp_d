@@ -974,18 +974,12 @@ def _validate_parameters(opts, build_log, parser):
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
         if opts.motion_filter_type is None:
-            error_messages.append(
-                "'--motion-filter-type' must be set for the 'abcd' and 'hbcd' modes. "
-                "Please set these parameters."
-            )
+            error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
     else:
         opts.file_format = "nifti" if opts.file_format == "auto" else opts.file_format
         opts.linc_qc = True
         if opts.dcan_correlation_lengths != "auto":
-            error_messages.append(
-                "The '--create-matrices' parameter is not supported for the 'linc' mode. "
-                "Please remove this parameter."
-            )
+            error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
 
     if opts.mode == "abcd":
         opts.despike = False if opts.despike == "auto" else opts.despike
@@ -996,7 +990,6 @@ def _validate_parameters(opts, build_log, parser):
         )
     elif opts.mode == "hbcd":
         opts.despike = False if opts.despike == "auto" else opts.despike
-        opts.cifti = True if opts.cifti == "auto" else opts.cifti
         opts.dcan_correlation_lengths = (
             ["all", 300, 480]
             if opts.dcan_correlation_lengths == "auto"
@@ -1004,7 +997,6 @@ def _validate_parameters(opts, build_log, parser):
         )
     elif opts.mode == "linc":
         opts.despike = False if opts.despike == "auto" else opts.despike
-        opts.cifti = False if opts.cifti == "auto" else opts.cifti
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
     else:
@@ -1085,41 +1077,22 @@ def _validate_parameters(opts, build_log, parser):
         )
 
     # Some parameters are automatically set depending on the input type.
-    if opts.input_type in ("dcan", "hcp"):
-        if not opts.cifti:
-            build_log.warning(
-                f"With input_type {opts.input_type}, cifti processing (--cifti) will be "
-                "enabled automatically."
+    if opts.input_type == "ukb":
+        if opts.file_format == "cifti":
+            error_messages.append(
+                "In order to process UK Biobank data, the file format must be set to 'nifti'."
             )
-            opts.cifti = True
-
-        if not opts.process_surfaces:
-            build_log.warning(
-                f"With input_type {opts.input_type}, surface normalization "
-                "(--warp-surfaces-native2std) will be enabled automatically."
-            )
-            opts.process_surfaces = True
-
-    elif opts.input_type == "ukb":
-        if opts.cifti:
-            build_log.warning(
-                f"With input_type {opts.input_type}, cifti processing (--cifti) will be "
-                "disabled automatically."
-            )
-            opts.cifti = False
 
         if opts.process_surfaces:
-            build_log.warning(
-                f"With input_type {opts.input_type}, surface normalization "
-                "(--warp-surfaces-native2std) will be disabled automatically."
+            error_messages.append(
+                "--warp-surfaces-native2std is not supported for UK Biobank data."
             )
-            opts.process_surfaces = False
 
     # process_surfaces and nifti processing are incompatible.
-    if opts.process_surfaces and not opts.cifti:
+    if opts.process_surfaces and (opts.file_format == "nifti"):
         error_messages.append(
             "In order to perform surface normalization (--warp-surfaces-native2std), "
-            "you must enable cifti processing (--cifti)."
+            "you must enable cifti processing (--file-format cifti)."
         )
 
     if error_messages:
