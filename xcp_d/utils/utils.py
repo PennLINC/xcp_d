@@ -416,8 +416,7 @@ def denoise_with_nilearn(
         confounds_arr = confounds.to_numpy()
 
     if censor_and_interpolate:
-        # Replace high-motion volumes in the BOLD data and confounds with cubic-spline interpolated
-        # values.
+        # Replace high-motion volumes in the BOLD data and confounds with interpolated values.
         preprocessed_bold = _interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
         if detrend_and_denoise:
             confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)

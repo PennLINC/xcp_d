@@ -69,7 +69,6 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
     signal_weights = rng.standard_normal(size=(n_signals, n_voxels))
     signal_arr = np.dot(signal_timeseries, signal_weights)
     data_arr += signal_arr
-    data_detrended = data_arr.copy()
 
     # Now add trends
     rng = np.random.default_rng(2)
@@ -109,6 +108,19 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         TR=TR,
     )
     assert out_arr.shape == (n_volumes, n_voxels)
+
+    # Denoise without censoring or filtering
+    out_arr = utils.denoise_with_nilearn(
+        preprocessed_bold=data_arr,
+        confounds=confounds_df,
+        sample_mask=np.ones(n_volumes, dtype=bool),
+        low_pass=None,
+        high_pass=None,
+        filter_order=None,
+        TR=TR,
+    )
+    assert out_arr.shape == (n_volumes, n_voxels)
+    assert np.allclose(out_arr, signal_arr)
 
     # Finally, run without denoising (censoring + interpolation + filtering)
     out_arr = utils.denoise_with_nilearn(
