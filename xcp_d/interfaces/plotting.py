@@ -679,7 +679,15 @@ class AnatomicalPlot(SimpleInterface):
         arr = img.get_fdata()
 
         fig = plt.figure(constrained_layout=False, figsize=(25, 10))
-        plot_anat(img, draw_cross=False, figure=fig, vmin=np.min(arr), vmax=np.max(arr))
+        plot_anat(
+            img,
+            draw_cross=False,
+            figure=fig,
+            vmin=np.min(arr),
+            vmax=np.max(arr),
+            cut_coords=[0, 0, 0],
+            annotate=False,
+        )
         fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
         plt.close(fig)
 

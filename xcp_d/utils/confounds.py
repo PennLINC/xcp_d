@@ -73,15 +73,17 @@ def load_motion(
         )
 
     # Volterra expansion
-    columns = motion_confounds_df.columns.tolist()
-    for col in columns:
-        new_col = f"{col}_derivative1"
-        motion_confounds_df[new_col] = motion_confounds_df[col].diff()
+    # Ignore pandas SettingWithCopyWarning
+    with pd.option_context("mode.chained_assignment", None):
+        columns = motion_confounds_df.columns.tolist()
+        for col in columns:
+            new_col = f"{col}_derivative1"
+            motion_confounds_df[new_col] = motion_confounds_df[col].diff()
 
-    columns = motion_confounds_df.columns.tolist()
-    for col in columns:
-        new_col = f"{col}_power2"
-        motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
+        columns = motion_confounds_df.columns.tolist()
+        for col in columns:
+            new_col = f"{col}_power2"
+            motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
 
     return motion_confounds_df
 
