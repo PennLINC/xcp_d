@@ -72,7 +72,7 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
 
     # Now add trends
     rng = np.random.default_rng(2)
-    trend = np.arange(n_volumes)
+    trend = np.arange(n_volumes).astype(np.float32)
     trend -= trend.mean()
     trend_weights = rng.standard_normal(size=(1, n_voxels))
     data_arr += np.dot(trend[:, np.newaxis], trend_weights)
