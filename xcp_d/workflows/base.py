@@ -128,7 +128,7 @@ def init_single_subject_wf(subject_id: str):
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
         input_type=config.workflow.input_type,
-        cifti=config.workflow.cifti,
+        file_format=config.workflow.file_format,
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None

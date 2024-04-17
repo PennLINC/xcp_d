@@ -79,7 +79,7 @@ def init_qc_report_wf(
 
     output_dir = config.execution.xcp_d_dir
     params = config.workflow.params
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     dcan_qc = config.workflow.dcan_qc
     omp_nthreads = config.nipype.omp_nthreads
 
@@ -124,7 +124,7 @@ def init_qc_report_wf(
         )
     )
 
-    if not cifti:
+    if file_format == "nifti":
         # We need the BOLD mask in T1w and standard spaces for QC metric calculation.
         # This is only possible for nifti inputs.
         get_native2space_transforms = pe.Node(
@@ -364,7 +364,7 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
-    if not cifti:
+    if file_format == "nifti":
         # fmt:off
         workflow.connect([
             (inputnode, plot_execsummary_carpets_dcan, [("bold_mask", "mask")]),
@@ -414,7 +414,7 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
-    if not cifti:
+    if file_format == "nifti":
         # fmt:off
         workflow.connect([
             (inputnode, qc_report, [

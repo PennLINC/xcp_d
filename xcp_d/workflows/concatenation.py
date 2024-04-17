@@ -76,7 +76,7 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     output_dir = config.execution.xcp_d_dir
     motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     dcan_qc = config.workflow.dcan_qc
     fd_thresh = config.workflow.fd_thresh
     atlases = config.execution.atlases
@@ -223,7 +223,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ]),
     ])  # fmt:skip
 
-    if cifti:
+    if file_format == "cifti":
         ds_censored_filtered_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -425,7 +425,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (make_correlations_dict, ds_correlations, [("metadata", "meta_dict")]),
         ])  # fmt:skip
 
-        if cifti:
+        if file_format == "cifti":
             make_timeseries_ciftis_dict = pe.MapNode(
                 niu.Function(
                     function=_make_dictionary,

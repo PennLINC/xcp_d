@@ -65,7 +65,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     workflow = Workflow(name=name)
     atlases = config.execution.atlases
     output_dir = config.execution.xcp_d_dir
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -93,7 +93,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
         Function(
             input_names=["atlas"],
             output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
-            function=get_atlas_cifti if cifti else get_atlas_nifti,
+            function=get_atlas_cifti if file_format == "cifti" else get_atlas_nifti,
         ),
         name="atlas_file_grabber",
         iterfield=["atlas"],
@@ -102,7 +102,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     atlas_buffer = pe.Node(niu.IdentityInterface(fields=["atlas_file"]), name="atlas_buffer")
 
-    if not cifti:
+    if file_format == "nifti":
         get_transforms_to_bold_space = pe.Node(
             Function(
                 input_names=["bold_file"],

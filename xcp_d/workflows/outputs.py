@@ -207,7 +207,7 @@ def init_postproc_derivatives_wf(
     smoothing = config.workflow.smoothing
     params = config.workflow.params
     atlases = config.execution.atlases
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     dcan_qc = config.workflow.dcan_qc
     output_dir = config.execution.xcp_d_dir
 
@@ -416,8 +416,8 @@ def init_postproc_derivatives_wf(
             dismiss_entities=["den"],
             cohort=cohort,
             desc="denoised",
-            den="91k" if cifti else None,
-            extension=".dtseries.nii" if cifti else ".nii.gz",
+            den="91k" if file_format == "cifti" else None,
+            extension=".dtseries.nii" if file_format == "cifti" else ".nii.gz",
             # Metadata
             meta_dict=cleaned_data_dictionary,
             SoftwareFilters=software_filters,
@@ -441,8 +441,8 @@ def init_postproc_derivatives_wf(
                 source_file=name_source,
                 dismiss_entities=["den"],
                 desc="interpolated",
-                den="91k" if cifti else None,
-                extension=".dtseries.nii" if cifti else ".nii.gz",
+                den="91k" if file_format == "cifti" else None,
+                extension=".dtseries.nii" if file_format == "cifti" else ".nii.gz",
                 # Metadata
                 meta_dict=cleaned_data_dictionary,
             ),
@@ -479,7 +479,7 @@ def init_postproc_derivatives_wf(
             source_file=name_source,
             dismiss_entities=["desc", "den", "res"],
             cohort=cohort,
-            den="91k" if cifti else None,
+            den="91k" if file_format == "cifti" else None,
             desc="linc",
             suffix="qc",
             extension=".tsv",
@@ -498,9 +498,9 @@ def init_postproc_derivatives_wf(
                 source_file=name_source,
                 dismiss_entities=["den"],
                 cohort=cohort,
-                den="91k" if cifti else None,
+                den="91k" if file_format == "cifti" else None,
                 desc="denoisedSmoothed",
-                extension=".dtseries.nii" if cifti else ".nii.gz",
+                extension=".dtseries.nii" if file_format == "cifti" else ".nii.gz",
                 check_hdr=False,
                 # Metadata
                 SoftwareFilters=software_filters,
@@ -679,7 +679,7 @@ def init_postproc_derivatives_wf(
         ])
         # fmt:on
 
-        if cifti:
+        if file_format == "cifti":
             ds_coverage_ciftis = pe.MapNode(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -731,7 +731,7 @@ def init_postproc_derivatives_wf(
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
                     cohort=cohort,
-                    den="91k" if cifti else None,
+                    den="91k" if file_format == "cifti" else None,
                     statistic="mean",
                     suffix="timeseries",
                     extension=".ptseries.nii",
@@ -777,7 +777,7 @@ def init_postproc_derivatives_wf(
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
                     cohort=cohort,
-                    den="91k" if cifti else None,
+                    den="91k" if file_format == "cifti" else None,
                     statistic="pearsoncorrelation",
                     suffix="boldmap",
                     extension=".pconn.nii",
@@ -846,10 +846,10 @@ def init_postproc_derivatives_wf(
             check_hdr=False,
             dismiss_entities=["desc", "den"],
             cohort=cohort,
-            den="91k" if cifti else None,
+            den="91k" if file_format == "cifti" else None,
             statistic="reho",
             suffix="boldmap",
-            extension=".dscalar.nii" if cifti else ".nii.gz",
+            extension=".dscalar.nii" if file_format == "cifti" else ".nii.gz",
             # Metadata
             SoftwareFilters=software_filters,
             Neighborhood="vertices",
@@ -918,10 +918,10 @@ def init_postproc_derivatives_wf(
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
                 cohort=cohort,
-                den="91k" if cifti else None,
+                den="91k" if file_format == "cifti" else None,
                 statistic="alff",
                 suffix="boldmap",
-                extension=".dscalar.nii" if cifti else ".nii.gz",
+                extension=".dscalar.nii" if file_format == "cifti" else ".nii.gz",
                 # Metadata
                 SoftwareFilters=software_filters,
             ),
@@ -944,10 +944,10 @@ def init_postproc_derivatives_wf(
                     dismiss_entities=["den"],
                     cohort=cohort,
                     desc="smooth",
-                    den="91k" if cifti else None,
+                    den="91k" if file_format == "cifti" else None,
                     statistic="alff",
                     suffix="boldmap",
-                    extension=".dscalar.nii" if cifti else ".nii.gz",
+                    extension=".dscalar.nii" if file_format == "cifti" else ".nii.gz",
                     check_hdr=False,
                     # Metadata
                     SoftwareFilters=software_filters,

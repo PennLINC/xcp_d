@@ -437,7 +437,7 @@ def init_despike_wf(TR, name="despike_wf"):
         The despiked NIFTI or CIFTI BOLD file.
     """
     workflow = Workflow(name=name)
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
@@ -450,7 +450,7 @@ def init_despike_wf(TR, name="despike_wf"):
         n_procs=omp_nthreads,
     )
 
-    if cifti:
+    if file_format == "cifti":
         workflow.__desc__ = """
 The BOLD data were converted to NIfTI format, despiked with *AFNI*'s *3dDespike*,
 and converted back to CIFTI format.
@@ -550,7 +550,7 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     bpf_order = config.workflow.bpf_order
     bandpass_filter = config.workflow.bandpass_filter
     smoothing = config.workflow.smoothing
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """\
@@ -623,7 +623,7 @@ approach.
         name="outputnode",
     )
 
-    denoising_interface = DenoiseCifti if cifti else DenoiseNifti
+    denoising_interface = DenoiseCifti if (file_format == "cifti") else DenoiseNifti
     regress_and_filter_bold = pe.Node(
         denoising_interface(
             TR=TR,
@@ -647,7 +647,7 @@ approach.
             ("denoised_interpolated_bold", "denoised_interpolated_bold"),
         ]),
     ])  # fmt:skip
-    if not cifti:
+    if file_format == "nifti":
         workflow.connect([(inputnode, regress_and_filter_bold, [("mask", "mask")])])
 
     censor_interpolated_data = pe.Node(
@@ -715,7 +715,7 @@ def init_resd_smoothing_wf(mem_gb, name="resd_smoothing_wf"):
     """
     workflow = Workflow(name=name)
     smoothing = config.workflow.smoothing
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
@@ -723,7 +723,7 @@ def init_resd_smoothing_wf(mem_gb, name="resd_smoothing_wf"):
 
     # Turn specified FWHM (Full-Width at Half Maximum) to standard deviation.
     sigma_lx = fwhm2sigma(smoothing)
-    if cifti:
+    if file_format == "cifti":
         workflow.__desc__ = f""" \
 The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian kernel
 (FWHM={str(smoothing)} mm).

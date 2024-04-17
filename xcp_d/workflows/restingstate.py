@@ -95,7 +95,7 @@ def init_alff_wf(
     high_pass = config.workflow.high_pass
     fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     omp_nthreads = config.nipype.omp_nthreads
 
     periodogram_desc = ""
@@ -138,7 +138,9 @@ series to retain the original scaling.
         Function(
             input_names=["output_path", "filename", "name_source"],
             output_names=["output_path"],
-            function=plot_alff_reho_surface if cifti else plot_alff_reho_volumetric,
+            function=(
+                plot_alff_reho_surface if (file_format == "cifti") else plot_alff_reho_volumetric
+            ),
         ),
         name="alff_plot",
     )
@@ -158,7 +160,7 @@ series to retain the original scaling.
     # fmt:on
 
     if smoothing:  # If we want to smooth
-        if not cifti:  # If nifti
+        if file_format == "nifti":
             workflow.__desc__ = workflow.__desc__ + (
                 " The ALFF maps were smoothed with Nilearn using a Gaussian kernel "
                 f"(FWHM={str(smoothing)} mm)."
@@ -224,7 +226,7 @@ series to retain the original scaling.
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=name_source,
-            desc="alffSurfacePlot" if cifti else "alffVolumetricPlot",
+            desc="alffSurfacePlot" if (file_format == "cifti") else "alffVolumetricPlot",
             datatype="figures",
         ),
         name="ds_alff_plot",
