@@ -96,7 +96,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--fd-thresh=0.3",
         "--upper-bpf=0.0",
         "--min-time=100",
-        "--exact-time",
+        "--create-matrices",
         "80",
         "200",
         f"--fs-license-file={fs_license_file}",
@@ -349,7 +349,7 @@ def test_nibabies(data_dir, output_dir, working_dir):
         "--head_radius=auto",
         "--smoothing=0",
         "--fd-thresh=0",
-        "--exact-time=none",
+        "--create-matrices=none",
     ]
     _run_and_generate(
         test_name=test_name,
