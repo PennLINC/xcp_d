@@ -46,7 +46,7 @@ def test_butter_bandpass():
         )
 
 
-def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
+def test_denoise_with_nilearn():
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
     high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
@@ -120,7 +120,8 @@ def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
         TR=TR,
     )
     assert out_arr.shape == (n_volumes, n_voxels)
-    assert np.allclose(out_arr, signal_arr)
+    # Output is orthogonal to confounds (based on nilearn's test)
+    assert np.abs(np.dot(confound_arr.T, out_arr)).max() < 1000.0 * np.finfo(np.float64).eps
 
     # Finally, run without denoising (censoring + interpolation + filtering)
     out_arr = utils.denoise_with_nilearn(

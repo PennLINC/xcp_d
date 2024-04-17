@@ -341,15 +341,6 @@ def denoise_with_nilearn(
 ):
     """Denoise an array with Nilearn.
 
-    This function is a modified version of Nilearn's signal.clean function, with the following
-    changes:
-
-    1.  Use :func:`numpy.linalg.lstsq` to estimate betas, instead of QR decomposition,
-        in order to denoise the interpolated data as well.
-    2.  Set any leading or trailing high-motion volumes to the closest low-motion volume's values
-        instead of disabling extrapolation.
-    3.  Return denoised, interpolated data.
-
     This function does the following:
 
     1.  Interpolate high-motion volumes in the BOLD data and confounds.
@@ -372,27 +363,36 @@ def denoise_with_nilearn(
         May be None, if no denoising should be performed.
     sample_mask : :obj:`numpy.ndarray` of shape (T,)
         Low-motion volumes are True and high-motion volumes are False.
-    low_pass, high_pass : float
+    low_pass, high_pass : :obj:`float`
         Low-pass and high-pass thresholds, in Hertz.
         If 0, that bound will be skipped
         (e.g., if low-pass is 0 and high-pass isn't,
         then high-pass filtering will be performed instead of bnadpass filtering).
-    filter_order : int
+    filter_order : :obj:`int`
         Filter order.
     %(TR)s
 
     Returns
     -------
-    denoised_interpolated_bold
-        Returned as a :obj:`numpy.ndarray` of shape (T, S)
+    denoised_interpolated_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The denoised, interpolated data.
 
     Notes
     -----
-    This step only removes high-motion outliers in this step (not the random volumes for trimming).
+    This step only removes high-motion outliers (not the random volumes for trimming).
 
     The denoising method is designed to follow recommendations from
     :footcite:t:`lindquist2019modular`.
     The method is largely equivalent to Lindquist et al.'s HPMC with orthogonalization.
+
+    This function is a modified version of Nilearn's :func:`~nilearn.signal.clean` function,
+    with the following changes:
+
+    1.  Use :func:`numpy.linalg.lstsq` to estimate betas, instead of QR decomposition,
+        in order to denoise the interpolated data as well.
+    2.  Set any leading or trailing high-motion volumes to the closest low-motion volume's values
+        instead of disabling extrapolation.
+    3.  Return denoised, interpolated data.
 
     References
     ----------
