@@ -213,11 +213,15 @@ was used to post-process the outputs of *{info_dict["name"]}* version {info_dict
 XCP-D was built with *Nipype* version {nipype_ver} [@nipype1, RRID:SCR_002502].
 """
 
+    cw_str = (
+        "*Connectome Workbench* [@marcus2011informatics], "
+        if config.workflow.file_format == "cifti"
+        else ""
+    )
     workflow.__postdesc__ = f"""
 
 Many internal operations of *XCP-D* use
-*AFNI* [@cox1996afni;@cox1997software],
-{"*Connectome Workbench* [@marcus2011informatics], " if config.workflow.cifti else ""}
+*AFNI* [@cox1996afni;@cox1997software],{cw_str}
 *ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
 *matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
@@ -395,7 +399,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             run_data = collect_run_data(
                 layout=config.execution.layout,
                 bold_file=bold_file,
-                cifti=config.workflow.cifti,
+                file_format=config.workflow.file_format,
                 target_space=target_space,
             )
 
@@ -455,9 +459,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 exact_scans=exact_scans,
-                name=(
-                    f"{'cifti' if config.workflow.cifti else 'nifti'}_postprocess_{run_counter}_wf"
-                ),
+                name=f"{config.workflow.file_format}_postprocess_{run_counter}_wf",
             )
             run_counter += 1
 
@@ -476,7 +478,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-                if config.workflow.cifti:
+                if config.workflow.file_format == "cifti":
                     workflow.connect([
                         (load_atlases_wf, postprocess_bold_wf, [
                             (
@@ -486,7 +488,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                         ]),
                     ])  # fmt:skip
 
-            if not config.workflow.cifti:
+            if config.workflow.file_format == "nifti":
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
                         ("anat_brainmask", "inputnode.anat_brainmask"),

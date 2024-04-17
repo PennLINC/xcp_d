@@ -542,7 +542,7 @@ def collect_morphometry_data(layout, participant_label):
 
 
 @fill_doc
-def collect_run_data(layout, bold_file, cifti, target_space):
+def collect_run_data(layout, bold_file, file_format, target_space):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -550,7 +550,7 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     %(layout)s
     bold_file : :obj:`str`
         Path to the BOLD file.
-    %(cifti)s
+    file_format
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
     target_space
         Used to find NIfTIs in the appropriate space if ``cifti`` is ``True``.
@@ -580,7 +580,7 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    if not cifti:
+    if file_format == "nifti":
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=True,

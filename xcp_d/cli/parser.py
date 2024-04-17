@@ -599,6 +599,15 @@ This option is only allowed for the "abcd" and "hbcd" modes.
 """,
     )
     g_dcan.add_argument(
+        "--random-seed",
+        "--random_seed",
+        dest="random_seed",
+        default=None,
+        type=int,
+        metavar="_RANDOM_SEED",
+        help="Initialize the random seed for the '--create-matrices' option.",
+    )
+    g_dcan.add_argument(
         "--linc-qc",
         "--linc_qc",
         action="store_true",
@@ -627,15 +636,6 @@ anatomical tissue segmentation, and an HDF5 file containing motion thresholds.
     )
 
     g_other = parser.add_argument_group("Other options")
-    g_other.add_argument(
-        "--random-seed",
-        "--random_seed",
-        dest="random_seed",
-        default=None,
-        type=int,
-        metavar="_RANDOM_SEED",
-        help="Initialize the random seed for the workflow.",
-    )
     g_other.add_argument(
         "-w",
         "--work-dir",
