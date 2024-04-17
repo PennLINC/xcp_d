@@ -584,7 +584,7 @@ The default is 240 (4 minutes).
         "--create_matrices",
         dest="dcan_correlation_lengths",
         required=False,
-        default="all",
+        default=None,
         nargs="+",
         type=_float_or_auto_or_none,
         help="""\
@@ -980,19 +980,19 @@ def _validate_parameters(opts, build_log, parser):
         opts.file_format = "nifti" if opts.file_format == "auto" else opts.file_format
         opts.despike = True if opts.despike is None else opts.despike
         opts.linc_qc = True
-        if opts.dcan_correlation_lengths != "auto":
+        if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
 
     if opts.mode == "abcd":
         opts.dcan_correlation_lengths = (
             ["all", 300, 480]
-            if opts.dcan_correlation_lengths == "auto"
+            if opts.dcan_correlation_lengths is None
             else opts.dcan_correlation_lengths
         )
     elif opts.mode == "hbcd":
         opts.dcan_correlation_lengths = (
             ["all", 300, 480]
-            if opts.dcan_correlation_lengths == "auto"
+            if opts.dcan_correlation_lengths is None
             else opts.dcan_correlation_lengths
         )
     elif opts.mode == "linc":
