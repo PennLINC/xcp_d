@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from scipy import signal
+from scipy import signal, stats
 
 from xcp_d.utils import utils
 
@@ -50,25 +50,45 @@ def test_denoise_with_nilearn():
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
     high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
-    n_voxels, n_volumes, n_signals, n_confounds = 100, 200, 2, 5
+    n_voxels, n_volumes, n_signals, n_confounds = 100, 1000, 2, 5
 
-    data_arr = np.empty((n_volumes, n_voxels))
-
-    # Create confounds and add them to the data
-    rng = np.random.default_rng(0)
-    confound_timeseries = rng.standard_normal(size=(n_volumes, n_confounds))
-    confound_timeseries = signal.detrend(confound_timeseries, axis=0)
-    confound_weights = rng.standard_normal(size=(n_confounds, n_voxels))
-    confound_arr = np.dot(confound_timeseries, confound_weights)
-    data_arr += confound_arr
+    data_arr = np.zeros((n_volumes, n_voxels))
 
     # Create signals and add them to the data
-    rng = np.random.default_rng(1)
+    rng = np.random.default_rng(0)
     signal_timeseries = rng.standard_normal(size=(n_volumes, n_signals))
     signal_timeseries = signal.detrend(signal_timeseries, axis=0)
+    signal_timeseries = stats.zscore(signal_timeseries, axis=0)
     signal_weights = rng.standard_normal(size=(n_signals, n_voxels))
+
+    for i_signal in range(n_signals):
+        # The first n_signals voxels are only affected by the corresponding signal
+        signal_weights[:, i_signal] = 0
+        signal_weights[i_signal, i_signal] = 1
+
     signal_arr = np.dot(signal_timeseries, signal_weights)
     data_arr += signal_arr
+
+    # Create confounds and add them to the data
+    rng = np.random.default_rng(1)
+    confound_timeseries = rng.standard_normal(size=(n_volumes, n_confounds))
+    confound_timeseries = signal.detrend(confound_timeseries, axis=0)
+    confound_timeseries = stats.zscore(confound_timeseries, axis=0)
+
+    # Orthogonalize the confound_timeseries w.r.t. the signal_timeseries
+    signal_betas = np.linalg.lstsq(signal_timeseries, confound_timeseries, rcond=None)[0]
+    pred_confound_timeseries = np.dot(signal_timeseries, signal_betas)
+    confound_timeseries = confound_timeseries - pred_confound_timeseries
+
+    confound_weights = rng.standard_normal(size=(n_confounds, n_voxels))
+
+    for i_confound in range(n_confounds):
+        # The first n_confounds + n_signals voxels are only affected by the corresponding confound
+        confound_weights[:, i_confound + n_signals] = 0
+        confound_weights[i_confound, i_confound + n_signals] = 1
+
+    confound_arr = np.dot(confound_timeseries, confound_weights)
+    data_arr += confound_arr
 
     # Now add trends
     rng = np.random.default_rng(2)
@@ -84,7 +104,7 @@ def test_denoise_with_nilearn():
 
     # First, try out filtering without censoring or denoising
     out_arr = utils.denoise_with_nilearn(
-        preprocessed_bold=data_arr,
+        preprocessed_bold=data_arr.copy(),
         confounds=None,
         sample_mask=np.ones(n_volumes, dtype=bool),
         low_pass=low_pass,
@@ -95,11 +115,12 @@ def test_denoise_with_nilearn():
     assert out_arr.shape == (n_volumes, n_voxels)
 
     # Now, no filtering (censoring + denoising + interpolation)
+    # With 1000 volumes, censoring shouldn't have much impact on the betas
     sample_mask = np.ones(n_volumes, dtype=bool)
     sample_mask[10:20] = False
     sample_mask[150:160] = False
     out_arr = utils.denoise_with_nilearn(
-        preprocessed_bold=data_arr,
+        preprocessed_bold=data_arr.copy(),
         confounds=confounds_df,
         sample_mask=sample_mask,
         low_pass=None,
@@ -108,24 +129,63 @@ def test_denoise_with_nilearn():
         TR=TR,
     )
     assert out_arr.shape == (n_volumes, n_voxels)
+    # trend was removed
+    trend_corr = np.corrcoef(trend, out_arr.T)[0, 1:]
+    assert all(np.abs(trend_corr) < 0.01)
+
+    # confounds were removed
+    for i_confound in range(n_confounds):
+        confound_corr = np.corrcoef(
+            confound_timeseries[sample_mask, i_confound],
+            out_arr[sample_mask, :].T,
+        )[0, 1:]
+        assert all(np.abs(confound_corr) < 0.01)
+
+    # signals were retained
+    for i_signal in range(n_signals):
+        signal_beta = np.linalg.lstsq(
+            signal_timeseries[sample_mask, i_signal][:, np.newaxis],
+            out_arr[sample_mask, i_signal],
+            rcond=None,
+        )[0]
+        assert np.isclose(signal_beta, 1.0, atol=0.1)
 
     # Denoise without censoring or filtering
+    sample_mask = np.ones(n_volumes, dtype=bool)
     out_arr = utils.denoise_with_nilearn(
-        preprocessed_bold=data_arr,
+        preprocessed_bold=data_arr.copy(),
         confounds=confounds_df,
-        sample_mask=np.ones(n_volumes, dtype=bool),
+        sample_mask=sample_mask,
         low_pass=None,
         high_pass=None,
         filter_order=None,
         TR=TR,
     )
     assert out_arr.shape == (n_volumes, n_voxels)
-    # Output is orthogonal to confounds (based on nilearn's test)
-    assert np.abs(np.dot(confound_arr.T, out_arr)).max() < 1000.0 * np.finfo(np.float64).eps
+    # trend was removed
+    trend_corr = np.corrcoef(trend, out_arr.T)[0, 1:]
+    assert all(np.abs(trend_corr) < 0.1)
 
-    # Finally, run without denoising (censoring + interpolation + filtering)
+    # confounds were removed
+    for i_confound in range(n_confounds):
+        confound_corr = np.corrcoef(
+            confound_timeseries[sample_mask, i_confound],
+            out_arr[sample_mask, :].T,
+        )[0, 1:]
+        assert all(np.abs(confound_corr) < 0.01)
+
+    # signals were retained
+    for i_signal in range(n_signals):
+        signal_beta = np.linalg.lstsq(
+            signal_timeseries[sample_mask, i_signal][:, np.newaxis],
+            out_arr[sample_mask, i_signal],
+            rcond=None,
+        )[0]
+        assert np.isclose(signal_beta, 1.0, atol=0.1)
+
+    # Run without denoising (censoring + interpolation + filtering)
     out_arr = utils.denoise_with_nilearn(
-        preprocessed_bold=data_arr,
+        preprocessed_bold=data_arr.copy(),
         confounds=None,
         sample_mask=sample_mask,
         low_pass=low_pass,
@@ -135,17 +195,37 @@ def test_denoise_with_nilearn():
     )
     assert out_arr.shape == (n_volumes, n_voxels)
 
+    # signals were retained
+    filtered_signals = utils.denoise_with_nilearn(
+        preprocessed_bold=signal_arr.copy(),
+        confounds=None,
+        sample_mask=sample_mask,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        filter_order=filter_order,
+        TR=TR,
+    )
+    for i_signal in range(n_signals):
+        signal_beta = np.linalg.lstsq(
+            filtered_signals[sample_mask, i_signal][:, np.newaxis],
+            out_arr[sample_mask, i_signal],
+            rcond=None,
+        )[0]
+        # atol is kind of high here. effect of filtering?
+        assert np.isclose(signal_beta, 1.0, atol=0.2)
+
     # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
     # Create an updated censoring file with outliers at first and last two volumes
-    sample_mask[:1] = False
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[:2] = False
     sample_mask[-2:] = False
-    n_censored_volumes = np.sum(sample_mask)
+    n_censored_volumes = np.sum(~sample_mask)
     assert n_censored_volumes == 4
 
     # Run without denoising or filtering (censoring + interpolation only)
     out_arr = utils.denoise_with_nilearn(
-        preprocessed_bold=data_arr,
-        confounds_file=None,
+        preprocessed_bold=data_arr.copy(),
+        confounds=None,
         sample_mask=sample_mask,
         low_pass=None,
         high_pass=None,
@@ -161,6 +241,25 @@ def test_denoise_with_nilearn():
     assert np.allclose(out_arr[-1, :], out_arr[-3, :])
     assert np.allclose(out_arr[-2, :], out_arr[-3, :])
     assert not np.allclose(out_arr[-3, :], out_arr[-4, :])
+
+    # signals were retained
+    filtered_signals = utils.denoise_with_nilearn(
+        preprocessed_bold=signal_arr.copy(),
+        confounds=None,
+        sample_mask=sample_mask,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        filter_order=filter_order,
+        TR=TR,
+    )
+    for i_signal in range(n_signals):
+        signal_beta = np.linalg.lstsq(
+            filtered_signals[sample_mask, i_signal][:, np.newaxis],
+            out_arr[sample_mask, i_signal],
+            rcond=None,
+        )[0]
+        # atol is really high here. effect of filtering?
+        assert np.isclose(signal_beta, 1.0, atol=0.6)
 
 
 def test_list_to_str():
