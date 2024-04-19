@@ -13,8 +13,8 @@ import re
 import nibabel as nb
 import pandas as pd
 from nipype import logging
-from xcp_d.data import load as load_data
 
+from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
     collect_anatomical_files,
     collect_hcp_confounds,

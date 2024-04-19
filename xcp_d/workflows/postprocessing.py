@@ -6,9 +6,9 @@ from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
-from xcp_d.data import load as load_data
 
 from xcp_d import config
+from xcp_d.data import load as load_data
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,

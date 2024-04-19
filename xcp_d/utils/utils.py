@@ -54,9 +54,9 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     Only used for QCReport in init_postprocess_nifti_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    from xcp_d.data import load as load_data
     from templateflow.api import get as get_template
 
+    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
@@ -159,9 +159,9 @@ def get_std2bold_xfms(bold_file):
     """
     import os
 
-    from xcp_d.data import load as load_data
     from templateflow.api import get as get_template
 
+    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file

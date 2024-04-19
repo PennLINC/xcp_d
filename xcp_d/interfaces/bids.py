@@ -18,8 +18,8 @@ from nipype.interfaces.base import (
     traits,
 )
 from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
-from xcp_d.data import load as load_data
 
+from xcp_d.data import load as load_data
 from xcp_d.utils.bids import get_entity
 
 # NOTE: Modified for xcpd's purposes
@@ -102,8 +102,9 @@ class CollectRegistrationFiles(SimpleInterface):
     def _run_interface(self, runtime):
         import os
 
-        from xcp_d.data import load as load_data
         from templateflow.api import get as get_template
+
+        from xcp_d.data import load as load_data
 
         hemisphere = self.inputs.hemisphere
         hstr = f"{hemisphere.lower()}h"

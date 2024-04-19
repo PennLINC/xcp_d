@@ -7,8 +7,8 @@ import tempfile
 import numpy as np
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
-from xcp_d.data import load as load_data
 
+from xcp_d.data import load as load_data
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.utils.utils import fwhm2sigma
 

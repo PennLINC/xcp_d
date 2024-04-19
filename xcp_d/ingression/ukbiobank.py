@@ -7,8 +7,8 @@ import os
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.fsl.preprocess import ApplyWarp
-from xcp_d.data import load as load_data
 
+from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
     collect_ukbiobank_confounds,
     copy_files_in_dict,

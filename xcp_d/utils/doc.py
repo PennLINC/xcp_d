@@ -632,6 +632,7 @@ def download_example_data(out_dir=None, overwrite=False):
     import tarfile
 
     import requests
+
     from xcp_d.data import load as load_data
 
     if not out_dir:

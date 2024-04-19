@@ -3,8 +3,8 @@
 import os
 
 import matplotlib.pyplot as plt
-from xcp_d.data import load as load_data
 
+from xcp_d.data import load as load_data
 from xcp_d.tests.utils import chdir
 from xcp_d.utils import execsummary
 

@@ -18,8 +18,8 @@ from nipype.interfaces.base import (
     TraitedSpec,
 )
 from PIL import Image
-from xcp_d.data import load as load_data
 
+from xcp_d.data import load as load_data
 from xcp_d.utils.filemanip import fname_presuffix
 
 
