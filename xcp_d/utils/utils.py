@@ -400,6 +400,9 @@ def denoise_with_nilearn(
     """
     from nilearn.signal import butterworth, standardize_signal
 
+    # Don't want to modify the input arrays
+    preprocessed_bold = preprocessed_bold.copy()
+
     n_volumes = preprocessed_bold.shape[0]
 
     # Coerce 0 filter values to None
@@ -413,7 +416,7 @@ def denoise_with_nilearn(
     censor_and_interpolate = bool(outlier_idx)
 
     if detrend_and_denoise:
-        confounds_arr = confounds.to_numpy()
+        confounds_arr = confounds.to_numpy().copy()
 
     if censor_and_interpolate:
         # Replace high-motion volumes in the BOLD data and confounds with interpolated values.
