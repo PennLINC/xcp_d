@@ -168,7 +168,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary = {}
 
     # The identity xform is used in place of any actual ones.
-    identity_xfm = load_data("transform/itkIdentityTransform.txt")
+    identity_xfm = str(load_data("transform/itkIdentityTransform.txt"))
     copy_dictionary[identity_xfm] = []
     morph_dict_all_ses = {}
 

@@ -377,7 +377,7 @@ def _run_and_generate(test_name, parameters, input_type):
         subject_list=config.execution.participant_label,
         output_dir=config.execution.xcp_d_dir,
         run_uuid=config.execution.run_uuid,
-        config=load_data("reports-spec.yml"),
+        config=str(load_data("reports-spec.yml")),
         packagename="xcp_d",
     )
 

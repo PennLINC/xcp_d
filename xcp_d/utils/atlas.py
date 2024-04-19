@@ -94,9 +94,11 @@ def get_atlas_nifti(atlas):
         atlas_labels_file = join("/AtlasPack", tsv_fname)
         atlas_metadata_file = f"/AtlasPack/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json"
     else:
-        atlas_file = load_data(f"atlases/{atlas_fname}")
-        atlas_labels_file = load_data(f"atlases/{tsv_fname}")
-        atlas_metadata_file = load_data(f"atlases/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json")
+        atlas_file = str(load_data(f"atlases/{atlas_fname}"))
+        atlas_labels_file = str(load_data(f"atlases/{tsv_fname}"))
+        atlas_metadata_file = str(
+            load_data(f"atlases/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json")
+        )
 
     if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
         raise FileNotFoundError(
@@ -139,9 +141,9 @@ def get_atlas_cifti(atlas):
         atlas_labels_file = f"/AtlasPack/atlas-{atlas}_dseg.tsv"
         atlas_metadata_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_dseg.json"
     else:
-        atlas_file = load_data(f"atlases/tpl-fsLR_atlas-{atlas}_den-32k_dseg.dlabel.nii")
-        atlas_labels_file = load_data(f"atlases/atlas-{atlas}_dseg.tsv")
-        atlas_metadata_file = load_data(f"atlases/tpl-fsLR_atlas-{atlas}_dseg.json")
+        atlas_file = str(load_data(f"atlases/tpl-fsLR_atlas-{atlas}_den-32k_dseg.dlabel.nii"))
+        atlas_labels_file = str(load_data(f"atlases/atlas-{atlas}_dseg.tsv"))
+        atlas_metadata_file = str(load_data(f"atlases/tpl-fsLR_atlas-{atlas}_dseg.json"))
 
     if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
         raise FileNotFoundError(

@@ -179,7 +179,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     # Warp BOLD, T1w, and brainmask to MNI152NLin6Asym
     # We use FSL's MNI152NLin6Asym 2 mm3 template instead of TemplateFlow's version,
     # because FSL uses LAS+ orientation, while TemplateFlow uses RAS+.
-    template_file = load_data("MNI152_T1_2mm.nii.gz")
+    template_file = str(load_data("MNI152_T1_2mm.nii.gz"))
 
     copy_dictionary = {}
 
@@ -267,7 +267,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     ]
 
     # The identity xform is used in place of any actual ones.
-    identity_xfm = load_data("transform/itkIdentityTransform.txt")
+    identity_xfm = str(load_data("transform/itkIdentityTransform.txt"))
     copy_dictionary[identity_xfm] = []
 
     t1w_to_template_fmriprep = os.path.join(

@@ -310,7 +310,7 @@ class ExecutiveSummary(object):
                     "LaTeX",
                     f"""<pre>{text}</pre>
 <h3>Bibliography</h3>
-<pre>{Path(load_data("boilerplate.bib")).read_text()}</pre>
+<pre>{load_data("boilerplate.bib").read_text()}</pre>
 """,
                 )
             )
@@ -319,7 +319,7 @@ class ExecutiveSummary(object):
         def include_file(name):
             return Markup(loader.get_source(environment, name)[0])
 
-        template_folder = load_data("executive_summary_templates/")
+        template_folder = str(load_data("executive_summary_templates/"))
         loader = FileSystemLoader(template_folder)
         environment = Environment(loader=loader)
         environment.filters["basename"] = os.path.basename

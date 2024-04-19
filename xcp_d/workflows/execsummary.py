@@ -89,10 +89,10 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
     )
 
     # Load template scene file
-    brainsprite_scene_template = load_data(
-        "executive_summary_scenes/brainsprite_template.scene.gz",
+    brainsprite_scene_template = str(
+        load_data("executive_summary_scenes/brainsprite_template.scene.gz")
     )
-    pngs_scene_template = load_data("executive_summary_scenes/pngs_template.scene.gz")
+    pngs_scene_template = str(load_data("executive_summary_scenes/pngs_template.scene.gz"))
 
     if t1w_available and t2w_available:
         image_types = ["T1", "T2"]

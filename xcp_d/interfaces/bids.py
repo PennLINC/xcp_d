@@ -3,7 +3,6 @@
 import os
 import shutil
 from json import loads
-from pathlib import Path
 
 import nibabel as nb
 import numpy as np
@@ -23,7 +22,7 @@ from xcp_d.data import load as load_data
 from xcp_d.utils.bids import get_entity
 
 # NOTE: Modified for xcpd's purposes
-xcp_d_spec = loads(Path(load_data("xcp_d_bids_config.json")).read_text())
+xcp_d_spec = loads(load_data("xcp_d_bids_config.json").read_text())
 bids_config = Config.load("bids")
 deriv_config = Config.load("derivatives")
 
@@ -138,10 +137,12 @@ class CollectRegistrationFiles(SimpleInterface):
 
             # TODO: Collect from templateflow once it's uploaded.
             # FreeSurfer: fs_?/fs_?-to-fs_LR_fsaverage.?_LR.spherical_std.164k_fs_?.surf.gii
-            self._results["sphere_to_sphere"] = load_data(
-                f"standard_mesh_atlases/fs_{hemisphere}/"
-                f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
-                f"164k_fs_{hemisphere}.surf.gii"
+            self._results["sphere_to_sphere"] = str(
+                load_data(
+                    f"standard_mesh_atlases/fs_{hemisphere}/"
+                    f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
+                    f"164k_fs_{hemisphere}.surf.gii"
+                )
             )
 
             # FreeSurfer: tpl-fsLR_hemi-?_den-32k_sphere.surf.gii

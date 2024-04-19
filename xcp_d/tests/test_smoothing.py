@@ -81,11 +81,15 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)
     tmpdir = tmp_path_factory.mktemp("test_smoothing_cifti")
     in_file = ds001419_data["cifti_file"]
     # pull out atlases for each hemisphere
-    right_surf = load_data(
-        "ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii",
+    right_surf = str(
+        load_data(
+            "ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii",
+        )
     )
-    left_surf = load_data(
-        "ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii",
+    left_surf = str(
+        load_data(
+            "ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii",
+        )
     )
 
     # Estimate the smoothness of the unsmoothed file

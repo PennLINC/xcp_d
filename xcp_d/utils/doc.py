@@ -636,7 +636,7 @@ def download_example_data(out_dir=None, overwrite=False):
     from xcp_d.data import load as load_data
 
     if not out_dir:
-        out_dir = load_data(".")
+        out_dir = str(load_data("."))
 
     out_dir = os.path.abspath(out_dir)
 

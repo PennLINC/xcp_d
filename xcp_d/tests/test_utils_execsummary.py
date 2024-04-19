@@ -33,8 +33,10 @@ def test_modify_brainsprite_scene_template(tmp_path_factory):
     """Test modify_brainsprite_scene_template."""
     tmpdir = tmp_path_factory.mktemp("test_modify_brainsprite_scene_template")
 
-    brainsprite_scene_template = load_data(
-        "executive_summary_scenes/brainsprite_template.scene.gz",
+    brainsprite_scene_template = str(
+        load_data(
+            "executive_summary_scenes/brainsprite_template.scene.gz",
+        )
     )
 
     with chdir(tmpdir):
@@ -55,7 +57,7 @@ def test_modify_pngs_scene_template(tmp_path_factory):
     """Test modify_pngs_scene_template."""
     tmpdir = tmp_path_factory.mktemp("test_modify_pngs_scene_template")
 
-    pngs_scene_template = load_data("executive_summary_scenes/pngs_template.scene.gz")
+    pngs_scene_template = str(load_data("executive_summary_scenes/pngs_template.scene.gz"))
 
     with chdir(tmpdir):
         scene_file = execsummary.modify_pngs_scene_template(

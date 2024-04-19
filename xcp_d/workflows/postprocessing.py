@@ -735,11 +735,16 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                 sigma_surf=sigma_lx,  # the size of the surface kernel
                 sigma_vol=sigma_lx,  # the volume of the surface kernel
                 direction="COLUMN",  # which direction to smooth along@
-                right_surf=load_data(  # pull out atlases for each hemisphere
-                    "ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii"
+                # pull out atlases for each hemisphere
+                right_surf=str(
+                    load_data(
+                        "ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii"
+                    )
                 ),
-                left_surf=load_data(
-                    "ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii"
+                left_surf=str(
+                    load_data(
+                        "ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii"
+                    )
                 ),
             ),
             name="cifti_smoothing",
