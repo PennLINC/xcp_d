@@ -247,7 +247,7 @@ def _build_parser():
         "--input_type",
         dest="input_type",
         required=False,
-        default="fmriprep",
+        default="auto",
         choices=["fmriprep", "dcan", "hcp", "nibabies", "ukb"],
         help=(
             "The pipeline used to generate the preprocessed derivatives. "
@@ -982,6 +982,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.linc_qc = True
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
+
+    if opts.mode == "hbcd":
+        opts.input_type = "nibabies" if opts.input_type == "auto" else opts.input_type
+    else:
+        opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
 
     if opts.mode == "abcd":
         opts.dcan_correlation_lengths = (
