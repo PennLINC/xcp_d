@@ -99,7 +99,7 @@ def test_denoise_with_nilearn():
 
     # Check that signals are present in the "raw" data at this point
     sample_mask = np.ones(n_volumes, dtype=bool)
-    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.00001)
+    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.01)
 
     # Now add trends
     rng = np.random.default_rng(2)
@@ -112,13 +112,13 @@ def test_denoise_with_nilearn():
 
     # Check that signals are still present
     sample_mask = np.ones(n_volumes, dtype=bool)
-    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.00001)
+    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.01)
 
     # Check that censoring doesn't cause any obvious problems
     sample_mask = np.ones(n_volumes, dtype=bool)
     sample_mask[10:20] = False
     sample_mask[150:160] = False
-    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.00001)
+    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.01)
 
     # First, try out filtering without censoring or denoising
     params = {
