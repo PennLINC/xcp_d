@@ -345,7 +345,6 @@ def test_nibabies(data_dir, output_dir, working_dir):
         f"-w={work_dir}",
         f"--input-type={input_type}",
         "--nuisance-regressors=27P",
-        "--despike",
         "--head_radius=auto",
         "--smoothing=0",
         "--fd-thresh=0",
