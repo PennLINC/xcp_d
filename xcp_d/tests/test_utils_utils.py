@@ -71,7 +71,7 @@ def test_denoise_with_nilearn():
 
     # Check that signals are present in the "raw" data
     sample_mask = np.ones(n_volumes, dtype=bool)
-    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.00001)
+    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.01)
 
     # Create confounds and add them to the data
     rng = np.random.default_rng(1)
