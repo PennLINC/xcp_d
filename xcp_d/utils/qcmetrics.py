@@ -225,7 +225,12 @@ def overlap(input1, input2):
     return intersection / smallv
 
 
-def compute_dvars(datat):
+def compute_dvars(
+    *,
+    datat,
+    remove_zerovariance=True,
+    variance_tol=1e-7,
+):
     """Compute standard DVARS.
 
     Parameters
@@ -239,11 +244,52 @@ def compute_dvars(datat):
     :obj:`numpy.ndarray`
         The calculated DVARS array.
         A (timepoints,) array.
+    :obj:`numpy.ndarray`
+        The calculated standardized DVARS array.
+        A (timepoints,) array.
     """
-    firstcolumn = np.zeros((datat.shape[0]))[..., None]
-    datax = np.hstack((firstcolumn, np.diff(datat)))
-    datax_ss = np.sum(np.square(datax), axis=0) / datat.shape[0]
-    return np.sqrt(datax_ss)
+    from nipype.algorithms.confounds import _AR_est_YW, regress_poly
+
+    # Robust standard deviation (we are using "lower" interpolation because this is what FSL does
+    try:
+        func_sd = (
+            np.percentile(datat, 75, axis=1, method="lower")
+            - np.percentile(datat, 25, axis=1, method="lower")
+        ) / 1.349
+    except TypeError:  # NP < 1.22
+        func_sd = (
+            np.percentile(datat, 75, axis=1, interpolation="lower")
+            - np.percentile(datat, 25, axis=1, interpolation="lower")
+        ) / 1.349
+
+    if remove_zerovariance:
+        zero_variance_voxels = func_sd > variance_tol
+        datat = datat[zero_variance_voxels, :]
+        func_sd = func_sd[zero_variance_voxels]
+
+    # Compute (non-robust) estimate of lag-1 autocorrelation
+    temp_data = regress_poly(0, datat, remove_mean=True)[0].astype(np.float32)
+
+    ar1 = np.apply_along_axis(_AR_est_YW, 1, temp_data, 1)
+
+    # Compute (predicted) standard deviation of temporal difference time series
+    diff_sdhat = np.squeeze(np.sqrt(((1 - ar1) * 2).tolist())) * func_sd
+    diff_sd_mean = diff_sdhat.mean()
+
+    # Compute temporal difference time series
+    func_diff = np.diff(datat, axis=1)
+
+    # DVARS (no standardization)
+    dvars_nstd = np.sqrt(np.square(func_diff).mean(axis=0))
+
+    # standardization
+    dvars_stdz = dvars_nstd / diff_sd_mean
+
+    # Insert 0 at the beginning (fMRIPrep would add a NaN here)
+    dvars_nstd = np.insert(dvars_nstd, 0, 0)
+    dvars_stdz = np.insert(dvars_stdz, 0, 0)
+
+    return dvars_nstd, dvars_stdz
 
 
 def make_dcan_qc_file(filtered_motion, TR):

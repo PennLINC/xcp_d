@@ -332,23 +332,14 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
 @fill_doc
 def denoise_with_nilearn(
     preprocessed_bold,
-    confounds_file,
-    temporal_mask,
+    confounds,
+    sample_mask,
     low_pass,
     high_pass,
     filter_order,
     TR,
 ):
     """Denoise an array with Nilearn.
-
-    This function is a modified version of Nilearn's signal.clean function, with the following
-    changes:
-
-    1.  Use :func:`numpy.linalg.lstsq` to estimate betas, instead of QR decomposition,
-        in order to denoise the interpolated data as well.
-    2.  Set any leading or trailing high-motion volumes to the closest low-motion volume's values
-        instead of disabling extrapolation.
-    3.  Return denoised, interpolated data.
 
     This function does the following:
 
@@ -366,39 +357,51 @@ def denoise_with_nilearn(
     preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
         Preprocessed BOLD data, after dummy volume removal,
         but without any additional censoring.
-    confounds_file : :obj:`str` or None
-        Path to TSV file containing selected confounds, after dummy volume removal,
+    confounds : :obj:`pandas.DataFrame` of shape (T, C) or None
+        DataFrame containing selected confounds, after dummy volume removal,
         but without any additional censoring.
         May be None, if no denoising should be performed.
-    %(temporal_mask)s
-    low_pass, high_pass : float
+    sample_mask : :obj:`numpy.ndarray` of shape (T,)
+        Low-motion volumes are True and high-motion volumes are False.
+    low_pass, high_pass : :obj:`float`
         Low-pass and high-pass thresholds, in Hertz.
         If 0, that bound will be skipped
         (e.g., if low-pass is 0 and high-pass isn't,
         then high-pass filtering will be performed instead of bnadpass filtering).
-    filter_order : int
+    filter_order : :obj:`int`
         Filter order.
     %(TR)s
 
     Returns
     -------
-    denoised_interpolated_bold
-        Returned as a :obj:`numpy.ndarray` of shape (T, S)
+    denoised_interpolated_bold : :obj:`numpy.ndarray` of shape (T, S)
+        The denoised, interpolated data.
 
     Notes
     -----
-    This step only removes high-motion outliers in this step (not the random volumes for trimming).
+    This step only removes high-motion outliers (not the random volumes for trimming).
 
     The denoising method is designed to follow recommendations from
     :footcite:t:`lindquist2019modular`.
     The method is largely equivalent to Lindquist et al.'s HPMC with orthogonalization.
 
+    This function is a modified version of Nilearn's :func:`~nilearn.signal.clean` function,
+    with the following changes:
+
+    1.  Use :func:`numpy.linalg.lstsq` to estimate betas, instead of QR decomposition,
+        in order to denoise the interpolated data as well.
+    2.  Set any leading or trailing high-motion volumes to the closest low-motion volume's values
+        instead of disabling extrapolation.
+    3.  Return denoised, interpolated data.
+
     References
     ----------
     .. footbibliography::
     """
-    import pandas as pd
     from nilearn.signal import butterworth, standardize_signal
+
+    # Don't want to modify the input arrays
+    preprocessed_bold = preprocessed_bold.copy()
 
     n_volumes = preprocessed_bold.shape[0]
 
@@ -406,33 +409,17 @@ def denoise_with_nilearn(
     low_pass = low_pass if low_pass != 0 else None
     high_pass = high_pass if high_pass != 0 else None
 
-    censoring_df = pd.read_table(temporal_mask)
-    if censoring_df.shape[0] != n_volumes:
-        raise ValueError(
-            f"Temporal mask file has {censoring_df.shape[0]} rows, "
-            f"but BOLD data has {n_volumes} volumes."
-        )
-
-    # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-    sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
     outlier_idx = list(np.where(~sample_mask)[0])
 
     # Determine which steps to apply
-    detrend_and_denoise = bool(confounds_file)
+    detrend_and_denoise = confounds is not None
     censor_and_interpolate = bool(outlier_idx)
 
     if detrend_and_denoise:
-        confounds_df = pd.read_table(confounds_file)
-        confounds_arr = confounds_df.to_numpy()
-        if confounds_arr.shape[0] != n_volumes:
-            raise ValueError(
-                f"Confounds file has {confounds_arr.shape[0]} rows, "
-                f"but BOLD data has {n_volumes} volumes."
-            )
+        confounds_arr = confounds.to_numpy().copy()
 
     if censor_and_interpolate:
-        # Replace high-motion volumes in the BOLD data and confounds with cubic-spline interpolated
-        # values.
+        # Replace high-motion volumes in the BOLD data and confounds with interpolated values.
         preprocessed_bold = _interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
         if detrend_and_denoise:
             confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
