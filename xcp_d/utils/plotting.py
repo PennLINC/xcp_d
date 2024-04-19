@@ -531,8 +531,8 @@ def plot_fmri_es(
     preprocessed_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     denoised_interpolated_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
 
-    preprocessed_dvars = compute_dvars(preprocessed_arr)
-    denoised_interpolated_dvars = compute_dvars(denoised_interpolated_arr)
+    preprocessed_dvars = compute_dvars(datat=preprocessed_arr)[1]
+    denoised_interpolated_dvars = compute_dvars(datat=denoised_interpolated_arr)[1]
 
     if preprocessed_arr.shape != denoised_interpolated_arr.shape:
         raise ValueError(
