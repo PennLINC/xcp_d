@@ -1,5 +1,43 @@
 # What's New
 
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## 0.7.1
+
+This release prepares for the XCP-D manuscript.
+
+### 🛠 Breaking Changes
+
+* Change default `--min-time` from 100 to 240 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1115
+
+### 🎉 Exciting New Features
+
+* Add `--bids-database-dir` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1116
+* Ignore subcortical figures and plot FOV center of reference brains in executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1145
+
+### 🐛 Bug Fixes
+
+* Modify metadata and boilerplate to reflect updated motion filter parameters by @tsalo in https://github.com/PennLINC/xcp_d/pull/1114
+* Add "subject" to native-space surface query by @tsalo in https://github.com/PennLINC/xcp_d/pull/1118
+* Stop using `config.nipype.memory_gb` as memory limit in workflow nodes by @tsalo in https://github.com/PennLINC/xcp_d/pull/1122
+* Pin dependencies to fix RTD build by @tsalo in https://github.com/PennLINC/xcp_d/pull/1136
+* Fix adjacency matrix for CIFTI ReHo by @tsalo in https://github.com/PennLINC/xcp_d/pull/1120
+* Use run-specific cwd for UK Biobank ingression interface by @tsalo in https://github.com/PennLINC/xcp_d/pull/1137
+* Add third config to BIDSLayout that defines cohort entity by @tsalo in https://github.com/PennLINC/xcp_d/pull/1143
+* Use standardized DVARS from Nipype by @tsalo in https://github.com/PennLINC/xcp_d/pull/1135
+
+### Other Changes
+
+* Adopt Nipreps-style Config object by @tsalo in https://github.com/PennLINC/xcp_d/pull/1040
+* Use pytest-env to capture warnings on CI runs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1107
+* Convert coverage values to float32 to address pandas warning by @tsalo in https://github.com/PennLINC/xcp_d/pull/1112
+* Only describe the atlases selected by the user by @tsalo in https://github.com/PennLINC/xcp_d/pull/1126
+* Fix API documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1144
+* Improve denoising tests by @tsalo in https://github.com/PennLINC/xcp_d/pull/1146
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.0...0.7.1
+
+
 ## 0.7.0
 
 This is a large, backwards-incompatible release.
