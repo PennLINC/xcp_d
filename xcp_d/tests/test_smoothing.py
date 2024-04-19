@@ -7,7 +7,7 @@ import tempfile
 import numpy as np
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
-from pkg_resources import resource_filename as pkgrf
+from xcp_d.data import load as load_data
 
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.utils.utils import fwhm2sigma
@@ -81,13 +81,11 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)
     tmpdir = tmp_path_factory.mktemp("test_smoothing_cifti")
     in_file = ds001419_data["cifti_file"]
     # pull out atlases for each hemisphere
-    right_surf = pkgrf(
-        "xcp_d",
-        "data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii",
+    right_surf = load_data(
+        "ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii",
     )
-    left_surf = pkgrf(
-        "xcp_d",
-        "data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii",
+    left_surf = load_data(
+        "ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii",
     )
 
     # Estimate the smoothness of the unsmoothed file

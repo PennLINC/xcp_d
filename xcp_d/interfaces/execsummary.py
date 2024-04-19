@@ -18,7 +18,7 @@ from nipype.interfaces.base import (
     TraitedSpec,
 )
 from PIL import Image
-from pkg_resources import resource_filename as pkgrf
+from xcp_d.data import load as load_data
 
 from xcp_d.utils.filemanip import fname_presuffix
 
@@ -310,7 +310,7 @@ class ExecutiveSummary(object):
                     "LaTeX",
                     f"""<pre>{text}</pre>
 <h3>Bibliography</h3>
-<pre>{Path(pkgrf("xcp_d", "data/boilerplate.bib")).read_text()}</pre>
+<pre>{Path(load_data("boilerplate.bib")).read_text()}</pre>
 """,
                 )
             )
@@ -319,7 +319,7 @@ class ExecutiveSummary(object):
         def include_file(name):
             return Markup(loader.get_source(environment, name)[0])
 
-        template_folder = pkgrf("xcp_d", "/data/executive_summary_templates/")
+        template_folder = load_data("executive_summary_templates/")
         loader = FileSystemLoader(template_folder)
         environment = Environment(loader=loader)
         environment.filters["basename"] = os.path.basename
