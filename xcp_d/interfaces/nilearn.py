@@ -2,6 +2,7 @@
 
 import os
 
+import pandas as pd
 from nilearn import masking
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -294,11 +295,31 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
 
         # Transpose from SxT (xcpd order) to TxS (nilearn order)
         preprocessed_bold_arr = preprocessed_bold_arr.T
+        n_volumes = preprocessed_bold_arr.shape[0]
+
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        if censoring_df.shape[0] != n_volumes:
+            raise ValueError(
+                f"Temporal mask file has {censoring_df.shape[0]} rows, "
+                f"but BOLD data has {n_volumes} volumes."
+            )
+
+        # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
+        sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
+
+        confounds_df = None
+        if self.inputs.confounds_file:
+            confounds_df = pd.read_table(self.inputs.confounds_file)
+            if confounds_df.shape[0] != n_volumes:
+                raise ValueError(
+                    f"Confounds file has {confounds_df.shape[0]} rows, "
+                    f"but BOLD data has {n_volumes} volumes."
+                )
 
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
-            confounds_file=self.inputs.confounds_file,
-            temporal_mask=self.inputs.temporal_mask,
+            confounds=confounds_df,
+            sample_mask=sample_mask,
             low_pass=low_pass,
             high_pass=high_pass,
             filter_order=self.inputs.filter_order,
@@ -350,11 +371,31 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             imgs=self.inputs.preprocessed_bold,
             mask_img=self.inputs.mask,
         )
+        n_volumes = preprocessed_bold_arr.shape[0]
+
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        if censoring_df.shape[0] != n_volumes:
+            raise ValueError(
+                f"Temporal mask file has {censoring_df.shape[0]} rows, "
+                f"but BOLD data has {n_volumes} volumes."
+            )
+
+        # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
+        sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
+
+        confounds_df = None
+        if self.inputs.confounds_file:
+            confounds_df = pd.read_table(self.inputs.confounds_file)
+            if confounds_df.shape[0] != n_volumes:
+                raise ValueError(
+                    f"Confounds file has {confounds_df.shape[0]} rows, "
+                    f"but BOLD data has {n_volumes} volumes."
+                )
 
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
-            confounds_file=self.inputs.confounds_file,
-            temporal_mask=self.inputs.temporal_mask,
+            confounds=confounds_df,
+            sample_mask=sample_mask,
             low_pass=low_pass,
             high_pass=high_pass,
             filter_order=self.inputs.filter_order,
