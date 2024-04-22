@@ -13,8 +13,8 @@ import re
 import nibabel as nb
 import pandas as pd
 from nipype import logging
-from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
     collect_anatomical_files,
     collect_hcp_confounds,
@@ -195,15 +195,15 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     os.makedirs(work_dir, exist_ok=True)
 
     # Get masks to be used to extract confounds
-    csf_mask = pkgrf("xcp_d", f"/data/masks/{volspace_ent}_{RES_ENT}_label-CSF_mask.nii.gz")
-    wm_mask = pkgrf("xcp_d", f"/data/masks/{volspace_ent}_{RES_ENT}_label-WM_mask.nii.gz")
+    csf_mask = str(load_data(f"masks/{volspace_ent}_{RES_ENT}_label-CSF_mask.nii.gz"))
+    wm_mask = str(load_data(f"masks/{volspace_ent}_{RES_ENT}_label-WM_mask.nii.gz"))
 
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
 
     # The identity xform is used in place of any actual ones.
-    identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
+    identity_xfm = str(load_data("transform/itkIdentityTransform.txt"))
     copy_dictionary[identity_xfm] = []
 
     t1w_to_template_fmriprep = os.path.join(

@@ -54,9 +54,9 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     Only used for QCReport in init_postprocess_nifti_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
@@ -94,9 +94,10 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
 
     elif bold_space == "MNIInfant":
         # MNIInfant --> MNI152NLin2009cAsym
-        MNIInfant_to_MNI152NLin2009cAsym = pkgrf(
-            "xcp_d",
-            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        MNIInfant_to_MNI152NLin2009cAsym = str(
+            load_data(
+                "transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+            )
         )
         xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
         xforms_to_MNI_invert = [False]
@@ -160,9 +161,9 @@ def get_std2bold_xfms(bold_file):
     """
     import os
 
-    from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
@@ -190,9 +191,10 @@ def get_std2bold_xfms(bold_file):
 
     elif bold_space == "MNIInfant":
         # NLin6 --> NLin2009c --> MNIInfant
-        MNI152NLin2009cAsym_to_MNI152Infant = pkgrf(
-            "xcp_d",
-            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        MNI152NLin2009cAsym_to_MNI152Infant = str(
+            load_data(
+                "transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+            )
         )
         transform_list = [
             MNI152NLin2009cAsym_to_MNI152Infant,

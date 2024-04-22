@@ -632,10 +632,11 @@ def download_example_data(out_dir=None, overwrite=False):
     import tarfile
 
     import requests
-    from pkg_resources import resource_filename as pkgrf
+
+    from xcp_d.data import load as load_data
 
     if not out_dir:
-        out_dir = pkgrf("xcp_d", "data")
+        out_dir = str(load_data("."))
 
     out_dir = os.path.abspath(out_dir)
 
