@@ -128,9 +128,9 @@ input_type : {"fmriprep", "dcan", "hcp", "nibabies", "ukb"}
 """
 
 docdict[
-    "dcan_qc"
+    "abcc_qc"
 ] = """
-dcan_qc : :obj:`bool`
+abcc_qc : :obj:`bool`
     This flag determines if DCAN-related QC steps will be taken.
     Enabling this flag will trigger the following steps:
 

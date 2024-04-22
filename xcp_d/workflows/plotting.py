@@ -12,7 +12,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.qcmetrics import make_dcan_qc_file
+from xcp_d.utils.qcmetrics import make_abcc_qc_file
 from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
 
 
@@ -55,7 +55,7 @@ def init_qc_report_wf(
         Used for carpet plots.
     %(denoised_interpolated_bold)s
         Used for DCAN carpet plots.
-        Only used if dcan_qc is True.
+        Only used if abcc_qc is True.
     %(censored_denoised_bold)s
         Used for LINC carpet plots.
     %(boldref)s
@@ -80,7 +80,7 @@ def init_qc_report_wf(
     output_dir = config.execution.xcp_d_dir
     params = config.workflow.params
     file_format = config.workflow.file_format
-    dcan_qc = config.workflow.dcan_qc
+    abcc_qc = config.workflow.abcc_qc
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -308,24 +308,24 @@ def init_qc_report_wf(
     ])
     # fmt:on
 
-    if dcan_qc:
-        make_dcan_qc_file_node = pe.Node(
+    if abcc_qc:
+        make_abcc_qc_file_node = pe.Node(
             Function(
                 input_names=["filtered_motion", "TR"],
                 output_names=["dcan_df_file"],
-                function=make_dcan_qc_file,
+                function=make_abcc_qc_file,
             ),
-            name="make_dcan_qc_file_node",
+            name="make_abcc_qc_file_node",
         )
-        make_dcan_qc_file_node.inputs.TR = TR
+        make_abcc_qc_file_node.inputs.TR = TR
 
         # fmt:off
         workflow.connect([
-            (inputnode, make_dcan_qc_file_node, [("filtered_motion", "filtered_motion")]),
+            (inputnode, make_abcc_qc_file_node, [("filtered_motion", "filtered_motion")]),
         ])
         # fmt:on
 
-        ds_dcan_qc = pe.Node(
+        ds_abcc_qc = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 datatype="func",
@@ -333,14 +333,14 @@ def init_qc_report_wf(
                 suffix="qc",
                 extension="hdf5",
             ),
-            name="ds_dcan_qc",
+            name="ds_abcc_qc",
             run_without_submitting=True,
         )
 
         # fmt:off
         workflow.connect([
-            (inputnode, ds_dcan_qc, [("name_source", "source_file")]),
-            (make_dcan_qc_file_node, ds_dcan_qc, [("dcan_df_file", "in_file")]),
+            (inputnode, ds_abcc_qc, [("name_source", "source_file")]),
+            (make_abcc_qc_file_node, ds_abcc_qc, [("dcan_df_file", "in_file")]),
         ])
         # fmt:on
 

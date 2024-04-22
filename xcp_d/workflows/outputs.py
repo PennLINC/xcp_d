@@ -208,7 +208,7 @@ def init_postproc_derivatives_wf(
     params = config.workflow.params
     atlases = config.execution.atlases
     file_format = config.workflow.file_format
-    dcan_qc = config.workflow.dcan_qc
+    abcc_qc = config.workflow.abcc_qc
     output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
@@ -434,7 +434,7 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    if dcan_qc and (fd_thresh > 0):
+    if abcc_qc and (fd_thresh > 0):
         ds_interpolated_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,

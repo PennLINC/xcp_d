@@ -353,7 +353,7 @@ to 1mm FD in 0.01 steps.
    xcp_d/
       sub-<label>/[ses-<label>/]
          func/
-            <source_entities>_desc-dcan_qc.hdf5
+            <source_entities>_desc-abcc_qc.hdf5
 
 These files have the following keys:
 

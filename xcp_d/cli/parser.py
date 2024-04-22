@@ -622,16 +622,16 @@ This will create the NiPreps-style HTML report and calculate QC metrics from the
 
     g_linc = parser.add_argument_group("linc mode options")
     g_linc.add_argument(
-        "--dcan-qc",
-        "--dcan_qc",
+        "--abcc-qc",
+        "--abcc_qc",
         action="store_true",
         default=None,
-        dest="dcan_qc",
+        dest="abcc_qc",
         help="""\
-Run DCAN QC.
+Run ABCC QC.
 
 This will create the DCAN executive summary, including a brainsprite visualization of the
-anatomical tissue segmentation, and an HDF5 file containing motion thresholds.
+anatomical tissue segmentation, and an HDF5 file containing motion levels at different thresholds.
 """,
     )
 
@@ -971,7 +971,7 @@ def _validate_parameters(opts, build_log, parser):
     if opts.mode in ("abcd", "hbcd"):
         opts.file_format = "cifti" if opts.file_format == "auto" else opts.file_format
         opts.despike = False if opts.despike is None else opts.despike
-        opts.dcan_qc = True
+        opts.abcc_qc = True
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
         if opts.motion_filter_type is None:

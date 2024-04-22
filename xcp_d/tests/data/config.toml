@@ -52,7 +52,7 @@ atlases = []
 min_coverage = 0.5
 dcan_correlation_lengths = []
 process_surfaces = false
-dcan_qc = false
+abcc_qc = false
 
 [nipype]
 crashfile_format = "txt"

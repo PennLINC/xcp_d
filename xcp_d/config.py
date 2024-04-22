@@ -564,7 +564,7 @@ class workflow(_Config):
     """Produce correlation matrices limited to each requested amount of time."""
     process_surfaces = False
     """Warp FreeSurfer's surfaces to the MNI space."""
-    dcan_qc = True
+    abcc_qc = True
     """Run DCAN QC."""
 
     @classmethod

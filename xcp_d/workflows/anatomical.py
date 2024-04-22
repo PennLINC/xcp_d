@@ -371,7 +371,7 @@ def init_postprocess_surfaces_wf(
     workflow = Workflow(name=name)
 
     fmri_dir = config.execution.fmri_dir
-    dcan_qc = config.workflow.dcan_qc
+    abcc_qc = config.workflow.abcc_qc
     process_surfaces = config.workflow.process_surfaces
     output_dir = config.execution.xcp_d_dir
     omp_nthreads = config.nipype.omp_nthreads
@@ -399,7 +399,7 @@ def init_postprocess_surfaces_wf(
     )
     workflow.__desc__ = ""
 
-    if dcan_qc and mesh_available:
+    if abcc_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             t1w_available=t1w_available,
@@ -528,7 +528,7 @@ def init_postprocess_surfaces_wf(
         ])
         # fmt:on
 
-        if dcan_qc:
+        if abcc_qc:
             # Use standard-space T1w and surfaces for brainsprite.
             # fmt:off
             workflow.connect([

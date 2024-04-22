@@ -299,7 +299,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
         load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
 
-    if config.workflow.process_surfaces or (config.workflow.dcan_qc and mesh_available):
+    if config.workflow.process_surfaces or (config.workflow.abcc_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(

@@ -47,7 +47,7 @@ def base_opts():
         "custom_confounds": None,
         "dcan_correlation_lengths": "none",
         "despike": False,
-        "dcan_qc": False,
+        "abcc_qc": False,
         "combineruns": False,
     }
     opts = FakeOptions(**opts_dict)

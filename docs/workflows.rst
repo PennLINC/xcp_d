@@ -43,9 +43,9 @@ Required Parameters
 Optional Parameters
 -------------------
 
--  ``--dcan-qc``: By default, XCP-D will not create the DCAN executive summary or QC file when run
+-  ``--abcc-qc``: By default, XCP-D will not create the DCAN executive summary or QC file when run
    in the ``linc`` mode.
-   If you would like to create these files, you must include the ``--dcan-qc`` flag.
+   If you would like to create these files, you must include the ``--abcc-qc`` flag.
 
 Prohibited Parameters
 ---------------------

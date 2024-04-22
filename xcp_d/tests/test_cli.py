@@ -137,7 +137,6 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
-        "--skip-dcan-qc",
         "--min-coverage=0.1",
         "--random-seed=8675309",
         "--min-time=100",
@@ -304,7 +303,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--min-time=20",
         "--dummy-scans=1",
         f"--custom_confounds={custom_confounds_dir}",
-        "--dcan-qc",
+        "--abcc-qc",
     ]
 
     _run_and_generate(

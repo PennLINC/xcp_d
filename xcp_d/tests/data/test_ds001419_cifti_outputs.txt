@@ -69,12 +69,12 @@ sub-01/anat
 sub-01/anat/sub-01_space-MNI152NLin2009cAsym_desc-preproc_T1w.nii.gz
 sub-01/anat/sub-01_space-MNI152NLin2009cAsym_dseg.nii.gz
 sub-01/func
-sub-01/func/sub-01_task-imagery_desc-dcan_qc.hdf5
+sub-01/func/sub-01_task-imagery_desc-abcc_qc.hdf5
 sub-01/func/sub-01_task-imagery_desc-filtered_motion.json
 sub-01/func/sub-01_task-imagery_desc-filtered_motion.tsv
 sub-01/func/sub-01_task-imagery_outliers.json
 sub-01/func/sub-01_task-imagery_outliers.tsv
-sub-01/func/sub-01_task-imagery_run-01_desc-dcan_qc.hdf5
+sub-01/func/sub-01_task-imagery_run-01_desc-abcc_qc.hdf5
 sub-01/func/sub-01_task-imagery_run-01_desc-filtered_motion.json
 sub-01/func/sub-01_task-imagery_run-01_desc-filtered_motion.tsv
 sub-01/func/sub-01_task-imagery_run-01_design.json
@@ -332,7 +332,7 @@ sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-Tian_stat-pearsoncorrelati
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-Tian_stat-pearsoncorrelation_relmat.tsv
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-Tian_stat-reho_bold.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-Tian_stat-reho_bold.tsv
-sub-01/func/sub-01_task-imagery_run-02_desc-dcan_qc.hdf5
+sub-01/func/sub-01_task-imagery_run-02_desc-abcc_qc.hdf5
 sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.json
 sub-01/func/sub-01_task-imagery_run-02_desc-filtered_motion.tsv
 sub-01/func/sub-01_task-imagery_run-02_design.json
