@@ -1,11 +1,9 @@
 """Test functions in xcp_d.utils.utils."""
 
-import os
-
 import numpy as np
 import pandas as pd
 import pytest
-from nilearn import masking
+from scipy import signal, stats
 
 from xcp_d.utils import utils
 
@@ -48,101 +46,230 @@ def test_butter_bandpass():
         )
 
 
-def test_denoise_with_nilearn(ds001419_data, tmp_path_factory):
+def test_denoise_with_nilearn():
     """Test xcp_d.utils.utils.denoise_with_nilearn."""
-    tmpdir = tmp_path_factory.mktemp("test_denoise_with_nilearn")
-
     high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
 
-    preprocessed_bold = ds001419_data["nifti_file"]
-    confounds_file = ds001419_data["confounds_file"]
-    bold_mask = ds001419_data["brain_mask_file"]
+    n_voxels, n_volumes, n_signals, n_confounds = 100, 10000, 2, 5
 
-    preprocessed_bold_arr = masking.apply_mask(preprocessed_bold, bold_mask)
-    # Reduce the size of the data for the test
-    preprocessed_bold_arr = preprocessed_bold_arr[:, ::3]
-    n_volumes, n_voxels = preprocessed_bold_arr.shape
+    data_arr = np.zeros((n_volumes, n_voxels))
 
-    # Select some confounds to use for denoising
-    confounds_df = pd.read_table(confounds_file)
-    reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
-    reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
+    # Create signals and add them to the data
+    rng = np.random.default_rng(0)
+    signal_timeseries = rng.standard_normal(size=(n_volumes, n_signals))
+    signal_timeseries = signal.detrend(signal_timeseries, axis=0)
+    signal_timeseries = stats.zscore(signal_timeseries, axis=0)
+    signal_weights = rng.standard_normal(size=(n_signals, n_voxels))
 
-    # Create the censoring file
-    censoring_df = confounds_df[["framewise_displacement"]].copy()
-    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
-    n_censored_volumes = censoring_df["framewise_displacement"].sum()
-    assert n_censored_volumes > 0
-    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    for i_signal in range(n_signals):
+        # The first n_signals voxels are only affected by the corresponding signal
+        signal_weights[:, i_signal] = 0
+        signal_weights[i_signal, i_signal] = 1
 
-    # First, try out filtering
-    denoised_interpolated_bold = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=reduced_confounds_file,
-        temporal_mask=temporal_mask,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        filter_order=filter_order,
-        TR=TR,
+    signal_arr = np.dot(signal_timeseries, signal_weights)
+    data_arr += signal_arr
+
+    # Check that signals are present in the "raw" data
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.01)
+
+    # Create confounds and add them to the data
+    rng = np.random.default_rng(1)
+    confound_timeseries = rng.standard_normal(size=(n_volumes, n_confounds))
+    confound_timeseries = signal.detrend(confound_timeseries, axis=0)
+
+    # Orthogonalize the confound_timeseries w.r.t. the signal_timeseries
+    signal_betas = np.linalg.lstsq(signal_timeseries, confound_timeseries, rcond=None)[0]
+    pred_confound_timeseries = np.dot(signal_timeseries, signal_betas)
+    confound_timeseries = confound_timeseries - pred_confound_timeseries
+
+    confound_timeseries = stats.zscore(confound_timeseries, axis=0)
+    confound_weights = rng.standard_normal(size=(n_confounds, n_voxels))
+    for i_confound in range(n_confounds):
+        # The first n_confounds + n_signals voxels are only affected by the corresponding confound
+        confound_weights[:, i_confound + n_signals] = 0
+        confound_weights[i_confound, i_confound + n_signals] = 1
+
+    confound_arr = np.dot(confound_timeseries, confound_weights)
+    data_arr += confound_arr
+    confounds_df = pd.DataFrame(
+        confound_timeseries,
+        columns=[f"confound_{i}" for i in range(n_confounds)],
     )
-    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+
+    # Check that signals are present in the "raw" data at this point
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.01)
+
+    # Now add trends
+    rng = np.random.default_rng(2)
+    trend = np.arange(n_volumes).astype(np.float32)
+    trend -= trend.mean()
+    trend_weights = rng.standard_normal(size=(1, n_voxels))
+    data_arr += np.dot(trend[:, np.newaxis], trend_weights)
+    orig_data_arr = data_arr.copy()
+    orig_signal_timeseries = signal_timeseries.copy()
+
+    # Check that signals are still present
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.01)
+
+    # Check that censoring doesn't cause any obvious problems
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[10:20] = False
+    sample_mask[150:160] = False
+    _check_signal(data_arr, signal_timeseries, sample_mask, atol=0.01)
+
+    # First, try out filtering without censoring or denoising
+    params = {
+        "confounds": None,
+        "sample_mask": np.ones(n_volumes, dtype=bool),
+        "low_pass": low_pass,
+        "high_pass": high_pass,
+        "filter_order": filter_order,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+    assert not np.allclose(out_arr, data_arr)  # data aren't modified
 
     # Now, no filtering (censoring + denoising + interpolation)
-    denoised_interpolated_bold = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=reduced_confounds_file,
-        temporal_mask=temporal_mask,
-        low_pass=None,
-        high_pass=None,
-        filter_order=None,
-        TR=TR,
-    )
-    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+    # With 10000 volumes, censoring shouldn't have much impact on the betas
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[10:20] = False
+    sample_mask[150:160] = False
+    params = {
+        "confounds": confounds_df,
+        "sample_mask": sample_mask,
+        "low_pass": None,
+        "high_pass": None,
+        "filter_order": 0,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
 
-    # Finally, run without denoising (censoring + interpolation + filtering)
-    denoised_interpolated_bold = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=None,
-        temporal_mask=temporal_mask,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        filter_order=filter_order,
-        TR=TR,
-    )
-    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+    assert np.array_equal(data_arr, orig_data_arr)
+    assert np.array_equal(signal_timeseries, orig_signal_timeseries)
+    _check_trend(out_arr, trend, sample_mask)
+    _check_confounds(out_arr, confound_timeseries, sample_mask)
+    _check_signal(data_arr, signal_timeseries, sample_mask)
+    _check_signal(out_arr, signal_timeseries, sample_mask)
+
+    # Denoise without censoring or filtering
+    params = {
+        "confounds": confounds_df,
+        "sample_mask": np.ones(n_volumes, dtype=bool),
+        "low_pass": None,
+        "high_pass": None,
+        "filter_order": 0,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+    assert not np.allclose(out_arr, data_arr)  # data aren't modified
+    _check_trend(out_arr, trend, sample_mask)
+    _check_confounds(out_arr, confound_timeseries, sample_mask)
+    _check_signal(data_arr, signal_timeseries, sample_mask)
+    _check_signal(out_arr, signal_timeseries, sample_mask)
+
+    # Run without denoising (censoring + interpolation + filtering)
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[10:20] = False
+    sample_mask[150:160] = False
+    params = {
+        "confounds": None,
+        "sample_mask": sample_mask,
+        "low_pass": low_pass,
+        "high_pass": high_pass,
+        "filter_order": filter_order,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+    assert not np.allclose(out_arr, data_arr)  # data aren't modified
+
+    # signals were retained
+    _check_signal(data_arr, signal_timeseries, sample_mask)
+    # XXX: I don't like how high the atol is here, but it's not terrible
+    filtered_signals = utils.denoise_with_nilearn(preprocessed_bold=signal_timeseries, **params)
+    _check_signal(out_arr, filtered_signals, sample_mask, atol=0.06)
 
     # Ensure that interpolation + filtering doesn't cause problems at beginning/end of scan
     # Create an updated censoring file with outliers at first and last two volumes
-    censoring_df = confounds_df[["framewise_displacement"]].copy()
-    censoring_df.loc[:, "framewise_displacement"] = False
-    censoring_df.loc[:1, "framewise_displacement"] = True
-    censoring_df.loc[58:, "framewise_displacement"] = True
-    n_censored_volumes = censoring_df["framewise_displacement"].sum()
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[:2] = False
+    sample_mask[-2:] = False
+    n_censored_volumes = np.sum(~sample_mask)
     assert n_censored_volumes == 4
-    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
     # Run without denoising or filtering (censoring + interpolation only)
-    denoised_interpolated_bold = utils.denoise_with_nilearn(
-        preprocessed_bold=preprocessed_bold_arr,
-        confounds_file=None,
-        temporal_mask=temporal_mask,
-        low_pass=None,
-        high_pass=None,
-        filter_order=0,
-        TR=TR,
-    )
-    assert denoised_interpolated_bold.shape == (n_volumes, n_voxels)
+    params = {
+        "confounds": None,
+        "sample_mask": sample_mask,
+        "low_pass": None,
+        "high_pass": None,
+        "filter_order": 0,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+    assert not np.allclose(out_arr, data_arr)  # data aren't modified
     # The first two volumes should be the same as the third (first non-outlier) volume
-    assert np.allclose(denoised_interpolated_bold[0, :], denoised_interpolated_bold[2, :])
-    assert np.allclose(denoised_interpolated_bold[1, :], denoised_interpolated_bold[2, :])
-    assert not np.allclose(denoised_interpolated_bold[2, :], denoised_interpolated_bold[3, :])
+    assert np.allclose(out_arr[0, :], out_arr[2, :])
+    assert np.allclose(out_arr[1, :], out_arr[2, :])
+    assert not np.allclose(out_arr[2, :], out_arr[3, :])
     # The last volume should be the same as the third-to-last (last non-outlier) volume
-    assert np.allclose(denoised_interpolated_bold[-1, :], denoised_interpolated_bold[-3, :])
-    assert np.allclose(denoised_interpolated_bold[-2, :], denoised_interpolated_bold[-3, :])
-    assert not np.allclose(denoised_interpolated_bold[-3, :], denoised_interpolated_bold[-4, :])
+    assert np.allclose(out_arr[-1, :], out_arr[-3, :])
+    assert np.allclose(out_arr[-2, :], out_arr[-3, :])
+    assert not np.allclose(out_arr[-3, :], out_arr[-4, :])
+
+    # signals were retained
+    filtered_signals = utils.denoise_with_nilearn(preprocessed_bold=signal_timeseries, **params)
+
+    _check_signal(data_arr, signal_timeseries, sample_mask)
+    _check_signal(out_arr, filtered_signals, sample_mask)
+
+
+def _check_trend(data, trend, sample_mask, atol=0.01):
+    """Ensure that the trend was removed by the denoising process."""
+    trend_corr = np.corrcoef(trend[sample_mask], data[sample_mask, :].T)[0, 1:]
+    assert all(np.abs(trend_corr) < atol)
+
+
+def _check_confounds(data, confounds, sample_mask, atol=0.01):
+    """Ensure that confounds were removed by the denoising process."""
+    for i_confound in range(confounds.shape[1]):
+        confound_corr = np.corrcoef(
+            confounds[sample_mask, i_confound],
+            data[sample_mask, :].T,
+        )[0, 1:]
+        assert all(np.abs(confound_corr) < atol)
+
+
+def _check_signal(data, signals, sample_mask, atol=0.001):
+    """Ensure that signals were retained by the denoising process."""
+    signal_betas = []
+
+    # Add constant and linear trend
+    dm = np.hstack(
+        (
+            signals,
+            np.ones((signals.shape[0], 1)),
+            np.arange(signals.shape[0])[:, np.newaxis],
+        ),
+    )
+    dm = dm[sample_mask, :]
+    for i_signal in range(signals.shape[1]):
+        res = np.linalg.lstsq(
+            dm,
+            data[sample_mask, i_signal][:, np.newaxis],
+            rcond=None,
+        )
+        signal_beta = res[0][i_signal]
+        signal_betas.append(signal_beta)
+
+    assert np.allclose(signal_betas, 1.0, atol=atol)
 
 
 def test_list_to_str():

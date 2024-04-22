@@ -88,7 +88,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
         name="outputnode",
     )
 
-    # get atlases via pkgrf
+    # get atlases via load_data
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas"],
@@ -318,7 +318,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
         return workflow
 
-    # Get CIFTI atlases via pkgrf
+    # Get CIFTI atlases via load_data
     atlas_file_grabber = pe.MapNode(
         Function(
             input_names=["atlas"],
