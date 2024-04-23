@@ -693,7 +693,6 @@ def parse_args(args=None, namespace=None):
     import logging
 
     parser = _build_parser()
-
     opts = parser.parse_args(args, namespace)
     if opts.config_file:
         skip = {} if opts.reports_only else {"execution": ("run_uuid",)}
