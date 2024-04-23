@@ -348,6 +348,7 @@ def test_nibabies(data_dir, output_dir, working_dir):
         "--smoothing=0",
         "--fd-thresh=0",
         "--create-matrices=none",
+        "--motion-filter-type=none",
     ]
     _run_and_generate(
         test_name=test_name,

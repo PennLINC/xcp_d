@@ -329,7 +329,7 @@ def init_qc_report_wf(
             DerivativesDataSink(
                 base_directory=output_dir,
                 datatype="func",
-                desc="dcan",
+                desc="abcc",
                 suffix="qc",
                 extension="hdf5",
             ),
