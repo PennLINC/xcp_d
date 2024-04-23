@@ -23,7 +23,7 @@ def main():
         write_dataset_description,
     )
 
-    parse_args()
+    parse_args(args=sys.argv[1:])
 
     if "pdb" in config.execution.debug:
         from xcp_d.utils.debug import setup_exceptionhook
