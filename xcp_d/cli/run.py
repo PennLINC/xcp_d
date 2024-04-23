@@ -153,14 +153,6 @@ def main():
                 f"boilerplate text found in {boiler_file}.",
             )
 
-        if config.workflow.run_reconall:
-            from niworkflows.utils.misc import _copy_any
-            from templateflow import api
-
-            dseg_tsv = str(api.get("fsaverage", suffix="dseg", extension=[".tsv"]))
-            _copy_any(dseg_tsv, str(config.execution.xcp_d_dir / "desc-aseg_dseg.tsv"))
-            _copy_any(dseg_tsv, str(config.execution.xcp_d_dir / "desc-aparcaseg_dseg.tsv"))
-
         errno = 0
 
     finally:
