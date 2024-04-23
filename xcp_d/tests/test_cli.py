@@ -360,7 +360,7 @@ def _run_and_generate(test_name, parameters, input_type):
 
     argv = ["xcp-d"] + parameters
     with patch.object(sys, "argv", argv):
-        run()
+        run.main()
 
     output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
     check_generated_files(config.execution.xcp_d_dir, output_list_file)
