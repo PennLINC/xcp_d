@@ -356,6 +356,7 @@ def _run_and_generate(test_name, parameters, input_type):
 
     parameters.append("--clean-workdir")
     parameters.append("--stop-on-first-crash")
+    parameters.append("--notrack")
     parameters.append("-vv")
 
     argv = ["xcp-d"] + parameters
