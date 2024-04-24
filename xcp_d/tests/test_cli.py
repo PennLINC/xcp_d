@@ -257,7 +257,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type="cifti",
-        test_main=True,
+        test_main=False,
     )
 
 
