@@ -22,7 +22,8 @@
 #
 # STATEMENT OF CHANGES: This file is derived from sources licensed under the Apache-2.0 terms,
 # and uses the following portion of the original code:
-# https://github.com/dandi/dandi-cli/blob/da3b7a726c4a352dfb53a0c6bee59e660de827e6/dandi/utils.py#L49-L82
+# https://github.com/dandi/dandi-cli/blob/da3b7a726c4a352dfb53a0c6bee59e660de827e6/dandi/\
+# utils.py#L49-L82
 #
 #
 # ORIGINAL WORK'S ATTRIBUTION NOTICE:
@@ -41,18 +42,20 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
+"""Tools for debugging, from fMRIPrep."""
 import sys
 
 
 def is_interactive():
-    """Return True if all in/outs are tty"""
+    """Return True if all in/outs are tty."""
     # TODO: check on windows if hasattr check would work correctly and add value:
     #
     return sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty()
 
 
 def setup_exceptionhook(ipython=False):
-    """Overloads default sys.excepthook with our exceptionhook handler.
+    """Overload default sys.excepthook with our exceptionhook handler.
+
     If interactive, our exceptionhook handler will invoke
     pdb.post_mortem; if not interactive, then invokes default handler.
     """
