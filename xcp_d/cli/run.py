@@ -114,11 +114,11 @@ def main():
     errno = 1  # Default is error exit unless otherwise set
     plugin = config.nipype.get_plugin()
     config.loggers.workflow.log(25, plugin)
-    try:
-        config.loggers.workflow.log(25, "Reached 1a")
-        xcpd_wf.run(**plugin)
-        config.loggers.workflow.log(25, "Reached 1b")
-    except Exception as e:
+    #try:
+    config.loggers.workflow.log(25, "Reached 1a")
+    xcpd_wf.run(**plugin)
+    config.loggers.workflow.log(25, "Reached 1b")
+    """except Exception as e:
         config.loggers.workflow.log(25, "Reached 1c")
         if not config.execution.notrack:
             from xcp_d.utils.sentry import process_crashfile
@@ -136,60 +136,60 @@ def main():
 
         config.loggers.workflow.log(25, "Reached 1d")
         config.loggers.workflow.critical("XCP-D failed: %s", e)
-        raise
+        raise"""
 
-    else:
-        config.loggers.workflow.log(25, "XCP-D finished successfully!")
-        if sentry_sdk is not None:
-            success_message = "XCP-D finished without errors"
-            sentry_sdk.add_breadcrumb(message=success_message, level="info")
-            sentry_sdk.capture_message(success_message, level="info")
+    # else:
+    config.loggers.workflow.log(25, "XCP-D finished successfully!")
+    if sentry_sdk is not None:
+        success_message = "XCP-D finished without errors"
+        sentry_sdk.add_breadcrumb(message=success_message, level="info")
+        sentry_sdk.capture_message(success_message, level="info")
 
-        # Bother users with the boilerplate only iff the workflow went okay.
-        boiler_file = config.execution.xcp_d_dir / "logs" / "CITATION.md"
-        if boiler_file.exists():
-            if config.environment.exec_env in (
-                "singularity",
-                "docker",
-            ):
-                boiler_file = Path("<OUTPUT_PATH>") / boiler_file.relative_to(
-                    config.execution.xcp_d_dir
-                )
-            config.loggers.workflow.log(
-                25,
-                "Works derived from this XCP-D execution should include the "
-                f"boilerplate text found in {boiler_file}.",
+    # Bother users with the boilerplate only iff the workflow went okay.
+    boiler_file = config.execution.xcp_d_dir / "logs" / "CITATION.md"
+    if boiler_file.exists():
+        if config.environment.exec_env in (
+            "singularity",
+            "docker",
+        ):
+            boiler_file = Path("<OUTPUT_PATH>") / boiler_file.relative_to(
+                config.execution.xcp_d_dir
             )
-
-        errno = 0
-
-    finally:
-        from xcp_d import data
-        from xcp_d.interfaces.report_core import generate_reports
-
-        # Write dataset description before generating reports
-        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
-
-        if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
-
-        # Generate reports phase
-        failed_reports = generate_reports(
-            subject_list=config.execution.participant_label,
-            output_dir=config.execution.xcp_d_dir,
-            run_uuid=config.execution.run_uuid,
-            config=data.load("reports-spec.yml"),
-            packagename="xcp_d",
+        config.loggers.workflow.log(
+            25,
+            "Works derived from this XCP-D execution should include the "
+            f"boilerplate text found in {boiler_file}.",
         )
 
-        if sentry_sdk is not None and failed_reports:
-            sentry_sdk.capture_message(
-                f"Report generation failed for {failed_reports} subjects",
-                level="error",
-            )
+    errno = 0
 
-        config.loggers.workflow.log(25, "Reached JJ")
-        sys.exit(int((errno + failed_reports) > 0))
+    #finally:
+    from xcp_d import data
+    from xcp_d.interfaces.report_core import generate_reports
+
+    # Write dataset description before generating reports
+    write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+
+    if config.execution.atlases:
+        write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
+
+    # Generate reports phase
+    failed_reports = generate_reports(
+        subject_list=config.execution.participant_label,
+        output_dir=config.execution.xcp_d_dir,
+        run_uuid=config.execution.run_uuid,
+        config=data.load("reports-spec.yml"),
+        packagename="xcp_d",
+    )
+
+    if sentry_sdk is not None and failed_reports:
+        sentry_sdk.capture_message(
+            f"Report generation failed for {failed_reports} subjects",
+            level="error",
+        )
+
+    config.loggers.workflow.log(25, "Reached JJ")
+    sys.exit(int((errno + failed_reports) > 0))
 
 
 if __name__ == "__main__":
