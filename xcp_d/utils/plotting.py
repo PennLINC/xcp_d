@@ -1183,14 +1183,14 @@ def plot_alff_reho_surface(output_path, filename, name_source):
         "CIFTI_STRUCTURE_CORTEX_RIGHT",
     )
 
-    v_max = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
-    v_min = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
+    vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
+    vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
 
     plott.plot_surf_stat_map(
         lh,
         lh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
+        vmin=vmin,
+        vmax=vmax,
         hemi="left",
         view="lateral",
         engine="matplotlib",
@@ -1201,8 +1201,8 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     plott.plot_surf_stat_map(
         lh,
         lh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
+        vmin=vmin,
+        vmax=vmax,
         hemi="left",
         view="medial",
         engine="matplotlib",
@@ -1213,8 +1213,8 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     plott.plot_surf_stat_map(
         rh,
         rh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
+        vmin=vmin,
+        vmax=vmax,
         hemi="right",
         view="lateral",
         engine="matplotlib",
@@ -1225,8 +1225,8 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     plott.plot_surf_stat_map(
         rh,
         rh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
+        vmin=vmin,
+        vmax=vmax,
         hemi="right",
         view="medial",
         engine="matplotlib",
