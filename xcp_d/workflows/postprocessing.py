@@ -305,7 +305,9 @@ def init_prepare_confounds_wf(
         ])  # fmt:skip
     else:
         workflow.connect([
-            (generate_confounds, outputnode, ["temporal_mask_metadata", "temporal_mask_metadata"]),
+            (generate_confounds, outputnode, [
+                ("temporal_mask_metadata", "temporal_mask_metadata"),
+            ]),
             (dummy_scan_buffer, outputnode, [("temporal_mask", "temporal_mask")]),
         ])  # fmt:skip
 
