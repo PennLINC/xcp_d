@@ -1,6 +1,24 @@
 # What's New
 
-<!-- Release notes generated using configuration in .github/release.yml at main -->
+## 0.7.2
+
+This is a patch release fixing small bugs in 0.7.1.
+
+### 🎉 Exciting New Features
+
+* Make `GeneratedBy` in preprocessing derivatives' `dataset_description.json` optional by @tsalo in https://github.com/PennLINC/xcp_d/pull/1151
+
+### 🐛 Bug Fixes
+
+* Fix exit code bug in `cli.run.main()` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1152
+
+### Other Changes
+
+* Replace pkgrf with load_data by @tsalo in https://github.com/PennLINC/xcp_d/pull/1147
+* Update to new build image (v0.0.12) by @tsalo in https://github.com/PennLINC/xcp_d/pull/1153
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.1...0.7.2
+
 
 ## 0.7.1
 
