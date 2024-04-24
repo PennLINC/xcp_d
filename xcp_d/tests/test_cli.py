@@ -1,14 +1,16 @@
 """Command-line interface tests."""
 
 import os
+import sys
 from glob import glob
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 from nipype import logging
 
-from xcp_d.cli import combineqc
+from xcp_d.cli import combineqc, run
 from xcp_d.cli.parser import parse_args
 from xcp_d.cli.workflow import build_boilerplate, build_workflow
 from xcp_d.data import load as load_data
@@ -253,6 +255,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type="cifti",
+        test_main=True,
     )
 
 
@@ -357,32 +360,43 @@ def test_nibabies(data_dir, output_dir, working_dir):
     )
 
 
-def _run_and_generate(test_name, parameters, input_type):
+def _run_and_generate(test_name, parameters, input_type, test_main=False):
     from xcp_d import config
 
     parameters.append("--clean-workdir")
     parameters.append("--stop-on-first-crash")
+    parameters.append("--notrack")
     parameters.append("-vv")
-    parse_args(parameters)
-    config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
-    config.loggers.cli.warning(f"Saving config file to {config_file}")
-    config.to_filename(config_file)
 
-    retval = build_workflow(config_file, retval={})
-    xcpd_wf = retval["workflow"]
-    xcpd_wf.run()
-    write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
-    if config.execution.atlases:
-        write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
+    if test_main:
+        # This runs, but for some reason doesn't count toward coverage.
+        argv = ["xcp-d"] + parameters
+        with patch.object(sys, "argv", argv):
+            with pytest.raises(SystemExit) as e:
+                run.main()
 
-    build_boilerplate(str(config_file), xcpd_wf)
-    generate_reports(
-        subject_list=config.execution.participant_label,
-        output_dir=config.execution.xcp_d_dir,
-        run_uuid=config.execution.run_uuid,
-        config=str(load_data("reports-spec.yml")),
-        packagename="xcp_d",
-    )
+            assert e.value.code == 0
+    else:
+        parse_args(parameters)
+        config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
+        config.loggers.cli.warning(f"Saving config file to {config_file}")
+        config.to_filename(config_file)
+
+        retval = build_workflow(config_file, retval={})
+        xcpd_wf = retval["workflow"]
+        xcpd_wf.run()
+        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+        if config.execution.atlases:
+            write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
+
+        build_boilerplate(str(config_file), xcpd_wf)
+        generate_reports(
+            subject_list=config.execution.participant_label,
+            output_dir=config.execution.xcp_d_dir,
+            run_uuid=config.execution.run_uuid,
+            config=str(load_data("reports-spec.yml")),
+            packagename="xcp_d",
+        )
 
     output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
     check_generated_files(config.execution.xcp_d_dir, output_list_file)
