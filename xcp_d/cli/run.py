@@ -112,9 +112,11 @@ def main():
     )
     config.loggers.workflow.log(25, "XCP-D started!")
     errno = 1  # Default is error exit unless otherwise set
+    plugin = config.nipype.get_plugin()
+    config.loggers.workflow.log(25, plugin)
     try:
         config.loggers.workflow.log(25, "Reached 1a")
-        xcpd_wf.run(**config.nipype.get_plugin())
+        xcpd_wf.run(**plugin)
         config.loggers.workflow.log(25, "Reached 1b")
     except Exception as e:
         config.loggers.workflow.log(25, "Reached 1c")
