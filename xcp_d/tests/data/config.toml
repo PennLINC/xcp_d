@@ -57,9 +57,9 @@ dcan_qc = false
 [nipype]
 crashfile_format = "txt"
 get_linked_libs = false
-memory_gb = 32
-nprocs = 8
-omp_nthreads = 8
+memory_gb = 48
+nprocs = 2
+omp_nthreads = 2
 plugin = "MultiProc"
 resource_monitor = false
 stop_on_first_crash = false
