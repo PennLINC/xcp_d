@@ -72,6 +72,7 @@ def main():
     config.load(config_file)
 
     if config.execution.reports_only:
+        config.loggers.workflow.log(25, "Reached BB")
         sys.exit(int(exitcode > 0))
 
     if xcpd_wf and config.execution.write_graph:
@@ -90,6 +91,7 @@ def main():
         p.join()
 
     if config.execution.boilerplate_only:
+        config.loggers.workflow.log(25, "Reached CC")
         sys.exit(int(exitcode > 0))
 
     # Clean up master process before running workflow, which may create forks
@@ -111,8 +113,11 @@ def main():
     config.loggers.workflow.log(25, "XCP-D started!")
     errno = 1  # Default is error exit unless otherwise set
     try:
+        config.loggers.workflow.log(25, "Reached 1a")
         xcpd_wf.run(**config.nipype.get_plugin())
+        config.loggers.workflow.log(25, "Reached 1b")
     except Exception as e:
+        config.loggers.workflow.log(25, "Reached 1c")
         if not config.execution.notrack:
             from xcp_d.utils.sentry import process_crashfile
 
@@ -127,6 +132,7 @@ def main():
             if sentry_sdk is not None and "Workflow did not execute cleanly" not in str(e):
                 sentry_sdk.capture_exception(e)
 
+        config.loggers.workflow.log(25, "Reached 1d")
         config.loggers.workflow.critical("XCP-D failed: %s", e)
         raise
 
@@ -180,6 +186,7 @@ def main():
                 level="error",
             )
 
+        config.loggers.workflow.log(25, "Reached JJ")
         sys.exit(int((errno + failed_reports) > 0))
 
 
