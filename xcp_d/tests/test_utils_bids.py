@@ -291,7 +291,7 @@ def test_get_preproc_pipeline_info(datasets, tmp_path_factory, caplog):
         json.dump({}, fo)
 
     assert "GeneratedBy key DNE" not in caplog.text
-    xbids.get_preproc_pipeline_info("dcan", tmpdir)
+    info_dict = xbids.get_preproc_pipeline_info("dcan", tmpdir)
     assert "GeneratedBy key DNE" in caplog.text
     assert info_dict["name"] == "dcan"
     assert info_dict["version"] == "unknown"
