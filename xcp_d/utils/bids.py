@@ -787,37 +787,56 @@ def write_atlas_dataset_description(atlas_dir):
 
 
 def get_preproc_pipeline_info(input_type, fmri_dir):
-    """Get preprocessing pipeline information from the dataset_description.json file."""
+    """Get preprocessing pipeline information from the dataset_description.json file.
+
+    Parameters
+    ----------
+    input_type : :obj:`str`
+        Type of input dataset.
+    fmri_dir : :obj:`str`
+        Path to the BIDS derivative dataset being ingested.
+
+    Returns
+    -------
+    info_dict : :obj:`dict`
+        Dictionary containing the name, version, and references of the preprocessing pipeline.
+    """
     import json
     import os
 
-    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
-    if not os.path.isfile(dataset_description):
-        raise FileNotFoundError(f"Dataset description DNE: {dataset_description}")
-
-    with open(dataset_description) as f:
-        dataset_dict = json.load(f)
+    references = {
+        "fmriprep": "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]",
+        "dcan": "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]",
+        "hcp": "[@glasser2013minimal]",
+        "nibabies": "[@goncalves_mathias_2022_7072346]",
+        "ukb": "[@miller2016multimodal]",
+    }
+    if input_type not in references.keys():
+        raise ValueError(f"Unsupported input_type '{input_type}'")
 
     info_dict = {
-        "name": dataset_dict["GeneratedBy"][0]["Name"],
-        "version": (
-            dataset_dict["GeneratedBy"][0]["Version"]
-            if "Version" in dataset_dict["GeneratedBy"][0].keys()
-            else "unknown"
-        ),
+        "name": input_type,
+        "version": "unknown",
+        "references": references[input_type],
     }
-    if input_type == "fmriprep":
-        info_dict["references"] = "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]"
-    elif input_type == "dcan":
-        info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]"
-    elif input_type == "hcp":
-        info_dict["references"] = "[@glasser2013minimal]"
-    elif input_type == "nibabies":
-        info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
-    elif input_type == "ukb":
-        info_dict["references"] = "[@miller2016multimodal]"
+
+    # Now try to modify the dictionary based on the dataset description
+    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
+    if os.path.isfile(dataset_description):
+        with open(dataset_description) as f:
+            dataset_dict = json.load(f)
+
+        if "GeneratedBy" in dataset_dict.keys():
+            info_dict["name"] = dataset_dict["GeneratedBy"][0]["Name"]
+            info_dict["version"] = (
+                dataset_dict["GeneratedBy"][0]["Version"]
+                if "Version" in dataset_dict["GeneratedBy"][0].keys()
+                else "unknown"
+            )
+        else:
+            LOGGER.warning(f"GeneratedBy key DNE: {dataset_description}. Using partial info.")
     else:
-        raise ValueError(f"Unsupported input_type '{input_type}'")
+        LOGGER.warning(f"Dataset description DNE: {dataset_description}. Using partial info.")
 
     return info_dict
 
