@@ -169,7 +169,7 @@ series to retain the original scaling.
 
         compute_smoothed_alff = pe.Node(
             ComputeALFF(TR=TR, low_pass=low_pass, high_pass=high_pass),
-            mem_gb=mem_gb,
+            mem_gb=mem_gb["resampled"],
             name="compute_smoothed_alff",
             n_procs=omp_nthreads,
         )
