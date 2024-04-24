@@ -108,6 +108,7 @@ class ConvertTo32(SimpleInterface):
     output_spec = _ConvertTo32OutputSpec
 
     def _run_interface(self, runtime):
+        raise ValueError("REACHED")
         self._results["bold_file"] = downcast_to_32(self.inputs.bold_file)
         self._results["boldref"] = downcast_to_32(self.inputs.boldref)
         self._results["bold_mask"] = downcast_to_32(self.inputs.bold_mask)
