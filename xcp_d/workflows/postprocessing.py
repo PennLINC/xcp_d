@@ -204,7 +204,6 @@ def init_prepare_confounds_wf(
     )
 
     # Load and filter confounds
-    # fmt:off
     workflow.connect([
         (inputnode, generate_confounds, [
             ("name_source", "in_file"),
@@ -216,8 +215,7 @@ def init_prepare_confounds_wf(
             ("motion_metadata", "motion_metadata"),
             ("confounds_metadata", "confounds_metadata"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     # A buffer node to hold either the original files or the files with the first N vols removed.
     dummy_scan_buffer = pe.Node(
@@ -241,7 +239,6 @@ def init_prepare_confounds_wf(
             mem_gb=4,
         )
 
-        # fmt:off
         workflow.connect([
             (inputnode, remove_dummy_scans, [
                 ("preprocessed_bold", "bold_file"),
@@ -263,11 +260,8 @@ def init_prepare_confounds_wf(
                 ("temporal_mask_dropped_TR", "temporal_mask"),
                 ("dummy_scans", "dummy_scans"),
             ]),
-        ])
-        # fmt:on
-
+        ])  # fmt:skip
     else:
-        # fmt:off
         workflow.connect([
             (inputnode, dummy_scan_buffer, [
                 ("dummy_scans", "dummy_scans"),
@@ -281,10 +275,8 @@ def init_prepare_confounds_wf(
                 # The selected confounds are not guaranteed to include motion params.
                 ("filtered_confounds_file", "fmriprep_confounds_file"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
-    # fmt:off
     workflow.connect([
         (dummy_scan_buffer, outputnode, [
             ("preprocessed_bold", "preprocessed_bold"),
@@ -293,26 +285,29 @@ def init_prepare_confounds_wf(
             ("motion_file", "filtered_motion"),
             ("dummy_scans", "dummy_scans"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
-    random_censor = pe.Node(
-        RandomCensor(exact_scans=exact_scans, random_seed=random_seed),
-        name="random_censor",
-    )
+    if config.workflow.dcan_correlation_lengths:
+        random_censor = pe.Node(
+            RandomCensor(exact_scans=exact_scans, random_seed=random_seed),
+            name="random_censor",
+        )
 
-    # fmt:off
-    workflow.connect([
-        (generate_confounds, random_censor, [
-            ("temporal_mask_metadata", "temporal_mask_metadata"),
-        ]),
-        (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
-        (random_censor, outputnode, [
-            ("temporal_mask", "temporal_mask"),
-            ("temporal_mask_metadata", "temporal_mask_metadata"),
-        ]),
-    ])
-    # fmt:on
+        workflow.connect([
+            (generate_confounds, random_censor, [
+                ("temporal_mask_metadata", "temporal_mask_metadata"),
+            ]),
+            (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
+            (random_censor, outputnode, [
+                ("temporal_mask", "temporal_mask"),
+                ("temporal_mask_metadata", "temporal_mask_metadata"),
+            ]),
+        ])  # fmt:skip
+    else:
+        workflow.connect([
+            (generate_confounds, outputnode, ["temporal_mask_metadata", "temporal_mask_metadata"]),
+            (dummy_scan_buffer, outputnode, [("temporal_mask", "temporal_mask")]),
+        ])  # fmt:skip
 
     if params != "none":
         plot_design_matrix = pe.Node(
@@ -324,12 +319,10 @@ def init_prepare_confounds_wf(
             name="plot_design_matrix",
         )
 
-        # fmt:off
         workflow.connect([
             (dummy_scan_buffer, plot_design_matrix, [("confounds_file", "design_matrix")]),
-            (random_censor, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
-        ])
-        # fmt:on
+            (outputnode, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
+        ])  # fmt:skip
 
         ds_design_matrix_plot = pe.Node(
             DerivativesDataSink(
@@ -343,12 +336,10 @@ def init_prepare_confounds_wf(
             run_without_submitting=False,
         )
 
-        # fmt:off
         workflow.connect([
             (inputnode, ds_design_matrix_plot, [("name_source", "source_file")]),
             (plot_design_matrix, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     censor_report = pe.Node(
         CensoringPlot(
@@ -362,15 +353,13 @@ def init_prepare_confounds_wf(
         n_procs=omp_nthreads,
     )
 
-    # fmt:off
     workflow.connect([
+        # use the full version of the confounds, for dummy scans in the figure
+        (inputnode, censor_report, [("fmriprep_confounds_file", "fmriprep_confounds_file")]),
         (generate_confounds, censor_report, [("motion_file", "filtered_motion")]),
         (dummy_scan_buffer, censor_report, [("dummy_scans", "dummy_scans")]),
-        (random_censor, censor_report, [("temporal_mask", "temporal_mask")]),
-        # use the undropped version
-        (inputnode, censor_report, [("fmriprep_confounds_file", "fmriprep_confounds_file")]),
-    ])
-    # fmt:on
+        (outputnode, censor_report, [("temporal_mask", "temporal_mask")]),
+    ])  # fmt:skip
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
@@ -384,12 +373,10 @@ def init_prepare_confounds_wf(
         run_without_submitting=False,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, ds_report_censoring, [("name_source", "source_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow
 

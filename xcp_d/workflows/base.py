@@ -33,7 +33,7 @@ from xcp_d.utils.bids import (
     group_across_runs,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.modified_data import flag_bad_run
+from xcp_d.utils.modified_data import calculate_exact_scans, flag_bad_run
 from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.workflows.anatomical import (
     init_postprocess_anat_wf,
@@ -365,7 +365,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     n_runs = len(preproc_files)
-    preproc_files = group_across_runs(preproc_files)  # group files across runs and directions
+    # group files across runs and directions, to facilitate concatenation
+    preproc_files = group_across_runs(preproc_files)
     run_counter = 0
     for ent_set, task_files in enumerate(preproc_files):
         # Assuming TR is constant across runs for a given combination of entities.
@@ -414,7 +415,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
             )
-            # Reduce exact_times to only include values greater than the post-scrubbing duration.
+
             if (config.workflow.min_time >= 0) and (
                 post_scrubbing_duration < config.workflow.min_time
             ):
@@ -426,30 +427,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 )
                 continue
 
+            # Reduce exact_times to only include values greater than the post-scrubbing duration.
             exact_scans = []
             if config.workflow.dcan_correlation_lengths:
-                retained_exact_times = [
-                    t
-                    for t in config.workflow.dcan_correlation_lengths
-                    if t <= post_scrubbing_duration
-                ]
-                dropped_exact_times = [
-                    t
-                    for t in config.workflow.dcan_correlation_lengths
-                    if t > post_scrubbing_duration
-                ]
-                if dropped_exact_times:
-                    LOGGER.warning(
-                        f"{post_scrubbing_duration} seconds in {os.path.basename(bold_file)} "
-                        "survive high-motion outlier scrubbing. "
-                        "Only retaining exact-time values greater than this "
-                        f"({retained_exact_times})."
-                    )
-
-                exact_scans = [
-                    int(t // run_data["bold_metadata"]["RepetitionTime"])
-                    for t in retained_exact_times
-                ]
+                exact_scans = calculate_exact_scans(
+                    exact_times=config.workflow.dcan_correlation_lengths,
+                    scan_length=post_scrubbing_duration,
+                    t_r=run_data["bold_metadata"]["RepetitionTime"],
+                    bold_file=bold_file,
+                )
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
