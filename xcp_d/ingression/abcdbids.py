@@ -12,8 +12,8 @@ import re
 import nibabel as nb
 import pandas as pd
 from nipype import logging
-from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
     collect_anatomical_files,
     collect_hcp_confounds,
@@ -168,7 +168,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_dictionary = {}
 
     # The identity xform is used in place of any actual ones.
-    identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
+    identity_xfm = str(load_data("transform/itkIdentityTransform.txt"))
     copy_dictionary[identity_xfm] = []
     morph_dict_all_ses = {}
 

@@ -53,7 +53,7 @@ def select_atlases(atlases, subset):
 
 
 def get_atlas_nifti(atlas):
-    """Select atlas by name from xcp_d/data using pkgrf.
+    """Select atlas by name from xcp_d/data using load_data.
 
     All atlases are in MNI space.
 
@@ -78,7 +78,7 @@ def get_atlas_nifti(atlas):
     """
     from os.path import isfile, join
 
-    from pkg_resources import resource_filename as pkgrf
+    from xcp_d.data import load as load_data
 
     if "4S" in atlas or atlas in ("Glasser", "Gordon"):
         # 1 mm3 atlases
@@ -94,11 +94,10 @@ def get_atlas_nifti(atlas):
         atlas_labels_file = join("/AtlasPack", tsv_fname)
         atlas_metadata_file = f"/AtlasPack/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json"
     else:
-        atlas_file = pkgrf("xcp_d", f"data/atlases/{atlas_fname}")
-        atlas_labels_file = pkgrf("xcp_d", f"data/atlases/{tsv_fname}")
-        atlas_metadata_file = pkgrf(
-            "xcp_d",
-            f"data/atlases/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json",
+        atlas_file = str(load_data(f"atlases/{atlas_fname}"))
+        atlas_labels_file = str(load_data(f"atlases/{tsv_fname}"))
+        atlas_metadata_file = str(
+            load_data(f"atlases/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json")
         )
 
     if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
@@ -135,19 +134,16 @@ def get_atlas_cifti(atlas):
     """
     from os.path import isfile
 
-    from pkg_resources import resource_filename as pkgrf
+    from xcp_d.data import load as load_data
 
     if "4S" in atlas:
         atlas_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_den-91k_dseg.dlabel.nii"
         atlas_labels_file = f"/AtlasPack/atlas-{atlas}_dseg.tsv"
         atlas_metadata_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_dseg.json"
     else:
-        atlas_file = pkgrf(
-            "xcp_d",
-            f"data/atlases/tpl-fsLR_atlas-{atlas}_den-32k_dseg.dlabel.nii",
-        )
-        atlas_labels_file = pkgrf("xcp_d", f"data/atlases/atlas-{atlas}_dseg.tsv")
-        atlas_metadata_file = pkgrf("xcp_d", f"data/atlases/tpl-fsLR_atlas-{atlas}_dseg.json")
+        atlas_file = str(load_data(f"atlases/tpl-fsLR_atlas-{atlas}_den-32k_dseg.dlabel.nii"))
+        atlas_labels_file = str(load_data(f"atlases/atlas-{atlas}_dseg.tsv"))
+        atlas_metadata_file = str(load_data(f"atlases/tpl-fsLR_atlas-{atlas}_dseg.json"))
 
     if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
         raise FileNotFoundError(

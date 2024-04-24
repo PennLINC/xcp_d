@@ -23,7 +23,7 @@ def main():
         write_dataset_description,
     )
 
-    parse_args()
+    parse_args(args=sys.argv[1:])
 
     if "pdb" in config.execution.debug:
         from xcp_d.utils.debug import setup_exceptionhook
@@ -152,14 +152,6 @@ def main():
                 "Works derived from this XCP-D execution should include the "
                 f"boilerplate text found in {boiler_file}.",
             )
-
-        if config.workflow.run_reconall:
-            from niworkflows.utils.misc import _copy_any
-            from templateflow import api
-
-            dseg_tsv = str(api.get("fsaverage", suffix="dseg", extension=[".tsv"]))
-            _copy_any(dseg_tsv, str(config.execution.xcp_d_dir / "desc-aseg_dseg.tsv"))
-            _copy_any(dseg_tsv, str(config.execution.xcp_d_dir / "desc-aparcaseg_dseg.tsv"))
 
         errno = 0
 
