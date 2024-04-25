@@ -209,7 +209,7 @@ def test_validate_parameters_14(base_opts, base_parser, caplog):
 
     # Set min > max for notch filter
     opts.input_type = "dcan"
-    opts.cifti = False
+    opts.file_format = "nifti"
 
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
@@ -226,7 +226,7 @@ def test_validate_parameters_15(base_opts, base_parser, caplog):
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert opts.cifti is True
+    assert opts.file_format == "cifti"
     assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
 
 
@@ -250,7 +250,7 @@ def test_validate_parameters_17(base_opts, base_parser, capsys):
 
     # Set min > max for notch filter
     opts.process_surfaces = True
-    opts.cifti = False
+    opts.file_format = "nifti"
 
     with pytest.raises(SystemExit, match="2"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
@@ -315,7 +315,7 @@ def test_validate_parameters_21(base_opts, base_parser, caplog):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     opts.input_type = "ukb"
-    opts.cifti = True
+    opts.file_format = "nifti"
     opts.process_surfaces = True
 
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
