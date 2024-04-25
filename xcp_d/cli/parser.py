@@ -24,6 +24,7 @@ def _build_parser():
         _float_or_auto_or_none,
         _int_or_auto,
         _restricted_float,
+        YesNoAction,
     )
     from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases
@@ -284,22 +285,22 @@ def _build_parser():
             "preprocessing derivatives' confounds file."
         ),
     )
-
-    g_despike = g_param.add_mutually_exclusive_group(required=False)
-    g_despike.add_argument(
+    g_param.add_argument(
         "--despike",
         dest="despike",
-        action="store_true",
-        default=None,
-        help="Despike the BOLD data before postprocessing.",
+        nargs="?",
+        const=None,
+        default="auto",
+        choices=["y", "n"],
+        action=YesNoAction,
+        help=(
+            "Despike the BOLD data before postprocessing. "
+            "If not defined, the despike option will be inferred from the 'mode'. "
+            "If defined without an argument, despiking will be enabled. "
+            "If defined with an argument (y or n), the value of the argument will be used. "
+            "'y' enables despiking. 'n' disables despiking."
+        ),
     )
-    g_despike.add_argument(
-        "--no-despike",
-        dest="despike",
-        action="store_false",
-        help="Don't despike the BOLD data before postprocessing.",
-    )
-
     g_param.add_argument(
         "-p",
         "--nuisance-regressors",
@@ -967,10 +968,13 @@ def _validate_parameters(opts, build_log, parser):
     if opts.custom_confounds:
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
+    # Check parameter value types/valid values
+    assert opts.despike in (True, False, "auto")
+
     # Check parameters based on the mode
     if opts.mode in ("abcd", "hbcd"):
         opts.file_format = "cifti" if opts.file_format == "auto" else opts.file_format
-        opts.despike = False if opts.despike is None else opts.despike
+        opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.abcc_qc = True
         opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
         opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
@@ -978,7 +982,7 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
     else:
         opts.file_format = "nifti" if opts.file_format == "auto" else opts.file_format
-        opts.despike = True if opts.despike is None else opts.despike
+        opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.linc_qc = True
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")

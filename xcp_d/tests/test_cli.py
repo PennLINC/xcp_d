@@ -377,6 +377,8 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
 
             assert e.value.code == 0
     else:
+        # XXX: I want to drop this option and use the main function,
+        # but the main function doesn't track coverage correctly.
         parse_args(parameters)
         config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
         config.loggers.cli.warning(f"Saving config file to {config_file}")

@@ -103,6 +103,13 @@ def _restricted_float(x):
     return x
 
 
+class YesNoAction(Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        lookup = {"y": True, "n": False, None: True, "auto": "auto"}
+        assert values in lookup.keys(), f"Invalid value '{values}' for {self.dest}"
+        setattr(namespace, self.dest, lookup[values])
+
+
 class _DeprecatedStoreAction(Action):
     """A custom argparse "store" action to raise a DeprecationWarning.
 

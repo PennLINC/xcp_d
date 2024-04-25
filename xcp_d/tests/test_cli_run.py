@@ -30,23 +30,23 @@ def base_opts():
         "work_dir": Path("work"),
         "analysis_level": "participant",
         "mode": "linc",
-        "lower_bpf": 0.01,
-        "upper_bpf": 0.1,
-        "bandpass_filter": True,
-        "fd_thresh": 0.3,
-        "min_time": 100,
-        "motion_filter_type": "notch",
-        "band_stop_min": 12,
-        "band_stop_max": 18,
-        "motion_filter_order": 1,
+        "file_format": "nifti",
         "input_type": "fmriprep",
-        "cifti": True,
-        "process_surfaces": True,
+        "lower_bpf": 0.01,
+        "upper_bpf": 0.08,
+        "bandpass_filter": True,
+        "fd_thresh": 0,
+        "min_time": 240,
+        "motion_filter_type": None,
+        "band_stop_min": None,
+        "band_stop_max": None,
+        "motion_filter_order": None,
+        "process_surfaces": False,
         "fs_license_file": Path(os.environ["FS_LICENSE"]),
         "atlases": ["Glasser"],
         "custom_confounds": None,
-        "dcan_correlation_lengths": "none",
-        "despike": False,
+        "dcan_correlation_lengths": None,
+        "despike": None,
         "abcc_qc": False,
         "combineruns": False,
     }
@@ -322,3 +322,84 @@ def test_validate_parameters_21(base_opts, base_parser, caplog):
 
     assert "cifti processing (--cifti) will be disabled automatically." in caplog.text
     assert "(--warp-surfaces-native2std) will be disabled automatically." in caplog.text
+
+
+@pytest.mark.parametrize(
+    "mode,despike,expectation",
+    [
+        ("linc", "auto", True),
+        ("abcd", "auto", True),
+        ("hbcd", "auto", True),
+        ("linc", True, True),
+        ("abcd", True, True),
+        ("hbcd", True, True),
+        ("linc", False, False),
+        ("abcd", False, False),
+        ("hbcd", False, False),
+        ("linc", "n", AssertionError),
+        ("abcd", "n", AssertionError),
+        ("hbcd", "n", AssertionError),
+    ],
+)
+def test_validate_parameters_22(base_opts, base_parser, mode, despike, expectation):
+    """Test processing of the "despike" parameter."""
+    opts = deepcopy(base_opts)
+    # Pass in some parameters to satisfy "abcd" and "hbcd" modes
+    opts.motion_filter_type = "lp"
+    opts.band_stop_min = 0.01
+
+    opts.mode = mode
+    opts.despike = despike
+    if isinstance(expectation, type) and issubclass(expectation, Exception):
+        with pytest.raises(expectation):
+            parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    else:
+        mod_opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+        assert mod_opts.despike is expectation
+
+
+def test_build_parser(tmp_path_factory):
+    """Test parser._build_parser."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser")
+    data_dir = os.path.join(tmpdir, "data")
+    data_path = Path(data_dir)
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, "out")
+    out_path = Path(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
+
+    base_args = [
+        data_dir,
+        out_dir,
+        "participant",
+        "--mode",
+        "linc",
+    ]
+    parser_obj = parser._build_parser()
+
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    assert opts.fmri_dir == data_path
+    assert opts.output_dir == out_path
+    assert opts.despike == "auto"
+
+    test_args = base_args[:]
+    test_args.extend(["--despike"])
+    opts = parser_obj.parse_args(args=test_args, namespace=None)
+    assert opts.fmri_dir == data_path
+    assert opts.output_dir == out_path
+    assert opts.despike is True
+
+    test_args = base_args[:]
+    test_args.extend(["--despike", "y"])
+    opts = parser_obj.parse_args(args=test_args, namespace=None)
+    assert opts.fmri_dir == data_path
+    assert opts.output_dir == out_path
+    assert opts.despike is True
+
+    test_args = base_args[:]
+    test_args.extend(["--despike", "n"])
+    opts = parser_obj.parse_args(args=test_args, namespace=None)
+    assert opts.fmri_dir == data_path
+    assert opts.output_dir == out_path
+    assert opts.despike is False
