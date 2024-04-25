@@ -20,11 +20,11 @@ def _build_parser():
     from packaging.version import Version
 
     from xcp_d.cli.parser_utils import (
+        YesNoAction,
         _float_or_auto,
         _float_or_auto_or_none,
         _int_or_auto,
         _restricted_float,
-        YesNoAction,
     )
     from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases

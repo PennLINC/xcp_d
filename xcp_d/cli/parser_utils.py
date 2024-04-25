@@ -104,7 +104,10 @@ def _restricted_float(x):
 
 
 class YesNoAction(Action):
-    def __call__(self, parser, namespace, values, option_string=None):
+    """A custom argparse "store" action to handle "y", "n", None, "auto" values."""
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+        """Call the argument."""
         lookup = {"y": True, "n": False, None: True, "auto": "auto"}
         assert values in lookup.keys(), f"Invalid value '{values}' for {self.dest}"
         setattr(namespace, self.dest, lookup[values])
