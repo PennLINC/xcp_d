@@ -346,7 +346,7 @@ def test_validate_parameters_22(base_opts, base_parser, mode, despike, expectati
     opts = deepcopy(base_opts)
     # Pass in some parameters to satisfy "abcd" and "hbcd" modes
     opts.motion_filter_type = "lp"
-    opts.band_stop_min = 0.01
+    opts.band_stop_min = 10
 
     opts.mode = mode
     opts.despike = despike
@@ -403,3 +403,29 @@ def test_build_parser(tmp_path_factory):
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
     assert opts.despike is False
+
+    # Parameters for abcd mode
+    base_args = [
+        data_dir,
+        out_dir,
+        "participant",
+        "--mode",
+        "abcd",
+        "--motion-filter-type",
+        "lp",
+        "--band-stop-min",
+        "10",
+    ]
+    parser_obj = parser._build_parser()
+
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    assert opts.fmri_dir == data_path
+    assert opts.output_dir == out_path
+    assert opts.despike == "auto"
+
+    test_args = base_args[:]
+    test_args.extend(["--create-matrices", "all", "300", "450"])
+    opts = parser_obj.parse_args(args=test_args, namespace=None)
+    assert opts.fmri_dir == data_path
+    assert opts.output_dir == out_path
+    assert opts.dcan_correlation_lengths == ["all", 300, 450]

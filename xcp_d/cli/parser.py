@@ -994,13 +994,13 @@ def _validate_parameters(opts, build_log, parser):
 
     if opts.mode == "abcd":
         opts.dcan_correlation_lengths = (
-            ["all", 300, 480]
+            ["all", "300", "480"]
             if opts.dcan_correlation_lengths is None
             else opts.dcan_correlation_lengths
         )
     elif opts.mode == "hbcd":
         opts.dcan_correlation_lengths = (
-            ["all", 300, 480]
+            ["all", "300", "480"]
             if opts.dcan_correlation_lengths is None
             else opts.dcan_correlation_lengths
         )
