@@ -354,21 +354,16 @@ def _build_parser():
             "Set to 0 to disable smoothing."
         ),
     )
-
-    g_combine = g_param.add_mutually_exclusive_group(required=False)
-    g_combine.add_argument(
+    g_param.add_argument(
         "-m",
         "--combineruns",
         dest="combineruns",
-        action="store_true",
+        nargs="?",
+        const=None,
         default="auto",
+        choices=["y", "n"],
+        action=YesNoAction,
         help="After denoising, concatenate each derivative from each task across runs.",
-    )
-    g_combine.add_argument(
-        "--no-combineruns",
-        dest="combineruns",
-        action="store_false",
-        help="Do not concatenate each derivative from each task across runs.",
     )
 
     g_motion_filter = parser.add_argument_group(
@@ -744,13 +739,15 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
 
     g_experimental = parser.add_argument_group("Experimental options")
 
-    g_surface_warp = g_experimental.add_mutually_exclusive_group(required=False)
-    g_surface_warp.add_argument(
+    g_experimental.add_argument(
         "--warp-surfaces-native2std",
         "--warp_surfaces_native2std",
-        action="store_true",
         dest="process_surfaces",
+        nargs="?",
+        const=None,
         default="auto",
+        choices=["y", "n"],
+        action=YesNoAction,
         help="""\
 If used, a workflow will be run to warp native-space (``fsnative``) reconstructed cortical
 surfaces (``surf.gii`` files) produced by Freesurfer into standard (``fsLR``) space.
@@ -759,16 +756,6 @@ By default, this workflow is disabled.
 
 **IMPORTANT**: This parameter can only be run if the --file-format flag is set to cifti.
 """,
-    )
-    g_surface_warp.add_argument(
-        "--no-warp-surfaces-native2std",
-        "--no_warp_surfaces_native2std",
-        action="store_false",
-        dest="process_surfaces",
-        help=(
-            "If used, the workflow to warp native-space surfaces to standard space will be "
-            "skipped."
-        ),
     )
 
     latest = check_latest()
