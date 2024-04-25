@@ -220,14 +220,29 @@ def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
     exact_scans : :obj:`list`
         List of exact scans corresponding to the exact times.
     """
-    retained_exact_times = [t for t in exact_times if t <= scan_length]
-    dropped_exact_times = [t for t in exact_times if t > scan_length]
+    float_times = []
+    non_float_times = []
+
+    for time in exact_times:
+        try:
+            float_times.append(float(time))
+        except ValueError:
+            non_float_times.append(time)
+
+    retained_exact_times = [t for t in float_times if t <= scan_length]
+    dropped_exact_times = [t for t in float_times if t > scan_length]
     if dropped_exact_times:
         LOGGER.warning(
             f"{scan_length} seconds in {os.path.basename(bold_file)} "
             "survive high-motion outlier scrubbing. "
             "Only retaining exact-time values greater than this "
             f"({retained_exact_times})."
+        )
+
+    if non_float_times:
+        LOGGER.warning(
+            f"Non-float values {non_float_times} in {os.path.basename(bold_file)} "
+            "will be ignored."
         )
 
     exact_scans = [int(t // t_r) for t in retained_exact_times]
