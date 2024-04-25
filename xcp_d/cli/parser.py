@@ -356,7 +356,8 @@ def _build_parser():
     )
     g_param.add_argument(
         "-m",
-        "--combineruns",
+        "--combine-runs",
+        "--combine_runs",
         dest="combineruns",
         nargs="?",
         const=None,

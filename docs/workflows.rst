@@ -671,7 +671,7 @@ Concatenation of functional derivatives [OPTIONAL]
 ==================================================
 :func:`~xcp_d.workflows.concatenation.init_concatenate_data_wf`
 
-If the ``--combineruns`` flag is included, then BOLD runs will be grouped by task and concatenated.
+If the ``--combine-runs`` flag is included, then BOLD runs will be grouped by task and concatenated.
 Several concatenated derivatives will be generated, including the ``denoised BOLD``,
 the ``denoised, interpolated BOLD``, the temporal mask, and the filtered motion parameters.
 
