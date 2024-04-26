@@ -958,20 +958,28 @@ def _validate_parameters(opts, build_log, parser):
 
     # Check parameter value types/valid values
     assert opts.despike in (True, False, "auto")
+    assert opts.process_surfaces in (True, False, "auto")
+    assert opts.combineruns in (True, False, "auto")
+    assert opts.file_format in ("nifti", "cifti", "auto")
 
     # Check parameters based on the mode
     if opts.mode in ("abcd", "hbcd"):
-        opts.file_format = "cifti" if opts.file_format == "auto" else opts.file_format
-        opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.abcc_qc = True
-        opts.combineruns = True if opts.combineruns == "auto" else opts.combineruns
-        opts.process_surfaces = True if opts.process_surfaces == "auto" else opts.process_surfaces
+        opts.combineruns = True if (opts.combineruns == "auto") else opts.combineruns
+        opts.despike = True if (opts.despike == "auto") else opts.despike
+        opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
+        opts.process_surfaces = (
+            True if (opts.process_surfaces == "auto") else opts.process_surfaces
+        )
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
     else:
-        opts.file_format = "nifti" if opts.file_format == "auto" else opts.file_format
         opts.despike = True if (opts.despike == "auto") else opts.despike
+        opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
         opts.linc_qc = True
+        opts.process_surfaces = (
+            False if (opts.process_surfaces == "auto") else opts.process_surfaces
+        )
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
 
