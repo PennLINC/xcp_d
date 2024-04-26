@@ -815,7 +815,7 @@ class ConnectPlot(SimpleInterface):
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
             dseg_file = self.inputs.atlas_tsvs[atlas_idx]
 
-            column_name = COMMUNITY_LOOKUP[atlas]
+            column_name = COMMUNITY_LOOKUP.get(atlas, "network_label")
             dseg_df = pd.read_table(dseg_file)
             corrs_df = pd.read_table(atlas_file, index_col="Node")
 
@@ -827,8 +827,10 @@ class ConnectPlot(SimpleInterface):
                 }
                 network_labels = dseg_df[column_name].fillna(dseg_df["atlas_name"]).tolist()
                 network_labels = [atlas_mapper.get(network, network) for network in network_labels]
-            else:
+            elif column_name in dseg_df.columns:
                 network_labels = dseg_df[column_name].fillna("None").tolist()
+            else:
+                network_labels = ["None"] * dseg_df.shape[0]
 
             ax = axes[subdict["axes"][0], subdict["axes"][1]]
             ax = self.plot_matrix(
