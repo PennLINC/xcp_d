@@ -150,7 +150,10 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         desc="TSV files with filtered motion parameters, used for FD calculation.",
     )
     temporal_mask = traits.List(
-        File(exists=True),
+        traits.Either(
+            File(exists=True),
+            Undefined,
+        ),
         desc="TSV files with high-motion outliers indexed.",
     )
     denoised_interpolated_bold = traits.List(
@@ -262,8 +265,10 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
         desc="TSV files with filtered motion parameters, used for FD calculation.",
     )
     temporal_mask = traits.List(
-        File(exists=True),
-        mandatory=True,
+        traits.Either(
+            File(exists=True),
+            Undefined,
+        ),
         desc="TSV files with high-motion outliers indexed.",
     )
     denoised_interpolated_bold = traits.List(
@@ -314,8 +319,9 @@ class _ConcatenateInputsOutputSpec(TraitedSpec):
         exists=True,
         desc="Concatenated TSV file with filtered motion parameters, used for FD calculation.",
     )
-    temporal_mask = File(
-        exists=True,
+    temporal_mask = traits.Either(
+        File(exists=True),
+        Undefined,
         desc="Concatenated TSV file with high-motion outliers indexed.",
     )
     denoised_interpolated_bold = File(
@@ -365,8 +371,8 @@ class ConcatenateInputs(SimpleInterface):
         }
 
         run_index, n_volumes = [], 0
-        for run_tmask in self.inputs.temporal_mask[:-1]:
-            n_volumes = n_volumes + pd.read_table(run_tmask).shape[0]
+        for run_motion in self.inputs.filtered_motion[:-1]:
+            n_volumes = n_volumes + pd.read_table(run_motion).shape[0]
             run_index.append(n_volumes)
 
         self._results["run_index"] = run_index

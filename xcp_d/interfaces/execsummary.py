@@ -204,6 +204,24 @@ class ExecutiveSummary(object):
         # Now sort the entity sets by each entity
         task_entity_sets = pd.DataFrame(task_entity_sets)
         task_entity_sets = task_entity_sets.sort_values(by=task_entity_sets.columns.tolist())
+
+        # Remove concatenated resting-state scans
+        # (there must also be at least one resting-state scan with run or direction)
+        mask_not_nan = (task_entity_sets["task"] == "rest") & task_entity_sets[
+            ["direction", "run"]
+        ].notna().any(axis=1)
+
+        # Create a mask for rows where 'run' is 'rest' and 'direction' and 'run' are NaN
+        mask_nan = (task_entity_sets["task"] == "rest") & task_entity_sets[
+            ["direction", "run"]
+        ].isna().all(axis=1)
+
+        # If there are rows where 'run' is 'rest', and 'direction' and 'run' are not NaN,
+        # remove rows where 'run' is 'rest', and 'direction' and 'run' are NaN
+        if mask_not_nan.any():
+            task_entity_sets = task_entity_sets.drop(task_entity_sets[mask_nan].index)
+
+        # Replace NaNs with Query.NONE
         task_entity_sets = task_entity_sets.fillna(Query.NONE)
 
         # Extract entities with variability
