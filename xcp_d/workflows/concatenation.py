@@ -323,7 +323,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ]),
         ])  # fmt:skip
 
-    if dcan_qc:
+    if dcan_qc and (fd_thresh > 0):
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_interpolated_filtered_bold, [
