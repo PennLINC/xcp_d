@@ -46,7 +46,7 @@ def base_opts():
         "atlases": ["Glasser"],
         "custom_confounds": None,
         "dcan_correlation_lengths": None,
-        "despike": None,
+        "despike": "auto",
         "abcc_qc": False,
         "combineruns": False,
     }
