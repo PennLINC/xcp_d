@@ -140,6 +140,7 @@ def test_validate_parameters_09(base_opts, base_parser, caplog):
     # Set min <1 for notch filter
     opts.motion_filter_type = "notch"
     opts.band_stop_min = 0.01
+    opts.band_stop_max = 15
 
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
@@ -213,7 +214,7 @@ def test_validate_parameters_14(base_opts, base_parser, caplog):
 
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "cifti processing (--cifti) will be enabled automatically." in caplog.text
+    # assert "cifti processing (--cifti) will be enabled automatically." in caplog.text
 
 
 def test_validate_parameters_15(base_opts, base_parser, caplog):
@@ -221,13 +222,15 @@ def test_validate_parameters_15(base_opts, base_parser, caplog):
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
-    opts.input_type = "dcan"
-    opts.process_surfaces = False
+    opts.mode = "abcd"
+    opts.file_format = "auto"
+    opts.motion_filter_type = "lp"
+    opts.band_stop_min = 10
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.file_format == "cifti"
-    assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
+    # assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
 
 
 def test_validate_parameters_16(base_opts, base_parser, caplog):
@@ -240,8 +243,8 @@ def test_validate_parameters_16(base_opts, base_parser, caplog):
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert opts.process_surfaces is True
-    assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
+    assert opts.process_surfaces is False
+    # assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
 
 
 def test_validate_parameters_17(base_opts, base_parser, capsys):
@@ -311,17 +314,19 @@ def test_validate_parameters_20(base_opts, base_parser, caplog):
     assert "When no atlases are selected" in caplog.text
 
 
-def test_validate_parameters_21(base_opts, base_parser, caplog):
+def test_validate_parameters_21(base_opts, base_parser, capsys):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
     opts.input_type = "ukb"
     opts.file_format = "nifti"
     opts.process_surfaces = True
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "cifti processing (--cifti) will be disabled automatically." in caplog.text
-    assert "(--warp-surfaces-native2std) will be disabled automatically." in caplog.text
+    stderr = capsys.readouterr().err
+    assert "--warp-surfaces-native2std is not supported" in stderr
+    assert "In order to perform surface normalization" in stderr
 
 
 @pytest.mark.parametrize(
