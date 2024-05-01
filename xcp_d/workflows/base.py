@@ -407,6 +407,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 band_stop_max=config.workflow.band_stop_max,
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
+                dvars_thresh=config.workflow.dvars_thresh,
+                censor_before=config.workflow.censor_before,
+                censor_after=config.workflow.censor_after,
+                censor_between=config.workflow.censor_between,
             )
             # Reduce exact_times to only include values greater than the post-scrubbing duration.
             if (config.workflow.min_time >= 0) and (
