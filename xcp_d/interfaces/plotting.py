@@ -126,14 +126,14 @@ class CensoringPlot(SimpleInterface):
             )
             ax.axhline(
                 self.inputs.fd_thresh[0],
-                label="FD Outlier Threshold",
-                color="salmon",
+                label="FD Denoising Outlier Threshold",
+                color=palette[3],
                 alpha=0.5,
             )
             ax.axhline(
                 self.inputs.fd_thresh[1],
-                label="FD Outlier Threshold",
-                color="peach",
+                label="FD Post-Denoising Outlier Threshold",
+                color=palette[4],
                 alpha=0.5,
             )
 
@@ -205,22 +205,34 @@ class CensoringPlot(SimpleInterface):
                     ymin=vline_ymin,
                     ymax=vline_ymax,
                     label=label,
-                    color=palette[4 + i_col],
+                    color=palette[5 + i_col],
                     alpha=0.8,
                 )
 
             vline_ymax = vline_ymin
 
         # Plot motion-censored volumes as vertical lines
-        tmask_arr = censoring_df["framewise_displacement"].values
+        tmask_arr = censoring_df["denoising"].values
         assert preproc_fd_timeseries.size == tmask_arr.size
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
-            label = "Motion-Censored Volumes" if i_idx == 0 else ""
+            label = "Denoising Censored Volumes" if i_idx == 0 else ""
             ax.axvline(
                 idx * self.inputs.TR,
                 label=label,
                 color=palette[3],
+                alpha=0.5,
+            )
+
+        tmask_arr = censoring_df["interpolation"].values
+        assert preproc_fd_timeseries.size == tmask_arr.size
+        tmask_idx = np.where(tmask_arr)[0]
+        for i_idx, idx in enumerate(tmask_idx):
+            label = "Post-Denoising Censored Volumes" if i_idx == 0 else ""
+            ax.axvline(
+                idx * self.inputs.TR,
+                label=label,
+                color=palette[4],
                 alpha=0.5,
             )
 

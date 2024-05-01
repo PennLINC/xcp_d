@@ -404,7 +404,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-f",
         "--fd-thresh",
         "--fd_thresh",
-        default=(0.3, 0),
+        default=[0.3, 0],
         metavar="FLOAT [FLOAT]",
         type=types._one_or_two_floats,
         help=(
@@ -419,7 +419,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "--dvars-thresh",
         "--dvars_thresh",
-        default=(0, 0),
+        default=[0, 0],
         metavar="FLOAT [FLOAT]",
         type=types._one_or_two_floats,
         help=(
@@ -434,7 +434,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "--censor-before",
         "--censor_before",
-        default=(0, 0),
+        default=[0, 0],
         metavar="INT [INT]",
         type=types._one_or_two_ints,
         help="The number of volumes to remove before any outlier volumes.",
@@ -442,7 +442,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "--censor-after",
         "--censor_after",
-        default=(0, 0),
+        default=[0, 0],
         metavar="INT [INT]",
         type=types._one_or_two_ints,
         help="The number of volumes to remove after any outlier volumes.",
@@ -450,7 +450,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
     g_censor.add_argument(
         "--censor-between",
         "--censor_between",
-        default=(0, 0),
+        default=[0, 0],
         metavar="INT [INT]",
         type=types._one_or_two_ints,
         help=(
