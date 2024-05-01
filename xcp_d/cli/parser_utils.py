@@ -157,6 +157,13 @@ def _check_censoring_thresholds(values, parser, arg_name):
             f"Invalid number of values for '{arg_name}': {len(values)}. "
             "Please provide either one or two values."
         )
+
+    if values[0] > 0 and values[1] > values[0]:
+        parser.error(
+            f"The second value ({values[1]}) for '{arg_name}' must be less than or equal to the "
+            f"first value ({values[0]})."
+        )
+
     return values
 
 
