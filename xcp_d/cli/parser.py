@@ -8,8 +8,8 @@ xcp_d preprocessing workflow
 import os
 import sys
 
-from xcp_d import config
 import xcp_d.cli.parser_utils as types
+from xcp_d import config
 
 
 def _build_parser():
