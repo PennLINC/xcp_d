@@ -738,6 +738,24 @@ def censor_basic(array, threshold):
 
 
 def censor_around(outlier_mask, before, after, between):
+    """Censor volumes adjacent to outliers.
+
+    Parameters
+    ----------
+    outlier_mask : array
+        Boolean array where True indicates an outlier.
+    before : int
+        Number of volumes to censor before each outlier.
+    after : int
+        Number of volumes to censor after each outlier.
+    between : int
+        Number of volumes to censor between each outlier.
+
+    Returns
+    -------
+    outlier_mask : array
+        Boolean array with additional volumes censored.
+    """
     # Censoring before and after outliers
     n_vols = len(outlier_mask)
     outlier_mask = outlier_mask.copy()
