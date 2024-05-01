@@ -939,7 +939,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.censor_between, parser, "--censor-between"
     )
 
-    nocensor = any(t <= 0 for t in opts.fd_thresh + opts.dvars_thresh)
+    nocensor = all(t <= 0 for t in opts.fd_thresh + opts.dvars_thresh)
     if nocensor and opts.min_time > 0:
         ignored_params = "\n\t".join(["--min-time"])
         build_log.warning(

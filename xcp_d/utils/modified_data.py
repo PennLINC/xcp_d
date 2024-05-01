@@ -8,7 +8,12 @@ import numpy as np
 import pandas as pd
 from nipype import logging
 
-from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, load_motion
+from xcp_d.utils.confounds import (
+    _infer_dummy_scans,
+    _modify_motion_filter,
+    calculate_outliers,
+    load_motion,
+)
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
 
@@ -146,6 +151,10 @@ def flag_bad_run(
     band_stop_max,
     head_radius,
     fd_thresh,
+    dvars_thresh,
+    censor_before,
+    censor_after,
+    censor_between,
 ):
     """Determine if a run has too many high-motion volumes to continue processing.
 
@@ -160,14 +169,18 @@ def flag_bad_run(
     %(band_stop_max)s
     %(head_radius)s
     %(fd_thresh)s
-    brain_mask
+    dvars_thresh
+    censor_before
+    censor_after
+    censor_between
 
     Returns
     -------
     post_scrubbing_duration : :obj:`float`
         Amount of time remaining in the run after dummy scan removal, in seconds.
     """
-    if fd_thresh[0] <= 0 and fd_thresh[1] <= 0:
+    nocensor = all(t <= 0 for t in fd_thresh + dvars_thresh)
+    if nocensor:
         # No scrubbing will be performed, so there's no point is calculating amount of "good time".
         return np.inf
 
@@ -182,7 +195,7 @@ def flag_bad_run(
     # Remove dummy volumes
     fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
 
-    # Calculate filtered FD
+    # Calculate filtered FD and patch it into the confounds file
     band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
         motion_filter_type=motion_filter_type,
         band_stop_min=band_stop_min,
@@ -197,13 +210,19 @@ def flag_bad_run(
         band_stop_min=band_stop_min_adjusted,
         band_stop_max=band_stop_max_adjusted,
     )
-    fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
-    keep_arr = np.ones_like(fd_arr, dtype=bool)
-    # XXX: This doesn't account for DVARS scrubbing, or before/after/between.
-    if fd_thresh[0] > 0:
-        keep_arr = keep_arr * (fd_arr < fd_thresh[0])
+    fmriprep_confounds_df["framewise_displacement"] = compute_fd(
+        confound=motion_df,
+        head_radius=head_radius,
+    )
 
-    if fd_thresh[1] > 0:
-        keep_arr = keep_arr * (fd_arr < fd_thresh[1])
-
+    # Calculate outliers to determine the post-censoring duration
+    outliers_df = calculate_outliers(
+        confounds=fmriprep_confounds_df,
+        fd_thresh=fd_thresh,
+        dvars_thresh=dvars_thresh,
+        before=censor_before,
+        after=censor_after,
+        between=censor_between,
+    )
+    keep_arr = ~outliers_df["interpolation"].astype(bool).values
     return np.sum(keep_arr) * TR

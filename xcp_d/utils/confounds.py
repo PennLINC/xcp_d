@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from nilearn.interfaces.fmriprep.load_confounds import _load_single_confounds_file
 from nipype import logging
+from scipy import ndimage
 from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
@@ -553,3 +554,168 @@ def _infer_dummy_scans(dummy_scans, confounds_file=None):
             dummy_scans = 0
 
     return dummy_scans
+
+
+def censor_basic(array, threshold):
+    """Censor basic."""
+    array[np.isnan(array)] = 0
+    if threshold > 0:
+        outlier_mask = array > threshold
+    else:
+        outlier_mask = np.zeros_like(array, dtype=bool)
+
+    return outlier_mask
+
+
+def censor_around(outlier_mask, before, after, between):
+    """Censor volumes adjacent to outliers.
+
+    Parameters
+    ----------
+    outlier_mask : array
+        Boolean array where True indicates an outlier.
+    before : int
+        Number of volumes to censor before each outlier.
+    after : int
+        Number of volumes to censor after each outlier.
+    between : int
+        Number of volumes to censor between each outlier.
+
+    Returns
+    -------
+    outlier_mask : array
+        Boolean array with additional volumes censored.
+    """
+    # Censoring before and after outliers
+    n_vols = len(outlier_mask)
+    outlier_mask = outlier_mask.astype(bool).copy()
+    outliers_idx = np.where(outlier_mask)[0]  # index untouched by expansion
+    for i in outliers_idx:
+        outlier_mask[max(0, i - before) : i] = True
+        outlier_mask[i + 1 : min(i + 1 + after, n_vols)] = True
+
+    # Find any contiguous sequences of 0s and censor them if the length of the sequence is
+    # less than or equal to the censor_between value.
+    # Find all contiguous sequences of Falses
+    labeled_array, n_uncensored_groups = ndimage.label(~outlier_mask)
+
+    # Iterate over each contiguous sequence
+    for i in range(1, n_uncensored_groups + 1):
+        slice_ = ndimage.find_objects(labeled_array == i)[0][0]
+        length = slice_.stop - slice_.start
+
+        # If the length of the contiguous sequence is less than censor_between,
+        # set the values to True
+        if length <= between:
+            outlier_mask[slice_] = True
+
+    return outlier_mask
+
+
+def calculate_outliers(*, confounds, fd_thresh, dvars_thresh, before, after, between):
+    """Generate a temporal mask DataFrame.
+
+    Parameters
+    ----------
+    confounds : pandas.DataFrame
+        DataFrame with confounds.
+        The two columns that will be used are "framewise_displacement" and "std_dvars".
+    fd_thresh : tuple
+        Tuple of two floats. The first value is the threshold for censoring during denoising,
+        and the second value is the threshold for censoring during interpolation.
+    dvars_thresh : tuple
+        Tuple of two floats. The first value is the threshold for censoring during denoising,
+        and the second value is the threshold for censoring during interpolation.
+    before : tuple
+        Tuple of two integers. The first value is the number of volumes to censor before each
+        FD or DVARS outlier volume during denoising, and the second value is the number of volumes
+        to censor before each FD or DVARS outlier volume during interpolation.
+    after : tuple
+        Tuple of two integers. The first value is the number of volumes to censor after each
+        FD or DVARS outlier volume during denoising, and the second value is the number of volumes
+        to censor after each FD or DVARS outlier volume during interpolation.
+    between : tuple
+        Tuple of two integers. The first value is the number of volumes to censor between each
+        FD or DVARS outlier volume during denoising, and the second value is the number of volumes
+        to censor between each FD or DVARS outlier volume during interpolation.
+
+    Returns
+    -------
+    outliers_df : pandas.DataFrame
+        DataFrame with columns for each type of censoring.
+    """
+    # Generate temporal mask with all timepoints have FD/DVARS over threshold set to 1.
+    n_vols = confounds.shape[0]
+
+    # Grab FD time series
+    if (
+        fd_thresh[0] > 0 or fd_thresh[1] > 0
+    ) and "framewise_displacement" not in confounds.columns:
+        raise ValueError(
+            "The 'framewise_displacement' column is missing from the fMRIPrep confounds file. "
+            "FD-based censoring is not possible."
+        )
+    elif "framewise_displacement" in confounds.columns:
+        fd_timeseries = confounds["framewise_displacement"].to_numpy()
+    else:
+        # Create a fake array that won't actually be used
+        fd_timeseries = np.zeros(n_vols)
+
+    # Grab DVARS time series
+    if (dvars_thresh[0] > 0 or dvars_thresh[1] > 0) and "std_dvars" not in confounds.columns:
+        raise ValueError(
+            "The 'std_dvars' column is missing from the fMRIPrep confounds file. "
+            "DVARS-based censoring is not possible."
+        )
+    elif "std_dvars" in confounds.columns:
+        dvars_timeseries = confounds["std_dvars"].to_numpy()
+    else:
+        # Create a fake array that won't actually be used
+        dvars_timeseries = np.zeros(n_vols)
+
+    outliers_df = pd.DataFrame(
+        columns=[
+            "framewise_displacement",
+            "dvars",
+            "denoising",
+            "framewise_displacement_interpolation",
+            "dvars_interpolation",
+            "interpolation",
+        ],
+        data=np.zeros((n_vols, 6), dtype=bool),
+    )
+
+    # Censoring for denoising
+    outliers_df["framewise_displacement"] = censor_basic(fd_timeseries, fd_thresh[0])
+    outliers_df["dvars"] = censor_basic(dvars_timeseries, dvars_thresh[0])
+
+    outlier_mask = np.logical_or(outliers_df["framewise_displacement"], outliers_df["dvars"])
+    outliers_df["denoising"] = censor_around(
+        outlier_mask,
+        before=before[0],
+        after=after[0],
+        between=between[0],
+    )
+
+    # Censoring for interpolated data (to remove interpolated signals that might be spread to
+    # other volumes by the temporal filter)
+    outliers_df["framewise_displacement_interpolation"] = censor_basic(fd_timeseries, fd_thresh[1])
+    outliers_df["dvars_interpolation"] = censor_basic(dvars_timeseries, dvars_thresh[1])
+
+    outlier_mask = np.logical_or(
+        outliers_df["framewise_displacement_interpolation"],
+        outliers_df["dvars_interpolation"],
+    )
+    outliers_df["interpolation"] = censor_around(
+        outlier_mask,
+        before=before[1],
+        after=after[1],
+        between=between[1],
+    )
+    # Interpolation outlier index should include all outliers form denoising index,
+    # because all volumes in denoising index are interpolated in denoising step.
+    outliers_df["interpolation"] = np.logical_or(
+        outliers_df["interpolation"],
+        outliers_df["denoising"],
+    )
+    return outliers_df
