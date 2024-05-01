@@ -19,7 +19,7 @@ def _build_parser():
 
     from packaging.version import Version
 
-    from xcp_d.cli.parser_utils import _float_or_auto, _int_or_auto, _restricted_float
+    import xcp_d.cli.parser_utils as types
     from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases
 
@@ -249,7 +249,7 @@ def _build_parser():
         "--dummy_scans",
         dest="dummy_scans",
         default=0,
-        type=_int_or_auto,
+        type=types._int_or_auto,
         metavar="{{auto,INT}}",
         help=(
             "Number of volumes to remove from the beginning of each run. "
@@ -391,7 +391,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--head-radius",
         "--head_radius",
         default=50,
-        type=_float_or_auto,
+        type=types._float_or_auto,
         help=(
             "Head radius used to calculate framewise displacement, in mm. "
             "The default value is 50 mm, which is recommended for adults. "
@@ -404,13 +404,60 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "-f",
         "--fd-thresh",
         "--fd_thresh",
-        default=0.3,
-        type=float,
+        default=(0.3, 0),
+        metavar="FLOAT [FLOAT]",
+        type=types._one_or_two_floats,
         help=(
-            "Framewise displacement threshold for censoring. "
-            "Any volumes with an FD value greater than the threshold will be removed from the "
-            "denoised BOLD data. "
+            "Framewise displacement thresholds for censoring. "
+            "This may be a single value or a pair of values. "
+            "If two values are provided, the first one will determine which volumes are "
+            "removed from the denoised BOLD data, and the second one will determine which "
+            "volumes are removed from the interpolated BOLD data. "
             "A threshold of <=0 will disable censoring completely."
+        ),
+    )
+    g_censor.add_argument(
+        "--dvars-thresh",
+        "--dvars_thresh",
+        default=(0, 0),
+        metavar="FLOAT [FLOAT]",
+        type=types._one_or_two_floats,
+        help=(
+            "DVARS threshold for censoring. "
+            "This may be a single value or a pair of values. "
+            "If two values are provided, the first one will determine which volumes are "
+            "removed from the denoised BOLD data, and the second one will determine which "
+            "volumes are removed from the interpolated BOLD data. "
+            "A threshold of <=0 will disable censoring completely."
+        ),
+    )
+    g_censor.add_argument(
+        "--censor-before",
+        "--censor_before",
+        default=(0, 0),
+        metavar="INT [INT]",
+        type=types._one_or_two_ints,
+        help="The number of volumes to remove before any outlier volumes.",
+    )
+    g_censor.add_argument(
+        "--censor-after",
+        "--censor_after",
+        default=(0, 0),
+        metavar="INT [INT]",
+        type=types._one_or_two_ints,
+        help="The number of volumes to remove after any outlier volumes.",
+    )
+    g_censor.add_argument(
+        "--censor-between",
+        "--censor_between",
+        default=(0, 0),
+        metavar="INT [INT]",
+        type=types._one_or_two_ints,
+        help=(
+            "If any short sets of contiguous non-outliers are found between outliers, "
+            "this parameter will remove them. "
+            "For example, if the value is set to 1, then any cases where only one non-outlier "
+            "volume exists between two outlier volumes will be censored."
         ),
     )
     g_censor.add_argument(
@@ -509,7 +556,7 @@ The default is 240 (4 minutes).
         "--min_coverage",
         required=False,
         default=0.5,
-        type=_restricted_float,
+        type=types._restricted_float,
         help=(
             "Coverage threshold to apply to parcels in each atlas. "
             "Any parcels with lower coverage than the threshold will be replaced with NaNs. "

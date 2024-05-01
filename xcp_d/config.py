@@ -544,8 +544,16 @@ class workflow(_Config):
     """Order of the filter to apply to the motion regressors."""
     head_radius = 50
     """Radius of the head in mm."""
-    fd_thresh = 0.3
+    fd_thresh = [0.3, 0.0]
     """Framewise displacement threshold for censoring."""
+    dvars_thresh = [0.0, 0.0]
+    """DVARS threshold for censoring."""
+    censor_before = [0, 0]
+    """Number of volumes to remove before FD or DVARS outliers."""
+    censor_after = [0, 0]
+    """Number of volumes to remove after FD or DVARS outliers."""
+    censor_between = [0, 0]
+    """Number of volumes to remove between any FD or DVARS outliers."""
     min_time = 240
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
     bandpass_filter = True

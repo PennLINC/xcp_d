@@ -106,7 +106,6 @@ def init_prepare_confounds_wf(
     band_stop_min = config.workflow.band_stop_min
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
-    fd_thresh = config.workflow.fd_thresh
     omp_nthreads = config.nipype.omp_nthreads
 
     dummy_scans_str = ""
@@ -135,10 +134,15 @@ def init_prepare_confounds_wf(
         TR=TR,
     )
 
-    if (fd_thresh > 0) or exact_scans:
+    censor = any(t > 0 for t in config.workflow.fd_thresh + config.workflow.dvars_thresh)
+    if censor or exact_scans:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
-            fd_thresh=fd_thresh,
+            fd_thresh=config.workflow.fd_thresh,
+            dvars_thresh=config.workflow.dvars_thresh,
+            censor_before=config.workflow.censor_before,
+            censor_after=config.workflow.censor_after,
+            censor_between=config.workflow.censor_between,
             exact_scans=exact_scans,
         )
     else:
@@ -195,7 +199,11 @@ def init_prepare_confounds_wf(
             band_stop_max=band_stop_max,
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
-            fd_thresh=fd_thresh,
+            fd_thresh=config.workflow.fd_thresh,
+            dvars_thresh=config.workflow.dvars_thresh,
+            censor_before=config.workflow.censor_before,
+            censor_after=config.workflow.censor_after,
+            censor_between=config.workflow.censor_between,
             head_radius=head_radius,
         ),
         name="generate_confounds",
@@ -354,7 +362,11 @@ def init_prepare_confounds_wf(
         CensoringPlot(
             TR=TR,
             motion_filter_type=motion_filter_type,
-            fd_thresh=fd_thresh,
+            fd_thresh=config.workflow.fd_thresh,
+            dvars_thresh=config.workflow.dvars_thresh,
+            censor_before=config.workflow.censor_before,
+            censor_after=config.workflow.censor_after,
+            censor_between=config.workflow.censor_between,
             head_radius=head_radius,
         ),
         name="censor_report",

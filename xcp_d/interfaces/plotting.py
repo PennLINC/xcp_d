@@ -47,7 +47,36 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
     motion_filter_type = traits.Either(None, traits.Str, mandatory=True)
-    fd_thresh = traits.Float(mandatory=True, desc="Framewise displacement threshold.")
+    fd_thresh = traits.List(
+        traits.Float,
+        minlen=2,
+        maxlen=2,
+        desc="Framewise displacement threshold. All values above this will be dropped.",
+    )
+    dvars_thresh = traits.List(
+        traits.Float,
+        minlen=2,
+        maxlen=2,
+        desc="DVARS threshold. All values above this will be dropped.",
+    )
+    censor_before = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor before each FD or DVARS outlier volume.",
+    )
+    censor_after = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor after each FD or DVARS outlier volume.",
+    )
+    censor_between = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor between each FD or DVARS outlier volume.",
+    )
 
 
 class _CensoringPlotOutputSpec(TraitedSpec):
@@ -95,7 +124,18 @@ class CensoringPlot(SimpleInterface):
                 label="Raw Framewise Displacement",
                 color=palette[0],
             )
-            ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="salmon", alpha=0.5)
+            ax.axhline(
+                self.inputs.fd_thresh[0],
+                label="FD Outlier Threshold",
+                color="salmon",
+                alpha=0.5,
+            )
+            ax.axhline(
+                self.inputs.fd_thresh[1],
+                label="FD Outlier Threshold",
+                color="peach",
+                alpha=0.5,
+            )
 
         dummy_scans = self.inputs.dummy_scans
         # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
@@ -138,7 +178,8 @@ class CensoringPlot(SimpleInterface):
                     (
                         preproc_fd_timeseries,
                         filtered_fd_timeseries,
-                        [self.inputs.fd_thresh],
+                        [self.inputs.fd_thresh[0]],
+                        [self.inputs.dvars_thresh[0]],
                     )
                 )
             )
