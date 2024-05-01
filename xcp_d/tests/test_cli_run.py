@@ -90,7 +90,7 @@ def test_validate_parameters_06(base_opts, base_parser, caplog):
     opts = deepcopy(base_opts)
 
     # Disable censoring
-    opts.fd_thresh = 0
+    opts.fd_thresh = [0, 0]
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 

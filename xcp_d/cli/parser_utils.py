@@ -147,3 +147,25 @@ class _DeprecatedStoreAction(Action):
             f"{self.__version__}. "
         )
         setattr(namespace, self.dest, values)
+
+
+def _check_censoring_thresholds(values, parser, arg_name):
+    if len(values) == 1:
+        values = [values[0], values[0]]
+    elif len(values) > 2:
+        parser.error(
+            f"Invalid number of values for '{arg_name}': {len(values)}. "
+            "Please provide either one or two values."
+        )
+    return values
+
+
+def _check_censoring_numbers(values, parser, arg_name):
+    if len(values) == 1:
+        values = [values[0], 0]
+    elif len(values) > 2:
+        parser.error(
+            f"Invalid number of values for '{arg_name}': {len(values)}. "
+            "Please provide either one or two values."
+        )
+    return values

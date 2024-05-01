@@ -167,7 +167,7 @@ def flag_bad_run(
     post_scrubbing_duration : :obj:`float`
         Amount of time remaining in the run after dummy scan removal, in seconds.
     """
-    if fd_thresh <= 0:
+    if fd_thresh[0] <= 0 and fd_thresh[1] <= 0:
         # No scrubbing will be performed, so there's no point is calculating amount of "good time".
         return np.inf
 
@@ -198,4 +198,12 @@ def flag_bad_run(
         band_stop_max=band_stop_max_adjusted,
     )
     fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
-    return np.sum(fd_arr <= fd_thresh) * TR
+    keep_arr = np.ones_like(fd_arr, dtype=bool)
+    # XXX: This doesn't account for DVARS scrubbing, or before/after/between.
+    if fd_thresh[0] > 0:
+        keep_arr = keep_arr * (fd_arr < fd_thresh[0])
+
+    if fd_thresh[1] > 0:
+        keep_arr = keep_arr * (fd_arr < fd_thresh[1])
+
+    return np.sum(keep_arr) * TR

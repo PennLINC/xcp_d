@@ -355,7 +355,7 @@ class QCPlots(SimpleInterface):
         dummy_scans = self.inputs.dummy_scans
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = censoring_df["framewise_displacement"].values
+            tmask_arr = censoring_df["interpolation"].values
         else:
             tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
 

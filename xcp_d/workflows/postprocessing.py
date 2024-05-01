@@ -557,6 +557,7 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     workflow = Workflow(name=name)
 
     fd_thresh = config.workflow.fd_thresh
+    dvars_thresh = config.workflow.dvars_thresh
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
     bpf_order = config.workflow.bpf_order
@@ -570,7 +571,7 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
 Nuisance regressors were regressed from the BOLD data using a denoising method based on *Nilearn*'s
 approach.
 """
-    if fd_thresh > 0:
+    if fd_thresh[0] > 0 or dvars_thresh[0] > 0:
         workflow.__desc__ += (
             "Any volumes censored earlier in the workflow were first cubic spline interpolated in "
             "the BOLD data. "
@@ -600,7 +601,7 @@ approach.
             "The same filter was applied to the confounds."
         )
 
-    if fd_thresh > 0:
+    if fd_thresh[0] > 0 or dvars_thresh[0] > 0:
         workflow.__desc__ += (
             " The resulting time series were then denoised via linear regression, "
             "in which the low-motion volumes from the BOLD time series and confounds were used to "

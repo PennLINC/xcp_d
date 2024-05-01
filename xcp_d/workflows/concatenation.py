@@ -78,8 +78,9 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
     dcan_qc = config.workflow.dcan_qc
-    fd_thresh = config.workflow.fd_thresh
     atlases = config.execution.atlases
+
+    censor = any(t > 0 for t in config.workflow.fd_thresh + config.workflow.dvars_thresh)
 
     workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.
@@ -203,7 +204,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ]),
     ])  # fmt:skip
 
-    if fd_thresh > 0:
+    if censor:
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -252,7 +253,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-        if dcan_qc and (fd_thresh > 0):
+        if dcan_qc and censor:
             ds_interpolated_filtered_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -292,7 +293,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-        if dcan_qc and (fd_thresh > 0):
+        if dcan_qc and censor:
             ds_interpolated_filtered_bold = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
@@ -324,7 +325,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ]),
         ])  # fmt:skip
 
-    if dcan_qc and (fd_thresh > 0):
+    if dcan_qc and censor:
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_interpolated_filtered_bold, [

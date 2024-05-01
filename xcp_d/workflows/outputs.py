@@ -202,7 +202,6 @@ def init_postproc_derivatives_wf(
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
     bpf_order = config.workflow.bpf_order
-    fd_thresh = config.workflow.fd_thresh
     motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
     params = config.workflow.params
@@ -210,6 +209,8 @@ def init_postproc_derivatives_wf(
     cifti = config.workflow.cifti
     dcan_qc = config.workflow.dcan_qc
     output_dir = config.execution.xcp_d_dir
+
+    censor = any(t > 0 for t in config.workflow.fd_thresh + config.workflow.dvars_thresh)
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -320,14 +321,14 @@ def init_postproc_derivatives_wf(
     # fmt:on
 
     merge_dense_src = pe.Node(
-        niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if params != "none" else 0))),
+        niu.Merge(numinputs=(1 + (1 if censor else 0) + (1 if params != "none" else 0))),
         name="merge_dense_src",
         run_without_submitting=True,
         mem_gb=1,
     )
     merge_dense_src.inputs.in1 = preproc_bold_src
 
-    if fd_thresh > 0:
+    if censor:
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -336,7 +337,8 @@ def init_postproc_derivatives_wf(
                 extension=".tsv",
                 source_file=name_source,
                 # Metadata
-                Threshold=fd_thresh,
+                FramewiseDisplacementThreshold=config.workflow.fd_thresh,
+                DVARSThreshold=config.workflow.dvars_thresh,
             ),
             name="ds_temporal_mask",
             run_without_submitting=True,
@@ -360,15 +362,13 @@ def init_postproc_derivatives_wf(
 
     if params != "none":
         confounds_src = pe.Node(
-            niu.Merge(
-                numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if custom_confounds_file else 0))
-            ),
+            niu.Merge(numinputs=(1 + (1 if censor else 0) + (1 if custom_confounds_file else 0))),
             name="confounds_src",
             run_without_submitting=True,
             mem_gb=1,
         )
         workflow.connect([(inputnode, confounds_src, [("fmriprep_confounds_file", "in1")])])
-        if fd_thresh > 0:
+        if censor:
             # fmt:off
             workflow.connect([
                 (ds_temporal_mask, confounds_src, [
@@ -403,7 +403,7 @@ def init_postproc_derivatives_wf(
             ]),
             (confounds_src, ds_confounds, [("out", "Sources")]),
             (ds_confounds, merge_dense_src, [
-                (("out_file", _make_xcpd_uri, output_dir), f"in{3 if fd_thresh > 0 else 2}"),
+                (("out_file", _make_xcpd_uri, output_dir), f"in{3 if censor else 2}"),
             ]),
         ])
         # fmt:on
@@ -434,7 +434,7 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    if dcan_qc and (fd_thresh > 0):
+    if dcan_qc and censor:
         ds_interpolated_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,

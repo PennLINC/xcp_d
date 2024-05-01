@@ -9,6 +9,7 @@ import os
 import sys
 
 from xcp_d import config
+import xcp_d.cli.parser_utils as types
 
 
 def _build_parser():
@@ -19,7 +20,6 @@ def _build_parser():
 
     from packaging.version import Version
 
-    import xcp_d.cli.parser_utils as types
     from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases
 
@@ -405,8 +405,9 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--fd-thresh",
         "--fd_thresh",
         default=[0.3, 0],
-        metavar="FLOAT [FLOAT]",
-        type=types._one_or_two_floats,
+        metavar="FLOAT",
+        type=float,
+        nargs="+",
         help=(
             "Framewise displacement thresholds for censoring. "
             "This may be a single value or a pair of values. "
@@ -420,8 +421,9 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--dvars-thresh",
         "--dvars_thresh",
         default=[0, 0],
-        metavar="FLOAT [FLOAT]",
-        type=types._one_or_two_floats,
+        metavar="FLOAT",
+        type=float,
+        nargs="+",
         help=(
             "DVARS threshold for censoring. "
             "This may be a single value or a pair of values. "
@@ -435,24 +437,27 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--censor-before",
         "--censor_before",
         default=[0, 0],
-        metavar="INT [INT]",
-        type=types._one_or_two_ints,
+        metavar="INT",
+        nargs="+",
+        type=int,
         help="The number of volumes to remove before any outlier volumes.",
     )
     g_censor.add_argument(
         "--censor-after",
         "--censor_after",
         default=[0, 0],
-        metavar="INT [INT]",
-        type=types._one_or_two_ints,
+        metavar="INT",
+        nargs="+",
+        type=int,
         help="The number of volumes to remove after any outlier volumes.",
     )
     g_censor.add_argument(
         "--censor-between",
         "--censor_between",
         default=[0, 0],
-        metavar="INT [INT]",
-        type=types._one_or_two_ints,
+        metavar="INT",
+        nargs="+",
+        type=int,
         help=(
             "If any short sets of contiguous non-outliers are found between outliers, "
             "this parameter will remove them. "
@@ -922,10 +927,23 @@ def _validate_parameters(opts, build_log, parser):
         build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
 
     # Scrubbing parameters
-    if opts.fd_thresh <= 0 and opts.min_time > 0:
+    opts.fd_thresh = types._check_censoring_thresholds(opts.fd_thresh, parser, "--fd-thresh")
+    opts.dvars_thresh = types._check_censoring_thresholds(
+        opts.dvars_thresh, parser, "--dvars-thresh"
+    )
+    opts.censor_before = types._check_censoring_numbers(
+        opts.censor_before, parser, "--censor-before"
+    )
+    opts.censor_after = types._check_censoring_numbers(opts.censor_after, parser, "--censor-after")
+    opts.censor_between = types._check_censoring_numbers(
+        opts.censor_between, parser, "--censor-between"
+    )
+
+    nocensor = any(t <= 0 for t in opts.fd_thresh + opts.dvars_thresh)
+    if nocensor and opts.min_time > 0:
         ignored_params = "\n\t".join(["--min-time"])
         build_log.warning(
-            "Framewise displacement-based scrubbing is disabled. "
+            "Censoring is disabled. "
             f"The following parameters will have no effect:\n\t{ignored_params}"
         )
         opts.min_time = 0

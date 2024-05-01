@@ -670,9 +670,17 @@ class GenerateConfounds(SimpleInterface):
         outliers_df["framewise_displacement"] = censor_basic(
             fd_timeseries, self.inputs.fd_thresh[0]
         )
-        outliers_df["dvars"] = censor_basic(
-            fmriprep_confounds_df["dvars"].to_numpy(), self.inputs.dvars_thresh[0]
-        )
+        if self.inputs.dvars_thresh[0] > 0:
+            if "std_dvars" not in fmriprep_confounds_df.columns:
+                raise ValueError(
+                    "The 'std_dvars' column is missing from the fMRIPrep confounds file. "
+                    "DVARS-based censoring is not possible."
+                )
+
+            outliers_df["dvars"] = censor_basic(
+                fmriprep_confounds_df["std_dvars"].to_numpy(), self.inputs.dvars_thresh[0]
+            )
+
         outlier_mask = np.logical_or(outliers_df["framewise_displacement"], outliers_df["dvars"])
         outliers_df["denoising"] = censor_around(
             outlier_mask,
@@ -686,9 +694,17 @@ class GenerateConfounds(SimpleInterface):
         outliers_df["framewise_displacement_interpolation"] = censor_basic(
             fd_timeseries, self.inputs.fd_thresh[1]
         )
-        outliers_df["dvars_interpolation"] = censor_basic(
-            fmriprep_confounds_df["dvars"].to_numpy(), self.inputs.dvars_thresh[1]
-        )
+        if self.inputs.dvars_thresh[1] > 0:
+            if "std_dvars" not in fmriprep_confounds_df.columns:
+                raise ValueError(
+                    "The 'std_dvars' column is missing from the fMRIPrep confounds file. "
+                    "DVARS-based censoring is not possible."
+                )
+
+            outliers_df["dvars_interpolation"] = censor_basic(
+                fmriprep_confounds_df["std_dvars"].to_numpy(), self.inputs.dvars_thresh[1]
+            )
+
         outlier_mask = np.logical_or(
             outliers_df["framewise_displacement_interpolation"],
             outliers_df["dvars_interpolation"],
@@ -705,6 +721,7 @@ class GenerateConfounds(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=True,
         )
+        outliers_df = outliers_df.astype(int)
         outliers_df.to_csv(
             self._results["temporal_mask"],
             index=False,
@@ -729,6 +746,7 @@ class GenerateConfounds(SimpleInterface):
 
 def censor_basic(array, threshold):
     """Censor basic."""
+    array[np.isnan(array)] = 0
     if threshold > 0:
         outlier_mask = array > threshold
     else:
@@ -758,11 +776,11 @@ def censor_around(outlier_mask, before, after, between):
     """
     # Censoring before and after outliers
     n_vols = len(outlier_mask)
-    outlier_mask = outlier_mask.copy()
+    outlier_mask = outlier_mask.astype(bool).copy()
     outliers_idx = np.where(outlier_mask)[0]  # index untouched by expansion
     for i in outliers_idx:
-        outlier_mask[max(0, i - before) : i] = 1
-        outlier_mask[i + 1 : min(i + 1 + after, n_vols)] = 1
+        outlier_mask[max(0, i - before) : i] = True
+        outlier_mask[i + 1 : min(i + 1 + after, n_vols)] = True
 
     # Find any contiguous sequences of 0s and censor them if the length of the sequence is
     # less than or equal to the censor_between value.
@@ -771,7 +789,7 @@ def censor_around(outlier_mask, before, after, between):
 
     # Iterate over each contiguous sequence
     for i in range(1, n_uncensored_groups + 1):
-        slice_ = ndimage.find_objects(labeled_array == i)[0]
+        slice_ = ndimage.find_objects(labeled_array == i)[0][0]
         length = slice_.stop - slice_.start
 
         # If the length of the contiguous sequence is less than censor_between,
