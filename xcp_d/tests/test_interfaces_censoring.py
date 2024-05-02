@@ -222,7 +222,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     # Test with a NIfTI file, with some censored volumes
     n_censored_volumes = 10
     n_retained_volumes = n_volumes - n_censored_volumes
-    censoring_df.loc[range(10), "framewise_displacement"] = 1
+    censoring_df.loc[range(10), "interpolation"] = 1
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
     interface = censoring.Censor(
         in_file=nifti_file,
