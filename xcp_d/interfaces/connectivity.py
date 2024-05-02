@@ -800,8 +800,8 @@ class ConnectPlot(SimpleInterface):
         ]
         selected_atlases = []
         c = 0
-        for atlas in self.inputs.atlases:
-            if atlas in priority_list:
+        for atlas in priority_list:
+            if atlas in self.inputs.atlases:
                 selected_atlases.append(atlas)
                 c += 1
 
