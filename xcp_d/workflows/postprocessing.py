@@ -306,7 +306,9 @@ def init_prepare_confounds_wf(
                 ("preprocessed_bold", "preprocessed_bold"),
                 ("full_confounds", "full_confounds"),
             ]),
-            (filter_motion, dummy_scan_buffer, [("modified_full_confounds", "full_confounds")]),
+            (filter_motion, dummy_scan_buffer, [
+                ("modified_full_confounds", "modified_full_confounds"),
+            ]),
             (generate_temporal_mask, dummy_scan_buffer, [("temporal_mask", "temporal_mask")]),
             (generate_design_matrix, dummy_scan_buffer, [("design_matrix", "design_matrix")]),
         ])  # fmt:skip
