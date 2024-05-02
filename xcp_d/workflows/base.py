@@ -373,7 +373,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         TR = _get_tr(nb.load(task_files[0]))
 
         n_task_runs = len(task_files)
-        if config.workflow.combineruns and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_task_runs > 1):
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
@@ -482,13 +482,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-            if config.workflow.combineruns and (n_task_runs > 1):
+            if config.workflow.combine_runs and (n_task_runs > 1):
                 for io_name, node in merge_dict.items():
                     workflow.connect([
                         (postprocess_bold_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
                     ])  # fmt:skip
 
-        if config.workflow.combineruns and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_task_runs > 1):
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,

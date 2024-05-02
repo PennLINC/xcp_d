@@ -19,59 +19,9 @@ def _build_parser():
 
     from packaging.version import Version
 
-    from xcp_d.cli.parser_utils import (
-        YesNoAction,
-        _float_or_auto,
-        _float_or_auto_or_none,
-        _int_or_auto,
-        _restricted_float,
-    )
+    from xcp_d.cli import parser_utils
     from xcp_d.cli.version import check_latest, is_flagged
     from xcp_d.utils.atlas import select_atlases
-
-    def _path_exists(path, parser):
-        """Ensure a given path exists."""
-        if path is None or not Path(path).exists():
-            raise parser.error(f"Path does not exist: <{path}>.")
-        return Path(path).absolute()
-
-    def _is_file(path, parser):
-        """Ensure a given path exists and it is a file."""
-        path = _path_exists(path, parser)
-        if not path.is_file():
-            raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
-        return path
-
-    def _process_value(value):
-        import bids
-
-        if value is None:
-            return bids.layout.Query.NONE
-        elif value == "*":
-            return bids.layout.Query.ANY
-        else:
-            return value
-
-    def _filter_pybids_none_any(dct):
-        d = {}
-        for k, v in dct.items():
-            if isinstance(v, list):
-                d[k] = [_process_value(val) for val in v]
-            else:
-                d[k] = _process_value(v)
-        return d
-
-    def _bids_filter(value, parser):
-        from json import JSONDecodeError, loads
-
-        if value:
-            if Path(value).exists():
-                try:
-                    return loads(Path(value).read_text(), object_hook=_filter_pybids_none_any)
-                except JSONDecodeError:
-                    raise parser.error(f"JSON syntax error in: <{value}>.")
-            else:
-                raise parser.error(f"Path does not exist: <{value}>.")
 
     verstr = f"XCP-D v{config.environment.version}"
     currentv = Version(config.environment.version)
@@ -82,9 +32,9 @@ def _build_parser():
         epilog="See https://xcp-d.readthedocs.io/en/latest/workflows.html",
         formatter_class=ArgumentDefaultsHelpFormatter,
     )
-    PathExists = partial(_path_exists, parser=parser)
-    IsFile = partial(_is_file, parser=parser)
-    BIDSFilter = partial(_bids_filter, parser=parser)
+    PathExists = partial(parser_utils._path_exists, parser=parser)
+    IsFile = partial(parser_utils._is_file, parser=parser)
+    BIDSFilter = partial(parser_utils._bids_filter, parser=parser)
 
     # important parameters required
     parser.add_argument(
@@ -277,7 +227,7 @@ def _build_parser():
         "--dummy_scans",
         dest="dummy_scans",
         default=0,
-        type=_int_or_auto,
+        type=parser_utils._int_or_auto,
         metavar="{{auto,INT}}",
         help=(
             "Number of volumes to remove from the beginning of each run. "
@@ -292,7 +242,7 @@ def _build_parser():
         const=None,
         default="auto",
         choices=["y", "n"],
-        action=YesNoAction,
+        action=parser_utils.YesNoAction,
         help=(
             "Despike the BOLD data before postprocessing. "
             "If not defined, the despike option will be inferred from the 'mode'. "
@@ -358,12 +308,12 @@ def _build_parser():
         "-m",
         "--combine-runs",
         "--combine_runs",
-        dest="combineruns",
+        dest="combine_runs",
         nargs="?",
         const=None,
         default="auto",
         choices=["y", "n"],
-        action=YesNoAction,
+        action=parser_utils.YesNoAction,
         help="After denoising, concatenate each derivative from each task across runs.",
     )
 
@@ -442,7 +392,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--head_radius",
         dest="head_radius",
         default=50,
-        type=_float_or_auto,
+        type=parser_utils._float_or_auto,
         help=(
             "Head radius used to calculate framewise displacement, in mm. "
             "The default value is 50 mm, which is recommended for adults. "
@@ -566,7 +516,7 @@ The default is 240 (4 minutes).
         dest="min_coverage",
         required=False,
         default=0.5,
-        type=_restricted_float,
+        type=parser_utils._restricted_float,
         help=(
             "Coverage threshold to apply to parcels in each atlas. "
             "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
@@ -583,7 +533,7 @@ The default is 240 (4 minutes).
         required=False,
         default=None,
         nargs="+",
-        type=_float_or_auto_or_none,
+        type=parser_utils._float_or_auto_or_none,
         help="""\
 If used, this parameter will produce correlation matrices limited to each requested amount of time.
 If there is more than the required amount of low-motion data,
@@ -748,7 +698,7 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         const=None,
         default="auto",
         choices=["y", "n"],
-        action=YesNoAction,
+        action=parser_utils.YesNoAction,
         help="""\
 If used, a workflow will be run to warp native-space (``fsnative``) reconstructed cortical
 surfaces (``surf.gii`` files) produced by Freesurfer into standard (``fsLR``) space.
@@ -959,13 +909,13 @@ def _validate_parameters(opts, build_log, parser):
     # Check parameter value types/valid values
     assert opts.despike in (True, False, "auto")
     assert opts.process_surfaces in (True, False, "auto")
-    assert opts.combineruns in (True, False, "auto")
+    assert opts.combine_runs in (True, False, "auto")
     assert opts.file_format in ("nifti", "cifti", "auto")
 
     # Check parameters based on the mode
     if opts.mode in ("abcd", "hbcd"):
         opts.abcc_qc = True
-        opts.combineruns = True if (opts.combineruns == "auto") else opts.combineruns
+        opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
         opts.process_surfaces = (
@@ -1002,7 +952,7 @@ def _validate_parameters(opts, build_log, parser):
         )
     elif opts.mode == "linc":
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
-        opts.combineruns = False if opts.combineruns == "auto" else opts.combineruns
+        opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
     else:
         raise ValueError(f"Unsupported mode '{opts.mode}'")
 

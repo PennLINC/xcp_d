@@ -6,6 +6,7 @@ import logging
 import os
 import warnings
 from argparse import Action
+from pathlib import Path
 
 from niworkflows import NIWORKFLOWS_LOG
 
@@ -101,6 +102,55 @@ def _restricted_float(x):
         raise argparse.ArgumentTypeError(f"{x} not in range [0.0, 1.0]")
 
     return x
+
+
+def _path_exists(path, parser):
+    """Ensure a given path exists."""
+    if path is None or not Path(path).exists():
+        raise parser.error(f"Path does not exist: <{path}>.")
+    return Path(path).absolute()
+
+
+def _is_file(path, parser):
+    """Ensure a given path exists and it is a file."""
+    path = _path_exists(path, parser)
+    if not path.is_file():
+        raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
+    return path
+
+
+def _process_value(value):
+    import bids
+
+    if value is None:
+        return bids.layout.Query.NONE
+    elif value == "*":
+        return bids.layout.Query.ANY
+    else:
+        return value
+
+
+def _filter_pybids_none_any(dct):
+    d = {}
+    for k, v in dct.items():
+        if isinstance(v, list):
+            d[k] = [_process_value(val) for val in v]
+        else:
+            d[k] = _process_value(v)
+    return d
+
+
+def _bids_filter(value, parser):
+    from json import JSONDecodeError, loads
+
+    if value:
+        if Path(value).exists():
+            try:
+                return loads(Path(value).read_text(), object_hook=_filter_pybids_none_any)
+            except JSONDecodeError:
+                raise parser.error(f"JSON syntax error in: <{value}>.")
+        else:
+            raise parser.error(f"Path does not exist: <{value}>.")
 
 
 class YesNoAction(Action):

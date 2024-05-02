@@ -48,7 +48,7 @@ def base_opts():
         "dcan_correlation_lengths": None,
         "despike": "auto",
         "abcc_qc": False,
-        "combineruns": False,
+        "combine_runs": False,
     }
     opts = FakeOptions(**opts_dict)
     return opts
@@ -364,7 +364,7 @@ def test_validate_parameters_22(base_opts, base_parser, mode, despike, expectati
         assert mod_opts.despike is expectation
 
 
-def test_build_parser(tmp_path_factory):
+def test_build_parser_01(tmp_path_factory):
     """Test parser._build_parser."""
     tmpdir = tmp_path_factory.mktemp("test_build_parser")
     data_dir = os.path.join(tmpdir, "data")
@@ -388,6 +388,7 @@ def test_build_parser(tmp_path_factory):
     assert opts.output_dir == out_path
     assert opts.despike == "auto"
 
+    # Test parsing of the despike parameter
     test_args = base_args[:]
     test_args.extend(["--despike"])
     opts = parser_obj.parse_args(args=test_args, namespace=None)
@@ -409,6 +410,17 @@ def test_build_parser(tmp_path_factory):
     assert opts.output_dir == out_path
     assert opts.despike is False
 
+
+def test_build_parser_02(tmp_path_factory):
+    """Test parser._build_parser."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_02")
+    data_dir = os.path.join(tmpdir, "data")
+    data_path = Path(data_dir)
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, "out")
+    out_path = Path(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
+
     # Parameters for abcd mode
     base_args = [
         data_dir,
@@ -416,6 +428,43 @@ def test_build_parser(tmp_path_factory):
         "participant",
         "--mode",
         "abcd",
+        "--motion-filter-type",
+        "lp",
+        "--band-stop-min",
+        "10",
+    ]
+    parser_obj = parser._build_parser()
+
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    assert opts.fmri_dir == data_path
+    assert opts.output_dir == out_path
+    assert opts.despike == "auto"
+
+    test_args = base_args[:]
+    test_args.extend(["--create-matrices", "all", "300", "450"])
+    opts = parser_obj.parse_args(args=test_args, namespace=None)
+    assert opts.fmri_dir == data_path
+    assert opts.output_dir == out_path
+    assert opts.dcan_correlation_lengths == ["all", 300, 450]
+
+
+def test_build_parser_03(tmp_path_factory):
+    """Test parser._build_parser."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_03")
+    data_dir = os.path.join(tmpdir, "data")
+    data_path = Path(data_dir)
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, "out")
+    out_path = Path(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Parameters for hbcd mode
+    base_args = [
+        data_dir,
+        out_dir,
+        "participant",
+        "--mode",
+        "hbcd",
         "--motion-filter-type",
         "lp",
         "--band-stop-min",
