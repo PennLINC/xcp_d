@@ -6,9 +6,9 @@ from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
+from templateflow.api import get as get_template
 
 from xcp_d import config
-from xcp_d.data import load as load_data
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
@@ -737,13 +737,23 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                 direction="COLUMN",  # which direction to smooth along@
                 # pull out atlases for each hemisphere
                 right_surf=str(
-                    load_data(
-                        "ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii"
+                    get_template(
+                        template="fsLR",
+                        space=None,
+                        hemi="R",
+                        density="32k",
+                        desc=None,
+                        suffix="sphere",
                     )
                 ),
                 left_surf=str(
-                    load_data(
-                        "ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii"
+                    get_template(
+                        template="fsLR",
+                        space=None,
+                        hemi="L",
+                        density="32k",
+                        desc=None,
+                        suffix="sphere",
                     )
                 ),
             ),

@@ -7,8 +7,8 @@ import tempfile
 import numpy as np
 from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
+from templateflow.api import get as get_template
 
-from xcp_d.data import load as load_data
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.utils.utils import fwhm2sigma
 
@@ -82,13 +82,23 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)
     in_file = ds001419_data["cifti_file"]
     # pull out atlases for each hemisphere
     right_surf = str(
-        load_data(
-            "ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii",
+        get_template(
+            template="fsLR",
+            space=None,
+            hemi="R",
+            density="32k",
+            desc=None,
+            suffix="sphere",
         )
     )
     left_surf = str(
-        load_data(
-            "ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii",
+        get_template(
+            template="fsLR",
+            space=None,
+            hemi="L",
+            density="32k",
+            desc=None,
+            suffix="sphere",
         )
     )
 
