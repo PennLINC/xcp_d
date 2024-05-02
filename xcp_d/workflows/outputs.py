@@ -202,7 +202,6 @@ def init_postproc_derivatives_wf(
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
     bpf_order = config.workflow.bpf_order
-    motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
     params = config.workflow.params
     atlases = config.execution.atlases

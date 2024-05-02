@@ -321,7 +321,9 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, make_dcan_qc_file_node, [("modified_full_confounds", "modified_full_confounds")]),
+            (inputnode, make_dcan_qc_file_node, [
+                ("modified_full_confounds", "modified_full_confounds"),
+            ]),
         ])
         # fmt:on
 
