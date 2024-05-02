@@ -720,63 +720,67 @@ class ConnectPlot(SimpleInterface):
     input_spec = _ConnectPlotInputSpec
     output_spec = _ConnectPlotOutputSpec
 
-    def plot_matrix(self, corr_mat, network_labels, ax):
+    def plot_matrix(self, corr_mat, ax, network_labels=None):
         """Plot matrix in subplot Axes."""
-        assert corr_mat.shape[0] == len(network_labels)
-        assert corr_mat.shape[1] == len(network_labels)
+        if network_labels is not None:
+            assert corr_mat.shape[0] == len(network_labels)
+            assert corr_mat.shape[1] == len(network_labels)
 
-        # Determine order of nodes while retaining original order of networks
-        unique_labels = []
-        for label in network_labels:
-            if label not in unique_labels:
-                unique_labels.append(label)
+            # Determine order of nodes while retaining original order of networks
+            unique_labels = []
+            for label in network_labels:
+                if label not in unique_labels:
+                    unique_labels.append(label)
 
-        mapper = {label: f"{i:03d}_{label}" for i, label in enumerate(unique_labels)}
-        mapped_network_labels = [mapper[label] for label in network_labels]
-        community_order = np.argsort(mapped_network_labels)
+            mapper = {label: f"{i:03d}_{label}" for i, label in enumerate(unique_labels)}
+            mapped_network_labels = [mapper[label] for label in network_labels]
+            community_order = np.argsort(mapped_network_labels)
 
-        # Sort parcels by community
-        corr_mat = corr_mat[community_order, :]
-        corr_mat = corr_mat[:, community_order]
+            # Sort parcels by community
+            corr_mat = corr_mat[community_order, :]
+            corr_mat = corr_mat[:, community_order]
+
+            # Get the community name associated with each network
+            labels = np.array(network_labels)[community_order]
+            unique_labels = sorted(list(set(labels)))
+            unique_labels = []
+            for label in labels:
+                if label not in unique_labels:
+                    unique_labels.append(label)
+
+            # Find the locations for the community-separating lines
+            break_idx = [0]
+            end_idx = None
+            for label in unique_labels:
+                start_idx = np.where(labels == label)[0][0]
+                if end_idx:
+                    break_idx.append(np.mean([start_idx, end_idx]))
+
+                end_idx = np.where(labels == label)[0][-1]
+
+            break_idx.append(len(labels))
+            break_idx = np.array(break_idx)
+
+            # Find the locations for the labels in the middles of the communities
+            label_idx = np.mean(np.vstack((break_idx[1:], break_idx[:-1])), axis=0)
+
         np.fill_diagonal(corr_mat, 0)
-
-        # Get the community name associated with each network
-        labels = np.array(network_labels)[community_order]
-        unique_labels = sorted(list(set(labels)))
-        unique_labels = []
-        for label in labels:
-            if label not in unique_labels:
-                unique_labels.append(label)
-
-        # Find the locations for the community-separating lines
-        break_idx = [0]
-        end_idx = None
-        for label in unique_labels:
-            start_idx = np.where(labels == label)[0][0]
-            if end_idx:
-                break_idx.append(np.mean([start_idx, end_idx]))
-
-            end_idx = np.where(labels == label)[0][-1]
-
-        break_idx.append(len(labels))
-        break_idx = np.array(break_idx)
-
-        # Find the locations for the labels in the middles of the communities
-        label_idx = np.mean(np.vstack((break_idx[1:], break_idx[:-1])), axis=0)
 
         # Plot the correlation matrix
         ax.imshow(corr_mat, vmin=-1, vmax=1, cmap="seismic")
 
-        # Add lines separating networks
-        for idx in break_idx[1:-1]:
-            ax.axes.axvline(idx, color="black")
-            ax.axes.axhline(idx, color="black")
+        if network_labels is not None:
+            # Add lines separating networks
+            for idx in break_idx[1:-1]:
+                ax.axes.axvline(idx, color="black")
+                ax.axes.axhline(idx, color="black")
 
-        # Add network names
-        ax.axes.set_yticks(label_idx)
-        ax.axes.set_xticks(label_idx)
-        ax.axes.set_yticklabels(unique_labels)
-        ax.axes.set_xticklabels(unique_labels, rotation=90)
+            # Add network names
+            ax.axes.set_yticks(label_idx)
+            ax.axes.set_xticks(label_idx)
+            ax.axes.set_yticklabels(unique_labels)
+            ax.axes.set_xticklabels(unique_labels, rotation=90)
+
         return ax
 
     def _run_interface(self, runtime):
