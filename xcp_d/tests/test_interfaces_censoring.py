@@ -52,7 +52,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
         censor_between=[1, 1],
         head_radius=50,
         full_confounds=confounds_tsv,
-        fmriprep_confounds_json=confounds_json,
+        full_confounds_json=confounds_json,
         custom_confounds_file=custom_confounds_file,
         motion_filter_type=None,
         motion_filter_order=4,
