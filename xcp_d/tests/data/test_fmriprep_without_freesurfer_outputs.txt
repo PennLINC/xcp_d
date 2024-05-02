@@ -72,8 +72,8 @@ sub-01/func
 sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-dcan_qc.hdf5
 sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv
-sub-01/func/sub-01_task-mixedgamblestask_run-1_motion.json
-sub-01/func/sub-01_task-mixedgamblestask_run-1_motion.tsv
+sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.json
+sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-confounds_timeseries.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_outliers.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_outliers.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.json
@@ -200,8 +200,8 @@ sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_stat-re
 sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-dcan_qc.hdf5
 sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.tsv
-sub-01/func/sub-01_task-mixedgamblestask_run-2_motion.json
-sub-01/func/sub-01_task-mixedgamblestask_run-2_motion.tsv
+sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-confounds_timeseries.json
+sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-confounds_timeseries.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_outliers.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_outliers.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.json

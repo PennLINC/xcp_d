@@ -73,8 +73,8 @@ sub-01/ses-1mo/func
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-dcan_qc.hdf5
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.json
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.tsv
-sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.json
-sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.tsv
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-confounds_timeseries.json
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-confounds_timeseries.tsv
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoised_bold.json
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoised_bold.nii.gz
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-linc_qc.tsv

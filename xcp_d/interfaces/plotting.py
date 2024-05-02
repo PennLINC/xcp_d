@@ -213,7 +213,9 @@ class CensoringPlot(SimpleInterface):
 
         # Plot motion-censored volumes as vertical lines
         tmask_arr = censoring_df["denoising"].values
-        assert preproc_fd_timeseries.size == tmask_arr.size
+        if preproc_fd_timeseries.size != tmask_arr.size:
+            raise ValueError(f"{preproc_fd_timeseries.size} != {tmask_arr.size}")
+
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
             label = "Denoising Censored Volumes" if i_idx == 0 else ""
@@ -225,7 +227,6 @@ class CensoringPlot(SimpleInterface):
             )
 
         tmask_arr = censoring_df["interpolation"].values - censoring_df["denoising"].values
-        assert preproc_fd_timeseries.size == tmask_arr.size
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
             label = "Post-Denoising Censored Volumes" if i_idx == 0 else ""

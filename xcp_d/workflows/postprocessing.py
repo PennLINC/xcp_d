@@ -344,9 +344,9 @@ def init_prepare_confounds_wf(
     else:
         workflow.connect([
             (generate_temporal_mask, tmask_buffer, [
-                ("temporal_mask", "temporal_mask"),
                 ("temporal_mask_metadata", "temporal_mask_metadata"),
             ]),
+            (dummy_scan_buffer, tmask_buffer, [("temporal_mask", "temporal_mask")]),
         ])  # fmt:skip
 
     workflow.connect([

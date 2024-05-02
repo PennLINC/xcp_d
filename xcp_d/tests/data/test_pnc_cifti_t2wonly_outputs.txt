@@ -42,8 +42,8 @@ sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_seg-
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_seg-Glasser_stat-mean_desc-thickness_morph.tsv
 sub-1648798153/ses-PNC1/func
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-dcan_qc.hdf5
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-filtered_motion.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-filtered_motion.tsv
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-confounds_timeseries.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-confounds_timeseries.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_outliers.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_outliers.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
