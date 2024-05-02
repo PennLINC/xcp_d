@@ -67,9 +67,9 @@ def init_qc_report_wf(
     %(template_to_anat_xfm)s
         Only used with non-CIFTI data.
     %(dummy_scans)s
-    %(full_confounds)s
+    full_confounds
     %(temporal_mask)s
-    %(modified_full_confounds)s
+    modified_full_confounds
 
     Outputs
     -------

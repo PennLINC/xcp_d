@@ -102,8 +102,8 @@ def init_postprocess_cifti_wf(
     t2w
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
-    %(full_confounds)s
-    fmriprep_confounds_json
+    full_confounds
+    full_confounds_json
     %(dummy_scans)s
 
     Outputs
@@ -111,9 +111,9 @@ def init_postprocess_cifti_wf(
     %(name_source)s
     preprocessed_bold : :obj:`str`
         The preprocessed BOLD file, after dummy scan removal.
-    %(full_confounds)s
+    full_confounds
         After dummy scan removal.
-    %(modified_full_confounds)s
+    modified_full_confounds
     %(temporal_mask)s
     %(denoised_interpolated_bold)s
     %(censored_denoised_bold)s
@@ -148,7 +148,7 @@ def init_postprocess_cifti_wf(
                 "t1w",
                 "t2w",
                 "full_confounds",
-                "fmriprep_confounds_json",
+                "full_confounds_json",
                 "dummy_scans",
                 # if parcellation is performed
                 "atlases",
@@ -163,7 +163,7 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
     inputnode.inputs.full_confounds = run_data["confounds"]
-    inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
+    inputnode.inputs.full_confounds_json = run_data["confounds_json"]
     inputnode.inputs.dummy_scans = dummy_scans
     inputnode.inputs.atlases = atlases
 
@@ -233,7 +233,7 @@ the following post-processing was performed.
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
             ("full_confounds", "inputnode.full_confounds"),
-            ("fmriprep_confounds_json", "inputnode.full_confounds_json"),
+            ("full_confounds_json", "inputnode.full_confounds_json"),
         ]),
         (downcast_data, prepare_confounds_wf, [
             ("bold_file", "inputnode.preprocessed_bold"),

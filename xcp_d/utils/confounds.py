@@ -90,7 +90,7 @@ def get_custom_confounds(custom_confounds_folder, full_confounds):
     Parameters
     ----------
     %(custom_confounds_folder)s
-    %(full_confounds)s
+    full_confounds
         We expect the custom confounds file to have the same name.
 
     Returns

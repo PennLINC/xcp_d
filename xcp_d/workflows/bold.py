@@ -113,8 +113,8 @@ def init_postprocess_nifti_wf(
     anat_brainmask
         T1w brain mask, used for transforms in the QC report workflow.
         Fed from the subject workflow.
-    %(full_confounds)s
-    fmriprep_confounds_json
+    full_confounds
+    full_confounds_json
     %(dummy_scans)s
 
     Outputs
@@ -122,9 +122,9 @@ def init_postprocess_nifti_wf(
     %(name_source)s
     preprocessed_bold : :obj:`str`
         The preprocessed BOLD file, after dummy scan removal.
-    %(modified_full_confounds)s
+    modified_full_confounds
     %(temporal_mask)s
-    %(full_confounds)s
+    full_confounds
         After dummy scan removal.
     %(denoised_interpolated_bold)s
     %(smoothed_denoised_bold)s
@@ -161,7 +161,7 @@ def init_postprocess_nifti_wf(
                 "t2w",
                 "anat_brainmask",
                 "full_confounds",
-                "fmriprep_confounds_json",
+                "full_confounds_json",
                 "dummy_scans",
                 # if parcellation is performed
                 "atlases",
@@ -176,7 +176,7 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.boldref = run_data["boldref"]
     inputnode.inputs.bold_mask = run_data["boldmask"]
     inputnode.inputs.full_confounds = run_data["confounds"]
-    inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
+    inputnode.inputs.full_confounds_json = run_data["confounds_json"]
     inputnode.inputs.dummy_scans = dummy_scans
     inputnode.inputs.atlases = atlases
 
@@ -249,7 +249,7 @@ the following post-processing was performed.
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
             ("full_confounds", "inputnode.full_confounds"),
-            ("fmriprep_confounds_json", "inputnode.full_confounds_json"),
+            ("full_confounds_json", "inputnode.full_confounds_json"),
         ]),
         (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
         (prepare_confounds_wf, outputnode, [

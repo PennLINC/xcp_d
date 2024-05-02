@@ -74,7 +74,6 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
-    motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
     dcan_qc = config.workflow.dcan_qc
@@ -188,8 +187,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
-            desc="filtered" if motion_filter_type else None,
-            suffix="motion",
+            desc="confounds",
+            suffix="timeseries",
             extension=".tsv",
         ),
         name="ds_filtered_motion",

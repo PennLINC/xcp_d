@@ -160,7 +160,7 @@ def flag_bad_run(
 
     Parameters
     ----------
-    %(full_confounds)s
+    full_confounds
     %(dummy_scans)s
     %(TR)s
     %(motion_filter_type)s
