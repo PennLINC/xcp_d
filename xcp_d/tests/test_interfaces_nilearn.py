@@ -116,7 +116,7 @@ def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
 
     interface = nilearn.DenoiseNifti(
         preprocessed_bold=preprocessed_bold,
-        confounds_file=reduced_confounds_file,
+        design_matrix=reduced_confounds_file,
         temporal_mask=temporal_mask,
         mask=mask,
         TR=2,
@@ -154,7 +154,7 @@ def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
 
     interface = nilearn.DenoiseCifti(
         preprocessed_bold=preprocessed_bold,
-        confounds_file=reduced_confounds_file,
+        design_matrix=reduced_confounds_file,
         temporal_mask=temporal_mask,
         TR=2,
         bandpass_filter=True,
