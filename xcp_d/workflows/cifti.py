@@ -333,7 +333,7 @@ the following post-processing was performed.
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.design_matrix", "inputnode.design_matrix"),
-            ("outputnode.design_matrix_metadata", "inputnode.confounds_metadata"),
+            ("outputnode.design_matrix_metadata", "inputnode.design_matrix_metadata"),
             ("outputnode.modified_full_confounds", "inputnode.modified_full_confounds"),
             (
                 "outputnode.modified_full_confounds_metadata",

@@ -407,7 +407,7 @@ class _ModifyConfoundsOutputSpec(TraitedSpec):
         exists=True,
         desc="Modified confounds file.",
     )
-    modified_full_confounds_json = File(
+    modified_full_confounds_metadata = traits.Dict(
         exists=True,
         desc="Metadata associated with the modified_full_confounds output.",
     )
@@ -509,15 +509,7 @@ class ModifyConfounds(SimpleInterface):
 
             confounds_metadata[col] = col_metadata
 
-        self._results["modified_full_confounds_json"] = fname_presuffix(
-            self.inputs.full_confounds_json,
-            suffix="_filtered",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-
-        with open(self._results["modified_full_confounds_json"], "w") as fo:
-            json.dump(confounds_metadata, fo, sort_keys=True, indent=4)
+        self._results["modified_full_confounds_metadata"] = confounds_metadata
 
         return runtime
 

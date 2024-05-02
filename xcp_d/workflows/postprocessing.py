@@ -214,7 +214,6 @@ def init_prepare_confounds_wf(
             ("full_confounds_json", "full_confounds_json"),
         ]),
         (filter_motion, outputnode, [
-            ("modified_full_confounds", "modified_full_confounds"),
             ("modified_full_confounds_metadata", "modified_full_confounds_metadata"),
         ]),
     ])  # fmt:skip
@@ -233,10 +232,6 @@ def init_prepare_confounds_wf(
     )
     workflow.connect([
         (filter_motion, generate_temporal_mask, [("modified_full_confounds", "full_confounds")]),
-        (generate_temporal_mask, outputnode, [
-            ("temporal_mask", "temporal_mask"),
-            ("temporal_mask_metadata", "temporal_mask_metadata"),
-        ]),
     ])  # fmt:skip
 
     generate_design_matrix = pe.Node(
@@ -257,7 +252,6 @@ def init_prepare_confounds_wf(
             ("modified_full_confounds_metadata", "full_confounds_metadata"),
         ]),
         (generate_design_matrix, outputnode, [
-            ("design_matrix", "design_matrix"),
             ("design_matrix_metadata", "design_matrix_metadata"),
         ]),
     ])  # fmt:skip
@@ -684,7 +678,7 @@ approach.
     workflow.connect([
         (inputnode, regress_and_filter_bold, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("design_matrix", "confounds_file"),
+            ("design_matrix", "design_matrix"),
             ("temporal_mask", "temporal_mask"),
         ]),
         (regress_and_filter_bold, outputnode, [
