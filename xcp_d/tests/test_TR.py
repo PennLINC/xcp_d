@@ -17,7 +17,7 @@ from xcp_d.interfaces.censoring import RemoveDummyVolumes
 def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
     """Test RemoveDummyVolumes() for NIFTI input data."""
     # Define inputs
-    temp_dir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_nifti")
+    temp_dir = tmp_path_factory.mktemp("test_removedummyvolumes_nifti")
 
     boldfile = ds001419_data["nifti_file"]
     confounds_file = ds001419_data["confounds_file"]
@@ -30,8 +30,8 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
     remove_nothing = RemoveDummyVolumes(
         bold_file=boldfile,
         full_confounds=confounds_file,
-        confounds_file=confounds_file,
-        motion_file=confounds_file,
+        modified_full_confounds=confounds_file,
+        design_matrix=confounds_file,
         temporal_mask=confounds_file,
         dummy_scans=0,
     )
@@ -52,8 +52,8 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
         remove_n_vols = RemoveDummyVolumes(
             bold_file=boldfile,
             full_confounds=confounds_file,
-            confounds_file=confounds_file,
-            motion_file=confounds_file,
+            modified_full_confounds=confounds_file,
+            design_matrix=confounds_file,
             temporal_mask=confounds_file,
             dummy_scans=n,
         )
@@ -92,8 +92,8 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
     remove_nothing = RemoveDummyVolumes(
         bold_file=boldfile,
         full_confounds=confounds_file,
-        confounds_file=confounds_file,
-        motion_file=confounds_file,
+        modified_full_confounds=confounds_file,
+        design_matrix=confounds_file,
         temporal_mask=confounds_file,
         dummy_scans=0,
     )
@@ -114,8 +114,8 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
         remove_n_vols = RemoveDummyVolumes(
             bold_file=boldfile,
             full_confounds=confounds_file,
-            confounds_file=confounds_file,
-            motion_file=confounds_file,
+            modified_full_confounds=confounds_file,
+            design_matrix=confounds_file,
             temporal_mask=confounds_file,
             dummy_scans=n,
         )

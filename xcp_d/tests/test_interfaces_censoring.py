@@ -10,10 +10,9 @@ import pandas as pd
 from xcp_d.interfaces import censoring
 
 
-def test_generate_confounds(ds001419_data, tmp_path_factory):
-    """Check results."""
-    tmpdir = tmp_path_factory.mktemp("test_generate_confounds")
-    in_file = ds001419_data["nifti_file"]
+def test_modify_confounds(ds001419_data, tmp_path_factory):
+    """Test censoring.ModifyConfounds."""
+    tmpdir = tmp_path_factory.mktemp("test_modify_confounds")
     confounds_file = ds001419_data["confounds_file"]
     confounds_json = ds001419_data["confounds_json"]
 
@@ -36,24 +35,12 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
 
-    custom_confounds_file = os.path.join(tmpdir, "custom_confounds.tsv")
-    df2 = pd.DataFrame(columns=["signal__test"], data=np.random.random((df.shape[0], 1)))
-    df2.to_csv(custom_confounds_file, sep="\t", index=False, header=True)
-
     # Run workflow
-    interface = censoring.GenerateConfounds(
-        in_file=in_file,
-        params="24P",
-        TR=0.8,
-        fd_thresh=[0.3, 0.1],
-        dvars_thresh=[1.5, 0.5],
-        censor_before=[0, 0],
-        censor_after=[0, 0],
-        censor_between=[1, 1],
+    interface = censoring.ModifyConfounds(
         head_radius=50,
+        TR=0.8,
         full_confounds=confounds_tsv,
         full_confounds_json=confounds_json,
-        custom_confounds_file=custom_confounds_file,
         motion_filter_type=None,
         motion_filter_order=4,
         band_stop_min=0,
@@ -61,12 +48,96 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     )
     results = interface.run(cwd=tmpdir)
 
-    assert os.path.isfile(results.outputs.filtered_confounds_file)
-    assert os.path.isfile(results.outputs.confounds_file)
-    assert os.path.isfile(results.outputs.motion_file)
+    assert os.path.isfile(results.outputs.modified_full_confounds)
+    assert isinstance(results.outputs.modified_full_confounds_metadata, dict)
+
+    out_df = pd.read_table(results.outputs.modified_full_confounds)
+    assert out_df.shape == df.shape
+
+
+def test_generate_temporal_mask(ds001419_data, tmp_path_factory):
+    """Check results."""
+    tmpdir = tmp_path_factory.mktemp("test_generate_temporal_mask")
+    confounds_file = ds001419_data["confounds_file"]
+    confounds_json = ds001419_data["confounds_json"]
+
+    df = pd.read_table(confounds_file)
+    with open(confounds_json, "r") as fo:
+        metadata = json.load(fo)
+
+    # Replace confounds tsv values with values that should be omitted
+    df.loc[1:3, "trans_x"] = [6, 8, 9]
+    df.loc[4:6, "trans_y"] = [7, 8, 9]
+    df.loc[7:9, "trans_z"] = [12, 8, 9]
+
+    # Modify JSON file
+    metadata["trans_x"] = {"test": "hello"}
+    confounds_json = os.path.join(tmpdir, "edited_confounds.json")
+    with open(confounds_json, "w") as fo:
+        json.dump(metadata, fo)
+
+    # Rename with same convention as initial confounds tsv
+    confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
+    df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
+
+    # Run workflow
+    interface = censoring.GenerateTemporalMask(
+        full_confounds=confounds_tsv,
+        fd_thresh=[0.3, 0.1],
+        dvars_thresh=[1.5, 0.5],
+        censor_before=[0, 0],
+        censor_after=[0, 0],
+        censor_between=[1, 1],
+    )
+    results = interface.run(cwd=tmpdir)
+
     assert os.path.isfile(results.outputs.temporal_mask)
-    out_confounds_file = results.outputs.confounds_file
-    out_df = pd.read_table(out_confounds_file)
+    assert isinstance(results.outputs.temporal_mask_metadata, dict)
+
+    out_df = pd.read_table(results.outputs.temporal_mask)
+    assert out_df.shape[0] == df.shape[0]
+    assert out_df.shape[1] == 6  # 6 types of outlier
+
+
+def test_generate_design_matrix(ds001419_data, tmp_path_factory):
+    """Check results."""
+    tmpdir = tmp_path_factory.mktemp("test_generate_design_matrix")
+    in_file = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+    confounds_json = ds001419_data["confounds_json"]
+
+    df = pd.read_table(confounds_file)
+    with open(confounds_json, "r") as fo:
+        metadata = json.load(fo)
+
+    # Replace confounds tsv values with values that should be omitted
+    df.loc[1:3, "trans_x"] = [6, 8, 9]
+    df.loc[4:6, "trans_y"] = [7, 8, 9]
+    df.loc[7:9, "trans_z"] = [12, 8, 9]
+
+    # Rename with same convention as initial confounds tsv
+    confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
+    df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
+
+    custom_confounds_file = os.path.join(tmpdir, "custom_confounds.tsv")
+    df2 = pd.DataFrame(columns=["signal__test"], data=np.random.random((df.shape[0], 1)))
+    df2.to_csv(custom_confounds_file, sep="\t", index=False, header=True)
+
+    # Run workflow
+    interface = censoring.GenerateDesignMatrix(
+        in_file=in_file,
+        params="24P",
+        full_confounds=confounds_tsv,
+        full_confounds_metadata=metadata,
+        custom_confounds_file=custom_confounds_file,
+    )
+    results = interface.run(cwd=tmpdir)
+
+    assert os.path.isfile(results.outputs.design_matrix)
+    assert isinstance(results.outputs.design_matrix_metadata, dict)
+
+    out_df = pd.read_table(results.outputs.design_matrix)
+    assert out_df.shape[0] == df.shape[0]
     assert out_df.shape[1] == 24  # 24(P)
     assert sum(out_df.columns.str.endswith("_orth")) == 24  # all 24(P)
 
