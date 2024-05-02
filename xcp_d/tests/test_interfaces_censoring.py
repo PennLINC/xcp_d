@@ -53,7 +53,7 @@ def test_generate_temporal_mask(tmp_path_factory):
     for idx, val in dvars_idx:
         dvars[idx] = val
 
-    df = pd.DataFrame({"framewise_displacement": fd, "dvars": dvars})
+    df = pd.DataFrame({"framewise_displacement": fd, "std_dvars": dvars})
     confounds_tsv = os.path.join(tmpdir, "test.tsv")
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
 
@@ -116,11 +116,21 @@ def test_random_censor(tmp_path_factory):
     n_volumes, n_outliers = 500, 100
     exact_scans = [100, 200, 300, 400]
 
-    outliers_arr = np.zeros(n_volumes, dtype=int)
+    outliers_arr = np.zeros((n_volumes, 6), dtype=int)
     rng = np.random.default_rng(0)
     outlier_idx = rng.choice(np.arange(n_volumes, dtype=int), size=n_outliers, replace=False)
-    outliers_arr[outlier_idx] = 1
-    temporal_mask_df = pd.DataFrame(data=outliers_arr, columns=["framewise_displacement"])
+    outliers_arr[outlier_idx, :] = 1
+    temporal_mask_df = pd.DataFrame(
+        data=outliers_arr,
+        columns=[
+            "framewise_displacement",
+            "dvars",
+            "denoising",
+            "framewise_displacement_interpolation",
+            "dvars_interpolation",
+            "interpolation",
+        ],
+    )
     original_temporal_mask = os.path.join(tmpdir, "orig_tmask.tsv")
     temporal_mask_df.to_csv(original_temporal_mask, index=False, sep="\t")
 
@@ -173,7 +183,17 @@ def test_censor(ds001419_data, tmp_path_factory):
     cifti_file = ds001419_data["cifti_file"]
     in_img = nb.load(nifti_file)
     n_volumes = in_img.shape[3]
-    censoring_df = pd.DataFrame(columns=["framewise_displacement"], data=np.zeros(n_volumes))
+    censoring_df = pd.DataFrame(
+        data=np.zeros((n_volumes, 6)),
+        columns=[
+            "framewise_displacement",
+            "dvars",
+            "denoising",
+            "framewise_displacement_interpolation",
+            "dvars_interpolation",
+            "interpolation",
+        ],
+    )
     temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 

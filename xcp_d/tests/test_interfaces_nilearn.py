@@ -107,8 +107,8 @@ def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
 
     # Create the censoring file
     censoring_df = confounds_df[["framewise_displacement"]]
-    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
-    assert censoring_df["framewise_displacement"].sum() > 0
+    censoring_df["denoising"] = censoring_df["framewise_displacement"] > 0.3
+    assert censoring_df["denoising"].sum() > 0
     temporal_mask = os.path.join(tmpdir, "censoring.tsv")
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
@@ -145,8 +145,8 @@ def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
 
     # Create the censoring file
     censoring_df = confounds_df[["framewise_displacement"]]
-    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
-    assert censoring_df["framewise_displacement"].sum() > 0
+    censoring_df["denoising"] = censoring_df["framewise_displacement"] > 0.3
+    assert censoring_df["denoising"].sum() > 0
     temporal_mask = os.path.join(tmpdir, "censoring.tsv")
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
