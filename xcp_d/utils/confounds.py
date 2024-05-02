@@ -18,7 +18,7 @@ LOGGER = logging.getLogger("nipype.utils")
 
 
 @fill_doc
-def load_motion(
+def filter_motion(
     confounds_df,
     TR,
     motion_filter_type=None,
@@ -42,7 +42,7 @@ def load_motion(
 
     Returns
     -------
-    motion_confounds_df : pandas.DataFrame
+    confounds_df : pandas.DataFrame
         The six motion regressors.
         The three rotations are listed first, then the three translations.
 
@@ -53,40 +53,34 @@ def load_motion(
     if motion_filter_type not in ("lp", "notch", None):
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
-    # Select the motion columns from the overall confounds DataFrame
-    motion_confounds_df = confounds_df[
-        ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
-    ]
+    confounds_df = confounds_df.copy()
+    motion_columns = ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
 
     # Apply LP or notch filter
     if motion_filter_type in ("lp", "notch"):
-        motion_confounds = motion_regression_filter(
-            data=motion_confounds_df.to_numpy(),
+        confounds_df[motion_columns] = motion_regression_filter(
+            data=confounds_df[motion_columns].to_numpy(),
             TR=TR,
             motion_filter_type=motion_filter_type,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
             motion_filter_order=motion_filter_order,
         )
-        motion_confounds_df = pd.DataFrame(
-            data=motion_confounds,
-            columns=motion_confounds_df.columns,
-        )
 
     # Volterra expansion
     # Ignore pandas SettingWithCopyWarning
     with pd.option_context("mode.chained_assignment", None):
-        columns = motion_confounds_df.columns.tolist()
-        for col in columns:
-            new_col = f"{col}_derivative1"
-            motion_confounds_df[new_col] = motion_confounds_df[col].diff()
+        columns_to_square = motion_columns[:]
+        for col in motion_columns:
+            deriv_col = f"{col}_derivative1"
+            confounds_df[deriv_col] = confounds_df[col].diff()
+            columns_to_square.append(deriv_col)
 
-        columns = motion_confounds_df.columns.tolist()
-        for col in columns:
-            new_col = f"{col}_power2"
-            motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
+        for col in columns_to_square:
+            square_col = f"{col}_power2"
+            confounds_df[square_col] = confounds_df[col] ** 2
 
-    return motion_confounds_df
+    return confounds_df
 
 
 @fill_doc

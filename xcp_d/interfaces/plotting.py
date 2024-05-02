@@ -36,8 +36,8 @@ LOGGER = logging.getLogger("nipype.interface")
 
 
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
-    fmriprep_confounds_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
-    filtered_motion = File(exists=True, mandatory=True, desc="Filtered motion file.")
+    full_confounds = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
+    modified_full_confounds = File(exists=True, mandatory=True, desc="Filtered motion file.")
     temporal_mask = File(
         exists=True,
         mandatory=True,
@@ -96,7 +96,7 @@ class CensoringPlot(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        confounds_df = pd.read_table(self.inputs.full_confounds)
         preproc_motion_df = load_motion(
             confounds_df.copy(),
             TR=self.inputs.TR,
@@ -157,7 +157,7 @@ class CensoringPlot(SimpleInterface):
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
-            filtered_fd_timeseries = pd.read_table(self.inputs.filtered_motion)[
+            filtered_fd_timeseries = pd.read_table(self.inputs.modified_full_confounds)[
                 "framewise_displacement"
             ]
 
@@ -224,7 +224,7 @@ class CensoringPlot(SimpleInterface):
                 alpha=0.5,
             )
 
-        tmask_arr = censoring_df["interpolation"].values
+        tmask_arr = censoring_df["interpolation"].values - censoring_df["denoising"].values
         assert preproc_fd_timeseries.size == tmask_arr.size
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):

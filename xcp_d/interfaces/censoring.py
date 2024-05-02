@@ -1,5 +1,6 @@
 """Interfaces for the post-processing workflows."""
 
+import json
 import os
 
 import nibabel as nb
@@ -18,8 +19,8 @@ from xcp_d.utils.confounds import (
     _infer_dummy_scans,
     _modify_motion_filter,
     calculate_outliers,
+    filter_motion,
     load_confound_matrix,
-    load_motion,
 )
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd
@@ -28,7 +29,6 @@ LOGGER = logging.getLogger("nipype.interface")
 
 
 class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
-    bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
     dummy_scans = traits.Either(
         traits.Int,
         "auto",
@@ -38,7 +38,8 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
             "calculated in an earlier workflow from dummy_scans."
         ),
     )
-    confounds_file = traits.Either(
+    bold_file = File(exists=True, mandatory=True, desc="Either cifti or nifti ")
+    design_matrix = traits.Either(
         File(exists=True),
         None,
         mandatory=True,
@@ -47,12 +48,12 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
             "May be None if denoising is disabled."
         ),
     )
-    fmriprep_confounds_file = File(
+    full_confounds = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds tsv. Used for motion-based censoring.",
     )
-    motion_file = File(
+    modified_full_confounds = File(
         exists=True,
         mandatory=True,
         desc="Confounds file containing only filtered motion parameters.",
@@ -65,12 +66,12 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
 
 
 class _RemoveDummyVolumesOutputSpec(TraitedSpec):
-    confounds_file_dropped_TR = traits.Either(
+    design_matrix_dropped_TR = traits.Either(
         File(exists=True),
         None,
         desc="TSV file with selected confounds for denoising, after removing TRs.",
     )
-    fmriprep_confounds_file_dropped_TR = File(
+    full_confounds_dropped_TR = File(
         exists=True,
         desc="fMRIPrep confounds tsv after removing TRs. Used for motion-based censoring.",
     )
@@ -79,7 +80,7 @@ class _RemoveDummyVolumesOutputSpec(TraitedSpec):
         desc="bold or cifti with volumes dropped",
     )
     dummy_scans = traits.Int(desc="Number of volumes dropped.")
-    motion_file_dropped_TR = File(
+    modified_full_confounds_dropped_TR = File(
         exists=True,
         desc="Confounds file containing only filtered motion parameters.",
     )
@@ -102,7 +103,7 @@ class RemoveDummyVolumes(SimpleInterface):
     def _run_interface(self, runtime):
         dummy_scans = _infer_dummy_scans(
             dummy_scans=self.inputs.dummy_scans,
-            confounds_file=self.inputs.fmriprep_confounds_file,
+            confounds_file=self.inputs.full_confounds,
         )
 
         self._results["dummy_scans"] = dummy_scans
@@ -111,12 +112,12 @@ class RemoveDummyVolumes(SimpleInterface):
         if dummy_scans == 0:
             # write the output out
             self._results["bold_file_dropped_TR"] = self.inputs.bold_file
-            self._results["fmriprep_confounds_file_dropped_TR"] = (
-                self.inputs.fmriprep_confounds_file
+            self._results["full_confounds_dropped_TR"] = self.inputs.full_confounds
+            self._results["modified_full_confounds_dropped_TR"] = (
+                self.inputs.modified_full_confounds
             )
-            self._results["confounds_file_dropped_TR"] = self.inputs.confounds_file
-            self._results["motion_file_dropped_TR"] = self.inputs.motion_file
             self._results["temporal_mask_dropped_TR"] = self.inputs.temporal_mask
+            self._results["design_matrix_dropped_TR"] = self.inputs.design_matrix
             return runtime
 
         # get the file names to output to
@@ -126,13 +127,13 @@ class RemoveDummyVolumes(SimpleInterface):
             suffix="_dropped",
             use_ext=True,
         )
-        self._results["fmriprep_confounds_file_dropped_TR"] = fname_presuffix(
-            self.inputs.fmriprep_confounds_file,
+        self._results["full_confounds_dropped_TR"] = fname_presuffix(
+            self.inputs.full_confounds,
             newpath=runtime.cwd,
-            suffix="_fmriprep_dropped",
+            suffix="_dropped",
             use_ext=True,
         )
-        self._results["motion_file_dropped_TR"] = fname_presuffix(
+        self._results["modified_full_confounds_dropped_TR"] = fname_presuffix(
             self.inputs.bold_file,
             suffix="_motion_dropped.tsv",
             newpath=os.getcwd(),
@@ -150,36 +151,38 @@ class RemoveDummyVolumes(SimpleInterface):
         dropped_image.to_filename(self._results["bold_file_dropped_TR"])
 
         # Drop the first N rows from the pandas dataframe
-        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        fmriprep_confounds_df_dropped = fmriprep_confounds_df.drop(np.arange(dummy_scans))
-        fmriprep_confounds_df_dropped.to_csv(
-            self._results["fmriprep_confounds_file_dropped_TR"],
+        full_confounds_df = pd.read_table(self.inputs.full_confounds)
+        full_confounds_df_dropped = full_confounds_df.drop(np.arange(dummy_scans))
+        full_confounds_df_dropped.to_csv(
+            self._results["full_confounds_dropped_TR"],
             sep="\t",
             index=False,
         )
 
         # Drop the first N rows from the confounds file
-        self._results["confounds_file_dropped_TR"] = None
-        if self.inputs.confounds_file:
-            self._results["confounds_file_dropped_TR"] = fname_presuffix(
+        self._results["design_matrix_dropped_TR"] = None
+        if self.inputs.design_matrix:
+            self._results["design_matrix_dropped_TR"] = fname_presuffix(
                 self.inputs.bold_file,
                 suffix="_selected_confounds_dropped.tsv",
                 newpath=os.getcwd(),
                 use_ext=False,
             )
-            confounds_df = pd.read_table(self.inputs.confounds_file)
+            confounds_df = pd.read_table(self.inputs.design_matrix)
             confounds_df_dropped = confounds_df.drop(np.arange(dummy_scans))
             confounds_df_dropped.to_csv(
-                self._results["confounds_file_dropped_TR"],
+                self._results["design_matrix_dropped_TR"],
                 sep="\t",
                 index=False,
             )
 
         # Drop the first N rows from the motion file
-        motion_df = pd.read_table(self.inputs.motion_file)
-        motion_df_dropped = motion_df.drop(np.arange(dummy_scans))
-        motion_df_dropped.to_csv(
-            self._results["motion_file_dropped_TR"],
+        modified_full_confounds_df = pd.read_table(self.inputs.modified_full_confounds)
+        modified_full_confounds_df_dropped = modified_full_confounds_df.drop(
+            np.arange(dummy_scans)
+        )
+        modified_full_confounds_df_dropped.to_csv(
+            self._results["modified_full_confounds_dropped_TR"],
             sep="\t",
             index=False,
         )
@@ -362,60 +365,18 @@ class RandomCensor(SimpleInterface):
         return runtime
 
 
-class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        desc="BOLD file after denoising, interpolation, and filtering",
-    )
-    params = traits.Str(mandatory=True, desc="Parameter set for regression.")
-    TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
-    fd_thresh = traits.List(
-        traits.Float,
-        minlen=2,
-        maxlen=2,
-        desc="Framewise displacement threshold. All values above this will be dropped.",
-    )
-    dvars_thresh = traits.List(
-        traits.Float,
-        minlen=2,
-        maxlen=2,
-        desc="DVARS threshold. All values above this will be dropped.",
-    )
-    censor_before = traits.List(
-        traits.Int,
-        minlen=2,
-        maxlen=2,
-        desc="Number of volumes to censor before each FD or DVARS outlier volume.",
-    )
-    censor_after = traits.List(
-        traits.Int,
-        minlen=2,
-        maxlen=2,
-        desc="Number of volumes to censor after each FD or DVARS outlier volume.",
-    )
-    censor_between = traits.List(
-        traits.Int,
-        minlen=2,
-        maxlen=2,
-        desc="Number of volumes to censor between each FD or DVARS outlier volume.",
-    )
+class _ModifyConfoundsInputSpec(BaseInterfaceInputSpec):
     head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
-    fmriprep_confounds_file = File(
+    TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
+    full_confounds = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds tsv.",
     )
-    fmriprep_confounds_json = File(
+    full_confounds_json = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds json.",
-    )
-    custom_confounds_file = traits.Either(
-        None,
-        File(exists=True),
-        mandatory=True,
-        desc="Custom confounds tsv.",
     )
     motion_filter_type = traits.Either(
         None,
@@ -441,48 +402,29 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _GenerateConfoundsOutputSpec(TraitedSpec):
-    filtered_confounds_file = File(
+class _ModifyConfoundsOutputSpec(TraitedSpec):
+    modified_full_confounds = File(
         exists=True,
-        desc=(
-            "The original fMRIPrep confounds, with the motion parameters and their Volterra "
-            "expansion regressors replaced with filtered versions."
-        ),
+        desc="Modified confounds file.",
     )
-    confounds_file = traits.Either(
-        File(exists=True),
-        None,
-        desc="The selected confounds. This may include custom confounds as well.",
-    )
-    confounds_metadata = traits.Dict(desc="Metadata associated with the confounds_file output.")
-    motion_file = File(
+    modified_full_confounds_json = File(
         exists=True,
-        desc="The filtered motion parameters.",
-    )
-    motion_metadata = traits.Dict(desc="Metadata associated with the filtered_motion output.")
-    temporal_mask = File(
-        exists=True,
-        desc=(
-            "Temporal mask; all values above fd_thresh set to 1. "
-            "This is a TSV file with one column: 'framewise_displacement'."
-        ),
-    )
-    temporal_mask_metadata = traits.Dict(
-        desc="Metadata associated with the temporal_mask output.",
+        desc="Metadata associated with the modified_full_confounds output.",
     )
 
 
-class GenerateConfounds(SimpleInterface):
-    """Load, consolidate, and filter confounds.
+class ModifyConfounds(SimpleInterface):
+    """Apply motion filter to confounds and recalculate framewise displacement."""
 
-    Also, generate the temporal mask.
-    """
-
-    input_spec = _GenerateConfoundsInputSpec
-    output_spec = _GenerateConfoundsOutputSpec
+    input_spec = _ModifyConfoundsInputSpec
+    output_spec = _ModifyConfoundsOutputSpec
 
     def _run_interface(self, runtime):
-        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        full_confounds_df = pd.read_table(self.inputs.full_confounds)
+        with open(self.inputs.full_confounds_json, "r") as f:
+            confounds_metadata = json.load(f)
+
+        # Modify motion filter if requested parameters are below the Nyquist frequency
         band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
             motion_filter_type=self.inputs.motion_filter_type,
             band_stop_min=self.inputs.band_stop_min,
@@ -490,8 +432,9 @@ class GenerateConfounds(SimpleInterface):
             TR=self.inputs.TR,
         )
 
-        motion_df = load_motion(
-            fmriprep_confounds_df.copy(),
+        # Filter motion parameters
+        full_confounds_df = filter_motion(
+            confounds_df=full_confounds_df,
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
@@ -499,52 +442,40 @@ class GenerateConfounds(SimpleInterface):
             band_stop_max=band_stop_max_adjusted,
         )
 
-        # Add in framewise displacement
-        fd_timeseries = compute_fd(
-            confound=motion_df,
+        # Calculate and add in framewise displacement
+        full_confounds_df["framewise_displacement"] = compute_fd(
+            confound=full_confounds_df,
             head_radius=self.inputs.head_radius,
         )
-        motion_df["framewise_displacement"] = fd_timeseries
 
-        # A file to house the modified fMRIPrep confounds.
-        self._results["filtered_confounds_file"] = fname_presuffix(
-            self.inputs.fmriprep_confounds_file,
+        # Write out the modified fMRIPrep confounds.
+        self._results["modified_full_confounds"] = fname_presuffix(
+            self.inputs.full_confounds,
             suffix="_filtered",
             newpath=runtime.cwd,
             use_ext=True,
         )
-
-        # Replace original motion parameters in fMRIPrep confounds file with filtered versions
-        for col in motion_df.columns.tolist():
-            # Check that the column already exists, in case fMRIPrep changes column names.
-            # We don't want to use the original motion parameters accidentally.
-            if col not in fmriprep_confounds_df.columns:
-                raise ValueError(
-                    f"Column '{col}' not found in confounds "
-                    f"{self.inputs.fmriprep_confounds_file}. "
-                    "Please open an issue on GitHub."
-                )
-
-            fmriprep_confounds_df[col] = motion_df[col]
-
-        fmriprep_confounds_df.to_csv(
-            self._results["filtered_confounds_file"],
+        full_confounds_df.to_csv(
+            self._results["modified_full_confounds"],
             sep="\t",
             index=False,
         )
 
-        # Load nuisance regressors, but use filtered motion parameters.
-        confounds_df, confounds_metadata = load_confound_matrix(
-            params=self.inputs.params,
-            img_file=self.inputs.in_file,
-            confounds_file=self._results["filtered_confounds_file"],
-            confounds_json_file=self.inputs.fmriprep_confounds_json,
-            custom_confounds=self.inputs.custom_confounds_file,
-        )
+        # Add filtering info to affected columns' metadata.
+        # This includes any columns that start with any of the following strings.
+        motion_columns = [
+            "trans_x",
+            "trans_y",
+            "trans_z",
+            "rot_x",
+            "rot_y",
+            "rot_z",
+            "framewise_displacement",
+        ]
+        for col in full_confounds_df.columns.tolist():
+            if not any(col.startswith(mc) for mc in motion_columns):
+                continue
 
-        # Compile motion metadata from confounds metadata, adding in filtering info
-        motion_metadata = {}
-        for col in motion_df.columns.tolist():
             col_metadata = confounds_metadata.get(col, {})
             if col == "framewise_displacement":
                 col_metadata["Description"] = (
@@ -576,84 +507,83 @@ class GenerateConfounds(SimpleInterface):
                 }
                 col_metadata["SoftwareFilters"] = filters
 
-            motion_metadata[col] = col_metadata
+            confounds_metadata[col] = col_metadata
 
-        self._results["motion_metadata"] = motion_metadata
-
-        if confounds_df is not None:
-            # Update confounds metadata with modified motion metadata
-            for col in motion_df.columns.tolist():
-                if col in confounds_df.columns:
-                    base_metadata = confounds_metadata.get(col, {})
-                    base_metadata.update(motion_metadata[col])
-                    confounds_metadata[col] = base_metadata
-
-            # Orthogonalize full nuisance regressors w.r.t. any signal regressors
-            signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
-            if signal_columns:
-                LOGGER.warning(
-                    "Signal columns detected. "
-                    "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
-                    f"{', '.join(signal_columns)}"
-                )
-                noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
-
-                orth_cols = [f"{c}_orth" for c in noise_columns]
-                orth_confounds_df = pd.DataFrame(
-                    index=confounds_df.index,
-                    columns=orth_cols,
-                )
-
-                # Do the orthogonalization
-                signal_regressors = confounds_df[signal_columns].to_numpy()
-                noise_regressors = confounds_df[noise_columns].to_numpy()
-                signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
-                pred_noise_regressors = np.dot(signal_regressors, signal_betas)
-                orth_noise_regressors = noise_regressors - pred_noise_regressors
-
-                # Replace the old data
-                orth_confounds_df.loc[:, orth_cols] = orth_noise_regressors
-                confounds_df = orth_confounds_df
-
-                for col in noise_columns:
-                    desc_str = (
-                        "This regressor is orthogonalized with respect to the 'signal' regressors "
-                        f"({', '.join(signal_columns)}) after dummy scan removal, "
-                        "but prior to any censoring."
-                    )
-
-                    col_metadata = {}
-                    if col in confounds_metadata.keys():
-                        col_metadata = confounds_metadata.pop(col)
-                        if "Description" in col_metadata.keys():
-                            desc_str = f"{col_metadata['Description']} {desc_str}"
-
-                    col_metadata["Description"] = desc_str
-                    confounds_metadata[f"{col}_orth"] = col_metadata
-
-        self._results["confounds_metadata"] = confounds_metadata
-
-        # get the output
-        self._results["motion_file"] = fname_presuffix(
-            self.inputs.fmriprep_confounds_file,
-            suffix="_motion",
+        self._results["modified_full_confounds_json"] = fname_presuffix(
+            self.inputs.full_confounds_json,
+            suffix="_filtered",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        motion_df.to_csv(self._results["motion_file"], sep="\t", index=False)
 
-        self._results["confounds_file"] = None
-        if confounds_df is not None:
-            self._results["confounds_file"] = fname_presuffix(
-                self.inputs.fmriprep_confounds_file,
-                suffix="_confounds",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            confounds_df.to_csv(self._results["confounds_file"], sep="\t", index=False)
+        with open(self._results["modified_full_confounds_json"], "w") as fo:
+            json.dump(confounds_metadata, fo, sort_keys=True, indent=4)
+
+        return runtime
+
+
+class _GenerateTemporalMaskInputSpec(BaseInterfaceInputSpec):
+    full_confounds = File(
+        exists=True,
+        mandatory=True,
+        desc="fMRIPrep confounds tsv.",
+    )
+    fd_thresh = traits.List(
+        traits.Float,
+        minlen=2,
+        maxlen=2,
+        desc="Framewise displacement threshold. All values above this will be dropped.",
+    )
+    dvars_thresh = traits.List(
+        traits.Float,
+        minlen=2,
+        maxlen=2,
+        desc="DVARS threshold. All values above this will be dropped.",
+    )
+    censor_before = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor before each FD or DVARS outlier volume.",
+    )
+    censor_after = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor after each FD or DVARS outlier volume.",
+    )
+    censor_between = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor between each FD or DVARS outlier volume.",
+    )
+
+
+class _GenerateTemporalMaskOutputSpec(TraitedSpec):
+    temporal_mask = File(
+        exists=True,
+        desc=(
+            "Temporal mask; all values above fd_thresh set to 1. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc="Metadata associated with the temporal_mask output.",
+    )
+
+
+class GenerateTemporalMask(SimpleInterface):
+    """Generate the temporal mask."""
+
+    input_spec = _GenerateTemporalMaskInputSpec
+    output_spec = _GenerateTemporalMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        full_confounds_df = pd.read_table(self.inputs.full_confounds)
 
         outliers_df = calculate_outliers(
-            confounds=fmriprep_confounds_df,
+            confounds=full_confounds_df,
             fd_thresh=self.inputs.fd_thresh,
             dvars_thresh=self.inputs.dvars_thresh,
             before=self.inputs.censor_before,
@@ -681,9 +611,185 @@ class GenerateConfounds(SimpleInterface):
                     "0": "Non-outlier volume",
                     "1": "Outlier volume",
                 },
-                "Threshold": self.inputs.fd_thresh,
-            }
+                "Threshold": self.inputs.fd_thresh[0],
+            },
+            "dvars": {
+                "Description": "Outlier time series based on DVARS.",
+                "Levels": {
+                    "0": "Non-outlier volume",
+                    "1": "Outlier volume",
+                },
+                "Threshold": self.inputs.dvars_thresh[0],
+            },
+            "denoising": {
+                "Description": (
+                    "Outlier time series based on framewise displacement and DVARS. "
+                    "Any volumes marked as outliers by either metric are marked as outliers in "
+                    "this column. "
+                    "This initial set of outliers is then expanded to mark "
+                    f"{self.inputs.censor_before[0]} volumes before and "
+                    f"{self.inputs.censor_after[0]} volumes after each outlier volume. "
+                    "Finally, any sequences of non-outliers shorter than or equal to "
+                    f"{self.inputs.censor_between[0]} volumes were marked as outliers."
+                ),
+                "Levels": {
+                    "0": "Non-outlier volume",
+                    "1": "Outlier volume",
+                },
+            },
+            "framewise_displacement_interpolation": {
+                "Description": "Outlier time series based on framewise displacement.",
+                "Levels": {
+                    "0": "Non-outlier volume",
+                    "1": "Outlier volume",
+                },
+                "Threshold": self.inputs.fd_thresh[1],
+            },
+            "dvars_interpolation": {
+                "Description": "Outlier time series based on DVARS.",
+                "Levels": {
+                    "0": "Non-outlier volume",
+                    "1": "Outlier volume",
+                },
+                "Threshold": self.inputs.dvars_thresh[1],
+            },
+            "interpolation": {
+                "Description": (
+                    "Outlier time series based on framewise displacement and DVARS. "
+                    "Any volumes marked as outliers by either metric, or the 'denoising' column', "
+                    "are marked as outliers in this column. "
+                    "This initial set of outliers is then expanded to mark "
+                    f"{self.inputs.censor_before[1]} volumes before and "
+                    f"{self.inputs.censor_after[1]} volumes after each outlier volume. "
+                    "Finally, any sequences of non-outliers shorter than or equal to "
+                    f"{self.inputs.censor_between[1]} volumes were marked as outliers."
+                ),
+                "Levels": {
+                    "0": "Non-outlier volume",
+                    "1": "Outlier volume",
+                },
+            },
         }
         self._results["temporal_mask_metadata"] = outliers_metadata
+
+        return runtime
+
+
+class _GenerateDesignMatrixInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="BOLD file after denoising, interpolation, and filtering",
+    )
+    params = traits.Str(mandatory=True, desc="Parameter set for regression.")
+    full_confounds = File(
+        exists=True,
+        mandatory=True,
+        desc="fMRIPrep confounds tsv.",
+    )
+    full_confounds_metadata = traits.Dict(
+        mandatory=True,
+        desc="fMRIPrep confounds metadata.",
+    )
+    custom_confounds_file = traits.Either(
+        None,
+        File(exists=True),
+        mandatory=True,
+        desc="Custom confounds tsv.",
+    )
+
+
+class _GenerateDesignMatrixOutputSpec(TraitedSpec):
+    design_matrix = traits.Either(
+        File(exists=True),
+        None,
+        desc="The selected confounds for denoising. This may include custom confounds as well.",
+    )
+    design_matrix_metadata = traits.Dict(desc="Metadata associated with the design_matrix output.")
+
+
+class GenerateDesignMatrix(SimpleInterface):
+    """Load, consolidate, and potentially orthogonalize confounds."""
+
+    input_spec = _GenerateDesignMatrixInputSpec
+    output_spec = _GenerateDesignMatrixOutputSpec
+
+    def _run_interface(self, runtime):
+        full_confounds_json = fname_presuffix(
+            self.inputs.full_confounds,
+            suffix=".json",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        with open(full_confounds_json, "w") as fo:
+            json.dump(self.inputs.full_confounds_metadata, fo, sort_keys=True, indent=4)
+
+        # Load nuisance regressors, but use filtered motion parameters.
+        design_matrix_df, design_matrix_metadata = load_confound_matrix(
+            params=self.inputs.params,
+            img_file=self.inputs.in_file,
+            confounds_file=self.inputs.full_confounds,
+            confounds_json_file=full_confounds_json,
+            custom_confounds=self.inputs.custom_confounds_file,
+        )
+
+        if design_matrix_df is not None:
+            # Orthogonalize full nuisance regressors w.r.t. any signal regressors
+            signal_columns = [c for c in design_matrix_df.columns if c.startswith("signal__")]
+            if signal_columns:
+                LOGGER.warning(
+                    "Signal columns detected. "
+                    "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
+                    f"{', '.join(signal_columns)}"
+                )
+                noise_columns = [
+                    c for c in design_matrix_df.columns if not c.startswith("signal__")
+                ]
+
+                orth_cols = [f"{c}_orth" for c in noise_columns]
+                orth_design_matrix_df = pd.DataFrame(
+                    index=design_matrix_df.index,
+                    columns=orth_cols,
+                )
+
+                # Do the orthogonalization
+                signal_regressors = design_matrix_df[signal_columns].to_numpy()
+                noise_regressors = design_matrix_df[noise_columns].to_numpy()
+                signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
+                pred_noise_regressors = np.dot(signal_regressors, signal_betas)
+                orth_noise_regressors = noise_regressors - pred_noise_regressors
+
+                # Replace the old data
+                orth_design_matrix_df.loc[:, orth_cols] = orth_noise_regressors
+                design_matrix_df = orth_design_matrix_df
+
+                for col in noise_columns:
+                    desc_str = (
+                        "This regressor is orthogonalized with respect to the 'signal' regressors "
+                        f"({', '.join(signal_columns)}) after dummy scan removal, "
+                        "but prior to any censoring."
+                    )
+
+                    col_metadata = {}
+                    if col in design_matrix_metadata.keys():
+                        col_metadata = design_matrix_metadata.pop(col)
+                        if "Description" in col_metadata.keys():
+                            desc_str = f"{col_metadata['Description']} {desc_str}"
+
+                    col_metadata["Description"] = desc_str
+                    design_matrix_metadata[f"{col}_orth"] = col_metadata
+
+        self._results["design_matrix_metadata"] = design_matrix_metadata
+
+        # get the output
+        self._results["design_matrix"] = None
+        if design_matrix_df is not None:
+            self._results["design_matrix"] = fname_presuffix(
+                self.inputs.full_confounds,
+                suffix="_confounds",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            design_matrix_df.to_csv(self._results["design_matrix"], sep="\t", index=False)
 
         return runtime

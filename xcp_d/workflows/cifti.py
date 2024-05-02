@@ -232,14 +232,14 @@ the following post-processing was performed.
     workflow.connect([
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
-            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
-            ("fmriprep_confounds_json", "inputnode.fmriprep_confounds_json"),
+            ("fmriprep_confounds_file", "inputnode.full_confounds"),
+            ("fmriprep_confounds_json", "inputnode.full_confounds_json"),
         ]),
         (downcast_data, prepare_confounds_wf, [
             ("bold_file", "inputnode.preprocessed_bold"),
         ]),
         (prepare_confounds_wf, outputnode, [
-            ("outputnode.fmriprep_confounds_file", "fmriprep_confounds_file"),
+            ("outputnode.full_confounds", "fmriprep_confounds_file"),
             ("outputnode.preprocessed_bold", "preprocessed_bold"),
         ]),
     ])  # fmt:skip
@@ -249,7 +249,7 @@ the following post-processing was performed.
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-            ("outputnode.confounds_file", "inputnode.confounds_file"),
+            ("outputnode.design_matrix", "inputnode.confounds_file"),
         ]),
     ])  # fmt:skip
 
@@ -303,9 +303,9 @@ the following post-processing was performed.
         (prepare_confounds_wf, qc_report_wf, [
             ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),
             ("outputnode.dummy_scans", "inputnode.dummy_scans"),
-            ("outputnode.fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
+            ("outputnode.full_confounds", "inputnode.fmriprep_confounds_file"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-            ("outputnode.filtered_motion", "inputnode.filtered_motion"),
+            ("outputnode.modified_full_confounds", "inputnode.filtered_motion"),
         ]),
         (denoise_bold_wf, qc_report_wf, [
             ("outputnode.denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
@@ -332,10 +332,10 @@ the following post-processing was performed.
         ]),
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
-            ("outputnode.confounds_file", "inputnode.confounds_file"),
-            ("outputnode.confounds_metadata", "inputnode.confounds_metadata"),
-            ("outputnode.filtered_motion", "inputnode.filtered_motion"),
-            ("outputnode.motion_metadata", "inputnode.motion_metadata"),
+            ("outputnode.design_matrix", "inputnode.confounds_file"),
+            ("outputnode.design_matrix_metadata", "inputnode.confounds_metadata"),
+            ("outputnode.modified_full_confounds", "inputnode.filtered_motion"),
+            ("outputnode.modified_full_confounds_metadata", "inputnode.motion_metadata"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ("outputnode.temporal_mask_metadata", "inputnode.temporal_mask_metadata"),
         ]),

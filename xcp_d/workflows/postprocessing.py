@@ -12,7 +12,9 @@ from xcp_d.data import load as load_data
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
-    GenerateConfounds,
+    GenerateDesignMatrix,
+    GenerateTemporalMask,
+    ModifyConfounds,
     RandomCensor,
     RemoveDummyVolumes,
 )
@@ -75,8 +77,8 @@ def init_prepare_confounds_wf(
     ------
     %(name_source)s
     preprocessed_bold : :obj:`str`
-    %(fmriprep_confounds_file)s
-    fmriprep_confounds_json : :obj:`str`
+    full_confounds
+    full_confounds_json : :obj:`str`
         JSON file associated with the fMRIPrep confounds TSV.
     %(custom_confounds_file)s
     %(dummy_scans)s
@@ -85,14 +87,16 @@ def init_prepare_confounds_wf(
     Outputs
     -------
     preprocessed_bold : :obj:`str`
-    %(fmriprep_confounds_file)s
-    confounds_file : :obj:`str`
+    full_confounds
+    design_matrix : :obj:`str`
         The selected confounds, potentially including custom confounds, after dummy scan removal.
-    confounds_metadata : :obj:`dict`
+    design_matrix_metadata : :obj:`dict`
     %(dummy_scans)s
         If originally set to "auto", this output will have the actual number of dummy volumes.
-    %(filtered_motion)s
-    motion_metadata : :obj:`dict`
+    modified_full_confounds
+        ``full_confounds`` file after filtering motion parameters and recalculating framewise
+        displacement.
+    modified_full_confounds_metadata : :obj:`dict`
     %(temporal_mask)s
     temporal_mask_metadata : :obj:`dict`
     """
@@ -163,8 +167,8 @@ def init_prepare_confounds_wf(
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "fmriprep_confounds_json",
+                "full_confounds",
+                "full_confounds_json",
                 "custom_confounds_file",
                 "dummy_scans",
             ],
@@ -178,54 +182,85 @@ def init_prepare_confounds_wf(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold",
-                "fmriprep_confounds_file",  # used to calculate motion in concatenation workflow
-                "confounds_file",
-                "confounds_metadata",
-                "dummy_scans",
-                "filtered_motion",
-                "motion_metadata",
+                "full_confounds",  # original confounds after dummy scan removal
+                "modified_full_confounds",  # modified confounds after motion filtering
+                "modified_full_confounds_metadata",
                 "temporal_mask",
                 "temporal_mask_metadata",
+                "design_matrix",
+                "design_matrix_metadata",
+                "dummy_scans",
             ],
         ),
         name="outputnode",
     )
 
-    generate_confounds = pe.Node(
-        GenerateConfounds(
-            params=params,
+    filter_motion = pe.Node(
+        ModifyConfounds(
             TR=TR,
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            head_radius=head_radius,
+        ),
+        name="filter_motion",
+        mem_gb=0.1,
+        omp_nthreads=omp_nthreads,
+    )
+    workflow.connect([
+        (inputnode, filter_motion, [
+            ("full_confounds", "full_confounds"),
+            ("full_confounds_json", "full_confounds_json"),
+        ]),
+        (filter_motion, outputnode, [
+            ("modified_full_confounds", "modified_full_confounds"),
+            ("modified_full_confounds_metadata", "modified_full_confounds_metadata"),
+        ]),
+    ])  # fmt:skip
+
+    generate_temporal_mask = pe.Node(
+        GenerateTemporalMask(
             fd_thresh=config.workflow.fd_thresh,
             dvars_thresh=config.workflow.dvars_thresh,
             censor_before=config.workflow.censor_before,
             censor_after=config.workflow.censor_after,
             censor_between=config.workflow.censor_between,
-            head_radius=head_radius,
         ),
-        name="generate_confounds",
-        mem_gb=2,
+        name="generate_temporal_mask",
+        mem_gb=0.1,
+        omp_nthreads=omp_nthreads,
+    )
+    workflow.connect([
+        (filter_motion, generate_temporal_mask, [("modified_full_confounds", "full_confounds")]),
+        (generate_temporal_mask, outputnode, [
+            ("temporal_mask", "temporal_mask"),
+            ("temporal_mask_metadata", "temporal_mask_metadata"),
+        ]),
+    ])  # fmt:skip
+
+    generate_design_matrix = pe.Node(
+        GenerateDesignMatrix(params=params),
+        name="generate_design_matrix",
+        mem_gb=0.1,
         omp_nthreads=omp_nthreads,
     )
 
     # Load and filter confounds
-    # fmt:off
     workflow.connect([
-        (inputnode, generate_confounds, [
+        (inputnode, generate_design_matrix, [
             ("name_source", "in_file"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("fmriprep_confounds_json", "fmriprep_confounds_json"),
             ("custom_confounds_file", "custom_confounds_file"),
         ]),
-        (generate_confounds, outputnode, [
-            ("motion_metadata", "motion_metadata"),
-            ("confounds_metadata", "confounds_metadata"),
+        (filter_motion, generate_design_matrix, [
+            ("modified_full_confounds", "full_confounds"),
+            ("modified_full_confounds_metadata", "full_confounds_metadata"),
         ]),
-    ])
-    # fmt:on
+        (generate_design_matrix, outputnode, [
+            ("design_matrix", "design_matrix"),
+            ("design_matrix_metadata", "design_matrix_metadata"),
+        ]),
+    ])  # fmt:skip
 
     # A buffer node to hold either the original files or the files with the first N vols removed.
     dummy_scan_buffer = pe.Node(
@@ -233,11 +268,11 @@ def init_prepare_confounds_wf(
             fields=[
                 "preprocessed_bold",
                 "dummy_scans",
-                "fmriprep_confounds_file",
-                "confounds_file",
-                "motion_file",
+                "full_confounds",
+                "modified_full_confounds",
                 "temporal_mask",
-            ]
+                "design_matrix",
+            ],
         ),
         name="dummy_scan_buffer",
     )
@@ -249,78 +284,83 @@ def init_prepare_confounds_wf(
             mem_gb=4,
         )
 
-        # fmt:off
         workflow.connect([
             (inputnode, remove_dummy_scans, [
                 ("preprocessed_bold", "bold_file"),
                 ("dummy_scans", "dummy_scans"),
+                ("full_confounds", "full_confounds"),
             ]),
-            (generate_confounds, remove_dummy_scans, [
-                ("confounds_file", "confounds_file"),
-                ("motion_file", "motion_file"),
-                ("temporal_mask", "temporal_mask"),
-                # fMRIPrep confounds file is needed for filtered motion.
-                # The selected confounds are not guaranteed to include motion params.
-                ("filtered_confounds_file", "fmriprep_confounds_file"),
+            (filter_motion, remove_dummy_scans, [
+                ("modified_full_confounds", "modified_full_confounds"),
             ]),
+            (generate_temporal_mask, remove_dummy_scans, [("temporal_mask", "temporal_mask")]),
+            (generate_design_matrix, remove_dummy_scans, [("design_matrix", "design_matrix")]),
             (remove_dummy_scans, dummy_scan_buffer, [
-                ("bold_file_dropped_TR", "preprocessed_bold"),
-                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
-                ("confounds_file_dropped_TR", "confounds_file"),
-                ("motion_file_dropped_TR", "motion_file"),
-                ("temporal_mask_dropped_TR", "temporal_mask"),
                 ("dummy_scans", "dummy_scans"),
+                ("bold_file_dropped_TR", "preprocessed_bold"),
+                ("full_confounds_dropped_TR", "full_confounds"),
+                ("modified_full_confounds_dropped_TR", "modified_full_confounds"),
+                ("design_matrix_dropped_TR", "design_matrix"),
+                ("temporal_mask_dropped_TR", "temporal_mask"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     else:
-        # fmt:off
         workflow.connect([
             (inputnode, dummy_scan_buffer, [
                 ("dummy_scans", "dummy_scans"),
                 ("preprocessed_bold", "preprocessed_bold"),
+                ("full_confounds", "full_confounds"),
             ]),
-            (generate_confounds, dummy_scan_buffer, [
-                ("confounds_file", "confounds_file"),
-                ("motion_file", "motion_file"),
-                ("temporal_mask", "temporal_mask"),
-                # fMRIPrep confounds file is needed for filtered motion.
-                # The selected confounds are not guaranteed to include motion params.
-                ("filtered_confounds_file", "fmriprep_confounds_file"),
-            ]),
-        ])
-        # fmt:on
+            (filter_motion, dummy_scan_buffer, [("modified_full_confounds", "full_confounds")]),
+            (generate_temporal_mask, dummy_scan_buffer, [("temporal_mask", "temporal_mask")]),
+            (generate_design_matrix, dummy_scan_buffer, [("design_matrix", "design_matrix")]),
+        ])  # fmt:skip
 
-    # fmt:off
     workflow.connect([
         (dummy_scan_buffer, outputnode, [
-            ("preprocessed_bold", "preprocessed_bold"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("confounds_file", "confounds_file"),
-            ("motion_file", "filtered_motion"),
             ("dummy_scans", "dummy_scans"),
+            ("preprocessed_bold", "preprocessed_bold"),
+            ("full_confounds", "full_confounds"),
+            ("modified_full_confounds", "modified_full_confounds"),
+            ("design_matrix", "design_matrix"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
-    random_censor = pe.Node(
-        RandomCensor(exact_scans=exact_scans, random_seed=random_seed),
-        name="random_censor",
+    tmask_buffer = pe.Node(
+        niu.IdentityInterface(fields=["temporal_mask", "temporal_mask_metadata"]),
+        name="tmask_buffer",
     )
+    if exact_scans:
+        random_censor = pe.Node(
+            RandomCensor(exact_scans=exact_scans, random_seed=random_seed),
+            name="random_censor",
+        )
 
-    # fmt:off
+        workflow.connect([
+            (generate_temporal_mask, random_censor, [
+                ("temporal_mask_metadata", "temporal_mask_metadata"),
+            ]),
+            (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
+            (random_censor, tmask_buffer, [
+                ("temporal_mask", "temporal_mask"),
+                ("temporal_mask_metadata", "temporal_mask_metadata"),
+            ]),
+        ])  # fmt:skip
+    else:
+        workflow.connect([
+            (generate_temporal_mask, tmask_buffer, [
+                ("temporal_mask", "temporal_mask"),
+                ("temporal_mask_metadata", "temporal_mask_metadata"),
+            ]),
+        ])  # fmt:skip
+
     workflow.connect([
-        (generate_confounds, random_censor, [
-            ("temporal_mask_metadata", "temporal_mask_metadata"),
-        ]),
-        (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
-        (random_censor, outputnode, [
+        (tmask_buffer, outputnode, [
             ("temporal_mask", "temporal_mask"),
             ("temporal_mask_metadata", "temporal_mask_metadata"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if params != "none":
         plot_design_matrix = pe.Node(
@@ -332,12 +372,10 @@ def init_prepare_confounds_wf(
             name="plot_design_matrix",
         )
 
-        # fmt:off
         workflow.connect([
-            (dummy_scan_buffer, plot_design_matrix, [("confounds_file", "design_matrix")]),
-            (random_censor, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
-        ])
-        # fmt:on
+            (dummy_scan_buffer, plot_design_matrix, [("design_matrix", "design_matrix")]),
+            (tmask_buffer, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
+        ])  # fmt:skip
 
         ds_design_matrix_plot = pe.Node(
             DerivativesDataSink(
@@ -351,12 +389,10 @@ def init_prepare_confounds_wf(
             run_without_submitting=False,
         )
 
-        # fmt:off
         workflow.connect([
             (inputnode, ds_design_matrix_plot, [("name_source", "source_file")]),
             (plot_design_matrix, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     censor_report = pe.Node(
         CensoringPlot(
@@ -374,15 +410,12 @@ def init_prepare_confounds_wf(
         n_procs=omp_nthreads,
     )
 
-    # fmt:off
     workflow.connect([
-        (generate_confounds, censor_report, [("motion_file", "filtered_motion")]),
+        (inputnode, censor_report, [("full_confounds", "full_confounds")]),  # use pre-dummy scans
+        (filter_motion, censor_report, [("modified_full_confounds", "modified_full_confounds")]),
         (dummy_scan_buffer, censor_report, [("dummy_scans", "dummy_scans")]),
-        (random_censor, censor_report, [("temporal_mask", "temporal_mask")]),
-        # use the undropped version
-        (inputnode, censor_report, [("fmriprep_confounds_file", "fmriprep_confounds_file")]),
-    ])
-    # fmt:on
+        (tmask_buffer, censor_report, [("temporal_mask", "temporal_mask")]),
+    ])  # fmt:skip
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
@@ -396,12 +429,10 @@ def init_prepare_confounds_wf(
         run_without_submitting=False,
     )
 
-    # fmt:off
     workflow.connect([
         (inputnode, ds_report_censoring, [("name_source", "source_file")]),
         (censor_report, ds_report_censoring, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow
 
