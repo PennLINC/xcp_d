@@ -25,7 +25,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
 
-from xcp_d.utils.confounds import load_motion
+from xcp_d.utils.confounds import filter_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es
@@ -97,7 +97,7 @@ class CensoringPlot(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
         confounds_df = pd.read_table(self.inputs.full_confounds)
-        preproc_motion_df = load_motion(
+        preproc_motion_df = filter_motion(
             confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=None,
@@ -338,7 +338,7 @@ class QCPlots(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
         confounds_df = pd.read_table(self.inputs.full_confounds)
-        preproc_motion_df = load_motion(
+        preproc_motion_df = filter_motion(
             confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=None,

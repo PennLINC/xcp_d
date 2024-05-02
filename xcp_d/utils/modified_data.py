@@ -12,7 +12,7 @@ from xcp_d.utils.confounds import (
     _infer_dummy_scans,
     _modify_motion_filter,
     calculate_outliers,
-    load_motion,
+    filter_motion,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
@@ -202,7 +202,7 @@ def flag_bad_run(
         band_stop_max=band_stop_max,
         TR=TR,
     )
-    motion_df = load_motion(
+    motion_df = filter_motion(
         fmriprep_confounds_df,
         TR=TR,
         motion_filter_type=motion_filter_type,
