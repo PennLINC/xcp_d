@@ -37,7 +37,8 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         config.workflow.cifti = False
         config.workflow.low_pass = 0.08
         config.workflow.high_pass = 0.01
-        config.workflow.fd_thresh = 0
+        config.workflow.fd_thresh = [0, 0]
+        config.workflow.dvars_thresh = [0, 0]
         config.workflow.smoothing = 6
         config.nipype.omp_nthreads = 2
 
@@ -124,7 +125,8 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         config.workflow.cifti = True
         config.workflow.low_pass = 0.08
         config.workflow.high_pass = 0.01
-        config.workflow.fd_thresh = 0.1
+        config.workflow.fd_thresh = [0.1, 0]
+        config.workflow.dvars_thresh = [0, 0]
         config.workflow.smoothing = 6
         config.nipype.omp_nthreads = 2
 

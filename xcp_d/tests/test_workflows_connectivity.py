@@ -103,9 +103,17 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
-        columns=["framewise_displacement", "exact_10"],
+        columns=[
+            "framewise_displacement",
+            "dvars",
+            "denoising",
+            "framewise_displacement_interpolation",
+            "dvars_interpolation",
+            "interpolation",
+            "exact_10",
+        ],
         data=np.stack(
-            (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            (np.zeros(n_volumes, 6), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
             axis=1,
         ),
     )
@@ -251,9 +259,17 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
-        columns=["framewise_displacement", "exact_10"],
+        columns=[
+            "framewise_displacement",
+            "dvars",
+            "denoising",
+            "framewise_displacement_interpolation",
+            "dvars_interpolation",
+            "interpolation",
+            "exact_10",
+        ],
         data=np.stack(
-            (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            (np.zeros(n_volumes, 6), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
             axis=1,
         ),
     )
