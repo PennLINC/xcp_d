@@ -275,7 +275,7 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
         Undefined,
         desc="Temporal mask",
     )
-    fmriprep_confounds_file = File(
+    full_confounds = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds file, after dummy scans removal",
@@ -337,7 +337,7 @@ class QCPlots(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        confounds_df = pd.read_table(self.inputs.full_confounds)
         preproc_motion_df = load_motion(
             confounds_df.copy(),
             TR=self.inputs.TR,
@@ -620,7 +620,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
     )
-    filtered_motion = File(
+    modified_full_confounds = File(
         exists=True,
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
@@ -704,7 +704,7 @@ class QCPlotsES(SimpleInterface):
             preprocessed_bold=self.inputs.preprocessed_bold,
             denoised_interpolated_bold=self.inputs.denoised_interpolated_bold,
             TR=self.inputs.TR,
-            filtered_motion=self.inputs.filtered_motion,
+            modified_full_confounds=self.inputs.modified_full_confounds,
             temporal_mask=self.inputs.temporal_mask,
             preprocessed_figure=preprocessed_figure,
             denoised_figure=denoised_figure,

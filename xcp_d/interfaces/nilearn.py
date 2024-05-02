@@ -245,7 +245,7 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
             "but without any additional censoring."
         ),
     )
-    confounds_file = traits.Either(
+    design_matrix = traits.Either(
         File(exists=True),
         None,
         mandatory=True,
@@ -308,8 +308,8 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         sample_mask = ~censoring_df["denoising"].to_numpy().astype(bool)
 
         confounds_df = None
-        if self.inputs.confounds_file:
-            confounds_df = pd.read_table(self.inputs.confounds_file)
+        if self.inputs.design_matrix:
+            confounds_df = pd.read_table(self.inputs.design_matrix)
             if confounds_df.shape[0] != n_volumes:
                 raise ValueError(
                     f"Confounds file has {confounds_df.shape[0]} rows, "
@@ -384,8 +384,8 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         sample_mask = ~censoring_df["denoising"].to_numpy().astype(bool)
 
         confounds_df = None
-        if self.inputs.confounds_file:
-            confounds_df = pd.read_table(self.inputs.confounds_file)
+        if self.inputs.design_matrix:
+            confounds_df = pd.read_table(self.inputs.design_matrix)
             if confounds_df.shape[0] != n_volumes:
                 raise ValueError(
                     f"Confounds file has {confounds_df.shape[0]} rows, "

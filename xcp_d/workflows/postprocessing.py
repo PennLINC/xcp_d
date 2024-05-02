@@ -577,7 +577,7 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     preprocessed_bold
     %(temporal_mask)s
     mask
-    confounds_file
+    design_matrix
 
     Outputs
     -------
@@ -651,7 +651,7 @@ approach.
                 "preprocessed_bold",
                 "temporal_mask",
                 "mask",  # only used for NIFTIs
-                "confounds_file",
+                "design_matrix",
             ],
         ),
         name="inputnode",
@@ -684,7 +684,7 @@ approach.
     workflow.connect([
         (inputnode, regress_and_filter_bold, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("confounds_file", "confounds_file"),
+            ("design_matrix", "confounds_file"),
             ("temporal_mask", "temporal_mask"),
         ]),
         (regress_and_filter_bold, outputnode, [

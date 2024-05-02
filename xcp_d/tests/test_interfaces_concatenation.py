@@ -40,8 +40,8 @@ def test_filteroutfailedruns(ds001419_data):
     n_runs = len(censored_denoised_bold)
     n_good_runs = 2
     preprocessed_bold = [nifti_file] * n_runs
-    fmriprep_confounds_file = [tsv_file] * n_runs
-    filtered_motion = [tsv_file] * n_runs
+    full_confounds = [tsv_file] * n_runs
+    modified_full_confounds = [tsv_file] * n_runs
     temporal_mask = [nifti_file] * n_runs
     denoised_interpolated_bold = [nifti_file] * n_runs
 
@@ -57,8 +57,8 @@ def test_filteroutfailedruns(ds001419_data):
     interface = concatenation.FilterOutFailedRuns(
         censored_denoised_bold=censored_denoised_bold,
         preprocessed_bold=preprocessed_bold,
-        fmriprep_confounds_file=fmriprep_confounds_file,
-        filtered_motion=filtered_motion,
+        full_confounds=full_confounds,
+        modified_full_confounds=modified_full_confounds,
         temporal_mask=temporal_mask,
         denoised_interpolated_bold=denoised_interpolated_bold,
         smoothed_denoised_bold=smoothed_denoised_bold,
@@ -71,8 +71,8 @@ def test_filteroutfailedruns(ds001419_data):
     out = results.outputs
     assert len(out.censored_denoised_bold) == n_good_runs
     assert len(out.preprocessed_bold) == n_good_runs
-    assert len(out.fmriprep_confounds_file) == n_good_runs
-    assert len(out.filtered_motion) == n_good_runs
+    assert len(out.full_confounds) == n_good_runs
+    assert len(out.modified_full_confounds) == n_good_runs
     assert len(out.temporal_mask) == n_good_runs
     assert len(out.denoised_interpolated_bold) == n_good_runs
     assert len(out.smoothed_denoised_bold) == n_good_runs
@@ -94,8 +94,8 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     n_atlases = 3
     censored_denoised_bold = [nifti_file] * n_runs
     preprocessed_bold = [nifti_file] * n_runs
-    fmriprep_confounds_file = [tsv_file] * n_runs
-    filtered_motion = [tsv_file] * n_runs
+    full_confounds = [tsv_file] * n_runs
+    modified_full_confounds = [tsv_file] * n_runs
     temporal_mask = [tsv_file] * n_runs
     denoised_interpolated_bold = [nifti_file] * n_runs
 
@@ -112,8 +112,8 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
         denoised_interpolated_bold=denoised_interpolated_bold,
         smoothed_denoised_bold=smoothed_denoised_bold,
         timeseries_ciftis=timeseries_ciftis,
-        fmriprep_confounds_file=fmriprep_confounds_file,
-        filtered_motion=filtered_motion,
+        full_confounds=full_confounds,
+        modified_full_confounds=modified_full_confounds,
         temporal_mask=temporal_mask,
         timeseries=timeseries,
     )
@@ -125,8 +125,8 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     assert not isdefined(out.smoothed_denoised_bold)
     assert len(out.timeseries_ciftis) == n_atlases
     assert all(os.path.isfile(f) for f in out.timeseries_ciftis)
-    assert os.path.isfile(out.fmriprep_confounds_file)
-    assert os.path.isfile(out.filtered_motion)
+    assert os.path.isfile(out.full_confounds)
+    assert os.path.isfile(out.modified_full_confounds)
     assert os.path.isfile(out.temporal_mask)
     assert len(out.timeseries) == n_atlases
     assert all(os.path.isfile(f) for f in out.timeseries)

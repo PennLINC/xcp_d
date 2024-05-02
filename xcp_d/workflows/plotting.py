@@ -67,9 +67,9 @@ def init_qc_report_wf(
     %(template_to_anat_xfm)s
         Only used with non-CIFTI data.
     %(dummy_scans)s
-    %(fmriprep_confounds_file)s
+    %(full_confounds)s
     %(temporal_mask)s
-    %(filtered_motion)s
+    %(modified_full_confounds)s
 
     Outputs
     -------
@@ -91,8 +91,8 @@ def init_qc_report_wf(
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "dummy_scans",
-                "fmriprep_confounds_file",
-                "filtered_motion",
+                "full_confounds",
+                "modified_full_confounds",
                 "temporal_mask",
                 "run_index",  # will only be set for concatenated data
                 # nifti-only inputs
@@ -280,7 +280,7 @@ def init_qc_report_wf(
             ("name_source", "name_source"),
             ("preprocessed_bold", "bold_file"),
             ("censored_denoised_bold", "cleaned_file"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+            ("full_confounds", "full_confounds"),
             ("temporal_mask", "temporal_mask"),
             ("dummy_scans", "dummy_scans"),
         ]),
@@ -311,7 +311,7 @@ def init_qc_report_wf(
     if dcan_qc:
         make_dcan_qc_file_node = pe.Node(
             Function(
-                input_names=["filtered_motion", "TR"],
+                input_names=["modified_full_confounds", "TR"],
                 output_names=["dcan_df_file"],
                 function=make_dcan_qc_file,
             ),
@@ -321,7 +321,7 @@ def init_qc_report_wf(
 
         # fmt:off
         workflow.connect([
-            (inputnode, make_dcan_qc_file_node, [("filtered_motion", "filtered_motion")]),
+            (inputnode, make_dcan_qc_file_node, [("modified_full_confounds", "modified_full_confounds")]),
         ])
         # fmt:on
 
@@ -357,7 +357,7 @@ def init_qc_report_wf(
         (inputnode, plot_execsummary_carpets_dcan, [
             ("preprocessed_bold", "preprocessed_bold"),
             ("denoised_interpolated_bold", "denoised_interpolated_bold"),
-            ("filtered_motion", "filtered_motion"),
+            ("modified_full_confounds", "modified_full_confounds"),
             ("temporal_mask", "temporal_mask"),
             ("run_index", "run_index"),
         ]),

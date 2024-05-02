@@ -84,13 +84,13 @@ def filter_motion(
 
 
 @fill_doc
-def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
+def get_custom_confounds(custom_confounds_folder, full_confounds):
     """Identify a custom confounds file.
 
     Parameters
     ----------
     %(custom_confounds_folder)s
-    %(fmriprep_confounds_file)s
+    %(full_confounds)s
         We expect the custom confounds file to have the same name.
 
     Returns
@@ -107,7 +107,7 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
             f"Custom confounds location does not exist: {custom_confounds_folder}"
         )
 
-    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
+    custom_confounds_filename = os.path.basename(full_confounds)
     custom_confounds_file = os.path.abspath(
         os.path.join(
             custom_confounds_folder,

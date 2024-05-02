@@ -370,8 +370,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "filtered_motion",
+                "full_confounds",
+                "modified_full_confounds",
                 "temporal_mask",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
@@ -398,7 +398,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             )
 
             post_scrubbing_duration = flag_bad_run(
-                fmriprep_confounds_file=run_data["confounds"],
+                full_confounds=run_data["confounds"],
                 dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
                 motion_filter_type=config.workflow.motion_filter_type,
