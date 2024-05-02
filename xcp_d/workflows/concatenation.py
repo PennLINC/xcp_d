@@ -203,25 +203,26 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ]),
     ])  # fmt:skip
 
-    ds_temporal_mask = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
-            suffix="outliers",
-            extension=".tsv",
-        ),
-        name="ds_temporal_mask",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
+    if fd_thresh > 0:
+        ds_temporal_mask = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
+                suffix="outliers",
+                extension=".tsv",
+            ),
+            name="ds_temporal_mask",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
 
-    workflow.connect([
-        (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
-        (filter_runs, ds_temporal_mask, [
-            (("temporal_mask", _make_xcpd_uri, output_dir), "Sources"),
-        ]),
-    ])  # fmt:skip
+        workflow.connect([
+            (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
+            (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
+            (filter_runs, ds_temporal_mask, [
+                (("temporal_mask", _make_xcpd_uri, output_dir), "Sources"),
+            ]),
+        ])  # fmt:skip
 
     if cifti:
         ds_censored_filtered_bold = pe.Node(
@@ -323,7 +324,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ]),
         ])  # fmt:skip
 
-    if dcan_qc:
+    if dcan_qc and (fd_thresh > 0):
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_interpolated_filtered_bold, [
