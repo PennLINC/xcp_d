@@ -17,29 +17,12 @@ def test_modify_confounds(ds001419_data, tmp_path_factory):
     confounds_json = ds001419_data["confounds_json"]
 
     df = pd.read_table(confounds_file)
-    with open(confounds_json, "r") as fo:
-        metadata = json.load(fo)
-
-    # Replace confounds tsv values with values that should be omitted
-    df.loc[1:3, "trans_x"] = [6, 8, 9]
-    df.loc[4:6, "trans_y"] = [7, 8, 9]
-    df.loc[7:9, "trans_z"] = [12, 8, 9]
-
-    # Modify JSON file
-    metadata["trans_x"] = {"test": "hello"}
-    confounds_json = os.path.join(tmpdir, "edited_confounds.json")
-    with open(confounds_json, "w") as fo:
-        json.dump(metadata, fo)
-
-    # Rename with same convention as initial confounds tsv
-    confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
-    df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
 
     # Run workflow
     interface = censoring.ModifyConfounds(
         head_radius=50,
         TR=0.8,
-        full_confounds=confounds_tsv,
+        full_confounds=confounds_file,
         full_confounds_json=confounds_json,
         motion_filter_type=None,
         motion_filter_order=4,
@@ -55,29 +38,23 @@ def test_modify_confounds(ds001419_data, tmp_path_factory):
     assert out_df.shape == df.shape
 
 
-def test_generate_temporal_mask(ds001419_data, tmp_path_factory):
+def test_generate_temporal_mask(tmp_path_factory):
     """Check results."""
     tmpdir = tmp_path_factory.mktemp("test_generate_temporal_mask")
-    confounds_file = ds001419_data["confounds_file"]
-    confounds_json = ds001419_data["confounds_json"]
 
-    df = pd.read_table(confounds_file)
-    with open(confounds_json, "r") as fo:
-        metadata = json.load(fo)
+    fd = np.zeros(20)
+    dvars = np.zeros(20)
 
-    # Replace confounds tsv values with values that should be omitted
-    df.loc[1:3, "trans_x"] = [6, 8, 9]
-    df.loc[4:6, "trans_y"] = [7, 8, 9]
-    df.loc[7:9, "trans_z"] = [12, 8, 9]
+    fd_idx = [(1, 0.4), (5, 0.2)]
+    for idx, val in fd_idx:
+        fd[idx] = val
 
-    # Modify JSON file
-    metadata["trans_x"] = {"test": "hello"}
-    confounds_json = os.path.join(tmpdir, "edited_confounds.json")
-    with open(confounds_json, "w") as fo:
-        json.dump(metadata, fo)
+    dvars_idx = [(11, 2.0), (15, 1.0)]
+    for idx, val in dvars_idx:
+        dvars[idx] = val
 
-    # Rename with same convention as initial confounds tsv
-    confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
+    df = pd.DataFrame({"framewise_displacement": fd, "dvars": dvars})
+    confounds_tsv = os.path.join(tmpdir, "test.tsv")
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
 
     # Run workflow
@@ -87,7 +64,7 @@ def test_generate_temporal_mask(ds001419_data, tmp_path_factory):
         dvars_thresh=[1.5, 0.5],
         censor_before=[0, 0],
         censor_after=[0, 0],
-        censor_between=[1, 1],
+        censor_between=[0, 0],
     )
     results = interface.run(cwd=tmpdir)
 
@@ -110,15 +87,6 @@ def test_generate_design_matrix(ds001419_data, tmp_path_factory):
     with open(confounds_json, "r") as fo:
         metadata = json.load(fo)
 
-    # Replace confounds tsv values with values that should be omitted
-    df.loc[1:3, "trans_x"] = [6, 8, 9]
-    df.loc[4:6, "trans_y"] = [7, 8, 9]
-    df.loc[7:9, "trans_z"] = [12, 8, 9]
-
-    # Rename with same convention as initial confounds tsv
-    confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
-    df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
-
     custom_confounds_file = os.path.join(tmpdir, "custom_confounds.tsv")
     df2 = pd.DataFrame(columns=["signal__test"], data=np.random.random((df.shape[0], 1)))
     df2.to_csv(custom_confounds_file, sep="\t", index=False, header=True)
@@ -127,7 +95,7 @@ def test_generate_design_matrix(ds001419_data, tmp_path_factory):
     interface = censoring.GenerateDesignMatrix(
         in_file=in_file,
         params="24P",
-        full_confounds=confounds_tsv,
+        full_confounds=confounds_file,
         full_confounds_metadata=metadata,
         custom_confounds_file=custom_confounds_file,
     )

@@ -310,3 +310,133 @@ def test_motion_filtering_notch():
     )
     notch_data_test = np.squeeze(notch_data_test)
     assert np.allclose(notch_data_test, notch_data_true)
+
+
+def test_calculate_outliers():
+    """Test confounds.calculate_outliers."""
+    fd = np.zeros(20)
+    dvars = np.zeros(20)
+
+    fd_idx = [(1, 0.4), (5, 0.2)]
+    for idx, val in fd_idx:
+        fd[idx] = val
+
+    dvars_idx = [(11, 2.0), (15, 1.0)]
+    for idx, val in dvars_idx:
+        dvars[idx] = val
+
+    df = pd.DataFrame({"framewise_displacement": fd, "std_dvars": dvars})
+
+    # Apply both thresholds without expanded censoring
+    outliers_df = confounds.calculate_outliers(
+        confounds=df,
+        fd_thresh=[0.3, 0.1],
+        dvars_thresh=[1.5, 0.5],
+        before=[0, 0],
+        after=[0, 0],
+        between=[0, 0],
+    )
+    assert outliers_df.shape[0] == df.shape[0]
+    assert outliers_df.shape[1] == 6  # 6 types of outlier
+    assert np.array_equal(np.where(outliers_df["framewise_displacement"].values)[0], [1])
+    assert np.array_equal(np.where(outliers_df["dvars"].values)[0], [11])
+    assert np.array_equal(np.where(outliers_df["denoising"].values)[0], [1, 11])
+    assert np.array_equal(
+        np.where(outliers_df["framewise_displacement_interpolation"].values)[0],
+        [1, 5],
+    )
+    assert np.array_equal(np.where(outliers_df["dvars_interpolation"].values)[0], [11, 15])
+    assert np.array_equal(np.where(outliers_df["interpolation"].values)[0], [1, 5, 11, 15])
+
+    # Apply both thresholds and use expanded censoring
+    outliers_df = confounds.calculate_outliers(
+        confounds=df,
+        fd_thresh=[0.3, 0.1],
+        dvars_thresh=[1.5, 0.5],
+        before=[1, 1],
+        after=[1, 1],
+        between=[1, 1],
+    )
+    assert outliers_df.shape[0] == df.shape[0]
+    assert outliers_df.shape[1] == 6  # 6 types of outlier
+    assert np.array_equal(np.where(outliers_df["framewise_displacement"].values)[0], [1])
+    assert np.array_equal(np.where(outliers_df["dvars"].values)[0], [11])
+    assert np.array_equal(np.where(outliers_df["denoising"].values)[0], [0, 1, 2, 10, 11, 12])
+    assert np.array_equal(
+        np.where(outliers_df["framewise_displacement_interpolation"].values)[0],
+        [1, 5],
+    )
+    assert np.array_equal(np.where(outliers_df["dvars_interpolation"].values)[0], [11, 15])
+    assert np.array_equal(
+        np.where(outliers_df["interpolation"].values)[0],
+        [0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15, 16],
+    )
+
+    # Drop FD column and try to apply FD-based censoring
+    temp_df = df[["std_dvars"]]
+    with pytest.raises(ValueError, match="FD-based censoring is not possible"):
+        confounds.calculate_outliers(
+            confounds=temp_df,
+            fd_thresh=[0.3, 0.1],
+            dvars_thresh=[1.5, 0.5],
+            before=[0, 0],
+            after=[0, 0],
+            between=[0, 0],
+        )
+
+    # Apply DVARS-based censoring when FD column is missing
+    outliers_df = confounds.calculate_outliers(
+        confounds=temp_df,
+        fd_thresh=[0, 0],
+        dvars_thresh=[1.5, 0.5],
+        before=[1, 1],
+        after=[1, 1],
+        between=[1, 1],
+    )
+    assert outliers_df.shape[0] == df.shape[0]
+    assert outliers_df.shape[1] == 6  # 6 types of outlier
+    assert np.array_equal(np.where(outliers_df["framewise_displacement"].values)[0], [])
+    assert np.array_equal(np.where(outliers_df["dvars"].values)[0], [11])
+    assert np.array_equal(np.where(outliers_df["denoising"].values)[0], [10, 11, 12])
+    assert np.array_equal(
+        np.where(outliers_df["framewise_displacement_interpolation"].values)[0],
+        [],
+    )
+    assert np.array_equal(np.where(outliers_df["dvars_interpolation"].values)[0], [11, 15])
+    assert np.array_equal(
+        np.where(outliers_df["interpolation"].values)[0],
+        [9, 10, 11, 12, 13, 14, 15, 16],
+    )
+
+    # Drop DVARS column and try to apply DVARS-based censoring
+    temp_df = df[["framewise_displacement"]]
+    with pytest.raises(ValueError, match="DVARS-based censoring is not possible"):
+        confounds.calculate_outliers(
+            confounds=temp_df,
+            fd_thresh=[0.3, 0.1],
+            dvars_thresh=[1.5, 0.5],
+            before=[0, 0],
+            after=[0, 0],
+            between=[0, 0],
+        )
+
+    # Apply FD-based censoring when DVARS column is missing
+    outliers_df = confounds.calculate_outliers(
+        confounds=temp_df,
+        fd_thresh=[0.3, 0.1],
+        dvars_thresh=[0, 0],
+        before=[1, 1],
+        after=[1, 1],
+        between=[1, 1],
+    )
+    assert outliers_df.shape[0] == df.shape[0]
+    assert outliers_df.shape[1] == 6  # 6 types of outlier
+    assert np.array_equal(np.where(outliers_df["framewise_displacement"].values)[0], [1])
+    assert np.array_equal(np.where(outliers_df["dvars"].values)[0], [])
+    assert np.array_equal(np.where(outliers_df["denoising"].values)[0], [0, 1, 2])
+    assert np.array_equal(
+        np.where(outliers_df["framewise_displacement_interpolation"].values)[0],
+        [1, 5],
+    )
+    assert np.array_equal(np.where(outliers_df["dvars_interpolation"].values)[0], [])
+    assert np.array_equal(np.where(outliers_df["interpolation"].values)[0], [0, 1, 2, 3, 4, 5, 6])

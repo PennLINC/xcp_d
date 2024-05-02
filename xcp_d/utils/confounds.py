@@ -696,20 +696,15 @@ def calculate_outliers(*, confounds, fd_thresh, dvars_thresh, before, after, bet
     outliers_df["framewise_displacement_interpolation"] = censor_basic(fd_timeseries, fd_thresh[1])
     outliers_df["dvars_interpolation"] = censor_basic(dvars_timeseries, dvars_thresh[1])
 
-    outlier_mask = np.logical_or(
-        outliers_df["framewise_displacement_interpolation"],
-        outliers_df["dvars_interpolation"],
-    )
+    # Interpolation outlier index should include all outliers form denoising index,
+    # because all volumes in denoising index are interpolated in denoising step.
+    outlier_mask = outliers_df[
+        ["denoising", "framewise_displacement_interpolation", "dvars_interpolation"]
+    ].any(axis=1)
     outliers_df["interpolation"] = censor_around(
         outlier_mask,
         before=before[1],
         after=after[1],
         between=between[1],
-    )
-    # Interpolation outlier index should include all outliers form denoising index,
-    # because all volumes in denoising index are interpolated in denoising step.
-    outliers_df["interpolation"] = np.logical_or(
-        outliers_df["interpolation"],
-        outliers_df["denoising"],
     )
     return outliers_df
