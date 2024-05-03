@@ -113,7 +113,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
             "exact_10",
         ],
         data=np.stack(
-            (np.zeros(n_volumes, 6), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            (np.zeros((n_volumes, 6)), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
             axis=1,
         ),
     )
@@ -269,7 +269,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
             "exact_10",
         ],
         data=np.stack(
-            (np.zeros(n_volumes, 6), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
+            (np.zeros((n_volumes, 6)), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
             axis=1,
         ),
     )
