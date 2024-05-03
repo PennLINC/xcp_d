@@ -103,7 +103,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     data = np.zeros((n_volumes, 7))
-    data[-1, :10] = 1
+    data[:10, -1] = 1
     censoring_df = pd.DataFrame(
         columns=[
             "framewise_displacement",
@@ -152,6 +152,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         config.workflow.bandpass_filter = False
         config.workflow.min_coverage = 0.5
         config.nipype.omp_nthreads = 2
+        config.execution.atlases = atlas_names
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
@@ -258,7 +259,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     data = np.zeros((n_volumes, 7))
-    data[-1, :10] = 1
+    data[:10, -1] = 1
     censoring_df = pd.DataFrame(
         columns=[
             "framewise_displacement",
