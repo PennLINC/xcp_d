@@ -1,7 +1,6 @@
 """Tests for the xcp_d.cli.parser_utils module."""
 
 from argparse import ArgumentParser, ArgumentTypeError
-from json import JSONDecodeError
 from pathlib import Path
 
 import pytest
@@ -109,5 +108,5 @@ def test_bids_filter_invalid_json(tmp_path_factory):
     with open(json_file, "w") as f:
         f.write("invalid json")
     parser = ArgumentParser()
-    with pytest.raises(JSONDecodeError):
+    with pytest.raises(SystemExit, match="2"):
         parser_utils._bids_filter(json_file, parser)
