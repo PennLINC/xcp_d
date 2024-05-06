@@ -30,25 +30,25 @@ def base_opts():
         "work_dir": Path("work"),
         "analysis_level": "participant",
         "mode": "linc",
-        "file_format": "nifti",
-        "input_type": "fmriprep",
+        "file_format": "auto",
+        "input_type": "auto",
         "lower_bpf": 0.01,
         "upper_bpf": 0.08,
         "bandpass_filter": True,
-        "fd_thresh": 0,
+        "fd_thresh": "auto",
         "min_time": 240,
         "motion_filter_type": None,
         "band_stop_min": None,
         "band_stop_max": None,
         "motion_filter_order": None,
-        "process_surfaces": False,
+        "process_surfaces": "auto",
         "fs_license_file": Path(os.environ["FS_LICENSE"]),
         "atlases": ["Glasser"],
         "custom_confounds": None,
         "dcan_correlation_lengths": None,
         "despike": "auto",
-        "abcc_qc": False,
-        "combine_runs": False,
+        "abcc_qc": "auto",
+        "combine_runs": "auto",
     }
     opts = FakeOptions(**opts_dict)
     return opts
@@ -60,37 +60,7 @@ def test_validate_parameters_01(base_opts, base_parser):
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
-def test_validate_parameters_04(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    assert opts.bandpass_filter is True
-
-    # Disable bandpass_filter to False indirectly
-    opts.lower_bpf = -1
-    opts.upper_bpf = -1
-
-    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert opts.bandpass_filter is False
-    assert "Bandpass filtering is disabled." in caplog.text
-
-
-def test_validate_parameters_05(base_opts, base_parser, capsys):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set upper BPF below lower one
-    opts.lower_bpf = 0.01
-    opts.upper_bpf = 0.001
-
-    with pytest.raises(SystemExit, match="2"):
-        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "must be lower than" in capsys.readouterr().err
-
-
-def test_validate_parameters_06(base_opts, base_parser, caplog):
+def test_validate_parameters_02(base_opts, base_parser, caplog):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
@@ -103,137 +73,7 @@ def test_validate_parameters_06(base_opts, base_parser, caplog):
     assert "Framewise displacement-based scrubbing is disabled." in caplog.text
 
 
-def test_validate_parameters_07(base_opts, base_parser, capsys):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set notch filter with no min or max
-    opts.motion_filter_type = "notch"
-    opts.band_stop_min = None
-    opts.band_stop_max = None
-
-    with pytest.raises(SystemExit, match="2"):
-        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "Please set both" in capsys.readouterr().err
-
-
-def test_validate_parameters_08(base_opts, base_parser, capsys):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set min > max for notch filter
-    opts.motion_filter_type = "notch"
-    opts.band_stop_min = 18
-    opts.band_stop_max = 12
-
-    with pytest.raises(SystemExit, match="2"):
-        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "must be lower than" in capsys.readouterr().err
-
-
-def test_validate_parameters_09(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set min <1 for notch filter
-    opts.motion_filter_type = "notch"
-    opts.band_stop_min = 0.01
-    opts.band_stop_max = 15
-
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "suspiciously low." in caplog.text
-
-
-def test_validate_parameters_10(base_opts, base_parser, capsys):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set lp without min
-    opts.motion_filter_type = "lp"
-    opts.band_stop_min = None
-    opts.band_stop_max = None
-
-    with pytest.raises(SystemExit, match="2"):
-        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "Please set '--band-stop-min'" in capsys.readouterr().err
-
-
-def test_validate_parameters_11(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set min > max for notch filter
-    opts.motion_filter_type = "lp"
-    opts.band_stop_min = 0.01
-    opts.band_stop_max = None
-
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "suspiciously low." in caplog.text
-
-
-def test_validate_parameters_12(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set min > max for notch filter
-    opts.motion_filter_type = "lp"
-    opts.band_stop_min = 12
-    opts.band_stop_max = 18
-
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "'--band-stop-max' is ignored" in caplog.text
-
-
-def test_validate_parameters_13(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set min > max for notch filter
-    opts.motion_filter_type = None
-    opts.band_stop_min = 12
-    opts.band_stop_max = 18
-
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert "'--band-stop-min' and '--band-stop-max' are ignored" in caplog.text
-
-
-def test_validate_parameters_14(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set min > max for notch filter
-    opts.input_type = "dcan"
-    opts.file_format = "nifti"
-
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    # assert "cifti processing (--cifti) will be enabled automatically." in caplog.text
-
-
-def test_validate_parameters_15(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
-    opts = deepcopy(base_opts)
-
-    # Set min > max for notch filter
-    opts.mode = "abcd"
-    opts.file_format = "auto"
-    opts.motion_filter_type = "lp"
-    opts.band_stop_min = 10
-
-    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert opts.file_format == "cifti"
-    # assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
-
-
-def test_validate_parameters_16(base_opts, base_parser, caplog):
+def test_validate_parameters_03(base_opts, base_parser, caplog):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
@@ -244,10 +84,9 @@ def test_validate_parameters_16(base_opts, base_parser, caplog):
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.process_surfaces is False
-    # assert "(--warp-surfaces-native2std) will be enabled automatically." in caplog.text
 
 
-def test_validate_parameters_17(base_opts, base_parser, capsys):
+def test_validate_parameters_04(base_opts, base_parser, capsys):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
 
@@ -261,11 +100,132 @@ def test_validate_parameters_17(base_opts, base_parser, capsys):
     assert "you must enable cifti processing" in capsys.readouterr().err
 
 
-def test_validate_parameters_18(base_opts, base_parser, caplog, capsys):
-    """Ensure parser._validate_parameters returns 0 when no fs_license_file is provided.
+def test_validate_parameters_05(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters with no-parcellation + min_coverage."""
+    opts = deepcopy(base_opts)
+    opts.atlases = []
+    opts.min_coverage = 0.1
 
-    This should work as long as the environment path exists.
-    """
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "When no atlases are selected" in caplog.text
+
+
+def test_validate_parameters_06(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters nifti + process_surfaces."""
+    opts = deepcopy(base_opts)
+    opts.input_type = "ukb"
+    opts.file_format = "nifti"
+    opts.process_surfaces = True
+
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "--warp-surfaces-native2std is not supported" in stderr
+    assert "In order to perform surface normalization" in stderr
+
+
+def test_validate_parameters_motion_filtering(base_opts, base_parser, caplog, capsys):
+    """Test parser._validate_parameters."""
+    opts = deepcopy(base_opts)
+
+    # Set notch filter with no min or max
+    opts.motion_filter_type = "notch"
+    opts.band_stop_min = None
+    opts.band_stop_max = None
+
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "Please set both" in capsys.readouterr().err
+
+    # Set min > max for notch filter
+    opts.motion_filter_type = "notch"
+    opts.band_stop_min = 18
+    opts.band_stop_max = 12
+
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "must be lower than" in capsys.readouterr().err
+
+    # Set min <1 for notch filter
+    opts.motion_filter_type = "notch"
+    opts.band_stop_min = 0.01
+    opts.band_stop_max = 15
+
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "suspiciously low." in caplog.text
+
+    # Set lp without min
+    opts.motion_filter_type = "lp"
+    opts.band_stop_min = None
+    opts.band_stop_max = None
+
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "Please set '--band-stop-min'" in capsys.readouterr().err
+
+    # Set min > max for notch filter
+    opts.motion_filter_type = "lp"
+    opts.band_stop_min = 0.01
+    opts.band_stop_max = None
+
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "suspiciously low." in caplog.text
+
+    # Set min > max for notch filter
+    opts.motion_filter_type = "lp"
+    opts.band_stop_min = 12
+    opts.band_stop_max = 18
+
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "'--band-stop-max' is ignored" in caplog.text
+
+    # Set min > max for notch filter
+    opts.motion_filter_type = None
+    opts.band_stop_min = 12
+    opts.band_stop_max = 18
+
+    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "'--band-stop-min' and '--band-stop-max' are ignored" in caplog.text
+
+
+def test_validate_parameters_bandpass_filter(base_opts, base_parser, caplog, capsys):
+    """Test parser._validate_parameters with bandpass filter modifications."""
+    opts = deepcopy(base_opts)
+
+    assert opts.bandpass_filter is True
+
+    # Disable bandpass_filter to False indirectly
+    opts.lower_bpf = -1
+    opts.upper_bpf = -1
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.bandpass_filter is False
+    assert "Bandpass filtering is disabled." in caplog.text
+
+    # Set upper BPF below lower one
+    opts.lower_bpf = 0.01
+    opts.upper_bpf = 0.001
+
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert "must be lower than" in capsys.readouterr().err
+
+
+def test_validate_parameters_fs_license(base_opts, base_parser, caplog, capsys, tmp_path_factory):
+    """Ensure parser._validate_parameters returns 2 when fs_license_file doesn't exist."""
+    tmpdir = tmp_path_factory.mktemp("test_validate_parameters_fs_license")
+
     opts = deepcopy(base_opts)
     opts.fs_license_file = None
 
@@ -280,15 +240,10 @@ def test_validate_parameters_18(base_opts, base_parser, caplog, capsys):
 
     assert "A valid FreeSurfer license file is required." in capsys.readouterr().err
 
-
-def test_validate_parameters_19(base_opts, base_parser, caplog, capsys, tmp_path_factory):
-    """Ensure parser._validate_parameters returns 1 when fs_license_file doesn't exist."""
-    tmpdir = tmp_path_factory.mktemp("test_validate_parameters_19")
+    # FS_LICENSE is an existing file
     license_file = os.path.join(tmpdir, "license.txt")
     with open(license_file, "w") as fo:
         fo.write("TEMP")
-
-    opts = deepcopy(base_opts)
 
     # If file exists, return_code should be 0
     opts.fs_license_file = Path(license_file)
@@ -303,82 +258,95 @@ def test_validate_parameters_19(base_opts, base_parser, caplog, capsys, tmp_path
     assert "Freesurfer license DNE" in capsys.readouterr().err
 
 
-def test_validate_parameters_20(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
+def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with linc mode."""
     opts = deepcopy(base_opts)
-    opts.atlases = []
-    opts.min_coverage = 0.1
+    opts.mode = "linc"
 
-    _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    # linc mode doesn't use abcc_qc but does use linc_qc
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert "When no atlases are selected" in caplog.text
+    assert opts.abcc_qc is False
+    assert opts.linc_qc is True
+
+    # --create-matrices is not supported
+    opts.dcan_correlation_lengths = [300]
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--create-matrices' is not supported" in stderr
 
 
-def test_validate_parameters_21(base_opts, base_parser, capsys):
-    """Test parser._validate_parameters."""
+def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with abcd mode."""
     opts = deepcopy(base_opts)
-    opts.input_type = "ukb"
-    opts.file_format = "nifti"
-    opts.process_surfaces = True
+    opts.mode = "abcd"
+
+    # linc mode doesn't use abcc_qc but does use linc_qc
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.abcc_qc is True
+    assert opts.linc_qc is False
+    assert opts.combine_runs is True
+    assert opts.despike is True
+    assert opts.fd_thresh == 0.3
+    assert opts.file_format == "cifti"
+    assert opts.process_surfaces is True
+    assert opts.input_type == "fmriprep"
+    assert opts.dcan_correlation_lengths == ["all", 300, 450]
+
+    # --create-matrices is not supported
+    opts.motion_filter_type = None
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--motion-filter-type' is required for" in stderr
+
+
+def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with hbcd mode."""
+    opts = deepcopy(base_opts)
+    opts.mode = "hbcd"
+
+    # linc mode doesn't use abcc_qc but does use linc_qc
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.abcc_qc is True
+    assert opts.linc_qc is False
+    assert opts.combine_runs is True
+    assert opts.despike is True
+    assert opts.fd_thresh == 0.3
+    assert opts.file_format == "cifti"
+    assert opts.process_surfaces is True
+    assert opts.input_type == "fmriprep"
+    assert opts.dcan_correlation_lengths == ["all", 300, 450]
+
+    # --create-matrices is not supported
+    opts.motion_filter_type = None
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--motion-filter-type' is required for" in stderr
+
+
+def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with 'other' mode."""
+    opts = deepcopy(base_opts)
+    opts.mode = "other"
 
     with pytest.raises(SystemExit, match="2"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
-    assert "--warp-surfaces-native2std is not supported" in stderr
-    assert "In order to perform surface normalization" in stderr
+    assert "Unsupported mode 'other'" in stderr
 
 
 def test_build_parser_01(tmp_path_factory):
-    """Test parser._build_parser."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser")
-    data_dir = os.path.join(tmpdir, "data")
-    data_path = Path(data_dir)
-    os.makedirs(data_dir, exist_ok=True)
-    out_dir = os.path.join(tmpdir, "out")
-    out_path = Path(out_dir)
-    os.makedirs(out_dir, exist_ok=True)
-
-    base_args = [
-        data_dir,
-        out_dir,
-        "participant",
-        "--mode",
-        "linc",
-    ]
-    parser_obj = parser._build_parser()
-
-    opts = parser_obj.parse_args(args=base_args, namespace=None)
-    assert opts.fmri_dir == data_path
-    assert opts.output_dir == out_path
-    assert opts.despike == "auto"
-
-    # Test parsing of the despike parameter
-    test_args = base_args[:]
-    test_args.extend(["--despike"])
-    opts = parser_obj.parse_args(args=test_args, namespace=None)
-    assert opts.fmri_dir == data_path
-    assert opts.output_dir == out_path
-    assert opts.despike is True
-
-    test_args = base_args[:]
-    test_args.extend(["--despike", "y"])
-    opts = parser_obj.parse_args(args=test_args, namespace=None)
-    assert opts.fmri_dir == data_path
-    assert opts.output_dir == out_path
-    assert opts.despike is True
-
-    test_args = base_args[:]
-    test_args.extend(["--despike", "n"])
-    opts = parser_obj.parse_args(args=test_args, namespace=None)
-    assert opts.fmri_dir == data_path
-    assert opts.output_dir == out_path
-    assert opts.despike is False
-
-
-def test_build_parser_02(tmp_path_factory):
-    """Test parser._build_parser."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_02")
+    """Test parser._build_parser with abcd mode."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_01")
     data_dir = os.path.join(tmpdir, "data")
     data_path = Path(data_dir)
     os.makedirs(data_dir, exist_ok=True)
@@ -413,9 +381,9 @@ def test_build_parser_02(tmp_path_factory):
     assert opts.dcan_correlation_lengths == ["all", 300, 450]
 
 
-def test_build_parser_03(tmp_path_factory):
-    """Test parser._build_parser."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_03")
+def test_build_parser_02(tmp_path_factory):
+    """Test parser._build_parser with hbcd mode."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_02")
     data_dir = os.path.join(tmpdir, "data")
     data_path = Path(data_dir)
     os.makedirs(data_dir, exist_ok=True)
@@ -467,9 +435,9 @@ def test_build_parser_03(tmp_path_factory):
         ("hbcd", "n", False),
     ],
 )
-def test_build_parser_04(tmp_path_factory, mode, combine_runs, expectation):
+def test_build_parser_03(tmp_path_factory, mode, combine_runs, expectation):
     """Test processing of the "combine_runs" parameter."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_04")
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_03")
     data_dir = os.path.join(tmpdir, "data")
     os.makedirs(data_dir, exist_ok=True)
     out_dir = os.path.join(tmpdir, "out")
@@ -494,6 +462,10 @@ def test_build_parser_04(tmp_path_factory, mode, combine_runs, expectation):
 
     parser_obj = parser._build_parser()
     opts = parser_obj.parse_args(args=base_args, namespace=None)
+    if combine_runs == "auto":
+        assert opts.combine_runs == "auto"
+
+    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser)
 
     assert opts.combine_runs is expectation
 
@@ -515,9 +487,9 @@ def test_build_parser_04(tmp_path_factory, mode, combine_runs, expectation):
         ("hbcd", "n", False),
     ],
 )
-def test_build_parser_05(tmp_path_factory, mode, despike, expectation):
+def test_build_parser_04(tmp_path_factory, mode, despike, expectation):
     """Test processing of the "despike" parameter."""
-    tmpdir = tmp_path_factory.mktemp("test_build_parser_05")
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_04")
     data_dir = os.path.join(tmpdir, "data")
     os.makedirs(data_dir, exist_ok=True)
     out_dir = os.path.join(tmpdir, "out")
@@ -542,5 +514,110 @@ def test_build_parser_05(tmp_path_factory, mode, despike, expectation):
 
     parser_obj = parser._build_parser()
     opts = parser_obj.parse_args(args=base_args, namespace=None)
+    if despike == "auto":
+        assert opts.despike == "auto"
+
+    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser)
 
     assert opts.despike is expectation
+
+
+@pytest.mark.parametrize(
+    "mode,process_surfaces,expectation",
+    [
+        ("linc", "auto", False),
+        ("abcd", "auto", True),
+        ("hbcd", "auto", True),
+        ("linc", None, True),
+        ("abcd", None, True),
+        ("hbcd", None, True),
+        ("linc", "y", True),
+        ("abcd", "y", True),
+        ("hbcd", "y", True),
+        ("linc", "n", False),
+        ("abcd", "n", False),
+        ("hbcd", "n", False),
+    ],
+)
+def test_build_parser_05(tmp_path_factory, mode, process_surfaces, expectation):
+    """Test processing of the "process_surfaces" parameter."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_05")
+    data_dir = os.path.join(tmpdir, "data")
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, "out")
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Parameters for hbcd mode
+    base_args = [
+        data_dir,
+        out_dir,
+        "participant",
+        "--mode",
+        mode,
+        "--motion-filter-type",
+        "lp",
+        "--band-stop-min",
+        "10",
+        "--file-format",
+        "cifti",
+    ]
+    if process_surfaces not in ("auto", None):
+        base_args += ["--warp-surfaces-native2std", process_surfaces]
+    elif process_surfaces is None:
+        base_args += ["--warp-surfaces-native2std"]
+
+    parser_obj = parser._build_parser()
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    if process_surfaces == "auto":
+        assert opts.process_surfaces == "auto"
+
+    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser)
+
+    assert opts.process_surfaces is expectation
+
+
+@pytest.mark.parametrize(
+    "mode,file_format,expectation",
+    [
+        ("linc", "auto", "nifti"),
+        ("abcd", "auto", "cifti"),
+        ("hbcd", "auto", "cifti"),
+        ("linc", "nifti", "nifti"),
+        ("abcd", "nifti", "nifti"),
+        ("hbcd", "nifti", "nifti"),
+        ("linc", "cifti", "cifti"),
+        ("abcd", "cifti", "cifti"),
+        ("hbcd", "cifti", "cifti"),
+    ],
+)
+def test_build_parser_06(tmp_path_factory, mode, file_format, expectation):
+    """Test processing of the "file_format" parameter."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_06")
+    data_dir = os.path.join(tmpdir, "data")
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, "out")
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Parameters for hbcd mode
+    base_args = [
+        data_dir,
+        out_dir,
+        "participant",
+        "--mode",
+        mode,
+        "--motion-filter-type",
+        "lp",
+        "--band-stop-min",
+        "10",
+    ]
+    if file_format != "auto":
+        base_args += ["--combine-runs", file_format]
+
+    parser_obj = parser._build_parser()
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    if file_format == "auto":
+        assert opts.file_format == "auto"
+
+    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser)
+
+    assert opts.file_format == expectation
