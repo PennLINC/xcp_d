@@ -35,8 +35,8 @@ sections:
               time series of each voxel/vertex's time series of activity.
     subtitle: Carpet Plot After Postprocessing
   - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
-    caption:  This plot shows heatmaps from ROI-to-ROI correlations from four atlases.
-    subtitle: Correlation Heatmaps from Four Atlases
+    caption:  This plot shows heatmaps from ROI-to-ROI correlations from one to four atlases.
+    subtitle: Correlation Heatmaps from A Subset of Atlases
   - bids:
       datatype: figures
       desc: alffVolumetricPlot
