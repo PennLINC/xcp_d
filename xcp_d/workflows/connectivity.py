@@ -581,38 +581,39 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         # fmt:on
 
     # Create a node to plot the matrices
-    connectivity_plot = pe.Node(
-        ConnectPlot(),
-        name="connectivity_plot",
-        mem_gb=mem_gb["resampled"],
-    )
+    if config.execution.atlases:
+        connectivity_plot = pe.Node(
+            ConnectPlot(),
+            name="connectivity_plot",
+            mem_gb=mem_gb["resampled"],
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, connectivity_plot, [
-            ("atlases", "atlases"),
-            ("atlas_labels_files", "atlas_tsvs"),
-        ]),
-        (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, connectivity_plot, [
+                ("atlases", "atlases"),
+                ("atlas_labels_files", "atlas_tsvs"),
+            ]),
+            (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
+        ])
+        # fmt:on
 
-    ds_connectivity_plot = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="connectivityplot",
-            datatype="figures",
-        ),
-        name="ds_connectivity_plot",
-        run_without_submitting=False,
-    )
+        ds_connectivity_plot = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                desc="connectivityplot",
+                datatype="figures",
+            ),
+            name="ds_connectivity_plot",
+            run_without_submitting=False,
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
-        (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
+            (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
+        ])
+        # fmt:on
 
     return workflow
 
@@ -812,38 +813,39 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         # fmt:on
 
     # Create a node to plot the matrixes
-    connectivity_plot = pe.Node(
-        ConnectPlot(),
-        name="connectivity_plot",
-        mem_gb=mem_gb["resampled"],
-    )
+    if config.execution.atlases:
+        connectivity_plot = pe.Node(
+            ConnectPlot(),
+            name="connectivity_plot",
+            mem_gb=mem_gb["resampled"],
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, connectivity_plot, [
-            ("atlases", "atlases"),
-            ("atlas_labels_files", "atlas_tsvs"),
-        ]),
-        (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, connectivity_plot, [
+                ("atlases", "atlases"),
+                ("atlas_labels_files", "atlas_tsvs"),
+            ]),
+            (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
+        ])
+        # fmt:on
 
-    ds_connectivity_plot = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="connectivityplot",
-            datatype="figures",
-        ),
-        name="ds_connectivity_plot",
-        run_without_submitting=False,
-        mem_gb=0.1,
-    )
+        ds_connectivity_plot = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                desc="connectivityplot",
+                datatype="figures",
+            ),
+            name="ds_connectivity_plot",
+            run_without_submitting=False,
+            mem_gb=0.1,
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
-        (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
-    ])
-    # fmt:on
+        # fmt:off
+        workflow.connect([
+            (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
+            (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
+        ])
+        # fmt:on
 
     return workflow
