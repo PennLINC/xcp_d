@@ -406,7 +406,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--fd-thresh",
         "--fd_thresh",
         dest="fd_thresh",
-        default=0.3,
+        default="auto",
         type=float,
         help=(
             "Framewise displacement threshold for censoring. "
@@ -917,6 +917,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.abcc_qc = True
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
         opts.despike = True if (opts.despike == "auto") else opts.despike
+        opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
@@ -926,6 +927,7 @@ def _validate_parameters(opts, build_log, parser):
     else:
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
+        opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.linc_qc = True
         opts.process_surfaces = (
             False if (opts.process_surfaces == "auto") else opts.process_surfaces
