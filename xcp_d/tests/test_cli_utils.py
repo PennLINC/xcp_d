@@ -66,13 +66,13 @@ def test_restricted_float():
     assert out == 0.5
 
 
-def test_path_exists():
+def test_path_exists(tmp_path_factory):
     """Test parser_utils._path_exists with an existing path."""
+    tmpdir = tmp_path_factory.mktemp("test_path_exists")
     parser = ArgumentParser()
-    path = "/path/to/existing/file.txt"
-    result = parser_utils._path_exists(path, parser)
+    result = parser_utils._path_exists(str(tmpdir), parser)
     assert isinstance(result, Path)
-    assert result == Path(path).absolute()
+    assert result == Path(tmpdir).absolute()
 
 
 def test_path_exists_nonexistent():
@@ -83,11 +83,14 @@ def test_path_exists_nonexistent():
         parser_utils._path_exists(path, parser)
 
 
-def test_bids_filter_existing_path():
+def test_bids_filter_existing_path(tmp_path_factory):
     """Test parser_utils._bids_filter with an existing path."""
+    tmpdir = tmp_path_factory.mktemp("test_bids_filter_existing_path")
+    json_file = str(tmpdir / "file.json")
+    with open(json_file, "w") as f:
+        f.write("{}")
     parser = ArgumentParser()
-    value = "/path/to/existing/file.json"
-    result = parser_utils._bids_filter(value, parser)
+    result = parser_utils._bids_filter(json_file, parser)
     assert isinstance(result, dict)
 
 
@@ -99,12 +102,12 @@ def test_bids_filter_nonexistent_path():
         parser_utils._bids_filter(value, parser)
 
 
-def test_bids_filter_invalid_json():
+def test_bids_filter_invalid_json(tmp_path_factory):
     """Test parser_utils._bids_filter with an invalid JSON file."""
+    tmpdir = tmp_path_factory.mktemp("test_bids_filter_invalid_json")
+    json_file = str(tmpdir / "invalid.json")
+    with open(json_file, "w") as f:
+        f.write("invalid json")
     parser = ArgumentParser()
-    value = "/path/to/invalid/json.json"
-    Path(value).write_text("invalid json")
     with pytest.raises(JSONDecodeError):
-        parser_utils._bids_filter(value, parser)
-
-    Path(value).unlink()
+        parser_utils._bids_filter(json_file, parser)

@@ -468,7 +468,7 @@ def test_build_parser_03(tmp_path_factory, mode, combine_runs, expectation):
     if combine_runs == "auto":
         assert opts.combine_runs == "auto"
 
-    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser)
+    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
     assert opts.combine_runs is expectation
 
@@ -511,16 +511,18 @@ def test_build_parser_04(tmp_path_factory, mode, despike, expectation):
         "10",
     ]
     if despike not in ("auto", None):
-        base_args += ["--combine-runs", despike]
+        base_args += ["--despike", despike]
     elif despike is None:
-        base_args += ["--combine-runs"]
+        base_args += ["--despike"]
 
     parser_obj = parser._build_parser()
     opts = parser_obj.parse_args(args=base_args, namespace=None)
     if despike == "auto":
         assert opts.despike == "auto"
+    else:
+        assert opts.despike is expectation
 
-    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser)
+    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
     assert opts.despike is expectation
 
@@ -574,7 +576,7 @@ def test_build_parser_05(tmp_path_factory, mode, process_surfaces, expectation):
     if process_surfaces == "auto":
         assert opts.process_surfaces == "auto"
 
-    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser)
+    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
     assert opts.process_surfaces is expectation
 
@@ -612,15 +614,17 @@ def test_build_parser_06(tmp_path_factory, mode, file_format, expectation):
         "lp",
         "--band-stop-min",
         "10",
+        "--warp-surfaces-native2std",
+        "n",
     ]
     if file_format != "auto":
-        base_args += ["--combine-runs", file_format]
+        base_args += ["--file-format", file_format]
 
     parser_obj = parser._build_parser()
     opts = parser_obj.parse_args(args=base_args, namespace=None)
     if file_format == "auto":
         assert opts.file_format == "auto"
 
-    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser)
+    opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
     assert opts.file_format == expectation
