@@ -924,7 +924,7 @@ def _validate_parameters(opts, build_log, parser):
         )
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
-    else:
+    elif opts.mode == "linc":
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
@@ -937,7 +937,7 @@ def _validate_parameters(opts, build_log, parser):
 
     if opts.mode == "hbcd":
         opts.input_type = "nibabies" if opts.input_type == "auto" else opts.input_type
-    else:
+    elif opts.mode in ("abcd", "linc"):
         opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
 
     if opts.mode == "abcd":

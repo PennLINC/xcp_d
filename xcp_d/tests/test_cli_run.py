@@ -329,41 +329,6 @@ def test_validate_parameters_21(base_opts, base_parser, capsys):
     assert "In order to perform surface normalization" in stderr
 
 
-@pytest.mark.parametrize(
-    "mode,despike,expectation",
-    [
-        ("linc", "auto", True),
-        ("abcd", "auto", True),
-        ("hbcd", "auto", True),
-        ("linc", True, True),
-        ("abcd", True, True),
-        ("hbcd", True, True),
-        ("linc", False, False),
-        ("abcd", False, False),
-        ("hbcd", False, False),
-        ("linc", "n", AssertionError),
-        ("abcd", "n", AssertionError),
-        ("hbcd", "n", AssertionError),
-    ],
-)
-def test_validate_parameters_22(base_opts, base_parser, mode, despike, expectation):
-    """Test processing of the "despike" parameter."""
-    opts = deepcopy(base_opts)
-    # Pass in some parameters to satisfy "abcd" and "hbcd" modes
-    opts.motion_filter_type = "lp"
-    opts.band_stop_min = 10
-
-    opts.mode = mode
-    opts.despike = despike
-    if isinstance(expectation, type) and issubclass(expectation, Exception):
-        with pytest.raises(expectation):
-            parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    else:
-        mod_opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-        assert mod_opts.despike is expectation
-
-
 def test_build_parser_01(tmp_path_factory):
     """Test parser._build_parser."""
     tmpdir = tmp_path_factory.mktemp("test_build_parser")
@@ -483,3 +448,99 @@ def test_build_parser_03(tmp_path_factory):
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
     assert opts.dcan_correlation_lengths == ["all", 300, 450]
+
+
+@pytest.mark.parametrize(
+    "mode,combine_runs,expectation",
+    [
+        ("linc", "auto", False),
+        ("abcd", "auto", True),
+        ("hbcd", "auto", True),
+        ("linc", None, True),
+        ("abcd", None, True),
+        ("hbcd", None, True),
+        ("linc", "y", True),
+        ("abcd", "y", True),
+        ("hbcd", "y", True),
+        ("linc", "n", False),
+        ("abcd", "n", False),
+        ("hbcd", "n", False),
+    ],
+)
+def test_build_parser_04(tmp_path_factory, mode, combine_runs, expectation):
+    """Test processing of the "combine_runs" parameter."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_04")
+    data_dir = os.path.join(tmpdir, "data")
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, "out")
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Parameters for hbcd mode
+    base_args = [
+        data_dir,
+        out_dir,
+        "participant",
+        "--mode",
+        mode,
+        "--motion-filter-type",
+        "lp",
+        "--band-stop-min",
+        "10",
+    ]
+    if combine_runs not in ("auto", None):
+        base_args += ["--combine-runs", combine_runs]
+    elif combine_runs is None:
+        base_args += ["--combine-runs"]
+
+    parser_obj = parser._build_parser()
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+
+    assert opts.combine_runs is expectation
+
+
+@pytest.mark.parametrize(
+    "mode,despike,expectation",
+    [
+        ("linc", "auto", True),
+        ("abcd", "auto", True),
+        ("hbcd", "auto", True),
+        ("linc", None, True),
+        ("abcd", None, True),
+        ("hbcd", None, True),
+        ("linc", "y", True),
+        ("abcd", "y", True),
+        ("hbcd", "y", True),
+        ("linc", "n", False),
+        ("abcd", "n", False),
+        ("hbcd", "n", False),
+    ],
+)
+def test_build_parser_05(tmp_path_factory, mode, despike, expectation):
+    """Test processing of the "despike" parameter."""
+    tmpdir = tmp_path_factory.mktemp("test_build_parser_05")
+    data_dir = os.path.join(tmpdir, "data")
+    os.makedirs(data_dir, exist_ok=True)
+    out_dir = os.path.join(tmpdir, "out")
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Parameters for hbcd mode
+    base_args = [
+        data_dir,
+        out_dir,
+        "participant",
+        "--mode",
+        mode,
+        "--motion-filter-type",
+        "lp",
+        "--band-stop-min",
+        "10",
+    ]
+    if despike not in ("auto", None):
+        base_args += ["--combine-runs", despike]
+    elif despike is None:
+        base_args += ["--combine-runs"]
+
+    parser_obj = parser._build_parser()
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+
+    assert opts.despike is expectation
