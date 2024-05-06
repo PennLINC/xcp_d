@@ -213,6 +213,7 @@ def test_validate_parameters_bandpass_filter(base_opts, base_parser, caplog, cap
     assert "Bandpass filtering is disabled." in caplog.text
 
     # Set upper BPF below lower one
+    opts.bandpass_filter = True
     opts.lower_bpf = 0.01
     opts.upper_bpf = 0.001
 
@@ -282,6 +283,8 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     """Test parser._validate_parameters with abcd mode."""
     opts = deepcopy(base_opts)
     opts.mode = "abcd"
+    opts.motion_filter_type = "lp"
+    opts.band_stop_min = 10
 
     # linc mode doesn't use abcc_qc but does use linc_qc
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
@@ -309,6 +312,8 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     """Test parser._validate_parameters with hbcd mode."""
     opts = deepcopy(base_opts)
     opts.mode = "hbcd"
+    opts.motion_filter_type = "lp"
+    opts.band_stop_min = 10
 
     # linc mode doesn't use abcc_qc but does use linc_qc
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)

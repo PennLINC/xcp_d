@@ -407,7 +407,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         "--fd_thresh",
         dest="fd_thresh",
         default="auto",
-        type=float,
+        type=parser_utils._float_or_auto,
         help=(
             "Framewise displacement threshold for censoring. "
             "Any volumes with an FD value greater than the threshold will be removed from the "
@@ -558,7 +558,7 @@ This option is only allowed for the "abcd" and "hbcd" modes.
         "--linc-qc",
         "--linc_qc",
         action="store_true",
-        default=None,
+        default="auto",
         dest="linc_qc",
         help="""\
 Run LINC QC.
@@ -572,7 +572,7 @@ This will create the NiPreps-style HTML report and calculate QC metrics from the
         "--abcc-qc",
         "--abcc_qc",
         action="store_true",
-        default=None,
+        default="auto",
         dest="abcc_qc",
         help="""\
 Run ABCC QC.
@@ -911,6 +911,8 @@ def _validate_parameters(opts, build_log, parser):
     assert opts.process_surfaces in (True, False, "auto")
     assert opts.combine_runs in (True, False, "auto")
     assert opts.file_format in ("nifti", "cifti", "auto")
+    assert opts.abcc_qc in (True, False, "auto")
+    assert opts.linc_qc in (True, False, "auto")
 
     # Check parameters based on the mode
     if opts.mode in ("abcd", "hbcd"):
@@ -918,6 +920,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
+        opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
@@ -925,6 +928,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
     elif opts.mode == "linc":
+        opts.abcc_qc = False if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
@@ -956,7 +960,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
     else:
-        raise ValueError(f"Unsupported mode '{opts.mode}'")
+        error_messages.append(f"Unsupported mode '{opts.mode}'.")
 
     # Bandpass filter parameters
     if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
@@ -967,7 +971,7 @@ def _validate_parameters(opts, build_log, parser):
         and (opts.lower_bpf >= opts.upper_bpf)
         and (opts.lower_bpf > 0 and opts.upper_bpf > 0)
     ):
-        parser.error(
+        error_messages.append(
             f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
             f"'--upper-bpf' ({opts.upper_bpf})."
         )
