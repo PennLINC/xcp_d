@@ -907,6 +907,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
     # Check parameter value types/valid values
+    assert opts.mode in ("abcd", "hbcd", "linc"), f"Unsupported mode '{opts.mode}'."
     assert opts.despike in (True, False, "auto")
     assert opts.process_surfaces in (True, False, "auto")
     assert opts.combine_runs in (True, False, "auto")
@@ -959,8 +960,6 @@ def _validate_parameters(opts, build_log, parser):
     elif opts.mode == "linc":
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
-    else:
-        error_messages.append(f"Unsupported mode '{opts.mode}'.")
 
     # Bandpass filter parameters
     if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:

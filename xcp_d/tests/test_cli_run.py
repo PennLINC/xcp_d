@@ -48,6 +48,7 @@ def base_opts():
         "dcan_correlation_lengths": None,
         "despike": "auto",
         "abcc_qc": "auto",
+        "linc_qc": "auto",
         "combine_runs": "auto",
     }
     opts = FakeOptions(**opts_dict)
@@ -297,7 +298,7 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     assert opts.file_format == "cifti"
     assert opts.process_surfaces is True
     assert opts.input_type == "fmriprep"
-    assert opts.dcan_correlation_lengths == ["all", 300, 450]
+    assert opts.dcan_correlation_lengths == ["all", "300", "480"]
 
     # --create-matrices is not supported
     opts.motion_filter_type = None
@@ -325,8 +326,8 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
     assert opts.process_surfaces is True
-    assert opts.input_type == "fmriprep"
-    assert opts.dcan_correlation_lengths == ["all", 300, 450]
+    assert opts.input_type == "nibabies"
+    assert opts.dcan_correlation_lengths == ["all", "300", "480"]
 
     # --create-matrices is not supported
     opts.motion_filter_type = None
@@ -342,11 +343,8 @@ def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
     opts = deepcopy(base_opts)
     opts.mode = "other"
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(AssertionError, match="Unsupported mode 'other'"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    stderr = capsys.readouterr().err
-    assert "Unsupported mode 'other'" in stderr
 
 
 def test_build_parser_01(tmp_path_factory):
@@ -379,11 +377,11 @@ def test_build_parser_01(tmp_path_factory):
     assert opts.despike == "auto"
 
     test_args = base_args[:]
-    test_args.extend(["--create-matrices", "all", "300", "450"])
+    test_args.extend(["--create-matrices", "all", "300", "480"])
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths == ["all", 300, 450]
+    assert opts.dcan_correlation_lengths == ["all", 300, 480]
 
 
 def test_build_parser_02(tmp_path_factory):
@@ -416,11 +414,11 @@ def test_build_parser_02(tmp_path_factory):
     assert opts.despike == "auto"
 
     test_args = base_args[:]
-    test_args.extend(["--create-matrices", "all", "300", "450"])
+    test_args.extend(["--create-matrices", "all", "300", "480"])
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths == ["all", 300, 450]
+    assert opts.dcan_correlation_lengths == ["all", 300, 480]
 
 
 @pytest.mark.parametrize(
