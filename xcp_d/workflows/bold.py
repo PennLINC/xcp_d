@@ -416,22 +416,23 @@ the following post-processing was performed.
                 ]),
             ])  # fmt:skip
 
-    # executive summary workflow
-    execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
-        preproc_nifti=bold_file,
-        t1w_available=t1w_available,
-        t2w_available=t2w_available,
-        mem_gb=mem_gbx,
-    )
+    if config.workflow.abcc_qc:
+        # executive summary workflow
+        execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
+            preproc_nifti=bold_file,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
+            mem_gb=mem_gbx,
+        )
 
-    workflow.connect([
-        # Use inputnode for executive summary instead of downcast_data
-        # because T1w is used as name source.
-        (inputnode, execsummary_functional_plots_wf, [
-            ("boldref", "inputnode.boldref"),
-            ("t1w", "inputnode.t1w"),
-            ("t2w", "inputnode.t2w"),
-        ]),
-    ])  # fmt:skip
+        workflow.connect([
+            # Use inputnode for executive summary instead of downcast_data
+            # because T1w is used as name source.
+            (inputnode, execsummary_functional_plots_wf, [
+                ("boldref", "inputnode.boldref"),
+                ("t1w", "inputnode.t1w"),
+                ("t2w", "inputnode.t2w"),
+            ]),
+        ])  # fmt:skip
 
     return workflow

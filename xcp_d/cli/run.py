@@ -169,6 +169,7 @@ def main():
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
             output_dir=config.execution.xcp_d_dir,
+            abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
             config=data.load("reports-spec.yml"),
             packagename="xcp_d",

@@ -278,30 +278,31 @@ resolution.
             ])
             # fmt:on
 
-    execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
-        t1w_available=t1w_available,
-        t2w_available=t2w_available,
-    )
+    if config.workflow.abcc_qc:
+        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
+        )
 
-    # fmt:off
-    workflow.connect([
-        (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
-    ])
-    # fmt:on
-
-    if t1w_available:
         # fmt:off
         workflow.connect([
-            (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
+            (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
         ])
         # fmt:on
 
-    if t2w_available:
-        # fmt:off
-        workflow.connect([
-            (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
-        ])
-        # fmt:on
+        if t1w_available:
+            # fmt:off
+            workflow.connect([
+                (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
+            ])
+            # fmt:on
+
+        if t2w_available:
+            # fmt:off
+            workflow.connect([
+                (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
+            ])
+            # fmt:on
 
     return workflow
 

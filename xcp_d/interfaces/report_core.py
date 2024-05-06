@@ -89,6 +89,7 @@ def generate_reports(
     subject_list,
     output_dir,
     run_uuid,
+    abcc_qc,
     config=None,
     packagename=None,
 ):
@@ -102,6 +103,8 @@ def generate_reports(
         The path to the working directory.
     output_dir : :obj:`str`
         The path to the output directory.
+    abcc_qc : :obj:`bool`
+        If True, generate an executive summary.
     run_uuid : :obj:`str`
         The UUID of the run for which the report will be generated.
     config : None or :obj:`str`, optional
@@ -133,7 +136,7 @@ def generate_reports(
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
         )
-    else:
+    elif abcc_qc:
         LOGGER.info("Generating executive summary.")
         for subject_label in subject_list:
             brainplotfiles = glob.glob(

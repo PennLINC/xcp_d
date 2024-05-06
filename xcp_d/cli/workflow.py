@@ -69,6 +69,7 @@ def build_workflow(config_file, retval):
         retval["return_code"] = generate_reports(
             subject_list=subject_list,
             output_dir=config.execution.xcp_d_dir,
+            abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
             config=load_data("reports-spec.yml"),
             packagename="xcp_d",
