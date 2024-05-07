@@ -1,43 +1,16 @@
 """Utility functions for xcp_d command-line interfaces."""
 
 import argparse
-import json
 import logging
-import os
 import warnings
 from argparse import Action
 from pathlib import Path
-
-from niworkflows import NIWORKFLOWS_LOG
 
 warnings.filterwarnings("ignore")
 
 logging.addLevelName(25, "IMPORTANT")  # Add a new level between INFO and WARNING
 logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
 logger = logging.getLogger("cli")
-
-
-def json_file(file_):
-    """Load a JSON file and return it."""
-    if file_ is None:
-        return file_
-    elif os.path.isfile(file_):
-        with open(file_, "r") as fo:
-            data = json.load(fo)
-        return data
-    else:
-        raise ValueError(f"Not supported: {file_}")
-
-
-def check_deps(workflow):
-    """Check the dependencies for the workflow."""
-    from nipype.utils.filemanip import which
-
-    return sorted(
-        (node.interface.__class__.__name__, node.interface._cmd)
-        for node in workflow._get_all_nodes()
-        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
-    )
 
 
 def _int_or_auto(string, is_parser=True):
@@ -161,20 +134,3 @@ class YesNoAction(Action):
         lookup = {"y": True, "n": False, None: True, "auto": "auto"}
         assert values in lookup.keys(), f"Invalid value '{values}' for {self.dest}"
         setattr(namespace, self.dest, lookup[values])
-
-
-class _DeprecatedStoreAction(Action):
-    """A custom argparse "store" action to raise a DeprecationWarning.
-
-    Based off of https://gist.github.com/bsolomon1124/44f77ed2f15062c614ef6e102bc683a5.
-    """
-
-    __version__ = ""
-
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
-        """Call the argument."""
-        NIWORKFLOWS_LOG.warn(
-            f"Argument '{option_string}' is deprecated and will be removed in version "
-            f"{self.__version__}. "
-        )
-        setattr(namespace, self.dest, values)

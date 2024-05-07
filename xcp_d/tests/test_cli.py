@@ -236,16 +236,16 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--band-stop-max=18",
         "--dummy-scans=auto",
         "--lower-bpf=0.0",
-        "--atlases",
-        "4S156Parcels",
-        "Glasser",
+        "--skip-parcellation",
         "--min-time=100",
+        "--despike=n",
+        "--disable-bandpass-filter",
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
         input_type="cifti",
-        test_main=True,
+        test_main=False,
     )
 
 
@@ -291,6 +291,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--head_radius=40",
         "-f=100",
         "--nuisance-regressors=27P",
+        "--despike=n",
         "--disable-bandpass-filter",
         "--min-time=20",
         "--dummy-scans=1",

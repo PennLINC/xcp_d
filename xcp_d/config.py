@@ -564,8 +564,10 @@ class workflow(_Config):
     """Produce correlation matrices limited to each requested amount of time."""
     process_surfaces = False
     """Warp FreeSurfer's surfaces to the MNI space."""
-    abcc_qc = True
+    abcc_qc = False
     """Run DCAN QC."""
+    linc_qc = False
+    """Run LINC QC."""
 
     @classmethod
     def init(cls):
