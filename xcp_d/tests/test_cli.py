@@ -98,6 +98,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "80",
         "200",
         f"--fs-license-file={fs_license_file}",
+        "--linc-qc",
     ]
     _run_and_generate(
         test_name=test_name,
