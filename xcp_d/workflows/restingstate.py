@@ -146,8 +146,6 @@ series to retain the original scaling.
     )
     alff_plot.inputs.output_path = "alff.svg"
     alff_plot.inputs.name_source = name_source
-
-    # fmt:off
     workflow.connect([
         (inputnode, alff_compt, [
             ("denoised_bold", "in_file"),
@@ -156,8 +154,7 @@ series to retain the original scaling.
         ]),
         (alff_compt, alff_plot, [("alff", "filename")]),
         (alff_compt, outputnode, [("alff", "alff")])
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if smoothing:  # If we want to smooth
         if file_format == "nifti":
@@ -171,12 +168,10 @@ series to retain the original scaling.
                 name="niftismoothing",
                 n_procs=omp_nthreads,
             )
-            # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [("alff", "in_file")]),
                 (smooth_data, outputnode, [("out_file", "smoothed_alff")])
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
         else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
@@ -213,14 +208,11 @@ series to retain the original scaling.
                 mem_gb=mem_gb["resampled"],
                 n_procs=omp_nthreads,
             )
-
-            # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [("alff", "in_file")]),
                 (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
                 (fix_cifti_intent, outputnode, [("out_file", "smoothed_alff")]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
     ds_alff_plot = pe.Node(
         DerivativesDataSink(
@@ -232,10 +224,7 @@ series to retain the original scaling.
         name="ds_alff_plot",
         run_without_submitting=False,
     )
-
-    # fmt:off
-    workflow.connect([(alff_plot, ds_alff_plot, [("output_path", "in_file")])])
-    # fmt:on
+    workflow.connect([(alff_plot, ds_alff_plot, [("output_path", "in_file")])])  # fmt:skip
 
     return workflow
 
@@ -375,7 +364,6 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     )
 
     # Write out results
-    # fmt:off
     workflow.connect([
         (inputnode, lh_surf, [("denoised_bold", "in_file")]),
         (inputnode, rh_surf, [("denoised_bold", "in_file")]),
@@ -390,8 +378,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (merge_cifti, outputnode, [("out_file", "reho")]),
         (merge_cifti, reho_plot, [("out_file", "filename")]),
         (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow
 
@@ -483,7 +470,6 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
     )
 
     # Write the results out
-    # fmt:off
     workflow.connect([
         (inputnode, compute_reho, [
             ("denoised_bold", "in_file"),
@@ -492,7 +478,6 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
         (compute_reho, outputnode, [("out_file", "reho")]),
         (compute_reho, reho_plot, [("out_file", "filename")]),
         (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow

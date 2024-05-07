@@ -337,13 +337,10 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             n_procs=omp_nthreads,
             iterfield=["label"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, resample_atlas_to_surface, [(file_to_parcellate, "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_surface, [("atlas_file", "label")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         parcellate_atlas = pe.MapNode(
             CiftiParcellateWorkbench(
@@ -356,13 +353,10 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             n_procs=omp_nthreads,
             iterfield=["atlas_label"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, parcellate_atlas, [(file_to_parcellate, "in_file")]),
             (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # Parcellate the ciftis
         parcellate_surface = pe.MapNode(
@@ -372,15 +366,12 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             n_procs=omp_nthreads,
             iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, parcellate_surface, [(file_to_parcellate, "data_file")]),
             (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas")]),
             (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
             (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # Write out the parcellated files
         ds_parcellated_surface = pe.MapNode(
@@ -398,13 +389,10 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             iterfield=["segmentation", "in_file"],
         )
         ds_parcellated_surface.inputs.segmentation = selected_atlases
-
-        # fmt:off
         workflow.connect([
             (inputnode, ds_parcellated_surface, [(file_to_parcellate, "source_file")]),
             (parcellate_surface, ds_parcellated_surface, [("timeseries", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     return workflow
 
@@ -507,8 +495,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         iterfield=["atlas", "atlas_labels"],
         mem_gb=mem_gb["timeseries"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, parcellate_data, [
             ("denoised_bold", "filtered_file"),
@@ -520,8 +506,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("coverage", "coverage"),
             ("timeseries", "timeseries"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     functional_connectivity = pe.MapNode(
         TSVConnect(),
@@ -529,8 +514,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         iterfield=["timeseries"],
         mem_gb=mem_gb["timeseries"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, functional_connectivity, [("temporal_mask", "temporal_mask")]),
         (parcellate_data, functional_connectivity, [("timeseries", "timeseries")]),
@@ -538,8 +521,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("correlations", "correlations"),
             ("correlations_exact", "correlations_exact"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     parcellate_reho = pe.MapNode(
         NiftiParcellate(min_coverage=min_coverage),
@@ -547,8 +529,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         iterfield=["atlas", "atlas_labels"],
         mem_gb=mem_gb["resampled"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, parcellate_reho, [
             ("reho", "filtered_file"),
@@ -557,8 +537,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("atlas_labels_files", "atlas_labels"),
         ]),
         (parcellate_reho, outputnode, [("timeseries", "parcellated_reho")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if bandpass_filter:
         parcellate_alff = pe.MapNode(
@@ -567,8 +546,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             iterfield=["atlas", "atlas_labels"],
             mem_gb=mem_gb["resampled"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, parcellate_alff, [
                 ("alff", "filtered_file"),
@@ -577,8 +554,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ("atlas_labels_files", "atlas_labels"),
             ]),
             (parcellate_alff, outputnode, [("timeseries", "parcellated_alff")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     # Create a node to plot the matrices
     if config.execution.atlases:
@@ -587,16 +563,13 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             name="connectivity_plot",
             mem_gb=mem_gb["resampled"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, connectivity_plot, [
                 ("atlases", "atlases"),
                 ("atlas_labels_files", "atlas_tsvs"),
             ]),
             (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         ds_connectivity_plot = pe.Node(
             DerivativesDataSink(
@@ -607,13 +580,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             name="ds_connectivity_plot",
             run_without_submitting=False,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
             (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     return workflow
 
@@ -729,8 +699,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         iterfield=["atlas", "atlas_labels", "parcellated_atlas"],
         mem_gb=mem_gb["timeseries"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, parcellate_data, [
             ("denoised_bold", "data_file"),
@@ -744,8 +712,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     functional_connectivity = pe.MapNode(
         CiftiConnect(),
@@ -753,8 +720,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         iterfield=["timeseries", "parcellated_atlas"],
         mem_gb=mem_gb["timeseries"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, functional_connectivity, [
             ("temporal_mask", "temporal_mask"),
@@ -768,8 +733,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("correlations_exact", "correlations_exact"),
             ("correlation_ciftis_exact", "correlation_ciftis_exact"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     parcellate_reho = pe.MapNode(
         CiftiParcellate(min_coverage=min_coverage),
@@ -778,8 +742,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         n_procs=omp_nthreads,
         iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, parcellate_reho, [
             ("reho", "data_file"),
@@ -788,8 +750,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("parcellated_atlas_files", "parcellated_atlas"),
         ]),
         (parcellate_reho, outputnode, [("timeseries", "parcellated_reho")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if bandpass_filter:
         parcellate_alff = pe.MapNode(
@@ -799,8 +760,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             n_procs=omp_nthreads,
             iterfield=["atlas_labels", "atlas", "parcellated_atlas"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, parcellate_alff, [
                 ("alff", "data_file"),
@@ -809,8 +768,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ("parcellated_atlas_files", "parcellated_atlas"),
             ]),
             (parcellate_alff, outputnode, [("timeseries", "parcellated_alff")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     # Create a node to plot the matrixes
     if config.execution.atlases:
@@ -819,16 +777,13 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             name="connectivity_plot",
             mem_gb=mem_gb["resampled"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, connectivity_plot, [
                 ("atlases", "atlases"),
                 ("atlas_labels_files", "atlas_tsvs"),
             ]),
             (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         ds_connectivity_plot = pe.Node(
             DerivativesDataSink(
@@ -840,12 +795,9 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             run_without_submitting=False,
             mem_gb=0.1,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
             (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     return workflow

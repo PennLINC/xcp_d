@@ -452,13 +452,10 @@ and converted back to CIFTI format.
             mem_gb=4,
             n_procs=omp_nthreads,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, convert_to_nifti, [("bold_file", "in_file")]),
             (convert_to_nifti, despike3d, [("out_file", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # finally, convert the despiked nifti back to cifti
         convert_to_cifti = pe.Node(
@@ -467,26 +464,20 @@ and converted back to CIFTI format.
             mem_gb=4,
             n_procs=omp_nthreads,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, convert_to_cifti, [("bold_file", "cifti_template")]),
             (despike3d, convert_to_cifti, [("out_file", "in_file")]),
             (convert_to_cifti, outputnode, [("out_file", "bold_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     else:
         workflow.__desc__ = """
 The BOLD data were despiked with *AFNI*'s *3dDespike*.
 """
-
-        # fmt:off
         workflow.connect([
             (inputnode, despike3d, [("bold_file", "in_file")]),
             (despike3d, outputnode, [("out_file", "bold_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     return workflow
 
@@ -748,13 +739,10 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
             mem_gb=1,
             n_procs=omp_nthreads,
         )
-
-        # fmt:off
         workflow.connect([
             (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
             (fix_cifti_intent, outputnode, [("out_file", "smoothed_bold")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     else:
         workflow.__desc__ = f""" \
@@ -767,17 +755,11 @@ The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str
             mem_gb=mem_gb["timeseries"],
             n_procs=omp_nthreads,
         )
-
-        # fmt:off
         workflow.connect([
             (smooth_data, outputnode, [("out_file", "smoothed_bold")]),
-        ])
-        # fmt:on
-
-    # fmt:off
+        ])  # fmt:skip
     workflow.connect([
         (inputnode, smooth_data, [("bold_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow
