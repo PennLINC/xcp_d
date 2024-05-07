@@ -600,6 +600,17 @@ workflows:
             tags:
               only: /.*/
 
+      - nifti_without_freesurfer_with_main:
+          requires:
+            - download_data_fmriprepwithoutfreesurfer
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
       - pytests:
           requires:
             - download_data_pnc
@@ -623,6 +634,7 @@ workflows:
             - ukbiobank
             - nibabies
             - nifti_without_freesurfer
+            - nifti_without_freesurfer_with_main
             - pytests
           filters:
             branches:
@@ -638,6 +650,7 @@ workflows:
             - ds001419_cifti
             - ukbiobank
             - nifti_without_freesurfer
+            - nifti_without_freesurfer_with_main
             - nibabies
             - pnc_cifti
             - pnc_cifti_t2wonly

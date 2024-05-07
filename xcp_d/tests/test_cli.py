@@ -316,6 +316,74 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     assert all(c in dm_df.columns for c in confounds_df.columns)
 
 
+@pytest.mark.fmriprep_without_freesurfer_with_main
+def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir):
+    """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
+
+    Notes
+    -----
+    This test also mocks up custom confounds.
+
+    This test uses a bash call to run XCP-D.
+    This won't count toward coverage, but will help test the command-line interface.
+    """
+    test_name = "test_fmriprep_without_freesurfer"
+
+    dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
+    temp_dir = os.path.join(output_dir, f"{test_name}_with_main")
+    out_dir = os.path.join(temp_dir, "xcp_d")
+    work_dir = os.path.join(working_dir, f"{test_name}_with_main")
+    custom_confounds_dir = os.path.join(temp_dir, "custom_confounds")
+    os.makedirs(custom_confounds_dir, exist_ok=True)
+
+    # Create custom confounds folder
+    for run_number in [1, 2]:
+        out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
+        out_file = os.path.join(custom_confounds_dir, out_file)
+        confounds_df = pd.DataFrame(
+            columns=["a", "b"],
+            data=np.random.random((16, 2)),
+        )
+        confounds_df.to_csv(out_file, sep="\t", index=False)
+        LOGGER.warning(f"Created custom confounds file at {out_file}.")
+
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        "--mode=linc",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        "--head_radius=40",
+        "-f=100",
+        "--nuisance-regressors=27P",
+        "--despike=n",
+        "--disable-bandpass-filter",
+        "--min-time=20",
+        "--dummy-scans=1",
+        f"--custom_confounds={custom_confounds_dir}",
+        "--abcc-qc",
+    ]
+
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="nifti",
+        test_main=True,
+    )
+
+    # Run combine-qc too
+    combineqc.main([out_dir, "summary"])
+
+    dm_file = os.path.join(
+        out_dir,
+        "sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv",
+    )
+    dm_df = pd.read_table(dm_file)
+    assert all(c in dm_df.columns for c in confounds_df.columns)
+
+
 @pytest.mark.nibabies
 def test_nibabies(data_dir, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
