@@ -361,6 +361,9 @@ def init_qc_report_wf(
             (inputnode, ds_report_qualitycontrol, [("name_source", "source_file")]),
             (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
         ])  # fmt:skip
+    else:
+        # Need to explicitly add the outputnode to the workflow, since it's not set otherwise.
+        workflow.add_nodes([outputnode])
 
     if config.workflow.abcc_qc:
         make_abcc_qc_file_node = pe.Node(
