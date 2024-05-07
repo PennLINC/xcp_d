@@ -496,6 +496,7 @@ The default is 240 (4 minutes).
         "--atlases",
         action="store",
         nargs="+",
+        metavar="ATLAS",
         choices=all_atlases,
         default=all_atlases,
         dest="atlases",
