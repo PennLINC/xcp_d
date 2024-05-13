@@ -42,7 +42,7 @@ def mock_config():
     if not _old_fs:
         os.environ["FREESURFER_HOME"] = mkdtemp()
 
-    filename = load_data("../tests/data/config.toml").resolve()
+    filename = load_data("tests/config.toml").resolve()
     settings = loads(filename.read_text())
     for sectionname, configs in settings.items():
         if sectionname != "environment":
