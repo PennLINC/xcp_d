@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from nipype import logging
 
-from xcp_d.utils.confounds import _infer_dummy_scans, load_motion
+from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, load_motion
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
 
@@ -183,13 +183,19 @@ def flag_bad_run(
     fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
 
     # Calculate filtered FD
+    band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
+        motion_filter_type=motion_filter_type,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        TR=TR,
+    )
     motion_df = load_motion(
         fmriprep_confounds_df,
         TR=TR,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
+        band_stop_min=band_stop_min_adjusted,
+        band_stop_max=band_stop_max_adjusted,
     )
     fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
     return np.sum(fd_arr <= fd_thresh) * TR

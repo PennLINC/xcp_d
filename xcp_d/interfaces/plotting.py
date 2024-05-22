@@ -217,7 +217,11 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
         desc="Preprocessed BOLD file, after dummy scan removal. Used in carpet plot.",
     )
     dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
-    temporal_mask = File(exists=True, mandatory=True, desc="Temporal mask")
+    temporal_mask = traits.Either(
+        File(exists=True),
+        Undefined,
+        desc="Temporal mask",
+    )
     fmriprep_confounds_file = File(
         exists=True,
         mandatory=True,
@@ -296,8 +300,12 @@ class QCPlots(SimpleInterface):
 
         # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans
-        censoring_df = pd.read_table(self.inputs.temporal_mask)
-        tmask_arr = censoring_df["framewise_displacement"].values
+        if isdefined(self.inputs.temporal_mask):
+            censoring_df = pd.read_table(self.inputs.temporal_mask)
+            tmask_arr = censoring_df["framewise_displacement"].values
+        else:
+            tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
+
         num_censored_volumes = int(tmask_arr.sum())
         num_retained_volumes = int((tmask_arr == 0).sum())
 
@@ -320,17 +328,17 @@ class QCPlots(SimpleInterface):
         )
 
         dvars_before_processing = compute_dvars(
-            read_ndata(
+            datat=read_ndata(
                 datafile=self.inputs.bold_file,
                 maskfile=self.inputs.mask_file,
-            )
-        )
+            ),
+        )[1]
         dvars_after_processing = compute_dvars(
-            read_ndata(
+            datat=read_ndata(
                 datafile=self.inputs.cleaned_file,
                 maskfile=self.inputs.mask_file,
             ),
-        )
+        )[1]
         if preproc_fd_timeseries.size != dvars_before_processing.size:
             raise ValueError(
                 f"FD {preproc_fd_timeseries.size} != DVARS {dvars_before_processing.size}\n"
@@ -564,9 +572,9 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
     )
-    temporal_mask = File(
-        exists=True,
-        mandatory=True,
+    temporal_mask = traits.Either(
+        File(exists=True),
+        Undefined,
         desc="TSV file with temporal mask.",
     )
     TR = traits.Float(default_value=1, desc="Repetition time")
@@ -679,7 +687,15 @@ class AnatomicalPlot(SimpleInterface):
         arr = img.get_fdata()
 
         fig = plt.figure(constrained_layout=False, figsize=(25, 10))
-        plot_anat(img, draw_cross=False, figure=fig, vmin=np.min(arr), vmax=np.max(arr))
+        plot_anat(
+            img,
+            draw_cross=False,
+            figure=fig,
+            vmin=np.min(arr),
+            vmax=np.max(arr),
+            cut_coords=[0, 0, 0],
+            annotate=False,
+        )
         fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
         plt.close(fig)
 

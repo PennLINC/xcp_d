@@ -16,8 +16,9 @@ from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
-from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from packaging.version import Version
 
+from xcp_d import config
 from xcp_d.__about__ import __version__
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
@@ -30,8 +31,6 @@ from xcp_d.utils.bids import (
     get_entity,
     get_preproc_pipeline_info,
     group_across_runs,
-    write_atlas_dataset_description,
-    write_dataset_description,
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import flag_bad_run
@@ -51,357 +50,102 @@ from xcp_d.workflows.connectivity import (
 LOGGER = logging.getLogger("nipype.workflow")
 
 
-@fill_doc
-def init_xcpd_wf(
-    fmri_dir,
-    output_dir,
-    work_dir,
-    subject_list,
-    analysis_level,
-    task_id,
-    bids_filters,
-    bandpass_filter,
-    high_pass,
-    low_pass,
-    bpf_order,
-    fd_thresh,
-    motion_filter_type,
-    motion_filter_order,
-    band_stop_min,
-    band_stop_max,
-    despike,
-    head_radius,
-    params,
-    smoothing,
-    custom_confounds_folder,
-    dummy_scans,
-    random_seed,
-    atlases,
-    exact_time,
-    cifti,
-    omp_nthreads,
-    layout=None,
-    process_surfaces=False,
-    dcan_qc=True,
-    input_type="fmriprep",
-    min_coverage=0.5,
-    min_time=100,
-    combineruns=False,
-    name="xcpd_wf",
-):
-    """Build and organize execution of xcp_d pipeline.
+def init_xcpd_wf():
+    """Build XCP-D's pipeline.
 
-    It also connects the subworkflows under the xcp_d workflow.
+    This workflow organizes the execution of XCP-D, with a sub-workflow for
+    each subject.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            import os
-            import tempfile
-
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.base import init_xcpd_wf
-            from xcp_d.utils.doc import download_example_data
 
-            fmri_dir = download_example_data()
-            out_dir = tempfile.mkdtemp()
+            with mock_config():
+                wf = init_xcpd_wf()
 
-            wf = init_xcpd_wf(
-                fmri_dir=fmri_dir,
-                output_dir=out_dir,
-                work_dir=".",
-                subject_list=["01"],
-                analysis_level="participant",
-                task_id="imagery",
-                bids_filters=None,
-                bandpass_filter=True,
-                high_pass=0.01,
-                low_pass=0.08,
-                bpf_order=2,
-                fd_thresh=0.3,
-                motion_filter_type=None,
-                motion_filter_order=4,
-                band_stop_min=12,
-                band_stop_max=20,
-                despike=True,
-                head_radius=50.,
-                params="36P",
-                smoothing=6,
-                custom_confounds_folder=None,
-                dummy_scans=0,
-                random_seed=None,
-                cifti=False,
-                omp_nthreads=1,
-                layout=None,
-                process_surfaces=False,
-                dcan_qc=True,
-                input_type="fmriprep",
-                min_time=100,
-                atlases=["Glasser"],
-                min_coverage=0.5,
-                exact_time=[],
-                combineruns=False,
-                name="xcpd_wf",
-            )
-
-    Parameters
-    ----------
-    %(layout)s
-    %(bandpass_filter)s
-    %(high_pass)s
-    %(low_pass)s
-    %(despike)s
-    %(bpf_order)s
-    %(analysis_level)s
-    %(motion_filter_type)s
-    %(motion_filter_order)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(omp_nthreads)s
-    %(cifti)s
-    task_id : :obj:`str` or None
-        Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
-    bids_filters : dict or None
-    %(output_dir)s
-    %(fd_thresh)s
-    run_uuid : :obj:`str`
-        Unique identifier for execution instance
-    subject_list : list
-        List of subject labels
-    %(work_dir)s
-    %(head_radius)s
-    %(params)s
-    %(smoothing)s
-    %(custom_confounds_folder)s
-    %(dummy_scans)s
-    %(random_seed)s
-    %(process_surfaces)s
-    %(dcan_qc)s
-    %(input_type)s
-    %(min_time)s
-    %(atlases)s
-    %(min_coverage)s
-    %(exact_time)s
-    combineruns
-    %(name)s
-
-    References
-    ----------
-    .. footbibliography::
     """
-    xcpd_wf = Workflow(name="xcpd_wf")
-    xcpd_wf.base_dir = work_dir
-    LOGGER.info(f"Beginning the {name} workflow")
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-    write_dataset_description(
-        fmri_dir,
-        output_dir,
-        atlases=atlases,
-        custom_confounds_folder=custom_confounds_folder,
-    )
-    if atlases:
-        write_atlas_dataset_description(os.path.join(output_dir, "atlases"))
+    ver = Version(config.environment.version)
 
-    for subject_id in subject_list:
-        single_subj_wf = init_subject_wf(
-            layout=layout,
-            high_pass=high_pass,
-            low_pass=low_pass,
-            bpf_order=bpf_order,
-            motion_filter_type=motion_filter_type,
-            motion_filter_order=motion_filter_order,
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            bandpass_filter=bandpass_filter,
-            fmri_dir=fmri_dir,
-            omp_nthreads=omp_nthreads,
-            subject_id=subject_id,
-            cifti=cifti,
-            despike=despike,
-            head_radius=head_radius,
-            params=params,
-            task_id=task_id,
-            bids_filters=bids_filters,
-            smoothing=smoothing,
-            output_dir=output_dir,
-            dummy_scans=dummy_scans,
-            random_seed=random_seed,
-            custom_confounds_folder=custom_confounds_folder,
-            fd_thresh=fd_thresh,
-            process_surfaces=process_surfaces,
-            dcan_qc=dcan_qc,
-            input_type=input_type,
-            min_time=min_time,
-            atlases=atlases,
-            min_coverage=min_coverage,
-            exact_time=exact_time,
-            combineruns=combineruns,
-            name=f"single_subject_{subject_id}_wf",
+    xcpd_wf = Workflow(name=f"xcp_d_{ver.major}_{ver.minor}_wf")
+    xcpd_wf.base_dir = config.execution.work_dir
+
+    for subject_id in config.execution.participant_label:
+        single_subject_wf = init_single_subject_wf(subject_id)
+
+        single_subject_wf.config["execution"]["crashdump_dir"] = str(
+            config.execution.xcp_d_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
         )
+        for node in single_subject_wf._get_all_nodes():
+            node.config = deepcopy(single_subject_wf.config)
 
-        single_subj_wf.config["execution"]["crashdump_dir"] = os.path.join(
-            output_dir,
-            f"sub-{subject_id}",
-            "log",
+        xcpd_wf.add_nodes([single_subject_wf])
+
+        # Dump a copy of the config file into the log directory
+        log_dir = (
+            config.execution.xcp_d_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
         )
-        for node in single_subj_wf._get_all_nodes():
-            node.config = deepcopy(single_subj_wf.config)
-        print(f"Analyzing data at the {analysis_level} level")
-        xcpd_wf.add_nodes([single_subj_wf])
+        log_dir.mkdir(exist_ok=True, parents=True)
+        config.to_filename(log_dir / "xcp_d.toml")
 
     return xcpd_wf
 
 
 @fill_doc
-def init_subject_wf(
-    fmri_dir,
-    subject_id,
-    input_type,
-    process_surfaces,
-    combineruns,
-    cifti,
-    task_id,
-    bids_filters,
-    bandpass_filter,
-    high_pass,
-    low_pass,
-    bpf_order,
-    motion_filter_type,
-    motion_filter_order,
-    band_stop_min,
-    band_stop_max,
-    smoothing,
-    head_radius,
-    params,
-    output_dir,
-    custom_confounds_folder,
-    dummy_scans,
-    random_seed,
-    fd_thresh,
-    despike,
-    dcan_qc,
-    min_time,
-    atlases,
-    min_coverage,
-    exact_time,
-    omp_nthreads,
-    layout,
-    name,
-):
+def init_single_subject_wf(subject_id: str):
     """Organize the postprocessing pipeline for a single subject.
+
+    It collects and reports information about the subject, and prepares
+    sub-workflows to perform anatomical and functional postprocessing.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.base import init_subject_wf
-            from xcp_d.utils.doc import download_example_data
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
+            from xcp_d.workflows.base import init_single_subject_wf
 
-            fmri_dir = download_example_data()
-
-            wf = init_subject_wf(
-                fmri_dir=fmri_dir,
-                subject_id="01",
-                input_type="fmriprep",
-                process_surfaces=False,
-                combineruns=False,
-                atlases=["Glasser"],
-                cifti=False,
-                task_id="imagery",
-                bids_filters=None,
-                bandpass_filter=True,
-                high_pass=0.01,
-                low_pass=0.08,
-                bpf_order=2,
-                motion_filter_type=None,
-                motion_filter_order=4,
-                band_stop_min=12,
-                band_stop_max=20,
-                smoothing=6.,
-                head_radius=50,
-                params="36P",
-                output_dir=".",
-                custom_confounds_folder=None,
-                dummy_scans=0,
-                random_seed=None,
-                fd_thresh=0.3,
-                despike=True,
-                dcan_qc=True,
-                min_coverage=0.5,
-                min_time=100,
-                exact_time=[],
-                omp_nthreads=1,
-                layout=None,
-                name="single_subject_sub-01_wf",
-            )
+            with mock_config():
+                wf = init_single_subject_wf("01")
 
     Parameters
     ----------
-    %(fmri_dir)s
-    %(subject_id)s
-    %(input_type)s
-    %(process_surfaces)s
-    combineruns
-    atlases
-    %(cifti)s
-    task_id : :obj:`str` or None
-        Task ID of BOLD  series to be selected for postprocess , or ``None`` to postprocess all
-    bids_filters : dict or None
-    %(bandpass_filter)s
-    %(high_pass)s
-    %(low_pass)s
-    %(bpf_order)s
-    %(motion_filter_type)s
-    %(motion_filter_order)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(smoothing)s
-    %(head_radius)s
-    %(params)s
-    %(output_dir)s
-    %(custom_confounds_folder)s
-    %(dummy_scans)s
-    %(random_seed)s
-    %(fd_thresh)s
-    %(despike)s
-    %(dcan_qc)s
-    %(min_coverage)s
-    %(min_time)s
-    %(exact_time)s
-    %(omp_nthreads)s
-    %(layout)s
-    %(name)s
-
-    References
-    ----------
-    .. footbibliography::
+    subject_id : :obj:`str`
+        Subject label for this single-subject workflow.
     """
-    layout, subj_data = collect_data(
-        bids_dir=fmri_dir,
-        input_type=input_type,
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+    subj_data = collect_data(
+        layout=config.execution.layout,
         participant_label=subject_id,
-        task=task_id,
-        bids_filters=bids_filters,
-        bids_validate=False,
-        cifti=cifti,
-        layout=layout,
+        bids_filters=config.execution.bids_filters,
+        input_type=config.workflow.input_type,
+        cifti=config.workflow.cifti,
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
 
     mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
-        layout=layout,
+        layout=config.execution.layout,
         participant_label=subject_id,
     )
     morph_file_types, morphometry_files = collect_morphometry_data(
-        layout=layout,
+        layout=config.execution.layout,
         participant_label=subject_id,
     )
 
     # determine the appropriate post-processing workflow
-    init_postprocess_bold_wf = init_postprocess_cifti_wf if cifti else init_postprocess_nifti_wf
+    init_postprocess_bold_wf = (
+        init_postprocess_cifti_wf if config.workflow.cifti else init_postprocess_nifti_wf
+    )
     preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
@@ -452,12 +196,15 @@ def init_subject_wf(
     inputnode.inputs.myelin = morphometry_files["myelin"]
     inputnode.inputs.myelin_smoothed = morphometry_files["myelin_smoothed"]
 
-    workflow = Workflow(name=name)
+    workflow = Workflow(name=f"sub_{subject_id}_wf")
 
-    info_dict = get_preproc_pipeline_info(input_type=input_type, fmri_dir=fmri_dir)
+    info_dict = get_preproc_pipeline_info(
+        input_type=config.workflow.input_type,
+        fmri_dir=config.execution.fmri_dir,
+    )
 
     workflow.__desc__ = f"""
-### Post-processing of {input_type} outputs
+### Post-processing of {config.workflow.input_type} outputs
 The eXtensible Connectivity Pipeline- DCAN (XCP-D) [@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of *{info_dict["name"]}* version {info_dict["version"]}
 {info_dict["references"]}.
@@ -468,7 +215,8 @@ XCP-D was built with *Nipype* version {nipype_ver} [@nipype1, RRID:SCR_002502].
 
 Many internal operations of *XCP-D* use
 *AFNI* [@cox1996afni;@cox1997software],
-{"*Connectome Workbench* [@marcus2011informatics], " if cifti else ""}*ANTS* [@avants2009advanced],
+{"*Connectome Workbench* [@marcus2011informatics], " if config.workflow.cifti else ""}
+*ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
 *matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
 *Nibabel* version {nb.__version__} [@brett_matthew_2022_6658382],
@@ -502,7 +250,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     ds_report_summary = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
+            base_directory=config.execution.xcp_d_dir,
             source_file=preproc_files[0],
             datatype="figures",
             desc="summary",
@@ -512,7 +260,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     ds_report_about = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
+            base_directory=config.execution.xcp_d_dir,
             source_file=preproc_files[0],
             desc="about",
             datatype="figures",
@@ -525,14 +273,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     target_space = get_entity(subj_data["anat_to_template_xfm"], "to")
 
     postprocess_anat_wf = init_postprocess_anat_wf(
-        output_dir=output_dir,
-        input_type=input_type,
         t1w_available=t1w_available,
         t2w_available=t2w_available,
         target_space=target_space,
-        omp_nthreads=omp_nthreads,
-        mem_gb=1,
-        name="postprocess_anat_wf",
     )
 
     workflow.connect([
@@ -545,35 +288,21 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ])  # fmt:skip
 
     # Load the atlases, warping to the same space as the BOLD data if necessary.
-    if atlases:
-        load_atlases_wf = init_load_atlases_wf(
-            atlases=atlases,
-            output_dir=output_dir,
-            cifti=cifti,
-            mem_gb=1,
-            omp_nthreads=omp_nthreads,
-            name="load_atlases_wf",
-        )
+    if config.execution.atlases:
+        load_atlases_wf = init_load_atlases_wf()
         load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
         load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
 
-    if process_surfaces or (dcan_qc and mesh_available):
+    if config.workflow.process_surfaces or (config.workflow.dcan_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
-            fmri_dir=fmri_dir,
             subject_id=subject_id,
-            dcan_qc=dcan_qc,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
             morphometry_files=morph_file_types,
-            process_surfaces=process_surfaces,
-            output_dir=output_dir,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
-            mem_gb=1,
-            omp_nthreads=omp_nthreads,
-            name="postprocess_surfaces_wf",
         )
 
         workflow.connect([
@@ -592,7 +321,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, postprocess_surfaces_wf, [(morph_file, f"inputnode.{morph_file}")]),
             ])  # fmt:skip
 
-        if process_surfaces or standard_space_mesh:
+        if config.workflow.process_surfaces or standard_space_mesh:
             # Use standard-space structurals
             workflow.connect([
                 (postprocess_anat_wf, postprocess_surfaces_wf, [
@@ -610,16 +339,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
-        if morph_file_types and atlases:
+        if morph_file_types and config.execution.atlases:
             # Parcellate the morphometry files
             parcellate_surfaces_wf = init_parcellate_surfaces_wf(
-                output_dir=output_dir,
-                atlases=atlases,
                 files_to_parcellate=morph_file_types,
-                min_coverage=min_coverage,
-                mem_gb=1,
-                omp_nthreads=omp_nthreads,
-                name="parcellate_surfaces_wf",
             )
 
             for morph_file_type in morph_file_types:
@@ -632,7 +355,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     # Estimate head radius, if necessary
     head_radius = estimate_brain_radius(
         mask_file=subj_data["anat_brainmask"],
-        head_radius=head_radius,
+        head_radius=config.workflow.head_radius,
     )
 
     n_runs = len(preproc_files)
@@ -643,7 +366,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         TR = _get_tr(nb.load(task_files[0]))
 
         n_task_runs = len(task_files)
-        if combineruns and (n_task_runs > 1):
+        if config.workflow.combineruns and (n_task_runs > 1):
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
@@ -668,36 +391,43 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(
-                layout=layout,
+                layout=config.execution.layout,
                 bold_file=bold_file,
-                cifti=cifti,
+                cifti=config.workflow.cifti,
                 target_space=target_space,
             )
 
             post_scrubbing_duration = flag_bad_run(
                 fmriprep_confounds_file=run_data["confounds"],
-                dummy_scans=dummy_scans,
+                dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                band_stop_min=band_stop_min,
-                band_stop_max=band_stop_max,
+                motion_filter_type=config.workflow.motion_filter_type,
+                motion_filter_order=config.workflow.motion_filter_order,
+                band_stop_min=config.workflow.band_stop_min,
+                band_stop_max=config.workflow.band_stop_max,
                 head_radius=head_radius,
-                fd_thresh=fd_thresh,
+                fd_thresh=config.workflow.fd_thresh,
             )
             # Reduce exact_times to only include values greater than the post-scrubbing duration.
-            if (min_time >= 0) and (post_scrubbing_duration < min_time):
+            if (config.workflow.min_time >= 0) and (
+                post_scrubbing_duration < config.workflow.min_time
+            ):
                 LOGGER.warning(
-                    f"Less than {min_time} seconds in {os.path.basename(bold_file)} survive "
+                    f"Less than {config.workflow.min_time} seconds in "
+                    f"{os.path.basename(bold_file)} survive "
                     f"high-motion outlier scrubbing ({post_scrubbing_duration}). "
                     "This run will not be processed."
                 )
                 continue
 
             exact_scans = []
-            if exact_time:
-                retained_exact_times = [t for t in exact_time if t <= post_scrubbing_duration]
-                dropped_exact_times = [t for t in exact_time if t > post_scrubbing_duration]
+            if config.workflow.exact_time:
+                retained_exact_times = [
+                    t for t in config.workflow.exact_time if t <= post_scrubbing_duration
+                ]
+                dropped_exact_times = [
+                    t for t in config.workflow.exact_time if t > post_scrubbing_duration
+                ]
                 if dropped_exact_times:
                     LOGGER.warning(
                         f"{post_scrubbing_duration} seconds in {os.path.basename(bold_file)} "
@@ -713,35 +443,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
-                fmri_dir=fmri_dir,
-                bandpass_filter=bandpass_filter,
-                high_pass=high_pass,
-                low_pass=low_pass,
-                bpf_order=bpf_order,
-                motion_filter_type=motion_filter_type,
-                motion_filter_order=motion_filter_order,
-                band_stop_min=band_stop_min,
-                band_stop_max=band_stop_max,
-                smoothing=smoothing,
                 head_radius=head_radius,
-                params=params,
-                output_dir=output_dir,
-                custom_confounds_folder=custom_confounds_folder,
-                dummy_scans=dummy_scans,
-                random_seed=random_seed,
-                atlases=atlases,
-                fd_thresh=fd_thresh,
-                despike=despike,
-                dcan_qc=dcan_qc,
                 run_data=run_data,
                 t1w_available=t1w_available,
                 t2w_available=t2w_available,
                 n_runs=n_runs,
-                min_coverage=min_coverage,
                 exact_scans=exact_scans,
-                omp_nthreads=omp_nthreads,
-                layout=layout,
-                name=f"{'cifti' if cifti else 'nifti'}_postprocess_{run_counter}_wf",
+                name=(
+                    f"{'cifti' if config.workflow.cifti else 'nifti'}_postprocess_{run_counter}_wf"
+                ),
             )
             run_counter += 1
 
@@ -752,7 +462,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
-            if atlases:
+            if config.execution.atlases:
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [
                         ("outputnode.atlas_files", "inputnode.atlas_files"),
@@ -760,7 +470,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-                if cifti:
+                if config.workflow.cifti:
                     workflow.connect([
                         (load_atlases_wf, postprocess_bold_wf, [
                             (
@@ -770,7 +480,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                         ]),
                     ])  # fmt:skip
 
-            if not cifti:
+            if not config.workflow.cifti:
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
                         ("anat_brainmask", "inputnode.anat_brainmask"),
@@ -778,26 +488,16 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-            if combineruns and (n_task_runs > 1):
+            if config.workflow.combineruns and (n_task_runs > 1):
                 for io_name, node in merge_dict.items():
                     workflow.connect([
                         (postprocess_bold_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
                     ])  # fmt:skip
 
-        if combineruns and (n_task_runs > 1):
+        if config.workflow.combineruns and (n_task_runs > 1):
             concatenate_data_wf = init_concatenate_data_wf(
-                output_dir=output_dir,
-                motion_filter_type=motion_filter_type,
                 TR=TR,
                 head_radius=head_radius,
-                params=params,
-                smoothing=smoothing,
-                cifti=cifti,
-                dcan_qc=dcan_qc,
-                fd_thresh=fd_thresh,
-                atlases=atlases,
-                mem_gb=1,
-                omp_nthreads=omp_nthreads,
                 name=f"concatenate_entity_set_{ent_set}_wf",
             )
 

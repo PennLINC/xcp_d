@@ -7,8 +7,8 @@ import os
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.fsl.preprocess import ApplyWarp
-from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
     collect_ukbiobank_confounds,
     copy_files_in_dict,
@@ -179,7 +179,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     # Warp BOLD, T1w, and brainmask to MNI152NLin6Asym
     # We use FSL's MNI152NLin6Asym 2 mm3 template instead of TemplateFlow's version,
     # because FSL uses LAS+ orientation, while TemplateFlow uses RAS+.
-    template_file = pkgrf("xcp_d", "data/MNI152_T1_2mm.nii.gz")
+    template_file = str(load_data("MNI152_T1_2mm.nii.gz"))
 
     copy_dictionary = {}
 
@@ -267,7 +267,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     ]
 
     # The identity xform is used in place of any actual ones.
-    identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
+    identity_xfm = str(load_data("transform/itkIdentityTransform.txt"))
     copy_dictionary[identity_xfm] = []
 
     t1w_to_template_fmriprep = os.path.join(
@@ -292,16 +292,19 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     # Write the dataset description out last
     dataset_description_dict = {
         "Name": "UK Biobank",
+        "BIDSVersion": "1.9.0",
         "DatasetType": "derivative",
         "GeneratedBy": [
             {
                 "Name": "UK Biobank",
                 "Version": "unknown",
+                "CodeURL": "https://github.com/ucam-department-of-psychiatry/UKB",
             },
         ],
     }
 
     if not os.path.isfile(dataset_description_fmriprep):
+        LOGGER.info(f"Writing dataset description to {dataset_description_fmriprep}")
         write_json(dataset_description_dict, dataset_description_fmriprep)
 
     # Write out the mapping from UK Biobank to fMRIPrep

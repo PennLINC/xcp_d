@@ -1,18 +1,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing the BOLD data."""
-import os
-
-import nibabel as nb
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
+from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
+from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
 from xcp_d.workflows.outputs import init_postproc_derivatives_wf
@@ -30,34 +29,12 @@ LOGGER = logging.getLogger("nipype.workflow")
 @fill_doc
 def init_postprocess_nifti_wf(
     bold_file,
-    fmri_dir,
-    bandpass_filter,
-    high_pass,
-    low_pass,
-    bpf_order,
-    motion_filter_type,
-    motion_filter_order,
-    band_stop_min,
-    band_stop_max,
-    smoothing,
     head_radius,
-    params,
-    output_dir,
-    custom_confounds_folder,
-    dummy_scans,
-    fd_thresh,
-    despike,
-    dcan_qc,
     run_data,
     t1w_available,
     t2w_available,
     n_runs,
-    atlases,
-    min_coverage,
     exact_scans,
-    random_seed,
-    omp_nthreads,
-    layout=None,
     name="bold_postprocess_wf",
 ):
     """Organize the bold processing workflow.
@@ -69,101 +46,49 @@ def init_postprocess_nifti_wf(
 
             import os
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.utils.bids import collect_data, collect_run_data
             from xcp_d.workflows.bold import init_postprocess_nifti_wf
-            from xcp_d.utils.doc import download_example_data
 
-            fmri_dir = download_example_data()
+            with mock_config():
+                bold_file = str(
+                    config.execution.fmri_dir / "sub-01" / "func" /
+                    (
+                        "sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_"
+                        "desc-preproc_bold.nii.gz"
+                    )
+                )
 
-            layout, subj_data = collect_data(
-                bids_dir=fmri_dir,
-                input_type="fmriprep",
-                participant_label="01",
-                task="imagery",
-                bids_validate=False,
-                cifti=False,
-            )
+                run_data = collect_run_data(
+                    layout=layout,
+                    input_type="fmriprep",
+                    bold_file=bold_file,
+                    cifti=False,
+                )
 
-            bold_file = subj_data["bold"][0]
-
-            run_data = collect_run_data(
-                layout=layout,
-                input_type="fmriprep",
-                bold_file=bold_file,
-                cifti=False,
-            )
-
-            custom_confounds_folder = os.path.join(fmri_dir, "sub-01/func")
-
-            wf = init_postprocess_nifti_wf(
-                bold_file=bold_file,
-                fmri_dir=fmri_dir,
-                bandpass_filter=True,
-                high_pass=0.01,
-                low_pass=0.08,
-                bpf_order=2,
-                motion_filter_type="notch",
-                motion_filter_order=4,
-                band_stop_min=12,
-                band_stop_max=20,
-                smoothing=6,
-                head_radius=50.,
-                params="27P",
-                output_dir=".",
-                custom_confounds_folder=custom_confounds_folder,
-                dummy_scans=2,
-                fd_thresh=0.3,
-                despike=True,
-                dcan_qc=True,
-                run_data=run_data,
-                t1w_available=True,
-                t2w_available=True,
-                n_runs=1,
-                atlases=["Glasser"],
-                min_coverage=0.5,
-                exact_scans=[],
-                random_seed=None,
-                omp_nthreads=1,
-                layout=layout,
-                name="nifti_postprocess_wf",
-            )
-            wf.inputs.inputnode.t1w = subj_data["t1w"]
-            wf.inputs.inputnode.template_to_anat_xfm = subj_data["template_to_anat_xfm"]
+                wf = init_postprocess_nifti_wf(
+                    bold_file=bold_file,
+                    head_radius=50.,
+                    run_data=run_data,
+                    t1w_available=True,
+                    t2w_available=True,
+                    n_runs=1,
+                    exact_scans=[],
+                    name="nifti_postprocess_wf",
+                )
 
     Parameters
     ----------
     bold_file: :obj:`str`
         bold file for post processing
-    %(bandpass_filter)s
-    %(high_pass)s
-    %(low_pass)s
-    %(bpf_order)s
-    %(motion_filter_type)s
-    %(motion_filter_order)s
-    %(band_stop_min)s
-    %(band_stop_max)s
-    %(smoothing)s
-    %(head_radius)s
-        This will already be estimated before this workflow.
-    %(params)s
-    %(output_dir)s
-    %(custom_confounds_folder)s
-    %(dummy_scans)s
-    %(fd_thresh)s
-    %(despike)s
-    %(dcan_qc)s
     run_data : dict
     t1w_available
     t2w_available
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
-    %(atlases)s
-    %(min_coverage)s
     %(exact_scans)s
-    %(random_seed)s
-    %(omp_nthreads)s
-    %(layout)s
     %(name)s
         Default is "nifti_postprocess_wf".
 
@@ -215,6 +140,13 @@ def init_postprocess_nifti_wf(
     """
     workflow = Workflow(name=name)
 
+    bandpass_filter = config.workflow.bandpass_filter
+    custom_confounds_folder = config.execution.custom_confounds
+    dummy_scans = config.workflow.dummy_scans
+    despike = config.workflow.despike
+    atlases = config.execution.atlases
+    omp_nthreads = config.nipype.omp_nthreads
+
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
     inputnode = pe.Node(
@@ -256,10 +188,12 @@ def init_postprocess_nifti_wf(
         run_data["confounds"],
     )
 
-    workflow.__desc__ = (
-        f"For each of the {num2words(n_runs)} BOLD runs found per subject "
-        "(across all tasks and sessions), the following post-processing was performed."
-    )
+    workflow.__desc__ = f"""\
+
+For each of the {num2words(n_runs)} BOLD runs found per subject (across all tasks and sessions),
+the following post-processing was performed.
+
+"""
 
     outputnode = pe.Node(
         niu.IdentityInterface(
@@ -305,22 +239,10 @@ def init_postprocess_nifti_wf(
     ])  # fmt:skip
 
     prepare_confounds_wf = init_prepare_confounds_wf(
-        output_dir=output_dir,
         TR=TR,
-        params=params,
-        dummy_scans=dummy_scans,
-        random_seed=random_seed,
         exact_scans=exact_scans,
-        motion_filter_type=motion_filter_type,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        motion_filter_order=motion_filter_order,
         head_radius=head_radius,
-        fd_thresh=fd_thresh,
         custom_confounds_file=custom_confounds_file,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
-        name="prepare_confounds_wf",
     )
 
     workflow.connect([
@@ -336,18 +258,7 @@ def init_postprocess_nifti_wf(
         ]),
     ])  # fmt:skip
 
-    denoise_bold_wf = init_denoise_bold_wf(
-        TR=TR,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        bpf_order=bpf_order,
-        bandpass_filter=bandpass_filter,
-        smoothing=smoothing,
-        cifti=False,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
-        name="denoise_bold_wf",
-    )
+    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb=mem_gbx)
 
     workflow.connect([
         (downcast_data, denoise_bold_wf, [("bold_mask", "inputnode.mask")]),
@@ -358,13 +269,7 @@ def init_postprocess_nifti_wf(
     ])  # fmt:skip
 
     if despike:
-        despike_wf = init_despike_wf(
-            TR=TR,
-            cifti=False,
-            mem_gb=mem_gbx["timeseries"],
-            omp_nthreads=omp_nthreads,
-            name="despike_wf",
-        )
+        despike_wf = init_despike_wf(TR=TR)
 
         workflow.connect([
             (prepare_confounds_wf, despike_wf, [
@@ -383,19 +288,7 @@ def init_postprocess_nifti_wf(
         ])  # fmt:skip
 
     if bandpass_filter:
-        alff_wf = init_alff_wf(
-            name_source=bold_file,
-            output_dir=output_dir,
-            TR=TR,
-            low_pass=low_pass,
-            high_pass=high_pass,
-            fd_thresh=fd_thresh,
-            smoothing=smoothing,
-            cifti=False,
-            mem_gb=mem_gbx["timeseries"],
-            omp_nthreads=omp_nthreads,
-            name="alff_wf",
-        )
+        alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
 
         workflow.connect([
             (downcast_data, alff_wf, [("bold_mask", "inputnode.bold_mask")]),
@@ -407,13 +300,7 @@ def init_postprocess_nifti_wf(
             ]),
         ])  # fmt:skip
 
-    reho_wf = init_reho_nifti_wf(
-        name_source=bold_file,
-        output_dir=output_dir,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
-        name="reho_wf",
-    )
+    reho_wf = init_reho_nifti_wf(name_source=bold_file, mem_gb=mem_gbx)
 
     workflow.connect([
         (downcast_data, reho_wf, [("bold_mask", "inputnode.bold_mask")]),
@@ -423,14 +310,8 @@ def init_postprocess_nifti_wf(
     ])  # fmt:skip
 
     qc_report_wf = init_qc_report_wf(
-        output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        params=params,
-        dcan_qc=dcan_qc,
-        cifti=False,
-        mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
         name="qc_report_wf",
     )
 
@@ -458,22 +339,8 @@ def init_postprocess_nifti_wf(
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         name_source=bold_file,
         source_metadata=run_data["bold_metadata"],
-        fmri_dir=fmri_dir,
-        bandpass_filter=bandpass_filter,
-        low_pass=low_pass,
-        high_pass=high_pass,
-        bpf_order=bpf_order,
-        fd_thresh=fd_thresh,
-        motion_filter_type=motion_filter_type,
-        smoothing=smoothing,
-        params=params,
         exact_scans=exact_scans,
-        atlases=atlases,
-        cifti=False,
-        dcan_qc=dcan_qc,
-        output_dir=output_dir,
         custom_confounds_file=custom_confounds_file,
-        name="postproc_derivatives_wf",
     )
 
     workflow.connect([
@@ -515,13 +382,7 @@ def init_postprocess_nifti_wf(
         ])  # fmt:skip
 
     if atlases:
-        connectivity_wf = init_functional_connectivity_nifti_wf(
-            output_dir=output_dir,
-            min_coverage=min_coverage,
-            alff_available=bandpass_filter,
-            mem_gb=mem_gbx["timeseries"],
-            name="connectivity_wf",
-        )
+        connectivity_wf = init_functional_connectivity_nifti_wf(mem_gb=mem_gbx)
 
         workflow.connect([
             (inputnode, connectivity_wf, [
@@ -560,9 +421,7 @@ def init_postprocess_nifti_wf(
         preproc_nifti=bold_file,
         t1w_available=t1w_available,
         t2w_available=t2w_available,
-        output_dir=output_dir,
-        layout=layout,
-        name="execsummary_functional_plots_wf",
+        mem_gb=mem_gbx,
     )
 
     workflow.connect([
@@ -576,22 +435,3 @@ def init_postprocess_nifti_wf(
     ])  # fmt:skip
 
     return workflow
-
-
-def _create_mem_gb(bold_fname):
-    bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    bold_tlen = nb.load(bold_fname).shape[-1]
-    mem_gbz = {
-        "derivative": bold_size_gb,
-        "resampled": bold_size_gb * 4,
-        "timeseries": bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
-    }
-
-    if mem_gbz["timeseries"] < 4.0:
-        mem_gbz["timeseries"] = 6.0
-        mem_gbz["resampled"] = 2
-    elif mem_gbz["timeseries"] > 8.0:
-        mem_gbz["timeseries"] = 8.0
-        mem_gbz["resampled"] = 3
-
-    return mem_gbz

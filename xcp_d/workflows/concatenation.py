@@ -4,6 +4,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.concatenation import (
     CleanNameSource,
@@ -18,21 +19,7 @@ from xcp_d.workflows.plotting import init_qc_report_wf
 
 
 @fill_doc
-def init_concatenate_data_wf(
-    output_dir,
-    motion_filter_type,
-    TR,
-    head_radius,
-    params,
-    smoothing,
-    cifti,
-    dcan_qc,
-    fd_thresh,
-    atlases,
-    mem_gb,
-    omp_nthreads,
-    name="concatenate_data_wf",
-):
+def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     """Concatenate postprocessed data across runs and directions.
 
     Workflow Graph
@@ -40,38 +27,21 @@ def init_concatenate_data_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.concatenation import init_concatenate_data_wf
 
-            wf = init_concatenate_data_wf(
-                output_dir=".",
-                motion_filter_type=None,
-                TR=2,
-                head_radius=50,
-                params="none",
-                smoothing=None,
-                cifti=False,
-                dcan_qc=True,
-                fd_thresh=0.3,
-                atlases=[],
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="concatenate_data_wf",
-            )
+            with mock_config():
+                wf = init_concatenate_data_wf(
+                    TR=2,
+                    head_radius=50,
+                    name="concatenate_data_wf",
+                )
 
     Parameters
     ----------
-    %(output_dir)s
-    %(motion_filter_type)s
     %(TR)s
     %(head_radius)s
-    %(params)s
-    %(smoothing)s
-    %(cifti)s
-    %(dcan_qc)s
-    %(fd_thresh)s
-    %(atlases)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "concatenate_data_wf".
 
@@ -102,6 +72,14 @@ def init_concatenate_data_wf(
         This will be a list of lists, with one sublist for each run.
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    motion_filter_type = config.workflow.motion_filter_type
+    smoothing = config.workflow.smoothing
+    cifti = config.workflow.cifti
+    dcan_qc = config.workflow.dcan_qc
+    fd_thresh = config.workflow.fd_thresh
+    atlases = config.execution.atlases
 
     workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.
@@ -177,14 +155,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     # Now, run the QC report workflow on the concatenated BOLD file.
     qc_report_wf = init_qc_report_wf(
-        output_dir=output_dir,
         TR=TR,
         head_radius=head_radius,
-        params=params,
-        cifti=cifti,
-        dcan_qc=dcan_qc,
-        mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
         name="concat_qc_report_wf",
     )
     qc_report_wf.inputs.inputnode.dummy_scans = 0
@@ -231,25 +203,26 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ]),
     ])  # fmt:skip
 
-    ds_temporal_mask = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
-            suffix="outliers",
-            extension=".tsv",
-        ),
-        name="ds_temporal_mask",
-        run_without_submitting=True,
-        mem_gb=1,
-    )
+    if fd_thresh > 0:
+        ds_temporal_mask = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
+                suffix="outliers",
+                extension=".tsv",
+            ),
+            name="ds_temporal_mask",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
 
-    workflow.connect([
-        (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
-        (filter_runs, ds_temporal_mask, [
-            (("temporal_mask", _make_xcpd_uri, output_dir), "Sources"),
-        ]),
-    ])  # fmt:skip
+        workflow.connect([
+            (clean_name_source, ds_temporal_mask, [("name_source", "source_file")]),
+            (concatenate_inputs, ds_temporal_mask, [("temporal_mask", "in_file")]),
+            (filter_runs, ds_temporal_mask, [
+                (("temporal_mask", _make_xcpd_uri, output_dir), "Sources"),
+            ]),
+        ])  # fmt:skip
 
     if cifti:
         ds_censored_filtered_bold = pe.Node(
@@ -351,7 +324,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ]),
         ])  # fmt:skip
 
-    if dcan_qc:
+    if dcan_qc and (fd_thresh > 0):
         workflow.connect([
             (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
             (concatenate_inputs, ds_interpolated_filtered_bold, [

@@ -531,8 +531,8 @@ def plot_fmri_es(
     preprocessed_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     denoised_interpolated_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
 
-    preprocessed_dvars = compute_dvars(preprocessed_arr)
-    denoised_interpolated_dvars = compute_dvars(denoised_interpolated_arr)
+    preprocessed_dvars = compute_dvars(datat=preprocessed_arr)[1]
+    denoised_interpolated_dvars = compute_dvars(datat=denoised_interpolated_arr)[1]
 
     if preprocessed_arr.shape != denoised_interpolated_arr.shape:
         raise ValueError(
@@ -550,7 +550,10 @@ def plot_fmri_es(
     )
 
     fd_regressor = pd.read_table(filtered_motion)["framewise_displacement"].values
-    tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values.astype(bool)
+    if temporal_mask:
+        tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values.astype(bool)
+    else:
+        tmask_arr = np.zeros(fd_regressor.shape, dtype=bool)
 
     # The mean and standard deviation of the preprocessed data,
     # after mean-centering and detrending.
@@ -1183,14 +1186,14 @@ def plot_alff_reho_surface(output_path, filename, name_source):
         "CIFTI_STRUCTURE_CORTEX_RIGHT",
     )
 
-    v_max = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
-    v_min = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
+    vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
+    vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
 
     plott.plot_surf_stat_map(
         lh,
         lh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
+        vmin=vmin,
+        vmax=vmax,
         hemi="left",
         view="lateral",
         engine="matplotlib",
@@ -1201,8 +1204,8 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     plott.plot_surf_stat_map(
         lh,
         lh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
+        vmin=vmin,
+        vmax=vmax,
         hemi="left",
         view="medial",
         engine="matplotlib",
@@ -1213,8 +1216,8 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     plott.plot_surf_stat_map(
         rh,
         rh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
+        vmin=vmin,
+        vmax=vmax,
         hemi="right",
         view="lateral",
         engine="matplotlib",
@@ -1225,8 +1228,8 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     plott.plot_surf_stat_map(
         rh,
         rh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
+        vmin=vmin,
+        vmax=vmax,
         hemi="right",
         view="medial",
         engine="matplotlib",

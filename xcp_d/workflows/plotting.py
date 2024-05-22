@@ -6,6 +6,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
@@ -17,14 +18,8 @@ from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
 
 @fill_doc
 def init_qc_report_wf(
-    output_dir,
     TR,
     head_radius,
-    params,
-    cifti,
-    dcan_qc,
-    mem_gb,
-    omp_nthreads,
     name="qc_report_wf",
 ):
     """Generate quality control figures and a QC file.
@@ -34,29 +29,21 @@ def init_qc_report_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.plotting import init_qc_report_wf
-            wf = init_qc_report_wf(
-                output_dir=".",
-                TR=0.5,
-                head_radius=50,
-                params="none",
-                cifti=False,
-                dcan_qc=True,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="qc_report_wf",
-            )
+
+            with mock_config():
+                wf = init_qc_report_wf(
+                    TR=0.5,
+                    head_radius=50,
+                    name="qc_report_wf",
+                )
 
     Parameters
     ----------
-    %(output_dir)s
     %(TR)s
     %(head_radius)s
-    %(params)s
-    %(cifti)s
-    %(dcan_qc)s
-    %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "qc_report_wf".
 
@@ -89,6 +76,12 @@ def init_qc_report_wf(
     qc_file
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    params = config.workflow.params
+    cifti = config.workflow.cifti
+    dcan_qc = config.workflow.dcan_qc
+    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -164,7 +157,7 @@ def init_qc_report_wf(
             ),
             name="warp_boldmask_to_t1w",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb,
+            mem_gb=1,
         )
 
         # fmt:off
@@ -188,7 +181,7 @@ def init_qc_report_wf(
             ),
             name="warp_boldmask_to_mni",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb,
+            mem_gb=1,
         )
 
         # fmt:off
@@ -260,7 +253,7 @@ def init_qc_report_wf(
             ),
             name="warp_dseg_to_bold",
             n_procs=omp_nthreads,
-            mem_gb=mem_gb * 3 * omp_nthreads,
+            mem_gb=3,
         )
 
         # fmt:off
@@ -277,7 +270,7 @@ def init_qc_report_wf(
             template_mask=nlin2009casym_brain_mask,
         ),
         name="qc_report",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -355,7 +348,7 @@ def init_qc_report_wf(
     plot_execsummary_carpets_dcan = pe.Node(
         QCPlotsES(TR=TR, standardize=params == "none"),
         name="plot_execsummary_carpets_dcan",
-        mem_gb=mem_gb,
+        mem_gb=2,
         n_procs=omp_nthreads,
     )
 
@@ -440,7 +433,7 @@ def init_qc_report_wf(
         FunctionalSummary(TR=TR),
         name="qcsummary",
         run_without_submitting=False,
-        mem_gb=mem_gb,
+        mem_gb=2,
     )
 
     # fmt:off

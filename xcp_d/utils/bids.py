@@ -11,7 +11,6 @@ from pathlib import Path
 
 import nibabel as nb
 import yaml
-from bids.layout import BIDSLayout
 from nipype import logging
 from packaging.version import Version
 
@@ -76,12 +75,12 @@ class BIDSWarning(RuntimeWarning):
     pass
 
 
-def collect_participants(bids_dir, participant_label=None, strict=False, bids_validate=False):
+def collect_participants(layout, participant_label=None, strict=False):
     """Collect a list of participants from a BIDS dataset.
 
     Parameters
     ----------
-    bids_dir : :obj:`str` or pybids.layout.BIDSLayout
+    bids_dir : pybids.layout.BIDSLayout
     participant_label : None, str, or list, optional
     strict : bool, optional
     bids_validate : bool, optional
@@ -102,11 +101,6 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     ['02', '04']
     ...
     """
-    if isinstance(bids_dir, BIDSLayout):
-        layout = bids_dir
-    else:
-        layout = BIDSLayout(str(bids_dir), validate=bids_validate)
-
     all_participants = set(layout.get_subjects())
 
     # Error: bids_dir does not contain subjects
@@ -114,7 +108,7 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
         raise BIDSError(
             "Could not find participants. Please make sure the BIDS derivatives "
             "are accessible to Docker/ are in BIDS directory structure.",
-            bids_dir,
+            layout,
         )
 
     # No --participant-label was set, return all
@@ -133,13 +127,13 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
     if not found_label:
         raise BIDSError(
             f"Could not find participants [{', '.join(participant_label)}]",
-            bids_dir,
+            layout,
         )
 
     if notfound_label := sorted(set(participant_label) - all_participants):
         exc = BIDSError(
             f"Some participants were not found: {', '.join(notfound_label)}",
-            bids_dir,
+            layout,
         )
         if strict:
             raise exc
@@ -150,24 +144,18 @@ def collect_participants(bids_dir, participant_label=None, strict=False, bids_va
 
 @fill_doc
 def collect_data(
-    bids_dir,
+    layout,
     input_type,
     participant_label,
-    task=None,
-    bids_validate=False,
-    bids_filters=None,
-    cifti=False,
-    layout=None,
+    bids_filters,
+    cifti,
 ):
     """Collect data from a BIDS dataset.
 
     Parameters
     ----------
-    bids_dir
     %(input_type)s
     participant_label
-    task
-    bids_validate
     bids_filters
     %(cifti)s
     %(layout)s
@@ -177,13 +165,6 @@ def collect_data(
     %(layout)s
     subj_data : dict
     """
-    if not isinstance(layout, BIDSLayout):
-        layout = BIDSLayout(
-            str(bids_dir),
-            validate=bids_validate,
-            config=["bids", "derivatives"],
-        )
-
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
         "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
@@ -249,10 +230,6 @@ def collect_data(
     for acq, entities in bids_filters.items():
         queries[acq].update(entities)
 
-    # Some filters are applied as parameters to the function though.
-    if task:
-        queries["bold"]["task"] = task
-
     # Select the best available space.
     if "space" in queries["bold"]:
         # Hopefully no one puts in multiple spaces here,
@@ -272,8 +249,13 @@ def collect_data(
             break
 
     if not bold_data:
+        filenames = "\n\t".join(
+            [f.path for f in layout.get(extension=[".nii.gz", ".dtseries.nii"])]
+        )
         raise FileNotFoundError(
-            f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)})."
+            f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)}).\n\n"
+            f"Query: {queries['bold']}\n\n"
+            f"Found files:\n\n{filenames}"
         )
 
     if cifti:
@@ -364,7 +346,7 @@ def collect_data(
 
     LOGGER.log(25, f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
 
-    return layout, subj_data
+    return subj_data
 
 
 @fill_doc
@@ -436,6 +418,7 @@ def collect_mesh_data(layout, participant_label):
         for hemisphere in ["L", "R"]:
             key = f"{hemisphere.lower()}h_{name}"
             queries[key] = {
+                "subject": participant_label,
                 "datatype": "anat",
                 "hemi": hemisphere,
                 "desc": None,
@@ -804,37 +787,56 @@ def write_atlas_dataset_description(atlas_dir):
 
 
 def get_preproc_pipeline_info(input_type, fmri_dir):
-    """Get preprocessing pipeline information from the dataset_description.json file."""
+    """Get preprocessing pipeline information from the dataset_description.json file.
+
+    Parameters
+    ----------
+    input_type : :obj:`str`
+        Type of input dataset.
+    fmri_dir : :obj:`str`
+        Path to the BIDS derivative dataset being ingested.
+
+    Returns
+    -------
+    info_dict : :obj:`dict`
+        Dictionary containing the name, version, and references of the preprocessing pipeline.
+    """
     import json
     import os
 
-    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
-    if not os.path.isfile(dataset_description):
-        raise FileNotFoundError(f"Dataset description DNE: {dataset_description}")
-
-    with open(dataset_description) as f:
-        dataset_dict = json.load(f)
+    references = {
+        "fmriprep": "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]",
+        "dcan": "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]",
+        "hcp": "[@glasser2013minimal]",
+        "nibabies": "[@goncalves_mathias_2022_7072346]",
+        "ukb": "[@miller2016multimodal]",
+    }
+    if input_type not in references.keys():
+        raise ValueError(f"Unsupported input_type '{input_type}'")
 
     info_dict = {
-        "name": dataset_dict["GeneratedBy"][0]["Name"],
-        "version": (
-            dataset_dict["GeneratedBy"][0]["Version"]
-            if "Version" in dataset_dict["GeneratedBy"][0].keys()
-            else "unknown"
-        ),
+        "name": input_type,
+        "version": "unknown",
+        "references": references[input_type],
     }
-    if input_type == "fmriprep":
-        info_dict["references"] = "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]"
-    elif input_type == "dcan":
-        info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]"
-    elif input_type == "hcp":
-        info_dict["references"] = "[@glasser2013minimal]"
-    elif input_type == "nibabies":
-        info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
-    elif input_type == "ukb":
-        info_dict["references"] = "[@miller2016multimodal]"
+
+    # Now try to modify the dictionary based on the dataset description
+    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
+    if os.path.isfile(dataset_description):
+        with open(dataset_description) as f:
+            dataset_dict = json.load(f)
+
+        if "GeneratedBy" in dataset_dict.keys():
+            info_dict["name"] = dataset_dict["GeneratedBy"][0]["Name"]
+            info_dict["version"] = (
+                dataset_dict["GeneratedBy"][0]["Version"]
+                if "Version" in dataset_dict["GeneratedBy"][0].keys()
+                else "unknown"
+            )
+        else:
+            LOGGER.warning(f"GeneratedBy key DNE: {dataset_description}. Using partial info.")
     else:
-        raise ValueError(f"Unsupported input_type '{input_type}'")
+        LOGGER.warning(f"Dataset description DNE: {dataset_description}. Using partial info.")
 
     return info_dict
 
@@ -1099,3 +1101,39 @@ def _make_custom_uri(out_file):
         return [_make_uri(of, "custom_confounds", os.path.dirname(of)) for of in out_file]
     else:
         return [_make_uri(out_file, "custom_confounds", os.path.dirname(out_file))]
+
+
+def check_pipeline_version(pipeline_name, cvers, data_desc):
+    """Search for existing BIDS pipeline output and compares against current pipeline version.
+
+    Parameters
+    ----------
+    cvers : :obj:`str`
+        Current pipeline version
+    data_desc : :obj:`str` or :obj:`os.PathLike`
+        Path to pipeline output's ``dataset_description.json``
+
+    Returns
+    -------
+    message : :obj:`str` or :obj:`None`
+        A warning string if there is a difference between versions, otherwise ``None``.
+
+    """
+    import json
+
+    data_desc = Path(data_desc)
+    if not data_desc.exists():
+        return
+
+    desc = json.loads(data_desc.read_text())
+    generators = {
+        generator["Name"]: generator.get("Version", "0+unknown")
+        for generator in desc.get("GeneratedBy", [])
+    }
+    dvers = generators.get(pipeline_name)
+    if dvers is None:
+        # Very old style
+        dvers = desc.get("PipelineDescription", {}).get("Version", "0+unknown")
+
+    if Version(cvers).public != Version(dvers).public:
+        return f"Previous output generated by version {dvers} found."

@@ -5,7 +5,7 @@ orbs:
 .dockersetup:
   &dockersetup
   docker:
-    - image: pennlinc/xcp_d_build:0.0.11
+    - image: pennlinc/xcp_d_build:0.0.12
   working_directory: /src/xcp_d
 
 runinstall:
@@ -134,7 +134,7 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nifti_without_freesurfer\]' )" != "" ]]; then
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
               echo "Skipping nifti_without_freesurfer build"
               circleci step halt
             fi
@@ -165,7 +165,7 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ds001419_nifti\]' )" != "" ]]; then
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
               echo "Skipping ds001419_nifti build"
               circleci step halt
             fi
@@ -187,6 +187,8 @@ jobs:
             - .coverage.ds001419_nifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_nifti/
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   ds001419_cifti:
     <<: *dockersetup
@@ -196,7 +198,7 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ds001419_cifti\]' )" != "" ]]; then
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
               echo "Skipping ds001419_cifti build"
               circleci step halt
             fi
@@ -227,7 +229,7 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?ukbiobank\]' )" != "" ]]; then
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
               echo "Skipping ukbiobank build"
               circleci step halt
             fi
@@ -258,7 +260,7 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?nibabies\]' )" != "" ]]; then
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
               echo "Skipping nibabies build"
               circleci step halt
             fi
@@ -289,7 +291,7 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_cifti\]' )" != "" ]]; then
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
               echo "Skipping pnc_cifti build"
               circleci step halt
             fi
@@ -320,7 +322,7 @@ jobs:
           name: Check whether build should be skipped
           command: |
             cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pnc_cifti_t2wonly\]' )" != "" ]]; then
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
               echo "Skipping pnc_cifti_t2wonly build"
               circleci step halt
             fi

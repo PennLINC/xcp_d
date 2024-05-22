@@ -8,6 +8,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
+from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
@@ -25,15 +26,8 @@ from xcp_d.utils.utils import fwhm2sigma
 @fill_doc
 def init_alff_wf(
     name_source,
-    output_dir,
     TR,
-    low_pass,
-    high_pass,
-    fd_thresh,
-    smoothing,
-    cifti,
     mem_gb,
-    omp_nthreads,
     name="alff_wf",
 ):
     """Compute alff for both nifti and cifti.
@@ -43,33 +37,24 @@ def init_alff_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.restingstate import init_alff_wf
-            wf = init_alff_wf(
-                name_source="/path/to/file.nii.gz",
-                output_dir=".",
-                TR=2.,
-                low_pass=0.1,
-                high_pass=0.01,
-                fd_thresh=0,
-                smoothing=6,
-                cifti=False,
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="alff_wf",
-            )
+
+            with mock_config():
+                wf = init_alff_wf(
+                    name_source="/path/to/file.nii.gz",
+                    TR=2.,
+                    mem_gb={"resampled": 0.1},
+                    name="alff_wf",
+                )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
     %(TR)s
-    %(low_pass)s
-    %(high_pass)s
-    %(fd_thresh)s
-    %(smoothing)s
-    %(cifti)s
-    %(mem_gb)s
-    %(omp_nthreads)s
+    mem_gb : :obj:`dict`
+        Memory allocation dictionary
     %(name)s
         Default is "compute_alff_wf".
 
@@ -105,6 +90,14 @@ def init_alff_wf(
     """
     workflow = Workflow(name=name)
 
+    output_dir = config.execution.xcp_d_dir
+    low_pass = config.workflow.low_pass
+    high_pass = config.workflow.high_pass
+    fd_thresh = config.workflow.fd_thresh
+    smoothing = config.workflow.smoothing
+    cifti = config.workflow.cifti
+    omp_nthreads = config.nipype.omp_nthreads
+
     periodogram_desc = ""
     if fd_thresh > 0:
         periodogram_desc = (
@@ -113,6 +106,7 @@ def init_alff_wf(
         )
 
     workflow.__desc__ = f""" \
+
 The amplitude of low-frequency fluctuation (ALFF) [@alff] was computed by transforming
 the mean-centered, standard deviation-normalized, denoised BOLD time series to the frequency
 domain{periodogram_desc}.
@@ -135,7 +129,7 @@ series to retain the original scaling.
     # compute alff
     alff_compt = pe.Node(
         ComputeALFF(TR=TR, low_pass=low_pass, high_pass=high_pass),
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         name="alff_compt",
         n_procs=omp_nthreads,
     )
@@ -206,7 +200,7 @@ series to retain the original scaling.
                     left_surf=lh_midthickness,
                 ),
                 name="ciftismoothing",
-                mem_gb=mem_gb,
+                mem_gb=mem_gb["resampled"],
                 n_procs=omp_nthreads,
             )
 
@@ -214,7 +208,7 @@ series to retain the original scaling.
             fix_cifti_intent = pe.Node(
                 FixCiftiIntent(),
                 name="fix_cifti_intent",
-                mem_gb=mem_gb,
+                mem_gb=mem_gb["resampled"],
                 n_procs=omp_nthreads,
             )
 
@@ -247,9 +241,7 @@ series to retain the original scaling.
 @fill_doc
 def init_reho_cifti_wf(
     name_source,
-    output_dir,
     mem_gb,
-    omp_nthreads,
     name="cifti_reho_wf",
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
@@ -259,22 +251,21 @@ def init_reho_cifti_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.restingstate import init_reho_cifti_wf
 
-            wf = init_reho_cifti_wf(
-                name_source="/path/to/bold.dtseries.nii",
-                output_dir=".",
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="cifti_reho_wf",
-            )
+            with mock_config():
+                wf = init_reho_cifti_wf(
+                    name_source="/path/to/bold.dtseries.nii",
+                    name="cifti_reho_wf",
+                )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
-    %(mem_gb)s
-    %(omp_nthreads)s
+    mem_gb : :obj:`dict`
+        Memory allocation dictionary
     %(name)s
         Default is "cifti_reho_wf".
 
@@ -299,6 +290,10 @@ was computed with nearest-neighbor vertices to yield ReHo.
 For the subcortical, volumetric data, ReHo was computed with neighborhood voxels using *AFNI*'s
 *3dReHo* [@taylor2013fatcat].
 """
+
+    output_dir = config.execution.xcp_d_dir
+    omp_nthreads = config.nipype.omp_nthreads
+
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["denoised_bold"]),
         name="inputnode",
@@ -312,19 +307,19 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     lh_surf = pe.Node(
         CiftiSeparateMetric(metric="CORTEX_LEFT", direction="COLUMN"),
         name="separate_lh",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     rh_surf = pe.Node(
         CiftiSeparateMetric(metric="CORTEX_RIGHT", direction="COLUMN"),
         name="separate_rh",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     subcortical_nifti = pe.Node(
         CiftiSeparateVolumeAll(direction="COLUMN"),
         name="separate_subcortical",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
 
@@ -332,19 +327,19 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     lh_reho = pe.Node(
         SurfaceReHo(surf_hemi="L"),
         name="reho_lh",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     rh_reho = pe.Node(
         SurfaceReHo(surf_hemi="R"),
         name="reho_rh",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
         ReHoNamePatch(neighborhood="vertices"),
         name="reho_subcortical",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
 
@@ -352,7 +347,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     merge_cifti = pe.Node(
         CiftiCreateDenseScalar(),
         name="merge_cifti",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     reho_plot = pe.Node(
@@ -400,13 +395,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 
 @fill_doc
-def init_reho_nifti_wf(
-    name_source,
-    output_dir,
-    mem_gb,
-    omp_nthreads,
-    name="nifti_reho_wf",
-):
+def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
     """Compute ReHo on volumetric (NIFTI) data.
 
     Workflow Graph
@@ -414,21 +403,21 @@ def init_reho_nifti_wf(
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
             from xcp_d.workflows.restingstate import init_reho_nifti_wf
-            wf = init_reho_nifti_wf(
-                name_source="/path/to/bold.nii.gz",
-                output_dir=".",
-                mem_gb=0.1,
-                omp_nthreads=1,
-                name="nifti_reho_wf",
-            )
+
+            with mock_config():
+                wf = init_reho_nifti_wf(
+                    name_source="/path/to/bold.nii.gz",
+                    name="nifti_reho_wf",
+                )
 
     Parameters
     ----------
     name_source
-    %(output_dir)s
-    %(mem_gb)s
-    %(omp_nthreads)s
+    mem_gb : :obj:`dict`
+        Memory allocation dictionary
     %(name)s
         Default is "nifti_reho_wf".
 
@@ -446,6 +435,10 @@ def init_reho_nifti_wf(
         reho output
     """
     workflow = Workflow(name=name)
+
+    output_dir = config.execution.xcp_d_dir
+    omp_nthreads = config.nipype.omp_nthreads
+
     workflow.__desc__ = """
 Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood voxels using
 *AFNI*'s *3dReHo* [@taylor2013fatcat].
@@ -461,7 +454,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
     compute_reho = pe.Node(
         ReHoNamePatch(neighborhood="vertices"),
         name="reho_3d",
-        mem_gb=mem_gb,
+        mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     # Get the svg
