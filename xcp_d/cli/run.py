@@ -178,13 +178,16 @@ def main():
             session_list=session_list,
         )
 
-        if sentry_sdk is not None and failed_reports:
-            sentry_sdk.capture_message(
-                f"Report generation failed for {failed_reports} subjects",
-                level="error",
+        if failed_reports:
+            msg = (
+                "Report generation was not successful for the following participants "
+                f': {", ".join(failed_reports)}.'
             )
+            config.loggers.cli.error(msg)
+            if sentry_sdk is not None:
+                sentry_sdk.capture_message(msg, level="error")
 
-        sys.exit(int((errno + failed_reports) > 0))
+        sys.exit(int((errno + len(failed_reports)) > 0))
 
 
 if __name__ == "__main__":
