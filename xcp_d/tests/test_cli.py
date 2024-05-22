@@ -194,6 +194,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--atlases",
         "Tian",
         "HCP",
+        "--aggregate-session-reports=1",
     ]
     _run_and_generate(
         test_name=test_name,
