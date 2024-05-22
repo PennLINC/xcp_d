@@ -27,7 +27,7 @@ sections:
     caption:  The "design matrix" represents the confounds that are used to denoise the BOLD data.
     subtitle: Design Matrix for Confound Regression
     style:
-      height: 100px
+      height: 500px
       width: auto
   - bids: {datatype: figures, desc: postprocessing, suffix: bold}
     caption:  FD and DVARS are two measures of in-scanner motion.
