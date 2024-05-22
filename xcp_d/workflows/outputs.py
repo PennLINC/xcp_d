@@ -173,8 +173,7 @@ def init_postproc_derivatives_wf(
     %(coverage_ciftis)s
     qc_file
         LINC-style quality control file
-    %(denoised_interpolated_bold)s
-    %(censored_denoised_bold)s
+    %(denoised_bold)s
     %(smoothed_denoised_bold)s
     alff
         alff nifti
@@ -204,7 +203,6 @@ def init_postproc_derivatives_wf(
     params = config.workflow.params
     atlases = config.execution.atlases
     file_format = config.workflow.file_format
-    abcc_qc = config.workflow.abcc_qc
     output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
@@ -221,9 +219,8 @@ def init_postproc_derivatives_wf(
                 "correlations",
                 "correlations_exact",
                 "qc_file",
-                "censored_denoised_bold",
+                "denoised_bold",
                 "smoothed_denoised_bold",
-                "denoised_interpolated_bold",
                 "alff",
                 "parcellated_alff",
                 "smoothed_alff",
@@ -251,7 +248,7 @@ def init_postproc_derivatives_wf(
             fields=[
                 "filtered_motion",
                 "temporal_mask",
-                "denoised_interpolated_bold",
+                "denoised_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "timeseries",
@@ -415,45 +412,10 @@ def init_postproc_derivatives_wf(
         mem_gb=2,
     )
     workflow.connect([
-        (inputnode, ds_denoised_bold, [("censored_denoised_bold", "in_file")]),
+        (inputnode, ds_denoised_bold, [("denoised_bold", "in_file")]),
         (merge_dense_src, ds_denoised_bold, [("out", "Sources")]),
-        (ds_denoised_bold, outputnode, [("out_file", "censored_denoised_bold")]),
+        (ds_denoised_bold, outputnode, [("out_file", "denoised_bold")]),
     ])  # fmt:skip
-
-    if abcc_qc and (fd_thresh > 0):
-        ds_interpolated_denoised_bold = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                source_file=name_source,
-                dismiss_entities=["den"],
-                desc="interpolated",
-                den="91k" if file_format == "cifti" else None,
-                extension=".dtseries.nii" if file_format == "cifti" else ".nii.gz",
-                # Metadata
-                meta_dict=cleaned_data_dictionary,
-            ),
-            name="ds_interpolated_denoised_bold",
-            run_without_submitting=True,
-            mem_gb=2,
-        )
-        workflow.connect([
-            (inputnode, ds_interpolated_denoised_bold, [
-                ("denoised_interpolated_bold", "in_file"),
-            ]),
-            (ds_denoised_bold, ds_interpolated_denoised_bold, [
-                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
-            (ds_interpolated_denoised_bold, outputnode, [
-                ("out_file", "denoised_interpolated_bold"),
-            ]),
-        ])  # fmt:skip
-
-    else:
-        workflow.connect([
-            (inputnode, outputnode, [
-                ("denoised_interpolated_bold", "denoised_interpolated_bold"),
-            ]),
-        ])  # fmt:skip
 
     if config.workflow.linc_qc:
         ds_qc_file = pe.Node(

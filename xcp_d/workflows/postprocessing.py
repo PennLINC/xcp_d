@@ -521,6 +521,8 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     %(denoised_interpolated_bold)s
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
+    denoised_bold
+        The selected denoised BOLD data to write out.
     """
     workflow = Workflow(name=name)
 
@@ -598,6 +600,7 @@ approach.
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
+                "denoised_bold",
             ],
         ),
         name="outputnode",
@@ -647,13 +650,22 @@ approach.
         ]),
     ])  # fmt:skip
 
+    if config.workflow.output_interpolated:
+        workflow.connect([
+            (censor_interpolated_data, outputnode, [("censored_denoised_bold", "denoised_bold")]),
+        ])  # fmt:skip
+    else:
+        workflow.connect([
+            (regress_and_filter_bold, outputnode, [
+                ("denoised_interpolated_bold", "denoised_bold"),
+            ]),
+        ])  # fmt:skip
+
     if smoothing:
         resd_smoothing_wf = init_resd_smoothing_wf(mem_gb=mem_gb)
 
         workflow.connect([
-            (censor_interpolated_data, resd_smoothing_wf, [
-                ("censored_denoised_bold", "inputnode.bold_file"),
-            ]),
+            (outputnode, resd_smoothing_wf, [("denoised_bold", "inputnode.bold_file")]),
             (resd_smoothing_wf, outputnode, [
                 ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
             ]),

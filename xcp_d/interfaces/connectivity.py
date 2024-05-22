@@ -232,19 +232,26 @@ class _TSVConnectOutputSpec(TraitedSpec):
 def correlate_timeseries(timeseries, temporal_mask):
     """Correlate timeseries stored in a TSV file."""
     timeseries_df = pd.read_table(timeseries)
-    correlations_df = timeseries_df.corr()
-
-    # Create correlation matrices limited to exact scan numbers
-    correlations_exact = {}
     if isdefined(temporal_mask):
         censoring_df = pd.read_table(temporal_mask)
+
+        # Determine if the time series is censored
+        if censoring_df.shape[0] == timeseries_df.shape[0]:
+            # The time series is not censored
+            timeseries_df = timeseries_df.loc[censoring_df["framewise_displacement"] == 0]
+
+        # Now create correlation matrices limited to exact scan numbers
         censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
         censored_censoring_df.reset_index(drop=True, inplace=True)
         exact_columns = [c for c in censoring_df.columns if c.startswith("exact_")]
+        correlations_exact = {}
         for exact_column in exact_columns:
             exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
             exact_correlations_df = exact_timeseries_df.corr()
             correlations_exact[exact_column] = exact_correlations_df
+
+    # Create correlation matrix from low-motion volumes only
+    correlations_df = timeseries_df.corr()
 
     return correlations_df, correlations_exact
 

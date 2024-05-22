@@ -326,8 +326,7 @@ the following post-processing was performed.
             ("atlas_files", "inputnode.atlas_files"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
-            ("outputnode.denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
-            ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
+            ("outputnode.denoised_bold", "inputnode.denoised_bold"),
             ("outputnode.smoothed_denoised_bold", "inputnode.smoothed_denoised_bold"),
         ]),
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
@@ -343,8 +342,7 @@ the following post-processing was performed.
         (postproc_derivatives_wf, outputnode, [
             ("outputnode.filtered_motion", "filtered_motion"),
             ("outputnode.temporal_mask", "temporal_mask"),
-            ("outputnode.denoised_interpolated_bold", "denoised_interpolated_bold"),
-            ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
+            ("outputnode.denoised_bold", "denoised_bold"),
             ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("outputnode.timeseries", "timeseries"),
             ("outputnode.timeseries_ciftis", "timeseries_ciftis"),
@@ -374,7 +372,7 @@ the following post-processing was performed.
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ]),
             (denoise_bold_wf, connectivity_wf, [
-                ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.denoised_bold", "inputnode.denoised_bold"),
             ]),
             (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
             (connectivity_wf, postproc_derivatives_wf, [
