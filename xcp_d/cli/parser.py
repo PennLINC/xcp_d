@@ -36,6 +36,13 @@ def _build_parser():
             raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
         return path
 
+    def _min_one(value, parser):
+        """Ensure an argument is not lower than 1."""
+        value = int(value)
+        if value < 1:
+            raise parser.error("Argument can't be less than one.")
+        return value
+
     def _process_value(value):
         import bids
 
@@ -78,6 +85,7 @@ def _build_parser():
     )
     PathExists = partial(_path_exists, parser=parser)
     IsFile = partial(_is_file, parser=parser)
+    PositiveInt = partial(_min_one, parser=parser)
     BIDSFilter = partial(_bids_filter, parser=parser)
 
     # important parameters required
@@ -536,6 +544,17 @@ The default is 240 (4 minutes).
     )
 
     g_other = parser.add_argument_group("Other options")
+    g_other.add_argument(
+        "--aggregate-session-reports",
+        dest="aggr_ses_reports",
+        action="store",
+        type=PositiveInt,
+        default=4,
+        help=(
+            "Maximum number of sessions aggregated in one subject's visual report. "
+            "If exceeded, visual reports are split by session."
+        ),
+    )
     g_other.add_argument(
         "--random-seed",
         "--random_seed",

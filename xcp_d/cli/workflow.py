@@ -15,7 +15,7 @@ def build_workflow(config_file, retval):
     from niworkflows.utils.misc import check_valid_fs_license
 
     from xcp_d import config, data
-    from xcp_d.interfaces.report_core import generate_reports
+    from xcp_d.reports.core import generate_reports
     from xcp_d.utils.bids import check_pipeline_version, collect_participants
     from xcp_d.utils.utils import check_deps
     from xcp_d.workflows.base import init_xcpd_wf
@@ -63,16 +63,26 @@ def build_workflow(config_file, retval):
 
     # Called with reports only
     if config.execution.reports_only:
-        from xcp_d.data import load as load_data
-
         build_log.log(25, "Running --reports-only on participants %s", ", ".join(subject_list))
-        retval["return_code"] = generate_reports(
-            subject_list=subject_list,
+        session_list = (
+            config.execution.bids_filters.get('bold', {}).get('session')
+            if config.execution.bids_filters
+            else None
+        )
+
+        failed_reports = generate_reports(
+            subject_list=config.execution.participant_label,
             output_dir=config.execution.xcp_d_dir,
             run_uuid=config.execution.run_uuid,
-            config=load_data("reports-spec.yml"),
-            packagename="xcp_d",
+            session_list=session_list,
         )
+        if failed_reports:
+            config.loggers.cli.error(
+                'Report generation was not successful for the following participants : %s.',
+                ', '.join(failed_reports),
+            )
+
+        retval['return_code'] = len(failed_reports)
         return retval
 
     # Build main workflow

@@ -5,6 +5,7 @@
 XCP-D postprocessing workflow
 ============================
 """
+
 from xcp_d import config
 
 
@@ -106,7 +107,9 @@ def main():
 
     config.loggers.workflow.log(
         15,
-        "\n".join(["XCP-D config:"] + [f"\t\t{s}" for s in config.dumps().splitlines()]),
+        "\n".join(
+            ["XCP-D config:"] + [f"\t\t{s}" for s in config.dumps().splitlines()]
+        ),
     )
     config.loggers.workflow.log(25, "XCP-D started!")
     errno = 1  # Default is error exit unless otherwise set
@@ -117,14 +120,19 @@ def main():
             from xcp_d.utils.sentry import process_crashfile
 
             crashfolders = [
-                config.execution.xcp_d_dir / f"sub-{s}" / "log" / config.execution.run_uuid
+                config.execution.xcp_d_dir
+                / f"sub-{s}"
+                / "log"
+                / config.execution.run_uuid
                 for s in config.execution.participant_label
             ]
             for crashfolder in crashfolders:
                 for crashfile in crashfolder.glob("crash*.*"):
                     process_crashfile(crashfile)
 
-            if sentry_sdk is not None and "Workflow did not execute cleanly" not in str(e):
+            if sentry_sdk is not None and "Workflow did not execute cleanly" not in str(
+                e
+            ):
                 sentry_sdk.capture_exception(e)
 
         config.loggers.workflow.critical("XCP-D failed: %s", e)
@@ -156,8 +164,7 @@ def main():
         errno = 0
 
     finally:
-        from xcp_d import data
-        from xcp_d.interfaces.report_core import generate_reports
+        from xcp_d.reports.core import generate_reports
 
         # Write dataset description before generating reports
         write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
@@ -166,12 +173,19 @@ def main():
             write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
 
         # Generate reports phase
+        session_list = (
+            config.execution.get()
+            .get("bids_filters", {})
+            .get("bold", {})
+            .get("session")
+        )
+
+        # Generate reports phase
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
             output_dir=config.execution.xcp_d_dir,
             run_uuid=config.execution.run_uuid,
-            config=data.load("reports-spec.yml"),
-            packagename="xcp_d",
+            session_list=session_list,
         )
 
         if sentry_sdk is not None and failed_reports:
