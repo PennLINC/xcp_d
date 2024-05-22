@@ -65,7 +65,7 @@ def build_workflow(config_file, retval):
     if config.execution.reports_only:
         build_log.log(25, "Running --reports-only on participants %s", ", ".join(subject_list))
         session_list = (
-            config.execution.bids_filters.get('bold', {}).get('session')
+            config.execution.bids_filters.get("bold", {}).get("session")
             if config.execution.bids_filters
             else None
         )
@@ -78,11 +78,11 @@ def build_workflow(config_file, retval):
         )
         if failed_reports:
             config.loggers.cli.error(
-                'Report generation was not successful for the following participants : %s.',
-                ', '.join(failed_reports),
+                "Report generation was not successful for the following participants : %s.",
+                ", ".join(failed_reports),
             )
 
-        retval['return_code'] = len(failed_reports)
+        retval["return_code"] = len(failed_reports)
         return retval
 
     # Build main workflow
