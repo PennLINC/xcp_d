@@ -373,6 +373,8 @@ class execution(_Config):
 
     fmri_dir = None
     """An existing path to the preprocessing derivatives dataset, which must be BIDS-compliant."""
+    aggr_ses_reports = None
+    """Maximum number of sessions aggregated in one subject's visual report."""
     bids_database_dir = None
     """Path to the directory containing SQLite database indices for the input BIDS dataset."""
     bids_description_hash = None

@@ -13,8 +13,7 @@ from nipype import logging
 from xcp_d.cli import combineqc, run
 from xcp_d.cli.parser import parse_args
 from xcp_d.cli.workflow import build_boilerplate, build_workflow
-from xcp_d.data import load as load_data
-from xcp_d.interfaces.report_core import generate_reports
+from xcp_d.reports.core import generate_reports
 from xcp_d.tests.utils import (
     check_affines,
     check_generated_files,
@@ -195,6 +194,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--atlases",
         "Tian",
         "HCP",
+        "--aggregate-session-reports=1",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -387,12 +387,16 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
             write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
 
         build_boilerplate(str(config_file), xcpd_wf)
+        session_list = (
+            config.execution.bids_filters.get("bold", {}).get("session")
+            if config.execution.bids_filters
+            else None
+        )
         generate_reports(
             subject_list=config.execution.participant_label,
             output_dir=config.execution.xcp_d_dir,
             run_uuid=config.execution.run_uuid,
-            config=str(load_data("reports-spec.yml")),
-            packagename="xcp_d",
+            session_list=session_list,
         )
 
     output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
