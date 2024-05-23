@@ -1116,6 +1116,8 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         desc="File to match brainordinates of.",
     )
     out_file = File(
+        exists=False,
+        mandatory=False,
         genfile=True,
         argstr="%s",
         position=1,
@@ -1215,6 +1217,11 @@ class CiftiCreateDenseFromTemplate(WBCommand):
             _, fname, _ = split_filename(self.inputs.template_cifti)
 
         return f"{fname}_converted.dscalar.nii"
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
+        return outputs
 
 
 class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
