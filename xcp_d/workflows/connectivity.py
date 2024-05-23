@@ -890,7 +890,7 @@ def init_parcellate_cifti_wf(
             out_file="parcellated_data.pscalar.nii",
         ),
         name="parcellate_data",
-        iterfield=["atlas_label", "cifti_weights"],
+        iterfield=["atlas_label"],
         mem_gb=mem_gb["resampled"],
     )
     workflow.connect([
