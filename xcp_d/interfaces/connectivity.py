@@ -973,15 +973,15 @@ class CiftiToTSV(SimpleInterface):
             # dictionary, with the corresponding values in the dictionary.
             # If any index values are not in the dictionary, raise an error with a list of the
             # missing index values.
-            # If any dictionary values are not in the index, raise an error with a list of the
-            # missing dictionary values.
+            # If any dictionary keys are not in the index, raise an error with a list of the
+            # missing dictionary keys.
             missing_index_values = []
             missing_dict_values = []
             for index_value in df.index:
                 if index_value not in parcel_label_mapper:
                     missing_index_values.append(index_value)
 
-                for dict_value in parcel_label_mapper.values():
+                for dict_value in parcel_label_mapper.keys():
                     if dict_value not in df.index:
                         missing_dict_values.append(dict_value)
 
@@ -1004,7 +1004,7 @@ class CiftiToTSV(SimpleInterface):
                 if column_value not in parcel_label_mapper:
                     missing_columns.append(column_value)
 
-                for dict_value in parcel_label_mapper.values():
+                for dict_value in parcel_label_mapper.keys():
                     if dict_value not in df.columns:
                         missing_dict_values.append(dict_value)
 
