@@ -859,7 +859,7 @@ def init_parcellate_cifti_wf(
         )
         workflow.connect([
             (inputnode, parcellate_coverage, [("atlas_files", "atlas_label")]),
-            (coverage_buffer, parcellate_coverage, [("coverage", "in_file")]),
+            (vertexwise_coverage, parcellate_coverage, [("mask_file", "in_file")]),
             (parcellate_coverage, coverage_buffer, [("out_file", "coverage_cifti")]),
             (parcellate_coverage, outputnode, [("out_file", "coverage_cifti")]),
         ])  # fmt:skip
