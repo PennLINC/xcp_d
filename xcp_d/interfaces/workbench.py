@@ -1138,14 +1138,14 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         position=3,
         desc="Use input data from cropped volume files.",
     )
-    lh_surface = File(
+    left_metric = File(
         exists=True,
         mandatory=False,
         argstr="-metric CORTEX_LEFT %s",
         position=4,
         desc="Use input data from surface files. Input surface file.",
     )
-    rh_surface = File(
+    right_metric = File(
         exists=True,
         mandatory=False,
         argstr="-metric CORTEX_RIGHT %s",
@@ -1182,8 +1182,8 @@ class CiftiCreateDenseFromTemplate(WBCommand):
     >>> ccdft.inputs.template_cifti = "sub-01_task-rest_bold.dtseries.nii"
     >>> ccdft.inputs.volume_all = "parcellation.nii.gz"
     >>> ccdft.inputs.from_cropped = True
-    >>> ccdft.inputs.lh_surface = "lh.func.gii"
-    >>> ccdft.inputs.rh_surface = "rh.func.gii"
+    >>> ccdft.inputs.left_metric = "lh.func.gii"
+    >>> ccdft.inputs.right_metric = "rh.func.gii"
     >>> ccdft.cmdline
     wb_command -cifti-create-dense-from-template \
         sub-01_task-rest_bold.dtseries.nii \
