@@ -159,7 +159,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
         workflow.connect([
             (inputnode, resample_atlas_to_data, [("bold_file", "template_cifti")]),
             (atlas_file_grabber, resample_atlas_to_data, [("atlas_file", "label")]),
-            (resample_atlas_to_data, atlas_buffer, [("cifti_out", "atlas_file")]),
+            (resample_atlas_to_data, atlas_buffer, [("out_file", "atlas_file")]),
         ])  # fmt:skip
 
         # Change the atlas to a scalar file.
@@ -175,7 +175,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
             iterfield=["data_cifti"],
         )
         workflow.connect([
-            (resample_atlas_to_data, convert_to_dscalar, [("cifti_out", "data_cifti")]),
+            (resample_atlas_to_data, convert_to_dscalar, [("out_file", "data_cifti")]),
         ])  # fmt:skip
 
         # Convert atlas from dlabel to pscalar format.
@@ -360,7 +360,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
         # fmt:off
         workflow.connect([
             (inputnode, parcellate_atlas, [(file_to_parcellate, "in_file")]),
-            (resample_atlas_to_surface, parcellate_atlas, [("cifti_out", "atlas_label")]),
+            (resample_atlas_to_surface, parcellate_atlas, [("out_file", "atlas_label")]),
         ])
         # fmt:on
 
@@ -376,7 +376,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
         # fmt:off
         workflow.connect([
             (inputnode, parcellate_surface, [(file_to_parcellate, "data_file")]),
-            (resample_atlas_to_surface, parcellate_surface, [("cifti_out", "atlas")]),
+            (resample_atlas_to_surface, parcellate_surface, [("out_file", "atlas")]),
             (atlas_file_grabber, parcellate_surface, [("atlas_labels_file", "atlas_labels")]),
             (parcellate_atlas, parcellate_surface, [("out_file", "parcellated_atlas")]),
         ])

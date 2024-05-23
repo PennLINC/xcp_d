@@ -279,7 +279,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
             only_numeric=True,
             out_file=f"parcellated_atlas_{i_file}.pscalar.nii",
             atlas_label=atlas_file,
-            in_file=resample_results.outputs.cifti_out,
+            in_file=resample_results.outputs.out_file,
         )
         parcellate_atlas_results = parcellate_atlas.run(cwd=tmpdir)
 
