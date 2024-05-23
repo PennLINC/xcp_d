@@ -914,7 +914,7 @@ class _CiftiToTSVInputSpec(BaseInterfaceInputSpec):
 
 
 class _CiftiToTSVOutputSpec(TraitedSpec):
-    tsv_file = File(exists=True, desc="Parcellated data TSV file.")
+    out_file = File(exists=True, desc="Parcellated data TSV file.")
 
 
 class CiftiToTSV(SimpleInterface):
@@ -1020,11 +1020,11 @@ class CiftiToTSV(SimpleInterface):
             df.columns = [parcel_label_mapper[i] for i in df.columns]
 
         # Save out the TSV
-        self._results["tsv_file"] = fname_presuffix(
+        self._results["out_file"] = fname_presuffix(
             "extracted.tsv",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        df.to_csv(self._results["tsv_file"], sep="\t", na_rep="n/a", index_label="Node")
+        df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index_label="Node")
 
         return runtime

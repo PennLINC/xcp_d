@@ -683,9 +683,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("outputnode.vertexwise_coverage", "inputnode.vertexwise_coverage"),
             ("outputnode.coverage_cifti", "inputnode.coverage_cifti"),
         ]),
-        (parcellate_reho_wf, outputnode, [
-            ("outputnode.parcellated_tsv", "parcellated_reho"),
-        ]),
+        (parcellate_reho_wf, outputnode, [("outputnode.parcellated_tsv", "parcellated_reho")]),
     ])  # fmt:skip
 
     if bandpass_filter:
@@ -704,9 +702,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ("outputnode.vertexwise_coverage", "inputnode.vertexwise_coverage"),
                 ("outputnode.coverage_cifti", "inputnode.coverage_cifti"),
             ]),
-            (parcellate_alff_wf, outputnode, [
-                ("outputnode.parcellated_tsv", "parcellated_alff"),
-            ]),
+            (parcellate_alff_wf, outputnode, [("outputnode.parcellated_tsv", "parcellated_alff")]),
         ])  # fmt:skip
 
     # Create a node to plot the matrices
@@ -746,7 +742,59 @@ def init_parcellate_cifti_wf(
     compute_mask=True,
     name="parcellate_cifti_wf",
 ):
-    """Parcellate a CIFTI file using a set of atlases."""
+    """Parcellate a CIFTI file using a set of atlases.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
+            from xcp_d.workflows.connectivity import init_parcellate_cifti_wf
+
+            with mock_config():
+                wf = init_parcellate_cifti_wf(mem_gb={"resampled": 2})
+
+    Parameters
+    ----------
+    mem_gb : :obj:`dict`
+        Dictionary of memory allocations.
+    compute_mask : :obj:`bool`
+        Whether to compute a mask for the CIFTI file.
+        Default is True.
+    name : :obj:`str`
+        Workflow name.
+        Default is "parcellate_cifti_wf".
+
+    Inputs
+    ------
+    in_file
+        CIFTI file to parcellate.
+    atlas_files
+        List of CIFTI atlas files.
+    atlas_labels_files
+        List of TSV atlas labels files.
+    vertexwise_coverage
+        Vertex-wise coverage mask.
+        Only used if `compute_mask` is False.
+    coverage_cifti
+        Coverage CIFTI files. One for each atlas.
+        Only used if `compute_mask` is False.
+
+    Outputs
+    -------
+    parcellated_cifti
+        Parcellated CIFTI files. One for each atlas.
+    parcellated_tsv
+        Parcellated TSV files. One for each atlas.
+    vertexwise_coverage
+        Vertex-wise coverage mask. Only output if `compute_mask` is True.
+    coverage_cifti
+        Coverage CIFTI files. One for each atlas. Only output if `compute_mask` is True.
+    coverage_tsv
+        Coverage TSV files. One for each atlas. Only output if `compute_mask` is True.
+    """
     from xcp_d.interfaces.connectivity import CiftiToTSV
     from xcp_d.interfaces.workbench import CiftiMath, CiftiParcellateWorkbench
     from xcp_d.utils.utils import create_cifti_mask
