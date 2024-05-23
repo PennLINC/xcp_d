@@ -1305,7 +1305,7 @@ class _CiftiMathInputSpec(CommandLineInputSpec):
     mask = File(
         exists=True,
         mandatory=False,
-        argstr="-var mask %s",
+        argstr="-var mask %s -select 1 1",
         position=3,
         desc="Second data file to use in the math operation",
     )
@@ -1317,7 +1317,7 @@ class _CiftiMathInputSpec(CommandLineInputSpec):
     )
     out_file = File(
         name_source=["data"],
-        name_template="mathed_%s",
+        name_template="mathed_%s.nii",
         keep_extension=True,
         argstr="%s",
         position=1,
