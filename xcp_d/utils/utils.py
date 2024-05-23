@@ -623,9 +623,7 @@ def create_cifti_mask(data_file):
 
     from xcp_d.utils.write_save import write_ndata
 
-    data_fname = os.path.basename(data_file)
-
-    mask_file = os.path.abspath(f"masked_{data_fname}")
+    mask_file = os.path.abspath("data_mask.dscalar.nii")
     data_img = nb.load(data_file)
     data_arr = data_img.get_fdata()
 

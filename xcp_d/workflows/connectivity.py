@@ -887,7 +887,7 @@ def init_parcellate_cifti_wf(
         CiftiParcellateWorkbench(
             direction="COLUMN",
             only_numeric=True,
-            out_file="parcellated_data.pscalar.nii",
+            out_file=f"parcellated_data.{'ptseries' if compute_mask else 'pscalar'}.nii",
         ),
         name="parcellate_data",
         iterfield=["atlas_label"],
@@ -912,7 +912,7 @@ def init_parcellate_cifti_wf(
 
     # Mask out uncovered nodes from parcellated denoised data
     mask_parcellated_data = pe.MapNode(
-        CiftiMath(expression="data * mask"),
+        CiftiMath(expression="data * (mask > 0)"),
         name="mask_parcellated_data",
         iterfield=["data", "mask"],
         mem_gb=mem_gb["resampled"],
