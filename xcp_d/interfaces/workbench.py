@@ -1152,6 +1152,13 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         position=5,
         desc="Use input data from surface files. Input surface file.",
     )
+    label = File(
+        exists=True,
+        mandatory=False,
+        argstr="-cifti %s",
+        position=6,
+        desc="Use input data from surface label files. Input label file.",
+    )
 
 
 class _CiftiCreateDenseFromTemplateOutputSpec(TraitedSpec):
