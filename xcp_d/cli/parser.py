@@ -462,6 +462,7 @@ The default is 240 (4 minutes).
         "--lower_bpf",
         action="store",
         default=0.01,
+        dest="high_pass",
         type=float,
         help=(
             "Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
@@ -474,6 +475,7 @@ The default is 240 (4 minutes).
         "--upper_bpf",
         action="store",
         default=0.08,
+        dest="low_pass",
         type=float,
         help=(
             "Upper cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
@@ -878,17 +880,17 @@ def _validate_parameters(opts, build_log, parser):
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
     # Bandpass filter parameters
-    if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
+    if opts.high_pass <= 0 and opts.low_pass <= 0:
         opts.bandpass_filter = False
 
     if (
         opts.bandpass_filter
-        and (opts.lower_bpf >= opts.upper_bpf)
-        and (opts.lower_bpf > 0 and opts.upper_bpf > 0)
+        and (opts.high_pass >= opts.low_pass)
+        and (opts.high_pass > 0 and opts.low_pass > 0)
     ):
         parser.error(
-            f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
-            f"'--upper-bpf' ({opts.upper_bpf})."
+            f"'--lower-bpf' ({opts.high_pass}) must be lower than "
+            f"'--upper-bpf' ({opts.low_pass})."
         )
     elif not opts.bandpass_filter:
         build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")

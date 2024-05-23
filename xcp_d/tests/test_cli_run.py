@@ -29,8 +29,8 @@ def base_opts():
         "output_dir": Path("out"),
         "work_dir": Path("work"),
         "analysis_level": "participant",
-        "lower_bpf": 0.01,
-        "upper_bpf": 0.1,
+        "high_pass": 0.01,
+        "low_pass": 0.1,
         "bandpass_filter": True,
         "fd_thresh": 0.3,
         "min_time": 100,
@@ -62,8 +62,8 @@ def test_validate_parameters_04(base_opts, base_parser, caplog):
     assert opts.bandpass_filter is True
 
     # Disable bandpass_filter to False indirectly
-    opts.lower_bpf = -1
-    opts.upper_bpf = -1
+    opts.high_pass = -1
+    opts.low_pass = -1
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
@@ -76,8 +76,8 @@ def test_validate_parameters_05(base_opts, base_parser, capsys):
     opts = deepcopy(base_opts)
 
     # Set upper BPF below lower one
-    opts.lower_bpf = 0.01
-    opts.upper_bpf = 0.001
+    opts.high_pass = 0.01
+    opts.low_pass = 0.001
 
     with pytest.raises(SystemExit, match="2"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
