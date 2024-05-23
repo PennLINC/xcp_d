@@ -1216,6 +1216,11 @@ class CiftiCreateDenseFromTemplate(WBCommand):
 
         return f"{fname}_converted.dscalar.nii"
 
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
+        return outputs
+
 
 class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
     """Input specification for the CiftiCreateDenseFromTemplate command."""
