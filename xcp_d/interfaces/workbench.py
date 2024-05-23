@@ -1116,7 +1116,7 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         desc="File to match brainordinates of.",
     )
     out_file = File(
-        name_source=["label"],
+        name_source=["label", "template_cifti"],
         name_template="resampled_%s.dscalar.nii",
         keep_extension=False,
         argstr="%s",
