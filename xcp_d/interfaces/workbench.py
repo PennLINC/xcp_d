@@ -1138,14 +1138,14 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         position=3,
         desc="Use input data from cropped volume files.",
     )
-    lh_surface = File(
+    left_metric = File(
         exists=True,
         mandatory=False,
         argstr="-metric CORTEX_LEFT %s",
         position=4,
         desc="Use input data from surface files. Input surface file.",
     )
-    rh_surface = File(
+    right_metric = File(
         exists=True,
         mandatory=False,
         argstr="-metric CORTEX_RIGHT %s",
