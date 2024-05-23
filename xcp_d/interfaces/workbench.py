@@ -1117,7 +1117,6 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
     )
     out_file = File(
         genfile=True,
-        keep_extension=False,
         argstr="%s",
         position=1,
         desc="The output cifti file.",
