@@ -150,7 +150,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
         # Add empty vertices to atlas for locations in data, but not in atlas
         # (e.g., subcortical regions for cortex-only atlases)
         resample_atlas_to_data = pe.MapNode(
-            CiftiCreateDenseFromTemplate(),
+            CiftiCreateDenseFromTemplate(out_file="resampled_atlas.dlabel.nii"),
             name="resample_atlas_to_data",
             n_procs=omp_nthreads,
             iterfield=["label"],
@@ -332,7 +332,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
     for file_to_parcellate in files_to_parcellate:
         resample_atlas_to_surface = pe.MapNode(
-            CiftiCreateDenseFromTemplate(),
+            CiftiCreateDenseFromTemplate(out_file="resampled_atlas.dlabel.nii"),
             name=f"resample_atlas_to_{file_to_parcellate}",
             n_procs=omp_nthreads,
             iterfield=["label"],
