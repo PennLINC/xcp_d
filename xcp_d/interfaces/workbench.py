@@ -1116,9 +1116,7 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         desc="File to match brainordinates of.",
     )
     out_file = File(
-        name_source=["label", "template_cifti"],
-        name_template="resampled_%s.dscalar.nii",
-        keep_extension=False,
+        gen_file=True,
         argstr="%s",
         position=1,
         desc="The output cifti file.",
@@ -1204,6 +1202,19 @@ class CiftiCreateDenseFromTemplate(WBCommand):
     input_spec = _CiftiCreateDenseFromTemplateInputSpec
     output_spec = _CiftiCreateDenseFromTemplateOutputSpec
     _cmd = "wb_command -cifti-create-dense-from-template"
+
+    def _gen_filename(self, name):
+        if name != "out_file":
+            return None
+
+        if isdefined(self.inputs.out_file):
+            return self.inputs.out_file
+        elif isdefined(self.inputs.label):
+            _, fname, _ = split_filename(self.inputs.label)
+        else:
+            _, fname, _ = split_filename(self.inputs.template_cifti)
+
+        return f"{fname}_converted.dscalar.nii"
 
 
 class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
