@@ -716,7 +716,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("atlases", "atlases"),
             ("atlas_labels_files", "atlas_tsvs"),
         ]),
-        (dconn_to_tsv, connectivity_plot, [("correlations", "correlations_tsv")]),
+        (dconn_to_tsv, connectivity_plot, [("out_file", "correlations_tsv")]),
     ])  # fmt:skip
 
     ds_connectivity_plot = pe.Node(
@@ -855,7 +855,7 @@ def init_parcellate_cifti_wf(
                 out_file="parcellated_atlas.pscalar.nii",
             ),
             name="parcellate_coverage",
-            iterfield=["atlas"],
+            iterfield=["atlas_label"],
         )
         workflow.connect([
             (inputnode, parcellate_coverage, [("atlas_files", "atlas_label")]),
@@ -890,12 +890,12 @@ def init_parcellate_cifti_wf(
             out_file="parcellated_data.pscalar.nii",
         ),
         name="parcellate_data",
-        iterfield=["atlas", "cifti_weights"],
+        iterfield=["atlas_label", "cifti_weights"],
         mem_gb=mem_gb["resampled"],
     )
     workflow.connect([
         (inputnode, parcellate_data, [
-            ("denoised_bold", "in_file"),
+            ("in_file", "in_file"),
             ("atlas_files", "atlas_label"),
         ]),
         (coverage_buffer, parcellate_data, [("vertexwise_coverage", "cifti_weights")]),
