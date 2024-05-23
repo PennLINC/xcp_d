@@ -269,6 +269,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
     for file_to_parcellate in files_to_parcellate:
         parcellate_surface_wf = init_parcellate_cifti_wf(
+            mem_gb={"resampled": 2},
             compute_mask=True,
             name=f"parcellate_{file_to_parcellate}_wf",
         )
@@ -745,6 +746,7 @@ def init_parcellate_cifti_wf(
     compute_mask=True,
     name="parcellate_cifti_wf",
 ):
+    """Parcellate a CIFTI file using a set of atlases."""
     from xcp_d.interfaces.connectivity import CiftiToTSV
     from xcp_d.interfaces.workbench import CiftiMath, CiftiParcellateWorkbench
     from xcp_d.utils.utils import create_cifti_mask
