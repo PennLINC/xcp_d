@@ -1115,27 +1115,49 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         position=0,
         desc="File to match brainordinates of.",
     )
-    cifti_out = File(
+    out_file = File(
         name_source=["label"],
-        name_template="resampled_%s.dlabel.nii",
+        name_template="resampled_%s.dscalar.nii",
         keep_extension=False,
         argstr="%s",
         position=1,
         desc="The output cifti file.",
     )
-    label = File(
+    volume_all = File(
         exists=True,
-        mandatory=True,
-        argstr="-cifti %s",
+        mandatory=False,
+        argstr="-volume-all %s",
         position=2,
-        desc="Use input data from surface label files. Input label file.",
+        desc="Use input data from volume files. Input volume file.",
+    )
+    from_cropped = traits.Bool(
+        False,
+        usedefault=True,
+        mandatory=False,
+        argstr="-from-cropped",
+        position=3,
+        desc="Use input data from cropped volume files.",
+    )
+    lh_surface = File(
+        exists=True,
+        mandatory=False,
+        argstr="-metric CORTEX_LEFT %s",
+        position=4,
+        desc="Use input data from surface files. Input surface file.",
+    )
+    rh_surface = File(
+        exists=True,
+        mandatory=False,
+        argstr="-metric CORTEX_RIGHT %s",
+        position=5,
+        desc="Use input data from surface files. Input surface file.",
     )
 
 
 class _CiftiCreateDenseFromTemplateOutputSpec(TraitedSpec):
     """Output specification for the CiftiCreateDenseFromTemplate command."""
 
-    cifti_out = File(exists=True, desc="output CIFTI file")
+    out_file = File(exists=True, desc="output CIFTI file")
 
 
 class CiftiCreateDenseFromTemplate(WBCommand):
@@ -1158,12 +1180,18 @@ class CiftiCreateDenseFromTemplate(WBCommand):
     --------
     >>> ccdft = CiftiCreateDenseFromTemplate()
     >>> ccdft.inputs.template_cifti = "sub-01_task-rest_bold.dtseries.nii"
-    >>> ccdft.inputs.label = "parcellation.dlabel.nii"
+    >>> ccdft.inputs.volume_all = "parcellation.nii.gz"
+    >>> ccdft.inputs.from_cropped = True
+    >>> ccdft.inputs.lh_surface = "lh.func.gii"
+    >>> ccdft.inputs.rh_surface = "rh.func.gii"
     >>> ccdft.cmdline
     wb_command -cifti-create-dense-from-template \
         sub-01_task-rest_bold.dtseries.nii \
-        resampled_parcellation.dlabel.nii \
-        -label parcellation.dlabel.nii
+        resampled_parcellation.dscalar.nii \
+        -volume-all parcellation.nii.gz \
+        -from-cropped \
+        -metric CORTEX_LEFT lh.func.gii \
+        -metric CORTEX_RIGHT rh.func.gii
     """
 
     input_spec = _CiftiCreateDenseFromTemplateInputSpec
@@ -1172,7 +1200,7 @@ class CiftiCreateDenseFromTemplate(WBCommand):
 
 
 class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
-    """Input specification for the CiftiCreateDenseFromTemplate command."""
+    """Input specification for the CiftiChangeMapping command."""
 
     data_cifti = File(
         exists=True,
@@ -1207,7 +1235,7 @@ class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
 
 
 class _CiftiChangeMappingOutputSpec(TraitedSpec):
-    """Output specification for the CiftiCreateDenseFromTemplate command."""
+    """Output specification for the CiftiChangeMapping command."""
 
     cifti_out = File(exists=True, desc="output CIFTI file")
 
