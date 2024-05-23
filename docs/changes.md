@@ -4,6 +4,8 @@
 
 This is a patch release fixing small bugs in 0.7.1.
 
+**There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
+
 ### 🎉 Exciting New Features
 
 * Make `GeneratedBy` in preprocessing derivatives' `dataset_description.json` optional by @tsalo in https://github.com/PennLINC/xcp_d/pull/1151
@@ -23,6 +25,8 @@ This is a patch release fixing small bugs in 0.7.1.
 ## 0.7.1
 
 This release prepares for the XCP-D manuscript.
+
+**There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
 
 ### 🛠 Breaking Changes
 
@@ -243,7 +247,6 @@ The 0.5.1 fixes some bugs for the XCP-D manuscript.
 ## 0.5.0
 
 The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce any backwards-incompatible changes between this release and 1.0.0 (the official paper release).
-<!-- Release notes generated using configuration in .github/release.yml at main -->
 
 ### 🛠 Breaking Changes
 
