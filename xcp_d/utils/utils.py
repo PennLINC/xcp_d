@@ -16,7 +16,10 @@ def check_deps(workflow):
     return sorted(
         (node.interface.__class__.__name__, node.interface._cmd)
         for node in workflow._get_all_nodes()
-        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
+        if (
+            hasattr(node.interface, "_cmd")
+            and which(node.interface._cmd.split()[0]) is None
+        )
     )
 
 
@@ -277,7 +280,9 @@ def butter_bandpass(
         fs=sampling_rate,  # eliminates need to normalize cutoff frequencies
     )
 
-    filtered_data = np.zeros_like(data)  # create something to populate filtered values with
+    filtered_data = np.zeros_like(
+        data
+    )  # create something to populate filtered values with
 
     # apply the filter, loop through columns of regressors
     for i_voxel in range(filtered_data.shape[1]):
@@ -422,15 +427,23 @@ def denoise_with_nilearn(
 
     if censor_and_interpolate:
         # Replace high-motion volumes in the BOLD data and confounds with interpolated values.
-        preprocessed_bold = _interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
+        preprocessed_bold = _interpolate(
+            arr=preprocessed_bold, sample_mask=sample_mask, TR=TR
+        )
         if detrend_and_denoise:
-            confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
+            confounds_arr = _interpolate(
+                arr=confounds_arr, sample_mask=sample_mask, TR=TR
+            )
 
     if detrend_and_denoise:
         # Detrend the interpolated data and confounds.
         # This also mean-centers the data and confounds.
-        preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=False)
-        confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
+        preprocessed_bold = standardize_signal(
+            preprocessed_bold, detrend=True, standardize=False
+        )
+        confounds_arr = standardize_signal(
+            confounds_arr, detrend=True, standardize=False
+        )
 
     if low_pass or high_pass:
         # Now apply the bandpass filter to the interpolated data and confounds
@@ -509,7 +522,11 @@ def _interpolate(*, arr, sample_mask, TR):
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
     # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
-    gaps = [[start, end] for start, end in zip(outlier_idx, outlier_idx[1:]) if start + 1 < end]
+    gaps = [
+        [start, end]
+        for start, end in zip(outlier_idx, outlier_idx[1:])
+        if start + 1 < end
+    ]
     edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
     consecutive_outliers_idx = list(zip(edges, edges))
     first_outliers = consecutive_outliers_idx[0]
@@ -521,7 +538,9 @@ def _interpolate(*, arr, sample_mask, TR):
             f"Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) "
             "will be replaced with first non-outlier volume's values."
         )
-        interpolated_arr[: first_outliers[1] + 1, :] = interpolated_arr[first_outliers[1] + 1, :]
+        interpolated_arr[: first_outliers[1] + 1, :] = interpolated_arr[
+            first_outliers[1] + 1, :
+        ]
 
     # Replace outliers at end of run
     if last_outliers[1] == n_volumes - 1:
@@ -529,7 +548,9 @@ def _interpolate(*, arr, sample_mask, TR):
             f"Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) "
             "will be replaced with last non-outlier volume's values."
         )
-        interpolated_arr[last_outliers[0] :, :] = interpolated_arr[last_outliers[0] - 1, :]
+        interpolated_arr[last_outliers[0] :, :] = interpolated_arr[
+            last_outliers[0] - 1, :
+        ]
 
     return interpolated_arr
 
@@ -612,3 +633,30 @@ def _create_mem_gb(bold_fname):
         mem_gbz["resampled"] = 3
 
     return mem_gbz
+
+
+def create_cifti_mask(data_file):
+    """Replace all-zero time series with NaNs."""
+    import os
+
+    import nibabel as nb
+    import numpy as np
+
+    from xcp_d.utils.write_save import write_ndata
+
+    data_fname = os.path.basename(data_file)
+
+    mask_file = os.path.abspath(f"masked_{data_fname}")
+    data_img = nb.load(data_file)
+    data_arr = data_img.get_fdata()
+
+    # Flag vertices where the time series is all zeros or NaNs
+    bad_vertices_idx = np.where(
+        np.all(np.logical_or(data_arr == 0, np.isnan(data_arr)), axis=0)
+    )[0]
+    data_arr[:, bad_vertices_idx] = np.nan
+    # Set any vertex with a NaN to 0 and all others to 1 in the mask file
+    vertex_weights_arr = np.all(~np.isnan(data_arr), axis=0).astype(int)
+
+    write_ndata(vertex_weights_arr, template=data_file, filename=mask_file)
+    return mask_file

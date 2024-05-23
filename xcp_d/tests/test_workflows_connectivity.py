@@ -11,10 +11,6 @@ from nilearn.maskers import NiftiLabelsMasker
 from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.connectivity import _sanitize_nifti_atlas
-from xcp_d.interfaces.workbench import (
-    CiftiCreateDenseFromTemplate,
-    CiftiParcellateWorkbench,
-)
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
@@ -265,26 +261,6 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
 
-    # Perform the resampling and parcellation done by init_load_atlases_wf
-    parcellated_atlases = []
-    for i_file, atlas_file in enumerate(atlas_files):
-        resample_atlas_to_data = CiftiCreateDenseFromTemplate(
-            template_cifti=bold_file,
-            label=atlas_file,
-        )
-        resample_results = resample_atlas_to_data.run(cwd=tmpdir)
-
-        parcellate_atlas = CiftiParcellateWorkbench(
-            direction="COLUMN",
-            only_numeric=True,
-            out_file=f"parcellated_atlas_{i_file}.pscalar.nii",
-            atlas_label=atlas_file,
-            in_file=resample_results.outputs.cifti_out,
-        )
-        parcellate_atlas_results = parcellate_atlas.run(cwd=tmpdir)
-
-        parcellated_atlases.append(parcellate_atlas_results.outputs.out_file)
-
     # Create the node and a tmpdir to write its results out to
     with mock_config():
         config.execution.xcp_d_dir = tmpdir
@@ -303,7 +279,6 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.inputs.inputnode.atlases = atlas_names
         connectivity_wf.inputs.inputnode.atlas_files = atlas_files
         connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
-        connectivity_wf.inputs.inputnode.parcellated_atlas_files = parcellated_atlases
         connectivity_wf.base_dir = tmpdir
         connectivity_wf_res = connectivity_wf.run()
 

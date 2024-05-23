@@ -902,3 +902,129 @@ def _sanitize_nifti_atlas(atlas, df):
     new_atlas_img = nb.Nifti1Image(new_atlas_data, atlas_img.affine, atlas_img.header)
 
     return new_atlas_img, df
+
+
+class _CiftiToTSVInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Parcellated CIFTI file to extract into a TSV.",
+    )
+    atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
+
+
+class _CiftiToTSVOutputSpec(TraitedSpec):
+    tsv_file = File(exists=True, desc="Parcellated data TSV file.")
+
+
+class CiftiToTSV(SimpleInterface):
+    """Extract data from a parcellated CIFTI file into a TSV file."""
+
+    input_spec = _CiftiToTSVInputSpec
+    output_spec = _CiftiToTSVOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+        atlas_labels = self.inputs.atlas_labels
+
+        assert in_file.endswith((".ptseries.nii", ".pscalar.nii", ".pconn.nii")), in_file
+
+        img = nb.load(in_file)
+        node_labels_df = pd.read_table(atlas_labels, index_col="index")
+        node_labels_df.sort_index(inplace=True)  # ensure index is in order
+
+        # Explicitly remove label corresponding to background (index=0), if present.
+        if 0 in node_labels_df.index:
+            LOGGER.warning(
+                "Index value of 0 found in atlas labels file. "
+                "Will assume this describes the background and ignore it."
+            )
+            node_labels_df = node_labels_df.drop(index=[0])
+
+        if "cifti_label" in node_labels_df.columns:
+            parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
+        elif "label_7network" in node_labels_df.columns:
+            node_labels_df["label_7network"] = node_labels_df["label_7network"].fillna(
+                node_labels_df["label"]
+            )
+            parcel_label_mapper = dict(
+                zip(node_labels_df["label_7network"], node_labels_df["label"])
+            )
+        else:
+            raise Exception(atlas_labels)
+
+        if in_file.endswith(".pconn.nii"):
+            ax0 = img.header.get_axis(0)
+            ax1 = img.header.get_axis(1)
+            ax0_labels = ax0.name
+            ax1_labels = ax1.name
+            df = pd.DataFrame(columns=ax1_labels, index=ax0_labels, data=img.get_fdata())
+            check_axes = [0, 1]
+        else:
+            # Second axis is the parcels
+            ax1 = img.header.get_axis(1)
+            assert isinstance(ax1, nb.cifti2.ParcelsAxis), type(ax1)
+            df = pd.DataFrame(columns=ax1.name, data=img.get_fdata())
+            check_axes = [1]
+
+        # Check that all labels in the atlas labels DF are present in the TSV file, and vice versa.
+        if 0 in check_axes:
+            # Replace values in index, which should match the keys in the parcel_label_mapper
+            # dictionary, with the corresponding values in the dictionary.
+            # If any index values are not in the dictionary, raise an error with a list of the
+            # missing index values.
+            # If any dictionary values are not in the index, raise an error with a list of the
+            # missing dictionary values.
+            missing_index_values = []
+            missing_dict_values = []
+            for index_value in df.index:
+                if index_value not in parcel_label_mapper:
+                    missing_index_values.append(index_value)
+
+                for dict_value in parcel_label_mapper.values():
+                    if dict_value not in df.index:
+                        missing_dict_values.append(dict_value)
+
+                if missing_index_values:
+                    raise ValueError(
+                        f"Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}"
+                    )
+
+                if missing_dict_values:
+                    raise ValueError(f"Missing atlas labels in CIFTI file: {missing_dict_values}")
+
+            # Replace the index values with the corresponding dictionary values.
+            df.index = [parcel_label_mapper[i] for i in df.index]
+
+        if 1 in check_axes:
+            # Repeat with columns
+            missing_columns = []
+            missing_dict_values = []
+            for column_value in df.columns:
+                if column_value not in parcel_label_mapper:
+                    missing_columns.append(column_value)
+
+                for dict_value in parcel_label_mapper.values():
+                    if dict_value not in df.columns:
+                        missing_dict_values.append(dict_value)
+
+                if missing_columns:
+                    raise ValueError(
+                        f"Missing CIFTI labels in atlas labels DataFrame: {missing_columns}"
+                    )
+
+                if missing_dict_values:
+                    raise ValueError(f"Missing atlas labels in CIFTI file: {missing_dict_values}")
+
+            # Replace the column names with the corresponding dictionary values.
+            df.columns = [parcel_label_mapper[i] for i in df.columns]
+
+        # Save out the TSV
+        self._results["tsv_file"] = fname_presuffix(
+            "extracted.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        df.to_csv(self._results["tsv_file"], sep="\t", na_rep="n/a", index_label="Node")
+
+        return runtime
