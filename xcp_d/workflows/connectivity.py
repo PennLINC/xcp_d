@@ -216,6 +216,8 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
     myelin
     myelin_smoothed
     """
+    from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate
+
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
@@ -268,6 +270,16 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
     atlas_file_grabber.inputs.atlas = selected_atlases
 
     for file_to_parcellate in files_to_parcellate:
+        resample_atlas_to_surface = pe.MapNode(
+            CiftiCreateDenseFromTemplate(),
+            name=f"resample_atlas_to_{file_to_parcellate}",
+            iterfield=["label"],
+        )
+        workflow.connect([
+            (inputnode, resample_atlas_to_surface, [(file_to_parcellate, "template_cifti")]),
+            (atlas_file_grabber, resample_atlas_to_surface, [("atlas_file", "label")]),
+        ])  # fmt:skip
+
         parcellate_surface_wf = init_parcellate_cifti_wf(
             mem_gb={"resampled": 2},
             compute_mask=True,
@@ -276,8 +288,10 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
         workflow.connect([
             (inputnode, parcellate_surface_wf, [(file_to_parcellate, "inputnode.in_file")]),
             (atlas_file_grabber, parcellate_surface_wf, [
-                ("atlas_file", "inputnode.atlas_files"),
                 ("atlas_labels_file", "inputnode.atlas_labels_files"),
+            ]),
+            (resample_atlas_to_surface, parcellate_surface_wf, [
+                ("out_file", "inputnode.atlas_files"),
             ]),
         ])  # fmt:skip
 
