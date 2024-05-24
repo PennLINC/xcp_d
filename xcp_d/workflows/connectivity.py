@@ -712,12 +712,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ("outputnode.coverage_cifti", "inputnode.coverage_cifti"),
             ]),
             (reduce_bold, parcellate_exact_bold_wf, [("out_file", "inputnode.in_file")]),
-            (parcellate_exact_bold_wf, collect_exact_ciftis, [
-                ("outputnode.parcellated_cifti", f"in{i_exact_scan + 1}"),
-            ]),
-            (parcellate_exact_bold_wf, collect_exact_tsvs, [
-                ("outputnode.parcellated_tsv", f"in{i_exact_scan + 1}"),
-            ]),
         ])  # fmt:skip
 
         # Correlate the parcellated data
