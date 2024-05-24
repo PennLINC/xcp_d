@@ -989,7 +989,7 @@ def init_parcellate_cifti_wf(
 
     # Mask out uncovered nodes from parcellated denoised data
     mask_parcellated_data = pe.MapNode(
-        CiftiMask,
+        CiftiMask(),
         name="mask_parcellated_data",
         iterfield=["in_file", "mask"],
         mem_gb=mem_gb["resampled"],
