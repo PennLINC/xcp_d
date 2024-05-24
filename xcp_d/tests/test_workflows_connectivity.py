@@ -286,25 +286,27 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         nodes = get_nodes(connectivity_wf_res)
 
         # Let's find the cifti files
-        pscalar = nodes["connectivity_wf.parcellate_data"].get_output("coverage_ciftis")[0]
+        pscalar = nodes["connectivity_wf.parcellate_bold_wf.parcellate_coverage"].get_output(
+            "out_file"
+        )[0]
         assert os.path.isfile(pscalar)
-        timeseries_ciftis = nodes["connectivity_wf.parcellate_data"].get_output(
-            "timeseries_ciftis"
-        )[0]
+        timeseries_ciftis = nodes[
+            "connectivity_wf.parcellate_bold_wf.mask_parcellated_data"
+        ].get_output("out_file")[0]
         assert os.path.isfile(timeseries_ciftis)
-        correlation_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
-            "correlation_ciftis"
-        )[0]
+        correlation_ciftis = nodes["connectivity_wf.correlate_bold"].get_output("out_file")[0]
         assert os.path.isfile(correlation_ciftis)
 
         # Let's find the tsv files
-        coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
+        coverage = nodes["connectivity_wf.parcellate_bold_wf.coverage_to_tsv"].get_output(
+            "coverage_tsv"
+        )[0]
         assert os.path.isfile(coverage)
-        timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
+        timeseries = nodes["connectivity_wf.parcellate_bold_wf.cifti_to_tsv"].get_output(
+            "out_file"
+        )[0]
         assert os.path.isfile(timeseries)
-        correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[
-            0
-        ]
+        correlations = nodes["connectivity_wf.dconn_to_tsv"].get_output("out_file")[0]
         assert os.path.isfile(correlations)
 
         # Let's read in the ciftis' data
