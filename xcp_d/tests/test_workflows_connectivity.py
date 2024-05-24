@@ -299,7 +299,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
         # Let's find the tsv files
         coverage = nodes["connectivity_wf.parcellate_bold_wf.coverage_to_tsv"].get_output(
-            "coverage_tsv"
+            "out_file"
         )[0]
         assert os.path.isfile(coverage)
         timeseries = nodes["connectivity_wf.parcellate_bold_wf.cifti_to_tsv"].get_output(
