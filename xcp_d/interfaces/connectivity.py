@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Handling functional connectvity."""
+"""Handling functional connectivity."""
 import gc
 
 import matplotlib.pyplot as plt
@@ -641,7 +641,11 @@ class CiftiToTSV(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=True,
         )
-        df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index=False)
+
+        if in_file.endswith(".pconn.nii"):
+            df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index_label="Node")
+        else:
+            df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index=False)
 
         return runtime
 
