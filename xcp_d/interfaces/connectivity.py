@@ -641,7 +641,7 @@ class CiftiToTSV(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=True,
         )
-        df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index_label="Node")
+        df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index=False)
 
         return runtime
 
