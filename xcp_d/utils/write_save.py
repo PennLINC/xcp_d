@@ -80,7 +80,7 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
 
     Parameters
     ----------
-    data matrix : (SxT) numpy.ndarray
+    data_matrix : (SxT) numpy.ndarray
         The array to save to a file.
     template : :obj:`str`
         Path to a template image, from which header and affine information will be used.
