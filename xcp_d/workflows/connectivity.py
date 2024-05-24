@@ -542,6 +542,8 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
     ----------
     mem_gb : :obj:`dict`
         Dictionary of memory allocations.
+    exact_scans : :obj:`list`
+        List of exact scans to compute correlations for.
     %(name)s
         Default is "connectivity_wf".
 
