@@ -21,7 +21,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.write_save import get_cifti_intents
+from xcp_d.utils.write_save import get_cifti_intents, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -1026,5 +1026,64 @@ class CiftiToTSV(SimpleInterface):
             use_ext=True,
         )
         df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index_label="Node")
+
+        return runtime
+
+
+class _CiftiMaskInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to mask.",
+    )
+    mask = File(
+        exists=True,
+        mandatory=True,
+        desc="Mask pscalar or dscalar to apply to in_file.",
+    )
+
+
+class _CiftiMaskOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Masked CIFTI file.")
+
+
+class CiftiMask(SimpleInterface):
+    """Mask a CIFTI file by replacing masked values with NaNs."""
+
+    input_spec = _CiftiMaskInputSpec
+    output_spec = _CiftiMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+        mask = self.inputs.mask
+
+        supported_extensions = (".ptseries.nii", ".pscalar.nii", ".dtseries.nii", ".dscalar.nii")
+        if not in_file.endswith(supported_extensions):
+            raise ValueError(f"Unsupported CIFTI extension for 'in_file': {in_file}")
+
+        if not mask.endswith((".pscalar.nii", ".dscalar.nii")):
+            raise ValueError(f"Unsupported CIFTI extension for 'mask': {mask}")
+
+        in_img = nb.load(in_file)
+        mask_img = nb.load(mask)
+        if in_img.shape[1] != mask_img.shape[1]:
+            raise ValueError(
+                "CIFTI files have different number of parcels/vertices. "
+                f"{in_file} ({in_img.shape}) vs {mask} ({mask_img.shape})"
+            )
+
+        in_data = in_img.get_fdata()
+        mask_data = mask_img.get_fdata()[0, :]
+        mask_data = mask_data.astype(bool)
+        in_data[:, mask_data] = np.nan
+
+        # Save out the TSV
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            prefix="masked_",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        write_ndata(in_data.T, template=in_file, filename=self._results["out_file"])
 
         return runtime

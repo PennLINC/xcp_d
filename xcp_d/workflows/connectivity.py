@@ -872,7 +872,7 @@ def init_parcellate_cifti_wf(
     coverage_tsv
         Coverage TSV files. One for each atlas. Only output if `compute_mask` is True.
     """
-    from xcp_d.interfaces.connectivity import CiftiToTSV
+    from xcp_d.interfaces.connectivity import CiftiMask, CiftiToTSV
     from xcp_d.interfaces.workbench import CiftiMath, CiftiParcellateWorkbench
     from xcp_d.utils.utils import create_cifti_mask
 
@@ -989,13 +989,13 @@ def init_parcellate_cifti_wf(
 
     # Mask out uncovered nodes from parcellated denoised data
     mask_parcellated_data = pe.MapNode(
-        CiftiMath(expression="data * (mask > 0)"),
+        CiftiMask,
         name="mask_parcellated_data",
-        iterfield=["data", "mask"],
+        iterfield=["in_file", "mask"],
         mem_gb=mem_gb["resampled"],
     )
     workflow.connect([
-        (parcellate_data, mask_parcellated_data, [("out_file", "data")]),
+        (parcellate_data, mask_parcellated_data, [("out_file", "in_file")]),
         (threshold_coverage, mask_parcellated_data, [("out_file", "mask")]),
         (mask_parcellated_data, outputnode, [("out_file", "parcellated_cifti")]),
     ])  # fmt:skip
