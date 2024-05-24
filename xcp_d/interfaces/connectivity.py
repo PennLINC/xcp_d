@@ -695,7 +695,7 @@ class CiftiMask(SimpleInterface):
         in_data = in_img.get_fdata()
         mask_data = mask_img.get_fdata()[0, :]
         mask_data = mask_data.astype(bool)
-        in_data[:, mask_data] = np.nan
+        in_data[:, ~mask_data] = np.nan
 
         # Save out the TSV
         self._results["out_file"] = fname_presuffix(
