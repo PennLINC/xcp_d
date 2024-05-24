@@ -348,7 +348,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
             mismatch_idx = np.vstack(
                 np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
             ).T
-            raise ValueError(f"{mismatch_idx}\n\n{np.where(np.isnan(pconn_arr))}")
+            raise ValueError(f"{mismatch_idx}\n\n{np.vstack(np.where(np.isnan(pconn_arr)))}")
 
         if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):
             diff = pconn_arr - calculated_correlations
