@@ -271,6 +271,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         resample_atlas_to_data = CiftiCreateDenseFromTemplate(
             template_cifti=bold_file,
             label=atlas_file,
+            out_file="resampled_atlas_to_data.dscalar.nii",
         )
         resample_results = resample_atlas_to_data.run(cwd=tmpdir)
 
