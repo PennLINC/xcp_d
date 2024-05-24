@@ -1189,8 +1189,8 @@ class CiftiCreateDenseFromTemplate(WBCommand):
     >>> ccdft.inputs.template_cifti = "sub-01_task-rest_bold.dtseries.nii"
     >>> ccdft.inputs.volume_all = "parcellation.nii.gz"
     >>> ccdft.inputs.from_cropped = True
-    >>> ccdft.inputs.lh_surface = "lh.func.gii"
-    >>> ccdft.inputs.rh_surface = "rh.func.gii"
+    >>> ccdft.inputs.left_metric = "lh.func.gii"
+    >>> ccdft.inputs.right_metric = "rh.func.gii"
     >>> ccdft.cmdline
     wb_command -cifti-create-dense-from-template \
         sub-01_task-rest_bold.dtseries.nii \

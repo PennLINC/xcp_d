@@ -271,7 +271,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
     for file_to_parcellate in files_to_parcellate:
         resample_atlas_to_surface = pe.MapNode(
-            CiftiCreateDenseFromTemplate(),
+            CiftiCreateDenseFromTemplate(out_file="resampled_atlas.dlabel.nii"),
             name=f"resample_atlas_to_{file_to_parcellate}",
             iterfield=["label"],
         )

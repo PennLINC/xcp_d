@@ -345,7 +345,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
-        CiftiCreateDenseFromTemplate(from_cropped=True),
+        CiftiCreateDenseFromTemplate(from_cropped=True, out_file="reho.dscalar.nii"),
         name="merge_cifti",
         mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
