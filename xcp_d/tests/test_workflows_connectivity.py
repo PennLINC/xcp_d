@@ -318,7 +318,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         assert pconn_arr.shape == (1056, 1056)
 
         # Read in the tsvs' data
-        coverage_arr = pd.read_table(coverage, index_col="Node").to_numpy()
+        coverage_arr = pd.read_table(coverage).to_numpy()
         timeseries_arr = pd.read_table(timeseries).to_numpy()
         correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
 
