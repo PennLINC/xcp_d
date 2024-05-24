@@ -535,7 +535,7 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
             with mock_config():
                 wf = init_functional_connectivity_cifti_wf(
                     mem_gb={"resampled": 2},
-                    exact_scans=[],
+                    exact_scans=[30, 40],
                 )
 
     Parameters
@@ -815,6 +815,18 @@ def init_parcellate_cifti_wf(
 ):
     """Parcellate a CIFTI file using a set of atlases.
 
+    Part of the parcellation includes applying vertex-wise and node-wise masks.
+
+    Vertex-wise masks are typically calculated from the full BOLD run,
+    wherein any vertex that has a time series of all zeros or NaNs is excluded.
+    Additionally, if *any* volumes in a vertex's time series are NaNs,
+    that vertex will be excluded.
+
+    The node-wise mask is determined based on the vertex-wise mask and the workflow's
+    coverage threshold.
+    Any nodes in the atlas with less than the coverage threshold's % of vertices retained by the
+    vertex-wise mask will have that node's time series set to NaNs.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -832,7 +844,10 @@ def init_parcellate_cifti_wf(
     mem_gb : :obj:`dict`
         Dictionary of memory allocations.
     compute_mask : :obj:`bool`
-        Whether to compute a mask for the CIFTI file.
+        Whether to compute a vertex-wise mask for the CIFTI file.
+        When processing full BOLD runs, this should be True.
+        When processing truncated BOLD runs or scalar maps, this should be False,
+        and the vertex-wise mask should be provided via the inputnode..
         Default is True.
     name : :obj:`str`
         Workflow name.

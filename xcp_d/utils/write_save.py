@@ -131,16 +131,18 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         n_volumes = data_matrix.shape[0]
         _, _, out_extension = split_filename(filename)
 
-        if filename.endswith(".dscalar.nii"):
+        if filename.endswith((".dscalar.nii", ".pscalar.nii")):
             # Dense scalar files have (ScalarAxis, BrainModelAxis)
+            # Parcellated scalar files have (ScalarAxis, ParcelsAxis)
             scalar_names = [f"#{i + 1}" for i in range(n_volumes)]
             ax_0 = nb.cifti2.cifti2_axes.ScalarAxis(name=scalar_names)
             ax_1 = template_img.header.get_axis(1)
             new_header = nb.Cifti2Header.from_axes((ax_0, ax_1))
             img = nb.Cifti2Image(data_matrix, new_header)
 
-        elif filename.endswith(".dtseries.nii"):
+        elif filename.endswith((".dtseries.nii", ".ptseries.nii")):
             # Dense series files have (SeriesAxis, BrainModelAxis)
+            # Parcellated series files have (SeriesAxis, ParcelsAxis)
             if n_volumes == template_img.shape[0]:
                 # same number of volumes in data as original image,
                 # so we can just use the original axis
