@@ -345,7 +345,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
         # pnc data doesn't have complete coverage, so we must allow NaNs here.
         # First set calculated_correlations diagonal to NaNs
-        np.fill_diagonal(calculated_correlations, np.nan)
+        np.fill_diagonal(pconn_arr, np.nan)
         if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations)):
             mismatch_idx = np.vstack(
                 np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
