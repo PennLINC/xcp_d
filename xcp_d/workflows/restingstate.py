@@ -142,7 +142,7 @@ series to retain the original scaling.
         ),
         name="alff_plot",
     )
-    alff_plot.inputs.output_path = "alff.svg"
+    alff_plot.inputs.output_path = "alff.png"
     alff_plot.inputs.name_source = name_source
 
     # fmt:off
@@ -358,7 +358,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         ),
         name="reho_cifti_plot",
     )
-    reho_plot.inputs.output_path = "reho.svg"
+    reho_plot.inputs.output_path = "reho.png"
     reho_plot.inputs.name_source = name_source
 
     ds_reho_plot = pe.Node(
