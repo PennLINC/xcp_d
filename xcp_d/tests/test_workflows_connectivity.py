@@ -351,9 +351,10 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
                 np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
             ).T
             raise ValueError(
+                f"{mismatch_idx.shape} mismatches\n\n"
                 f"{mismatch_idx}\n\n"
-                f"{pconn_arr[mismatch_idx]}\n\n"
-                f"{calculated_correlations[mismatch_idx]}"
+                f"{pconn_arr[mismatch_idx[:, 0], mismatch_idx[:, 1]]}\n\n"
+                f"{calculated_correlations[mismatch_idx[:, 0], mismatch_idx[:, 1]]}"
             )
 
         if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):
