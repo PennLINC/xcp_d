@@ -1041,7 +1041,7 @@ class PlotCiftiParcellation(SimpleInterface):
                 view="medial",
                 engine="matplotlib",
                 cmap="cool",
-                colorbar=False,
+                colorbar=True,
                 axes=inner_subplots[3],
                 figure=fig,
             )
