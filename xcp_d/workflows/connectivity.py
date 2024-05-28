@@ -685,7 +685,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     )
     workflow.connect([
         (inputnode, ds_plot_coverage, [("name_source", "source_file")]),
-        (plot_coverage, ds_plot_coverage, [("connectplot", "in_file")]),
+        (plot_coverage, ds_plot_coverage, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     # Correlate the parcellated data
