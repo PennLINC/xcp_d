@@ -691,7 +691,7 @@ class _ReduceCiftiOutputSpec(TraitedSpec):
 
 
 class ReduceCifti(SimpleInterface):
-    """Randomly flag volumes to censor."""
+    """Remove flagged volumes from a CIFTI series file."""
 
     input_spec = _ReduceCiftiInputSpec
     output_spec = _ReduceCiftiOutputSpec
