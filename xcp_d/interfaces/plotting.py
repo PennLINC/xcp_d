@@ -957,7 +957,8 @@ class PlotCiftiParcellation(SimpleInterface):
                 for i in range(2)
                 for j in range(2)
             ]
-            inner_subplots = [ax.set_rasterized(True) for ax in inner_subplots]
+            for ax in inner_subplots:
+                ax.set_rasterized(True)
 
             img = nb.load(cortical_files[i_file])
             img_data = img.get_fdata()
