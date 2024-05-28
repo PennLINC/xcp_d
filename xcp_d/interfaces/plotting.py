@@ -889,6 +889,7 @@ class _PlotCiftiParcellationOutputSpec(TraitedSpec):
 
 
 class PlotCiftiParcellation(SimpleInterface):
+    """Plot a parcellated (.pscalar.nii) CIFTI file."""
 
     input_spec = _PlotCiftiParcellationInputSpec
     output_spec = _PlotCiftiParcellationOutputSpec

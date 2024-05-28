@@ -671,7 +671,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     )
     workflow.connect([
         (inputnode, plot_coverage, [("atlases", "labels")]),
-        (parcellate_bold_wf, plot_coverage, [("outputnode.coverage_cifti", "in_file")]),
+        (parcellate_bold_wf, plot_coverage, [("outputnode.coverage_cifti", "in_files")]),
     ])  # fmt:skip
 
     ds_plot_coverage = pe.Node(
@@ -803,7 +803,9 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     )
     workflow.connect([
         (inputnode, plot_parcellated_reho, [("atlases", "labels")]),
-        (parcellate_reho_wf, plot_parcellated_reho, [("outputnode.parcellated_cifti", "in_file")]),
+        (parcellate_reho_wf, plot_parcellated_reho, [
+            ("outputnode.parcellated_cifti", "in_files"),
+        ]),
     ])  # fmt:skip
 
     ds_plot_reho = pe.Node(
@@ -847,7 +849,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         workflow.connect([
             (inputnode, plot_parcellated_alff, [("atlases", "labels")]),
             (parcellate_alff_wf, plot_parcellated_alff, [
-                ("outputnode.parcellated_cifti", "in_file"),
+                ("outputnode.parcellated_cifti", "in_files"),
             ]),
         ])  # fmt:skip
 
