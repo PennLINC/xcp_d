@@ -1109,17 +1109,28 @@ def surf_data_from_cifti(data, axis, surf_name):
     https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/\
     we-nibabel-markiewicz/NiBabel.ipynb
     """
-    assert isinstance(axis, nb.cifti2.BrainModelAxis)
-    for name, data_indices, model in axis.iter_structures():
-        # Iterates over volumetric and surface structures
-        if name == surf_name:  # Just looking for a surface
-            data = data.T[data_indices]
-            # Assume brainmodels axis is last, move it to front
-            vtx_indices = model.vertex
-            # Generally 1-N, except medial wall vertices
-            surf_data = np.zeros((vtx_indices.max() + 1,) + data.shape[1:], dtype=data.dtype)
-            surf_data[vtx_indices] = data
-            return surf_data
+    assert isinstance(axis, (nb.cifti2.BrainModelAxis, nb.cifti2.ParcelsAxis))
+    if isinstance(axis, nb.cifti2.BrainModelAxis):
+        for name, data_indices, model in axis.iter_structures():
+            # Iterates over volumetric and surface structures
+            if name == surf_name:  # Just looking for a surface
+                data = data.T[data_indices]
+                # Assume brainmodels axis is last, move it to front
+                vtx_indices = model.vertex
+                # Generally 1-N, except medial wall vertices
+                surf_data = np.zeros((vtx_indices.max() + 1,) + data.shape[1:], dtype=data.dtype)
+                surf_data[vtx_indices] = data
+                return surf_data
+    else:
+        nvertices = axis.nvertices[surf_name]
+        surf_data = np.zeros(nvertices)
+        for i_label in range(len(axis.name)):
+            element_dict = axis.get_element(i_label)[2]
+            if surf_name in element_dict:
+                element_idx = element_dict[surf_name]
+                surf_data[element_idx] = data[0, i_label]
+
+        return surf_data
 
     raise ValueError(f"No structure named {surf_name}")
 

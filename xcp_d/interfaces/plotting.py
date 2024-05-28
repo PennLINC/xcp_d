@@ -9,7 +9,8 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from nilearn.plotting import plot_anat
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+from nilearn.plotting import plot_anat, plot_surf_stat_map
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -24,11 +25,12 @@ from nipype.interfaces.base import (
     traits,
 )
 from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
+from templateflow.api import get as get_template
 
 from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
-from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es
+from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
 from xcp_d.utils.write_save import read_ndata
 
@@ -860,3 +862,156 @@ class PNGAppend(FSLCommand):
         outputs = self._outputs().get()
         outputs["out_file"] = os.path.abspath(self.inputs.out_file)
         return outputs
+
+
+class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
+    in_files = traits.List(
+        File(exists=True),
+        mandatory=True,
+        desc="CIFTI files to plot.",
+    )
+    labels = traits.List(
+        traits.Str,
+        mandatory=True,
+        desc="Labels for the CIFTI files.",
+    )
+    out_file = File(
+        exists=False,
+        mandatory=False,
+        desc="Output file.",
+        default="plot.svg",
+        usedefault=True,
+    )
+
+
+class _PlotCiftiParcellationOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+
+
+class PlotCiftiParcellation(SimpleInterface):
+
+    input_spec = _PlotCiftiParcellationInputSpec
+    output_spec = _PlotCiftiParcellationOutputSpec
+
+    def _run_interface(self, runtime):
+        assert len(self.inputs.in_files) == len(self.inputs.labels)
+
+        rh = str(
+            get_template(
+                template="fsLR",
+                hemi="R",
+                density="32k",
+                suffix="midthickness",
+                extension=".surf.gii",
+            )
+        )
+        lh = str(
+            get_template(
+                template="fsLR",
+                hemi="L",
+                density="32k",
+                suffix="midthickness",
+                extension=".surf.gii",
+            )
+        )
+
+        # Create Figure and GridSpec.
+        # One subplot for each file. Each file will then have four subplots, arranged in a square.
+        n_files = len(self.inputs.in_files)
+        fig = plt.figure(constrained_layout=False)
+
+        if n_files == 1:
+            fig.set_size_inches(6, 6)
+            gs = GridSpec(1, 1, figure=fig)
+            subplots = [fig.add_subplot(gs[0, 0])]
+        else:
+            nrows = np.ceil(n_files / 2).astype(int)
+            fig.set_size_inches(12, 6 * nrows)
+            gs = GridSpec(nrows, 2, figure=fig)
+            subplots = [fig.add_subplot(gs[i, j]) for i in range(nrows) for j in range(2)]
+            subplots = subplots[:n_files]
+
+        for i_file in range(n_files):
+            subplot = subplots[i_file]
+            subplot.set_title(self.inputs.labels[i_file])
+
+            # Create 4 Axes (2 rows, 2 columns) from the subplot
+            gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot)
+            inner_subplots = [fig.add_subplot(gs_inner[i, j]) for i in range(2) for j in range(2)]
+
+            img = nb.load(self.inputs.in_files[i_file])
+            img_data = img.get_fdata()
+            img_axes = [img.header.get_axis(i) for i in range(img.ndim)]
+            lh_surf_data = surf_data_from_cifti(
+                img_data,
+                img_axes[1],
+                "CIFTI_STRUCTURE_CORTEX_LEFT",
+            )
+            rh_surf_data = surf_data_from_cifti(
+                img_data,
+                img_axes[1],
+                "CIFTI_STRUCTURE_CORTEX_RIGHT",
+            )
+
+            vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
+            vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
+
+            plot_surf_stat_map(
+                lh,
+                lh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="left",
+                view="lateral",
+                engine="matplotlib",
+                colorbar=False,
+                axes=inner_subplots[0],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                lh,
+                lh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="left",
+                view="medial",
+                engine="matplotlib",
+                colorbar=False,
+                axes=inner_subplots[1],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                rh,
+                rh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="right",
+                view="lateral",
+                engine="matplotlib",
+                colorbar=False,
+                axes=inner_subplots[2],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                rh,
+                rh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="right",
+                view="medial",
+                engine="matplotlib",
+                colorbar=False,
+                axes=inner_subplots[3],
+                figure=fig,
+            )
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_file.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
+        plt.close(fig)
+
+        return runtime

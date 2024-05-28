@@ -590,6 +590,7 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
     """
     from xcp_d.interfaces.censoring import ReduceCifti
     from xcp_d.interfaces.connectivity import CiftiToTSV, ConnectPlot
+    from xcp_d.interfaces.plotting import PlotCiftiParcellation
     from xcp_d.interfaces.workbench import CiftiCorrelation
 
     workflow = Workflow(name=name)
@@ -661,6 +662,30 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("outputnode.coverage_cifti", "coverage_ciftis"),
             ("outputnode.coverage_tsv", "coverage"),
         ]),
+    ])  # fmt:skip
+
+    plot_coverage = pe.Node(
+        PlotCiftiParcellation(),
+        name="plot_coverage",
+        mem_gb=mem_gb["resampled"],
+    )
+    workflow.connect([
+        (inputnode, plot_coverage, [("atlases", "labels")]),
+        (parcellate_bold_wf, plot_coverage, [("outputnode.coverage_cifti", "in_file")]),
+    ])  # fmt:skip
+
+    ds_plot_coverage = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="coverageplot",
+            datatype="figures",
+        ),
+        name="ds_plot_coverage",
+        run_without_submitting=False,
+    )
+    workflow.connect([
+        (inputnode, ds_plot_coverage, [("name_source", "source_file")]),
+        (plot_coverage, ds_plot_coverage, [("connectplot", "in_file")]),
     ])  # fmt:skip
 
     # Correlate the parcellated data
@@ -771,6 +796,30 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         (parcellate_reho_wf, outputnode, [("outputnode.parcellated_tsv", "parcellated_reho")]),
     ])  # fmt:skip
 
+    plot_parcellated_reho = pe.Node(
+        PlotCiftiParcellation(),
+        name="plot_parcellated_reho",
+        mem_gb=mem_gb["resampled"],
+    )
+    workflow.connect([
+        (inputnode, plot_parcellated_reho, [("atlases", "labels")]),
+        (parcellate_reho_wf, plot_parcellated_reho, [("outputnode.parcellated_cifti", "in_file")]),
+    ])  # fmt:skip
+
+    ds_plot_reho = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            desc="rehoparcellated",
+            datatype="figures",
+        ),
+        name="ds_plot_reho",
+        run_without_submitting=False,
+    )
+    workflow.connect([
+        (inputnode, ds_plot_reho, [("name_source", "source_file")]),
+        (plot_parcellated_reho, ds_plot_reho, [("out_file", "in_file")]),
+    ])  # fmt:skip
+
     if bandpass_filter:
         parcellate_alff_wf = init_parcellate_cifti_wf(
             mem_gb=mem_gb,
@@ -788,6 +837,32 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ("outputnode.coverage_cifti", "inputnode.coverage_cifti"),
             ]),
             (parcellate_alff_wf, outputnode, [("outputnode.parcellated_tsv", "parcellated_alff")]),
+        ])  # fmt:skip
+
+        plot_parcellated_alff = pe.Node(
+            PlotCiftiParcellation(),
+            name="plot_parcellated_alff",
+            mem_gb=mem_gb["resampled"],
+        )
+        workflow.connect([
+            (inputnode, plot_parcellated_alff, [("atlases", "labels")]),
+            (parcellate_alff_wf, plot_parcellated_alff, [
+                ("outputnode.parcellated_cifti", "in_file"),
+            ]),
+        ])  # fmt:skip
+
+        ds_plot_alff = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                desc="alffparcellated",
+                datatype="figures",
+            ),
+            name="ds_plot_alff",
+            run_without_submitting=False,
+        )
+        workflow.connect([
+            (inputnode, ds_plot_alff, [("name_source", "source_file")]),
+            (plot_parcellated_alff, ds_plot_alff, [("out_file", "in_file")]),
         ])  # fmt:skip
 
     # Create a node to plot the matrices
@@ -895,6 +970,7 @@ def init_parcellate_cifti_wf(
     coverage_tsv
         Coverage TSV files. One for each atlas. Only output if `compute_mask` is True.
     """
+    from xcp_d import config
     from xcp_d.interfaces.connectivity import CiftiMask, CiftiToTSV
     from xcp_d.interfaces.workbench import CiftiMath, CiftiParcellateWorkbench
     from xcp_d.utils.utils import create_cifti_mask
