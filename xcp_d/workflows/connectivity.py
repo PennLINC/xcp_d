@@ -680,7 +680,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ds_plot_coverage = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                desc="coverageplot",
+                desc="coverage",
                 datatype="figures",
             ),
             name="ds_plot_coverage",
@@ -815,7 +815,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ds_plot_reho = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                desc="rehoparcellated",
+                desc="rehoParcellated",
                 datatype="figures",
             ),
             name="ds_plot_reho",
@@ -861,7 +861,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ds_plot_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    desc="alffparcellated",
+                    desc="alffParcellated",
                     datatype="figures",
                 ),
                 name="ds_plot_alff",

@@ -959,6 +959,8 @@ class PlotCiftiParcellation(SimpleInterface):
             ]
             for ax in inner_subplots:
                 ax.set_rasterized(True)
+                ax.get_xaxis().set_visible(False)
+                ax.get_yaxis().set_visible(False)
 
             img = nb.load(cortical_files[i_file])
             img_data = img.get_fdata()
