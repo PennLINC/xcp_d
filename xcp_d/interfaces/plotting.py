@@ -1011,7 +1011,7 @@ class PlotCiftiParcellation(SimpleInterface):
             )
 
         self._results["out_file"] = fname_presuffix(
-            self.inputs.in_file,
+            self.inputs.in_files[0],
             suffix="_file.svg",
             newpath=runtime.cwd,
             use_ext=False,
