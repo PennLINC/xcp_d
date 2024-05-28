@@ -48,6 +48,7 @@ sections:
       datatype: figures
       desc: alffSurfacePlot
       suffix: bold
+      extension: png
     caption:  ALFF, or amplitude of low frequency fluctuations.
     subtitle: ALFF
   - bids:
@@ -61,6 +62,7 @@ sections:
       datatype: figures
       desc: rehoSurfacePlot
       suffix: bold
+      extension: png
     caption:  ReHo, or regional homogeneity.
     subtitle: ReHo
 - name: About
