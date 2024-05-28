@@ -668,7 +668,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     cortical_atlases = select_atlases(atlases=config.execution.atlases, subset="cortical")
     if cortical_atlases:
         plot_coverage = pe.Node(
-            PlotCiftiParcellation(cortical_atlases=cortical_atlases),
+            PlotCiftiParcellation(cortical_atlases=cortical_atlases, vmin=0, vmax=1),
             name="plot_coverage",
             mem_gb=mem_gb["resampled"],
         )

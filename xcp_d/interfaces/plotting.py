@@ -887,6 +887,18 @@ class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
         default="plot.svg",
         usedefault=True,
     )
+    vmin = traits.Float(
+        mandatory=False,
+        default="auto",
+        usedefault=True,
+        desc="Minimum value for the colormap.",
+    )
+    vmax = traits.Float(
+        mandatory=False,
+        default="auto",
+        usedefault=True,
+        desc="Maximum value for the colormap.",
+    )
 
 
 class _PlotCiftiParcellationOutputSpec(TraitedSpec):
@@ -946,11 +958,14 @@ class PlotCiftiParcellation(SimpleInterface):
             subplots = [fig.add_subplot(gs[i, j]) for i in range(nrows) for j in range(2)]
             subplots = subplots[:n_files]
 
-        vmax, vmin = -np.inf, np.inf
-        for cortical_file in cortical_files:
-            img_data = nb.load(cortical_file).get_fdata()
-            vmax = np.max([np.nanmax(img_data), vmax])
-            vmin = np.min([np.nanmin(img_data), vmin])
+        vmin, vmin = self.inputs.vmin, self.inputs.vmax
+        if (self.inputs.vmin == "auto") and (self.inputs.vmax == "auto"):
+            # Define vmin and vmax based on all of the files
+            vmin, vmax = np.inf, -np.inf
+            for cortical_file in cortical_files:
+                img_data = nb.load(cortical_file).get_fdata()
+                vmin = np.min([np.nanmin(img_data), vmin])
+                vmax = np.max([np.nanmax(img_data), vmax])
 
         for i_file in range(n_files):
             subplot = subplots[i_file]
