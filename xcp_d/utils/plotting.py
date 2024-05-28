@@ -1205,6 +1205,11 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
     vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
 
+    axes[0, 0].set_rasterized(True)
+    axes[0, 1].set_rasterized(True)
+    axes[1, 0].set_rasterized(True)
+    axes[1, 1].set_rasterized(True)
+
     plott.plot_surf_stat_map(
         lh,
         lh_surf_data,
@@ -1261,7 +1266,6 @@ def plot_alff_reho_surface(output_path, filename, name_source):
         bbox_inches="tight",
         pad_inches=None,
         format="svg",
-        rasterized=True,
     )
     plt.close(fig)
     return output_path
