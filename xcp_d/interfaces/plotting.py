@@ -1030,7 +1030,13 @@ class PlotCiftiParcellation(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-        fig.savefig(self._results["out_file"], bbox_inches="tight", pad_inches=None)
+        fig.savefig(
+            self._results["out_file"],
+            bbox_inches="tight",
+            pad_inches=None,
+            format="svg",
+            rasterized=True,
+        )
         plt.close(fig)
 
         return runtime

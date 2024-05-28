@@ -142,7 +142,7 @@ series to retain the original scaling.
         ),
         name="alff_plot",
     )
-    alff_plot.inputs.output_path = "alff.png"
+    alff_plot.inputs.output_path = "alff.svg"
     alff_plot.inputs.name_source = name_source
 
     # fmt:off

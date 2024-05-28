@@ -1256,7 +1256,13 @@ def plot_alff_reho_surface(output_path, filename, name_source):
     axes[0, 0].set_title("Left Hemisphere", fontsize=10)
     axes[0, 1].set_title("Right Hemisphere", fontsize=10)
     fig.tight_layout()
-    fig.savefig(output_path)
+    fig.savefig(
+        output_path,
+        bbox_inches="tight",
+        pad_inches=None,
+        format="svg",
+        rasterized=True,
+    )
     plt.close(fig)
     return output_path
 
