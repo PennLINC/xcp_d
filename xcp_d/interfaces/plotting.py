@@ -946,6 +946,12 @@ class PlotCiftiParcellation(SimpleInterface):
             subplots = [fig.add_subplot(gs[i, j]) for i in range(nrows) for j in range(2)]
             subplots = subplots[:n_files]
 
+        vmax, vmin = -np.inf, np.inf
+        for cortical_file in cortical_files:
+            img_data = nb.load(cortical_file).get_fdata()
+            vmax = np.max([np.nanmax(img_data), vmax])
+            vmin = np.min([np.nanmin(img_data), vmin])
+
         for i_file in range(n_files):
             subplot = subplots[i_file]
             subplot.set_title(cortical_atlases[i_file])
@@ -957,10 +963,6 @@ class PlotCiftiParcellation(SimpleInterface):
                 for i in range(2)
                 for j in range(2)
             ]
-            for ax in inner_subplots:
-                ax.set_rasterized(True)
-                ax.get_xaxis().set_visible(False)
-                ax.get_yaxis().set_visible(False)
 
             img = nb.load(cortical_files[i_file])
             img_data = img.get_fdata()
@@ -976,9 +978,6 @@ class PlotCiftiParcellation(SimpleInterface):
                 "CIFTI_STRUCTURE_CORTEX_RIGHT",
             )
 
-            vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
-            vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
-
             plot_surf_stat_map(
                 lh,
                 lh_surf_data,
@@ -987,20 +986,9 @@ class PlotCiftiParcellation(SimpleInterface):
                 hemi="left",
                 view="lateral",
                 engine="matplotlib",
+                colormap="cool",
                 colorbar=False,
                 axes=inner_subplots[0],
-                figure=fig,
-            )
-            plot_surf_stat_map(
-                lh,
-                lh_surf_data,
-                vmin=vmin,
-                vmax=vmax,
-                hemi="left",
-                view="medial",
-                engine="matplotlib",
-                colorbar=False,
-                axes=inner_subplots[1],
                 figure=fig,
             )
             plot_surf_stat_map(
@@ -1011,6 +999,20 @@ class PlotCiftiParcellation(SimpleInterface):
                 hemi="right",
                 view="lateral",
                 engine="matplotlib",
+                colormap="cool",
+                colorbar=False,
+                axes=inner_subplots[1],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                lh,
+                lh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="left",
+                view="medial",
+                engine="matplotlib",
+                colormap="cool",
                 colorbar=False,
                 axes=inner_subplots[2],
                 figure=fig,
@@ -1023,10 +1025,15 @@ class PlotCiftiParcellation(SimpleInterface):
                 hemi="right",
                 view="medial",
                 engine="matplotlib",
+                colormap="cool",
                 colorbar=False,
                 axes=inner_subplots[3],
                 figure=fig,
             )
+
+            for ax in inner_subplots:
+                ax.axis("off")
+                ax.set_rasterized(True)
 
         self._results["out_file"] = fname_presuffix(
             cortical_files[0],
