@@ -948,7 +948,6 @@ class PlotCiftiParcellation(SimpleInterface):
 
         for i_file in range(n_files):
             subplot = subplots[i_file]
-            subplot.set_rasterized(True)
             subplot.set_title(cortical_atlases[i_file])
 
             # Create 4 Axes (2 rows, 2 columns) from the subplot
@@ -958,6 +957,7 @@ class PlotCiftiParcellation(SimpleInterface):
                 for i in range(2)
                 for j in range(2)
             ]
+            inner_subplots = [ax.set_rasterized(True) for ax in inner_subplots]
 
             img = nb.load(cortical_files[i_file])
             img_data = img.get_fdata()
