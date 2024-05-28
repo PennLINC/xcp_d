@@ -358,7 +358,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         ),
         name="reho_cifti_plot",
     )
-    reho_plot.inputs.output_path = "reho.png"
+    reho_plot.inputs.output_path = "reho.svg"
     reho_plot.inputs.name_source = name_source
 
     ds_reho_plot = pe.Node(
