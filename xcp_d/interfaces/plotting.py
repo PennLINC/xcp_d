@@ -939,7 +939,7 @@ class PlotCiftiParcellation(SimpleInterface):
             # Create 4 Axes (2 rows, 2 columns) from the subplot
             gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot)
             inner_subplots = [
-                fig.add_subplot(gs_inner[i, j], subplot_kw={"projection": "3d"})
+                fig.add_subplot(gs_inner[i, j], projection="3d")
                 for i in range(2)
                 for j in range(2)
             ]
