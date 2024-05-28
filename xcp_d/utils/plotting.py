@@ -1122,6 +1122,11 @@ def surf_data_from_cifti(data, axis, surf_name):
                 surf_data[vtx_indices] = data
                 return surf_data
     else:
+        if surf_name not in axis.nvertices:
+            raise ValueError(
+                f"No structure named {surf_name}.\n\n"
+                f"Available structures are {list(axis.name.keys())}"
+            )
         nvertices = axis.nvertices[surf_name]
         surf_data = np.zeros(nvertices)
         for i_label in range(len(axis.name)):
