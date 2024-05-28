@@ -958,7 +958,7 @@ class PlotCiftiParcellation(SimpleInterface):
             subplots = [fig.add_subplot(gs[i, j]) for i in range(nrows) for j in range(2)]
             subplots = subplots[:n_files]
 
-        vmin, vmin = self.inputs.vmin, self.inputs.vmax
+        vmin, vmax = self.inputs.vmin, self.inputs.vmax
         if (self.inputs.vmin == "auto") and (self.inputs.vmax == "auto"):
             # Define vmin and vmax based on all of the files
             vmin, vmax = np.inf, -np.inf
