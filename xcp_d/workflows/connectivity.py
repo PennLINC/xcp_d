@@ -664,29 +664,32 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ]),
     ])  # fmt:skip
 
-    plot_coverage = pe.Node(
-        PlotCiftiParcellation(),
-        name="plot_coverage",
-        mem_gb=mem_gb["resampled"],
-    )
-    workflow.connect([
-        (inputnode, plot_coverage, [("atlases", "labels")]),
-        (parcellate_bold_wf, plot_coverage, [("outputnode.coverage_cifti", "in_files")]),
-    ])  # fmt:skip
+    # Filter out subcortical atlases
+    cortical_atlases = select_atlases(atlases=config.execution.atlases, subset="cortical")
+    if cortical_atlases:
+        plot_coverage = pe.Node(
+            PlotCiftiParcellation(cortical_atlases=cortical_atlases),
+            name="plot_coverage",
+            mem_gb=mem_gb["resampled"],
+        )
+        workflow.connect([
+            (inputnode, plot_coverage, [("atlases", "labels")]),
+            (parcellate_bold_wf, plot_coverage, [("outputnode.coverage_cifti", "in_files")]),
+        ])  # fmt:skip
 
-    ds_plot_coverage = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="coverageplot",
-            datatype="figures",
-        ),
-        name="ds_plot_coverage",
-        run_without_submitting=False,
-    )
-    workflow.connect([
-        (inputnode, ds_plot_coverage, [("name_source", "source_file")]),
-        (plot_coverage, ds_plot_coverage, [("out_file", "in_file")]),
-    ])  # fmt:skip
+        ds_plot_coverage = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                desc="coverageplot",
+                datatype="figures",
+            ),
+            name="ds_plot_coverage",
+            run_without_submitting=False,
+        )
+        workflow.connect([
+            (inputnode, ds_plot_coverage, [("name_source", "source_file")]),
+            (plot_coverage, ds_plot_coverage, [("out_file", "in_file")]),
+        ])  # fmt:skip
 
     # Correlate the parcellated data
     correlate_bold = pe.MapNode(
@@ -796,31 +799,32 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         (parcellate_reho_wf, outputnode, [("outputnode.parcellated_tsv", "parcellated_reho")]),
     ])  # fmt:skip
 
-    plot_parcellated_reho = pe.Node(
-        PlotCiftiParcellation(),
-        name="plot_parcellated_reho",
-        mem_gb=mem_gb["resampled"],
-    )
-    workflow.connect([
-        (inputnode, plot_parcellated_reho, [("atlases", "labels")]),
-        (parcellate_reho_wf, plot_parcellated_reho, [
-            ("outputnode.parcellated_cifti", "in_files"),
-        ]),
-    ])  # fmt:skip
+    if cortical_atlases:
+        plot_parcellated_reho = pe.Node(
+            PlotCiftiParcellation(cortical_atlases=cortical_atlases),
+            name="plot_parcellated_reho",
+            mem_gb=mem_gb["resampled"],
+        )
+        workflow.connect([
+            (inputnode, plot_parcellated_reho, [("atlases", "labels")]),
+            (parcellate_reho_wf, plot_parcellated_reho, [
+                ("outputnode.parcellated_cifti", "in_files"),
+            ]),
+        ])  # fmt:skip
 
-    ds_plot_reho = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="rehoparcellated",
-            datatype="figures",
-        ),
-        name="ds_plot_reho",
-        run_without_submitting=False,
-    )
-    workflow.connect([
-        (inputnode, ds_plot_reho, [("name_source", "source_file")]),
-        (plot_parcellated_reho, ds_plot_reho, [("out_file", "in_file")]),
-    ])  # fmt:skip
+        ds_plot_reho = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                desc="rehoparcellated",
+                datatype="figures",
+            ),
+            name="ds_plot_reho",
+            run_without_submitting=False,
+        )
+        workflow.connect([
+            (inputnode, ds_plot_reho, [("name_source", "source_file")]),
+            (plot_parcellated_reho, ds_plot_reho, [("out_file", "in_file")]),
+        ])  # fmt:skip
 
     if bandpass_filter:
         parcellate_alff_wf = init_parcellate_cifti_wf(
@@ -841,31 +845,32 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (parcellate_alff_wf, outputnode, [("outputnode.parcellated_tsv", "parcellated_alff")]),
         ])  # fmt:skip
 
-        plot_parcellated_alff = pe.Node(
-            PlotCiftiParcellation(),
-            name="plot_parcellated_alff",
-            mem_gb=mem_gb["resampled"],
-        )
-        workflow.connect([
-            (inputnode, plot_parcellated_alff, [("atlases", "labels")]),
-            (parcellate_alff_wf, plot_parcellated_alff, [
-                ("outputnode.parcellated_cifti", "in_files"),
-            ]),
-        ])  # fmt:skip
+        if cortical_atlases:
+            plot_parcellated_alff = pe.Node(
+                PlotCiftiParcellation(cortical_atlases=cortical_atlases),
+                name="plot_parcellated_alff",
+                mem_gb=mem_gb["resampled"],
+            )
+            workflow.connect([
+                (inputnode, plot_parcellated_alff, [("atlases", "labels")]),
+                (parcellate_alff_wf, plot_parcellated_alff, [
+                    ("outputnode.parcellated_cifti", "in_files"),
+                ]),
+            ])  # fmt:skip
 
-        ds_plot_alff = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                desc="alffparcellated",
-                datatype="figures",
-            ),
-            name="ds_plot_alff",
-            run_without_submitting=False,
-        )
-        workflow.connect([
-            (inputnode, ds_plot_alff, [("name_source", "source_file")]),
-            (plot_parcellated_alff, ds_plot_alff, [("out_file", "in_file")]),
-        ])  # fmt:skip
+            ds_plot_alff = pe.Node(
+                DerivativesDataSink(
+                    base_directory=output_dir,
+                    desc="alffparcellated",
+                    datatype="figures",
+                ),
+                name="ds_plot_alff",
+                run_without_submitting=False,
+            )
+            workflow.connect([
+                (inputnode, ds_plot_alff, [("name_source", "source_file")]),
+                (plot_parcellated_alff, ds_plot_alff, [("out_file", "in_file")]),
+            ])  # fmt:skip
 
     # Create a node to plot the matrices
     connectivity_plot = pe.Node(

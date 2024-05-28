@@ -870,6 +870,11 @@ class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="CIFTI files to plot.",
     )
+    cortical_atlases = traits.List(
+        traits.Str,
+        mandatory=True,
+        desc="Atlases to select from 'labels'.",
+    )
     labels = traits.List(
         traits.Str,
         mandatory=True,
@@ -896,6 +901,7 @@ class PlotCiftiParcellation(SimpleInterface):
 
     def _run_interface(self, runtime):
         assert len(self.inputs.in_files) == len(self.inputs.labels)
+        assert len(self.inputs.cortical_atlases) > 0
 
         rh = str(
             get_template(
@@ -918,7 +924,15 @@ class PlotCiftiParcellation(SimpleInterface):
 
         # Create Figure and GridSpec.
         # One subplot for each file. Each file will then have four subplots, arranged in a square.
-        n_files = len(self.inputs.in_files)
+        cortical_files = [
+            self.inputs.in_files[i]
+            for i, atlas in enumerate(self.inputs.labels)
+            if atlas in self.inputs.cortical_atlases
+        ]
+        cortical_atlases = [
+            atlas for atlas in self.inputs.labels if atlas in self.inputs.cortical_atlases
+        ]
+        n_files = len(cortical_files)
         fig = plt.figure(constrained_layout=False)
 
         if n_files == 1:
@@ -934,7 +948,7 @@ class PlotCiftiParcellation(SimpleInterface):
 
         for i_file in range(n_files):
             subplot = subplots[i_file]
-            subplot.set_title(self.inputs.labels[i_file])
+            subplot.set_title(cortical_atlases[i_file])
 
             # Create 4 Axes (2 rows, 2 columns) from the subplot
             gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot)
@@ -944,7 +958,7 @@ class PlotCiftiParcellation(SimpleInterface):
                 for j in range(2)
             ]
 
-            img = nb.load(self.inputs.in_files[i_file])
+            img = nb.load(cortical_files[i_file])
             img_data = img.get_fdata()
             img_axes = [img.header.get_axis(i) for i in range(img.ndim)]
             lh_surf_data = surf_data_from_cifti(
@@ -1011,7 +1025,7 @@ class PlotCiftiParcellation(SimpleInterface):
             )
 
         self._results["out_file"] = fname_presuffix(
-            self.inputs.in_files[0],
+            cortical_files[0],
             suffix="_file.svg",
             newpath=runtime.cwd,
             use_ext=False,
