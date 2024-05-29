@@ -954,7 +954,7 @@ class PlotCiftiParcellation(SimpleInterface):
             # Add an additional column for the colorbar
             gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 0.05])
             subplots = [fig.add_subplot(gs[0, 0])]
-            colorbar_ax = fig.add_subplot(gs[0, 1])  # Add a subplot for the colorbar
+            colorbar_axes = [fig.add_subplot(gs[0, 1])]
         else:
             nrows = np.ceil(n_files / 2).astype(int)
             fig.set_size_inches(12.5, 6 * nrows)
@@ -962,7 +962,7 @@ class PlotCiftiParcellation(SimpleInterface):
             gs = GridSpec(nrows, 3, figure=fig, width_ratios=[1, 1, 0.05])
             subplots = [fig.add_subplot(gs[i, j]) for i in range(nrows) for j in range(2)]
             subplots = subplots[:n_files]
-            colorbar_ax = fig.add_subplot(gs[:, 2])  # Add a subplot for the colorbar
+            colorbar_axes = [fig.add_subplot(gs[i, 2]) for i in range(nrows)]
 
         vmin, vmax = self.inputs.vmin, self.inputs.vmax
         if vmin == vmax:
@@ -1064,9 +1064,10 @@ class PlotCiftiParcellation(SimpleInterface):
                 ax.grid(False)
                 ax.set_rasterized(True)
 
-            # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
-            sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
+        # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
+        sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
 
+        for colorbar_ax in colorbar_axes:
             # Add a colorbar to colorbar_ax using the ScalarMappable
             fig.colorbar(sm, cax=colorbar_ax)
 
