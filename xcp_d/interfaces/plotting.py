@@ -1056,6 +1056,9 @@ class PlotCiftiParcellation(SimpleInterface):
                 figure=fig,
             )
 
+            for ax in inner_subplots:
+                ax.set_rasterized(True)
+
         # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
         sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
 
