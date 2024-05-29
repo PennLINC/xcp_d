@@ -961,8 +961,10 @@ class PlotCiftiParcellation(SimpleInterface):
             # Add an additional column for the colorbar
             gs = GridSpec(nrows, 3, figure=fig, width_ratios=[1, 1, 0.05])
             subplots = [fig.add_subplot(gs[i, j]) for i in range(nrows) for j in range(2)]
-            subplots = subplots[:n_files]
             colorbar_axes = [fig.add_subplot(gs[i, 2]) for i in range(nrows)]
+
+        for subplot in subplots:
+            subplot.set_axis_off()
 
         vmin, vmax = self.inputs.vmin, self.inputs.vmax
         if vmin == vmax:
@@ -1053,16 +1055,6 @@ class PlotCiftiParcellation(SimpleInterface):
                 axes=inner_subplots[3],
                 figure=fig,
             )
-
-            for ax in inner_subplots:
-                ax.set_xticks([])
-                ax.set_yticks([])
-                ax.set_zticks([])
-                ax.xaxis.set_ticklabels([])
-                ax.yaxis.set_ticklabels([])
-                ax.zaxis.set_ticklabels([])
-                ax.grid(False)
-                ax.set_rasterized(True)
 
         # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
         sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
