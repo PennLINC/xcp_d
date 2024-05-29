@@ -1,5 +1,31 @@
 # What's New
 
+
+## 0.7.4
+
+This is a patch release that fixes two important bugs.
+The two bugs are:
+(1) band-pass filter values were not respected in versions 0.7.1 - 0.7.3 (they were hardcoded to 0.01 - 0.1) and
+(2) when processing CIFTI files, parcellated ReHo values in TSVs were not correct, due to a problem with how we were reconstructing CIFTI ReHo files.
+The dense CIFTI files should still be useable though.
+
+### 🎉 Exciting New Features
+
+* Make ConnectPlot robust to chosen atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/1161
+
+### 🐛 Bug Fixes
+
+* Fix band-pass filter settings in Config by @tsalo in https://github.com/PennLINC/xcp_d/pull/1172
+* Allow ALFF to work with low-pass or high-pass filters by @tsalo in https://github.com/PennLINC/xcp_d/pull/1176
+* Use CiftiCreateDenseFromTemplate for CIFTI ReHo by @tsalo in https://github.com/PennLINC/xcp_d/pull/1175
+
+### Other Changes
+
+* Use nireports for HTML report generation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1169
+
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.3...0.7.4
+
 ## 0.7.3
 
 Small patch release for manuscript's executive summary.
