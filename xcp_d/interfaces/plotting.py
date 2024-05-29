@@ -1049,13 +1049,19 @@ class PlotCiftiParcellation(SimpleInterface):
                 view="medial",
                 engine="matplotlib",
                 cmap="cool",
-                colorbar=True,
+                colorbar=False,
                 axes=inner_subplots[3],
                 figure=fig,
             )
 
             for ax in inner_subplots:
-                ax.axis("off")
+                ax.set_xticks([])
+                ax.set_yticks([])
+                ax.set_zticks([])
+                ax.xaxis.set_ticklabels([])
+                ax.yaxis.set_ticklabels([])
+                ax.zaxis.set_ticklabels([])
+                ax.grid(False)
                 ax.set_rasterized(True)
 
             # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
