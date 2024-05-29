@@ -889,13 +889,13 @@ class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
     )
     vmin = traits.Float(
         mandatory=False,
-        default_value="auto",
+        default_value=0,
         usedefault=True,
         desc="Minimum value for the colormap.",
     )
     vmax = traits.Float(
         mandatory=False,
-        default_value="auto",
+        default_value=0,
         usedefault=True,
         desc="Maximum value for the colormap.",
     )
@@ -959,7 +959,7 @@ class PlotCiftiParcellation(SimpleInterface):
             subplots = subplots[:n_files]
 
         vmin, vmax = self.inputs.vmin, self.inputs.vmax
-        if (self.inputs.vmin == "auto") and (self.inputs.vmax == "auto"):
+        if vmin == vmax:
             # Define vmin and vmax based on all of the files
             vmin, vmax = np.inf, -np.inf
             LOGGER.warning(f"Setting vmin={vmin}, vmax={vmax}")
