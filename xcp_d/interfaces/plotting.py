@@ -9,6 +9,8 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from nilearn.plotting import plot_anat, plot_surf_stat_map
 from nipype import logging
@@ -948,15 +950,19 @@ class PlotCiftiParcellation(SimpleInterface):
         fig = plt.figure(constrained_layout=False)
 
         if n_files == 1:
-            fig.set_size_inches(6, 6)
-            gs = GridSpec(1, 1, figure=fig)
+            fig.set_size_inches(6.5, 6)
+            # Add an additional column for the colorbar
+            gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 0.05])
             subplots = [fig.add_subplot(gs[0, 0])]
+            colorbar_ax = fig.add_subplot(gs[0, 1])  # Add a subplot for the colorbar
         else:
             nrows = np.ceil(n_files / 2).astype(int)
-            fig.set_size_inches(12, 6 * nrows)
-            gs = GridSpec(nrows, 2, figure=fig)
+            fig.set_size_inches(12.5, 6 * nrows)
+            # Add an additional column for the colorbar
+            gs = GridSpec(nrows, 3, figure=fig, width_ratios=[1, 1, 0.05])
             subplots = [fig.add_subplot(gs[i, j]) for i in range(nrows) for j in range(2)]
             subplots = subplots[:n_files]
+            colorbar_ax = fig.add_subplot(gs[:, 2])  # Add a subplot for the colorbar
 
         vmin, vmax = self.inputs.vmin, self.inputs.vmax
         if vmin == vmax:
@@ -1051,6 +1057,12 @@ class PlotCiftiParcellation(SimpleInterface):
             for ax in inner_subplots:
                 ax.axis("off")
                 ax.set_rasterized(True)
+
+            # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
+            sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
+
+            # Add a colorbar to colorbar_ax using the ScalarMappable
+            fig.colorbar(sm, cax=colorbar_ax)
 
         self._results["out_file"] = fname_presuffix(
             cortical_files[0],
