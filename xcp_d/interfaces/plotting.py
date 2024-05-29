@@ -889,13 +889,13 @@ class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
     )
     vmin = traits.Float(
         mandatory=False,
-        default="auto",
+        default_value="auto",
         usedefault=True,
         desc="Minimum value for the colormap.",
     )
     vmax = traits.Float(
         mandatory=False,
-        default="auto",
+        default_value="auto",
         usedefault=True,
         desc="Maximum value for the colormap.",
     )
