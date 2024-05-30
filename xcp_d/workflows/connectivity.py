@@ -336,6 +336,8 @@ def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
             from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 
             with mock_config():
+                config.execution.atlases = ["Glasser", "Gordon"]
+
                 wf = init_functional_connectivity_nifti_wf()
 
     Parameters
@@ -546,6 +548,8 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
             from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
 
             with mock_config():
+                config.execution.atlases = ["Glasser", "Gordon"]
+
                 wf = init_functional_connectivity_cifti_wf(
                     mem_gb={"resampled": 2},
                     exact_scans=[30, 40],
