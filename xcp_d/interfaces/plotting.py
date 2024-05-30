@@ -953,15 +953,17 @@ class PlotCiftiParcellation(SimpleInterface):
             fig.set_size_inches(6.5, 6)
             # Add an additional column for the colorbar
             gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 0.05])
-            subplots = [fig.add_subplot(gs[0, 0])]
-            colorbar_axes = [fig.add_subplot(gs[0, 1])]
+            gs_list = [gs[0, 0]]
+            subplots = [fig.add_subplot(gs) for gs in gs_list]
+            cbar_gs_list = [gs[0, 1]]
         else:
             nrows = np.ceil(n_files / 2).astype(int)
             fig.set_size_inches(12.5, 6 * nrows)
             # Add an additional column for the colorbar
             gs = GridSpec(nrows, 3, figure=fig, width_ratios=[1, 1, 0.05])
-            subplots = [fig.add_subplot(gs[i, j]) for i in range(nrows) for j in range(2)]
-            colorbar_axes = [fig.add_subplot(gs[i, 2]) for i in range(nrows)]
+            gs_list = [gs[i, j] for i in range(nrows) for j in range(2)]
+            subplots = [fig.add_subplot(gs) for gs in gs_list]
+            cbar_gs_list = [gs[i, 2] for i in range(nrows)]
 
         for subplot in subplots:
             subplot.set_axis_off()
@@ -980,9 +982,10 @@ class PlotCiftiParcellation(SimpleInterface):
         for i_file in range(n_files):
             subplot = subplots[i_file]
             subplot.set_title(cortical_atlases[i_file])
+            subplot_gridspec = gs_list[i_file]
 
             # Create 4 Axes (2 rows, 2 columns) from the subplot
-            gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot)
+            gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot_gridspec)
             inner_subplots = [
                 fig.add_subplot(gs_inner[i, j], projection="3d")
                 for i in range(2)
@@ -1062,7 +1065,8 @@ class PlotCiftiParcellation(SimpleInterface):
         # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
         sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
 
-        for colorbar_ax in colorbar_axes:
+        for colorbar_gridspec in cbar_gs_list:
+            colorbar_ax = fig.add_subplot(colorbar_gridspec)
             # Add a colorbar to colorbar_ax using the ScalarMappable
             fig.colorbar(sm, cax=colorbar_ax)
 
