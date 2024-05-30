@@ -546,6 +546,7 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
             :graph2use: orig
             :simple_form: yes
 
+            from xcp_d import config
             from xcp_d.tests.tests import mock_config
             from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
 
