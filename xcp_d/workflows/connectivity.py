@@ -423,7 +423,9 @@ def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
             from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
 
             with mock_config():
-                wf = init_functional_connectivity_nifti_wf()
+                wf = init_functional_connectivity_nifti_wf(
+                    mem_gb={"resampled": 0.1, "timeseries": 1.0},
+                )
 
     Parameters
     ----------
@@ -632,7 +634,9 @@ def init_functional_connectivity_cifti_wf(mem_gb, name="connectivity_wf"):
             from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
 
             with mock_config():
-                wf = init_functional_connectivity_cifti_wf()
+                wf = init_functional_connectivity_cifti_wf(
+                    mem_gb={"resampled": 0.1, "timeseries": 1.0},
+                )
 
     Parameters
     ----------
