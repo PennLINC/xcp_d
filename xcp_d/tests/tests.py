@@ -43,6 +43,12 @@ def mock_config():
         os.environ["FREESURFER_HOME"] = mkdtemp()
 
     filename = load_data("tests/config.toml").resolve()
+    if not filename.exists():
+        base_path = os.path.dirname(filename)
+        raise FileNotFoundError(
+            f"File not found: {filename}\nFiles in {base_path}:\n{os.listdir(base_path)}"
+        )
+
     settings = loads(filename.read_text())
     for sectionname, configs in settings.items():
         if sectionname != "environment":
