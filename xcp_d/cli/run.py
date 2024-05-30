@@ -3,7 +3,7 @@
 """The XCP-D postprocessing worklow.
 
 XCP-D postprocessing workflow
-============================
+=============================
 """
 from xcp_d import config
 
