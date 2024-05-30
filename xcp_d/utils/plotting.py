@@ -3,7 +3,6 @@
 """Plotting tools."""
 import os
 
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
@@ -911,7 +910,7 @@ def plot_carpet(
         # Preserve continuity
         order = seg_data.argsort(kind="stable")
         # Get color maps
-        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
+        cmap = ListedColormap([plt.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
         assert len(cmap.colors) == len(
             struct_map
         ), "Mismatch between expected # of structures and colors"
@@ -919,7 +918,7 @@ def plot_carpet(
         # Order following segmentation labels
         order = np.argsort(seg_data)[::-1]
         # Set colormap
-        cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
+        cmap = ListedColormap(plt.get_cmap("tab10").colors[:4][::-1])
 
     # Detrend and z-score data
     if standardize:
