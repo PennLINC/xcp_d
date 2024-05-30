@@ -1380,19 +1380,19 @@ class _CiftiCorrelationOutputSpec(TraitedSpec):
 
 
 class CiftiCorrelation(WBCommand):
-    """Evaluate expression on CIFTI files.
+    """Generate correlation of rows in CIFTI file.
 
-    I should use a dynamic trait for the variables going into the math expression,
-    but I hardcoded data and mask because those are the only ones I'm currently using.
+    This interface only supports parcellated time series files for now.
 
     Examples
     --------
-    >>> cifticorrelation = CiftiMath()
-    >>> cifticorrelation.inputs.data = 'sub-01XX_task-rest.dtseries.nii'
-    >>> cifticorrelation.inputs.out_file = 'mathed_sub_01XX_task-rest.dtseries.nii'
-    >>> cifticorrelation.inputs.expression = 'data * 2'
+    >>> cifticorrelation = CiftiCorrelation()
+    >>> cifticorrelation.inputs.in_file = 'sub-01XX_task-rest_bold.ptseries.nii'
+    >>> cifticorrelation.inputs.out_file = 'sub-01XX_task-rest_bold.pconn.nii'
     >>> cifticorrelation.cmdline
-    wb_command -cifti-correlation sub-01XX_task-rest.dtseries.nii sub-01XX_task-rest.dconn.nii
+    wb_command -cifti-correlation \
+    sub-01XX_task-rest_bold.ptseries.nii \
+    sub-01XX_task-rest_bold.pconn.nii
     """
 
     input_spec = _CiftiCorrelationInputSpec
