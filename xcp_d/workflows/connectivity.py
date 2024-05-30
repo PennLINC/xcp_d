@@ -543,7 +543,6 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
             :simple_form: yes
 
             from xcp_d.tests.tests import mock_config
-            from xcp_d import config
             from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
 
             with mock_config():
@@ -714,72 +713,77 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         (dconn_to_tsv, outputnode, [("out_file", "correlations")]),
     ])  # fmt:skip
 
-    # TODO: Add exact correlation calculation back in
-    collect_exact_ciftis = pe.Node(
-        niu.Merge(len(exact_scans)),
-        name="collect_exact_ciftis",
-    )
-    workflow.connect([(collect_exact_ciftis, outputnode, [("out", "correlation_ciftis_exact")])])
-
-    collect_exact_tsvs = pe.Node(
-        niu.Merge(len(exact_scans)),
-        name="collect_exact_tsvs",
-    )
-    workflow.connect([(collect_exact_tsvs, outputnode, [("out", "correlations_exact")])])
-
-    for i_exact_scan, exact_scan in enumerate(exact_scans):
-        reduce_bold = pe.Node(
-            ReduceCifti(column=f"exact_{exact_scan}"),
-            name=f"reduce_bold_{exact_scan}volumes",
+    # Perform exact-time correlations
+    if exact_scans:
+        collect_exact_ciftis = pe.Node(
+            niu.Merge(len(exact_scans)),
+            name="collect_exact_ciftis",
         )
         workflow.connect([
-            (inputnode, reduce_bold, [
-                ("denoised_bold", "in_file"),
-                ("temporal_mask", "temporal_mask"),
-            ]),
+            (collect_exact_ciftis, outputnode, [("out", "correlation_ciftis_exact")]),
         ])  # fmt:skip
 
-        parcellate_exact_bold_wf = init_parcellate_cifti_wf(
-            mem_gb=mem_gb,
-            compute_mask=False,
-            name=f"parcellate_bold_{exact_scan}volumes_wf",
+        collect_exact_tsvs = pe.Node(
+            niu.Merge(len(exact_scans)),
+            name="collect_exact_tsvs",
         )
-        workflow.connect([
-            (inputnode, parcellate_exact_bold_wf, [
-                ("atlas_files", "inputnode.atlas_files"),
-                ("atlas_labels_files", "inputnode.atlas_labels_files"),
-            ]),
-            (parcellate_bold_wf, parcellate_exact_bold_wf, [
-                ("outputnode.vertexwise_coverage", "inputnode.vertexwise_coverage"),
-                ("outputnode.coverage_cifti", "inputnode.coverage_cifti"),
-            ]),
-            (reduce_bold, parcellate_exact_bold_wf, [("out_file", "inputnode.in_file")]),
-        ])  # fmt:skip
+        workflow.connect([(collect_exact_tsvs, outputnode, [("out", "correlations_exact")])])
 
-        # Correlate the parcellated data
-        correlate_exact_bold = pe.MapNode(
-            CiftiCorrelation(),
-            name=f"correlate_bold_{exact_scan}volumes",
-            iterfield=["in_file"],
-        )
-        workflow.connect([
-            (parcellate_exact_bold_wf, correlate_exact_bold, [
-                ("outputnode.parcellated_cifti", "in_file"),
-            ]),
-            (correlate_exact_bold, collect_exact_ciftis, [("out_file", f"in{i_exact_scan + 1}")]),
-        ])  # fmt:skip
+        for i_exact_scan, exact_scan in enumerate(exact_scans):
+            reduce_bold = pe.Node(
+                ReduceCifti(column=f"exact_{exact_scan}"),
+                name=f"reduce_bold_{exact_scan}volumes",
+            )
+            workflow.connect([
+                (inputnode, reduce_bold, [
+                    ("denoised_bold", "in_file"),
+                    ("temporal_mask", "temporal_mask"),
+                ]),
+            ])  # fmt:skip
 
-        # Convert correlation pconn file to TSV
-        exact_dconn_to_tsv = pe.MapNode(
-            CiftiToTSV(),
-            name=f"dconn_to_tsv_{exact_scan}volumes",
-            iterfield=["in_file", "atlas_labels"],
-        )
-        workflow.connect([
-            (inputnode, exact_dconn_to_tsv, [("atlas_labels_files", "atlas_labels")]),
-            (correlate_exact_bold, exact_dconn_to_tsv, [("out_file", "in_file")]),
-            (exact_dconn_to_tsv, collect_exact_tsvs, [("out_file", f"in{i_exact_scan + 1}")]),
-        ])  # fmt:skip
+            parcellate_exact_bold_wf = init_parcellate_cifti_wf(
+                mem_gb=mem_gb,
+                compute_mask=False,
+                name=f"parcellate_bold_{exact_scan}volumes_wf",
+            )
+            workflow.connect([
+                (inputnode, parcellate_exact_bold_wf, [
+                    ("atlas_files", "inputnode.atlas_files"),
+                    ("atlas_labels_files", "inputnode.atlas_labels_files"),
+                ]),
+                (parcellate_bold_wf, parcellate_exact_bold_wf, [
+                    ("outputnode.vertexwise_coverage", "inputnode.vertexwise_coverage"),
+                    ("outputnode.coverage_cifti", "inputnode.coverage_cifti"),
+                ]),
+                (reduce_bold, parcellate_exact_bold_wf, [("out_file", "inputnode.in_file")]),
+            ])  # fmt:skip
+
+            # Correlate the parcellated data
+            correlate_exact_bold = pe.MapNode(
+                CiftiCorrelation(),
+                name=f"correlate_bold_{exact_scan}volumes",
+                iterfield=["in_file"],
+            )
+            workflow.connect([
+                (parcellate_exact_bold_wf, correlate_exact_bold, [
+                    ("outputnode.parcellated_cifti", "in_file"),
+                ]),
+                (correlate_exact_bold, collect_exact_ciftis, [
+                    ("out_file", f"in{i_exact_scan + 1}"),
+                ]),
+            ])  # fmt:skip
+
+            # Convert correlation pconn file to TSV
+            exact_dconn_to_tsv = pe.MapNode(
+                CiftiToTSV(),
+                name=f"dconn_to_tsv_{exact_scan}volumes",
+                iterfield=["in_file", "atlas_labels"],
+            )
+            workflow.connect([
+                (inputnode, exact_dconn_to_tsv, [("atlas_labels_files", "atlas_labels")]),
+                (correlate_exact_bold, exact_dconn_to_tsv, [("out_file", "in_file")]),
+                (exact_dconn_to_tsv, collect_exact_tsvs, [("out_file", f"in{i_exact_scan + 1}")]),
+            ])  # fmt:skip
 
     parcellate_reho_wf = init_parcellate_cifti_wf(
         mem_gb=mem_gb,
@@ -872,7 +876,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 (plot_parcellated_alff, ds_plot_alff, [("out_file", "in_file")]),
             ])  # fmt:skip
 
-    # Create a node to plot the matrices
+    # Plot up to four connectivity matrices
     connectivity_plot = pe.Node(
         ConnectPlot(),
         name="connectivity_plot",
