@@ -255,11 +255,6 @@ class FilterOutFailedRuns(SimpleInterface):
 
 
 class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
-    censored_denoised_bold = traits.List(
-        File(exists=True),
-        mandatory=True,
-        desc="Denoised BOLD data.",
-    )
     preprocessed_bold = traits.List(
         File(exists=True),
         mandatory=True,
@@ -282,7 +277,17 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
         ),
         desc="TSV files with high-motion outliers indexed.",
     )
+    denoised_bold = traits.List(
+        File(exists=True),
+        mandatory=True,
+        desc="Denoised BOLD data.",
+    )
     denoised_interpolated_bold = traits.List(
+        File(exists=True),
+        mandatory=True,
+        desc="Denoised BOLD data.",
+    )
+    censored_denoised_bold = traits.List(
         File(exists=True),
         mandatory=True,
         desc="Denoised BOLD data.",
@@ -314,10 +319,6 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
 
 
 class _ConcatenateInputsOutputSpec(TraitedSpec):
-    censored_denoised_bold = File(
-        exists=True,
-        desc="Concatenated denoised BOLD data.",
-    )
     preprocessed_bold = File(
         exists=True,
         desc="Concatenated preprocessed BOLD file.",
@@ -335,7 +336,15 @@ class _ConcatenateInputsOutputSpec(TraitedSpec):
         Undefined,
         desc="Concatenated TSV file with high-motion outliers indexed.",
     )
+    denoised_bold = File(
+        exists=True,
+        desc="Concatenated denoised BOLD data.",
+    )
     denoised_interpolated_bold = File(
+        exists=True,
+        desc="Concatenated denoised BOLD data.",
+    )
+    censored_denoised_bold = File(
         exists=True,
         desc="Concatenated denoised BOLD data.",
     )
@@ -370,9 +379,10 @@ class ConcatenateInputs(SimpleInterface):
 
     def _run_interface(self, runtime):
         merge_inputs = {
-            "censored_denoised_bold": self.inputs.censored_denoised_bold,
             "preprocessed_bold": self.inputs.preprocessed_bold,
+            "denoised_bold": self.inputs.denoised_bold,
             "denoised_interpolated_bold": self.inputs.denoised_interpolated_bold,
+            "censored_denoised_bold": self.inputs.censored_denoised_bold,
             "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
             "timeseries_ciftis": self.inputs.timeseries_ciftis,
             "fmriprep_confounds_file": self.inputs.fmriprep_confounds_file,
