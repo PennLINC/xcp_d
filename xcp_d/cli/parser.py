@@ -936,6 +936,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
+        opts.output_interpolated = True
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
         )
@@ -947,6 +948,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.linc_qc = True
+        opts.output_interpolated = False
         opts.process_surfaces = (
             False if (opts.process_surfaces == "auto") else opts.process_surfaces
         )

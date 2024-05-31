@@ -536,6 +536,8 @@ class workflow(_Config):
     """Nuisance regressors to include in the postprocessing."""
     smoothing = None
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
+    output_interpolated = False
+    """Output interpolated data, not censored data."""
     combine_runs = False
     """Combine runs of the same task."""
     motion_filter_type = None
