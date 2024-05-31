@@ -13,7 +13,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
 from xcp_d.interfaces.workbench import (
-    CiftiCreateDenseScalar,
+    CiftiCreateDenseFromTemplate,
     CiftiSeparateMetric,
     CiftiSeparateVolumeAll,
     FixCiftiIntent,
@@ -249,6 +249,7 @@ def init_reho_cifti_wf(
             with mock_config():
                 wf = init_reho_cifti_wf(
                     name_source="/path/to/bold.dtseries.nii",
+                    mem_gb={"resampled": 0.1},
                     name="cifti_reho_wf",
                 )
 
@@ -336,7 +337,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
-        CiftiCreateDenseScalar(),
+        CiftiCreateDenseFromTemplate(from_cropped=True, out_file="reho.dscalar.nii"),
         name="merge_cifti",
         mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
@@ -371,10 +372,10 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (lh_surf, lh_reho, [("out_file", "surf_bold")]),
         (rh_surf, rh_reho, [("out_file", "surf_bold")]),
         (subcortical_nifti, subcortical_reho, [("out_file", "in_file")]),
-        (subcortical_nifti, merge_cifti, [("label_file", "structure_label_volume")]),
+        (inputnode, merge_cifti, [("denoised_bold", "template_cifti")]),
         (lh_reho, merge_cifti, [("surf_gii", "left_metric")]),
         (rh_reho, merge_cifti, [("surf_gii", "right_metric")]),
-        (subcortical_reho, merge_cifti, [("out_file", "volume_data")]),
+        (subcortical_reho, merge_cifti, [("out_file", "volume_all")]),
         (merge_cifti, outputnode, [("out_file", "reho")]),
         (merge_cifti, reho_plot, [("out_file", "filename")]),
         (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
@@ -399,6 +400,7 @@ def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
             with mock_config():
                 wf = init_reho_nifti_wf(
                     name_source="/path/to/bold.nii.gz",
+                    mem_gb={"resampled": 0.1}
                     name="nifti_reho_wf",
                 )
 

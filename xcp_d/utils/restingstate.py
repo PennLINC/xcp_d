@@ -186,6 +186,14 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         # square root of power spectrum
         power_spectrum_sqrt = np.sqrt(power_spectrum)
         # get the position of the arguments closest to high_pass and low_pass, respectively
+        if high_pass == 0:
+            # If high_pass is 0, then we set it to the minimum frequency
+            high_pass = frequencies_hz[0]
+
+        if low_pass == 0:
+            # If low_pass is 0, then we set it to the maximum frequency
+            low_pass = frequencies_hz[-1]
+
         ff_alff = [
             np.argmin(np.abs(frequencies_hz - high_pass)),
             np.argmin(np.abs(frequencies_hz - low_pass)),

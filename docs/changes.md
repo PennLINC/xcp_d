@@ -1,8 +1,51 @@
 # What's New
 
+
+## 0.7.4
+
+This is a patch release that fixes two important bugs.
+The two bugs are:
+(1) band-pass filter values were not respected in versions 0.7.1 - 0.7.3 (they were hardcoded to 0.01 - 0.1) and
+(2) when processing CIFTI files, parcellated ReHo values in TSVs were not correct, due to a problem with how we were reconstructing CIFTI ReHo files.
+The dense CIFTI files should still be useable though.
+
+### 🎉 Exciting New Features
+
+* Make ConnectPlot robust to chosen atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/1161
+
+### 🐛 Bug Fixes
+
+* Fix band-pass filter settings in Config by @tsalo in https://github.com/PennLINC/xcp_d/pull/1172
+* Allow ALFF to work with low-pass or high-pass filters by @tsalo in https://github.com/PennLINC/xcp_d/pull/1176
+* Use CiftiCreateDenseFromTemplate for CIFTI ReHo by @tsalo in https://github.com/PennLINC/xcp_d/pull/1175
+
+### Other Changes
+
+* Use nireports for HTML report generation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1169
+
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.3...0.7.4
+
+## 0.7.3
+
+Small patch release for manuscript's executive summary.
+
+**There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
+
+## What's Changed
+
+### 🐛 Bug Fixes
+
+* Drop concatenated rest-as-run section from executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1156
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.2...0.7.3
+
+
 ## 0.7.2
 
 This is a patch release fixing small bugs in 0.7.1.
+
+**There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
 
 ### 🎉 Exciting New Features
 
@@ -23,6 +66,8 @@ This is a patch release fixing small bugs in 0.7.1.
 ## 0.7.1
 
 This release prepares for the XCP-D manuscript.
+
+**There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
 
 ### 🛠 Breaking Changes
 
@@ -243,7 +288,6 @@ The 0.5.1 fixes some bugs for the XCP-D manuscript.
 ## 0.5.0
 
 The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce any backwards-incompatible changes between this release and 1.0.0 (the official paper release).
-<!-- Release notes generated using configuration in .github/release.yml at main -->
 
 ### 🛠 Breaking Changes
 

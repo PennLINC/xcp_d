@@ -3,8 +3,9 @@
 """The XCP-D postprocessing worklow.
 
 XCP-D postprocessing workflow
-============================
+=============================
 """
+
 from xcp_d import config
 
 
@@ -156,8 +157,7 @@ def main():
         errno = 0
 
     finally:
-        from xcp_d import data
-        from xcp_d.interfaces.report_core import generate_reports
+        from xcp_d.reports.core import generate_reports
 
         # Write dataset description before generating reports
         write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
@@ -166,22 +166,29 @@ def main():
             write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
 
         # Generate reports phase
+        session_list = (
+            config.execution.get().get("bids_filters", {}).get("bold", {}).get("session")
+        )
+
+        # Generate reports phase
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
             output_dir=config.execution.xcp_d_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
-            config=data.load("reports-spec.yml"),
-            packagename="xcp_d",
+            session_list=session_list,
         )
 
-        if sentry_sdk is not None and failed_reports:
-            sentry_sdk.capture_message(
-                f"Report generation failed for {failed_reports} subjects",
-                level="error",
+        if failed_reports:
+            msg = (
+                "Report generation was not successful for the following participants "
+                f': {", ".join(failed_reports)}.'
             )
+            config.loggers.cli.error(msg)
+            if sentry_sdk is not None:
+                sentry_sdk.capture_message(msg, level="error")
 
-        sys.exit(int((errno + failed_reports) > 0))
+        sys.exit(int((errno + len(failed_reports)) > 0))
 
 
 if __name__ == "__main__":

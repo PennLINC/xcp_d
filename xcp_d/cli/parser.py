@@ -34,6 +34,7 @@ def _build_parser():
     )
     PathExists = partial(parser_utils._path_exists, parser=parser)
     IsFile = partial(parser_utils._is_file, parser=parser)
+    PositiveInt = partial(parser_utils._min_one, parser=parser)
     BIDSFilter = partial(parser_utils._bids_filter, parser=parser)
 
     # important parameters required
@@ -455,9 +456,9 @@ The default is 240 (4 minutes).
     g_temporal_filter.add_argument(
         "--lower-bpf",
         "--lower_bpf",
-        dest="lower_bpf",
         action="store",
         default=0.01,
+        dest="high_pass",
         type=float,
         help=(
             "Lower cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
@@ -468,9 +469,9 @@ The default is 240 (4 minutes).
     g_temporal_filter.add_argument(
         "--upper-bpf",
         "--upper_bpf",
-        dest="upper_bpf",
         action="store",
         default=0.08,
+        dest="low_pass",
         type=float,
         help=(
             "Upper cut-off frequency (Hz) for the Butterworth bandpass filter to be applied to "
@@ -584,6 +585,17 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
     )
 
     g_other = parser.add_argument_group("Other options")
+    g_other.add_argument(
+        "--aggregate-session-reports",
+        dest="aggr_ses_reports",
+        action="store",
+        type=PositiveInt,
+        default=4,
+        help=(
+            "Maximum number of sessions aggregated in one subject's visual report. "
+            "If exceeded, visual reports are split by session."
+        ),
+    )
     g_other.add_argument(
         "-w",
         "--work-dir",
@@ -963,17 +975,17 @@ def _validate_parameters(opts, build_log, parser):
         opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
 
     # Bandpass filter parameters
-    if opts.lower_bpf <= 0 and opts.upper_bpf <= 0:
+    if opts.high_pass <= 0 and opts.low_pass <= 0:
         opts.bandpass_filter = False
 
     if (
         opts.bandpass_filter
-        and (opts.lower_bpf >= opts.upper_bpf)
-        and (opts.lower_bpf > 0 and opts.upper_bpf > 0)
+        and (opts.high_pass >= opts.low_pass)
+        and (opts.high_pass > 0 and opts.low_pass > 0)
     ):
-        error_messages.append(
-            f"'--lower-bpf' ({opts.lower_bpf}) must be lower than "
-            f"'--upper-bpf' ({opts.upper_bpf})."
+        parser.error(
+            f"'--lower-bpf' ({opts.high_pass}) must be lower than "
+            f"'--upper-bpf' ({opts.low_pass})."
         )
     elif not opts.bandpass_filter:
         build_log.warning("Bandpass filtering is disabled. ALFF outputs will not be generated.")
