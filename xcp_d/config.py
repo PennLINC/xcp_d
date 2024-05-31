@@ -373,6 +373,8 @@ class execution(_Config):
 
     fmri_dir = None
     """An existing path to the preprocessing derivatives dataset, which must be BIDS-compliant."""
+    aggr_ses_reports = None
+    """Maximum number of sessions aggregated in one subject's visual report."""
     bids_database_dir = None
     """Path to the directory containing SQLite database indices for the input BIDS dataset."""
     bids_description_hash = None
@@ -522,15 +524,15 @@ class workflow(_Config):
 
     cifti = False
     """Postprocess CIFTI inputs instead of NIfTIs."""
-    dummy_scans = 0
+    dummy_scans = None
     """Number of label-control volume pairs to delete before CBF computation."""
-    input_type = "fmriprep"
+    input_type = None
     """Postprocessing pipeline type."""
     despike = False
     """Despike the BOLD data before postprocessing."""
-    params = "36P"
+    params = None
     """Nuisance regressors to include in the postprocessing."""
-    smoothing = 6
+    smoothing = None
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     combineruns = False
     """Combine runs of the same task."""
@@ -540,31 +542,31 @@ class workflow(_Config):
     """Low cutoff frequency for the band-stop filter."""
     band_stop_max = None
     """High cutoff frequency for the band-stop filter."""
-    motion_filter_order = 4
+    motion_filter_order = None
     """Order of the filter to apply to the motion regressors."""
-    head_radius = 50
+    head_radius = None
     """Radius of the head in mm."""
-    fd_thresh = [0.3, 0.0]
+    fd_thresh = None
     """Framewise displacement threshold for censoring."""
-    dvars_thresh = [0.0, 0.0]
+    dvars_thresh = None
     """DVARS threshold for censoring."""
-    censor_before = [0, 0]
+    censor_before = None
     """Number of volumes to remove before FD or DVARS outliers."""
-    censor_after = [0, 0]
+    censor_after = None
     """Number of volumes to remove after FD or DVARS outliers."""
-    censor_between = [0, 0]
+    censor_between = None
     """Number of volumes to remove between any FD or DVARS outliers."""
-    min_time = 240
+    min_time = None
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
     bandpass_filter = True
     """Apply a band-pass filter to the data."""
-    high_pass = 0.01
+    high_pass = None
     """Lower bound of the band-pass filter."""
-    low_pass = 0.1
+    low_pass = None
     """Upper bound of the band-pass filter."""
-    bpf_order = 2
+    bpf_order = None
     """Order of the band-pass filter."""
-    min_coverage = 0.5
+    min_coverage = None
     """Coverage threshold to apply to parcels in each atlas."""
     exact_time = []
     """Produce correlation matrices limited to each requested amount of time."""

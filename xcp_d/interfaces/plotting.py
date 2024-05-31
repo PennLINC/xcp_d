@@ -9,7 +9,10 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from nilearn.plotting import plot_anat
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+from nilearn.plotting import plot_anat, plot_stat_map, plot_surf_stat_map
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -24,11 +27,12 @@ from nipype.interfaces.base import (
     traits,
 )
 from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
+from templateflow.api import get as get_template
 
 from xcp_d.utils.confounds import filter_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
-from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es
+from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
 from xcp_d.utils.write_save import read_ndata
 
@@ -914,3 +918,420 @@ class PNGAppend(FSLCommand):
         outputs = self._outputs().get()
         outputs["out_file"] = os.path.abspath(self.inputs.out_file)
         return outputs
+
+
+class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
+    in_files = traits.List(
+        File(exists=True),
+        mandatory=True,
+        desc="CIFTI files to plot.",
+    )
+    cortical_atlases = traits.List(
+        traits.Str,
+        mandatory=True,
+        desc="Atlases to select from 'labels'.",
+    )
+    labels = traits.List(
+        traits.Str,
+        mandatory=True,
+        desc="Labels for the CIFTI files.",
+    )
+    out_file = File(
+        exists=False,
+        mandatory=False,
+        desc="Output file.",
+        default="plot.svg",
+        usedefault=True,
+    )
+    vmin = traits.Float(
+        mandatory=False,
+        default_value=0,
+        usedefault=True,
+        desc="Minimum value for the colormap.",
+    )
+    vmax = traits.Float(
+        mandatory=False,
+        default_value=0,
+        usedefault=True,
+        desc="Maximum value for the colormap.",
+    )
+
+
+class _PlotCiftiParcellationOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+
+
+class PlotCiftiParcellation(SimpleInterface):
+    """Plot a parcellated (.pscalar.nii) CIFTI file."""
+
+    input_spec = _PlotCiftiParcellationInputSpec
+    output_spec = _PlotCiftiParcellationOutputSpec
+
+    def _run_interface(self, runtime):
+        assert len(self.inputs.in_files) == len(self.inputs.labels)
+        assert len(self.inputs.cortical_atlases) > 0
+
+        rh = str(
+            get_template(
+                template="fsLR",
+                hemi="R",
+                density="32k",
+                suffix="midthickness",
+                extension=".surf.gii",
+            )
+        )
+        lh = str(
+            get_template(
+                template="fsLR",
+                hemi="L",
+                density="32k",
+                suffix="midthickness",
+                extension=".surf.gii",
+            )
+        )
+
+        # Create Figure and GridSpec.
+        # One subplot for each file. Each file will then have four subplots, arranged in a square.
+        cortical_files = [
+            self.inputs.in_files[i]
+            for i, atlas in enumerate(self.inputs.labels)
+            if atlas in self.inputs.cortical_atlases
+        ]
+        cortical_atlases = [
+            atlas for atlas in self.inputs.labels if atlas in self.inputs.cortical_atlases
+        ]
+        n_files = len(cortical_files)
+        fig = plt.figure(constrained_layout=False)
+
+        if n_files == 1:
+            fig.set_size_inches(6.5, 6)
+            # Add an additional column for the colorbar
+            gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 0.05])
+            gs_list = [gs[0, 0]]
+            subplots = [fig.add_subplot(gs) for gs in gs_list]
+            cbar_gs_list = [gs[0, 1]]
+        else:
+            nrows = np.ceil(n_files / 2).astype(int)
+            fig.set_size_inches(12.5, 6 * nrows)
+            # Add an additional column for the colorbar
+            gs = GridSpec(nrows, 3, figure=fig, width_ratios=[1, 1, 0.05])
+            gs_list = [gs[i, j] for i in range(nrows) for j in range(2)]
+            subplots = [fig.add_subplot(gs) for gs in gs_list]
+            cbar_gs_list = [gs[i, 2] for i in range(nrows)]
+
+        for subplot in subplots:
+            subplot.set_axis_off()
+
+        vmin, vmax = self.inputs.vmin, self.inputs.vmax
+        if vmin == vmax:
+            # Define vmin and vmax based on all of the files
+            vmin, vmax = np.inf, -np.inf
+            LOGGER.warning(f"Setting vmin={vmin}, vmax={vmax}")
+            for cortical_file in cortical_files:
+                img_data = nb.load(cortical_file).get_fdata()
+                vmin = np.min([np.nanmin(img_data), vmin])
+                vmax = np.max([np.nanmax(img_data), vmax])
+                LOGGER.warning(f"Setting vmin={vmin}, vmax={vmax}")
+
+        for i_file in range(n_files):
+            subplot = subplots[i_file]
+            subplot.set_title(cortical_atlases[i_file])
+            subplot_gridspec = gs_list[i_file]
+
+            # Create 4 Axes (2 rows, 2 columns) from the subplot
+            gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot_gridspec)
+            inner_subplots = [
+                fig.add_subplot(gs_inner[i, j], projection="3d")
+                for i in range(2)
+                for j in range(2)
+            ]
+
+            img = nb.load(cortical_files[i_file])
+            img_data = img.get_fdata()
+            img_axes = [img.header.get_axis(i) for i in range(img.ndim)]
+            lh_surf_data = surf_data_from_cifti(
+                img_data,
+                img_axes[1],
+                "CIFTI_STRUCTURE_CORTEX_LEFT",
+            )
+            rh_surf_data = surf_data_from_cifti(
+                img_data,
+                img_axes[1],
+                "CIFTI_STRUCTURE_CORTEX_RIGHT",
+            )
+
+            plot_surf_stat_map(
+                lh,
+                lh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="left",
+                view="lateral",
+                engine="matplotlib",
+                cmap="cool",
+                colorbar=False,
+                axes=inner_subplots[0],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                rh,
+                rh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="right",
+                view="lateral",
+                engine="matplotlib",
+                cmap="cool",
+                colorbar=False,
+                axes=inner_subplots[1],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                lh,
+                lh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="left",
+                view="medial",
+                engine="matplotlib",
+                cmap="cool",
+                colorbar=False,
+                axes=inner_subplots[2],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                rh,
+                rh_surf_data,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="right",
+                view="medial",
+                engine="matplotlib",
+                cmap="cool",
+                colorbar=False,
+                axes=inner_subplots[3],
+                figure=fig,
+            )
+
+            for ax in inner_subplots:
+                ax.set_rasterized(True)
+
+        # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
+        sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
+
+        for colorbar_gridspec in cbar_gs_list:
+            colorbar_ax = fig.add_subplot(colorbar_gridspec)
+            # Add a colorbar to colorbar_ax using the ScalarMappable
+            fig.colorbar(sm, cax=colorbar_ax)
+
+        self._results["out_file"] = fname_presuffix(
+            cortical_files[0],
+            suffix="_file.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        fig.savefig(
+            self._results["out_file"],
+            bbox_inches="tight",
+            pad_inches=None,
+            format="svg",
+        )
+        plt.close(fig)
+
+        return runtime
+
+
+class _PlotDenseCiftiInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to plot.",
+    )
+    name_source = File(
+        exists=False,
+        mandatory=True,
+        desc="File to use as the name source. Unused but retained for compatibility.",
+    )
+
+
+class _PlotDenseCiftiOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+
+
+class PlotDenseCifti(SimpleInterface):
+    """Plot a dense (.dscalar.nii) CIFTI file."""
+
+    input_spec = _PlotDenseCiftiInputSpec
+    output_spec = _PlotDenseCiftiOutputSpec
+
+    def _run_interface(self, runtime):
+        rh = str(
+            get_template(
+                template="fsLR",
+                hemi="R",
+                density="32k",
+                suffix="midthickness",
+                extension=".surf.gii",
+            )
+        )
+        lh = str(
+            get_template(
+                template="fsLR",
+                hemi="L",
+                density="32k",
+                suffix="midthickness",
+                extension=".surf.gii",
+            )
+        )
+
+        cifti = nb.load(self.inputs.in_file)
+        cifti_data = cifti.get_fdata()
+        cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
+
+        fig, axes = plt.subplots(figsize=(4, 4), ncols=2, nrows=2, subplot_kw={"projection": "3d"})
+        lh_surf_data = surf_data_from_cifti(
+            cifti_data,
+            cifti_axes[1],
+            "CIFTI_STRUCTURE_CORTEX_LEFT",
+        )
+        rh_surf_data = surf_data_from_cifti(
+            cifti_data,
+            cifti_axes[1],
+            "CIFTI_STRUCTURE_CORTEX_RIGHT",
+        )
+
+        vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
+        vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
+
+        axes[0, 0].set_rasterized(True)
+        axes[0, 1].set_rasterized(True)
+        axes[1, 0].set_rasterized(True)
+        axes[1, 1].set_rasterized(True)
+
+        plot_surf_stat_map(
+            lh,
+            lh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="left",
+            view="lateral",
+            engine="matplotlib",
+            colorbar=False,
+            axes=axes[0, 0],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            lh,
+            lh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="left",
+            view="medial",
+            engine="matplotlib",
+            colorbar=False,
+            axes=axes[1, 0],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            rh,
+            rh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="right",
+            view="lateral",
+            engine="matplotlib",
+            colorbar=False,
+            axes=axes[0, 1],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            rh,
+            rh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="right",
+            view="medial",
+            engine="matplotlib",
+            colorbar=False,
+            axes=axes[1, 1],
+            figure=fig,
+        )
+        axes[0, 0].set_title("Left Hemisphere", fontsize=10)
+        axes[0, 1].set_title("Right Hemisphere", fontsize=10)
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_file.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        fig.tight_layout()
+        fig.savefig(
+            self._results["out_file"],
+            bbox_inches="tight",
+            pad_inches=None,
+            format="svg",
+        )
+        plt.close(fig)
+
+        return runtime
+
+
+class _PlotNiftiInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to plot.",
+    )
+    name_source = File(
+        exists=False,
+        mandatory=True,
+        desc="File to use as the name source.",
+    )
+
+
+class _PlotNiftiOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+
+
+class PlotNifti(SimpleInterface):
+    """Plot a NIfTI file."""
+
+    input_spec = _PlotNiftiInputSpec
+    output_spec = _PlotNiftiOutputSpec
+
+    def _run_interface(self, runtime):
+        from bids.layout import parse_file_entities
+
+        ENTITIES_TO_USE = ["cohort", "den", "res"]
+
+        # templateflow uses the full entity names in its BIDSLayout config,
+        # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
+        ENTITY_NAMES_MAPPER = {"den": "density", "res": "resolution"}
+        space = parse_file_entities(self.inputs.name_source)["space"]
+        file_entities = parse_file_entities(self.inputs.name_source)
+        entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
+        entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in entities_to_use.items()}
+
+        template_file = get_template(template=space, **entities_to_use, suffix="T1w", desc=None)
+        if isinstance(template_file, list):
+            template_file = template_file[0]
+
+        template = str(template_file)
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_plot.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        plot_stat_map(
+            self.inputs.in_file,
+            bg_img=template,
+            display_mode="mosaic",
+            cut_coords=8,
+            colorbar=True,
+            output_file=self._results["out_file"],
+        )
+        return runtime

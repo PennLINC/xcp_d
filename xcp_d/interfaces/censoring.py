@@ -24,6 +24,7 @@ from xcp_d.utils.confounds import (
 )
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd
+from xcp_d.utils.write_save import write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -783,5 +784,71 @@ class GenerateDesignMatrix(SimpleInterface):
                 use_ext=True,
             )
             design_matrix_df.to_csv(self._results["design_matrix"], sep="\t", index=False)
+
+
+class _ReduceCiftiInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI timeseries file to reduce.",
+    )
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Temporal mask; all motion outlier volumes set to 1. "
+            "This is a TSV file with one column: 'framewise_displacement'."
+        ),
+    )
+    column = traits.Str(
+        mandatory=True,
+        desc="Column name in the temporal mask to use for censoring.",
+    )
+
+
+class _ReduceCiftiOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc="Censored CIFTI file.",
+    )
+
+
+class ReduceCifti(SimpleInterface):
+    """Remove flagged volumes from a CIFTI series file."""
+
+    input_spec = _ReduceCiftiInputSpec
+    output_spec = _ReduceCiftiOutputSpec
+
+    def _run_interface(self, runtime):
+        # Read in temporal mask
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        img = nb.load(self.inputs.in_file)
+
+        if self.inputs.column not in censoring_df.columns:
+            raise ValueError(
+                f"Column '{self.inputs.column}' not found in temporal mask file "
+                f"({self.inputs.temporal_mask})."
+            )
+
+        # Drop the high-motion volumes, because the CIFTI is already censored
+        censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
+        censored_censoring_df.reset_index(drop=True, inplace=True)
+        if censored_censoring_df.shape[0] != img.shape[0]:
+            raise ValueError(
+                f"Number of volumnes in the temporal mask ({censored_censoring_df.shape[0]}) "
+                f"does not match the CIFTI ({img.shape[0]})."
+            )
+
+        data = img.get_fdata()
+        retain_idx = (censored_censoring_df[self.inputs.column] == 0).index.values
+        data = data[retain_idx, ...]
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            prefix=f"{self.inputs.column}_",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        write_ndata(data.T, template=self.inputs.in_file, filename=self._results["out_file"])
 
         return runtime

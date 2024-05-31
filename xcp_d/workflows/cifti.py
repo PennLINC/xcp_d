@@ -154,7 +154,6 @@ def init_postprocess_cifti_wf(
                 "atlases",
                 "atlas_files",
                 "atlas_labels_files",
-                "parcellated_atlas_files",
             ],
         ),
         name="inputnode",
@@ -363,7 +362,10 @@ the following post-processing was performed.
         ])  # fmt:skip
 
     if atlases:
-        connectivity_wf = init_functional_connectivity_cifti_wf(mem_gb=mem_gbx)
+        connectivity_wf = init_functional_connectivity_cifti_wf(
+            mem_gb=mem_gbx,
+            exact_scans=exact_scans,
+        )
 
         workflow.connect([
             (inputnode, connectivity_wf, [
@@ -371,7 +373,6 @@ the following post-processing was performed.
                 ("atlases", "inputnode.atlases"),
                 ("atlas_files", "inputnode.atlas_files"),
                 ("atlas_labels_files", "inputnode.atlas_labels_files"),
-                ("parcellated_atlas_files", "inputnode.parcellated_atlas_files"),
             ]),
             (prepare_confounds_wf, connectivity_wf, [
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
