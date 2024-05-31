@@ -94,6 +94,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--upper-bpf=0.0",
         "--min-time=100",
         "--create-matrices",
+        "all",
         "80",
         "200",
         "--atlases",
@@ -245,6 +246,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--min-time=100",
         "--despike=n",
         "--disable-bandpass-filter",
+        "--create-matrices=all",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -413,7 +415,7 @@ def test_nibabies(data_dir, output_dir, working_dir):
         "--head_radius=auto",
         "--smoothing=0",
         "--fd-thresh=0",
-        "--create-matrices=none",
+        "--create-matrices=all",
         "--motion-filter-type=none",
     ]
     _run_and_generate(
