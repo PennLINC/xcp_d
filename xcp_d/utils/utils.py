@@ -612,28 +612,3 @@ def _create_mem_gb(bold_fname):
         mem_gbz["resampled"] = 3
 
     return mem_gbz
-
-
-def create_cifti_mask(data_file):
-    """Replace all-zero time series with NaNs."""
-    import os
-
-    import nibabel as nb
-    import numpy as np
-
-    from xcp_d.utils.write_save import write_ndata
-
-    mask_file = os.path.abspath("data_mask.dscalar.nii")
-    data_img = nb.load(data_file)
-    data_arr = data_img.get_fdata()
-
-    # Flag vertices where the time series is all zeros or NaNs
-    bad_vertices_idx = np.where(np.all(np.logical_or(data_arr == 0, np.isnan(data_arr)), axis=0))[
-        0
-    ]
-    data_arr[:, bad_vertices_idx] = np.nan
-    # Set any vertex with a NaN to 0 and all others to 1 in the mask file
-    vertex_weights_arr = np.all(~np.isnan(data_arr), axis=0).astype(int)
-
-    write_ndata(vertex_weights_arr, template=data_file, filename=mask_file)
-    return mask_file

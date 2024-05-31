@@ -711,3 +711,47 @@ class CiftiMask(SimpleInterface):
         write_ndata(in_data.T, template=in_file, filename=self._results["out_file"])
 
         return runtime
+
+
+class _CiftiVertexMaskInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to mask.",
+    )
+
+
+class _CiftiVertexMaskOutputSpec(TraitedSpec):
+    mask_file = File(exists=True, desc="CIFTI mask.")
+
+
+class CiftiVertexMask(SimpleInterface):
+    """Create a vertex-wise mask."""
+
+    input_spec = _CiftiVertexMaskInputSpec
+    output_spec = _CiftiVertexMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        data_file = self.inputs.in_file
+
+        data_img = nb.load(data_file)
+        data_arr = data_img.get_fdata()
+
+        # Flag vertices where the time series is all zeros or NaNs
+        bad_vertices_idx = np.where(
+            np.all(np.logical_or(data_arr == 0, np.isnan(data_arr)), axis=0)
+        )[0]
+        data_arr[:, bad_vertices_idx] = np.nan
+        # Set any vertex with a NaN to 0 and all others to 1 in the mask file
+        vertex_weights_arr = np.all(~np.isnan(data_arr), axis=0).astype(int)
+
+        # Save out the TSV
+        self._results["mask_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=".dscalar.nii",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(vertex_weights_arr, template=data_file, filename=self._results["mask_file"])
+
+        return runtime

@@ -989,9 +989,8 @@ def init_parcellate_cifti_wf(
         Coverage TSV files. One for each atlas. Only output if `compute_mask` is True.
     """
     from xcp_d import config
-    from xcp_d.interfaces.connectivity import CiftiMask, CiftiToTSV
+    from xcp_d.interfaces.connectivity import CiftiMask, CiftiToTSV, CiftiVertexMask
     from xcp_d.interfaces.workbench import CiftiMath, CiftiParcellateWorkbench
-    from xcp_d.utils.utils import create_cifti_mask
 
     workflow = Workflow(name=name)
 
@@ -1029,15 +1028,11 @@ def init_parcellate_cifti_wf(
     if compute_mask:
         # Write out a vertex-wise binary coverage map using Python.
         vertexwise_coverage = pe.Node(
-            niu.Function(
-                input_names=["data_file"],
-                output_names=["mask_file"],
-                function=create_cifti_mask,
-            ),
+            CiftiVertexMask(),
             name="vertexwise_coverage",
         )
         workflow.connect([
-            (inputnode, vertexwise_coverage, [("in_file", "data_file")]),
+            (inputnode, vertexwise_coverage, [("in_file", "in_file")]),
             (vertexwise_coverage, coverage_buffer, [("mask_file", "vertexwise_coverage")]),
             (vertexwise_coverage, outputnode, [("mask_file", "vertexwise_coverage")]),
         ])  # fmt:skip
