@@ -77,7 +77,6 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
-    abcc_qc = config.workflow.abcc_qc
     fd_thresh = config.workflow.fd_thresh
     atlases = config.execution.atlases
 
@@ -94,6 +93,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "filtered_motion",
                 "temporal_mask",
                 "denoised_bold",
+                "denoised_interpolated_bold",
+                "censored_denoised_bold",
                 "smoothed_denoised_bold",
                 "bold_mask",  # only for niftis, from postproc workflows
                 "boldref",  # only for niftis, from postproc workflows
@@ -124,6 +125,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
             ("denoised_bold", "denoised_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
+            ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("bold_mask", "bold_mask"),
             ("boldref", "boldref"),
@@ -144,6 +147,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("filtered_motion", "filtered_motion"),
             ("temporal_mask", "temporal_mask"),
             ("denoised_bold", "denoised_bold"),
+            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
+            ("censored_denoised_bold", "censored_denoised_bold"),
             ("smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("timeseries", "timeseries"),
             ("timeseries_ciftis", "timeseries_ciftis"),
@@ -222,7 +227,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ])  # fmt:skip
 
     if file_format == "cifti":
-        ds_censored_filtered_bold = pe.Node(
+        ds_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["den"],
@@ -230,7 +235,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 den="91k",
                 extension=".dtseries.nii",
             ),
-            name="ds_censored_filtered_bold",
+            name="ds_denoised_bold",
             run_without_submitting=True,
             mem_gb=2,
         )
@@ -249,29 +254,15 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-        if abcc_qc and (fd_thresh > 0):
-            ds_interpolated_filtered_bold = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    dismiss_entities=["den"],
-                    desc="interpolated",
-                    den="91k",
-                    extension=".dtseries.nii",
-                ),
-                name="ds_interpolated_filtered_bold",
-                run_without_submitting=True,
-                mem_gb=2,
-            )
-
     else:
-        ds_censored_filtered_bold = pe.Node(
+        ds_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 desc="denoised",
                 extension=".nii.gz",
                 compression=True,
             ),
-            name="ds_censored_filtered_bold",
+            name="ds_denoised_bold",
             run_without_submitting=True,
             mem_gb=2,
         )
@@ -289,24 +280,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 mem_gb=2,
             )
 
-        if abcc_qc and (fd_thresh > 0):
-            ds_interpolated_filtered_bold = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    desc="interpolated",
-                    extension=".nii.gz",
-                    compression=True,
-                ),
-                name="ds_interpolated_filtered_bold",
-                run_without_submitting=True,
-                mem_gb=2,
-            )
-
     workflow.connect([
-        (clean_name_source, ds_censored_filtered_bold, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_censored_filtered_bold, [("censored_denoised_bold", "in_file")]),
-        (filter_runs, ds_censored_filtered_bold, [
-            (("censored_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
+        (clean_name_source, ds_denoised_bold, [("name_source", "source_file")]),
+        (concatenate_inputs, ds_denoised_bold, [("denoised_bold", "in_file")]),
+        (filter_runs, ds_denoised_bold, [
+            (("denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
         ]),
     ])  # fmt:skip
 
@@ -318,17 +296,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ]),
             (filter_runs, ds_smoothed_denoised_bold, [
                 (("smoothed_denoised_bold", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
-        ])  # fmt:skip
-
-    if abcc_qc and (fd_thresh > 0):
-        workflow.connect([
-            (clean_name_source, ds_interpolated_filtered_bold, [("name_source", "source_file")]),
-            (concatenate_inputs, ds_interpolated_filtered_bold, [
-                ("denoised_interpolated_bold", "in_file"),
-            ]),
-            (filter_runs, ds_interpolated_filtered_bold, [
-                (("denoised_interpolated_bold", _make_xcpd_uri, output_dir), "Sources"),
             ]),
         ])  # fmt:skip
 

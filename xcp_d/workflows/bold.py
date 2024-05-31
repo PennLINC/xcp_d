@@ -203,6 +203,7 @@ the following post-processing was performed.
                 "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
+                "denoised_bold",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
@@ -265,6 +266,10 @@ the following post-processing was performed.
         (prepare_confounds_wf, denoise_bold_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ("outputnode.confounds_file", "inputnode.confounds_file"),
+        ]),
+        (denoise_bold_wf, outputnode, [
+            ("outputnode.denoised_interpolated_bold", "denoised_interpolated_bold"),
+            ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
         ]),
     ])  # fmt:skip
 

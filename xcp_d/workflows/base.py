@@ -380,6 +380,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
+                "denoised_bold",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",

@@ -133,10 +133,6 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
 
 
 class _FilterOutFailedRunsOutputSpec(TraitedSpec):
-    censored_denoised_bold = traits.List(
-        File(exists=True),
-        desc="Denoised BOLD data.",
-    )
     preprocessed_bold = traits.List(
         File(exists=True),
         desc="Preprocessed BOLD files, after dummy volume removal.",
@@ -156,7 +152,15 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         ),
         desc="TSV files with high-motion outliers indexed.",
     )
+    denoised_bold = traits.List(
+        File(exists=True),
+        desc="Denoised BOLD data.",
+    )
     denoised_interpolated_bold = traits.List(
+        File(exists=True),
+        desc="Denoised BOLD data.",
+    )
+    censored_denoised_bold = traits.List(
         File(exists=True),
         desc="Denoised BOLD data.",
     )
@@ -213,6 +217,7 @@ class FilterOutFailedRuns(SimpleInterface):
             "fmriprep_confounds_file": self.inputs.fmriprep_confounds_file,
             "filtered_motion": self.inputs.filtered_motion,
             "temporal_mask": self.inputs.temporal_mask,
+            "denoised_bold": self.inputs.denoised_bold,
             "denoised_interpolated_bold": self.inputs.denoised_interpolated_bold,
             "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
             "bold_mask": self.inputs.bold_mask,
