@@ -349,7 +349,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             iterfield=["timeseries"],
         )
         workflow.connect([
-            (concatenate_inputs, correlate_timeseries, [("timeseries", "timeseries")]),
+            (concatenate_inputs, correlate_timeseries, [
+                ("timeseries", "timeseries"),
+                ("temporal_mask", "temporal_mask"),
+            ]),
         ])  # fmt:skip
 
         make_correlations_dict = pe.MapNode(
