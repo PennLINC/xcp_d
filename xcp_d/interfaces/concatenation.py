@@ -54,6 +54,14 @@ class CleanNameSource(SimpleInterface):
 
 
 class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
+    censored_denoised_bold = traits.List(
+        traits.Either(
+            File(exists=True),
+            Undefined,
+        ),
+        mandatory=True,
+        desc="Denoised BOLD data. This is used to index successful runs.",
+    )
     preprocessed_bold = traits.List(
         traits.Either(
             File(exists=True),
@@ -86,23 +94,7 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="TSV files with high-motion outliers indexed.",
     )
-    denoised_bold = traits.List(
-        traits.Either(
-            File(exists=True),
-            Undefined,
-        ),
-        mandatory=True,
-        desc="Denoised BOLD data.",
-    )
     denoised_interpolated_bold = traits.List(
-        traits.Either(
-            File(exists=True),
-            Undefined,
-        ),
-        mandatory=True,
-        desc="Denoised BOLD data.",
-    )
-    censored_denoised_bold = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
@@ -141,6 +133,10 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
 
 
 class _FilterOutFailedRunsOutputSpec(TraitedSpec):
+    censored_denoised_bold = traits.List(
+        File(exists=True),
+        desc="Denoised BOLD data.",
+    )
     preprocessed_bold = traits.List(
         File(exists=True),
         desc="Preprocessed BOLD files, after dummy volume removal.",
@@ -160,15 +156,7 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         ),
         desc="TSV files with high-motion outliers indexed.",
     )
-    denoised_bold = traits.List(
-        File(exists=True),
-        desc="Denoised BOLD data.",
-    )
     denoised_interpolated_bold = traits.List(
-        File(exists=True),
-        desc="Denoised BOLD data.",
-    )
-    censored_denoised_bold = traits.List(
         File(exists=True),
         desc="Denoised BOLD data.",
     )
@@ -219,14 +207,13 @@ class FilterOutFailedRuns(SimpleInterface):
     output_spec = _FilterOutFailedRunsOutputSpec
 
     def _run_interface(self, runtime):
-        denoised_bold = self.inputs.denoised_bold
+        censored_denoised_bold = self.inputs.censored_denoised_bold
         inputs_to_filter = {
             "preprocessed_bold": self.inputs.preprocessed_bold,
             "full_confounds": self.inputs.full_confounds,
             "modified_full_confounds": self.inputs.modified_full_confounds,
             "temporal_mask": self.inputs.temporal_mask,
             "denoised_interpolated_bold": self.inputs.denoised_interpolated_bold,
-            "censored_denoised_bold": self.inputs.censored_denoised_bold,
             "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
             "bold_mask": self.inputs.bold_mask,
             "boldref": self.inputs.boldref,
@@ -234,14 +221,14 @@ class FilterOutFailedRuns(SimpleInterface):
             "timeseries_ciftis": self.inputs.timeseries_ciftis,
         }
 
-        n_runs = len(denoised_bold)
-        successful_runs = [i for i, f in enumerate(denoised_bold) if isdefined(f)]
+        n_runs = len(censored_denoised_bold)
+        successful_runs = [i for i, f in enumerate(censored_denoised_bold) if isdefined(f)]
 
         if len(successful_runs) < n_runs:
             LOGGER.warning(f"Of {n_runs} runs, only runs {successful_runs} were successful.")
 
-        self._results["denoised_bold"] = [
-            denoised_bold[i] for i in successful_runs
+        self._results["censored_denoised_bold"] = [
+            censored_denoised_bold[i] for i in successful_runs
         ]
 
         for input_name, input_list in inputs_to_filter.items():
