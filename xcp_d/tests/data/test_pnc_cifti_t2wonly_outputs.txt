@@ -33,8 +33,6 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-9
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-denoised_bold.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-interpolated_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_stat-reho_boldmap.dscalar.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_stat-reho_boldmap.json
 sub-1648798153_ses-PNC1_executive_summary.html

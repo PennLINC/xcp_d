@@ -45,8 +45,6 @@ sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoisedSmoothed_
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.json
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-interpolated_bold.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-linc_qc.tsv
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_stat-alff_boldmap.dscalar.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_den-91k_stat-alff_boldmap.json
@@ -133,8 +131,6 @@ sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoisedSmoothed_
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-denoised_bold.json
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-interpolated_bold.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_desc-linc_qc.tsv
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_stat-alff_boldmap.dscalar.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_den-91k_stat-alff_boldmap.json
@@ -214,8 +210,6 @@ sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dt
 sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
 sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-denoised_bold.json
-sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
-sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-interpolated_bold.json
 sub-01/func/sub-01_task-imagery_space-fsLR_seg-4S156Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_space-fsLR_seg-4S156Parcels_den-91k_stat-mean_timeseries.ptseries.nii
 sub-01/func/sub-01_task-imagery_space-fsLR_seg-4S156Parcels_stat-mean_timeseries.json
