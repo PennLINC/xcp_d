@@ -68,7 +68,7 @@ which may be overridden by the user:
 abcd Mode
 =========
 
-The ``abcd`` mode is designed by the `DCAN`_ for processing data from the `ABCD`_ study.
+The ``abcd`` mode is designed by the `DCAN`_ lab for processing data from the `ABCD`_ study.
 
 In this mode, XCP-D will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
@@ -108,7 +108,7 @@ which may be overridden by the user:
 hbcd Mode
 =========
 
-The ``hbcd`` mode is designed by the `DCAN`_ for processing data from the `HBCD`_ study.
+The ``hbcd`` mode is designed by the `DCAN`_ lab for processing data from the `HBCD`_ study.
 
 In this mode, XCP-D will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
