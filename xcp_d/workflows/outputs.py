@@ -173,8 +173,8 @@ def init_postproc_derivatives_wf(
     %(coverage_ciftis)s
     qc_file
         LINC-style quality control file
-    %(denoised_bold)s
-    %(smoothed_denoised_bold)s
+    denoised_bold
+    smoothed_denoised_bold
     alff
         alff nifti
     parcellated_alff
