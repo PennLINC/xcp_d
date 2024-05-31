@@ -26,6 +26,12 @@ sections:
               This plot shows standardized FD, DVARS, and then a carpet plot for the
               time series of each voxel/vertex's time series of activity.
     subtitle: Carpet Plot After Postprocessing
+  - bids:
+      datatype: figures
+      desc: coverage
+      suffix: bold
+    caption:  Parcellation coverage.
+    subtitle: Coverage
   - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
     caption:  This plot shows heatmaps from ROI-to-ROI correlations from one to four atlases.
     subtitle: Correlation Heatmaps from A Subset of Atlases
@@ -38,10 +44,34 @@ sections:
     subtitle: ALFF
   - bids:
       datatype: figures
+      desc: alffSurfacePlot
+      suffix: bold
+    caption:  ALFF, or amplitude of low frequency fluctuations.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffParcellated
+      suffix: bold
+    caption:  Parcellated ALFF.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
       desc: rehoVolumetricPlot
       suffix: bold
     caption:  ReHo, or regional homogeneity.
               Overlaid on T1W image with same entities as the original image.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoSurfacePlot
+      suffix: bold
+    caption:  ReHo, or regional homogeneity.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoParcellated
+      suffix: bold
+    caption:  Parcellated ReHo.
     subtitle: ReHo
 - name: About
   reportlets:
