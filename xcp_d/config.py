@@ -538,6 +538,8 @@ class workflow(_Config):
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     output_interpolated = None
     """Output interpolated data, not censored data."""
+    output_correlations = None
+    """Output correlations from censored data. This doesn't affect exact_scans."""
     combine_runs = None
     """Combine runs of the same task."""
     motion_filter_type = None

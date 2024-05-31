@@ -929,52 +929,63 @@ def _validate_parameters(opts, build_log, parser):
     assert opts.linc_qc in (True, False, "auto")
 
     # Check parameters based on the mode
-    if opts.mode in ("abcd", "hbcd"):
+    if opts.mode == "abcd":
         opts.abcc_qc = True
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
+        opts.dcan_correlation_lengths = (
+            ["all", "300", "480"]
+            if opts.dcan_correlation_lengths is None
+            else opts.dcan_correlation_lengths
+        )
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
-        opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
+        opts.input_type = "nibabies" if opts.input_type == "auto" else opts.input_type
+        opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
+        if opts.motion_filter_type is None:
+            error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
+        opts.output_correlations = True if "all" in opts.dcan_correlation_lengths else False
         opts.output_interpolated = True
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
         )
+        # Remove "all" from the list of correlation lengths
+        opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != "all"]
+    elif opts.mode == "hbcd":
+        opts.abcc_qc = True
+        opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
+        opts.dcan_correlation_lengths = (
+            ["all", "300", "480"]
+            if opts.dcan_correlation_lengths is None
+            else opts.dcan_correlation_lengths
+        )
+        opts.despike = True if (opts.despike == "auto") else opts.despike
+        opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
+        opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
+        opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
+        opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
+        opts.output_correlations = True if "all" in opts.dcan_correlation_lengths else False
+        opts.output_interpolated = True
+        opts.process_surfaces = (
+            True if (opts.process_surfaces == "auto") else opts.process_surfaces
+        )
+        # Remove "all" from the list of correlation lengths
+        opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != "all"]
     elif opts.mode == "linc":
         opts.abcc_qc = False if (opts.abcc_qc == "auto") else opts.abcc_qc
+        opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
         opts.despike = True if (opts.despike == "auto") else opts.despike
-        opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
+        opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
+        opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
         opts.linc_qc = True
+        opts.output_correlations = True
         opts.output_interpolated = False
-        opts.process_surfaces = (
-            False if (opts.process_surfaces == "auto") else opts.process_surfaces
-        )
+        opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
-
-    if opts.mode == "hbcd":
-        opts.input_type = "nibabies" if opts.input_type == "auto" else opts.input_type
-    elif opts.mode in ("abcd", "linc"):
-        opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
-
-    if opts.mode == "abcd":
-        opts.dcan_correlation_lengths = (
-            ["all", "300", "480"]
-            if opts.dcan_correlation_lengths is None
-            else opts.dcan_correlation_lengths
-        )
-    elif opts.mode == "hbcd":
-        opts.dcan_correlation_lengths = (
-            ["all", "300", "480"]
-            if opts.dcan_correlation_lengths is None
-            else opts.dcan_correlation_lengths
-        )
-    elif opts.mode == "linc":
-        opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
-        opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
 
     # Bandpass filter parameters
     if opts.high_pass <= 0 and opts.low_pass <= 0:
