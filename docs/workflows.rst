@@ -41,8 +41,6 @@ and correlation matrices, will be censored.
 Required Parameters
 -------------------
 
--  ``--participant_label``: The participant label to process.
-
 Optional Parameters
 -------------------
 
