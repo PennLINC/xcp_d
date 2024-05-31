@@ -650,22 +650,30 @@ approach.
         ]),
     ])  # fmt:skip
 
+    denoised_bold_buffer = pe.Node(
+        niu.IdentityInterface(fields=["denoised_bold"]),
+        name="denoised_bold_buffer",
+    )
     if config.workflow.output_interpolated:
         workflow.connect([
-            (censor_interpolated_data, outputnode, [("censored_denoised_bold", "denoised_bold")]),
-        ])  # fmt:skip
-    else:
-        workflow.connect([
-            (regress_and_filter_bold, outputnode, [
+            (regress_and_filter_bold, denoised_bold_buffer, [
                 ("denoised_interpolated_bold", "denoised_bold"),
             ]),
         ])  # fmt:skip
+    else:
+        workflow.connect([
+            (censor_interpolated_data, denoised_bold_buffer, [
+                ("censored_denoised_bold", "denoised_bold"),
+            ]),
+        ])  # fmt:skip
+
+    workflow.connect([(denoised_bold_buffer, outputnode, [("denoised_bold", "denoised_bold")])])
 
     if smoothing:
         resd_smoothing_wf = init_resd_smoothing_wf(mem_gb=mem_gb)
 
         workflow.connect([
-            (outputnode, resd_smoothing_wf, [("denoised_bold", "inputnode.bold_file")]),
+            (denoised_bold_buffer, resd_smoothing_wf, [("denoised_bold", "inputnode.bold_file")]),
             (resd_smoothing_wf, outputnode, [
                 ("outputnode.smoothed_bold", "smoothed_denoised_bold"),
             ]),
