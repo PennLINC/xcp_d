@@ -126,6 +126,14 @@ def _bids_filter(value, parser):
             raise parser.error(f"Path does not exist: <{value}>.")
 
 
+def _min_one(value, parser):
+    """Ensure an argument is not lower than 1."""
+    value = int(value)
+    if value < 1:
+        raise parser.error("Argument can't be less than one.")
+    return value
+
+
 class YesNoAction(Action):
     """A custom argparse "store" action to handle "y", "n", None, "auto" values."""
 
