@@ -133,13 +133,11 @@ series to retain the original scaling.
         n_procs=omp_nthreads,
     )
 
-    plot_interface = PlotDenseCifti if cifti else PlotNifti
+    plot_interface = PlotDenseCifti if (file_format == "cifti") else PlotNifti
     alff_plot = pe.Node(
         plot_interface(name_source=name_source),
         name="alff_plot",
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, alff_compt, [
             ("denoised_bold", "in_file"),
