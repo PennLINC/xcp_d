@@ -429,7 +429,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
     parameters.append("--clean-workdir")
     parameters.append("--stop-on-first-crash")
     parameters.append("--notrack")
-    parameters.append("-vvvvv")
+    parameters.append("-v")
 
     if test_main:
         # This runs, but for some reason doesn't count toward coverage.

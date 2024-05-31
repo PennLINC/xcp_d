@@ -381,7 +381,7 @@ class execution(_Config):
     """Checksum (SHA256) of the ``dataset_description.json`` of the BIDS dataset."""
     bids_filters = None
     """A dictionary of BIDS selection filters."""
-    boilerplate_only = False
+    boilerplate_only = None
     """Only generate a boilerplate."""
     debug = []
     """Debug mode(s)."""
@@ -397,11 +397,11 @@ class execution(_Config):
     """Output verbosity."""
     low_mem = None
     """Utilize uncompressed NIfTIs and other tricks to minimize memory allocation."""
-    md_only_boilerplate = False
+    md_only_boilerplate = None
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
-    notrack = False
+    notrack = None
     """Do not collect telemetry information for *XCP-D*."""
-    reports_only = False
+    reports_only = None
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
     """Folder where derivatives will be stored."""
@@ -419,7 +419,7 @@ class execution(_Config):
     """The root folder of the TemplateFlow client."""
     work_dir = Path("work").absolute()
     """Path to a working directory where intermediate results will be available."""
-    write_graph = False
+    write_graph = None
     """Write out the computational graph corresponding to the planned preprocessing."""
 
     _layout = None
@@ -524,21 +524,21 @@ class workflow(_Config):
 
     mode = None
     """Study- or pipeline-specific mode used to set other parameters."""
-    file_format = "auto"
+    file_format = None
     """The file format to process. May be "auto", "cifti", or "nifti"."""
     dummy_scans = None
     """Number of label-control volume pairs to delete before CBF computation."""
     input_type = None
     """Postprocessing pipeline type."""
-    despike = False
+    despike = None
     """Despike the BOLD data before postprocessing."""
     params = None
     """Nuisance regressors to include in the postprocessing."""
     smoothing = None
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
-    output_interpolated = False
+    output_interpolated = None
     """Output interpolated data, not censored data."""
-    combine_runs = False
+    combine_runs = None
     """Combine runs of the same task."""
     motion_filter_type = None
     """Type of filter to apply to the motion regressors."""
@@ -554,7 +554,7 @@ class workflow(_Config):
     """Framewise displacement threshold for censoring."""
     min_time = None
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
-    bandpass_filter = True
+    bandpass_filter = None
     """Apply a band-pass filter to the data."""
     high_pass = None
     """Lower bound of the band-pass filter."""
@@ -564,13 +564,13 @@ class workflow(_Config):
     """Order of the band-pass filter."""
     min_coverage = None
     """Coverage threshold to apply to parcels in each atlas."""
-    dcan_correlation_lengths = []
+    dcan_correlation_lengths = None
     """Produce correlation matrices limited to each requested amount of time."""
-    process_surfaces = False
+    process_surfaces = None
     """Warp FreeSurfer's surfaces to the MNI space."""
-    abcc_qc = False
+    abcc_qc = None
     """Run DCAN QC."""
-    linc_qc = False
+    linc_qc = None
     """Run LINC QC."""
 
     @classmethod
