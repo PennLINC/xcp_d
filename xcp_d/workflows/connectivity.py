@@ -679,6 +679,32 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (plot_coverage, ds_plot_coverage, [("out_file", "in_file")]),
         ])  # fmt:skip
 
+    # Reduce the CIFTI before calculating correlations
+    parcellated_bold_buffer = pe.MapNode(
+        niu.IdentityInterface(fields=["parcellated_cifti"]),
+        name="parcellated_bold_buffer",
+        iterfield=["parcellated_cifti"],
+    )
+    if config.workflow.output_interpolated:
+        # If we want interpolated time series, the parcellated CIFTI will have interpolated values,
+        # but the correlation matrices should only include low-motion volumes.
+        remove_outliers = pe.MapNode(
+            ReduceCifti(column="framewise_displacement"),
+            name="remove_outliers",
+            iterfield=["in_file"],
+        )
+        workflow.connect([
+            (inputnode, remove_outliers, [("temporal_mask", "temporal_mask")]),
+            (parcellate_bold_wf, remove_outliers, [("outputnode.parcellated_cifti", "in_file")]),
+            (remove_outliers, parcellated_bold_buffer, [("out_file", "parcellated_cifti")]),
+        ])  # fmt:skip
+    else:
+        workflow.connect([
+            (parcellate_bold_wf, parcellated_bold_buffer, [
+                ("outputnode.parcellated_cifti", "parcellated_cifti"),
+            ]),
+        ])  # fmt:skip
+
     # Correlate the parcellated data
     correlate_bold = pe.MapNode(
         CiftiCorrelation(),
@@ -686,7 +712,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         iterfield=["in_file"],
     )
     workflow.connect([
-        (parcellate_bold_wf, correlate_bold, [("outputnode.parcellated_cifti", "in_file")]),
+        (parcellated_bold_buffer, correlate_bold, [("parcellated_cifti", "in_file")]),
         (correlate_bold, outputnode, [("out_file", "correlation_ciftis")]),
     ])  # fmt:skip
 
@@ -719,32 +745,14 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         workflow.connect([(collect_exact_tsvs, outputnode, [("out", "correlations_exact")])])
 
         for i_exact_scan, exact_scan in enumerate(exact_scans):
-            reduce_bold = pe.Node(
+            reduce_exact_bold = pe.MapNode(
                 ReduceCifti(column=f"exact_{exact_scan}"),
                 name=f"reduce_bold_{exact_scan}volumes",
+                iterfield=["in_file"],
             )
             workflow.connect([
-                (inputnode, reduce_bold, [
-                    ("denoised_bold", "in_file"),
-                    ("temporal_mask", "temporal_mask"),
-                ]),
-            ])  # fmt:skip
-
-            parcellate_exact_bold_wf = init_parcellate_cifti_wf(
-                mem_gb=mem_gb,
-                compute_mask=False,
-                name=f"parcellate_bold_{exact_scan}volumes_wf",
-            )
-            workflow.connect([
-                (inputnode, parcellate_exact_bold_wf, [
-                    ("atlas_files", "inputnode.atlas_files"),
-                    ("atlas_labels_files", "inputnode.atlas_labels_files"),
-                ]),
-                (parcellate_bold_wf, parcellate_exact_bold_wf, [
-                    ("outputnode.vertexwise_coverage", "inputnode.vertexwise_coverage"),
-                    ("outputnode.coverage_cifti", "inputnode.coverage_cifti"),
-                ]),
-                (reduce_bold, parcellate_exact_bold_wf, [("out_file", "inputnode.in_file")]),
+                (inputnode, reduce_exact_bold, [("temporal_mask", "temporal_mask")]),
+                (parcellated_bold_buffer, reduce_exact_bold, [("parcellated_cifti", "in_file")]),
             ])  # fmt:skip
 
             # Correlate the parcellated data
@@ -754,9 +762,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 iterfield=["in_file"],
             )
             workflow.connect([
-                (parcellate_exact_bold_wf, correlate_exact_bold, [
-                    ("outputnode.parcellated_cifti", "in_file"),
-                ]),
+                (reduce_exact_bold, correlate_exact_bold, [("out_file", "in_file")]),
                 (correlate_exact_bold, collect_exact_ciftis, [
                     ("out_file", f"in{i_exact_scan + 1}"),
                 ]),
