@@ -240,9 +240,7 @@ class FilterOutFailedRuns(SimpleInterface):
         if len(successful_runs) < n_runs:
             LOGGER.warning(f"Of {n_runs} runs, only runs {successful_runs} were successful.")
 
-        self._results["denoised_bold"] = [
-            denoised_bold[i] for i in successful_runs
-        ]
+        self._results["denoised_bold"] = [denoised_bold[i] for i in successful_runs]
 
         for input_name, input_list in inputs_to_filter.items():
             if len(input_list) != n_runs:
