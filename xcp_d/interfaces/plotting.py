@@ -12,7 +12,7 @@ import seaborn as sns
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
-from nilearn.plotting import plot_anat, plot_surf_stat_map
+from nilearn.plotting import plot_anat, plot_stat_map, plot_surf_stat_map
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -1084,4 +1084,200 @@ class PlotCiftiParcellation(SimpleInterface):
         )
         plt.close(fig)
 
+        return runtime
+
+
+class _PlotDenseCiftiInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to plot.",
+    )
+    name_source = File(
+        exists=False,
+        mandatory=True,
+        desc="File to use as the name source. Unused but retained for compatibility.",
+    )
+
+
+class _PlotDenseCiftiOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+
+
+class PlotDenseCifti(SimpleInterface):
+    """Plot a dense (.dscalar.nii) CIFTI file."""
+
+    input_spec = _PlotDenseCiftiInputSpec
+    output_spec = _PlotDenseCiftiOutputSpec
+
+    def _run_interface(self, runtime):
+        rh = str(
+            get_template(
+                template="fsLR",
+                hemi="R",
+                density="32k",
+                suffix="midthickness",
+                extension=".surf.gii",
+            )
+        )
+        lh = str(
+            get_template(
+                template="fsLR",
+                hemi="L",
+                density="32k",
+                suffix="midthickness",
+                extension=".surf.gii",
+            )
+        )
+
+        cifti = nb.load(self.inputs.in_file)
+        cifti_data = cifti.get_fdata()
+        cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
+
+        fig, axes = plt.subplots(figsize=(4, 4), ncols=2, nrows=2, subplot_kw={"projection": "3d"})
+        lh_surf_data = surf_data_from_cifti(
+            cifti_data,
+            cifti_axes[1],
+            "CIFTI_STRUCTURE_CORTEX_LEFT",
+        )
+        rh_surf_data = surf_data_from_cifti(
+            cifti_data,
+            cifti_axes[1],
+            "CIFTI_STRUCTURE_CORTEX_RIGHT",
+        )
+
+        vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
+        vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
+
+        axes[0, 0].set_rasterized(True)
+        axes[0, 1].set_rasterized(True)
+        axes[1, 0].set_rasterized(True)
+        axes[1, 1].set_rasterized(True)
+
+        plot_surf_stat_map(
+            lh,
+            lh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="left",
+            view="lateral",
+            engine="matplotlib",
+            colorbar=False,
+            axes=axes[0, 0],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            lh,
+            lh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="left",
+            view="medial",
+            engine="matplotlib",
+            colorbar=False,
+            axes=axes[1, 0],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            rh,
+            rh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="right",
+            view="lateral",
+            engine="matplotlib",
+            colorbar=False,
+            axes=axes[0, 1],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            rh,
+            rh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="right",
+            view="medial",
+            engine="matplotlib",
+            colorbar=False,
+            axes=axes[1, 1],
+            figure=fig,
+        )
+        axes[0, 0].set_title("Left Hemisphere", fontsize=10)
+        axes[0, 1].set_title("Right Hemisphere", fontsize=10)
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_file.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        fig.tight_layout()
+        fig.savefig(
+            self._results["out_file"],
+            bbox_inches="tight",
+            pad_inches=None,
+            format="svg",
+        )
+        plt.close(fig)
+
+        return runtime
+
+
+class _PlotNiftiInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to plot.",
+    )
+    name_source = File(
+        exists=False,
+        mandatory=True,
+        desc="File to use as the name source.",
+    )
+
+
+class _PlotNiftiOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+
+
+class PlotNifti(SimpleInterface):
+    """Plot a NIfTI file."""
+
+    input_spec = _PlotNiftiInputSpec
+    output_spec = _PlotNiftiOutputSpec
+
+    def _run_interface(self, runtime):
+        from bids.layout import parse_file_entities
+
+        ENTITIES_TO_USE = ["cohort", "den", "res"]
+
+        # templateflow uses the full entity names in its BIDSLayout config,
+        # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
+        ENTITY_NAMES_MAPPER = {"den": "density", "res": "resolution"}
+        space = parse_file_entities(self.inputs.name_source)["space"]
+        file_entities = parse_file_entities(self.inputs.name_source)
+        entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
+        entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in entities_to_use.items()}
+
+        template_file = get_template(template=space, **entities_to_use, suffix="T1w", desc=None)
+        if isinstance(template_file, list):
+            template_file = template_file[0]
+
+        template = str(template_file)
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_plot.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        plot_stat_map(
+            self.inputs.in_file,
+            bg_img=template,
+            display_mode="mosaic",
+            cut_coords=8,
+            colorbar=True,
+            output_file=self._results["out_file"],
+        )
         return runtime
