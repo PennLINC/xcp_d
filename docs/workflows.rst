@@ -35,6 +35,9 @@ The ``linc`` mode is designed by the `PennLINC`_ lab.
 In this mode, XCP-D will generate PennLINC-preferred outputs,
 such as the NiPreps-format HTML report and the LINC QC file.
 
+All denoised BOLD data, including dense time series, parcellated time series,
+and correlation matrices, will be censored.
+
 Required Parameters
 -------------------
 
@@ -70,6 +73,9 @@ The ``abcd`` mode is designed by the `DCAN`_ for processing data from the `ABCD`
 In this mode, XCP-D will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
 
+Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
+Correlation matrices will be created from the censored data, however.
+
 Required Parameters
 -------------------
 
@@ -87,16 +93,8 @@ Optional Parameters
 
 -  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``abcd`` mode.
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
--  ``--linc-qc``: By default, XCP-D will not create the NiPreps-format HTML report or LINC QC file when run
-   in the ``abcd`` mode.
+-  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``abcd`` mode.
    If you would like to create these files, you must include the ``--linc-qc`` flag.
-
-Prohibited Parameters
----------------------
-
-The following parameters are **not** allowed:
-
--  ``--session_label``: The session label to process.
 
 Defaults
 --------
@@ -107,11 +105,45 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 
 
-
 hbcd Mode
 =========
 
 The ``hbcd`` mode is designed by the `DCAN`_ for processing data from the `HBCD`_ study.
+
+In this mode, XCP-D will generate DCAN-preferred outputs,
+such as the executive summary and the DCAN QC file.
+
+Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
+Correlation matrices will be created from the censored data, however.
+
+Required Parameters
+-------------------
+
+In ``hbcd`` mode, the following parameters are required:
+
+-  ``--motion-filter-type``: The filter to apply to the motion parameters.
+   If this is set to a value other than "none", then the following parameters are also required.
+
+   -  ``--band-stop-min``: Required if ``--motion-filter-type`` is "bandstop" or "lp".
+   -  ``--band-stop-max``: Required if ``--motion-filter-type`` is "bandstop".
+   -  ``--motion-filter-order``: Required if ``--motion-filter-type`` is "bandstop" or "lp".
+
+Optional Parameters
+-------------------
+
+-  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``hbcd`` mode.
+   If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+-  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``hbcd`` mode.
+   If you would like to create these files, you must include the ``--linc-qc`` flag.
+
+Defaults
+--------
+
+By default, the ``abcd`` mode will apply the following parameters,
+which may be overridden by the user:
+
+-  ``--file-format cifti``: CIFTI files are used as input.
+
 
 ****************
 Processing Steps
