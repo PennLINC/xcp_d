@@ -81,7 +81,7 @@ def test_write_ndata(ds001419_data, tmp_path_factory):
     assert (cifti_data_loaded[1000, 0] - 1000) < 1
 
     # Try writing out a different CIFTI filetype (should fail)
-    temp_cifti = os.path.join(tmpdir, "file.pscalar.nii")
+    temp_cifti = os.path.join(tmpdir, "file.dlabel.nii")
     with pytest.raises(ValueError, match="Unsupported CIFTI extension"):
         write_save.write_ndata(cifti_data, template=orig_cifti, filename=temp_cifti)
 

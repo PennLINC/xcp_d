@@ -1116,7 +1116,9 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         desc="File to match brainordinates of.",
     )
     out_file = File(
-        gen_file=True,
+        exists=False,
+        mandatory=False,
+        genfile=True,
         argstr="%s",
         position=1,
         desc="The output cifti file.",
@@ -1223,7 +1225,7 @@ class CiftiCreateDenseFromTemplate(WBCommand):
 
 
 class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
-    """Input specification for the CiftiCreateDenseFromTemplate command."""
+    """Input specification for the CiftiChangeMapping command."""
 
     data_cifti = File(
         exists=True,
@@ -1258,7 +1260,7 @@ class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
 
 
 class _CiftiChangeMappingOutputSpec(TraitedSpec):
-    """Output specification for the CiftiCreateDenseFromTemplate command."""
+    """Output specification for the CiftiChangeMapping command."""
 
     cifti_out = File(exists=True, desc="output CIFTI file")
 
@@ -1288,3 +1290,111 @@ class CiftiChangeMapping(WBCommand):
     input_spec = _CiftiChangeMappingInputSpec
     output_spec = _CiftiChangeMappingOutputSpec
     _cmd = "wb_command -cifti-change-mapping"
+
+
+class _CiftiMathInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiMath command."""
+
+    data = File(
+        exists=True,
+        mandatory=True,
+        argstr="-var data %s",
+        position=2,
+        desc="First data file to use in the math operation",
+    )
+    mask = File(
+        exists=True,
+        mandatory=False,
+        argstr="-var mask %s -select 1 1",
+        position=3,
+        desc="Second data file to use in the math operation",
+    )
+    expression = traits.Str(
+        mandatory=True,
+        argstr='"%s"',
+        position=0,
+        desc="Math expression",
+    )
+    out_file = File(
+        name_source=["data"],
+        name_template="mathed_%s.nii",
+        keep_extension=True,
+        argstr="%s",
+        position=1,
+        desc="Output cifti file",
+    )
+
+
+class _CiftiMathOutputSpec(TraitedSpec):
+    """Output specification for the CiftiMath command."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiMath(WBCommand):
+    """Evaluate expression on CIFTI files.
+
+    I should use a dynamic trait for the variables going into the math expression,
+    but I hardcoded data and mask because those are the only ones I'm currently using.
+
+    Examples
+    --------
+    >>> ciftimath = CiftiMath()
+    >>> ciftimath.inputs.data = 'sub-01XX_task-rest.dtseries.nii'
+    >>> ciftimath.inputs.out_file = 'mathed_sub_01XX_task-rest.dtseries.nii'
+    >>> ciftimath.inputs.expression = 'data * 2'
+    >>> ciftimath.cmdline
+    wb_command -cifti-math "data * 2" mathed_sub_01XX_task-rest.dtseries.nii \
+    -var data sub-01XX_task-rest.dtseries.nii
+    """
+
+    input_spec = _CiftiMathInputSpec
+    output_spec = _CiftiMathOutputSpec
+    _cmd = "wb_command -cifti-math"
+
+
+class _CiftiCorrelationInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiCorrelation command."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="Input file to correlate",
+    )
+    out_file = File(
+        name_source=["in_file"],
+        name_template="corr_%s.pconn.nii",
+        keep_extension=False,
+        argstr="%s",
+        position=1,
+        desc="Output cifti file",
+    )
+
+
+class _CiftiCorrelationOutputSpec(TraitedSpec):
+    """Output specification for the CiftiCorrelation command."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiCorrelation(WBCommand):
+    """Generate correlation of rows in CIFTI file.
+
+    This interface only supports parcellated time series files for now.
+
+    Examples
+    --------
+    >>> cifticorrelation = CiftiCorrelation()
+    >>> cifticorrelation.inputs.in_file = 'sub-01XX_task-rest_bold.ptseries.nii'
+    >>> cifticorrelation.inputs.out_file = 'sub-01XX_task-rest_bold.pconn.nii'
+    >>> cifticorrelation.cmdline
+    wb_command -cifti-correlation \
+    sub-01XX_task-rest_bold.ptseries.nii \
+    sub-01XX_task-rest_bold.pconn.nii
+    """
+
+    input_spec = _CiftiCorrelationInputSpec
+    output_spec = _CiftiCorrelationOutputSpec
+    _cmd = "wb_command -cifti-correlation"
