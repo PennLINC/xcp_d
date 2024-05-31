@@ -146,7 +146,7 @@ series to retain the original scaling.
             ("bold_mask", "mask"),
             ("temporal_mask", "temporal_mask"),
         ]),
-        (alff_compt, alff_plot, [("alff", "filename")]),
+        (alff_compt, alff_plot, [("alff", "in_file")]),
         (alff_compt, outputnode, [("alff", "alff")])
     ])
     # fmt:on
@@ -226,7 +226,7 @@ series to retain the original scaling.
     )
 
     # fmt:off
-    workflow.connect([(alff_plot, ds_alff_plot, [("output_path", "in_file")])])
+    workflow.connect([(alff_plot, ds_alff_plot, [("out_file", "in_file")])])
     # fmt:on
 
     return workflow
@@ -375,8 +375,8 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (rh_reho, merge_cifti, [("surf_gii", "right_metric")]),
         (subcortical_reho, merge_cifti, [("out_file", "volume_all")]),
         (merge_cifti, outputnode, [("out_file", "reho")]),
-        (merge_cifti, reho_plot, [("out_file", "filename")]),
-        (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
+        (merge_cifti, reho_plot, [("out_file", "in_file")]),
+        (reho_plot, ds_reho_plot, [("out_file", "in_file")]),
     ])
     # fmt:on
 
@@ -472,8 +472,8 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
             ("bold_mask", "mask_file"),
         ]),
         (compute_reho, outputnode, [("out_file", "reho")]),
-        (compute_reho, reho_plot, [("out_file", "filename")]),
-        (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
+        (compute_reho, reho_plot, [("out_file", "in_file")]),
+        (reho_plot, ds_reho_plot, [("out_file", "in_file")]),
     ])
     # fmt:on
 
