@@ -205,8 +205,8 @@ def test_validate_parameters_bandpass_filter(base_opts, base_parser, caplog, cap
     assert opts.bandpass_filter is True
 
     # Disable bandpass_filter to False indirectly
-    opts.lower_bpf = -1
-    opts.upper_bpf = -1
+    opts.high_pass = -1
+    opts.low_pass = -1
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
@@ -215,8 +215,8 @@ def test_validate_parameters_bandpass_filter(base_opts, base_parser, caplog, cap
 
     # Set upper BPF below lower one
     opts.bandpass_filter = True
-    opts.lower_bpf = 0.01
-    opts.upper_bpf = 0.001
+    opts.high_pass = 0.01
+    opts.low_pass = 0.001
 
     with pytest.raises(SystemExit, match="2"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
