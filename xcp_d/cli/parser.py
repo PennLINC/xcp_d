@@ -565,7 +565,7 @@ This option is only allowed for the "abcd" and "hbcd" modes.
         help="""\
 Run LINC QC.
 
-This will create the NiPreps-style HTML report and calculate QC metrics from the LINC pipeline.
+This will calculate QC metrics from the LINC pipeline.
 """,
     )
 
