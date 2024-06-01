@@ -287,20 +287,26 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     opts.motion_filter_type = "lp"
     opts.band_stop_min = 10
 
-    # linc mode doesn't use abcc_qc but does use linc_qc
+    # abcd mode does use abcc_qc but doesn't use linc_qc
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.abcc_qc is True
-    assert opts.linc_qc is False
     assert opts.combine_runs is True
+    assert opts.dcan_correlation_lengths == ["300", "480"]
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
-    assert opts.process_surfaces is True
     assert opts.input_type == "fmriprep"
-    assert opts.dcan_correlation_lengths == ["all", "300", "480"]
+    assert opts.linc_qc is False
+    assert opts.output_correlations is True
+    assert opts.process_surfaces is True
 
-    # --create-matrices is not supported
+    opts.dcan_correlation_lengths = ["300"]
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    assert opts.dcan_correlation_lengths == ["300"]
+    assert opts.output_correlations is False
+
+    # --motion-filter-type is required
     opts.motion_filter_type = None
     with pytest.raises(SystemExit, match="2"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
@@ -316,20 +322,26 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     opts.motion_filter_type = "lp"
     opts.band_stop_min = 10
 
-    # linc mode doesn't use abcc_qc but does use linc_qc
+    # hbcd mode does use abcc_qc but doesn't use linc_qc
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.abcc_qc is True
-    assert opts.linc_qc is False
     assert opts.combine_runs is True
+    assert opts.dcan_correlation_lengths == ["300", "480"]
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
-    assert opts.process_surfaces is True
     assert opts.input_type == "nibabies"
-    assert opts.dcan_correlation_lengths == ["all", "300", "480"]
+    assert opts.linc_qc is False
+    assert opts.output_correlations is True
+    assert opts.process_surfaces is True
 
-    # --create-matrices is not supported
+    opts.dcan_correlation_lengths = ["300"]
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    assert opts.dcan_correlation_lengths == ["300"]
+    assert opts.output_correlations is False
+
+    # --motion-filter-type is required
     opts.motion_filter_type = None
     with pytest.raises(SystemExit, match="2"):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
