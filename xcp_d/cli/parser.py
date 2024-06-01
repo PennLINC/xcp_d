@@ -940,7 +940,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
-        opts.input_type = "nibabies" if opts.input_type == "auto" else opts.input_type
+        opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
         opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
@@ -962,7 +962,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
-        opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
+        opts.input_type = "nibabies" if opts.input_type == "auto" else opts.input_type
         opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
