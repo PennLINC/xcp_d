@@ -38,22 +38,6 @@ such as the NiPreps-format HTML report and the LINC QC file.
 All denoised BOLD data, including dense time series, parcellated time series,
 and correlation matrices, will be censored.
 
-Required Parameters
--------------------
-
-Optional Parameters
--------------------
-
--  ``--abcc-qc``: By default, XCP-D will not create the DCAN executive summary or QC file when run
-   in the ``linc`` mode.
-   If you would like to create these files, you must include the ``--abcc-qc`` flag.
-
-Prohibited Parameters
----------------------
-
--  ``--create-matrices``: This option is not allowed in the ``linc`` mode,
-   as the PennLINC team does not recommend randomly censoring data.
-
 Defaults
 --------
 
@@ -62,6 +46,29 @@ which may be overridden by the user:
 
 -  ``--file-format nifti``: NIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
+-  ``--fd-thresh 0``: Censoring is disabled by default.
+-  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
+
+Optional Parameters
+-------------------
+
+-  ``--abcc-qc``: By default, XCP-D will not create the DCAN executive summary or QC file when run
+   in the ``linc`` mode.
+   If you would like to create these files, you must include the ``--abcc-qc`` flag.
+-  ``--combine-runs``: By default, XCP-D will not combine runs when run in the ``linc`` mode.
+   If you would like to combine runs, you must include the ``--combine-runs`` flag.
+-  ``--warp-surfaces-native2std``: By default, XCP-D will not warp surfaces to standard space when
+   run in the ``linc`` mode.
+   If you would like to warp surfaces, you must include the ``--warp-surfaces-native2std`` flag.
+
+Prohibited Parameters
+---------------------
+
+-  ``--create-matrices``: This option is not allowed in the ``linc`` mode,
+   as the PennLINC team does not recommend randomly censoring data.
+   Instead, correlation matrices will be created from the full (censored) time series,
+   which is equivalent to running ``--create-matrices all``.
+
 
 abcd Mode
 =========
@@ -73,6 +80,19 @@ such as the executive summary and the DCAN QC file.
 
 Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
 Correlation matrices will be created from the censored data, however.
+
+Defaults
+--------
+
+By default, the ``abcd`` mode will apply the following parameters,
+which may be overridden by the user:
+
+-  ``--file-format cifti``: CIFTI files are used as input.
+-  ``--despike``: Despiking is enabled by default.
+-  ``--fd-thresh 0``: Censoring is disabled by default.
+-  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
+-  ``--combine-runs``: Runs will be concatenated by default.
+-  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
 
 Required Parameters
 -------------------
@@ -94,14 +114,6 @@ Optional Parameters
 -  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``abcd`` mode.
    If you would like to create these files, you must include the ``--linc-qc`` flag.
 
-Defaults
---------
-
-By default, the ``abcd`` mode will apply the following parameters,
-which may be overridden by the user:
-
--  ``--file-format cifti``: CIFTI files are used as input.
-
 
 hbcd Mode
 =========
@@ -113,6 +125,19 @@ such as the executive summary and the DCAN QC file.
 
 Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
 Correlation matrices will be created from the censored data, however.
+
+Defaults
+--------
+
+By default, the ``hbcd`` mode will apply the following parameters,
+which may be overridden by the user:
+
+-  ``--file-format cifti``: CIFTI files are used as input.
+-  ``--despike``: Despiking is enabled by default.
+-  ``--fd-thresh 0``: Censoring is disabled by default.
+-  ``--input-type nibabies``: Nibabies outputs are expected as input.
+-  ``--combine-runs``: Runs will be concatenated by default.
+-  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
 
 Required Parameters
 -------------------
@@ -133,14 +158,6 @@ Optional Parameters
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
 -  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``hbcd`` mode.
    If you would like to create these files, you must include the ``--linc-qc`` flag.
-
-Defaults
---------
-
-By default, the ``abcd`` mode will apply the following parameters,
-which may be overridden by the user:
-
--  ``--file-format cifti``: CIFTI files are used as input.
 
 
 ****************

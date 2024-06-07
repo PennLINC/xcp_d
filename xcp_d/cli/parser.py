@@ -65,7 +65,9 @@ def _build_parser():
     )
 
     # Required "mode" argument
-    parser.add_argument(
+    optional = parser._action_groups.pop()
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
         "--mode",
         dest="mode",
         action="store",
@@ -80,9 +82,9 @@ def _build_parser():
     )
 
     # optional arguments
-    parser.add_argument("--version", action="version", version=verstr)
+    optional.add_argument("--version", action="version", version=verstr)
 
-    g_bids = parser.add_argument_group("Options for filtering BIDS queries")
+    g_bids = optional.add_argument_group("Options for filtering BIDS queries")
     g_bids.add_argument(
         "--participant-label",
         "--participant_label",
@@ -135,7 +137,7 @@ def _build_parser():
         ),
     )
 
-    g_perfm = parser.add_argument_group("Options for resource management")
+    g_perfm = optional.add_argument_group("Options for resource management")
     g_perfm.add_argument(
         "--nprocs",
         "--nthreads",
@@ -193,7 +195,7 @@ def _build_parser():
         help="Increases log verbosity for each occurence. Debug level is '-vvv'.",
     )
 
-    g_outputoption = parser.add_argument_group("Input flags")
+    g_outputoption = optional.add_argument_group("Input flags")
     g_outputoption.add_argument(
         "--input-type",
         "--input_type",
@@ -222,7 +224,7 @@ def _build_parser():
         ),
     )
 
-    g_param = parser.add_argument_group("Postprocessing parameters")
+    g_param = optional.add_argument_group("Postprocessing parameters")
     g_param.add_argument(
         "--dummy-scans",
         "--dummy_scans",
@@ -318,7 +320,7 @@ def _build_parser():
         help="After denoising, concatenate each derivative from each task across runs.",
     )
 
-    g_motion_filter = parser.add_argument_group(
+    g_motion_filter = optional.add_argument_group(
         title="Motion filtering parameters",
         description=(
             "These parameters enable and control a filter that will be applied to motion "
@@ -386,7 +388,7 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         help="Number of filter coeffecients for the motion parameter filter.",
     )
 
-    g_censor = parser.add_argument_group("Censoring and scrubbing options")
+    g_censor = optional.add_argument_group("Censoring and scrubbing options")
     g_censor.add_argument(
         "-r",
         "--head-radius",
@@ -435,7 +437,7 @@ The default is 240 (4 minutes).
 """,
     )
 
-    g_temporal_filter = parser.add_argument_group(
+    g_temporal_filter = optional.add_argument_group(
         title="Data filtering parameters",
         description=(
             "These parameters determine whether a bandpass filter will be applied to the BOLD "
@@ -489,7 +491,7 @@ The default is 240 (4 minutes).
         help="Number of filter coefficients for the Butterworth bandpass filter.",
     )
 
-    g_parcellation = parser.add_argument_group("Parcellation options")
+    g_parcellation = optional.add_argument_group("Parcellation options")
 
     g_atlases = g_parcellation.add_mutually_exclusive_group(required=False)
     all_atlases = select_atlases(atlases=None, subset="all")
@@ -527,7 +529,7 @@ The default is 240 (4 minutes).
         ),
     )
 
-    g_dcan = parser.add_argument_group("abcd/hbcd mode options")
+    g_dcan = optional.add_argument_group("abcd/hbcd mode options")
     g_dcan.add_argument(
         "--create-matrices",
         "--create_matrices",
@@ -569,7 +571,7 @@ This will calculate QC metrics from the LINC pipeline.
 """,
     )
 
-    g_linc = parser.add_argument_group("linc mode options")
+    g_linc = optional.add_argument_group("linc mode options")
     g_linc.add_argument(
         "--abcc-qc",
         "--abcc_qc",
@@ -584,7 +586,7 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
 """,
     )
 
-    g_other = parser.add_argument_group("Other options")
+    g_other = optional.add_argument_group("Other options")
     g_other.add_argument(
         "--aggregate-session-reports",
         dest="aggr_ses_reports",
@@ -701,7 +703,7 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         ),
     )
 
-    g_experimental = parser.add_argument_group("Experimental options")
+    g_experimental = optional.add_argument_group("Experimental options")
 
     g_experimental.add_argument(
         "--warp-surfaces-native2std",
