@@ -238,8 +238,8 @@ This includes the atlases used to extract the timeseries.
    In both cases, the correlation matrices will be calculated using the censored time series.
 
 .. important::
-   Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the ``--exact-time``
-   parameter is used.
+   Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the
+   ``--create-matrices`` parameter is used with integer values.
 
 .. code-block::
 

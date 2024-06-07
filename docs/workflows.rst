@@ -111,6 +111,7 @@ Optional Parameters
 
 -  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``abcd`` mode.
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+   The ``--create-matrices`` parameter accepts
 -  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``abcd`` mode.
    If you would like to create these files, you must include the ``--linc-qc`` flag.
 
@@ -158,6 +159,60 @@ Optional Parameters
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
 -  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``hbcd`` mode.
    If you would like to create these files, you must include the ``--linc-qc`` flag.
+
+
+Major Differences Between Modes
+===============================
+
+Interpolated vs. Censored Time Series
+-------------------------------------
+
+The ``abcd`` and ``hbcd`` modes output denoised BOLD data and parcellated time series with
+interpolated volumes.
+The ``linc`` mode outputs denoised BOLD data and parcellated time series with censored volumes
+instead.
+
+The benefit to writing out interpolated data is that the outputs retain the temporal structure of
+the original data.
+This may make it easier to use the post-processed BOLD data in conjunction with other data acquired
+at the same time, such as physiological recordings or task regressors.
+Additionally, some tools, such as `biceps <https://biceps-cmdln.readthedocs.io/en/latest/>`_,
+are designed to perform additional post-processing, such as additional censoring and parcellation,
+on interpolated data.
+
+The risk to working with interpolated data is that the interpolated volumes should not be used for
+actual analyses, as the values do not reflect real data.
+Thus, with the ``abcd`` and ``hbcd`` modes, it is imperative that users understand that additional
+steps must be taken before using the interpolated data for analyses.
+
+The benefit to writing out censored data is that the outputs are more directly usable for analyses,
+and there is less of a chance that users will accidentally use interpolated data in their analyses.
+
+In this sense, the ``abcd`` and ``hbcd`` modes are designed to be used with additional tools,
+such as ``biceps``, or with additional steps taken by the user to ensure that the interpolated data
+are re-censored appropriately before being used in analyses.
+Conversely, the ``linc`` mode is designed to output data that is directly usable for analyses,
+at the cost of losing the temporal structure of the original data and making it harder to pass the
+data along to other tools that require the original temporal structure.
+
+Correlation Matrices From Matches Lengths
+-----------------------------------------
+
+The ``abcd`` and ``hbcd`` modes allow the ``--create-matrices`` parameter,
+which will create correlation matrices from subsampled data,
+while ``linc`` mode does not allow this parameter.
+
+This parameter exists because motion (and thus censoring) can exhibit a non-linear relationship
+with functional connectivity estimates.
+By randomly selecting a subset of volumes from each run before calculating correlations,
+the user can ensure that every run has the same number of data points contributing to its
+functional connectivity estimate, which may ameliorate the effect of motion on the estimates.
+This is the DCAN lab's recommended approach.
+
+Conversely, the LINC lab does not recommend doing this, as it removes meaningful data that may contribute to the functional connectivity estimates.
+Instead, the LINC lab recommends accounting for the number of volumes in group-level models,
+or using other methods, such as xDF :footcite:p:`afyouni2019effective`,
+to account for the effect of motion on functional connectivity estimates (or their variance).
 
 
 ****************
@@ -604,7 +659,12 @@ Re-censoring
 
 After bandpass filtering, high motion volumes are removed from the
 ``denoised, interpolated BOLD`` once again, to produce ``denoised BOLD``.
-This is the primary output of XCP-D.
+
+.. important::
+
+   In ``linc`` mode, the re-censored BOLD data are the primary output.
+   In the ``abcd`` and ``hbcd`` modes,
+   the denoised, **interpolated** BOLD data are the primary output.
 
 
 Resting-state derivative generation
@@ -695,15 +755,16 @@ the authors' solution was to randomly select a subset of volumes from each run b
 correlations, so that every run had the same number of data points contributing to its functional
 connectivity estimate.
 
-We have implemented this behavior via the optional ``--exact-time`` parameter, which allows the
-user to provide a list of durations, in seconds, to be used for functional connectivity estimates.
+We have implemented this behavior via the optional ``--create-matrices`` parameter,
+which allows the user to provide a list of durations, in seconds,
+to be used for functional connectivity estimates.
 These subsampled correlation matrices will be written out with ``desc-<numberOfVolumes>volumes``
 in the filenames.
 The correlation matrices *without* the ``desc`` entity still include all of the post-censoring
 volumes.
 
-The ``--random-seed`` parameter can control the random seed used to select the reduced set of \
-volumes, which improves reproducibility.
+The ``--random-seed`` parameter controls the random seed used to select the reduced set of volumes,
+which improves reproducibility.
 
 
 Smoothing [OPTIONAL]
@@ -751,18 +812,11 @@ The QC metrics include the following:
 Outputs
 *******
 
-XCP-D generates four main types of outputs for every subject.
+XCP-D generates three main types of outputs for every subject.
 
-First, XCP-D generates an HTML "executive summary" that displays relevant information about the
-anatomical data and the BOLD data before and after regression.
-The anatomical image viewer allows the user to see the segmentation overlaid on the anatomical
-image.
-Next, for each session, the user can see the segmentation registered onto the BOLD images.
-Beside the segmentations, users can see the pre-regression and post-regression "carpet" plot,
-as well as DVARS, FD, the global signal.
-The number of volumes remaining at various FD thresholds are shown.
+First, XCP-D generates HTML visual reports that display relevant information about the processed data.
 
-Second, XCP-D generates an HTML "report" for each subject and session.
+The first of these reports is a NiPreps-style HTML file for each subject.
 The report contains a Processing Summary with QC values, with the BOLD volume space, the TR,
 mean FD, mean RMSD, and mean and maximum RMS,
 the correlation between DVARS and FD before and after processing, and the number of volumes
@@ -773,11 +827,23 @@ pasted into the user's paper,
 which is customized based on command line options, and an Error section, which will read
 "No errors to report!" if no errors are found.
 
-Third, XCP-D outputs processed BOLD data, including denoised unsmoothed and smoothed timeseries in
+If ``abcd`` or ``hbcd`` mode is used, or the ``--abcc-qc`` flag is used,
+the "executive summary" HTML report will be created.
+
+The "executive summary" displays relevant information about the
+anatomical data and the BOLD data before and after regression.
+The anatomical image viewer allows the user to see the segmentation overlaid on the anatomical
+image.
+Next, for each session, the user can see the segmentation registered onto the BOLD images.
+Beside the segmentations, users can see the pre-regression and post-regression "carpet" plot,
+as well as DVARS, FD, the global signal.
+The number of volumes remaining at various FD thresholds are shown.
+
+Second, XCP-D outputs processed BOLD data, including denoised unsmoothed and smoothed timeseries in
 MNI152NLin2009cAsym and fsLR-32k spaces, parcellated time series, functional connectivity matrices,
 and ALFF and ReHo (smoothed and unsmoothed).
 
-Fourth, the anatomical data (processed T1w processed and segmentation files) are copied from
+Third, the anatomical data (processed T1w processed and segmentation files) are copied from
 fMRIPrep.
 If both images are not in MNI152NLin6Asym space, they are resampled to MNI space.
 The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space

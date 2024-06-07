@@ -390,7 +390,7 @@ docdict[
 ] = """
 random_seed : :obj:`int` or None
     Random seed for the workflow.
-    This is currently only used with the ``--exact-time`` parameter,
+    This is currently only used with the ``--create-matrices`` parameter,
     when randomly selecting volumes to censor for correlation matrices.
 """
 
