@@ -73,8 +73,7 @@ Optional Parameters
 Prohibited Parameters
 ---------------------
 
--  ``--create-matrices``: This option is not allowed in the ``linc`` mode,
-   as the PennLINC team does not recommend randomly censoring data.
+-  ``--create-matrices``: This option is not allowed in the ``linc`` mode.
    Instead, correlation matrices will be created from the full (censored) time series,
    which is equivalent to running ``--create-matrices all``.
 
