@@ -89,7 +89,7 @@ which may be overridden by the user:
 
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
--  ``--fd-thresh 0``: Censoring is disabled by default.
+-  ``--fd-thresh 0.3``: The censoring threshold is set to 0.3 mm by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
@@ -134,7 +134,7 @@ which may be overridden by the user:
 
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
--  ``--fd-thresh 0``: Censoring is disabled by default.
+-  ``--fd-thresh 0.3``: The censoring threshold is set to 0.3 mm by default.
 -  ``--input-type nibabies``: Nibabies outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
