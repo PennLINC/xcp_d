@@ -723,6 +723,8 @@ By default, this workflow is disabled.
 **IMPORTANT**: This parameter can only be run if the --file-format flag is set to cifti.
 """,
     )
+    # Add the optional parameters back in
+    parser._action_groups.append(optional)
 
     latest = check_latest()
     if latest is not None and currentv < latest:
