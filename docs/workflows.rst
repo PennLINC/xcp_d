@@ -10,9 +10,18 @@ Processing Pipeline Details
 Input data
 **********
 
-The default inputs to XCP-D are the outputs of ``fMRIPrep`` (``--input-type fmriprep``) and
-``Nibabies`` (``--input-type nibabies``).
-XCP-D can also postprocess ``HCP`` data (``--input-type hcp``).
+XCP-D can post-process data from several different preprocessing pipelines,
+including ``fMRIPrep`` (``--input-type fmriprep``), ``Nibabies`` (``--input-type nibabies``),
+``HCPPipelines`` (``--input-type hcp``), ``abcd-hcp-pipeline`` (``--input-type dcan``),
+and UK Biobank's pipeline (``--input-type ukb``).
+
+The default input type depends on the mode that XCP-D is run in-
+``fmriprep`` for ``abcd`` and ``linc`` modes, ``nibabies`` for ``hbcd`` mode.
+
+XCP-D's support for fMRIPrep and Nibabies derivatives will be the most robust,
+as these pipelines produces BIDS-compliant derivatives.
+For the HCP, ABCD-HCP, and UK Biobank pipelines,
+XCP-D will read in the post-processed data and convert it to a BIDS-like structure.
 
 
 ****************
@@ -195,8 +204,8 @@ Conversely, the ``linc`` mode is designed to output data that is directly usable
 at the cost of losing the temporal structure of the original data and making it harder to pass the
 data along to other tools that require the original temporal structure.
 
-Correlation Matrices From Matches Lengths
------------------------------------------
+Correlation Matrices From Matching Lengths
+------------------------------------------
 
 The ``abcd`` and ``hbcd`` modes allow the ``--create-matrices`` parameter,
 which will create correlation matrices from subsampled data,
@@ -209,7 +218,8 @@ the user can ensure that every run has the same number of data points contributi
 functional connectivity estimate, which may ameliorate the effect of motion on the estimates.
 This is the DCAN lab's recommended approach.
 
-Conversely, the LINC lab does not recommend doing this, as it removes meaningful data that may contribute to the functional connectivity estimates.
+Conversely, the LINC lab does not recommend doing this,
+as it removes meaningful data that may contribute to the functional connectivity estimates.
 Instead, the LINC lab recommends accounting for the number of volumes in group-level models,
 or using other methods, such as xDF :footcite:p:`afyouni2019effective`,
 to account for the effect of motion on functional connectivity estimates (or their variance).
