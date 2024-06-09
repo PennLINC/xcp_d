@@ -292,19 +292,19 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is True
     assert opts.combine_runs is True
-    assert opts.dcan_correlation_lengths == ["300", "480"]
+    assert opts.dcan_correlation_lengths is None
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
     assert opts.input_type == "fmriprep"
     assert opts.linc_qc is False
-    assert opts.output_correlations is True
+    assert opts.output_correlations is False
     assert opts.process_surfaces is True
 
-    opts.dcan_correlation_lengths = ["300"]
+    opts.dcan_correlation_lengths = ["300", "all"]
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert opts.dcan_correlation_lengths == ["300"]
-    assert opts.output_correlations is False
+    assert opts.output_correlations is True
 
     # --motion-filter-type is required
     opts.motion_filter_type = None
@@ -327,19 +327,19 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is True
     assert opts.combine_runs is True
-    assert opts.dcan_correlation_lengths == ["300", "480"]
+    assert opts.dcan_correlation_lengths is None
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
     assert opts.input_type == "nibabies"
     assert opts.linc_qc is False
-    assert opts.output_correlations is True
+    assert opts.output_correlations is False
     assert opts.process_surfaces is True
 
-    opts.dcan_correlation_lengths = ["300"]
+    opts.dcan_correlation_lengths = ["300", "all"]
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert opts.dcan_correlation_lengths == ["300"]
-    assert opts.output_correlations is False
+    assert opts.output_correlations is True
 
     # --motion-filter-type is required
     opts.motion_filter_type = None
@@ -393,7 +393,7 @@ def test_build_parser_01(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths == ["all", 300, 480]
+    assert opts.dcan_correlation_lengths is None
 
 
 def test_build_parser_02(tmp_path_factory):
@@ -430,7 +430,7 @@ def test_build_parser_02(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths == ["all", 300, 480]
+    assert opts.dcan_correlation_lengths is None
 
 
 @pytest.mark.parametrize(

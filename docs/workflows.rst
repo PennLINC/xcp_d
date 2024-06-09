@@ -87,7 +87,12 @@ In this mode, XCP-D will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
 
 Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
-Correlation matrices will be created from the censored data, however.
+Correlation matrices can be created optionally from the censored data.
+
+.. important::
+
+   Currently, ``abcd`` mode is identical to ``hbcd`` mode, except for the expected preprocessing
+   pipeline.
 
 Defaults
 --------
@@ -119,7 +124,8 @@ Optional Parameters
 
 -  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``abcd`` mode.
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
-   The ``--create-matrices`` parameter accepts
+   The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
+   as well as the special value "all", which uses all of the low-motion data from the run.
 -  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``abcd`` mode.
    If you would like to create these files, you must include the ``--linc-qc`` flag.
 
@@ -133,7 +139,12 @@ In this mode, XCP-D will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
 
 Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
-Correlation matrices will be created from the censored data, however.
+Correlation matrices can be created optionally from the censored data.
+
+.. important::
+
+   Currently, ``hbcd`` mode is identical to ``abcd`` mode, except for the expected preprocessing
+   pipeline.
 
 Defaults
 --------
@@ -165,6 +176,8 @@ Optional Parameters
 
 -  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``hbcd`` mode.
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+   The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
+   as well as the special value "all", which uses all of the low-motion data from the run.
 -  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``hbcd`` mode.
    If you would like to create these files, you must include the ``--linc-qc`` flag.
 

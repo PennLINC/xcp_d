@@ -194,6 +194,10 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "Tian",
         "HCP",
         "--aggregate-session-reports=1",
+        "--create-matrices",
+        "300",
+        "480",
+        "all",
     ]
     _run_and_generate(
         test_name=test_name,
