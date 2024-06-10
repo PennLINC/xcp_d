@@ -936,6 +936,9 @@ def _validate_parameters(opts, build_log, parser):
     if opts.mode == "abcd":
         opts.abcc_qc = True
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
+        opts.dcan_correlation_lengths = (
+            [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
+        )
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
@@ -953,6 +956,9 @@ def _validate_parameters(opts, build_log, parser):
     elif opts.mode == "hbcd":
         opts.abcc_qc = True
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
+        opts.dcan_correlation_lengths = (
+            [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
+        )
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
