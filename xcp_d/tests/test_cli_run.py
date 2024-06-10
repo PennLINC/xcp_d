@@ -292,7 +292,7 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is True
     assert opts.combine_runs is True
-    assert opts.dcan_correlation_lengths is None
+    assert opts.dcan_correlation_lengths == []
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
@@ -327,7 +327,7 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is True
     assert opts.combine_runs is True
-    assert opts.dcan_correlation_lengths is None
+    assert opts.dcan_correlation_lengths == []
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
@@ -393,7 +393,7 @@ def test_build_parser_01(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths is None
+    assert opts.dcan_correlation_lengths == ["all", 300, 480]
 
 
 def test_build_parser_02(tmp_path_factory):
@@ -430,7 +430,7 @@ def test_build_parser_02(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths is None
+    assert opts.dcan_correlation_lengths == ["all", 300, 480]
 
 
 @pytest.mark.parametrize(
