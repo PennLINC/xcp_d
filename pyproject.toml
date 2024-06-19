@@ -32,7 +32,7 @@ dependencies = [
     "niworkflows == 1.10.2",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
-    "numpy ~= 1.19",
+    "numpy ~= 2.0",
     "packaging",  # for version string parsing
     "pandas",
     "psutil >= 5.4",  # for sentry
