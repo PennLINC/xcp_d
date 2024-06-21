@@ -1115,19 +1115,48 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         position=0,
         desc="File to match brainordinates of.",
     )
-    cifti_out = File(
-        name_source=["label"],
-        name_template="resampled_%s.dlabel.nii",
-        keep_extension=False,
+    out_file = File(
+        exists=False,
+        mandatory=False,
+        genfile=True,
         argstr="%s",
         position=1,
         desc="The output cifti file.",
     )
+    volume_all = File(
+        exists=True,
+        mandatory=False,
+        argstr="-volume-all %s",
+        position=2,
+        desc="Use input data from volume files. Input volume file.",
+    )
+    from_cropped = traits.Bool(
+        False,
+        usedefault=True,
+        mandatory=False,
+        argstr="-from-cropped",
+        position=3,
+        desc="Use input data from cropped volume files.",
+    )
+    left_metric = File(
+        exists=True,
+        mandatory=False,
+        argstr="-metric CORTEX_LEFT %s",
+        position=4,
+        desc="Use input data from surface files. Input surface file.",
+    )
+    right_metric = File(
+        exists=True,
+        mandatory=False,
+        argstr="-metric CORTEX_RIGHT %s",
+        position=5,
+        desc="Use input data from surface files. Input surface file.",
+    )
     label = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         argstr="-cifti %s",
-        position=2,
+        position=6,
         desc="Use input data from surface label files. Input label file.",
     )
 
@@ -1135,7 +1164,7 @@ class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
 class _CiftiCreateDenseFromTemplateOutputSpec(TraitedSpec):
     """Output specification for the CiftiCreateDenseFromTemplate command."""
 
-    cifti_out = File(exists=True, desc="output CIFTI file")
+    out_file = File(exists=True, desc="output CIFTI file")
 
 
 class CiftiCreateDenseFromTemplate(WBCommand):
@@ -1158,21 +1187,45 @@ class CiftiCreateDenseFromTemplate(WBCommand):
     --------
     >>> ccdft = CiftiCreateDenseFromTemplate()
     >>> ccdft.inputs.template_cifti = "sub-01_task-rest_bold.dtseries.nii"
-    >>> ccdft.inputs.label = "parcellation.dlabel.nii"
+    >>> ccdft.inputs.volume_all = "parcellation.nii.gz"
+    >>> ccdft.inputs.from_cropped = True
+    >>> ccdft.inputs.left_metric = "lh.func.gii"
+    >>> ccdft.inputs.right_metric = "rh.func.gii"
     >>> ccdft.cmdline
     wb_command -cifti-create-dense-from-template \
         sub-01_task-rest_bold.dtseries.nii \
-        resampled_parcellation.dlabel.nii \
-        -label parcellation.dlabel.nii
+        resampled_parcellation.dscalar.nii \
+        -volume-all parcellation.nii.gz \
+        -from-cropped \
+        -metric CORTEX_LEFT lh.func.gii \
+        -metric CORTEX_RIGHT rh.func.gii
     """
 
     input_spec = _CiftiCreateDenseFromTemplateInputSpec
     output_spec = _CiftiCreateDenseFromTemplateOutputSpec
     _cmd = "wb_command -cifti-create-dense-from-template"
 
+    def _gen_filename(self, name):
+        if name != "out_file":
+            return None
+
+        if isdefined(self.inputs.out_file):
+            return self.inputs.out_file
+        elif isdefined(self.inputs.label):
+            _, fname, _ = split_filename(self.inputs.label)
+        else:
+            _, fname, _ = split_filename(self.inputs.template_cifti)
+
+        return f"{fname}_converted.dscalar.nii"
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = os.path.abspath(self._gen_filename("out_file"))
+        return outputs
+
 
 class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
-    """Input specification for the CiftiCreateDenseFromTemplate command."""
+    """Input specification for the CiftiChangeMapping command."""
 
     data_cifti = File(
         exists=True,
@@ -1207,7 +1260,7 @@ class _CiftiChangeMappingInputSpec(CommandLineInputSpec):
 
 
 class _CiftiChangeMappingOutputSpec(TraitedSpec):
-    """Output specification for the CiftiCreateDenseFromTemplate command."""
+    """Output specification for the CiftiChangeMapping command."""
 
     cifti_out = File(exists=True, desc="output CIFTI file")
 
@@ -1237,3 +1290,111 @@ class CiftiChangeMapping(WBCommand):
     input_spec = _CiftiChangeMappingInputSpec
     output_spec = _CiftiChangeMappingOutputSpec
     _cmd = "wb_command -cifti-change-mapping"
+
+
+class _CiftiMathInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiMath command."""
+
+    data = File(
+        exists=True,
+        mandatory=True,
+        argstr="-var data %s",
+        position=2,
+        desc="First data file to use in the math operation",
+    )
+    mask = File(
+        exists=True,
+        mandatory=False,
+        argstr="-var mask %s -select 1 1",
+        position=3,
+        desc="Second data file to use in the math operation",
+    )
+    expression = traits.Str(
+        mandatory=True,
+        argstr='"%s"',
+        position=0,
+        desc="Math expression",
+    )
+    out_file = File(
+        name_source=["data"],
+        name_template="mathed_%s.nii",
+        keep_extension=True,
+        argstr="%s",
+        position=1,
+        desc="Output cifti file",
+    )
+
+
+class _CiftiMathOutputSpec(TraitedSpec):
+    """Output specification for the CiftiMath command."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiMath(WBCommand):
+    """Evaluate expression on CIFTI files.
+
+    I should use a dynamic trait for the variables going into the math expression,
+    but I hardcoded data and mask because those are the only ones I'm currently using.
+
+    Examples
+    --------
+    >>> ciftimath = CiftiMath()
+    >>> ciftimath.inputs.data = 'sub-01XX_task-rest.dtseries.nii'
+    >>> ciftimath.inputs.out_file = 'mathed_sub_01XX_task-rest.dtseries.nii'
+    >>> ciftimath.inputs.expression = 'data * 2'
+    >>> ciftimath.cmdline
+    wb_command -cifti-math "data * 2" mathed_sub_01XX_task-rest.dtseries.nii \
+    -var data sub-01XX_task-rest.dtseries.nii
+    """
+
+    input_spec = _CiftiMathInputSpec
+    output_spec = _CiftiMathOutputSpec
+    _cmd = "wb_command -cifti-math"
+
+
+class _CiftiCorrelationInputSpec(CommandLineInputSpec):
+    """Input specification for the CiftiCorrelation command."""
+
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="Input file to correlate",
+    )
+    out_file = File(
+        name_source=["in_file"],
+        name_template="corr_%s.pconn.nii",
+        keep_extension=False,
+        argstr="%s",
+        position=1,
+        desc="Output cifti file",
+    )
+
+
+class _CiftiCorrelationOutputSpec(TraitedSpec):
+    """Output specification for the CiftiCorrelation command."""
+
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiCorrelation(WBCommand):
+    """Generate correlation of rows in CIFTI file.
+
+    This interface only supports parcellated time series files for now.
+
+    Examples
+    --------
+    >>> cifticorrelation = CiftiCorrelation()
+    >>> cifticorrelation.inputs.in_file = 'sub-01XX_task-rest_bold.ptseries.nii'
+    >>> cifticorrelation.inputs.out_file = 'sub-01XX_task-rest_bold.pconn.nii'
+    >>> cifticorrelation.cmdline
+    wb_command -cifti-correlation \
+    sub-01XX_task-rest_bold.ptseries.nii \
+    sub-01XX_task-rest_bold.pconn.nii
+    """
+
+    input_spec = _CiftiCorrelationInputSpec
+    output_spec = _CiftiCorrelationOutputSpec
+    _cmd = "wb_command -cifti-correlation"

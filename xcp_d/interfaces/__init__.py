@@ -11,7 +11,6 @@ from xcp_d.interfaces import (
     nilearn,
     plotting,
     report,
-    report_core,
     restingstate,
     workbench,
 )
@@ -26,7 +25,6 @@ __all__ = [
     "plotting",
     "censoring",
     "report",
-    "report_core",
     "restingstate",
     "workbench",
 ]
