@@ -470,16 +470,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-                if config.workflow.cifti:
-                    workflow.connect([
-                        (load_atlases_wf, postprocess_bold_wf, [
-                            (
-                                "outputnode.parcellated_atlas_files",
-                                "inputnode.parcellated_atlas_files",
-                            ),
-                        ]),
-                    ])  # fmt:skip
-
             if not config.workflow.cifti:
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [

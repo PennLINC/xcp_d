@@ -11,10 +11,6 @@ from nilearn.maskers import NiftiLabelsMasker
 from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.connectivity import _sanitize_nifti_atlas
-from xcp_d.interfaces.workbench import (
-    CiftiCreateDenseFromTemplate,
-    CiftiParcellateWorkbench,
-)
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
@@ -265,26 +261,6 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
     atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
 
-    # Perform the resampling and parcellation done by init_load_atlases_wf
-    parcellated_atlases = []
-    for i_file, atlas_file in enumerate(atlas_files):
-        resample_atlas_to_data = CiftiCreateDenseFromTemplate(
-            template_cifti=bold_file,
-            label=atlas_file,
-        )
-        resample_results = resample_atlas_to_data.run(cwd=tmpdir)
-
-        parcellate_atlas = CiftiParcellateWorkbench(
-            direction="COLUMN",
-            only_numeric=True,
-            out_file=f"parcellated_atlas_{i_file}.pscalar.nii",
-            atlas_label=atlas_file,
-            in_file=resample_results.outputs.cifti_out,
-        )
-        parcellate_atlas_results = parcellate_atlas.run(cwd=tmpdir)
-
-        parcellated_atlases.append(parcellate_atlas_results.outputs.out_file)
-
     # Create the node and a tmpdir to write its results out to
     with mock_config():
         config.execution.xcp_d_dir = tmpdir
@@ -294,6 +270,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,
+            exact_scans=[],
             name="connectivity_wf",
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
@@ -303,32 +280,33 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.inputs.inputnode.atlases = atlas_names
         connectivity_wf.inputs.inputnode.atlas_files = atlas_files
         connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
-        connectivity_wf.inputs.inputnode.parcellated_atlas_files = parcellated_atlases
         connectivity_wf.base_dir = tmpdir
         connectivity_wf_res = connectivity_wf.run()
 
         nodes = get_nodes(connectivity_wf_res)
 
         # Let's find the cifti files
-        pscalar = nodes["connectivity_wf.parcellate_data"].get_output("coverage_ciftis")[0]
+        pscalar = nodes["connectivity_wf.parcellate_bold_wf.parcellate_coverage"].get_output(
+            "out_file"
+        )[0]
         assert os.path.isfile(pscalar)
-        timeseries_ciftis = nodes["connectivity_wf.parcellate_data"].get_output(
-            "timeseries_ciftis"
-        )[0]
+        timeseries_ciftis = nodes[
+            "connectivity_wf.parcellate_bold_wf.mask_parcellated_data"
+        ].get_output("out_file")[0]
         assert os.path.isfile(timeseries_ciftis)
-        correlation_ciftis = nodes["connectivity_wf.functional_connectivity"].get_output(
-            "correlation_ciftis"
-        )[0]
+        correlation_ciftis = nodes["connectivity_wf.correlate_bold"].get_output("out_file")[0]
         assert os.path.isfile(correlation_ciftis)
 
         # Let's find the tsv files
-        coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
+        coverage = nodes["connectivity_wf.parcellate_bold_wf.coverage_to_tsv"].get_output(
+            "out_file"
+        )[0]
         assert os.path.isfile(coverage)
-        timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
+        timeseries = nodes["connectivity_wf.parcellate_bold_wf.cifti_to_tsv"].get_output(
+            "out_file"
+        )[0]
         assert os.path.isfile(timeseries)
-        correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[
-            0
-        ]
+        correlations = nodes["connectivity_wf.dconn_to_tsv"].get_output("out_file")[0]
         assert os.path.isfile(correlations)
 
         # Let's read in the ciftis' data
@@ -340,7 +318,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         assert pconn_arr.shape == (1056, 1056)
 
         # Read in the tsvs' data
-        coverage_arr = pd.read_table(coverage, index_col="Node").to_numpy()
+        coverage_arr = pd.read_table(coverage).to_numpy().T
         timeseries_arr = pd.read_table(timeseries).to_numpy()
         correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
 
@@ -366,11 +344,19 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         assert np.sum(np.isnan(first_good_parcel_corrs)) == bad_parcels_idx.size
 
         # pnc data doesn't have complete coverage, so we must allow NaNs here.
+        # First set diagonals to NaNs
+        np.fill_diagonal(pconn_arr, np.nan)
+        np.fill_diagonal(calculated_correlations, np.nan)
         if not np.array_equal(np.isnan(pconn_arr), np.isnan(calculated_correlations)):
             mismatch_idx = np.vstack(
                 np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
             ).T
-            raise ValueError(f"{mismatch_idx}\n\n{np.where(np.isnan(pconn_arr))}")
+            raise ValueError(
+                f"{mismatch_idx.shape} mismatches\n\n"
+                f"{mismatch_idx}\n\n"
+                f"{pconn_arr[mismatch_idx[:, 0], mismatch_idx[:, 1]]}\n\n"
+                f"{calculated_correlations[mismatch_idx[:, 0], mismatch_idx[:, 1]]}"
+            )
 
         if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):
             diff = pconn_arr - calculated_correlations

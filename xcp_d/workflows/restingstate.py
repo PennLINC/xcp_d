@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for calculating resting state-specific metrics."""
-from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
@@ -11,15 +10,15 @@ from templateflow.api import get as get_template
 from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
+from xcp_d.interfaces.plotting import PlotDenseCifti, PlotNifti
 from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
 from xcp_d.interfaces.workbench import (
-    CiftiCreateDenseScalar,
+    CiftiCreateDenseFromTemplate,
     CiftiSeparateMetric,
     CiftiSeparateVolumeAll,
     FixCiftiIntent,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.plotting import plot_alff_reho_surface, plot_alff_reho_volumetric
 from xcp_d.utils.utils import fwhm2sigma
 
 
@@ -134,16 +133,11 @@ series to retain the original scaling.
         n_procs=omp_nthreads,
     )
 
+    plot_interface = PlotDenseCifti if cifti else PlotNifti
     alff_plot = pe.Node(
-        Function(
-            input_names=["output_path", "filename", "name_source"],
-            output_names=["output_path"],
-            function=plot_alff_reho_surface if cifti else plot_alff_reho_volumetric,
-        ),
+        plot_interface(name_source=name_source),
         name="alff_plot",
     )
-    alff_plot.inputs.output_path = "alff.svg"
-    alff_plot.inputs.name_source = name_source
 
     # fmt:off
     workflow.connect([
@@ -152,7 +146,7 @@ series to retain the original scaling.
             ("bold_mask", "mask"),
             ("temporal_mask", "temporal_mask"),
         ]),
-        (alff_compt, alff_plot, [("alff", "filename")]),
+        (alff_compt, alff_plot, [("alff", "in_file")]),
         (alff_compt, outputnode, [("alff", "alff")])
     ])
     # fmt:on
@@ -232,7 +226,7 @@ series to retain the original scaling.
     )
 
     # fmt:off
-    workflow.connect([(alff_plot, ds_alff_plot, [("output_path", "in_file")])])
+    workflow.connect([(alff_plot, ds_alff_plot, [("out_file", "in_file")])])
     # fmt:on
 
     return workflow
@@ -258,6 +252,7 @@ def init_reho_cifti_wf(
             with mock_config():
                 wf = init_reho_cifti_wf(
                     name_source="/path/to/bold.dtseries.nii",
+                    mem_gb={"resampled": 0.1},
                     name="cifti_reho_wf",
                 )
 
@@ -345,21 +340,15 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
-        CiftiCreateDenseScalar(),
+        CiftiCreateDenseFromTemplate(from_cropped=True, out_file="reho.dscalar.nii"),
         name="merge_cifti",
         mem_gb=mem_gb["resampled"],
         n_procs=omp_nthreads,
     )
     reho_plot = pe.Node(
-        Function(
-            input_names=["output_path", "filename", "name_source"],
-            output_names=["output_path"],
-            function=plot_alff_reho_surface,
-        ),
+        PlotDenseCifti(name_source=name_source),
         name="reho_cifti_plot",
     )
-    reho_plot.inputs.output_path = "reho.svg"
-    reho_plot.inputs.name_source = name_source
 
     ds_reho_plot = pe.Node(
         DerivativesDataSink(
@@ -381,13 +370,13 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (lh_surf, lh_reho, [("out_file", "surf_bold")]),
         (rh_surf, rh_reho, [("out_file", "surf_bold")]),
         (subcortical_nifti, subcortical_reho, [("out_file", "in_file")]),
-        (subcortical_nifti, merge_cifti, [("label_file", "structure_label_volume")]),
+        (inputnode, merge_cifti, [("denoised_bold", "template_cifti")]),
         (lh_reho, merge_cifti, [("surf_gii", "left_metric")]),
         (rh_reho, merge_cifti, [("surf_gii", "right_metric")]),
-        (subcortical_reho, merge_cifti, [("out_file", "volume_data")]),
+        (subcortical_reho, merge_cifti, [("out_file", "volume_all")]),
         (merge_cifti, outputnode, [("out_file", "reho")]),
-        (merge_cifti, reho_plot, [("out_file", "filename")]),
-        (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
+        (merge_cifti, reho_plot, [("out_file", "in_file")]),
+        (reho_plot, ds_reho_plot, [("out_file", "in_file")]),
     ])
     # fmt:on
 
@@ -410,6 +399,7 @@ def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
             with mock_config():
                 wf = init_reho_nifti_wf(
                     name_source="/path/to/bold.nii.gz",
+                    mem_gb={"resampled": 0.1}
                     name="nifti_reho_wf",
                 )
 
@@ -459,15 +449,9 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
     )
     # Get the svg
     reho_plot = pe.Node(
-        Function(
-            input_names=["output_path", "filename", "name_source"],
-            output_names=["output_path"],
-            function=plot_alff_reho_volumetric,
-        ),
+        PlotNifti(name_source=name_source),
         name="reho_nifti_plot",
     )
-    reho_plot.inputs.output_path = "reho.svg"
-    reho_plot.inputs.name_source = name_source
 
     ds_reho_plot = pe.Node(
         DerivativesDataSink(
@@ -488,8 +472,8 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
             ("bold_mask", "mask_file"),
         ]),
         (compute_reho, outputnode, [("out_file", "reho")]),
-        (compute_reho, reho_plot, [("out_file", "filename")]),
-        (reho_plot, ds_reho_plot, [("output_path", "in_file")]),
+        (compute_reho, reho_plot, [("out_file", "in_file")]),
+        (reho_plot, ds_reho_plot, [("out_file", "in_file")]),
     ])
     # fmt:on
 
