@@ -56,6 +56,8 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--skip-dcan-qc",
         "--random-seed=8675309",
         "--min-time=100",
+        "--atlases",
+        "4S156Parcels",
     ]
     _run_and_generate(
         test_name=test_name,
