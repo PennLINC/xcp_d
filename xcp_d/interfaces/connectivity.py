@@ -438,8 +438,8 @@ class ConnectPlot(SimpleInterface):
             ax_idx = list(range(ncols))
 
         fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
-        if not isinstance(axes, list):
-            axes = [axes]
+        if isinstance(axes, plt.Axes):
+            axes = np.array([axes])
 
         for i_ax, atlas in enumerate(selected_atlases):
             atlas_idx = self.inputs.atlases.index(atlas)
