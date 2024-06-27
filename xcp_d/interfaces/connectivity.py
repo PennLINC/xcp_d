@@ -438,6 +438,9 @@ class ConnectPlot(SimpleInterface):
             ax_idx = list(range(ncols))
 
         fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
+        if not isinstance(axes, list):
+            axes = [axes]
+
         for i_ax, atlas in enumerate(selected_atlases):
             atlas_idx = self.inputs.atlases.index(atlas)
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
