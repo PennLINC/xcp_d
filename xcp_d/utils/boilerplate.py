@@ -261,6 +261,7 @@ def describe_atlases(atlases):
         "Gordon": "the Gordon atlas [@Gordon_2014]",
         "Tian": "the Tian subcortical atlas [@tian2020topographic]",
         "HCP": "the HCP CIFTI subcortical atlas [@glasser2013minimal]",
+        "MIDB": "the MIDB precision brain atlas [@hermosillo2022precision]",
     }
 
     atlas_strings = []
