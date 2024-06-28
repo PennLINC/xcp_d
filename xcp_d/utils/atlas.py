@@ -33,6 +33,7 @@ def select_atlases(atlases, subset):
             "4S1056Parcels",
             "Glasser",
             "Gordon",
+            "MIDB",
         ],
         "subcortical": [
             "Tian",
