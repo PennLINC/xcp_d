@@ -67,7 +67,6 @@ sub-0000001
 sub-0000001.html
 sub-0000001/ses-01
 sub-0000001/ses-01/anat
-sub-0000001/ses-01/anat/sub-0000001_ses-01_space-MNI152NLin6Asym_desc-aparcaseg_dseg.nii.gz
 sub-0000001/ses-01/anat/sub-0000001_ses-01_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
 sub-0000001/ses-01/func
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_desc-filtered_motion.json

@@ -238,13 +238,6 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
             f"{subses_ents}_space-{VOLSPACE}_desc-brain_mask.nii.gz",
         )
     )
-    # Use the brain mask as the "aparcaseg" dseg too.
-    copy_dictionary[warp_brainmask_to_std_results.outputs.out_file].append(
-        os.path.join(
-            anat_dir_bids,
-            f"{subses_ents}_space-{VOLSPACE}_desc-aparcaseg_dseg.nii.gz",
-        )
-    )
 
     # Warp the reference file to MNI space.
     warp_boldref_to_std = ApplyWarp(

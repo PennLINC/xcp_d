@@ -184,14 +184,6 @@ def collect_data(
             "suffix": "T2w",
             "extension": ".nii.gz",
         },
-        # native T1w-space dseg file
-        "anat_dseg": {
-            "datatype": "anat",
-            "space": None,
-            "desc": None,
-            "suffix": "dseg",
-            "extension": ".nii.gz",
-        },
         # transform from standard space to T1w or T2w space
         # "from" entity will be set later
         "template_to_anat_xfm": {
@@ -219,8 +211,6 @@ def collect_data(
         # HCP/DCAN data have anats only in standard space
         queries["t1w"]["space"] = "MNI152NLin6Asym"
         queries["t2w"]["space"] = "MNI152NLin6Asym"
-        queries["anat_dseg"]["desc"] = "aparcaseg"
-        queries["anat_dseg"]["space"] = "MNI152NLin6Asym"
         queries["anat_brainmask"]["space"] = "MNI152NLin6Asym"
 
     queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"

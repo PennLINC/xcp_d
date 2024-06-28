@@ -113,7 +113,6 @@ Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation i
          anat/
             <source_entities>_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
             <source_entities>_space-MNI152NLin6Asym_desc-preproc_T2w.nii.gz
-            <source_entities>_space-MNI152NLin6Asym_dseg.nii.gz
 
 
 Surface mesh files

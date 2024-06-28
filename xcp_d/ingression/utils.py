@@ -21,7 +21,6 @@ def collect_anatomical_files(anat_dir_orig, anat_dir_bids, base_anatomical_ents)
         "T1w.nii.gz": "desc-preproc_T1w.nii.gz",
         "brainmask_fs.nii.gz": "desc-brain_mask.nii.gz",
         "ribbon.nii.gz": "desc-ribbon_T1w.nii.gz",
-        "aparc+aseg.nii.gz": "desc-aparcaseg_dseg.nii.gz",
     }
     copy_dictionary = {}
 
