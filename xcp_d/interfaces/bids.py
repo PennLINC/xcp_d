@@ -141,8 +141,8 @@ class CollectRegistrationFiles(SimpleInterface):
             # Load the fsaverage-to-fsLR warp sphere.
             self._results["sphere_to_sphere"] = str(
                 get_template(
-                    template="fsaverage",
-                    space="fsLR",
+                    template="fsLR",
+                    space="fsaverage",
                     hemi=hemisphere,
                     density="164k",
                     desc=None,
