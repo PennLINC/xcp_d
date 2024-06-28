@@ -6,7 +6,7 @@ atlases/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii
 atlases/atlas-MIDB
 atlases/atlas-MIDB/atlas-MIDB_dseg.json
 atlases/atlas-MIDB/atlas-MIDB_dseg.tsv
-atlases/atlas-MIDB/atlas-MIDB_space-fsLR_den-91k_desc-abcdThresh75_dseg.dlabel.nii
+atlases/atlas-MIDB/atlas-MIDB_space-fsLR_den-91k_dseg.dlabel.nii
 atlases/dataset_description.json
 dataset_description.json
 desc-linc_qc.json
