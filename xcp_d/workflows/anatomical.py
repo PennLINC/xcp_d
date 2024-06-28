@@ -516,8 +516,7 @@ def init_postprocess_surfaces_wf(
 
     elif not morphometry_files:
         raise ValueError(
-            "No surfaces found. "
-            "Surfaces are required if `--warp-surfaces-native2std` is enabled."
+            "No surfaces found. Surfaces are required if `--warp-surfaces-native2std` is enabled."
         )
 
     return workflow
@@ -919,8 +918,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         n_procs=omp_nthreads,
     )  # MB
 
-    # fmt:off
-    workflow.connect([(inputnode, disassemble_h5, [("anat_to_template_xfm", "in_file")])])  # fmt:skip
+    workflow.connect([(inputnode, disassemble_h5, [("anat_to_template_xfm", "in_file")])])
 
     # Nipype's CompositeTransformUtil assumes a certain file naming and
     # concatenation order of xfms which does not work for the inverse .h5,
@@ -935,7 +933,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         n_procs=omp_nthreads,
     )
 
-    workflow.connect([(inputnode, disassemble_h5_inv, [("template_to_anat_xfm", "in_file")])])  # fmt:skip
+    workflow.connect([(inputnode, disassemble_h5_inv, [("template_to_anat_xfm", "in_file")])])
 
     # convert affine from ITK binary to txt
     convert_ants_transform = pe.Node(
@@ -963,7 +961,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         name="convert_xfm2world",
     )
 
-    workflow.connect([(change_xfm_type, convert_xfm2world, [("out_transform", "in_file")])])  # fmt:skip
+    workflow.connect([(change_xfm_type, convert_xfm2world, [("out_transform", "in_file")])])
 
     # use C3d to separate the combined warpfield xfm into x, y, and z components
     get_xyz_components = pe.Node(
