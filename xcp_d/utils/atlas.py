@@ -120,7 +120,7 @@ def get_atlas_cifti(atlas):
     atlas : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
              "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
              "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
-             "Tian", "HCP"}
+             "Tian", "HCP", "MIDB"}
         The name of the CIFTI atlas to fetch.
 
     Returns
@@ -140,6 +140,14 @@ def get_atlas_cifti(atlas):
         atlas_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_den-91k_dseg.dlabel.nii"
         atlas_labels_file = f"/AtlasPack/atlas-{atlas}_dseg.tsv"
         atlas_metadata_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_dseg.json"
+    elif "MIDB" in atlas:
+        atlas_file = str(
+            load_data("atlases/tpl-fsLR_atlas-MIDB_den-32k_desc-abcdThresh75_dseg.dlabel.nii")
+        )
+        atlas_labels_file = str(load_data(f"atlases/atlas-{atlas}_dseg.tsv"))
+        atlas_metadata_file = str(
+            load_data("atlases/tpl-fsLR_atlas-MIDB_den-32k_desc-abcdThresh75_dseg.json")
+        )
     else:
         atlas_file = str(load_data(f"atlases/tpl-fsLR_atlas-{atlas}_den-32k_dseg.dlabel.nii"))
         atlas_labels_file = str(load_data(f"atlases/atlas-{atlas}_dseg.tsv"))

@@ -255,7 +255,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--lower-bpf=0.0",
         "--atlases",
         "4S156Parcels",
-        "Glasser",
+        "MIDB",
         "--min-time=100",
     ]
     _run_and_generate(

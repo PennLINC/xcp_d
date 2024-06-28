@@ -981,6 +981,10 @@ def _validate_parameters(opts, build_log, parser):
             )
             opts.process_surfaces = False
 
+    if "MIDB" in opts.atlases and not opts.cifti:
+        build_log.warning("Atlas 'MIDB' requires CIFTI processing. Skipping atlas.")
+        opts.atlases = [atlas for atlas in opts.atlases if atlas != "MIDB"]
+
     # process_surfaces and nifti processing are incompatible.
     if opts.process_surfaces and not opts.cifti:
         parser.error(
