@@ -278,13 +278,11 @@ resolution.
     ])  # fmt:skip
 
     if t1w_available:
-
         workflow.connect([
             (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
         ])  # fmt:skip
 
     if t2w_available:
-
         workflow.connect([
             (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
         ])  # fmt:skip
@@ -303,6 +301,22 @@ def init_postprocess_surfaces_wf(
     name="postprocess_surfaces_wf",
 ):
     """Postprocess surfaces.
+
+    If DCAN QC is enabled, this will generate a BrainSprite for the executive summary.
+    If process-surfaces is enabled *or* fsLR-space mesh files are available,
+    then the BrainSprite will use standard-space mesh files.
+    Otherwise, it will use the native-space mesh files.
+
+    If process-surfaces is enabled and mesh files (i.e., white and pial surfaces) are available in
+    fsnative space, this workflow will warp them to fsLR space.
+    If process-surfaces is enabled and the mesh files are already in fsLR space,
+    they will be copied to the output directory.
+
+    As long as process-surfaces is enabled and mesh files (in either space) are available,
+    HCP-style midthickness, inflated, and very-inflated surfaces will be generated from them.
+
+    If process-surfaces is enabled and morphometry files (e.g., sulcal depth, cortical thickness)
+    are available in fsLR space, they will be copied to the output directory.
 
     Workflow Graph
         .. workflow::
@@ -504,7 +518,6 @@ def init_postprocess_surfaces_wf(
 
         if dcan_qc:
             # Use standard-space T1w and surfaces for brainsprite.
-
             workflow.connect([
                 (warp_surfaces_to_template_wf, brainsprite_wf, [
                     ("outputnode.lh_pial_surf", "inputnode.lh_pial_surf"),
