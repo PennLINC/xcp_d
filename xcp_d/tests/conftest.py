@@ -122,7 +122,6 @@ def ds001419_data(datasets):
         anat_dir,
         "sub-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.nii.gz",
     )
-    files["anat_dseg"] = os.path.join(anat_dir, "sub-01_desc-aseg_dseg.nii.gz")
 
     return files
 
@@ -179,7 +178,6 @@ def pnc_data(datasets):
         anat_dir,
         "sub-1648798153_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.nii.gz",
     )
-    files["anat_dseg"] = os.path.join(anat_dir, "sub-1648798153_desc-aseg_dseg.nii.gz")
 
     return files
 

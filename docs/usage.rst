@@ -166,9 +166,6 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 
 ``"t2w"`` selects a native T1w-space, preprocessed T2w file.
 
-``"anat_dseg"`` selects a native T1w-space segmentation file.
-This file is primarily used for figures.
-
 ``"anat_brainmask"`` selects a native T1w-space brain mask.
 
 ``"anat_to_template_xfm"`` selects a transform from T1w (or T2w, if no T1w image is available)
