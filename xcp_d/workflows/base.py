@@ -370,8 +370,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "filtered_motion",
+                "full_confounds",
+                "modified_full_confounds",
                 "temporal_mask",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
@@ -398,7 +398,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             )
 
             post_scrubbing_duration = flag_bad_run(
-                fmriprep_confounds_file=run_data["confounds"],
+                full_confounds=run_data["confounds"],
                 dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
                 motion_filter_type=config.workflow.motion_filter_type,
@@ -407,6 +407,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 band_stop_max=config.workflow.band_stop_max,
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
+                dvars_thresh=config.workflow.dvars_thresh,
+                censor_before=config.workflow.censor_before,
+                censor_after=config.workflow.censor_after,
+                censor_between=config.workflow.censor_between,
             )
             # Reduce exact_times to only include values greater than the post-scrubbing duration.
             if (config.workflow.min_time >= 0) and (

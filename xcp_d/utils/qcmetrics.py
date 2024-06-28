@@ -292,7 +292,7 @@ def compute_dvars(
     return dvars_nstd, dvars_stdz
 
 
-def make_dcan_qc_file(filtered_motion, TR):
+def make_dcan_qc_file(modified_full_confounds, TR):
     """Make DCAN HDF5 file from single motion file.
 
     NOTE: This is a Node function.
@@ -315,17 +315,17 @@ def make_dcan_qc_file(filtered_motion, TR):
 
     dcan_df_file = os.path.abspath("desc-dcan_qc.hdf5")
 
-    make_dcan_df(filtered_motion, dcan_df_file, TR)
+    make_dcan_df(modified_full_confounds, dcan_df_file, TR)
     return dcan_df_file
 
 
 @fill_doc
-def make_dcan_df(filtered_motion, name, TR):
+def make_dcan_df(modified_full_confounds, name, TR):
     """Create an HDF5-format file containing a DCAN-format dataset.
 
     Parameters
     ----------
-    %(filtered_motion)s
+    %(modified_full_confounds)s
     name : :obj:`str`
         Name of the HDF5-format file to be created.
     %(TR)s
@@ -352,7 +352,7 @@ def make_dcan_df(filtered_motion, name, TR):
     LOGGER.debug(f"Generating DCAN file: {name}")
 
     # Load filtered framewise_displacement values from file
-    filtered_motion_df = pd.read_table(filtered_motion)
+    filtered_motion_df = pd.read_table(modified_full_confounds)
     fd = filtered_motion_df["framewise_displacement"].values
 
     with h5py.File(name, "w") as dcan:

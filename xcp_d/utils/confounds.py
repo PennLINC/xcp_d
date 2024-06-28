@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from nilearn.interfaces.fmriprep.load_confounds import _load_single_confounds_file
 from nipype import logging
+from scipy import ndimage
 from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
@@ -17,7 +18,7 @@ LOGGER = logging.getLogger("nipype.utils")
 
 
 @fill_doc
-def load_motion(
+def filter_motion(
     confounds_df,
     TR,
     motion_filter_type=None,
@@ -41,7 +42,7 @@ def load_motion(
 
     Returns
     -------
-    motion_confounds_df : pandas.DataFrame
+    confounds_df : pandas.DataFrame
         The six motion regressors.
         The three rotations are listed first, then the three translations.
 
@@ -52,50 +53,44 @@ def load_motion(
     if motion_filter_type not in ("lp", "notch", None):
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
-    # Select the motion columns from the overall confounds DataFrame
-    motion_confounds_df = confounds_df[
-        ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
-    ]
+    confounds_df = confounds_df.copy()
+    motion_columns = ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
 
     # Apply LP or notch filter
     if motion_filter_type in ("lp", "notch"):
-        motion_confounds = motion_regression_filter(
-            data=motion_confounds_df.to_numpy(),
+        confounds_df[motion_columns] = motion_regression_filter(
+            data=confounds_df[motion_columns].to_numpy(),
             TR=TR,
             motion_filter_type=motion_filter_type,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
             motion_filter_order=motion_filter_order,
         )
-        motion_confounds_df = pd.DataFrame(
-            data=motion_confounds,
-            columns=motion_confounds_df.columns,
-        )
 
     # Volterra expansion
     # Ignore pandas SettingWithCopyWarning
     with pd.option_context("mode.chained_assignment", None):
-        columns = motion_confounds_df.columns.tolist()
-        for col in columns:
-            new_col = f"{col}_derivative1"
-            motion_confounds_df[new_col] = motion_confounds_df[col].diff()
+        columns_to_square = motion_columns[:]
+        for col in motion_columns:
+            deriv_col = f"{col}_derivative1"
+            confounds_df[deriv_col] = confounds_df[col].diff()
+            columns_to_square.append(deriv_col)
 
-        columns = motion_confounds_df.columns.tolist()
-        for col in columns:
-            new_col = f"{col}_power2"
-            motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
+        for col in columns_to_square:
+            square_col = f"{col}_power2"
+            confounds_df[square_col] = confounds_df[col] ** 2
 
-    return motion_confounds_df
+    return confounds_df
 
 
 @fill_doc
-def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
+def get_custom_confounds(custom_confounds_folder, full_confounds):
     """Identify a custom confounds file.
 
     Parameters
     ----------
     %(custom_confounds_folder)s
-    %(fmriprep_confounds_file)s
+    full_confounds
         We expect the custom confounds file to have the same name.
 
     Returns
@@ -112,7 +107,7 @@ def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
             f"Custom confounds location does not exist: {custom_confounds_folder}"
         )
 
-    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
+    custom_confounds_filename = os.path.basename(full_confounds)
     custom_confounds_file = os.path.abspath(
         os.path.join(
             custom_confounds_folder,
@@ -553,3 +548,163 @@ def _infer_dummy_scans(dummy_scans, confounds_file=None):
             dummy_scans = 0
 
     return dummy_scans
+
+
+def censor_basic(array, threshold):
+    """Censor basic."""
+    array[np.isnan(array)] = 0
+    if threshold > 0:
+        outlier_mask = array > threshold
+    else:
+        outlier_mask = np.zeros_like(array, dtype=bool)
+
+    return outlier_mask
+
+
+def censor_around(outlier_mask, before, after, between):
+    """Censor volumes adjacent to outliers.
+
+    Parameters
+    ----------
+    outlier_mask : array
+        Boolean array where True indicates an outlier.
+    before : int
+        Number of volumes to censor before each outlier.
+    after : int
+        Number of volumes to censor after each outlier.
+    between : int
+        Number of volumes to censor between each outlier.
+
+    Returns
+    -------
+    outlier_mask : array
+        Boolean array with additional volumes censored.
+    """
+    # Censoring before and after outliers
+    n_vols = len(outlier_mask)
+    outlier_mask = outlier_mask.astype(bool).copy()
+    outliers_idx = np.where(outlier_mask)[0]  # index untouched by expansion
+    for i in outliers_idx:
+        outlier_mask[max(0, i - before) : i] = True
+        outlier_mask[i + 1 : min(i + 1 + after, n_vols)] = True
+
+    # Find any contiguous sequences of 0s and censor them if the length of the sequence is
+    # less than or equal to the censor_between value.
+    # Find all contiguous sequences of Falses
+    labeled_array, n_uncensored_groups = ndimage.label(~outlier_mask)
+
+    # Iterate over each contiguous sequence
+    for i in range(1, n_uncensored_groups + 1):
+        slice_ = ndimage.find_objects(labeled_array == i)[0][0]
+        length = slice_.stop - slice_.start
+
+        # If the length of the contiguous sequence is less than censor_between,
+        # set the values to True
+        if length <= between:
+            outlier_mask[slice_] = True
+
+    return outlier_mask
+
+
+def calculate_outliers(*, confounds, fd_thresh, dvars_thresh, before, after, between):
+    """Generate a temporal mask DataFrame.
+
+    Parameters
+    ----------
+    confounds : pandas.DataFrame
+        DataFrame with confounds.
+        The two columns that will be used are "framewise_displacement" and "std_dvars".
+    fd_thresh : tuple
+        Tuple of two floats. The first value is the threshold for censoring during denoising,
+        and the second value is the threshold for censoring during interpolation.
+    dvars_thresh : tuple
+        Tuple of two floats. The first value is the threshold for censoring during denoising,
+        and the second value is the threshold for censoring during interpolation.
+    before : tuple
+        Tuple of two integers. The first value is the number of volumes to censor before each
+        FD or DVARS outlier volume during denoising, and the second value is the number of volumes
+        to censor before each FD or DVARS outlier volume during interpolation.
+    after : tuple
+        Tuple of two integers. The first value is the number of volumes to censor after each
+        FD or DVARS outlier volume during denoising, and the second value is the number of volumes
+        to censor after each FD or DVARS outlier volume during interpolation.
+    between : tuple
+        Tuple of two integers. The first value is the number of volumes to censor between each
+        FD or DVARS outlier volume during denoising, and the second value is the number of volumes
+        to censor between each FD or DVARS outlier volume during interpolation.
+
+    Returns
+    -------
+    outliers_df : pandas.DataFrame
+        DataFrame with columns for each type of censoring.
+    """
+    # Generate temporal mask with all timepoints have FD/DVARS over threshold set to 1.
+    n_vols = confounds.shape[0]
+
+    # Grab FD time series
+    if (
+        fd_thresh[0] > 0 or fd_thresh[1] > 0
+    ) and "framewise_displacement" not in confounds.columns:
+        raise ValueError(
+            "The 'framewise_displacement' column is missing from the fMRIPrep confounds file. "
+            "FD-based censoring is not possible."
+        )
+    elif "framewise_displacement" in confounds.columns:
+        fd_timeseries = confounds["framewise_displacement"].to_numpy()
+    else:
+        # Create a fake array that won't actually be used
+        fd_timeseries = np.zeros(n_vols)
+
+    # Grab DVARS time series
+    if (dvars_thresh[0] > 0 or dvars_thresh[1] > 0) and "std_dvars" not in confounds.columns:
+        raise ValueError(
+            "The 'std_dvars' column is missing from the fMRIPrep confounds file. "
+            "DVARS-based censoring is not possible."
+        )
+    elif "std_dvars" in confounds.columns:
+        dvars_timeseries = confounds["std_dvars"].to_numpy()
+    else:
+        # Create a fake array that won't actually be used
+        dvars_timeseries = np.zeros(n_vols)
+
+    outliers_df = pd.DataFrame(
+        columns=[
+            "framewise_displacement",
+            "dvars",
+            "denoising",
+            "framewise_displacement_interpolation",
+            "dvars_interpolation",
+            "interpolation",
+        ],
+        data=np.zeros((n_vols, 6), dtype=bool),
+    )
+
+    # Censoring for denoising
+    outliers_df["framewise_displacement"] = censor_basic(fd_timeseries, fd_thresh[0])
+    outliers_df["dvars"] = censor_basic(dvars_timeseries, dvars_thresh[0])
+
+    outlier_mask = np.logical_or(outliers_df["framewise_displacement"], outliers_df["dvars"])
+    outliers_df["denoising"] = censor_around(
+        outlier_mask,
+        before=before[0],
+        after=after[0],
+        between=between[0],
+    )
+
+    # Censoring for interpolated data (to remove interpolated signals that might be spread to
+    # other volumes by the temporal filter)
+    outliers_df["framewise_displacement_interpolation"] = censor_basic(fd_timeseries, fd_thresh[1])
+    outliers_df["dvars_interpolation"] = censor_basic(dvars_timeseries, dvars_thresh[1])
+
+    # Interpolation outlier index should include all outliers form denoising index,
+    # because all volumes in denoising index are interpolated in denoising step.
+    outlier_mask = outliers_df[
+        ["denoising", "framewise_displacement_interpolation", "dvars_interpolation"]
+    ].any(axis=1)
+    outliers_df["interpolation"] = censor_around(
+        outlier_mask,
+        before=before[1],
+        after=after[1],
+        between=between[1],
+    )
+    return outliers_df

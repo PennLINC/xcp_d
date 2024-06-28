@@ -47,7 +47,7 @@ then fsnative surface files from the preprocessing derivatives will be warped to
 Identification of high-motion outlier volumes
 =============================================
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.censoring.GenerateConfounds`
+:class:`~xcp_d.interfaces.censoring.GenerateTemporalMask`
 
 XCP-D uses framewise displacement to identify high-motion outlier volumes.
 These outlier volumes are removed from the BOLD data prior to denoising.
@@ -62,7 +62,7 @@ The threshold used to identify outlier volumes can be set with the ``--fd-thresh
 Motion parameter filtering [OPTIONAL]
 -------------------------------------
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
+:class:`~xcp_d.interfaces.censoring.ModifyConfounds`,
 :func:`~xcp_d.utils.confounds.load_motion`
 
 Motion parameters may be contaminated with respiratory effects :footcite:p:`power2019distinctions`.
@@ -116,7 +116,7 @@ per :footcite:t:`gratton2020removal`.
 Framewise displacement calculation and thresholding
 ---------------------------------------------------
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
+:class:`~xcp_d.interfaces.censoring.GenerateTemporalMask`,
 :func:`~xcp_d.utils.modified_data.compute_fd`
 
 Framewise displacement is then calculated according to the formula from :footcite:t:`power_fd_dvars`.
@@ -137,7 +137,7 @@ These volumes will later be removed from the denoised data.
 Confound regressor selection
 ============================
 :func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
-:func:`~xcp_d.interfaces.censoring.GenerateConfounds`
+:func:`~xcp_d.interfaces.censoring.GenerateDesignMatrix`
 
 The confound regressor configurations in the table below are implemented in XCP-D,
 with ``36P`` as the default.
@@ -507,13 +507,13 @@ ReHo
 :func:`~xcp_d.workflows.restingstate.init_reho_nifti_wf`,
 :func:`~xcp_d.workflows.restingstate.init_reho_cifti_wf`
 
-Regional Homogeneity (ReHo) is a measure of local temporal uniformity in the BOLD signal computed at each voxel of the processed image. 
-Greater ReHo values correspond to greater synchrony among BOLD activity patterns measured in a local neighborhood of voxels, with neighborhood size determined by a user-specified radius of voxels. 
+Regional Homogeneity (ReHo) is a measure of local temporal uniformity in the BOLD signal computed at each voxel of the processed image.
+Greater ReHo values correspond to greater synchrony among BOLD activity patterns measured in a local neighborhood of voxels, with neighborhood size determined by a user-specified radius of voxels.
 ReHo is calculated as the coefficient of concordance among all voxels in a sphere centered on the target voxel.
 
-For NIfTIs, ReHo is always calculated via AFNI’s 3dReho with 27 voxels in each neighborhood, using Kendall's coefficient of concordance (KCC). 
-For CIFTIs, the left and right hemisphere are extracted into GIFTI format via Connectome Workbench’s CIFTISeparateMetric. Next, the mesh adjacency matrix is obtained,and Kendall's coefficient of concordance (KCC) is calculated, with each vertex having four neighbors. 
-For subcortical voxels in the CIFTIs, 3dReho is used with the same parameters that are used for NIfTIs. 
+For NIfTIs, ReHo is always calculated via AFNI’s 3dReho with 27 voxels in each neighborhood, using Kendall's coefficient of concordance (KCC).
+For CIFTIs, the left and right hemisphere are extracted into GIFTI format via Connectome Workbench’s CIFTISeparateMetric. Next, the mesh adjacency matrix is obtained,and Kendall's coefficient of concordance (KCC) is calculated, with each vertex having four neighbors.
+For subcortical voxels in the CIFTIs, 3dReho is used with the same parameters that are used for NIfTIs.
 
 
 Parcellation and functional connectivity estimation [OPTIONAL]

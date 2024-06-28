@@ -29,7 +29,7 @@ from nipype.interfaces.base import (
 from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
 from templateflow.api import get as get_template
 
-from xcp_d.utils.confounds import load_motion
+from xcp_d.utils.confounds import filter_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
@@ -40,8 +40,8 @@ LOGGER = logging.getLogger("nipype.interface")
 
 
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
-    fmriprep_confounds_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
-    filtered_motion = File(exists=True, mandatory=True, desc="Filtered motion file.")
+    full_confounds = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
+    modified_full_confounds = File(exists=True, mandatory=True, desc="Filtered motion file.")
     temporal_mask = File(
         exists=True,
         mandatory=True,
@@ -51,7 +51,36 @@ class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(mandatory=True, desc="Repetition Time")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation")
     motion_filter_type = traits.Either(None, traits.Str, mandatory=True)
-    fd_thresh = traits.Float(mandatory=True, desc="Framewise displacement threshold.")
+    fd_thresh = traits.List(
+        traits.Float,
+        minlen=2,
+        maxlen=2,
+        desc="Framewise displacement threshold. All values above this will be dropped.",
+    )
+    dvars_thresh = traits.List(
+        traits.Float,
+        minlen=2,
+        maxlen=2,
+        desc="DVARS threshold. All values above this will be dropped.",
+    )
+    censor_before = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor before each FD or DVARS outlier volume.",
+    )
+    censor_after = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor after each FD or DVARS outlier volume.",
+    )
+    censor_between = traits.List(
+        traits.Int,
+        minlen=2,
+        maxlen=2,
+        desc="Number of volumes to censor between each FD or DVARS outlier volume.",
+    )
 
 
 class _CensoringPlotOutputSpec(TraitedSpec):
@@ -71,8 +100,8 @@ class CensoringPlot(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        preproc_motion_df = load_motion(
+        confounds_df = pd.read_table(self.inputs.full_confounds)
+        preproc_motion_df = filter_motion(
             confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=None,
@@ -99,7 +128,18 @@ class CensoringPlot(SimpleInterface):
                 label="Raw Framewise Displacement",
                 color=palette[0],
             )
-            ax.axhline(self.inputs.fd_thresh, label="Outlier Threshold", color="salmon", alpha=0.5)
+            ax.axhline(
+                self.inputs.fd_thresh[0],
+                label="FD Denoising Outlier Threshold",
+                color=palette[3],
+                alpha=0.5,
+            )
+            ax.axhline(
+                self.inputs.fd_thresh[1],
+                label="FD Post-Denoising Outlier Threshold",
+                color=palette[4],
+                alpha=0.5,
+            )
 
         dummy_scans = self.inputs.dummy_scans
         # This check is necessary, because init_prepare_confounds_wf connects dummy_scans from the
@@ -121,7 +161,7 @@ class CensoringPlot(SimpleInterface):
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
-            filtered_fd_timeseries = pd.read_table(self.inputs.filtered_motion)[
+            filtered_fd_timeseries = pd.read_table(self.inputs.modified_full_confounds)[
                 "framewise_displacement"
             ]
 
@@ -142,7 +182,8 @@ class CensoringPlot(SimpleInterface):
                     (
                         preproc_fd_timeseries,
                         filtered_fd_timeseries,
-                        [self.inputs.fd_thresh],
+                        [self.inputs.fd_thresh[0]],
+                        [self.inputs.dvars_thresh[0]],
                     )
                 )
             )
@@ -168,22 +209,35 @@ class CensoringPlot(SimpleInterface):
                     ymin=vline_ymin,
                     ymax=vline_ymax,
                     label=label,
-                    color=palette[4 + i_col],
+                    color=palette[5 + i_col],
                     alpha=0.8,
                 )
 
             vline_ymax = vline_ymin
 
         # Plot motion-censored volumes as vertical lines
-        tmask_arr = censoring_df["framewise_displacement"].values
-        assert preproc_fd_timeseries.size == tmask_arr.size
+        tmask_arr = censoring_df["denoising"].values
+        if preproc_fd_timeseries.size != tmask_arr.size:
+            raise ValueError(f"{preproc_fd_timeseries.size} != {tmask_arr.size}")
+
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
-            label = "Motion-Censored Volumes" if i_idx == 0 else ""
+            label = "Denoising Censored Volumes" if i_idx == 0 else ""
             ax.axvline(
                 idx * self.inputs.TR,
                 label=label,
                 color=palette[3],
+                alpha=0.5,
+            )
+
+        tmask_arr = censoring_df["interpolation"].values - censoring_df["denoising"].values
+        tmask_idx = np.where(tmask_arr)[0]
+        for i_idx, idx in enumerate(tmask_idx):
+            label = "Post-Denoising Censored Volumes" if i_idx == 0 else ""
+            ax.axvline(
+                idx * self.inputs.TR,
+                label=label,
+                color=palette[4],
                 alpha=0.5,
             )
 
@@ -226,7 +280,7 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
         Undefined,
         desc="Temporal mask",
     )
-    fmriprep_confounds_file = File(
+    full_confounds = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds file, after dummy scans removal",
@@ -288,8 +342,8 @@ class QCPlots(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        preproc_motion_df = load_motion(
+        confounds_df = pd.read_table(self.inputs.full_confounds)
+        preproc_motion_df = filter_motion(
             confounds_df.copy(),
             TR=self.inputs.TR,
             motion_filter_type=None,
@@ -306,7 +360,7 @@ class QCPlots(SimpleInterface):
         dummy_scans = self.inputs.dummy_scans
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = censoring_df["framewise_displacement"].values
+            tmask_arr = censoring_df["interpolation"].values
         else:
             tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
 
@@ -571,7 +625,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
     )
-    filtered_motion = File(
+    modified_full_confounds = File(
         exists=True,
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
@@ -655,7 +709,7 @@ class QCPlotsES(SimpleInterface):
             preprocessed_bold=self.inputs.preprocessed_bold,
             denoised_interpolated_bold=self.inputs.denoised_interpolated_bold,
             TR=self.inputs.TR,
-            filtered_motion=self.inputs.filtered_motion,
+            modified_full_confounds=self.inputs.modified_full_confounds,
             temporal_mask=self.inputs.temporal_mask,
             preprocessed_figure=preprocessed_figure,
             denoised_figure=denoised_figure,

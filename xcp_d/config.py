@@ -548,6 +548,14 @@ class workflow(_Config):
     """Radius of the head in mm."""
     fd_thresh = None
     """Framewise displacement threshold for censoring."""
+    dvars_thresh = None
+    """DVARS threshold for censoring."""
+    censor_before = None
+    """Number of volumes to remove before FD or DVARS outliers."""
+    censor_after = None
+    """Number of volumes to remove after FD or DVARS outliers."""
+    censor_between = None
+    """Number of volumes to remove between any FD or DVARS outliers."""
     min_time = None
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
     bandpass_filter = True

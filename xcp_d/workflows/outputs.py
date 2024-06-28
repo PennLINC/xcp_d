@@ -187,10 +187,10 @@ def init_postproc_derivatives_wf(
         smoothed alff
     reho
     parcellated_reho
-    confounds_file
-    confounds_metadata
-    %(filtered_motion)s
-    motion_metadata
+    design_matrix
+    design_matrix_metadata
+    %(modified_full_confounds)s
+    modified_full_confounds_metadata
     %(temporal_mask)s
     temporal_mask_metadata
     %(dummy_scans)s
@@ -202,8 +202,6 @@ def init_postproc_derivatives_wf(
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
     bpf_order = config.workflow.bpf_order
-    fd_thresh = config.workflow.fd_thresh
-    motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
     params = config.workflow.params
     atlases = config.execution.atlases
@@ -211,15 +209,17 @@ def init_postproc_derivatives_wf(
     dcan_qc = config.workflow.dcan_qc
     output_dir = config.execution.xcp_d_dir
 
+    censor = any(t > 0 for t in config.workflow.fd_thresh + config.workflow.dvars_thresh)
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 # preprocessing files to use as sources
-                "fmriprep_confounds_file",
+                "full_confounds",
                 # postprocessed outputs
                 "atlas_files",  # for Sources
-                "confounds_file",
-                "confounds_metadata",
+                "design_matrix",
+                "design_matrix_metadata",
                 "coverage",
                 "timeseries",
                 "correlations",
@@ -233,8 +233,8 @@ def init_postproc_derivatives_wf(
                 "smoothed_alff",
                 "reho",
                 "parcellated_reho",
-                "filtered_motion",
-                "motion_metadata",
+                "modified_full_confounds",
+                "modified_full_confounds_metadata",
                 "temporal_mask",
                 "temporal_mask_metadata",
                 "dummy_scans",
@@ -253,7 +253,7 @@ def init_postproc_derivatives_wf(
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "filtered_motion",
+                "modified_full_confounds",
                 "temporal_mask",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
@@ -295,39 +295,39 @@ def init_postproc_derivatives_wf(
 
     preproc_bold_src = _make_preproc_uri(name_source, fmri_dir)
 
-    ds_filtered_motion = pe.Node(
+    ds_modified_full_confounds = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=name_source,
             dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
-            desc="filtered" if motion_filter_type else None,
-            suffix="motion",
+            desc="confounds",
+            suffix="timeseries",
             extension=".tsv",
         ),
-        name="ds_filtered_motion",
+        name="ds_modified_full_confounds",
         run_without_submitting=True,
         mem_gb=1,
     )
     # fmt:off
     workflow.connect([
-        (inputnode, ds_filtered_motion, [
-            ("motion_metadata", "meta_dict"),
-            ("filtered_motion", "in_file"),
-            (("fmriprep_confounds_file", _make_preproc_uri, fmri_dir), "Sources"),
+        (inputnode, ds_modified_full_confounds, [
+            ("modified_full_confounds_metadata", "meta_dict"),
+            ("modified_full_confounds", "in_file"),
+            (("full_confounds", _make_preproc_uri, fmri_dir), "Sources"),
         ]),
-        (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
+        (ds_modified_full_confounds, outputnode, [("out_file", "modified_full_confounds")]),
     ])
     # fmt:on
 
     merge_dense_src = pe.Node(
-        niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if params != "none" else 0))),
+        niu.Merge(numinputs=(1 + (1 if censor else 0) + (1 if params != "none" else 0))),
         name="merge_dense_src",
         run_without_submitting=True,
         mem_gb=1,
     )
     merge_dense_src.inputs.in1 = preproc_bold_src
 
-    if fd_thresh > 0:
+    if censor:
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -336,7 +336,8 @@ def init_postproc_derivatives_wf(
                 extension=".tsv",
                 source_file=name_source,
                 # Metadata
-                Threshold=fd_thresh,
+                FramewiseDisplacementThreshold=config.workflow.fd_thresh,
+                DVARSThreshold=config.workflow.dvars_thresh,
             ),
             name="ds_temporal_mask",
             run_without_submitting=True,
@@ -348,7 +349,7 @@ def init_postproc_derivatives_wf(
                 ("temporal_mask_metadata", "meta_dict"),
                 ("temporal_mask", "in_file"),
             ]),
-            (ds_filtered_motion, ds_temporal_mask, [
+            (ds_modified_full_confounds, ds_temporal_mask, [
                 (("out_file", _make_xcpd_uri, output_dir), "Sources"),
             ]),
             (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
@@ -360,15 +361,13 @@ def init_postproc_derivatives_wf(
 
     if params != "none":
         confounds_src = pe.Node(
-            niu.Merge(
-                numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if custom_confounds_file else 0))
-            ),
+            niu.Merge(numinputs=(1 + (1 if censor else 0) + (1 if custom_confounds_file else 0))),
             name="confounds_src",
             run_without_submitting=True,
             mem_gb=1,
         )
-        workflow.connect([(inputnode, confounds_src, [("fmriprep_confounds_file", "in1")])])
-        if fd_thresh > 0:
+        workflow.connect([(inputnode, confounds_src, [("full_confounds", "in1")])])
+        if censor:
             # fmt:off
             workflow.connect([
                 (ds_temporal_mask, confounds_src, [
@@ -383,7 +382,7 @@ def init_postproc_derivatives_wf(
         elif custom_confounds_file:
             confounds_src.inputs.in2 = _make_custom_uri(custom_confounds_file)
 
-        ds_confounds = pe.Node(
+        ds_design_matrix = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 source_file=name_source,
@@ -392,18 +391,18 @@ def init_postproc_derivatives_wf(
                 suffix="design",
                 extension=".tsv",
             ),
-            name="ds_confounds",
+            name="ds_design_matrix",
             run_without_submitting=False,
         )
         # fmt:off
         workflow.connect([
-            (inputnode, ds_confounds, [
-                ("confounds_file", "in_file"),
-                ("confounds_metadata", "meta_dict"),
+            (inputnode, ds_design_matrix, [
+                ("design_matrix", "in_file"),
+                ("design_matrix_metadata", "meta_dict"),
             ]),
-            (confounds_src, ds_confounds, [("out", "Sources")]),
-            (ds_confounds, merge_dense_src, [
-                (("out_file", _make_xcpd_uri, output_dir), f"in{3 if fd_thresh > 0 else 2}"),
+            (confounds_src, ds_design_matrix, [("out", "Sources")]),
+            (ds_design_matrix, merge_dense_src, [
+                (("out_file", _make_xcpd_uri, output_dir), f"in{3 if censor else 2}"),
             ]),
         ])
         # fmt:on
@@ -434,7 +433,7 @@ def init_postproc_derivatives_wf(
     ])
     # fmt:on
 
-    if dcan_qc and (fd_thresh > 0):
+    if dcan_qc and censor:
         ds_interpolated_denoised_bold = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,

@@ -70,36 +70,61 @@ def test_describe_motion_parameters():
 
 def test_describe_censoring():
     """Test boilerplate.describe_censoring."""
-    motion_filter_type = "notch"
-    fd_thresh = 0.2
-    exact_scans = []
-    desc = boilerplate.describe_censoring(motion_filter_type, fd_thresh, exact_scans)
+    desc = boilerplate.describe_censoring(
+        motion_filter_type="notch",
+        fd_thresh=[0.2, 0.2],
+        dvars_thresh=[0, 0],
+        censor_before=[0, 0],
+        censor_after=[0, 0],
+        censor_between=[0, 0],
+        exact_scans=[],
+    )
     assert "Volumes with filtered framewise displacement" in desc
 
-    motion_filter_type = None
-    fd_thresh = 0.2
-    exact_scans = []
-    desc = boilerplate.describe_censoring(motion_filter_type, fd_thresh, exact_scans)
+    desc = boilerplate.describe_censoring(
+        motion_filter_type=None,
+        fd_thresh=[0.2, 0.2],
+        dvars_thresh=[0, 0],
+        censor_before=[0, 0],
+        censor_after=[0, 0],
+        censor_between=[0, 0],
+        exact_scans=[],
+    )
     assert "Volumes with framewise displacement" in desc
 
-    motion_filter_type = None
-    fd_thresh = 0.2
-    exact_scans = [100, 200, 300]
-    desc = boilerplate.describe_censoring(motion_filter_type, fd_thresh, exact_scans)
+    desc = boilerplate.describe_censoring(
+        motion_filter_type=None,
+        fd_thresh=[0.2, 0.2],
+        dvars_thresh=[0, 0],
+        censor_before=[0, 0],
+        censor_after=[0, 0],
+        censor_between=[0, 0],
+        exact_scans=[100, 200, 300],
+    )
     assert "Volumes with framewise displacement" in desc
     assert "limited to 100, 200, and 300 volumes" in desc
 
-    motion_filter_type = None
-    fd_thresh = 0
-    exact_scans = [100, 200, 300]
-    desc = boilerplate.describe_censoring(motion_filter_type, fd_thresh, exact_scans)
+    desc = boilerplate.describe_censoring(
+        motion_filter_type=None,
+        fd_thresh=[0, 0],
+        dvars_thresh=[0, 0],
+        censor_before=[0, 0],
+        censor_after=[0, 0],
+        censor_between=[0, 0],
+        exact_scans=[100, 200, 300],
+    )
     assert "Volumes were randomly selected for censoring" in desc
     assert "limited to 100, 200, and 300 volumes" in desc
 
-    motion_filter_type = "notch"
-    fd_thresh = 0
-    exact_scans = [100, 200, 300]
-    desc = boilerplate.describe_censoring(motion_filter_type, fd_thresh, exact_scans)
+    desc = boilerplate.describe_censoring(
+        motion_filter_type="notch",
+        fd_thresh=[0, 0],
+        dvars_thresh=[0, 0],
+        censor_before=[0, 0],
+        censor_after=[0, 0],
+        censor_between=[0, 0],
+        exact_scans=[100, 200, 300],
+    )
     assert "Volumes were randomly selected for censoring" in desc
     assert "limited to 100, 200, and 300 volumes" in desc
 

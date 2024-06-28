@@ -237,7 +237,7 @@ def correlate_timeseries(timeseries, temporal_mask):
     correlations_exact = {}
     if isdefined(temporal_mask):
         censoring_df = pd.read_table(temporal_mask)
-        censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
+        censored_censoring_df = censoring_df.loc[censoring_df["interpolation"] == 0]
         censored_censoring_df.reset_index(drop=True, inplace=True)
         exact_columns = [c for c in censoring_df.columns if c.startswith("exact_")]
         for exact_column in exact_columns:

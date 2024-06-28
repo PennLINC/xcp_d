@@ -91,13 +91,26 @@ def describe_motion_parameters(
 
 
 @fill_doc
-def describe_censoring(motion_filter_type, fd_thresh, exact_scans):
+def describe_censoring(
+    *,
+    motion_filter_type,
+    fd_thresh,
+    dvars_thresh,
+    censor_before,
+    censor_after,
+    censor_between,
+    exact_scans,
+):
     """Build a text description of the FD censoring process.
 
     Parameters
     ----------
     %(motion_filter_type)s
     %(fd_thresh)s
+    dvars_thresh
+    censor_before
+    censor_after
+    censor_between
     %(exact_scans)s
 
     Returns
@@ -106,14 +119,48 @@ def describe_censoring(motion_filter_type, fd_thresh, exact_scans):
         A text description of the censoring procedure.
     """
     desc = ""
-    if fd_thresh > 0:
-        desc += (
-            f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
-            f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of "
-            "later censoring [@power_fd_dvars]."
-        )
+    censor = any(t > 0 for t in fd_thresh + dvars_thresh)
+    if censor:
+        if fd_thresh[0] > 0 or dvars_thresh[0] > 0:
+            desc += (
+                f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
+                f"greater than {fd_thresh[0]} mm or DVARS greater than {dvars_thresh[0]} "
+                "were flagged as outliers for censoring as part of the denoising step "
+                "[@power_fd_dvars]. "
+            )
+            if censor_before[0] > 0 or censor_after[0] > 0:
+                desc += (
+                    f"Additionally, {censor_before[0]} volumes before and {censor_after[0]} "
+                    "volumes after each outlier were flagged for censoring. "
+                )
 
-    if exact_scans and (fd_thresh > 0):
+            if censor_between[0] > 0:
+                desc += (
+                    "Any sequences of non-outlier volumes shorter than or equal to "
+                    f"{censor_between[0]} volumes were also flagged for censoring. "
+                )
+
+        if fd_thresh[1] > 0 or dvars_thresh[1] > 0:
+            desc += (
+                f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
+                f"greater than {fd_thresh[1]} mm or DVARS greater than {dvars_thresh[1]} "
+                "were flagged as outliers for censoring after interpolation and temporal "
+                "filtering. "
+            )
+
+            if censor_before[1] > 0 or censor_after[1] > 0:
+                desc += (
+                    f"Additionally, {censor_before[1]} volumes before and {censor_after[1]} "
+                    "volumes after each outlier were flagged for censoring. "
+                )
+
+            if censor_between[1] > 0:
+                desc += (
+                    "Any sequences of non-outlier volumes shorter than or equal to "
+                    f"{censor_between[1]} volumes were also flagged for censoring. "
+                )
+
+    if exact_scans and censor:
         desc += (
             " Additional sets of censoring volumes were randomly selected to produce additional "
             f"correlation matrices limited to {list_to_str(exact_scans)} volumes."

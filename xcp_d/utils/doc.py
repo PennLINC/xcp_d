@@ -101,9 +101,9 @@ TR : :obj:`float`
 """
 
 docdict[
-    "fmriprep_confounds_file"
+    "full_confounds"
 ] = """
-fmriprep_confounds_file : :obj:`str`
+full_confounds : :obj:`str`
     Confounds TSV file from preprocessing derivatives.
 """
 
@@ -430,9 +430,9 @@ despike : :obj:`bool`
 """
 
 docdict[
-    "filtered_motion"
+    "modified_full_confounds"
 ] = """
-filtered_motion : :obj:`str`
+modified_full_confounds : :obj:`str`
     Framewise displacement timeseries, potentially after bandstop or low-pass filtering.
     This is a TSV file with one column: 'framewise_displacement'.
 """

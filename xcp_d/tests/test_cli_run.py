@@ -32,7 +32,11 @@ def base_opts():
         "high_pass": 0.01,
         "low_pass": 0.1,
         "bandpass_filter": True,
-        "fd_thresh": 0.3,
+        "fd_thresh": [0.3, 0],
+        "dvars_thresh": [0, 0],
+        "censor_before": [0, 0],
+        "censor_after": [0, 0],
+        "censor_between": [0, 0],
         "min_time": 100,
         "motion_filter_type": "notch",
         "band_stop_min": 12,
@@ -90,12 +94,12 @@ def test_validate_parameters_06(base_opts, base_parser, caplog):
     opts = deepcopy(base_opts)
 
     # Disable censoring
-    opts.fd_thresh = 0
+    opts.fd_thresh = [0, 0]
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.min_time == 0
-    assert "Framewise displacement-based scrubbing is disabled." in caplog.text
+    assert "Censoring is disabled." in caplog.text
 
 
 def test_validate_parameters_07(base_opts, base_parser, capsys):
@@ -317,3 +321,21 @@ def test_validate_parameters_21(base_opts, base_parser, caplog):
 
     assert "cifti processing (--cifti) will be disabled automatically." in caplog.text
     assert "(--warp-surfaces-native2std) will be disabled automatically." in caplog.text
+
+
+def test_validate_parameters_22(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = [0.3]
+    opts.dvars_thresh = [1]
+    opts.censor_before = [1]
+    opts.censor_after = [1]
+    opts.censor_between = [1]
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.fd_thresh == [0.3, 0.3]
+    assert opts.dvars_thresh == [1, 1]
+    assert opts.censor_before == [1, 0]
+    assert opts.censor_after == [1, 0]
+    assert opts.censor_between == [1, 0]

@@ -92,13 +92,12 @@ def init_alff_wf(
     output_dir = config.execution.xcp_d_dir
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
-    fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
     cifti = config.workflow.cifti
     omp_nthreads = config.nipype.omp_nthreads
 
     periodogram_desc = ""
-    if fd_thresh > 0:
+    if config.workflow.fd_thresh[0] > 0 or config.workflow.dvars_thresh[0] > 0:
         periodogram_desc = (
             " using the Lomb-Scargle periodogram "
             "[@lomb1976least;@scargle1982studies;@townsend2010fast;@taylorlomb]"

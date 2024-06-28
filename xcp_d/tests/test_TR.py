@@ -17,7 +17,7 @@ from xcp_d.interfaces.censoring import RemoveDummyVolumes
 def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
     """Test RemoveDummyVolumes() for NIFTI input data."""
     # Define inputs
-    temp_dir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_nifti")
+    temp_dir = tmp_path_factory.mktemp("test_removedummyvolumes_nifti")
 
     boldfile = ds001419_data["nifti_file"]
     confounds_file = ds001419_data["confounds_file"]
@@ -29,17 +29,17 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
     # Test a nifti file with 0 volumes to remove
     remove_nothing = RemoveDummyVolumes(
         bold_file=boldfile,
-        fmriprep_confounds_file=confounds_file,
-        confounds_file=confounds_file,
-        motion_file=confounds_file,
+        full_confounds=confounds_file,
+        modified_full_confounds=confounds_file,
+        design_matrix=confounds_file,
         temporal_mask=confounds_file,
         dummy_scans=0,
     )
     results = remove_nothing.run(cwd=temp_dir)
-    undropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
+    undropped_confounds = pd.read_table(results.outputs.full_confounds_dropped_TR)
     # Were the files created?
     assert op.exists(results.outputs.bold_file_dropped_TR)
-    assert op.exists(results.outputs.fmriprep_confounds_file_dropped_TR)
+    assert op.exists(results.outputs.full_confounds_dropped_TR)
     # Have the confounds stayed the same shape?
     assert undropped_confounds.shape == original_confounds.shape
     # Has the nifti stayed the same shape?
@@ -51,17 +51,17 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
     for n in range(10):
         remove_n_vols = RemoveDummyVolumes(
             bold_file=boldfile,
-            fmriprep_confounds_file=confounds_file,
-            confounds_file=confounds_file,
-            motion_file=confounds_file,
+            full_confounds=confounds_file,
+            modified_full_confounds=confounds_file,
+            design_matrix=confounds_file,
             temporal_mask=confounds_file,
             dummy_scans=n,
         )
         results = remove_n_vols.run(cwd=temp_dir)
-        dropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
+        dropped_confounds = pd.read_table(results.outputs.full_confounds_dropped_TR)
         # Were the files created?
         assert op.exists(results.outputs.bold_file_dropped_TR)
-        assert op.exists(results.outputs.fmriprep_confounds_file_dropped_TR)
+        assert op.exists(results.outputs.full_confounds_dropped_TR)
         # Have the confounds changed correctly?
         assert dropped_confounds.shape[0] == original_confounds.shape[0] - n
         # Has the nifti changed correctly?
@@ -91,17 +91,17 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
     # Test a cifti file with 0 volumes to remove
     remove_nothing = RemoveDummyVolumes(
         bold_file=boldfile,
-        fmriprep_confounds_file=confounds_file,
-        confounds_file=confounds_file,
-        motion_file=confounds_file,
+        full_confounds=confounds_file,
+        modified_full_confounds=confounds_file,
+        design_matrix=confounds_file,
         temporal_mask=confounds_file,
         dummy_scans=0,
     )
     results = remove_nothing.run(cwd=temp_dir)
-    undropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
+    undropped_confounds = pd.read_table(results.outputs.full_confounds_dropped_TR)
     # Were the files created?
     assert op.exists(results.outputs.bold_file_dropped_TR)
-    assert op.exists(results.outputs.fmriprep_confounds_file_dropped_TR)
+    assert op.exists(results.outputs.full_confounds_dropped_TR)
     # Have the confounds stayed the same shape?
     assert undropped_confounds.shape == original_confounds.shape
     # Has the cifti stayed the same shape?
@@ -113,18 +113,18 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
     for n in range(10):
         remove_n_vols = RemoveDummyVolumes(
             bold_file=boldfile,
-            fmriprep_confounds_file=confounds_file,
-            confounds_file=confounds_file,
-            motion_file=confounds_file,
+            full_confounds=confounds_file,
+            modified_full_confounds=confounds_file,
+            design_matrix=confounds_file,
             temporal_mask=confounds_file,
             dummy_scans=n,
         )
 
         results = remove_n_vols.run(cwd=temp_dir)
-        dropped_confounds = pd.read_table(results.outputs.fmriprep_confounds_file_dropped_TR)
+        dropped_confounds = pd.read_table(results.outputs.full_confounds_dropped_TR)
         # Were the files created?
         assert op.exists(results.outputs.bold_file_dropped_TR)
-        assert op.exists(results.outputs.fmriprep_confounds_file_dropped_TR)
+        assert op.exists(results.outputs.full_confounds_dropped_TR)
         # Have the confounds changed correctly?
         assert dropped_confounds.shape[0] == original_confounds.shape[0] - n
         # Has the cifti changed correctly?
@@ -150,7 +150,7 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
 #     # Run workflow
 #     remvtr = RemoveDummyVolumes()
 #     remvtr.inputs.bold_file = boldfile
-#     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
+#     remvtr.inputs.full_confounds = confounds_tsv
 #     remvtr.inputs.custom_confounds = custom_confounds_tsv
 #     remvtr.inputs.dummy_scans = 5
 #     results = remvtr.run(cwd=temp_dir)
@@ -177,7 +177,7 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
 #     # Run workflow
 #     remvtr = RemoveDummyVolumes()
 #     remvtr.inputs.bold_file = boldfile
-#     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
+#     remvtr.inputs.full_confounds = confounds_tsv
 #     remvtr.inputs.custom_confounds = custom_confounds_tsv
 #     remvtr.inputs.dummy_scans = 5
 #     results = remvtr.run(cwd=temp_dir)

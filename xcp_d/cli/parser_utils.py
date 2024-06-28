@@ -73,6 +73,52 @@ def _float_or_auto(string, is_parser=True):
     return floatarg
 
 
+def _one_or_two_ints(string, is_parser=True):
+    """Check if argument is one or two integers >= 0."""
+    error = argparse.ArgumentTypeError if is_parser else ValueError
+    try:
+        ints = [int(i) for i in string.split()]
+    except ValueError:
+        msg = "Argument must be one or two integers."
+        raise error(msg)
+
+    if len(ints) == 1:
+        ints.append(0)
+    elif len(ints) != 2:
+        raise error("Argument must be one or two integers.")
+
+    if ints[0] < 0 or ints[1] < 0:
+        raise error(
+            "Int arguments must be nonnegative. "
+            "If you wish to disable censoring, set the value to 0."
+        )
+
+    return ints
+
+
+def _one_or_two_floats(string, is_parser=True):
+    """Check if argument is one or two floats >= 0."""
+    error = argparse.ArgumentTypeError if is_parser else ValueError
+    try:
+        floats = [float(i) for i in string.split()]
+    except ValueError:
+        msg = "Argument must be one or two floats."
+        raise error(msg)
+
+    if len(floats) == 1:
+        floats.append(0.0)
+    elif len(floats) != 2:
+        raise error("Argument must be one or two floats.")
+
+    if floats[0] < 0 or floats[1] < 0:
+        raise error(
+            "Float arguments must be nonnegative. "
+            "If you wish to disable censoring, set the value to 0."
+        )
+
+    return floats
+
+
 def _restricted_float(x):
     """From https://stackoverflow.com/a/12117065/2589328."""
     try:
@@ -101,3 +147,32 @@ class _DeprecatedStoreAction(Action):
             f"{self.__version__}. "
         )
         setattr(namespace, self.dest, values)
+
+
+def _check_censoring_thresholds(values, parser, arg_name):
+    if len(values) == 1:
+        values = [values[0], values[0]]
+    elif len(values) > 2:
+        parser.error(
+            f"Invalid number of values for '{arg_name}': {len(values)}. "
+            "Please provide either one or two values."
+        )
+
+    if values[0] > 0 and values[1] > values[0]:
+        parser.error(
+            f"The second value ({values[1]}) for '{arg_name}' must be less than or equal to the "
+            f"first value ({values[0]})."
+        )
+
+    return values
+
+
+def _check_censoring_numbers(values, parser, arg_name):
+    if len(values) == 1:
+        values = [values[0], 0]
+    elif len(values) > 2:
+        parser.error(
+            f"Invalid number of values for '{arg_name}': {len(values)}. "
+            "Please provide either one or two values."
+        )
+    return values

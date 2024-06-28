@@ -142,7 +142,7 @@ class ComputeALFF(SimpleInterface):
         if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
-            sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
+            sample_mask = ~censoring_df["interpolation"].values.astype(bool)
 
         # compute the ALFF
         alff_mat = compute_alff(
