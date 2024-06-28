@@ -108,8 +108,6 @@ class CollectRegistrationFiles(SimpleInterface):
 
         from templateflow.api import get as get_template
 
-        from xcp_d.data import load as load_data
-
         hemisphere = self.inputs.hemisphere
         hstr = f"{hemisphere.lower()}h"
         participant_id = self.inputs.participant_id
