@@ -7,6 +7,14 @@ atlases/atlas-Tian
 atlases/atlas-Tian/atlas-Tian_dseg.json
 atlases/atlas-Tian/atlas-Tian_dseg.tsv
 atlases/atlas-Tian/atlas-Tian_space-fsLR_den-91k_dseg.dlabel.nii
+atlases/atlas-MyersLabonte50
+atlases/atlas-MyersLabonte50/atlas-MyersLabonte50_dseg.json
+atlases/atlas-MyersLabonte50/atlas-MyersLabonte50_dseg.tsv
+atlases/atlas-MyersLabonte50/atlas-MyersLabonte50_space-fsLR_den-91k_dseg.dlabel.nii
+atlases/atlas-MyersLabonte90
+atlases/atlas-MyersLabonte90/atlas-MyersLabonte90_dseg.json
+atlases/atlas-MyersLabonte90/atlas-MyersLabonte90_dseg.tsv
+atlases/atlas-MyersLabonte90/atlas-MyersLabonte90_space-fsLR_den-91k_dseg.dlabel.nii
 atlases/dataset_description.json
 dataset_description.json
 desc-linc_qc.json
