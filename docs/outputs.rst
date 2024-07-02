@@ -170,16 +170,6 @@ Functional Outputs
 Functional outputs consist of processed/denoised BOLD data, timeseries,
 functional connectivity matrices, and resting-state derivatives.
 
-.. important::
-
-   Prior to version 0.4.0, the denoised data outputted by *XCP-D* was interpolated,
-   meaning that high-motion volumes were replaced with interpolated data prior to temporal
-   filtering.
-   **This was a bug.**
-   From 0.4.0 on, we have started to only write out the censored version of the denoised data,
-   with high-motion volumes completely removed.
-   This extends to the parcellated time series and correlation matrices as well.
-
 
 Denoised or residual BOLD data
 ==============================
@@ -197,18 +187,14 @@ Denoised or residual BOLD data
             # NIfTI
             <source_entities>_space-<label>_desc-denoised_bold.nii.gz
             <source_entities>_space-<label>_desc-denoisedSmoothed_bold.nii.gz
-            <source_entities>_space-<label>_desc-interpolated_bold.nii.gz
 
             # CIFTI
             <source_entities>_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
             <source_entities>_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
-            <source_entities>_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
 
 .. important::
-
-   The interpolated denoised BOLD files (``desc-interpolated``) should NOT be used for analyses.
-   These files are only generated if ``--skip-dcan-qc`` is not used,
-   and primarily exist for compatibility with DCAN-specific analysis tools.
+   If ``abcd`` or ``hbcd`` mode is used, the denoised BOLD data will be interpolated.
+   If ``linc`` mode is used, the denoised BOLD data will be censored.
 
 The sidecar json files contains parameters of the data and processing steps.
 The Sources field contains BIDS URIs pointing to the files used to create the derivative.
@@ -247,8 +233,13 @@ Functional timeseries and connectivity matrices
 This includes the atlases used to extract the timeseries.
 
 .. important::
-   Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the ``--exact-time``
-   parameter is used.
+   If ``abcd`` or ``hbcd`` mode is used, the time series will be interpolated.
+   If ``linc`` mode is used, the time series will be censored.
+   In both cases, the correlation matrices will be calculated using the censored time series.
+
+.. important::
+   Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the
+   ``--create-matrices`` parameter is used with integer values.
 
 .. code-block::
 
@@ -278,12 +269,12 @@ Resting-state metric derivatives (ReHo and ALFF)
 (ALFF), depending on the parameters.
 
 .. important::
-      Smoothed ALFF will only be generated if smoothing is enabled with the ``--smoothing``
-      parameter.
+   Smoothed ALFF will only be generated if smoothing is enabled with the ``--smoothing``
+   parameter.
 
 .. important::
-      ALFF will not be generated if bandpass filtering is disabled with the
-      ``--disable-bandpass-filtering`` parameter.
+   ALFF will not be generated if bandpass filtering is disabled with the
+   ``--disable-bandpass-filtering`` parameter.
 
 *XCP-D* will also parcellate the ReHo and ALFF maps with each of the atlases used for the BOLD
 data.
@@ -353,7 +344,7 @@ to 1mm FD in 0.01 steps.
    xcp_d/
       sub-<label>/[ses-<label>/]
          func/
-            <source_entities>_desc-dcan_qc.hdf5
+            <source_entities>_desc-abcc_qc.hdf5
 
 These files have the following keys:
 

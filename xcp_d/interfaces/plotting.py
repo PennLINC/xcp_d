@@ -972,12 +972,10 @@ class PlotCiftiParcellation(SimpleInterface):
         if vmin == vmax:
             # Define vmin and vmax based on all of the files
             vmin, vmax = np.inf, -np.inf
-            LOGGER.warning(f"Setting vmin={vmin}, vmax={vmax}")
             for cortical_file in cortical_files:
                 img_data = nb.load(cortical_file).get_fdata()
                 vmin = np.min([np.nanmin(img_data), vmin])
                 vmax = np.max([np.nanmax(img_data), vmax])
-                LOGGER.warning(f"Setting vmin={vmin}, vmax={vmax}")
 
         for i_file in range(n_files):
             subplot = subplots[i_file]

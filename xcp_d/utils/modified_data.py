@@ -199,3 +199,51 @@ def flag_bad_run(
     )
     fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
     return np.sum(fd_arr <= fd_thresh) * TR
+
+
+def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
+    """Calculate the exact scans corresponding to exact times.
+
+    Parameters
+    ----------
+    exact_times : :obj:`list`
+        List of exact times in seconds.
+    scan_length : :obj:`int`
+        Length of the scan in seconds.
+    t_r : :obj:`float`
+        Repetition time of the scan in seconds.
+    bold_file : :obj:`str`
+        Path to the BOLD file.
+
+    Returns
+    -------
+    exact_scans : :obj:`list`
+        List of exact scans corresponding to the exact times.
+    """
+    float_times = []
+    non_float_times = []
+
+    for time in exact_times:
+        try:
+            float_times.append(float(time))
+        except ValueError:
+            non_float_times.append(time)
+
+    retained_exact_times = [t for t in float_times if t <= scan_length]
+    dropped_exact_times = [t for t in float_times if t > scan_length]
+    if dropped_exact_times:
+        LOGGER.warning(
+            f"{scan_length} seconds in {os.path.basename(bold_file)} "
+            "survive high-motion outlier scrubbing. "
+            "Only retaining exact-time values greater than this "
+            f"({retained_exact_times})."
+        )
+
+    if non_float_times:
+        LOGGER.warning(
+            f"Non-float values {non_float_times} in {os.path.basename(bold_file)} "
+            "will be ignored."
+        )
+
+    exact_scans = [int(t // t_r) for t in retained_exact_times]
+    return exact_scans

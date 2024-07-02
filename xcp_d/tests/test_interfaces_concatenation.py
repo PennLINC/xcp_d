@@ -36,14 +36,15 @@ def test_filteroutfailedruns(ds001419_data):
     nifti_file = ds001419_data["nifti_file"]
     tsv_file = ds001419_data["confounds_file"]
 
-    censored_denoised_bold = [Undefined, nifti_file, Undefined, Undefined, nifti_file]
-    n_runs = len(censored_denoised_bold)
+    denoised_bold = [Undefined, nifti_file, Undefined, Undefined, nifti_file]
+    n_runs = len(denoised_bold)
     n_good_runs = 2
     preprocessed_bold = [nifti_file] * n_runs
     fmriprep_confounds_file = [tsv_file] * n_runs
     filtered_motion = [tsv_file] * n_runs
     temporal_mask = [nifti_file] * n_runs
     denoised_interpolated_bold = [nifti_file] * n_runs
+    censored_denoised_bold = [nifti_file] * n_runs
 
     # Some can just be Undefined
     smoothed_denoised_bold = Undefined
@@ -55,6 +56,7 @@ def test_filteroutfailedruns(ds001419_data):
     timeseries_ciftis = [[nifti_file, nifti_file, nifti_file]] * n_runs
 
     interface = concatenation.FilterOutFailedRuns(
+        denoised_bold=denoised_bold,
         censored_denoised_bold=censored_denoised_bold,
         preprocessed_bold=preprocessed_bold,
         fmriprep_confounds_file=fmriprep_confounds_file,
@@ -69,6 +71,7 @@ def test_filteroutfailedruns(ds001419_data):
     )
     results = interface.run()
     out = results.outputs
+    assert len(out.denoised_bold) == n_good_runs
     assert len(out.censored_denoised_bold) == n_good_runs
     assert len(out.preprocessed_bold) == n_good_runs
     assert len(out.fmriprep_confounds_file) == n_good_runs
@@ -92,6 +95,7 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
 
     n_runs = 2
     n_atlases = 3
+    denoised_bold = [nifti_file] * n_runs
     censored_denoised_bold = [nifti_file] * n_runs
     preprocessed_bold = [nifti_file] * n_runs
     fmriprep_confounds_file = [tsv_file] * n_runs
@@ -107,6 +111,7 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     timeseries_ciftis = [[cifti_file] * n_atlases] * n_runs
 
     interface = concatenation.ConcatenateInputs(
+        denoised_bold=denoised_bold,
         censored_denoised_bold=censored_denoised_bold,
         preprocessed_bold=preprocessed_bold,
         denoised_interpolated_bold=denoised_interpolated_bold,
@@ -119,6 +124,7 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     )
     results = interface.run(cwd=tmpdir)
     out = results.outputs
+    assert os.path.isfile(out.denoised_bold)
     assert os.path.isfile(out.censored_denoised_bold)
     assert os.path.isfile(out.preprocessed_bold)
     assert os.path.isfile(out.denoised_interpolated_bold)

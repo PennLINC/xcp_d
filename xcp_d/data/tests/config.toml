@@ -36,7 +36,7 @@ despike = false
 params = "36P"
 custom_confounds = false
 smoothing = 6
-combineruns = false
+combine_runs = false
 motion_filter_type = false
 band_stop_min = false
 band_stop_max = false
@@ -50,9 +50,9 @@ low_pass = 0.1
 bpf_order = 2
 atlases = []
 min_coverage = 0.5
-exact_time = []
+dcan_correlation_lengths = []
 process_surfaces = false
-dcan_qc = false
+abcc_qc = false
 
 [nipype]
 crashfile_format = "txt"

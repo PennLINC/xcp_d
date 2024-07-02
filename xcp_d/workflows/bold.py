@@ -203,6 +203,7 @@ the following post-processing was performed.
                 "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
+                "denoised_bold",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
@@ -265,6 +266,10 @@ the following post-processing was performed.
         (prepare_confounds_wf, denoise_bold_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ("outputnode.confounds_file", "inputnode.confounds_file"),
+        ]),
+        (denoise_bold_wf, outputnode, [
+            ("outputnode.denoised_interpolated_bold", "denoised_interpolated_bold"),
+            ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
         ]),
     ])  # fmt:skip
 
@@ -357,8 +362,7 @@ the following post-processing was performed.
             ("outputnode.temporal_mask_metadata", "inputnode.temporal_mask_metadata"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
-            ("outputnode.denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
-            ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
+            ("outputnode.denoised_bold", "inputnode.denoised_bold"),
             ("outputnode.smoothed_denoised_bold", "inputnode.smoothed_denoised_bold"),
         ]),
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
@@ -366,8 +370,7 @@ the following post-processing was performed.
         (postproc_derivatives_wf, outputnode, [
             ("outputnode.filtered_motion", "filtered_motion"),
             ("outputnode.temporal_mask", "temporal_mask"),
-            ("outputnode.denoised_interpolated_bold", "denoised_interpolated_bold"),
-            ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
+            ("outputnode.denoised_bold", "denoised_bold"),
             ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
             ("outputnode.timeseries", "timeseries"),
         ]),
@@ -396,7 +399,7 @@ the following post-processing was performed.
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ]),
             (denoise_bold_wf, connectivity_wf, [
-                ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+                ("outputnode.denoised_bold", "inputnode.denoised_bold"),
             ]),
             (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
             (connectivity_wf, postproc_derivatives_wf, [
@@ -416,22 +419,23 @@ the following post-processing was performed.
                 ]),
             ])  # fmt:skip
 
-    # executive summary workflow
-    execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
-        preproc_nifti=bold_file,
-        t1w_available=t1w_available,
-        t2w_available=t2w_available,
-        mem_gb=mem_gbx,
-    )
+    if config.workflow.abcc_qc:
+        # executive summary workflow
+        execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
+            preproc_nifti=bold_file,
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
+            mem_gb=mem_gbx,
+        )
 
-    workflow.connect([
-        # Use inputnode for executive summary instead of downcast_data
-        # because T1w is used as name source.
-        (inputnode, execsummary_functional_plots_wf, [
-            ("boldref", "inputnode.boldref"),
-            ("t1w", "inputnode.t1w"),
-            ("t2w", "inputnode.t2w"),
-        ]),
-    ])  # fmt:skip
+        workflow.connect([
+            # Use inputnode for executive summary instead of downcast_data
+            # because T1w is used as name source.
+            (inputnode, execsummary_functional_plots_wf, [
+                ("boldref", "inputnode.boldref"),
+                ("t1w", "inputnode.t1w"),
+                ("t2w", "inputnode.t2w"),
+            ]),
+        ])  # fmt:skip
 
     return workflow

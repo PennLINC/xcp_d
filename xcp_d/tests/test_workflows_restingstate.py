@@ -34,7 +34,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
 
     with mock_config():
         config.execution.xcp_d_dir = tempdir
-        config.workflow.cifti = False
+        config.workflow.file_format = "nifti"
         config.workflow.low_pass = 0.08
         config.workflow.high_pass = 0.01
         config.workflow.fd_thresh = 0
@@ -121,7 +121,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
 
     with mock_config():
         config.execution.xcp_d_dir = tempdir
-        config.workflow.cifti = True
+        config.workflow.file_format = "cifti"
         config.workflow.low_pass = 0.08
         config.workflow.high_pass = 0.01
         config.workflow.fd_thresh = 0.1

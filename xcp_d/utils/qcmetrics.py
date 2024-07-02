@@ -292,7 +292,7 @@ def compute_dvars(
     return dvars_nstd, dvars_stdz
 
 
-def make_dcan_qc_file(filtered_motion, TR):
+def make_abcc_qc_file(filtered_motion, TR):
     """Make DCAN HDF5 file from single motion file.
 
     NOTE: This is a Node function.
@@ -313,7 +313,7 @@ def make_dcan_qc_file(filtered_motion, TR):
 
     from xcp_d.utils.qcmetrics import make_dcan_df
 
-    dcan_df_file = os.path.abspath("desc-dcan_qc.hdf5")
+    dcan_df_file = os.path.abspath("desc-abcc_qc.hdf5")
 
     make_dcan_df(filtered_motion, dcan_df_file, TR)
     return dcan_df_file

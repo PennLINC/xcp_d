@@ -708,16 +708,17 @@ class ReduceCifti(SimpleInterface):
             )
 
         # Drop the high-motion volumes, because the CIFTI is already censored
-        censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
-        censored_censoring_df.reset_index(drop=True, inplace=True)
-        if censored_censoring_df.shape[0] != img.shape[0]:
-            raise ValueError(
-                f"Number of volumnes in the temporal mask ({censored_censoring_df.shape[0]}) "
-                f"does not match the CIFTI ({img.shape[0]})."
-            )
+        if self.inputs.column != "framewise_displacement":
+            censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
+            censoring_df.reset_index(drop=True, inplace=True)
+            if censoring_df.shape[0] != img.shape[0]:
+                raise ValueError(
+                    f"Number of volumes in the temporal mask ({censoring_df.shape[0]}) "
+                    f"does not match the CIFTI ({img.shape[0]})."
+                )
 
         data = img.get_fdata()
-        retain_idx = (censored_censoring_df[self.inputs.column] == 0).index.values
+        retain_idx = (censoring_df[self.inputs.column] == 0).index.values
         data = data[retain_idx, ...]
 
         self._results["out_file"] = fname_presuffix(

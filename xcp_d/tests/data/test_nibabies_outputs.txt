@@ -57,7 +57,6 @@ atlases/atlas-Tian/atlas-Tian_dseg.tsv
 atlases/atlas-Tian/atlas-Tian_space-MNIInfant_cohort-1_dseg.nii.gz
 atlases/dataset_description.json
 dataset_description.json
-desc-linc_qc.json
 logs
 logs/CITATION.bib
 logs/CITATION.html
@@ -70,14 +69,13 @@ sub-01/ses-1mo/anat
 sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_desc-preproc_T1w.nii.gz
 sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_dseg.nii.gz
 sub-01/ses-1mo/func
-sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-dcan_qc.hdf5
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-abcc_qc.hdf5
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.json
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.tsv
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.json
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_motion.tsv
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoised_bold.json
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-denoised_bold.nii.gz
-sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_desc-linc_qc.tsv
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-4S1056Parcels_stat-alff_bold.json
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-4S1056Parcels_stat-alff_bold.tsv
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-4S1056Parcels_stat-coverage_bold.json
