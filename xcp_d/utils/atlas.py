@@ -35,7 +35,6 @@ def select_atlases(atlases, subset):
             "Gordon",
             "MIDB",
             "MyersLabonte50",
-            "MyersLabonte90",
         ],
         "subcortical": [
             "Tian",
@@ -123,7 +122,7 @@ def get_atlas_cifti(atlas):
     atlas : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
              "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
              "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
-             "Tian", "HCP", "MIDB", "MyersLabonte50", "MyersLabonte90"}
+             "Tian", "HCP", "MIDB", "MyersLabonte50"}
         The name of the CIFTI atlas to fetch.
 
     Returns

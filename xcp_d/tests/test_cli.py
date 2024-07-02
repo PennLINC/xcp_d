@@ -200,7 +200,6 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "Tian",
         "HCP",
         "MyersLabonte50",
-        "MyersLabonte90",
         "--aggregate-session-reports=1",
     ]
     _run_and_generate(

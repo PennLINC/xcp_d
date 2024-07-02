@@ -981,7 +981,7 @@ def _validate_parameters(opts, build_log, parser):
             )
             opts.process_surfaces = False
 
-    for cifti_only_atlas in ["MIDB", "MyersLabonte50", "MyersLabonte90"]:
+    for cifti_only_atlas in ["MIDB", "MyersLabonte50"]:
         if cifti_only_atlas in opts.atlases and not opts.cifti:
             build_log.warning(
                 f"Atlas '{cifti_only_atlas}' requires CIFTI processing. Skipping atlas."

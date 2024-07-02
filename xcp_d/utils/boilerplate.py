@@ -265,9 +265,6 @@ def describe_atlases(atlases):
         "MyersLabonte50": (
             "the Myers-Labonte infant atlas thresholded at 50% probability [@myers2023functional]"
         ),
-        "MyersLabonte90": (
-            "the Myers-Labonte infant atlas thresholded at 90% probability [@myers2023functional]"
-        ),
     }
 
     atlas_strings = []
