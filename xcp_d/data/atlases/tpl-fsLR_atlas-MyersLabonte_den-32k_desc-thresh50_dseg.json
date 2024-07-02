@@ -1,0 +1,66 @@
+{
+    "BIDSVersion": "1.8.0",
+    "Density": {
+        "32k": "29706 vertices per hemisphere"
+    },
+    "Description": "The 283-node Myers-Labonte infant atlas, thresholded and binarized at 90% probability.",
+    "Name": "Myers-Labonte infant atlas thresholded at 90% probability",
+    "ReferencesAndLinks": [
+        "https://github.com/myersm0/myers-labonte_parcellation",
+        "https://www.biorxiv.org/content/10.1101/2023.11.10.566629"
+    ],
+    "SpatialReference": {
+        "CIFTI_STRUCTURE_CORTEX_LEFT": "https://templateflow.s3.amazonaws.com/tpl-fsLR_den-32k_hemi-L_midthickness.surf.gii",
+        "CIFTI_STRUCTURE_CORTEX_RIGHT": "https://templateflow.s3.amazonaws.com/tpl-fsLR_den-32k_hemi-R_midthickness.surf.gii",
+        "VolumeReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-02_T1w.nii.gz"
+    },
+    "cifti_label": {
+        "Description": "The region label present in the CIFTI file.",
+        "LongName": "CIFTI Label"
+    },
+    "color_red": {
+        "Description": "The red component of the region's specified color, ranging from 0 to 255.",
+        "LongName": "Red Color"
+    },
+    "color_green": {
+        "Description": "The green component of the region's specified color, ranging from 0 to 255.",
+        "LongName": "Green Color"
+    },
+    "color_blue": {
+        "Description": "The blue component of the region's specified color, ranging from 0 to 255.",
+        "LongName": "Blue Color"
+    },
+    "community": {
+        "Description": "Myers-Labonte network assignments.",
+        "LongName": "Community Assignment",
+        "Levels": {
+            "Anterior default mode": "Anterior default mode network",
+            "Anterior fronto-parietal": "Anterior fronto-parietal network",
+            "Anterior precuneus": "Anterior precuneus",
+            "Auditory": "Auditory network",
+            "Cingulate": "Cingulate",
+            "Dorsal attention": "Dorsal attention network",
+            "Inferior fronto-parietal": "Inferior fronto-parietal network",
+            "Inferior precuneus": "Inferior precuneus",
+            "Insula": "Insula",
+            "Lateral orbito-frontal": "Lateral orbito-frontal",
+            "Lateral visual": "Lateral visual network",
+            "Medial orbito-frontal": "Medial orbito-frontal network",
+            "Medial visual": "Medial visual network",
+            "MotorHand": "Motor Hand",
+            "MotorMouth": "Motor Mouth",
+            "Posterior default mode": "Posterior default mode network",
+            "Posterior fronto-parietal": "Posterior fronto-parietal network",
+            "Precentral fronto-parietal": "Precentral fronto-parietal network",
+            "Premotor": "Premotor",
+            "Salience": "Salience network",
+            "Superior precuneus": "Superior precuneus",
+            "Unassigned": "No network assignment",
+            "Ventral attention": "Ventral attention network"
+        }
+    },
+    "opacity": {
+        "Description": "The opacity to be used when rendering the region, ranging from 0 to 255.",
+        "LongName": "Opacity"
+    }
+}
