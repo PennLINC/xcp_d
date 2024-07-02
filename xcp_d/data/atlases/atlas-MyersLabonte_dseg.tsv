@@ -1,4 +1,4 @@
-index	label	cifti_label	community	color_red	color_green	color_blue	opacity
+index	label	cifti_label	network_label	color_red	color_green	color_blue	opacity
 1	Label_1	Label_1	Posterior default mode	255	0	0	255
 2	Label_2	Label_2	Premotor	255	153	255	255
 3	Label_3	Label_3	Anterior default mode	235	61	84	255

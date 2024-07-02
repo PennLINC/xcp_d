@@ -1,4 +1,4 @@
-index	label	cifti_label	community	color_red	color_green	color_blue	opacity
+index	label	cifti_label	network_label	color_red	color_green	color_blue	opacity
 1	DMN_LABEL_1	DMN_LABEL_1	DMN	255	0	0	255
 2	Vis_LABEL_2	Vis_LABEL_2	Vis	0	0	153	255
 3	FP_LABEL_3	FP_LABEL_3	FP	255	255	0	255
