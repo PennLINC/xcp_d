@@ -151,6 +151,8 @@ def generate_reports(
 
         # Drop ses- prefixes
         session_list = [ses[4:] if ses.startswith("ses-") else ses for ses in session_list]
+        if not session_list:
+            session_list = [None]
 
         for session_label in session_list:
             exsumm = ExecutiveSummary(
