@@ -365,7 +365,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         dimension=3,
     )
     warp_brainmask_results = warp_brainmask.run(
-        cwd=(config.execution.work_dir / workflow.full_name),
+        cwd=(config.execution.work_dir / workflow.fullname),
     )
     anat_brainmask = warp_brainmask_results.output_image
 
