@@ -364,6 +364,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         input_image_type=3,
         dimension=3,
     )
+    os.makedirs(config.execution.work_dir / workflow.fullname, exist_ok=True)
     warp_brainmask_results = warp_brainmask.run(
         cwd=(config.execution.work_dir / workflow.fullname),
     )
