@@ -132,6 +132,7 @@ def init_single_subject_wf(subject_id: str):
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
+    anat_mod = "t1w" if t1w_available else "t2w"
 
     mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
@@ -154,7 +155,7 @@ def init_single_subject_wf(subject_id: str):
                 "subj_data",  # not currently used, but will be in future
                 "t1w",
                 "t2w",  # optional
-                "anat_brainmask",  # not used by cifti workflow
+                "anat_brainmask",  # used to estimate head radius and for QC metrics
                 "anat_dseg",
                 "template_to_anat_xfm",  # not used by cifti workflow
                 "anat_to_template_xfm",
@@ -353,6 +354,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ])  # fmt:skip
 
     # Estimate head radius, if necessary
+    # TODO: warp the brain mask to anatomical space
     head_radius = estimate_brain_radius(
         mask_file=subj_data["anat_brainmask"],
         head_radius=config.workflow.head_radius,
@@ -478,6 +480,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
+                # The post-processing workflow needs a native anatomical-space image as a reference
+                workflow.connect([
+                    (inputnode, postprocess_bold_wf, [(anat_mod, "inputnode.anat_native")]),
+                ])  # fmt:skip
+
             if config.workflow.combineruns and (n_task_runs > 1):
                 for io_name, node in merge_dict.items():
                     workflow.connect([
@@ -495,6 +502,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, concatenate_data_wf, [
                     ("anat_brainmask", "inputnode.anat_brainmask"),
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
+                    (anat_mod, "inputnode.anat_native"),
                 ]),
             ])  # fmt:skip
 

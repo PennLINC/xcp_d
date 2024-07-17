@@ -98,6 +98,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 "smoothed_denoised_bold",
                 "bold_mask",  # only for niftis, from postproc workflows
                 "boldref",  # only for niftis, from postproc workflows
+                "anat_native",  # only for niftis, from data collection
                 "anat_brainmask",  # only for niftis, from data collection
                 "template_to_anat_xfm",  # only for niftis, from data collection
                 "timeseries",
@@ -164,6 +165,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (inputnode, qc_report_wf, [
             ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
+            ("anat_native", "inputnode.anat"),
             ("anat_brainmask", "inputnode.anat_brainmask"),
         ]),
         (clean_name_source, qc_report_wf, [("name_source", "inputnode.name_source")]),

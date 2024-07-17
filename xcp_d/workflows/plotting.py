@@ -61,8 +61,10 @@ def init_qc_report_wf(
     %(boldref)s
         Only used with non-CIFTI data.
     bold_mask
+        Path to the BOLD run's brain mask in the same space as ``preprocessed_bold``.
         Only used with non-CIFTI data.
     anat_brainmask
+        Path to the anatomical brain mask in the same standard space as ``bold_mask``.
         Only used with non-CIFTI data.
     %(template_to_anat_xfm)s
         Only used with non-CIFTI data.
@@ -97,6 +99,7 @@ def init_qc_report_wf(
                 "run_index",  # will only be set for concatenated data
                 # nifti-only inputs
                 "bold_mask",
+                "anat",  # T1w/T2w image in anatomical space
                 "anat_brainmask",
                 "boldref",
                 "template_to_anat_xfm",
@@ -164,7 +167,7 @@ def init_qc_report_wf(
         workflow.connect([
             (inputnode, warp_boldmask_to_t1w, [
                 ("bold_mask", "input_image"),
-                ("anat_brainmask", "reference_image"),
+                ("anat", "reference_image"),
             ]),
             (get_native2space_transforms, warp_boldmask_to_t1w, [
                 ("bold_to_t1w_xfms", "transforms"),
@@ -193,6 +196,27 @@ def init_qc_report_wf(
             ]),
         ])
         # fmt:on
+
+        # Warp the standard-space anatomical brain mask to the anatomical space
+        warp_anatmask_to_t1w = pe.Node(
+            ApplyTransforms(
+                dimension=3,
+                interpolation="NearestNeighbor",
+            ),
+            name="warp_anatmask_to_t1w",
+            n_procs=omp_nthreads,
+            mem_gb=1,
+        )
+        workflow.connect([
+            (inputnode, warp_anatmask_to_t1w, [
+                ("bold_mask", "input_image"),
+                ("anat", "reference_image"),
+            ]),
+            (get_native2space_transforms, warp_anatmask_to_t1w, [
+                ("bold_to_t1w_xfms", "transforms"),
+                ("bold_to_t1w_xfms_invert", "invert_transform_flags"),
+            ]),
+        ])  # fmt:skip
 
         # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
         # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
