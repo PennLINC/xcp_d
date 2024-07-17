@@ -20,6 +20,7 @@ from packaging.version import Version
 
 from xcp_d import config
 from xcp_d.__about__ import __version__
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
@@ -354,9 +355,22 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ])  # fmt:skip
 
     # Estimate head radius, if necessary
-    # TODO: warp the brain mask to anatomical space
+    warp_brainmask = ApplyTransforms(
+        input_image=subj_data["anat_brainmask"],
+        transforms=[subj_data["template_to_anat_xfm"]],
+        reference_image=subj_data[anat_mod],
+        num_threads=2,
+        interpolation="GenericLabel",
+        input_image_type=3,
+        dimension=3,
+    )
+    warp_brainmask_results = warp_brainmask.run(
+        cwd=(config.execution.work_dir / workflow.full_name),
+    )
+    anat_brainmask = warp_brainmask_results.output_image
+
     head_radius = estimate_brain_radius(
-        mask_file=subj_data["anat_brainmask"],
+        mask_file=anat_brainmask,
         head_radius=config.workflow.head_radius,
     )
 
