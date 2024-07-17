@@ -61,7 +61,7 @@ doc = [
     "pydotplus",
     "recommonmark",
     "sphinx >= 4.2.0",
-    "sphinx-argparse",
+    "sphinx-argparse !=0.5.0",
     "sphinx-markdown-tables",
     "sphinx_rtd_theme",
     "sphinxcontrib-apidoc",
