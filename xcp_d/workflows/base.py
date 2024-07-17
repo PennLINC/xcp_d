@@ -368,7 +368,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     warp_brainmask_results = warp_brainmask.run(
         cwd=(config.execution.work_dir / workflow.fullname),
     )
-    anat_brainmask = warp_brainmask_results.output_image
+    anat_brainmask = warp_brainmask_results.outputs.output_image
 
     head_radius = estimate_brain_radius(
         mask_file=anat_brainmask,
