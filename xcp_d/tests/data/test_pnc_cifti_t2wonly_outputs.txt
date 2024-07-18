@@ -57,8 +57,6 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_den-91k_stat-mean_timeseries.ptseries.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-alff_bold.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-alff_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-coverage_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-coverage_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_stat-mean_timeseries.json
@@ -73,8 +71,6 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-M
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-MIDB_den-91k_stat-mean_timeseries.ptseries.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-MIDB_den-91k_stat-pearsoncorrelation_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-MIDB_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-MIDB_stat-alff_bold.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-MIDB_stat-alff_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-MIDB_stat-coverage_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-MIDB_stat-coverage_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-MIDB_stat-mean_timeseries.json

@@ -246,7 +246,6 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--band-stop-min=12",
         "--band-stop-max=18",
         "--dummy-scans=auto",
-        "--lower-bpf=0.0",
         "--atlases",
         "4S156Parcels",
         "MIDB",
