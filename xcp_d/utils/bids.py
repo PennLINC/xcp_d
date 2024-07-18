@@ -306,7 +306,6 @@ def collect_data(
         queries["template_to_anat_xfm"]["to"] = "T2w"
         queries["anat_to_template_xfm"]["from"] = "T2w"
         # Nibabies may include space-T2w for some derivatives
-        queries["anat_dseg"]["space"] = ["T2w", None]
         queries["anat_brainmask"]["space"] = ["T2w", None]
 
     # Search for the files.
