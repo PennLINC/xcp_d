@@ -114,12 +114,9 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
             omp_nthreads=omp_nthreads,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, get_number_of_frames, [(inputnode_anat_name, "anat_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # Modify template scene file with file paths
         modify_brainsprite_template_scene = pe.MapNode(
@@ -142,8 +139,6 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             omp_nthreads=omp_nthreads,
         )
         modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
-
-        # fmt:off
         workflow.connect([
             (inputnode, modify_brainsprite_template_scene, [
                 (inputnode_anat_name, "anat_file"),
@@ -155,8 +150,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             (get_number_of_frames, modify_brainsprite_template_scene, [
                 ("frame_numbers", "slice_number"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         create_framewise_pngs = pe.MapNode(
             ShowScene(
@@ -169,14 +163,11 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             mem_gb=1,
             omp_nthreads=omp_nthreads,
         )
-
-        # fmt:off
         workflow.connect([
             (modify_brainsprite_template_scene, create_framewise_pngs, [
                 ("out_file", "scene_file"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # Make mosaic
         make_mosaic_node = pe.Node(
@@ -203,13 +194,10 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             name=f"ds_mosaic_file_{image_type}",
             run_without_submitting=False,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, ds_mosaic_file, [(inputnode_anat_name, "source_file")]),
             (make_mosaic_node, ds_mosaic_file, [("mosaic_file", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # Start working on the selected PNG images for the button
         modify_pngs_template_scene = pe.Node(
@@ -230,8 +218,6 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             omp_nthreads=omp_nthreads,
         )
         modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
-
-        # fmt:off
         workflow.connect([
             (inputnode, modify_pngs_template_scene, [
                 (inputnode_anat_name, "anat_file"),
@@ -240,8 +226,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
                 ("lh_pial_surf", "lh_pial_surf"),
                 ("rh_pial_surf", "rh_pial_surf"),
             ])
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         # Create specific PNGs for button
         get_png_scene_names = pe.Node(
@@ -259,15 +244,12 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             mem_gb=1,
             omp_nthreads=omp_nthreads,
         )
-
-        # fmt:off
         workflow.connect([
             (modify_pngs_template_scene, create_scenewise_pngs, [("out_file", "scene_file")]),
             (get_png_scene_names, create_scenewise_pngs, [
                 ("scene_index", "scene_name_or_number"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         ds_scenewise_pngs = pe.MapNode(
             DerivativesDataSink(
@@ -281,14 +263,11 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             iterfield=["desc", "in_file"],
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, ds_scenewise_pngs, [(inputnode_anat_name, "source_file")]),
             (get_png_scene_names, ds_scenewise_pngs, [("scene_descriptions", "desc")]),
             (create_scenewise_pngs, ds_scenewise_pngs, [("out_file", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     return workflow
 
@@ -432,13 +411,10 @@ def init_execsummary_functional_plots_wf(
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, ds_meanbold_figure, [("preproc_nifti", "source_file")]),
         (plot_meanbold, ds_meanbold_figure, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name="plot_boldref")
@@ -456,13 +432,10 @@ def init_execsummary_functional_plots_wf(
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, ds_boldref_figure, [("preproc_nifti", "source_file")]),
         (plot_boldref, ds_boldref_figure, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     # Start plotting the overlay figures
     # T1 in Task, Task in T1, Task in T2, T2 in Task
@@ -474,20 +447,15 @@ def init_execsummary_functional_plots_wf(
             name=f"resample_bold_to_{anat}",
             mem_gb=mem_gb["resampled"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, resample_bold_to_anat, [(anat, "target_file")]),
             (calculate_mean_bold, resample_bold_to_anat, [("out_file", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         plot_anat_on_task_wf = init_plot_overlay_wf(
             desc=f"{anat[0].upper()}{anat[1:]}OnTask",
             name=f"plot_{anat}_on_task_wf",
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, plot_anat_on_task_wf, [
                 ("preproc_nifti", "inputnode.name_source"),
@@ -496,15 +464,12 @@ def init_execsummary_functional_plots_wf(
             (resample_bold_to_anat, plot_anat_on_task_wf, [
                 ("out_file", "inputnode.underlay_file"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         plot_task_on_anat_wf = init_plot_overlay_wf(
             desc=f"TaskOn{anat[0].upper()}{anat[1:]}",
             name=f"plot_task_on_{anat}_wf",
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, plot_task_on_anat_wf, [
                 ("preproc_nifti", "inputnode.name_source"),
@@ -513,8 +478,7 @@ def init_execsummary_functional_plots_wf(
             (resample_bold_to_anat, plot_task_on_anat_wf, [
                 ("out_file", "inputnode.overlay_file"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     return workflow
 
@@ -581,45 +545,36 @@ def init_execsummary_anatomical_plots_wf(
             name=f"resample_{anat}",
             mem_gb=1,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, resample_anat, [
                 (anat, "in_file"),
                 ("template", "target_file"),
             ]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         plot_anat_on_atlas_wf = init_plot_overlay_wf(
             desc="AnatOnAtlas",
             name=f"plot_{anat}_on_atlas_wf",
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, plot_anat_on_atlas_wf, [
                 ("template", "inputnode.underlay_file"),
                 (anat, "inputnode.name_source"),
             ]),
             (resample_anat, plot_anat_on_atlas_wf, [("out_file", "inputnode.overlay_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         plot_atlas_on_anat_wf = init_plot_overlay_wf(
             desc="AtlasOnAnat",
             name=f"plot_atlas_on_{anat}_wf",
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, plot_atlas_on_anat_wf, [
                 ("template", "inputnode.overlay_file"),
                 (anat, "inputnode.name_source"),
             ]),
             (resample_anat, plot_atlas_on_anat_wf, [("out_file", "inputnode.underlay_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
     # TODO: Add subcortical overlay images as well.
     # 1. Binarize atlas.
@@ -700,13 +655,10 @@ def init_plot_custom_slices_wf(
     )
     make_image.inputs.single_slice = SINGLE_SLICES
     make_image.inputs.slice_number = SLICE_NUMBERS
-
-    # fmt:off
     workflow.connect([
         (inputnode, make_image, [("underlay_file", "in_file")]),
         (binarize_edges, make_image, [("out_file", "image_edges")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     combine_images = pe.Node(
         PNGAppend(out_file="out.png"),
@@ -728,13 +680,10 @@ def init_plot_custom_slices_wf(
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, ds_overlay_figure, [("name_source", "source_file")]),
         (combine_images, ds_overlay_figure, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow
 

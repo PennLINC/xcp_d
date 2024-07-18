@@ -128,9 +128,9 @@ input_type : {"fmriprep", "dcan", "hcp", "nibabies", "ukb"}
 """
 
 docdict[
-    "dcan_qc"
+    "abcc_qc"
 ] = """
-dcan_qc : :obj:`bool`
+abcc_qc : :obj:`bool`
     This flag determines if DCAN-related QC steps will be taken.
     Enabling this flag will trigger the following steps:
 
@@ -311,9 +311,9 @@ band_stop_max : :obj:`float` or None
 """
 
 docdict[
-    "exact_time"
+    "dcan_correlation_lengths"
 ] = """
-exact_time : :obj:`list` of :obj:`float`, optional
+dcan_correlation_lengths : :obj:`list` of :obj:`float`, optional
     If used, this parameter will produce correlation matrices limited to each requested
     amount of time.
     If there is more than the required amount of low-motion data,
@@ -390,7 +390,7 @@ docdict[
 ] = """
 random_seed : :obj:`int` or None
     Random seed for the workflow.
-    This is currently only used with the ``--exact-time`` parameter,
+    This is currently only used with the ``--create-matrices`` parameter,
     when randomly selecting volumes to censor for correlation matrices.
 """
 

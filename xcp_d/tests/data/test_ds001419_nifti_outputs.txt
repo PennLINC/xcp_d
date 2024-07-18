@@ -70,4 +70,3 @@ sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_stat-alff_desc-smoo
 sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_stat-alff_desc-smooth_boldmap.nii.gz
 sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_stat-reho_boldmap.json
 sub-01/func/sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_stat-reho_boldmap.nii.gz
-sub-01_executive_summary.html
