@@ -68,7 +68,7 @@ sub-01.html
 sub-01/anat
 sub-01/anat/sub-01_space-MNI152NLin2009cAsym_desc-preproc_T1w.nii.gz
 sub-01/func
-sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-dcan_qc.hdf5
+sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-abcc_qc.hdf5
 sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_motion.json
@@ -79,8 +79,6 @@ sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-de
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.nii.gz
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoised_bold.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz
-sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-interpolated_bold.json
-sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-interpolated_bold.nii.gz
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_desc-linc_qc.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-coverage_bold.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-coverage_bold.tsv
@@ -196,7 +194,7 @@ sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tia
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Tian_stat-reho_bold.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_stat-reho_boldmap.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_stat-reho_boldmap.nii.gz
-sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-dcan_qc.hdf5
+sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-abcc_qc.hdf5
 sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-preproc_design.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_motion.json
@@ -207,8 +205,6 @@ sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-de
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-denoisedSmoothed_bold.nii.gz
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-denoised_bold.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-denoised_bold.nii.gz
-sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-interpolated_bold.json
-sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-interpolated_bold.nii.gz
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_desc-linc_qc.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-coverage_bold.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1056Parcels_stat-coverage_bold.tsv

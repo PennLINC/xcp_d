@@ -55,7 +55,7 @@ def test_collect_data_ds001419(datasets):
         input_type="fmriprep",
         participant_label="01",
         bids_filters=None,
-        cifti=False,
+        file_format="nifti",
     )
 
     assert len(subj_data["bold"]) == 5
@@ -71,7 +71,7 @@ def test_collect_data_ds001419(datasets):
         input_type="fmriprep",
         participant_label="01",
         bids_filters={"bold": {"task": "rest"}},
-        cifti=True,
+        file_format="cifti",
     )
 
     assert len(subj_data["bold"]) == 1
@@ -100,7 +100,7 @@ def test_collect_data_nibabies(datasets):
         input_type="fmriprep",
         participant_label="01",
         bids_filters=None,
-        cifti=False,
+        file_format="nifti",
     )
 
     assert len(subj_data["bold"]) == 1
@@ -118,7 +118,7 @@ def test_collect_data_nibabies(datasets):
             input_type="fmriprep",
             participant_label="01",
             bids_filters=None,
-            cifti=True,
+            file_format="cifti",
         )
 
 

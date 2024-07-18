@@ -42,20 +42,18 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
+        "--mode=linc",
         f"-w={work_dir}",
         f"--bids-filter-file={filter_file}",
-        "--combineruns",
         "--nuisance-regressors=aroma_gsr",
         "--dummy-scans=4",
         "--fd-thresh=0.2",
         "--head_radius=40",
-        "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
         "--skip-parcellation",
-        "--skip-dcan-qc",
-        "--random-seed=8675309",
         "--min-time=100",
+        "--combine-runs",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -81,24 +79,22 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
+        "--mode=abcd",
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=acompcor_gsr",
-        "--despike",
+        "--warp_surfaces_native2std=n",
         "--head_radius=40",
-        "--smoothing=6",
         "--motion-filter-type=notch",
         "--band-stop-min=12",
         "--band-stop-max=18",
-        "--cifti",
-        "--combineruns",
         "--dummy-scans=auto",
-        "--fd-thresh=0.3",
         "--upper-bpf=0.0",
         "--min-time=100",
-        "--exact-time",
+        "--create-matrices",
+        "all",
         "80",
         "200",
         "--atlases",
@@ -107,6 +103,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "4S356Parcels",
         "4S456Parcels",
         f"--fs-license-file={fs_license_file}",
+        "--linc-qc",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -128,19 +125,20 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
+        "--mode=linc",
+        "--file-format=nifti",
+        "--warp-surfaces-native2std=n",
+        "--combine-runs=n",
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
         "--input-type=ukb",
         "--nuisance-regressors=gsr_only",
-        "--despike",
         "--dummy-scans=4",
         "--fd-thresh=0.2",
         "--head_radius=40",
-        "--smoothing=6",
         "--motion-filter-type=lp",
         "--band-stop-min=6",
-        "--skip-dcan-qc",
         "--min-coverage=0.1",
         "--random-seed=8675309",
         "--min-time=100",
@@ -179,6 +177,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
+        "--mode=abcd",
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
@@ -186,20 +185,19 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--min-time=60",
         "--nuisance-regressors=acompcor_gsr",
         "--head-radius=40",
-        "--smoothing=6",
         "--motion-filter-type=notch",
         "--band-stop-min=12",
         "--band-stop-max=18",
-        "--warp-surfaces-native2std",
-        "--cifti",
-        "--combineruns",
         "--dummy-scans=auto",
-        "--fd-thresh=0.3",
         "--upper-bpf=0.0",
         "--atlases",
         "Tian",
         "HCP",
         "--aggregate-session-reports=1",
+        "--create-matrices",
+        "300",
+        "480",
+        "all",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -236,33 +234,29 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
+        "--mode=abcd",
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=none",
-        "--despike",
         "--head_radius=40",
-        "--smoothing=6",
         "--motion-filter-type=notch",
         "--band-stop-min=12",
         "--band-stop-max=18",
-        "--warp-surfaces-native2std",
-        "--cifti",
-        "--combineruns",
         "--dummy-scans=auto",
-        "--fd-thresh=0.3",
         "--lower-bpf=0.0",
-        "--atlases",
-        "4S156Parcels",
-        "Glasser",
+        "--skip-parcellation",
         "--min-time=100",
+        "--despike=n",
+        "--disable-bandpass-filter",
+        "--create-matrices=all",
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
         input_type="cifti",
-        test_main=True,
+        test_main=False,
     )
 
 
@@ -301,24 +295,93 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
+        "--mode=linc",
         f"-w={work_dir}",
         "--nthreads=2",
         "--omp-nthreads=2",
-        "--despike",
         "--head_radius=40",
-        "--smoothing=6",
         "-f=100",
         "--nuisance-regressors=27P",
+        "--despike=n",
         "--disable-bandpass-filter",
         "--min-time=20",
         "--dummy-scans=1",
         f"--custom_confounds={custom_confounds_dir}",
+        "--abcc-qc",
     ]
 
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
         input_type="nifti",
+    )
+
+    # Run combine-qc too
+    combineqc.main([out_dir, "summary"])
+
+    dm_file = os.path.join(
+        out_dir,
+        "sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv",
+    )
+    dm_df = pd.read_table(dm_file)
+    assert all(c in dm_df.columns for c in confounds_df.columns)
+
+
+@pytest.mark.fmriprep_without_freesurfer_with_main
+def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir):
+    """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
+
+    Notes
+    -----
+    This test also mocks up custom confounds.
+
+    This test uses a bash call to run XCP-D.
+    This won't count toward coverage, but will help test the command-line interface.
+    """
+    test_name = "test_fmriprep_without_freesurfer"
+
+    dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
+    temp_dir = os.path.join(output_dir, f"{test_name}_with_main")
+    out_dir = os.path.join(temp_dir, "xcp_d")
+    work_dir = os.path.join(working_dir, f"{test_name}_with_main")
+    custom_confounds_dir = os.path.join(temp_dir, "custom_confounds")
+    os.makedirs(custom_confounds_dir, exist_ok=True)
+
+    # Create custom confounds folder
+    for run_number in [1, 2]:
+        out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
+        out_file = os.path.join(custom_confounds_dir, out_file)
+        confounds_df = pd.DataFrame(
+            columns=["a", "b"],
+            data=np.random.random((16, 2)),
+        )
+        confounds_df.to_csv(out_file, sep="\t", index=False)
+        LOGGER.warning(f"Created custom confounds file at {out_file}.")
+
+    parameters = [
+        dataset_dir,
+        out_dir,
+        "participant",
+        "--mode=linc",
+        f"-w={work_dir}",
+        "--nthreads=2",
+        "--omp-nthreads=2",
+        "--head_radius=40",
+        "-f=100",
+        "--nuisance-regressors=27P",
+        "--despike=n",
+        "--disable-bandpass-filter",
+        "--min-time=20",
+        "--dummy-scans=1",
+        f"--custom_confounds={custom_confounds_dir}",
+        "--abcc-qc",
+    ]
+
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type="nifti",
+        test_main=True,
     )
 
     # Run combine-qc too
@@ -347,13 +410,17 @@ def test_nibabies(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
+        "--mode=hbcd",
+        "--file-format=nifti",
+        "--warp-surfaces-native2std=n",
         f"-w={work_dir}",
         f"--input-type={input_type}",
         "--nuisance-regressors=27P",
-        "--despike",
         "--head_radius=auto",
         "--smoothing=0",
         "--fd-thresh=0",
+        "--create-matrices=all",
+        "--motion-filter-type=none",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -368,7 +435,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
     parameters.append("--clean-workdir")
     parameters.append("--stop-on-first-crash")
     parameters.append("--notrack")
-    parameters.append("-vv")
+    parameters.append("-v")
 
     if test_main:
         # This runs, but for some reason doesn't count toward coverage.
@@ -379,6 +446,8 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
 
             assert e.value.code == 0
     else:
+        # XXX: I want to drop this option and use the main function,
+        # but the main function doesn't track coverage correctly.
         parse_args(parameters)
         config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
         config.loggers.cli.warning(f"Saving config file to {config_file}")
@@ -400,6 +469,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         generate_reports(
             subject_list=config.execution.participant_label,
             output_dir=config.execution.xcp_d_dir,
+            abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
             session_list=session_list,
         )

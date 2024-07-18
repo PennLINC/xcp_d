@@ -53,6 +53,7 @@ def run_reports(
 def generate_reports(
     subject_list,
     output_dir,
+    abcc_qc,
     run_uuid,
     session_list=None,
     bootstrap_file=None,
@@ -141,7 +142,7 @@ def generate_reports(
             "data from participants: %s. Check the HTML reports for details.",
             error_list,
         )
-    else:
+    elif abcc_qc:
         config.loggers.cli.info("Generating executive summary.")
 
         if session_list is None:

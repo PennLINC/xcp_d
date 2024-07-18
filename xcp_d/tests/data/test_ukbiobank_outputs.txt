@@ -226,4 +226,3 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-alff_desc-smooth_boldmap.nii.gz
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-reho_boldmap.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-reho_boldmap.nii.gz
-sub-0000001_ses-01_executive_summary.html
