@@ -111,7 +111,7 @@ def init_postprocess_nifti_wf(
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
     anat_brainmask
-        T1w brain mask, used for transforms in the QC report workflow.
+        T1w brain mask in standard space, used for transforms in the QC report workflow.
         Fed from the subject workflow.
     %(fmriprep_confounds_file)s
     fmriprep_confounds_json

@@ -441,13 +441,11 @@ def init_qc_report_wf(
     if not cifti:
         # fmt:off
         workflow.connect([
-            (inputnode, qc_report, [
-                ("anat_brainmask", "anat_brainmask"),
-                ("bold_mask", "mask_file"),
-            ]),
+            (inputnode, qc_report, [("bold_mask", "mask_file")]),
             (warp_dseg_to_bold, qc_report, [("output_image", "seg_file")]),
             (warp_boldmask_to_t1w, qc_report, [("output_image", "bold2T1w_mask")]),
             (warp_boldmask_to_mni, qc_report, [("output_image", "bold2temp_mask")]),
+            (warp_anatmask_to_t1w, qc_report, [("output_image", "anat_brainmask")]),
         ])
         # fmt:on
     else:
