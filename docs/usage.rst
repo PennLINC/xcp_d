@@ -34,7 +34,7 @@ command-line structure, for example:
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <output_dir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d <fmriprep_dir> <output_dir> --file-format cifti --despike --head_radius 40 -w /wkdir --smoothing 6
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
@@ -198,11 +198,14 @@ In this example file, we only run XCP-D on resting-state preprocessed BOLD runs 
    }
 
 
+****************************
+Running XCP-D via containers
+****************************
+
 .. _run_docker:
 
-***********************************
-Running XCP-D via Docker containers
-***********************************
+Docker
+======
 
 If you are running XCP-D locally, we recommend Docker.
 See :ref:`installation_container_technologies` for installation instructions.
@@ -223,48 +226,46 @@ A Docker container can be created using the following command:
       -v /dset/derivatives/freesurfer:/freesurfer:ro \  # Necessary for fMRIPrep versions <22.0.2
       pennlinc/xcp_d:latest \
       /fmriprep /out participant \
-      --cifti --despike --head_radius 40 -w /work --smoothing 6
-
+      --file-format cifti --despike --head_radius 40 -w /work --smoothing 6
 
 .. _run_singularity:
 
-****************************************
-Running XCP-D via Singularity containers
-****************************************
+Apptainer
+=========
 
 If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using
-Singularity.
+Apptainer.
 See :ref:`installation_container_technologies` for installation instructions.
 
 .. warning::
 
-   XCP-D (and perhaps other Docker-based Singularity images) may not work with
-   Singularity <=2.4.
-   We strongly recommend using Singularity 3+.
+   XCP-D (and perhaps other Docker-based Apptainer images) may not work with
+   Apptainer <=2.4.
+   We strongly recommend using Apptainer 3+.
    For more information, see `this xcp_d issue <https://github.com/PennLINC/xcp_d/issues/793>`_ and
-   `this Singularity issue <https://github.com/apptainer/singularity/issues/884>`_.
+   `this Apptainer issue <https://github.com/apptainer/singularity/issues/884>`_.
 
 If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run
 *xcp_d*.
 
 .. code-block:: bash
 
-    singularity run --cleanenv xcp_d.simg \
-        path/to/data/fmri_dir  \
-        path/to/output/dir \
+    singularity run --cleanenv xcp_d.sif \
+        /dset/derivatives/fmriprep  \
+        /dset/derivatives/xcp_d \
         --participant-label label
 
 
 Relevant aspects of the ``$HOME`` directory within the container
 ================================================================
 
-By default, Singularity will bind the user's ``$HOME`` directory on the host
+By default, Apptainer will bind the user's ``$HOME`` directory on the host
 into the ``/home/$USER`` directory (or equivalent) in the container.
 Most of the time, it will also redefine the ``$HOME`` environment variable and
 update it to point to the corresponding mount point in ``/home/$USER``.
 However, these defaults can be overwritten in your system.
 It is recommended that you check your settings with your system's administrator.
-If your Singularity installation allows it, you can work around the ``$HOME``
+If your Apptainer installation allows it, you can work around the ``$HOME``
 specification, combining the bind mounts argument (``-B``) with the home overwrite
 argument (``--home``) as follows:
 

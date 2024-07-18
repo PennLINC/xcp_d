@@ -158,7 +158,6 @@ def init_postprocess_anat_wf(
             name="ds_t1w_std",
             run_without_submitting=False,
         )
-
         workflow.connect([
             (inputnode, ds_t1w_std, [("t1w", "source_file")]),
             (ds_t1w_std, outputnode, [("out_file", "t1w")]),
@@ -175,7 +174,6 @@ def init_postprocess_anat_wf(
             name="ds_t2w_std",
             run_without_submitting=False,
         )
-
         workflow.connect([
             (inputnode, ds_t2w_std, [("t2w", "source_file")]),
             (ds_t2w_std, outputnode, [("out_file", "t2w")]),
@@ -213,7 +211,6 @@ resolution.
             mem_gb=2,
             n_procs=omp_nthreads,
         )
-
         workflow.connect([
             (inputnode, warp_anat_dseg_to_template, [
                 ("anat_dseg", "input_image"),
@@ -236,7 +233,6 @@ resolution.
                 mem_gb=2,
                 n_procs=omp_nthreads,
             )
-
             workflow.connect([
                 (inputnode, warp_t1w_to_template, [
                     ("t1w", "input_image"),
@@ -258,7 +254,6 @@ resolution.
                 mem_gb=2,
                 n_procs=omp_nthreads,
             )
-
             workflow.connect([
                 (inputnode, warp_t2w_to_template, [
                     ("t2w", "input_image"),
@@ -268,24 +263,24 @@ resolution.
                 (warp_t2w_to_template, ds_t2w_std, [("output_image", "in_file")]),
             ])  # fmt:skip
 
-    execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
-        t1w_available=t1w_available,
-        t2w_available=t2w_available,
-    )
-
-    workflow.connect([
-        (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
-    ])  # fmt:skip
-
-    if t1w_available:
+    if config.workflow.abcc_qc:
+        execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
+        )
         workflow.connect([
-            (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
+            (inputnode, execsummary_anatomical_plots_wf, [("template", "inputnode.template")]),
         ])  # fmt:skip
 
-    if t2w_available:
-        workflow.connect([
-            (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
-        ])  # fmt:skip
+        if t1w_available:
+            workflow.connect([
+                (ds_t1w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t1w")]),
+            ])  # fmt:skip
+
+        if t2w_available:
+            workflow.connect([
+                (ds_t2w_std, execsummary_anatomical_plots_wf, [("out_file", "inputnode.t2w")]),
+            ])  # fmt:skip
 
     return workflow
 
@@ -371,7 +366,7 @@ def init_postprocess_surfaces_wf(
     workflow = Workflow(name=name)
 
     fmri_dir = config.execution.fmri_dir
-    dcan_qc = config.workflow.dcan_qc
+    abcc_qc = config.workflow.abcc_qc
     process_surfaces = config.workflow.process_surfaces
     output_dir = config.execution.xcp_d_dir
     omp_nthreads = config.nipype.omp_nthreads
@@ -399,7 +394,7 @@ def init_postprocess_surfaces_wf(
     )
     workflow.__desc__ = ""
 
-    if dcan_qc and mesh_available:
+    if abcc_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             t1w_available=t1w_available,
@@ -496,7 +491,6 @@ def init_postprocess_surfaces_wf(
             omp_nthreads=omp_nthreads,
             name="warp_surfaces_to_template_wf",
         )
-
         workflow.connect([
             (inputnode, warp_surfaces_to_template_wf, [
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
@@ -516,7 +510,7 @@ def init_postprocess_surfaces_wf(
             ]),
         ])  # fmt:skip
 
-        if dcan_qc:
+        if abcc_qc:
             # Use standard-space T1w and surfaces for brainsprite.
             workflow.connect([
                 (warp_surfaces_to_template_wf, brainsprite_wf, [
@@ -639,7 +633,6 @@ def init_warp_surfaces_to_template_wf(
         omp_nthreads=omp_nthreads,
         name="update_xfm_wf",
     )
-
     workflow.connect([
         (inputnode, update_xfm_wf, [
             ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
@@ -656,7 +649,6 @@ def init_warp_surfaces_to_template_wf(
             niu.Merge(2),
             name=f"collect_surfaces_{hemi_label}",
         )
-
         # NOTE: Must match order of split_up_surfaces_fsLR_32k.
         workflow.connect([
             (inputnode, collect_surfaces, [
@@ -672,7 +664,6 @@ def init_warp_surfaces_to_template_wf(
             omp_nthreads=omp_nthreads,
             name=f"{hemi_label}_apply_transforms_wf",
         )
-
         workflow.connect([
             (get_freesurfer_dir_node, apply_transforms_wf, [
                 ("freesurfer_path", "inputnode.freesurfer_path"),
@@ -698,7 +689,6 @@ def init_warp_surfaces_to_template_wf(
             ),
             name=f"split_up_surfaces_fsLR_32k_{hemi_label}",
         )
-
         workflow.connect([
             (apply_transforms_wf, split_up_surfaces_fsLR_32k, [
                 ("outputnode.warped_hemi_files", "inlist"),
@@ -721,7 +711,6 @@ def init_warp_surfaces_to_template_wf(
             mem_gb=1,
             iterfield=["in_file", "source_file"],
         )
-
         workflow.connect([
             (collect_surfaces, ds_standard_space_surfaces, [("out", "source_file")]),
             (apply_transforms_wf, ds_standard_space_surfaces, [
@@ -784,7 +773,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
         mem_gb=2,
         n_procs=omp_nthreads,
     )
-
     workflow.connect([
         (inputnode, generate_midthickness, [
             ("pial_surf", "surface_in1"),
@@ -806,7 +794,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
         run_without_submitting=False,
         mem_gb=2,
     )
-
     workflow.connect([
         (inputnode, ds_midthickness, [("name_source", "source_file")]),
         (generate_midthickness, ds_midthickness, [("out_file", "in_file")]),
@@ -819,7 +806,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
         omp_nthreads=omp_nthreads,
         name="inflate_surface",
     )
-
     workflow.connect([
         (generate_midthickness, inflate_surface, [("out_file", "anatomical_surface_in")]),
     ])  # fmt:skip
@@ -838,7 +824,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
         run_without_submitting=False,
         mem_gb=2,
     )
-
     workflow.connect([
         (inputnode, ds_inflated, [("name_source", "source_file")]),
         (inflate_surface, ds_inflated, [("inflated_out_file", "in_file")]),
@@ -858,7 +843,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
         run_without_submitting=False,
         mem_gb=2,
     )
-
     workflow.connect([
         (inputnode, ds_vinflated, [("name_source", "source_file")]),
         (inflate_surface, ds_vinflated, [("very_inflated_out_file", "in_file")]),
@@ -930,7 +914,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )  # MB
-
     workflow.connect([(inputnode, disassemble_h5, [("anat_to_template_xfm", "in_file")])])
 
     # Nipype's CompositeTransformUtil assumes a certain file naming and
@@ -945,7 +928,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
     workflow.connect([(inputnode, disassemble_h5_inv, [("template_to_anat_xfm", "in_file")])])
 
     # convert affine from ITK binary to txt
@@ -953,7 +935,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         ConvertTransformFile(dimension=3),
         name="convert_ants_transform",
     )
-
     workflow.connect([
         (disassemble_h5, convert_ants_transform, [("affine_transform", "in_transform")]),
     ])  # fmt:skip
@@ -963,7 +944,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     # (AffineTransform is a subclass of MatrixOffsetTransformBase
     # which makes this okay to do AFAIK)
     change_xfm_type = pe.Node(ChangeXfmType(), name="change_xfm_type")
-
     workflow.connect([
         (convert_ants_transform, change_xfm_type, [("out_transform", "in_transform")]),
     ])  # fmt:skip
@@ -973,7 +953,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         ConvertAffine(fromwhat="itk", towhat="world"),
         name="convert_xfm2world",
     )
-
     workflow.connect([(change_xfm_type, convert_xfm2world, [("out_transform", "in_file")])])
 
     # use C3d to separate the combined warpfield xfm into x, y, and z components
@@ -997,7 +976,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
     workflow.connect([
         (disassemble_h5, get_xyz_components, [("displacement_field", "in_file")]),
         (disassemble_h5_inv, get_inv_xyz_components, [("displacement_field", "in_file")]),
@@ -1044,7 +1022,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
     workflow.connect([
         (get_xyz_components, select_x_component, [("out_files", "inlist")]),
         (get_xyz_components, select_y_component, [("out_files", "inlist")]),
@@ -1069,7 +1046,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
     workflow.connect([
         (select_y_component, reverse_y_component, [("out", "in_file")]),
         (select_inv_y_component, reverse_inv_y_component, [("out", "in_file")]),
@@ -1088,7 +1064,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
     workflow.connect([
         (select_x_component, collect_new_components, [("out", "in1")]),
         (reverse_y_component, collect_new_components, [("out_file", "in2")]),
@@ -1111,7 +1086,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-
     workflow.connect([
         (collect_new_components, remerge_warpfield, [("out", "in_files")]),
         (collect_new_inv_components, remerge_inv_warpfield, [("out", "in_files")]),

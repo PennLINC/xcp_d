@@ -9,7 +9,6 @@ atlases/atlas-Tian/atlas-Tian_dseg.tsv
 atlases/atlas-Tian/atlas-Tian_space-fsLR_den-91k_dseg.dlabel.nii
 atlases/dataset_description.json
 dataset_description.json
-desc-linc_qc.json
 logs
 logs/CITATION.bib
 logs/CITATION.html
@@ -35,7 +34,7 @@ sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-91k_sulc.dscalar.nii
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-91k_thickness.dscalar.nii
 sub-1648798153/ses-PNC1/func
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-dcan_qc.hdf5
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-abcc_qc.hdf5
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-filtered_motion.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-filtered_motion.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_design.json
@@ -46,9 +45,6 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_desc-denoised_bold.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_desc-interpolated_bold.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_desc-linc_qc.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-alff_boldmap.dscalar.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-alff_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.dscalar.nii

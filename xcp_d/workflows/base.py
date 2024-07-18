@@ -34,7 +34,7 @@ from xcp_d.utils.bids import (
     group_across_runs,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.modified_data import flag_bad_run
+from xcp_d.utils.modified_data import calculate_exact_scans, flag_bad_run
 from xcp_d.utils.utils import estimate_brain_radius
 from xcp_d.workflows.anatomical import (
     init_postprocess_anat_wf,
@@ -129,7 +129,7 @@ def init_single_subject_wf(subject_id: str):
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
         input_type=config.workflow.input_type,
-        cifti=config.workflow.cifti,
+        file_format=config.workflow.file_format,
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
@@ -145,9 +145,11 @@ def init_single_subject_wf(subject_id: str):
     )
 
     # determine the appropriate post-processing workflow
-    init_postprocess_bold_wf = (
-        init_postprocess_cifti_wf if config.workflow.cifti else init_postprocess_nifti_wf
-    )
+    workflows = {
+        "nifti": init_postprocess_nifti_wf,
+        "cifti": init_postprocess_cifti_wf,
+    }
+    init_postprocess_bold_wf = workflows[config.workflow.file_format]
     preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
@@ -213,11 +215,15 @@ was used to post-process the outputs of *{info_dict["name"]}* version {info_dict
 XCP-D was built with *Nipype* version {nipype_ver} [@nipype1, RRID:SCR_002502].
 """
 
+    cw_str = (
+        "*Connectome Workbench* [@marcus2011informatics], "
+        if config.workflow.file_format == "cifti"
+        else ""
+    )
     workflow.__postdesc__ = f"""
 
 Many internal operations of *XCP-D* use
-*AFNI* [@cox1996afni;@cox1997software],
-{"*Connectome Workbench* [@marcus2011informatics], " if config.workflow.cifti else ""}
+*AFNI* [@cox1996afni;@cox1997software],{cw_str}
 *ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
 *matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
@@ -295,7 +301,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
         load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
 
-    if config.workflow.process_surfaces or (config.workflow.dcan_qc and mesh_available):
+    if config.workflow.process_surfaces or (config.workflow.abcc_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
@@ -377,20 +383,22 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     )
 
     n_runs = len(preproc_files)
-    preproc_files = group_across_runs(preproc_files)  # group files across runs and directions
+    # group files across runs and directions, to facilitate concatenation
+    preproc_files = group_across_runs(preproc_files)
     run_counter = 0
     for ent_set, task_files in enumerate(preproc_files):
         # Assuming TR is constant across runs for a given combination of entities.
         TR = _get_tr(nb.load(task_files[0]))
 
         n_task_runs = len(task_files)
-        if config.workflow.combineruns and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_task_runs > 1):
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
                 "fmriprep_confounds_file",
                 "filtered_motion",
                 "temporal_mask",
+                "denoised_bold",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
@@ -411,7 +419,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             run_data = collect_run_data(
                 layout=config.execution.layout,
                 bold_file=bold_file,
-                cifti=config.workflow.cifti,
+                file_format=config.workflow.file_format,
                 target_space=target_space,
             )
 
@@ -426,7 +434,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
             )
-            # Reduce exact_times to only include values greater than the post-scrubbing duration.
+
             if (config.workflow.min_time >= 0) and (
                 post_scrubbing_duration < config.workflow.min_time
             ):
@@ -438,26 +446,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 )
                 continue
 
+            # Reduce exact_times to only include values greater than the post-scrubbing duration.
             exact_scans = []
-            if config.workflow.exact_time:
-                retained_exact_times = [
-                    t for t in config.workflow.exact_time if t <= post_scrubbing_duration
-                ]
-                dropped_exact_times = [
-                    t for t in config.workflow.exact_time if t > post_scrubbing_duration
-                ]
-                if dropped_exact_times:
-                    LOGGER.warning(
-                        f"{post_scrubbing_duration} seconds in {os.path.basename(bold_file)} "
-                        "survive high-motion outlier scrubbing. "
-                        "Only retaining exact-time values greater than this "
-                        f"({retained_exact_times})."
-                    )
-
-                exact_scans = [
-                    int(t // run_data["bold_metadata"]["RepetitionTime"])
-                    for t in retained_exact_times
-                ]
+            if config.workflow.dcan_correlation_lengths:
+                exact_scans = calculate_exact_scans(
+                    exact_times=config.workflow.dcan_correlation_lengths,
+                    scan_length=post_scrubbing_duration,
+                    t_r=run_data["bold_metadata"]["RepetitionTime"],
+                    bold_file=bold_file,
+                )
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
@@ -467,9 +464,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 exact_scans=exact_scans,
-                name=(
-                    f"{'cifti' if config.workflow.cifti else 'nifti'}_postprocess_{run_counter}_wf"
-                ),
+                name=f"{config.workflow.file_format}_postprocess_{run_counter}_wf",
             )
             run_counter += 1
 
@@ -488,7 +483,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-            if not config.workflow.cifti:
+            if config.workflow.file_format == "nifti":
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
                         ("anat_brainmask", "inputnode.anat_brainmask"),
@@ -501,13 +496,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     (inputnode, postprocess_bold_wf, [(anat_mod, "inputnode.anat_native")]),
                 ])  # fmt:skip
 
-            if config.workflow.combineruns and (n_task_runs > 1):
+            if config.workflow.combine_runs and (n_task_runs > 1):
                 for io_name, node in merge_dict.items():
                     workflow.connect([
                         (postprocess_bold_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
                     ])  # fmt:skip
 
-        if config.workflow.combineruns and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_task_runs > 1):
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,
