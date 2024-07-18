@@ -73,6 +73,7 @@ def build_workflow(config_file, retval):
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
             output_dir=config.execution.xcp_d_dir,
+            abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
             session_list=session_list,
         )

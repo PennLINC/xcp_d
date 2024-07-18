@@ -94,7 +94,7 @@ def init_alff_wf(
     high_pass = config.workflow.high_pass
     fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     omp_nthreads = config.nipype.omp_nthreads
 
     periodogram_desc = ""
@@ -133,13 +133,11 @@ series to retain the original scaling.
         n_procs=omp_nthreads,
     )
 
-    plot_interface = PlotDenseCifti if cifti else PlotNifti
+    plot_interface = PlotDenseCifti if (file_format == "cifti") else PlotNifti
     alff_plot = pe.Node(
         plot_interface(name_source=name_source),
         name="alff_plot",
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, alff_compt, [
             ("denoised_bold", "in_file"),
@@ -148,11 +146,10 @@ series to retain the original scaling.
         ]),
         (alff_compt, alff_plot, [("alff", "in_file")]),
         (alff_compt, outputnode, [("alff", "alff")])
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     if smoothing:  # If we want to smooth
-        if not cifti:  # If nifti
+        if file_format == "nifti":
             workflow.__desc__ = workflow.__desc__ + (
                 " The ALFF maps were smoothed with Nilearn using a Gaussian kernel "
                 f"(FWHM={str(smoothing)} mm)."
@@ -163,12 +160,10 @@ series to retain the original scaling.
                 name="niftismoothing",
                 n_procs=omp_nthreads,
             )
-            # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [("alff", "in_file")]),
                 (smooth_data, outputnode, [("out_file", "smoothed_alff")])
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
         else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
@@ -205,29 +200,23 @@ series to retain the original scaling.
                 mem_gb=mem_gb["resampled"],
                 n_procs=omp_nthreads,
             )
-
-            # fmt:off
             workflow.connect([
                 (alff_compt, smooth_data, [("alff", "in_file")]),
                 (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
                 (fix_cifti_intent, outputnode, [("out_file", "smoothed_alff")]),
-            ])
-            # fmt:on
+            ])  # fmt:skip
 
     ds_alff_plot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=name_source,
-            desc="alffSurfacePlot" if cifti else "alffVolumetricPlot",
+            desc="alffSurfacePlot" if (file_format == "cifti") else "alffVolumetricPlot",
             datatype="figures",
         ),
         name="ds_alff_plot",
         run_without_submitting=False,
     )
-
-    # fmt:off
     workflow.connect([(alff_plot, ds_alff_plot, [("out_file", "in_file")])])
-    # fmt:on
 
     return workflow
 
@@ -362,7 +351,6 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     )
 
     # Write out results
-    # fmt:off
     workflow.connect([
         (inputnode, lh_surf, [("denoised_bold", "in_file")]),
         (inputnode, rh_surf, [("denoised_bold", "in_file")]),
@@ -377,8 +365,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (merge_cifti, outputnode, [("out_file", "reho")]),
         (merge_cifti, reho_plot, [("out_file", "in_file")]),
         (reho_plot, ds_reho_plot, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow
 
@@ -465,7 +452,6 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
     )
 
     # Write the results out
-    # fmt:off
     workflow.connect([
         (inputnode, compute_reho, [
             ("denoised_bold", "in_file"),
@@ -474,7 +460,6 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
         (compute_reho, outputnode, [("out_file", "reho")]),
         (compute_reho, reho_plot, [("out_file", "in_file")]),
         (reho_plot, ds_reho_plot, [("out_file", "in_file")]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
     return workflow

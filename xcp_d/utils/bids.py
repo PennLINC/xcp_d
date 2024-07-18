@@ -148,17 +148,17 @@ def collect_data(
     input_type,
     participant_label,
     bids_filters,
-    cifti,
+    file_format,
 ):
     """Collect data from a BIDS dataset.
 
     Parameters
     ----------
+    %(layout)s
     %(input_type)s
     participant_label
     bids_filters
-    %(cifti)s
-    %(layout)s
+    file_format
 
     Returns
     -------
@@ -223,7 +223,7 @@ def collect_data(
         queries["anat_dseg"]["space"] = "MNI152NLin6Asym"
         queries["anat_brainmask"]["space"] = "MNI152NLin6Asym"
 
-    queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
+    queries["bold"]["extension"] = ".dtseries.nii" if (file_format == "cifti") else ".nii.gz"
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
@@ -239,7 +239,7 @@ def collect_data(
         allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
             input_type,
             DEFAULT_ALLOWED_SPACES,
-        )["cifti" if cifti else "nifti"]
+        )[file_format]
 
     for space in allowed_spaces:
         queries["bold"]["space"] = space
@@ -258,7 +258,7 @@ def collect_data(
             f"Found files:\n\n{filenames}"
         )
 
-    if cifti:
+    if file_format == "cifti":
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
         allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
@@ -315,6 +315,9 @@ def collect_data(
         LOGGER.warning("T2w found, but no T1w. Enabling T2w-only processing.")
         queries["template_to_anat_xfm"]["to"] = "T2w"
         queries["anat_to_template_xfm"]["from"] = "T2w"
+        # Nibabies may include space-T2w for some derivatives
+        queries["anat_dseg"]["space"] = ["T2w", None]
+        queries["anat_brainmask"]["space"] = ["T2w", None]
 
     # Search for the files.
     subj_data = {
@@ -542,7 +545,7 @@ def collect_morphometry_data(layout, participant_label):
 
 
 @fill_doc
-def collect_run_data(layout, bold_file, cifti, target_space):
+def collect_run_data(layout, bold_file, file_format, target_space):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -550,7 +553,7 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     %(layout)s
     bold_file : :obj:`str`
         Path to the BOLD file.
-    %(cifti)s
+    file_format
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
     target_space
         Used to find NIfTIs in the appropriate space if ``cifti`` is ``True``.
@@ -580,7 +583,7 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    if not cifti:
+    if file_format == "nifti":
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=True,

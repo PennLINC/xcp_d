@@ -9,7 +9,6 @@ atlases/atlas-MIDB/atlas-MIDB_dseg.tsv
 atlases/atlas-MIDB/atlas-MIDB_space-fsLR_den-91k_dseg.dlabel.nii
 atlases/dataset_description.json
 dataset_description.json
-desc-linc_qc.json
 logs
 logs/CITATION.bib
 logs/CITATION.html
@@ -41,7 +40,7 @@ sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_seg-
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_seg-MIDB_stat-mean_desc-sulc_morph.tsv
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_seg-MIDB_stat-mean_desc-thickness_morph.tsv
 sub-1648798153/ses-PNC1/func
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-dcan_qc.hdf5
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-abcc_qc.hdf5
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-filtered_motion.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_desc-filtered_motion.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_outliers.json
@@ -50,13 +49,6 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-9
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-denoised_bold.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-interpolated_bold.dtseries.nii
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-interpolated_bold.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_desc-linc_qc.tsv
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_stat-alff_boldmap.dscalar.nii
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_stat-alff_boldmap.json
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.dscalar.nii
-sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_stat-reho_boldmap.dscalar.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_den-91k_stat-reho_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-idemo_space-fsLR_seg-4S156Parcels_den-91k_stat-coverage_boldmap.json

@@ -54,7 +54,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     workflow = Workflow(name=name)
     atlases = config.execution.atlases
     output_dir = config.execution.xcp_d_dir
-    cifti = config.workflow.cifti
+    file_format = config.workflow.file_format
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -81,7 +81,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
         Function(
             input_names=["atlas"],
             output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
-            function=get_atlas_cifti if cifti else get_atlas_nifti,
+            function=get_atlas_cifti if file_format == "cifti" else get_atlas_nifti,
         ),
         name="atlas_file_grabber",
         iterfield=["atlas"],
@@ -90,7 +90,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     atlas_buffer = pe.Node(niu.IdentityInterface(fields=["atlas_file"]), name="atlas_buffer")
 
-    if not cifti:
+    if file_format == "nifti":
         get_transforms_to_bold_space = pe.Node(
             Function(
                 input_names=["bold_file"],
@@ -426,8 +426,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         iterfield=["atlas", "atlas_labels"],
         mem_gb=mem_gb["timeseries"],
     )
-
-    # fmt:off
     workflow.connect([
         (inputnode, parcellate_data, [
             ("denoised_bold", "filtered_file"),
@@ -439,83 +437,36 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ("coverage", "coverage"),
             ("timeseries", "timeseries"),
         ]),
-    ])
-    # fmt:on
+    ])  # fmt:skip
 
-    functional_connectivity = pe.MapNode(
-        TSVConnect(),
-        name="functional_connectivity",
-        iterfield=["timeseries"],
-        mem_gb=mem_gb["timeseries"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, functional_connectivity, [("temporal_mask", "temporal_mask")]),
-        (parcellate_data, functional_connectivity, [("timeseries", "timeseries")]),
-        (functional_connectivity, outputnode, [
-            ("correlations", "correlations"),
-            ("correlations_exact", "correlations_exact"),
-        ]),
-    ])
-    # fmt:on
-
-    parcellate_reho = pe.MapNode(
-        NiftiParcellate(min_coverage=min_coverage),
-        name="parcellate_reho",
-        iterfield=["atlas", "atlas_labels"],
-        mem_gb=mem_gb["resampled"],
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, parcellate_reho, [
-            ("reho", "filtered_file"),
-            ("bold_mask", "mask"),
-            ("atlas_files", "atlas"),
-            ("atlas_labels_files", "atlas_labels"),
-        ]),
-        (parcellate_reho, outputnode, [("timeseries", "parcellated_reho")]),
-    ])
-    # fmt:on
-
-    if bandpass_filter:
-        parcellate_alff = pe.MapNode(
-            NiftiParcellate(min_coverage=min_coverage),
-            name="parcellate_alff",
-            iterfield=["atlas", "atlas_labels"],
-            mem_gb=mem_gb["resampled"],
+    if config.workflow.output_correlations:
+        functional_connectivity = pe.MapNode(
+            TSVConnect(),
+            name="functional_connectivity",
+            iterfield=["timeseries"],
+            mem_gb=mem_gb["timeseries"],
         )
-
-        # fmt:off
         workflow.connect([
-            (inputnode, parcellate_alff, [
-                ("alff", "filtered_file"),
-                ("bold_mask", "mask"),
-                ("atlas_files", "atlas"),
-                ("atlas_labels_files", "atlas_labels"),
+            (inputnode, functional_connectivity, [("temporal_mask", "temporal_mask")]),
+            (parcellate_data, functional_connectivity, [("timeseries", "timeseries")]),
+            (functional_connectivity, outputnode, [
+                ("correlations", "correlations"),
+                ("correlations_exact", "correlations_exact"),
             ]),
-            (parcellate_alff, outputnode, [("timeseries", "parcellated_alff")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
-    # Create a node to plot the matrices
-    if config.execution.atlases:
         connectivity_plot = pe.Node(
             ConnectPlot(),
             name="connectivity_plot",
             mem_gb=mem_gb["resampled"],
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, connectivity_plot, [
                 ("atlases", "atlases"),
                 ("atlas_labels_files", "atlas_tsvs"),
             ]),
             (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
 
         ds_connectivity_plot = pe.Node(
             DerivativesDataSink(
@@ -526,13 +477,43 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             name="ds_connectivity_plot",
             run_without_submitting=False,
         )
-
-        # fmt:off
         workflow.connect([
             (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
             (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
-        ])
-        # fmt:on
+        ])  # fmt:skip
+
+    parcellate_reho = pe.MapNode(
+        NiftiParcellate(min_coverage=min_coverage),
+        name="parcellate_reho",
+        iterfield=["atlas", "atlas_labels"],
+        mem_gb=mem_gb["resampled"],
+    )
+    workflow.connect([
+        (inputnode, parcellate_reho, [
+            ("reho", "filtered_file"),
+            ("bold_mask", "mask"),
+            ("atlas_files", "atlas"),
+            ("atlas_labels_files", "atlas_labels"),
+        ]),
+        (parcellate_reho, outputnode, [("timeseries", "parcellated_reho")]),
+    ])  # fmt:skip
+
+    if bandpass_filter:
+        parcellate_alff = pe.MapNode(
+            NiftiParcellate(min_coverage=min_coverage),
+            name="parcellate_alff",
+            iterfield=["atlas", "atlas_labels"],
+            mem_gb=mem_gb["resampled"],
+        )
+        workflow.connect([
+            (inputnode, parcellate_alff, [
+                ("alff", "filtered_file"),
+                ("bold_mask", "mask"),
+                ("atlas_files", "atlas"),
+                ("atlas_labels_files", "atlas_labels"),
+            ]),
+            (parcellate_alff, outputnode, [("timeseries", "parcellated_alff")]),
+        ])  # fmt:skip
 
     return workflow
 
@@ -697,28 +678,84 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (plot_coverage, ds_plot_coverage, [("out_file", "in_file")]),
         ])  # fmt:skip
 
-    # Correlate the parcellated data
-    correlate_bold = pe.MapNode(
-        CiftiCorrelation(),
-        name="correlate_bold",
-        iterfield=["in_file"],
+    # Reduce the CIFTI before calculating correlations
+    parcellated_bold_buffer = pe.MapNode(
+        niu.IdentityInterface(fields=["parcellated_cifti"]),
+        name="parcellated_bold_buffer",
+        iterfield=["parcellated_cifti"],
     )
-    workflow.connect([
-        (parcellate_bold_wf, correlate_bold, [("outputnode.parcellated_cifti", "in_file")]),
-        (correlate_bold, outputnode, [("out_file", "correlation_ciftis")]),
-    ])  # fmt:skip
+    if config.workflow.output_interpolated:
+        # If we want interpolated time series, the parcellated CIFTI will have interpolated values,
+        # but the correlation matrices should only include low-motion volumes.
+        remove_outliers = pe.MapNode(
+            ReduceCifti(column="framewise_displacement"),
+            name="remove_outliers",
+            iterfield=["in_file"],
+        )
+        workflow.connect([
+            (inputnode, remove_outliers, [("temporal_mask", "temporal_mask")]),
+            (parcellate_bold_wf, remove_outliers, [("outputnode.parcellated_cifti", "in_file")]),
+            (remove_outliers, parcellated_bold_buffer, [("out_file", "parcellated_cifti")]),
+        ])  # fmt:skip
+    else:
+        workflow.connect([
+            (parcellate_bold_wf, parcellated_bold_buffer, [
+                ("outputnode.parcellated_cifti", "parcellated_cifti"),
+            ]),
+        ])  # fmt:skip
 
-    # Convert correlation pconn file to TSV
-    dconn_to_tsv = pe.MapNode(
-        CiftiToTSV(),
-        name="dconn_to_tsv",
-        iterfield=["in_file", "atlas_labels"],
-    )
-    workflow.connect([
-        (inputnode, dconn_to_tsv, [("atlas_labels_files", "atlas_labels")]),
-        (correlate_bold, dconn_to_tsv, [("out_file", "in_file")]),
-        (dconn_to_tsv, outputnode, [("out_file", "correlations")]),
-    ])  # fmt:skip
+    if config.workflow.output_correlations:
+        # Correlate the parcellated data
+        correlate_bold = pe.MapNode(
+            CiftiCorrelation(),
+            name="correlate_bold",
+            iterfield=["in_file"],
+        )
+        workflow.connect([
+            (parcellated_bold_buffer, correlate_bold, [("parcellated_cifti", "in_file")]),
+            (correlate_bold, outputnode, [("out_file", "correlation_ciftis")]),
+        ])  # fmt:skip
+
+        # Convert correlation pconn file to TSV
+        dconn_to_tsv = pe.MapNode(
+            CiftiToTSV(),
+            name="dconn_to_tsv",
+            iterfield=["in_file", "atlas_labels"],
+        )
+        workflow.connect([
+            (inputnode, dconn_to_tsv, [("atlas_labels_files", "atlas_labels")]),
+            (correlate_bold, dconn_to_tsv, [("out_file", "in_file")]),
+            (dconn_to_tsv, outputnode, [("out_file", "correlations")]),
+        ])  # fmt:skip
+
+        # Plot up to four connectivity matrices
+        connectivity_plot = pe.Node(
+            ConnectPlot(),
+            name="connectivity_plot",
+            mem_gb=mem_gb["resampled"],
+        )
+        workflow.connect([
+            (inputnode, connectivity_plot, [
+                ("atlases", "atlases"),
+                ("atlas_labels_files", "atlas_tsvs"),
+            ]),
+            (dconn_to_tsv, connectivity_plot, [("out_file", "correlations_tsv")]),
+        ])  # fmt:skip
+
+        ds_connectivity_plot = pe.Node(
+            DerivativesDataSink(
+                base_directory=output_dir,
+                desc="connectivityplot",
+                datatype="figures",
+            ),
+            name="ds_connectivity_plot",
+            run_without_submitting=False,
+            mem_gb=0.1,
+        )
+        workflow.connect([
+            (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
+            (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
+        ])  # fmt:skip
 
     # Perform exact-time correlations
     if exact_scans:
@@ -737,32 +774,14 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         workflow.connect([(collect_exact_tsvs, outputnode, [("out", "correlations_exact")])])
 
         for i_exact_scan, exact_scan in enumerate(exact_scans):
-            reduce_bold = pe.Node(
+            reduce_exact_bold = pe.MapNode(
                 ReduceCifti(column=f"exact_{exact_scan}"),
                 name=f"reduce_bold_{exact_scan}volumes",
+                iterfield=["in_file"],
             )
             workflow.connect([
-                (inputnode, reduce_bold, [
-                    ("denoised_bold", "in_file"),
-                    ("temporal_mask", "temporal_mask"),
-                ]),
-            ])  # fmt:skip
-
-            parcellate_exact_bold_wf = init_parcellate_cifti_wf(
-                mem_gb=mem_gb,
-                compute_mask=False,
-                name=f"parcellate_bold_{exact_scan}volumes_wf",
-            )
-            workflow.connect([
-                (inputnode, parcellate_exact_bold_wf, [
-                    ("atlas_files", "inputnode.atlas_files"),
-                    ("atlas_labels_files", "inputnode.atlas_labels_files"),
-                ]),
-                (parcellate_bold_wf, parcellate_exact_bold_wf, [
-                    ("outputnode.vertexwise_coverage", "inputnode.vertexwise_coverage"),
-                    ("outputnode.coverage_cifti", "inputnode.coverage_cifti"),
-                ]),
-                (reduce_bold, parcellate_exact_bold_wf, [("out_file", "inputnode.in_file")]),
+                (inputnode, reduce_exact_bold, [("temporal_mask", "temporal_mask")]),
+                (parcellated_bold_buffer, reduce_exact_bold, [("parcellated_cifti", "in_file")]),
             ])  # fmt:skip
 
             # Correlate the parcellated data
@@ -772,9 +791,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 iterfield=["in_file"],
             )
             workflow.connect([
-                (parcellate_exact_bold_wf, correlate_exact_bold, [
-                    ("outputnode.parcellated_cifti", "in_file"),
-                ]),
+                (reduce_exact_bold, correlate_exact_bold, [("out_file", "in_file")]),
                 (correlate_exact_bold, collect_exact_ciftis, [
                     ("out_file", f"in{i_exact_scan + 1}"),
                 ]),
@@ -882,35 +899,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 (inputnode, ds_plot_alff, [("name_source", "source_file")]),
                 (plot_parcellated_alff, ds_plot_alff, [("out_file", "in_file")]),
             ])  # fmt:skip
-
-    # Plot up to four connectivity matrices
-    connectivity_plot = pe.Node(
-        ConnectPlot(),
-        name="connectivity_plot",
-        mem_gb=mem_gb["resampled"],
-    )
-    workflow.connect([
-        (inputnode, connectivity_plot, [
-            ("atlases", "atlases"),
-            ("atlas_labels_files", "atlas_tsvs"),
-        ]),
-        (dconn_to_tsv, connectivity_plot, [("out_file", "correlations_tsv")]),
-    ])  # fmt:skip
-
-    ds_connectivity_plot = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="connectivityplot",
-            datatype="figures",
-        ),
-        name="ds_connectivity_plot",
-        run_without_submitting=False,
-        mem_gb=0.1,
-    )
-    workflow.connect([
-        (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
-        (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
-    ])  # fmt:skip
 
     return workflow
 
