@@ -199,10 +199,9 @@ def collect_data(
             "to": ["T1w", "T2w"],
             "suffix": "xfm",
         },
-        # native T1w-space brain mask
+        # brain mask in same standard space as BOLD data
         "anat_brainmask": {
             "datatype": "anat",
-            "space": None,
             "desc": "brain",
             "suffix": "mask",
             "extension": ".nii.gz",
@@ -289,10 +288,12 @@ def collect_data(
 
         queries["anat_to_template_xfm"]["to"] = volspace
         queries["template_to_anat_xfm"]["from"] = volspace
+        queries["anat_brainmask"]["space"] = volspace
     else:
         # use the BOLD file's space if the BOLD file is a nifti.
         queries["anat_to_template_xfm"]["to"] = queries["bold"]["space"]
         queries["template_to_anat_xfm"]["from"] = queries["bold"]["space"]
+        queries["anat_brainmask"]["space"] = queries["bold"]["space"]
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
