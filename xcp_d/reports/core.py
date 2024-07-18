@@ -5,15 +5,12 @@
 This is adapted from fMRIPost-AROMA.
 """
 
-import glob
-import os
 from pathlib import Path
 
 from nireports.assembler.report import Report
 
 from xcp_d import config, data
 from xcp_d.interfaces.execsummary import ExecutiveSummary
-from xcp_d.utils.bids import get_entity
 
 
 def run_reports(
@@ -146,24 +143,22 @@ def generate_reports(
         )
     else:
         config.loggers.cli.info("Generating executive summary.")
-        for subject_label in subject_list:
-            brainplotfiles = glob.glob(
-                os.path.join(output_dir, f"sub-{subject_label}/figures/*_bold.svg"),
-            )
-            if not brainplotfiles:
-                config.loggers.cli.warning(
-                    "No postprocessing BOLD figures found for subject %s.",
-                    subject_label,
-                )
-                session_id = None
-            else:
-                brainplotfile = brainplotfiles[0]
-                session_id = get_entity(brainplotfile, "ses")
 
+        if session_list is None:
+            all_filters = config.execution.bids_filters or {}
+            filters = all_filters.get("bold", {})
+            session_list = config.execution.layout.get_sessions(subject=subject_label, **filters)
+
+        # Drop ses- prefixes
+        session_list = [ses[4:] if ses.startswith("ses-") else ses for ses in session_list]
+        if not session_list:
+            session_list = [None]
+
+        for session_label in session_list:
             exsumm = ExecutiveSummary(
                 xcpd_path=output_dir,
                 subject_id=subject_label,
-                session_id=session_id,
+                session_id=session_label,
             )
             exsumm.collect_inputs()
             exsumm.generate_report()
