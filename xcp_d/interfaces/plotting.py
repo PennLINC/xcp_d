@@ -247,10 +247,14 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
 
     # Inputs used only for nifti data
     seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
-    anat_brainmask = File(exists=True, mandatory=False, desc="Mask in T1W")
+    anat_brainmask = File(
+        exists=True,
+        mandatory=False,
+        desc="Anatomically-derived brain mask in anatomical space.",
+    )
     template_mask = File(exists=True, mandatory=False, desc="Template mask")
-    bold2T1w_mask = File(exists=True, mandatory=False, desc="Bold mask in MNI")
-    bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
+    bold2T1w_mask = File(exists=True, mandatory=False, desc="BOLD mask in MNI space")
+    bold2temp_mask = File(exists=True, mandatory=False, desc="BOLD mask in anatomical space")
 
 
 class _QCPlotsOutputSpec(TraitedSpec):

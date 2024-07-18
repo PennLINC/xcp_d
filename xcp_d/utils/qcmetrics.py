@@ -26,9 +26,9 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
     Parameters
     ----------
     bold2t1w_mask : :obj:`str`
-        Path to the BOLD mask in T1w space.
+        Path to the BOLD mask in anatomical (T1w or T2w) space.
     anat_brainmask : :obj:`str`
-        Path to the T1w mask.
+        Path to the anatomically-derived brain mask in anatomical space.
     bold2template_mask : :obj:`str`
         Path to the BOLD mask in template space.
     template_mask : :obj:`str`

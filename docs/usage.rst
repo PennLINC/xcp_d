@@ -165,8 +165,11 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 ``"t1w"`` selects a native T1w-space, preprocessed T1w file.
 
 ``"t2w"`` selects a native T1w-space, preprocessed T2w file.
+If not T1w file is available, this file will be in T2w space.
 
-``"anat_brainmask"`` selects a native T1w-space brain mask.
+``"anat_brainmask"`` selects an anatomically-derived brain mask in the same space as the BOLD data.
+This file is used (1) to estimate head radius for FD calculation and
+(2) to calculate coregistration quality metrics.
 
 ``"anat_to_template_xfm"`` selects a transform from T1w (or T2w, if no T1w image is available)
 space to standard space.
