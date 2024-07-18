@@ -64,6 +64,7 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
         Brain mask files for each of the BOLD runs.
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
     anat_brainmask : :obj:`str`
+        Anatomically-derived brain mask in the same standard space as the BOLD mask.
     %(template_to_anat_xfm)s
     %(boldref)s
     %(timeseries)s

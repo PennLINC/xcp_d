@@ -355,6 +355,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ])  # fmt:skip
 
     # Estimate head radius, if necessary
+    # Need to warp the standard-space brain mask to the anatomical space to estimate head radius
     warp_brainmask = ApplyTransforms(
         input_image=subj_data["anat_brainmask"],
         transforms=[subj_data["template_to_anat_xfm"]],
@@ -368,10 +369,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     warp_brainmask_results = warp_brainmask.run(
         cwd=(config.execution.work_dir / workflow.fullname),
     )
-    anat_brainmask = warp_brainmask_results.outputs.output_image
+    anat_brainmask_in_anat_space = warp_brainmask_results.outputs.output_image
 
     head_radius = estimate_brain_radius(
-        mask_file=anat_brainmask,
+        mask_file=anat_brainmask_in_anat_space,
         head_radius=config.workflow.head_radius,
     )
 
