@@ -297,6 +297,22 @@ def init_postprocess_surfaces_wf(
 ):
     """Postprocess surfaces.
 
+    If DCAN QC is enabled, this will generate a BrainSprite for the executive summary.
+    If process-surfaces is enabled *or* fsLR-space mesh files are available,
+    then the BrainSprite will use standard-space mesh files.
+    Otherwise, it will use the native-space mesh files.
+
+    If process-surfaces is enabled and mesh files (i.e., white and pial surfaces) are available in
+    fsnative space, this workflow will warp them to fsLR space.
+    If process-surfaces is enabled and the mesh files are already in fsLR space,
+    they will be copied to the output directory.
+
+    As long as process-surfaces is enabled and mesh files (in either space) are available,
+    HCP-style midthickness, inflated, and very-inflated surfaces will be generated from them.
+
+    If process-surfaces is enabled and morphometry files (e.g., sulcal depth, cortical thickness)
+    are available in fsLR space, they will be copied to the output directory.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -507,8 +523,7 @@ def init_postprocess_surfaces_wf(
 
     elif not morphometry_files:
         raise ValueError(
-            "No surfaces found. "
-            "Surfaces are required if `--warp-surfaces-native2std` is enabled."
+            "No surfaces found. Surfaces are required if `--warp-surfaces-native2std` is enabled."
         )
 
     return workflow

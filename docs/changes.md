@@ -1,6 +1,23 @@
 # What's New
 
 
+## 0.7.5
+
+This is a patch release that fixes how the correlation matrix plot is generated when users select only one atlas for parcellation.
+The bug was likely introduced in 0.7.4 and only affects runs with a single atlas.
+
+### 🐛 Bug Fixes
+
+* Fix ConnectPlot by @tsalo in https://github.com/PennLINC/xcp_d/pull/1188
+
+### Other Changes
+
+* Refactor CIFTI parcellation and connectivity workflows to use wb_command by @tsalo in https://github.com/PennLINC/xcp_d/pull/1174
+* Replace internal smoothing spheres with ones from TemplateFlow by @tsalo in https://github.com/PennLINC/xcp_d/pull/1160
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.4...0.7.5
+
+
 ## 0.7.4
 
 This is a patch release that fixes two important bugs.
