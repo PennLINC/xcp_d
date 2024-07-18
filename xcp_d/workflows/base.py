@@ -20,6 +20,7 @@ from packaging.version import Version
 
 from xcp_d import config
 from xcp_d.__about__ import __version__
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
@@ -132,6 +133,7 @@ def init_single_subject_wf(subject_id: str):
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
+    anat_mod = "t1w" if t1w_available else "t2w"
 
     mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
@@ -156,7 +158,7 @@ def init_single_subject_wf(subject_id: str):
                 "subj_data",  # not currently used, but will be in future
                 "t1w",
                 "t2w",  # optional
-                "anat_brainmask",  # not used by cifti workflow
+                "anat_brainmask",  # used to estimate head radius and for QC metrics
                 "anat_dseg",
                 "template_to_anat_xfm",  # not used by cifti workflow
                 "anat_to_template_xfm",
@@ -359,8 +361,24 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ])  # fmt:skip
 
     # Estimate head radius, if necessary
+    # Need to warp the standard-space brain mask to the anatomical space to estimate head radius
+    warp_brainmask = ApplyTransforms(
+        input_image=subj_data["anat_brainmask"],
+        transforms=[subj_data["template_to_anat_xfm"]],
+        reference_image=subj_data[anat_mod],
+        num_threads=2,
+        interpolation="GenericLabel",
+        input_image_type=3,
+        dimension=3,
+    )
+    os.makedirs(config.execution.work_dir / workflow.fullname, exist_ok=True)
+    warp_brainmask_results = warp_brainmask.run(
+        cwd=(config.execution.work_dir / workflow.fullname),
+    )
+    anat_brainmask_in_anat_space = warp_brainmask_results.outputs.output_image
+
     head_radius = estimate_brain_radius(
-        mask_file=subj_data["anat_brainmask"],
+        mask_file=anat_brainmask_in_anat_space,
         head_radius=config.workflow.head_radius,
     )
 
@@ -473,6 +491,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
+                # The post-processing workflow needs a native anatomical-space image as a reference
+                workflow.connect([
+                    (inputnode, postprocess_bold_wf, [(anat_mod, "inputnode.anat_native")]),
+                ])  # fmt:skip
+
             if config.workflow.combine_runs and (n_task_runs > 1):
                 for io_name, node in merge_dict.items():
                     workflow.connect([
@@ -490,6 +513,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, concatenate_data_wf, [
                     ("anat_brainmask", "inputnode.anat_brainmask"),
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
+                    (anat_mod, "inputnode.anat_native"),
                 ]),
             ])  # fmt:skip
 
