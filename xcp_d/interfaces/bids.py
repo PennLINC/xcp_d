@@ -172,18 +172,24 @@ class CollectRegistrationFiles(SimpleInterface):
 
             # TODO: Collect from templateflow once it's uploaded.
             # MCRIBS: tpl-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
+            # What about tpl-fsaverage_hemi-L_den-41k_sphere.surf.gii from TemplateFlow?
             self._results["source_sphere"] = os.path.join(
                 self.inputs.segmentation_dir,
                 "templates_fsLR",
                 f"tpl-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
             # MCRIBS: tpl-dHCP_space-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
-            self._results["sphere_to_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-dHCP_space-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
+            self._results["sphere_to_sphere"] = str(
+                get_template(
+                    template="dhcpAsym",
+                    cohort="42",
+                    space="fsaverage",
+                    hemi=hemisphere,
+                    density="41k",
+                    desc="reg",
+                    suffix="sphere",
+                ),
             )
 
             # TODO: Collect from templateflow once it's uploaded.
