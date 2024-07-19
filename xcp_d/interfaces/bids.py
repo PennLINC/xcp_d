@@ -50,11 +50,6 @@ class DerivativesDataSink(BaseDerivativesDataSink):
 
 
 class _CollectRegistrationFilesInputSpec(BaseInterfaceInputSpec):
-    segmentation_dir = Directory(
-        exists=True,
-        required=True,
-        desc="Path to FreeSurfer or MCRIBS derivatives.",
-    )
     software = traits.Enum(
         "FreeSurfer",
         "MCRIBS",
@@ -67,17 +62,9 @@ class _CollectRegistrationFilesInputSpec(BaseInterfaceInputSpec):
         required=True,
         desc="The hemisphere being used.",
     )
-    participant_id = traits.Str(
-        required=True,
-        desc="Participant ID. Used to select the subdirectory of the FreeSurfer derivatives.",
-    )
 
 
 class _CollectRegistrationFilesOutputSpec(TraitedSpec):
-    subject_sphere = File(
-        exists=True,
-        desc="Subject-space sphere.",
-    )
     source_sphere = File(
         exists=True,
         desc="Source-space sphere (namely, fsaverage).",
@@ -99,29 +86,13 @@ class CollectRegistrationFiles(SimpleInterface):
     output_spec = _CollectRegistrationFilesOutputSpec
 
     def _run_interface(self, runtime):
-        import os
-
         from templateflow.api import get as get_template
 
         from xcp_d.data import load as load_data
 
         hemisphere = self.inputs.hemisphere
-        hstr = f"{hemisphere.lower()}h"
-        participant_id = self.inputs.participant_id
-        if not participant_id.startswith("sub-"):
-            participant_id = f"sub-{participant_id}"
 
         if self.inputs.software == "FreeSurfer":
-            # Find the subject's sphere in the FreeSurfer derivatives.
-            # TODO: Collect from the preprocessing derivatives if they're a compliant version.
-            # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
-            self._results["subject_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                participant_id,
-                "surf",
-                f"{hstr}.sphere.reg",
-            )
-
             # Load the fsaverage-164k sphere
             # FreeSurfer: tpl-fsaverage_hemi-?_den-164k_sphere.surf.gii
             self._results["source_sphere"] = str(
@@ -158,28 +129,17 @@ class CollectRegistrationFiles(SimpleInterface):
             )
 
         elif self.inputs.software == "MCRIBS":
-            # Find the subject's sphere in the MCRIBS derivatives.
-            # TODO: Collect from the preprocessing derivatives if they're a compliant version.
-            # Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
-            self._results["subject_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                participant_id,
-                "freesurfer",
-                participant_id,
-                "surf",
-                f"{hstr}.sphere.reg2",
+            self._results["source_sphere"] = str(
+                get_template(
+                    template="fsaverage",
+                    space=None,
+                    hemi=hemisphere,
+                    density="41k",
+                    desc=None,
+                    suffix="sphere",
+                ),
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # MCRIBS: tpl-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
-            # What about tpl-fsaverage_hemi-L_den-41k_sphere.surf.gii from TemplateFlow?
-            self._results["source_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-fsaverage_hemi-{hemisphere}_den-41k_desc-reg_sphere.surf.gii",
-            )
-
-            # MCRIBS: tpl-dHCP_space-fsaverage_hemi-?_den-41k_desc-reg_sphere.surf.gii
             self._results["sphere_to_sphere"] = str(
                 get_template(
                     template="dhcpAsym",
@@ -192,12 +152,16 @@ class CollectRegistrationFiles(SimpleInterface):
                 ),
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # MCRIBS: tpl-dHCP_space-fsLR_hemi-?_den-32k_desc-week42_sphere.surf.gii
-            self._results["target_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                "templates_fsLR",
-                f"tpl-dHCP_space-fsLR_hemi-{hemisphere}_den-32k_desc-week42_sphere.surf.gii",
+            self._results["target_sphere"] = str(
+                get_template(
+                    template="dhcpAsym",
+                    cohort="42",
+                    space=None,
+                    hemi=hemisphere,
+                    density="32k",
+                    desc=None,
+                    suffix="sphere",
+                ),
             )
 
         return runtime

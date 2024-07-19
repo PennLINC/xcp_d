@@ -28,7 +28,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import get_freesurfer_dir
+from xcp_d.utils.bids import get_segmentation_software
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import list_to_str
 from xcp_d.workflows.execsummary import (
@@ -356,6 +356,7 @@ def init_postprocess_surfaces_wf(
     %(template_to_anat_xfm)s
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
+    lh_subject_sphere, rh_subject_sphere
     sulcal_depth
     sulcal_curv
     cortical_thickness
@@ -378,6 +379,8 @@ def init_postprocess_surfaces_wf(
                 "t2w",
                 "anat_to_template_xfm",
                 "template_to_anat_xfm",
+                "lh_subject_sphere",
+                "rh_subject_sphere",
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
@@ -493,6 +496,8 @@ def init_postprocess_surfaces_wf(
         )
         workflow.connect([
             (inputnode, warp_surfaces_to_template_wf, [
+                ("lh_subject_sphere", "inputnode.lh_subject_sphere"),
+                ("rh_subject_sphere", "inputnode.rh_subject_sphere"),
                 ("lh_pial_surf", "inputnode.lh_pial_surf"),
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
@@ -573,6 +578,8 @@ def init_warp_surfaces_to_template_wf(
         The template in question should match the volumetric space of the BOLD CIFTI files
         being processed by the main xcpd workflow.
         For example, MNI152NLin6Asym for fsLR-space CIFTIs.
+    lh_subject_sphere, rh_subject_sphere : :obj:`str`
+        Left- and right-hemisphere sphere registration files.
     lh_pial_surf, rh_pial_surf : :obj:`str`
         Left- and right-hemisphere pial surface files in fsnative space.
     lh_wm_surf, rh_wm_surf : :obj:`str`
@@ -594,6 +601,8 @@ def init_warp_surfaces_to_template_wf(
                 "anat_to_template_xfm",
                 "template_to_anat_xfm",
                 # surfaces
+                "lh_subject_sphere",
+                "rh_subject_sphere",
                 "lh_pial_surf",
                 "rh_pial_surf",
                 "lh_wm_surf",
@@ -616,17 +625,17 @@ def init_warp_surfaces_to_template_wf(
         name="outputnode",
     )
 
-    # Warp the surfaces to space-fsLR, den-32k.
-    get_freesurfer_dir_node = pe.Node(
+    get_software = pe.Node(
         Function(
-            function=get_freesurfer_dir,
+            function=get_segmentation_software,
             input_names=["fmri_dir"],
-            output_names=["freesurfer_path", "segmentation_software"],
+            output_names=["software"],
         ),
-        name="get_freesurfer_dir_node",
+        name="get_software",
     )
-    get_freesurfer_dir_node.inputs.fmri_dir = fmri_dir
+    get_software.inputs.fmri_dir = fmri_dir
 
+    # Warp the surfaces to space-fsLR, den-32k.
     # First, we create the Connectome WorkBench-compatible transform files.
     update_xfm_wf = init_ants_xfm_to_fsl_wf(
         mem_gb=1,
@@ -658,17 +667,16 @@ def init_warp_surfaces_to_template_wf(
         ])  # fmt:skip
 
         apply_transforms_wf = init_warp_one_hemisphere_wf(
-            participant_id=subject_id,
             hemisphere=hemi,
             mem_gb=2,
             omp_nthreads=omp_nthreads,
             name=f"{hemi_label}_apply_transforms_wf",
         )
         workflow.connect([
-            (get_freesurfer_dir_node, apply_transforms_wf, [
-                ("freesurfer_path", "inputnode.freesurfer_path"),
-                ("segmentation_software", "inputnode.segmentation_software"),
+            (inputnode, apply_transforms_wf, [
+                (f"{hemi_label}_subject_sphere", "inputnode.subject_sphere"),
             ]),
+            (get_software, apply_transforms_wf, [("software", "inputnode.software")]),
             (update_xfm_wf, apply_transforms_wf, [
                 ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
                 ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
@@ -1099,7 +1107,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
 
 @fill_doc
 def init_warp_one_hemisphere_wf(
-    participant_id,
     hemisphere,
     mem_gb,
     omp_nthreads,
@@ -1115,7 +1122,6 @@ def init_warp_one_hemisphere_wf(
             from xcp_d.workflows.anatomical import init_warp_one_hemisphere_wf
 
             wf = init_warp_one_hemisphere_wf(
-                participant_id="01",
                 hemisphere="L",
                 mem_gb=0.1,
                 omp_nthreads=1,
@@ -1137,12 +1143,9 @@ def init_warp_one_hemisphere_wf(
     world_xfm
     merged_warpfield
     merged_inv_warpfield
-    freesurfer_path
-        Path to FreeSurfer derivatives. Used to load the subject's sphere file.
-    segmentation_software : {"FreeSurfer", "MCRIBS"}
+    subject_sphere
+    software : {"FreeSurfer", "MCRIBS"}
         The software used for the segmentation.
-    participant_id
-        Set from parameters.
 
     Outputs
     -------
@@ -1157,14 +1160,12 @@ def init_warp_one_hemisphere_wf(
                 "world_xfm",
                 "merged_warpfield",
                 "merged_inv_warpfield",
-                "freesurfer_path",
-                "segmentation_software",
-                "participant_id",
+                "subject_sphere",
+                "software",
             ],
         ),
         name="inputnode",
     )
-    inputnode.inputs.participant_id = participant_id
 
     collect_registration_files = pe.Node(
         CollectRegistrationFiles(hemisphere=hemisphere),
@@ -1172,13 +1173,7 @@ def init_warp_one_hemisphere_wf(
         mem_gb=0.1,
         n_procs=1,
     )
-    workflow.connect([
-        (inputnode, collect_registration_files, [
-            ("freesurfer_path", "segmentation_dir"),
-            ("participant_id", "participant_id"),
-            ("segmentation_software", "software"),
-        ]),
-    ])  # fmt:skip
+    workflow.connect([(inputnode, collect_registration_files, [("software", "software")])])
 
     # NOTE: What does this step do?
     sphere_to_surf_gii = pe.Node(
@@ -1187,9 +1182,7 @@ def init_warp_one_hemisphere_wf(
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
     )
-    workflow.connect([
-        (collect_registration_files, sphere_to_surf_gii, [("subject_sphere", "in_file")]),
-    ])  # fmt:skip
+    workflow.connect([(inputnode, sphere_to_surf_gii, [("subject_sphere", "in_file")])])
 
     # NOTE: What does this step do?
     surface_sphere_project_unproject = pe.Node(

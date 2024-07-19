@@ -380,16 +380,18 @@ def collect_mesh_data(layout, participant_label):
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
     base_queries = {
-        "pial_surf": "pial",
-        "wm_surf": ["smoothwm", "white"],
-    }
-    query_extras = {
-        "space": "fsLR",
-        "den": "32k",
+        "pial_surf": {
+            "desc": None,
+            "suffix": "pial",
+        },
+        "wm_surf": {
+            "desc": None,
+            "suffix": ["smoothwm", "white"],
+        },
     }
 
     standard_space_mesh = True
-    for name, suffixes in base_queries.items():
+    for name, query in base_queries.items():
         # First, try to grab the first base surface file in standard space.
         # If it's not available, switch to native T1w-space data.
         for hemisphere in ["L", "R"]:
@@ -398,11 +400,12 @@ def collect_mesh_data(layout, participant_label):
                 subject=participant_label,
                 datatype="anat",
                 hemi=hemisphere,
-                desc=None,
-                suffix=suffixes,
+                space="fsLR",
+                den="32k",
                 extension=".surf.gii",
-                **query_extras,
+                **query,
             )
+
             if len(temp_files) == 0:
                 LOGGER.info("No standard-space surfaces found.")
                 standard_space_mesh = False
@@ -410,23 +413,29 @@ def collect_mesh_data(layout, participant_label):
                 LOGGER.warning(f"{name}: More than one standard-space surface found.")
 
     # Now that we know if there are standard-space surfaces available, we can grab the files.
+    query_extras = {}
     if not standard_space_mesh:
         query_extras = {
             "space": None,
         }
+        # We need the subject spheres if we're using native-space surfaces.
+        base_queries["subject_sphere"] = {
+            "space": None,
+            "desc": "reg",
+            "suffix": "sphere",
+        }
 
     initial_mesh_files = {}
     queries = {}
-    for name, suffixes in base_queries.items():
+    for name, query in base_queries.items():
         for hemisphere in ["L", "R"]:
             key = f"{hemisphere.lower()}h_{name}"
             queries[key] = {
                 "subject": participant_label,
                 "datatype": "anat",
                 "hemi": hemisphere,
-                "desc": None,
-                "suffix": suffixes,
                 "extension": ".surf.gii",
+                **query,
                 **query_extras,
             }
             initial_mesh_files[key] = layout.get(return_type="file", **queries[key])
@@ -449,6 +458,9 @@ def collect_mesh_data(layout, participant_label):
                 f"Surfaces found:\n\t{surface_str}\n"
                 f"Query: {queries[dtype]}"
             )
+
+    mesh_files["lh_subject_sphere"] = mesh_files.get("lh_subject_sphere", None)
+    mesh_files["rh_subject_sphere"] = mesh_files.get("rh_subject_sphere", None)
 
     LOGGER.log(
         25,
@@ -865,7 +877,7 @@ def _get_tr(img):
         return img.header.get_zooms()[-1]
 
 
-def get_freesurfer_dir(fmri_dir):
+def get_segmentation_software(fmri_dir):
     """Find FreeSurfer or MCRIBS derivatives associated with preprocessing pipeline.
 
     NOTE: This is a Node function.
@@ -877,9 +889,7 @@ def get_freesurfer_dir(fmri_dir):
 
     Returns
     -------
-    seg_path : :obj:`str`
-        Path to FreeSurfer or MCRIBS derivatives.
-    seg
+    software
 
     Raises
     ------
@@ -924,7 +934,7 @@ def get_freesurfer_dir(fmri_dir):
                 f"{software} derivatives associated with {desc} preprocessing derivatives found "
                 f"at {pattern}"
             )
-            return pattern, software
+            return software
 
         # Otherwise, continue to the next pattern
 
