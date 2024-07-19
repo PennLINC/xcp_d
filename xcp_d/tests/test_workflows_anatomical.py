@@ -32,6 +32,15 @@ def surface_files(datasets, tmp_path_factory):
         shutil.copyfile(fpath, std_fpath)
         final_files[std_fref] = std_fpath
 
+    final_files["lh_surface_sphere"] = os.path.join(
+        anat_dir,
+        "sub-01_hemi-L_desc-reg_sphere.surf.gii",
+    )
+    final_files["rh_surface_sphere"] = os.path.join(
+        anat_dir,
+        "sub-01_hemi-R_desc-reg_sphere.surf.gii",
+    )
+
     return final_files
 
 
@@ -47,11 +56,8 @@ def test_warp_surfaces_to_template_wf(
     """
     tmpdir = tmp_path_factory.mktemp("test_warp_surfaces_to_template_wf")
 
-    subject_id = "01"
-
     wf = anatomical.init_warp_surfaces_to_template_wf(
         fmri_dir=datasets["ds001419"],
-        subject_id=subject_id,
         output_dir=tmpdir,
         omp_nthreads=1,
     )

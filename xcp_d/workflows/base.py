@@ -135,7 +135,7 @@ def init_single_subject_wf(subject_id: str):
     t2w_available = subj_data["t2w"] is not None
     anat_mod = "t1w" if t1w_available else "t2w"
 
-    mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
+    mesh_available, standard_space_mesh, software, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
         participant_label=subject_id,
     )
@@ -314,6 +314,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             morphometry_files=morph_file_types,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
+            software=software,
         )
 
         workflow.connect([

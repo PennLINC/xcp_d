@@ -372,6 +372,8 @@ def collect_mesh_data(layout, participant_label):
         True if surface mesh files (pial and smoothwm) were found. False if they were not.
     standard_space_mesh : :obj:`bool`
         True if standard-space (fsLR) surface mesh files were found. False if they were not.
+    software : {"MCRIBS", "FreeSurfer"}
+        The software used to generate the surfaces.
     mesh_files : :obj:`dict`
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
@@ -462,12 +464,26 @@ def collect_mesh_data(layout, participant_label):
     mesh_files["lh_subject_sphere"] = mesh_files.get("lh_subject_sphere", None)
     mesh_files["rh_subject_sphere"] = mesh_files.get("rh_subject_sphere", None)
 
+    # Check for *_space-dhcpAsym_desc-reg_sphere.surf.gii
+    # If we find it, we assume segmentation was done with MCRIBS. Otherwise, assume FreeSurfer.
+    dhcp_file = layout.get(
+        return_type="file",
+        datatype="anat",
+        subject=participant_label,
+        hemi="L",
+        space="dhcpAsym",
+        desc="reg",
+        suffix="sphere",
+        extension=".surf.gii",
+    )
+    software = "MCRIBS" if bool(len(dhcp_file)) else "FreeSurfer"
+
     LOGGER.log(
         25,
         f"Collected mesh files:\n{yaml.dump(mesh_files, default_flow_style=False, indent=4)}",
     )
 
-    return mesh_available, standard_space_mesh, mesh_files
+    return mesh_available, standard_space_mesh, software, mesh_files
 
 
 @fill_doc

@@ -292,6 +292,7 @@ def init_postprocess_surfaces_wf(
     morphometry_files,
     t1w_available,
     t2w_available,
+    software,
     name="postprocess_surfaces_wf",
 ):
     """Postprocess surfaces.
@@ -328,6 +329,7 @@ def init_postprocess_surfaces_wf(
                     morphometry_files=[],
                     t1w_available=True,
                     t2w_available=True,
+                    software="FreeSurfer",
                     name="postprocess_surfaces_wf",
                 )
 
@@ -340,6 +342,8 @@ def init_postprocess_surfaces_wf(
         True if a T1w image is available.
     t2w_available : bool
         True if a T2w image is available.
+    software : {"MCRIBS", "FreeSurfer"}
+        The software used to generate the surfaces.
     %(name)s
         Default is "postprocess_surfaces_wf".
 
@@ -487,6 +491,7 @@ def init_postprocess_surfaces_wf(
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
             output_dir=output_dir,
+            software=software,
             omp_nthreads=omp_nthreads,
             name="warp_surfaces_to_template_wf",
         )
@@ -534,6 +539,7 @@ def init_postprocess_surfaces_wf(
 def init_warp_surfaces_to_template_wf(
     fmri_dir,
     output_dir,
+    software,
     omp_nthreads,
     name="warp_surfaces_to_template_wf",
 ):
@@ -549,6 +555,7 @@ def init_warp_surfaces_to_template_wf(
             wf = init_warp_surfaces_to_template_wf(
                 fmri_dir=".",
                 output_dir=".",
+                software="FreeSurfer",
                 omp_nthreads=1,
                 name="warp_surfaces_to_template_wf",
             )
@@ -557,6 +564,8 @@ def init_warp_surfaces_to_template_wf(
     ----------
     %(fmri_dir)s
     %(output_dir)s
+    software : {"MCRIBS", "FreeSurfer"}
+        The software used to generate the surfaces.
     %(omp_nthreads)s
     %(name)s
         Default is "warp_surfaces_to_template_wf".
@@ -618,16 +627,6 @@ def init_warp_surfaces_to_template_wf(
         name="outputnode",
     )
 
-    get_software = pe.Node(
-        Function(
-            function=get_segmentation_software,
-            input_names=["fmri_dir"],
-            output_names=["software"],
-        ),
-        name="get_software",
-    )
-    get_software.inputs.fmri_dir = fmri_dir
-
     # Warp the surfaces to space-fsLR, den-32k.
     # First, we create the Connectome WorkBench-compatible transform files.
     update_xfm_wf = init_ants_xfm_to_fsl_wf(
@@ -661,6 +660,7 @@ def init_warp_surfaces_to_template_wf(
 
         apply_transforms_wf = init_warp_one_hemisphere_wf(
             hemisphere=hemi,
+            software=software,
             mem_gb=2,
             omp_nthreads=omp_nthreads,
             name=f"{hemi_label}_apply_transforms_wf",
@@ -669,7 +669,6 @@ def init_warp_surfaces_to_template_wf(
             (inputnode, apply_transforms_wf, [
                 (f"{hemi_label}_subject_sphere", "inputnode.subject_sphere"),
             ]),
-            (get_software, apply_transforms_wf, [("software", "inputnode.software")]),
             (update_xfm_wf, apply_transforms_wf, [
                 ("outputnode.merged_warpfield", "inputnode.merged_warpfield"),
                 ("outputnode.merged_inv_warpfield", "inputnode.merged_inv_warpfield"),
@@ -1101,6 +1100,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
 @fill_doc
 def init_warp_one_hemisphere_wf(
     hemisphere,
+    software,
     mem_gb,
     omp_nthreads,
     name="warp_one_hemisphere_wf",
@@ -1116,6 +1116,7 @@ def init_warp_one_hemisphere_wf(
 
             wf = init_warp_one_hemisphere_wf(
                 hemisphere="L",
+                software="FreeSurfer",
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="warp_one_hemisphere_wf",
@@ -1124,6 +1125,8 @@ def init_warp_one_hemisphere_wf(
     Parameters
     ----------
     hemisphere : {"L", "R"}
+    software : {"MCRIBS", "FreeSurfer"}
+        The software used for the segmentation.
     %(mem_gb)s
     %(omp_nthreads)s
     %(name)s
@@ -1137,8 +1140,6 @@ def init_warp_one_hemisphere_wf(
     merged_warpfield
     merged_inv_warpfield
     subject_sphere
-    software : {"FreeSurfer", "MCRIBS"}
-        The software used for the segmentation.
 
     Outputs
     -------
@@ -1154,19 +1155,17 @@ def init_warp_one_hemisphere_wf(
                 "merged_warpfield",
                 "merged_inv_warpfield",
                 "subject_sphere",
-                "software",
             ],
         ),
         name="inputnode",
     )
 
     collect_registration_files = pe.Node(
-        CollectRegistrationFiles(hemisphere=hemisphere),
+        CollectRegistrationFiles(hemisphere=hemisphere, software=software),
         name="collect_registration_files",
         mem_gb=0.1,
         n_procs=1,
     )
-    workflow.connect([(inputnode, collect_registration_files, [("software", "software")])])
 
     # NOTE: What does this step do?
     sphere_to_surf_gii = pe.Node(
