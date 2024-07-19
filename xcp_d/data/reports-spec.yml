@@ -48,13 +48,23 @@ sections:
       desc: alffVolumetricPlot
       suffix: bold
     caption:  ALFF, or amplitude of low frequency fluctuations.
-              Overlaid on T1W image with same entities as the original image.
+              Overlaid on T1w image with same entities as the original image.
     subtitle: ALFF
   - bids:
       datatype: figures
-      desc: alffSurfacePlot
+      desc: alffSurfaceStandard
       suffix: bold
-    caption:  ALFF, or amplitude of low frequency fluctuations.
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations.
+      Overlaid on the fsLR midthickness surface.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffSurfaceSubject
+      suffix: bold
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations.
+      Overlaid on the participant's midthickness surface mapped onto fsLR space.
     subtitle: ALFF
   - bids:
       datatype: figures
@@ -71,9 +81,19 @@ sections:
     subtitle: ReHo
   - bids:
       datatype: figures
-      desc: rehoSurfacePlot
+      desc: rehoSurfaceStandard
       suffix: bold
-    caption:  ReHo, or regional homogeneity.
+    caption: |
+      ReHo, or regional homogeneity.
+      Overlaid on the fsLR midthickness surface.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoSurfaceSubject
+      suffix: bold
+    caption: |
+      ReHo, or regional homogeneity.
+      Overlaid on the participant's midthickness surface mapped onto fsLR space.
     subtitle: ReHo
   - bids:
       datatype: figures

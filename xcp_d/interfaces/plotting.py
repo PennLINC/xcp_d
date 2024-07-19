@@ -905,10 +905,27 @@ class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
         usedefault=True,
         desc="Maximum value for the colormap.",
     )
+    base_desc = traits.Str(
+        mandatory=False,
+        default_value="",
+        usedefault=True,
+        desc="Base description for the output file.",
+    )
+    lh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Left hemisphere underlay.",
+    )
+    rh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Right hemisphere underlay.",
+    )
 
 
 class _PlotCiftiParcellationOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="Output file.")
+    desc = traits.Str(desc="Description of the output file.")
 
 
 class PlotCiftiParcellation(SimpleInterface):
@@ -921,24 +938,30 @@ class PlotCiftiParcellation(SimpleInterface):
         assert len(self.inputs.in_files) == len(self.inputs.labels)
         assert len(self.inputs.cortical_atlases) > 0
 
-        rh = str(
-            get_template(
-                template="fsLR",
-                hemi="R",
-                density="32k",
-                suffix="midthickness",
-                extension=".surf.gii",
+        if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
+            self._results["desc"] = f"{self.inputs.base_desc}ParcellatedStandard"
+            rh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="R",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
             )
-        )
-        lh = str(
-            get_template(
-                template="fsLR",
-                hemi="L",
-                density="32k",
-                suffix="midthickness",
-                extension=".surf.gii",
+            lh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="L",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
             )
-        )
+        else:
+            self._results["desc"] = f"{self.inputs.base_desc}ParcellatedSubject"
+            rh = self.inputs.rh_underlay
+            lh = self.inputs.lh_underlay
 
         # Create Figure and GridSpec.
         # One subplot for each file. Each file will then have four subplots, arranged in a square.
@@ -1095,15 +1118,27 @@ class _PlotDenseCiftiInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="CIFTI file to plot.",
     )
-    name_source = File(
-        exists=False,
-        mandatory=True,
-        desc="File to use as the name source. Unused but retained for compatibility.",
+    base_desc = traits.Str(
+        mandatory=False,
+        default_value="",
+        usedefault=True,
+        desc="Base description for the output file.",
+    )
+    lh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Left hemisphere underlay.",
+    )
+    rh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Right hemisphere underlay.",
     )
 
 
 class _PlotDenseCiftiOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="Output file.")
+    desc = traits.Str(desc="Description of the output file.")
 
 
 class PlotDenseCifti(SimpleInterface):
@@ -1113,24 +1148,30 @@ class PlotDenseCifti(SimpleInterface):
     output_spec = _PlotDenseCiftiOutputSpec
 
     def _run_interface(self, runtime):
-        rh = str(
-            get_template(
-                template="fsLR",
-                hemi="R",
-                density="32k",
-                suffix="midthickness",
-                extension=".surf.gii",
+        if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
+            self._results["desc"] = f"{self.inputs.base_desc}SurfaceStandard"
+            rh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="R",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
             )
-        )
-        lh = str(
-            get_template(
-                template="fsLR",
-                hemi="L",
-                density="32k",
-                suffix="midthickness",
-                extension=".surf.gii",
+            lh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="L",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
             )
-        )
+        else:
+            self._results["desc"] = f"{self.inputs.base_desc}SurfaceSubject"
+            rh = self.inputs.rh_underlay
+            lh = self.inputs.lh_underlay
 
         cifti = nb.load(self.inputs.in_file)
         cifti_data = cifti.get_fdata()
