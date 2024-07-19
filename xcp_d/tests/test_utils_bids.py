@@ -306,28 +306,6 @@ def test_get_tr(ds001419_data):
     assert t_r == 3.0
 
 
-def test_get_freesurfer_dir(datasets):
-    """Test get_freesurfer_dir."""
-    with pytest.raises(NotADirectoryError, match="No FreeSurfer/MCRIBS derivatives found"):
-        xbids.get_freesurfer_dir(".")
-
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
-    assert os.path.isdir(fs_dir)
-    assert software == "FreeSurfer"
-
-    # Create fake FreeSurfer folder so there are two possible folders and it grabs the closest
-    tmp_fs_dir = os.path.join(datasets["nibabies"], "sourcedata/mcribs")
-    os.makedirs(tmp_fs_dir, exist_ok=True)
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
-    assert os.path.isdir(fs_dir)
-    assert software == "MCRIBS"
-    os.rmdir(tmp_fs_dir)
-
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["pnc"])
-    assert os.path.isdir(fs_dir)
-    assert software == "FreeSurfer"
-
-
 def test_get_entity(datasets):
     """Test get_entity."""
     fname = os.path.join(datasets["ds001419"], "sub-01", "anat", "sub-01_desc-preproc_T1w.nii.gz")

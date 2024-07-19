@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Anatomical post-processing workflows."""
-from nipype import Function, logging
+from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.interfaces.freesurfer import MRIsConvert
@@ -28,7 +28,6 @@ from xcp_d.interfaces.workbench import (  # MB,TM
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
 )
-from xcp_d.utils.bids import get_segmentation_software
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import list_to_str
 from xcp_d.workflows.execsummary import (
