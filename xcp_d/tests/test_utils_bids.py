@@ -126,60 +126,60 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
     # Dataset without mesh files
     layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False)
-    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
     assert mesh_available is False
     assert standard_space_mesh is False
 
     # Dataset with native-space mesh files (one file matching each query)
-    layout = BIDSLayout(datasets["ds001419"], validate=False)
-    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    layout = BIDSLayout(datasets["pnc"], validate=False)
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
     assert mesh_available is True
     assert standard_space_mesh is False
 
     # Dataset with standard-space mesh files (one file matching each query)
     std_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
     shutil.copyfile(
-        os.path.join(datasets["ds001419"], "dataset_description.json"),
+        os.path.join(datasets["pnc"], "dataset_description.json"),
         std_mesh_dir / "dataset_description.json",
     )
-    os.makedirs(std_mesh_dir / "sub-01/anat", exist_ok=True)
+    os.makedirs(std_mesh_dir / "sub-1648798153/ses-PNC1/anat", exist_ok=True)
     files = [
-        "sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_white.surf.gii",
     ]
     for f in files:
-        (std_mesh_dir / "sub-01/anat").joinpath(f).touch()
+        (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
-    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
     assert mesh_available is True
     assert standard_space_mesh is True
 
     # Dataset with multiple files matching each query (raises an error)
     bad_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
     shutil.copyfile(
-        os.path.join(datasets["ds001419"], "dataset_description.json"),
+        os.path.join(datasets["pnc"], "dataset_description.json"),
         bad_mesh_dir / "dataset_description.json",
     )
-    os.makedirs(bad_mesh_dir / "sub-01/anat", exist_ok=True)
+    os.makedirs(bad_mesh_dir / "sub-1648798153/ses-PNC1/anat", exist_ok=True)
     files = [
-        "sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-R_white.surf.gii",
-        "sub-01_acq-test_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-01_acq-test_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-01_acq-test_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-01_acq-test_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-R_white.surf.gii",
     ]
     for f in files:
-        (std_mesh_dir / "sub-01/anat").joinpath(f).touch()
+        (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     with pytest.raises(ValueError, match="More than one surface found"):
-        xbids.collect_mesh_data(layout, "01")
+        xbids.collect_mesh_data(layout, "1648798153")
 
 
 def test_write_dataset_description(datasets, tmp_path_factory, caplog):
@@ -304,28 +304,6 @@ def test_get_tr(ds001419_data):
 
     t_r = xbids._get_tr(ds001419_data["cifti_file"])
     assert t_r == 3.0
-
-
-def test_get_freesurfer_dir(datasets):
-    """Test get_freesurfer_dir."""
-    with pytest.raises(NotADirectoryError, match="No FreeSurfer/MCRIBS derivatives found"):
-        xbids.get_freesurfer_dir(".")
-
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
-    assert os.path.isdir(fs_dir)
-    assert software == "FreeSurfer"
-
-    # Create fake FreeSurfer folder so there are two possible folders and it grabs the closest
-    tmp_fs_dir = os.path.join(datasets["nibabies"], "sourcedata/mcribs")
-    os.makedirs(tmp_fs_dir, exist_ok=True)
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
-    assert os.path.isdir(fs_dir)
-    assert software == "MCRIBS"
-    os.rmdir(tmp_fs_dir)
-
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["pnc"])
-    assert os.path.isdir(fs_dir)
-    assert software == "FreeSurfer"
 
 
 def test_get_entity(datasets):
