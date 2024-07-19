@@ -482,6 +482,8 @@ def collect_mesh_data(layout, participant_label):
         25,
         f"Collected mesh files:\n{yaml.dump(mesh_files, default_flow_style=False, indent=4)}",
     )
+    if mesh_available:
+        LOGGER.log(25, f"Assuming segmentation was performed with {software}.")
 
     return mesh_available, standard_space_mesh, software, mesh_files
 
