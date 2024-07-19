@@ -287,7 +287,6 @@ resolution.
 
 @fill_doc
 def init_postprocess_surfaces_wf(
-    subject_id,
     mesh_available,
     standard_space_mesh,
     morphometry_files,
@@ -324,7 +323,6 @@ def init_postprocess_surfaces_wf(
 
             with mock_config():
                 wf = init_postprocess_surfaces_wf(
-                    subject_id="01",
                     mesh_available=True,
                     standard_space_mesh=False,
                     morphometry_files=[],
@@ -335,7 +333,6 @@ def init_postprocess_surfaces_wf(
 
     Parameters
     ----------
-    subject_id
     mesh_available : bool
     standard_space_mesh : bool
     morphometry_files : list of str
@@ -489,7 +486,6 @@ def init_postprocess_surfaces_wf(
         # Mesh files are in fsnative and must be warped to fsLR.
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             fmri_dir=fmri_dir,
-            subject_id=subject_id,
             output_dir=output_dir,
             omp_nthreads=omp_nthreads,
             name="warp_surfaces_to_template_wf",
@@ -537,7 +533,6 @@ def init_postprocess_surfaces_wf(
 @fill_doc
 def init_warp_surfaces_to_template_wf(
     fmri_dir,
-    subject_id,
     output_dir,
     omp_nthreads,
     name="warp_surfaces_to_template_wf",
@@ -553,7 +548,6 @@ def init_warp_surfaces_to_template_wf(
 
             wf = init_warp_surfaces_to_template_wf(
                 fmri_dir=".",
-                subject_id="01",
                 output_dir=".",
                 omp_nthreads=1,
                 name="warp_surfaces_to_template_wf",
@@ -562,7 +556,6 @@ def init_warp_surfaces_to_template_wf(
     Parameters
     ----------
     %(fmri_dir)s
-    %(subject_id)s
     %(output_dir)s
     %(omp_nthreads)s
     %(name)s

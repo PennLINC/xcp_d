@@ -309,7 +309,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
-            subject_id=subject_id,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
             morphometry_files=morph_file_types,
