@@ -1,19 +1,21 @@
 {
     "BIDSVersion": "1.8.0",
-    "Density": {
-        "32k": "32492 vertices per hemisphere"
-    },
     "Description": "The 283-node Myers-Labonte infant atlas, thresholded and binarized at 50% probability.",
     "Name": "Myers-Labonte infant atlas",
     "ReferencesAndLinks": [
         "https://github.com/myersm0/myers-labonte_parcellation",
         "https://doi.org/10.1093/cercor/bhae047"
     ],
-    "SpatialReference": {
-        "CIFTI_STRUCTURE_CORTEX_LEFT": "https://templateflow.s3.amazonaws.com/tpl-fsLR_den-32k_hemi-L_midthickness.surf.gii",
-        "CIFTI_STRUCTURE_CORTEX_RIGHT": "https://templateflow.s3.amazonaws.com/tpl-fsLR_den-32k_hemi-R_midthickness.surf.gii",
-        "VolumeReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-02_T1w.nii.gz"
+    "Resolution": {
+        "02": {
+            "zooms": [
+                2.0,
+                2.0,
+                2.0
+            ]
+        }
     },
+    "SpatialReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-02_T1w.nii.gz",
     "cifti_label": {
         "Description": "The region label present in the CIFTI file.",
         "LongName": "CIFTI Label"
