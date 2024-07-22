@@ -261,7 +261,10 @@ def describe_atlases(atlases):
         "Gordon": "the Gordon atlas [@Gordon_2014]",
         "Tian": "the Tian subcortical atlas [@tian2020topographic]",
         "HCP": "the HCP CIFTI subcortical atlas [@glasser2013minimal]",
-        "MIDB": "the MIDB precision brain atlas [@hermosillo2022precision]",
+        "MIDB": (
+            "the MIDB precision brain atlas derived from ABCD data and thresholded at 75% "
+            "probability [@hermosillo2022precision]"
+        ),
         "MyersLabonte": (
             "the Myers-Labonte infant atlas thresholded at 50% probability [@myers2023functional]"
         ),
