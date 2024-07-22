@@ -380,6 +380,8 @@ the following post-processing was performed.
                 ("atlases", "inputnode.atlases"),
                 ("atlas_files", "inputnode.atlas_files"),
                 ("atlas_labels_files", "inputnode.atlas_labels_files"),
+                ("lh_midthickness", "inputnode.lh_midthickness"),
+                ("rh_midthickness", "inputnode.rh_midthickness"),
             ]),
             (prepare_confounds_wf, connectivity_wf, [
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),

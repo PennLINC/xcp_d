@@ -610,6 +610,9 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 "atlases",
                 "atlas_files",
                 "atlas_labels_files",
+                # for plotting, if the anatomical workflow is enabled
+                "lh_midthickness",
+                "rh_midthickness",
             ],
         ),
         name="inputnode",
@@ -660,7 +663,11 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             mem_gb=mem_gb["resampled"],
         )
         workflow.connect([
-            (inputnode, plot_coverage, [("atlases", "labels")]),
+            (inputnode, plot_coverage, [
+                ("atlases", "labels"),
+                ("lh_midthickness", "lh_underlay"),
+                ("rh_midthickness", "rh_underlay"),
+            ]),
             (parcellate_bold_wf, plot_coverage, [("outputnode.coverage_cifti", "in_files")]),
         ])  # fmt:skip
 
