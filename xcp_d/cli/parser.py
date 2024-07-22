@@ -1073,7 +1073,7 @@ def _validate_parameters(opts, build_log, parser):
                 "--warp-surfaces-native2std is not supported for UK Biobank data."
             )
 
-    for cifti_only_atlas in ["MIDB", "MyersLabonte50"]:
+    for cifti_only_atlas in ["MIDB"]:
         if (cifti_only_atlas in opts.atlases) and (opts.file_format == "nifti"):
             build_log.warning(
                 f"Atlas '{cifti_only_atlas}' requires CIFTI processing. Skipping atlas."

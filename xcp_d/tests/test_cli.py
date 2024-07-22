@@ -193,7 +193,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--atlases",
         "Tian",
         "HCP",
-        "MyersLabonte50",
+        "MyersLabonte",
         "--aggregate-session-reports=1",
         "--create-matrices",
         "300",

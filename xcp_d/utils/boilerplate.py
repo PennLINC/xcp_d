@@ -262,7 +262,7 @@ def describe_atlases(atlases):
         "Tian": "the Tian subcortical atlas [@tian2020topographic]",
         "HCP": "the HCP CIFTI subcortical atlas [@glasser2013minimal]",
         "MIDB": "the MIDB precision brain atlas [@hermosillo2022precision]",
-        "MyersLabonte50": (
+        "MyersLabonte": (
             "the Myers-Labonte infant atlas thresholded at 50% probability [@myers2023functional]"
         ),
     }

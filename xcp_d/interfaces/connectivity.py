@@ -407,7 +407,7 @@ class ConnectPlot(SimpleInterface):
     def _run_interface(self, runtime):
         priority_list = [
             "MIDB",
-            "MyersLabonte50",
+            "MyersLabonte",
             "4S156Parcels",
             "4S456Parcels",
             "Gordon",
