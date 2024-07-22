@@ -101,7 +101,7 @@ def get_atlas_nifti(atlas):
                 "atlases/tpl-MNI152NLin6Asym_atlas-MyersLabonte_res-02_desc-thresh50_dseg.nii.gz"
             )
         )
-        atlas_labels_file = str(load_data("atlases/atlas-MyersLabonte_dseg.tsv"))
+        atlas_labels_file = str(load_data("atlases/atlas-MyersLabonte_desc-thresh50_dseg.tsv"))
         atlas_metadata_file = str(
             load_data("atlases/tpl-MNI152NLin6Asym_atlas-MyersLabonte_desc-thresh50_dseg.json")
         )
@@ -164,7 +164,7 @@ def get_atlas_cifti(atlas):
         atlas_file = str(
             load_data("atlases/tpl-fsLR_atlas-MyersLabonte_den-32k_desc-thresh50_dseg.dlabel.nii")
         )
-        atlas_labels_file = str(load_data("atlases/atlas-MyersLabonte_dseg.tsv"))
+        atlas_labels_file = str(load_data("atlases/atlas-MyersLabonte_desc-thresh50_dseg.tsv"))
         atlas_metadata_file = str(
             load_data("atlases/tpl-fsLR_atlas-MyersLabonte_den-32k_desc-thresh50_dseg.json")
         )
