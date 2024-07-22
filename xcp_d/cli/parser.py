@@ -1073,6 +1073,13 @@ def _validate_parameters(opts, build_log, parser):
                 "--warp-surfaces-native2std is not supported for UK Biobank data."
             )
 
+    for cifti_only_atlas in ["MIDB"]:
+        if (cifti_only_atlas in opts.atlases) and (opts.file_format == "nifti"):
+            build_log.warning(
+                f"Atlas '{cifti_only_atlas}' requires CIFTI processing. Skipping atlas."
+            )
+            opts.atlases = [atlas for atlas in opts.atlases if atlas != cifti_only_atlas]
+
     # process_surfaces and nifti processing are incompatible.
     if opts.process_surfaces and (opts.file_format == "nifti"):
         error_messages.append(

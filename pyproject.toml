@@ -170,8 +170,9 @@ per-file-ignores = [
 ]
 
 [tool.pytest.ini_options]
-addopts = '-m "not ds001419_nifti and not ds001419_cifti and not ukbiobank and not pnc_cifti and not pnc_cifti_t2wonly and not fmriprep_without_freesurfer and not nifti_without_freesurfer_with_main and not nibabies"'
+addopts = '-m "not integration"'
 markers = [
+    "integration: mark test as an integration test",
     "ds001419_nifti: mark NIfTI integration test for fMRIPrep derivatives from ds001419",
     "ds001419_cifti: mark CIFTI integration test for fMRIPrep derivatives from ds001419",
     "ukbiobank: mark integration test for UK Biobank derivatives with NIfTI settings",
