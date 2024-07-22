@@ -58,8 +58,11 @@ The atlases currently used in *XCP-D* can be separated into three groups: subcor
 and combined cortical/subcortical.
 The two subcortical atlases are the Tian atlas :footcite:p:`tian2020topographic` and the
 CIFTI subcortical parcellation :footcite:p:`glasser2013minimal`.
-The cortical atlases are the Glasser :footcite:p:`Glasser_2016` and the
-Gordon :footcite:p:`Gordon_2014`.
+The cortical atlases are the Glasser :footcite:p:`Glasser_2016`, the
+Gordon :footcite:p:`Gordon_2014`,
+the MIDB precision brain atlas derived from ABCD data and thresholded at 75% probability
+:footcite:p:`hermosillo2022precision`,
+and the Myers-Labonte infant atlas thresholded at 50% probability :footcite:`myers2023functional`.
 The combined cortical/subcortical atlases are 10 different resolutions of the
 4S (Schaefer Supplemented with Subcortical Structures) atlas.
 
