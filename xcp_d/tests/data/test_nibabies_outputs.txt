@@ -221,3 +221,17 @@ sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_coho
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_stat-reho_boldmap.json
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_stat-reho_boldmap.nii.gz
 sub-01_ses-1mo_executive_summary.html
+atlases/atlas-MyersLabonte
+atlases/atlas-MyersLabonte/atlas-MyersLabonte_dseg.json
+atlases/atlas-MyersLabonte/atlas-MyersLabonte_dseg.tsv
+atlases/atlas-MyersLabonte/atlas-MyersLabonte_space-MNIInfant_cohort-1_dseg.nii.gz
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-alff_bold.json
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-alff_bold.tsv
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-coverage_bold.json
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-coverage_bold.tsv
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-mean_timeseries.json
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-mean_timeseries.tsv
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-pearsoncorrelation_relmat.json
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-pearsoncorrelation_relmat.tsv
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-reho_bold.json
+sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_seg-MyersLabonte_stat-reho_bold.tsv
