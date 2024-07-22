@@ -26,6 +26,7 @@ from xcp_d.utils.bids import write_atlas_dataset_description, write_dataset_desc
 LOGGER = logging.getLogger("nipype.utils")
 
 
+@pytest.mark.integration
 @pytest.mark.ds001419_nifti
 def test_ds001419_nifti(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
@@ -62,6 +63,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     )
 
 
+@pytest.mark.integration
 @pytest.mark.ds001419_cifti
 def test_ds001419_cifti(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
@@ -112,6 +114,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
     )
 
 
+@pytest.mark.integration
 @pytest.mark.ukbiobank
 def test_ukbiobank(data_dir, output_dir, working_dir):
     """Run xcp_d on UK Biobank derivatives."""
@@ -150,6 +153,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
     )
 
 
+@pytest.mark.integration
 @pytest.mark.pnc_cifti
 def test_pnc_cifti(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with cifti options."""
@@ -207,6 +211,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
     )
 
 
+@pytest.mark.integration
 @pytest.mark.pnc_cifti_t2wonly
 def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with cifti options and a simulated T2w image."""
@@ -262,6 +267,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     )
 
 
+@pytest.mark.integration
 @pytest.mark.fmriprep_without_freesurfer
 def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
@@ -329,6 +335,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     assert all(c in dm_df.columns for c in confounds_df.columns)
 
 
+@pytest.mark.integration
 @pytest.mark.fmriprep_without_freesurfer_with_main
 def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
@@ -397,6 +404,7 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     assert all(c in dm_df.columns for c in confounds_df.columns)
 
 
+@pytest.mark.integration
 @pytest.mark.nibabies
 def test_nibabies(data_dir, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
