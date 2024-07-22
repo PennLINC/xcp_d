@@ -1177,7 +1177,23 @@ class PlotDenseCifti(SimpleInterface):
         cifti_data = cifti.get_fdata()
         cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
 
-        fig, axes = plt.subplots(figsize=(4, 4), ncols=2, nrows=2, subplot_kw={"projection": "3d"})
+        # Create Figure and GridSpec.
+        fig = plt.figure(constrained_layout=False)
+        fig.set_size_inches(6.5, 6)
+        # Add an additional column for the colorbar
+        gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 0.05])
+        subplot_gridspec = gs[0, 0]
+        subplot = fig.add_subplot(subplot_gridspec)
+        colorbar_gridspec = gs[0, 1]
+
+        subplot.set_axis_off()
+
+        # Create 4 Axes (2 rows, 2 columns) from the subplot
+        gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot_gridspec)
+        inner_subplots = [
+            fig.add_subplot(gs_inner[i, j], projection="3d") for i in range(2) for j in range(2)
+        ]
+
         lh_surf_data = surf_data_from_cifti(
             cifti_data,
             cifti_axes[1],
@@ -1189,13 +1205,8 @@ class PlotDenseCifti(SimpleInterface):
             "CIFTI_STRUCTURE_CORTEX_RIGHT",
         )
 
-        vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
-        vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
-
-        axes[0, 0].set_rasterized(True)
-        axes[0, 1].set_rasterized(True)
-        axes[1, 0].set_rasterized(True)
-        axes[1, 1].set_rasterized(True)
+        vmax = np.nanmax([np.nanmax(lh_surf_data), np.nanmax(rh_surf_data)])
+        vmin = np.nanmin([np.nanmin(lh_surf_data), np.nanmin(rh_surf_data)])
 
         plot_surf_stat_map(
             lh,
@@ -1205,20 +1216,9 @@ class PlotDenseCifti(SimpleInterface):
             hemi="left",
             view="lateral",
             engine="matplotlib",
+            cmap="cool",
             colorbar=False,
-            axes=axes[0, 0],
-            figure=fig,
-        )
-        plot_surf_stat_map(
-            lh,
-            lh_surf_data,
-            vmin=vmin,
-            vmax=vmax,
-            hemi="left",
-            view="medial",
-            engine="matplotlib",
-            colorbar=False,
-            axes=axes[1, 0],
+            axes=inner_subplots[0],
             figure=fig,
         )
         plot_surf_stat_map(
@@ -1229,8 +1229,22 @@ class PlotDenseCifti(SimpleInterface):
             hemi="right",
             view="lateral",
             engine="matplotlib",
+            cmap="cool",
             colorbar=False,
-            axes=axes[0, 1],
+            axes=inner_subplots[1],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            lh,
+            lh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="left",
+            view="medial",
+            engine="matplotlib",
+            cmap="cool",
+            colorbar=False,
+            axes=inner_subplots[2],
             figure=fig,
         )
         plot_surf_stat_map(
@@ -1241,12 +1255,21 @@ class PlotDenseCifti(SimpleInterface):
             hemi="right",
             view="medial",
             engine="matplotlib",
+            cmap="cool",
             colorbar=False,
-            axes=axes[1, 1],
+            axes=inner_subplots[3],
             figure=fig,
         )
-        axes[0, 0].set_title("Left Hemisphere", fontsize=10)
-        axes[0, 1].set_title("Right Hemisphere", fontsize=10)
+
+        for ax in inner_subplots:
+            ax.set_rasterized(True)
+
+        # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
+        sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
+
+        colorbar_ax = fig.add_subplot(colorbar_gridspec)
+        # Add a colorbar to colorbar_ax using the ScalarMappable
+        fig.colorbar(sm, cax=colorbar_ax)
 
         self._results["out_file"] = fname_presuffix(
             self.inputs.in_file,
