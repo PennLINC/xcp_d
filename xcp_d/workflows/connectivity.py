@@ -658,7 +658,12 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     cortical_atlases = select_atlases(atlases=config.execution.atlases, subset="cortical")
     if cortical_atlases:
         plot_coverage = pe.Node(
-            PlotCiftiParcellation(cortical_atlases=cortical_atlases, vmin=0, vmax=1),
+            PlotCiftiParcellation(
+                base_desc="coverage",
+                cortical_atlases=cortical_atlases,
+                vmin=0,
+                vmax=1,
+            ),
             name="plot_coverage",
             mem_gb=mem_gb["resampled"],
         )
@@ -674,7 +679,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ds_plot_coverage = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                desc="coverage",
                 datatype="figures",
             ),
             name="ds_plot_coverage",
@@ -682,7 +686,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         )
         workflow.connect([
             (inputnode, ds_plot_coverage, [("name_source", "source_file")]),
-            (plot_coverage, ds_plot_coverage, [("out_file", "in_file")]),
+            (plot_coverage, ds_plot_coverage, [
+                ("out_file", "in_file"),
+                ("desc", "desc"),
+            ]),
         ])  # fmt:skip
 
     # Reduce the CIFTI before calculating correlations
@@ -836,7 +843,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
     if cortical_atlases:
         plot_parcellated_reho = pe.Node(
-            PlotCiftiParcellation(cortical_atlases=cortical_atlases),
+            PlotCiftiParcellation(
+                base_desc="reho",
+                cortical_atlases=cortical_atlases,
+            ),
             name="plot_parcellated_reho",
             mem_gb=mem_gb["resampled"],
         )
@@ -850,7 +860,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ds_plot_reho = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                desc="rehoParcellated",
                 datatype="figures",
             ),
             name="ds_plot_reho",
@@ -858,7 +867,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         )
         workflow.connect([
             (inputnode, ds_plot_reho, [("name_source", "source_file")]),
-            (plot_parcellated_reho, ds_plot_reho, [("out_file", "in_file")]),
+            (plot_parcellated_reho, ds_plot_reho, [
+                ("desc", "desc"),
+                ("out_file", "in_file"),
+            ]),
         ])  # fmt:skip
 
     if bandpass_filter:
@@ -882,7 +894,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
         if cortical_atlases:
             plot_parcellated_alff = pe.Node(
-                PlotCiftiParcellation(cortical_atlases=cortical_atlases),
+                PlotCiftiParcellation(
+                    base_desc="alff",
+                    cortical_atlases=cortical_atlases,
+                ),
                 name="plot_parcellated_alff",
                 mem_gb=mem_gb["resampled"],
             )
@@ -896,7 +911,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ds_plot_alff = pe.Node(
                 DerivativesDataSink(
                     base_directory=output_dir,
-                    desc="alffParcellated",
                     datatype="figures",
                 ),
                 name="ds_plot_alff",
@@ -904,7 +918,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             )
             workflow.connect([
                 (inputnode, ds_plot_alff, [("name_source", "source_file")]),
-                (plot_parcellated_alff, ds_plot_alff, [("out_file", "in_file")]),
+                (plot_parcellated_alff, ds_plot_alff, [
+                    ("out_file", "in_file"),
+                    ("desc", "desc"),
+                ]),
             ])  # fmt:skip
 
     return workflow
