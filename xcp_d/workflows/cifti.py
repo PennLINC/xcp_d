@@ -154,6 +154,9 @@ def init_postprocess_cifti_wf(
                 "atlases",
                 "atlas_files",
                 "atlas_labels_files",
+                # for plotting, if the anatomical workflow was used
+                "lh_midthickness",
+                "rh_midthickness",
             ],
         ),
         name="inputnode",
@@ -280,6 +283,10 @@ the following post-processing was performed.
         alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
 
         workflow.connect([
+            (inputnode, alff_wf, [
+                ("lh_midthickness", "inputnode.lh_midthickness"),
+                ("rh_midthickness", "inputnode.rh_midthickness"),
+            ]),
             (prepare_confounds_wf, alff_wf, [
                 ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ]),

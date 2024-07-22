@@ -481,6 +481,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
+            if config.workflow.process_surfaces or (config.workflow.abcc_qc and mesh_available):
+                workflow.connect([
+                    (postprocess_surfaces_wf, postprocess_bold_wf, [
+                        ("outputnode.lh_midthickness", "inputnode.lh_midthickness"),
+                        ("outputnode.rh_midthickness", "inputnode.rh_midthickness"),
+                    ]),
+                ])  # fmt:skip
+
             if config.execution.atlases:
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [

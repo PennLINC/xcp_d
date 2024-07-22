@@ -117,11 +117,20 @@ series to retain the original scaling.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold", "bold_mask", "temporal_mask"]),
+        niu.IdentityInterface(
+            fields=[
+                "denoised_bold",
+                "bold_mask",
+                "temporal_mask",
+                # only used for CIFTI data if the anatomical workflow is enabled
+                "lh_midthickness",
+                "rh_midthickness",
+            ],
+        ),
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["alff", "smoothed_alff", "alffplot"]),
+        niu.IdentityInterface(fields=["alff", "smoothed_alff"]),
         name="outputnode",
     )
 
@@ -157,7 +166,13 @@ series to retain the original scaling.
             PlotDenseCifti(base_desc="alff"),
             name="alff_plot",
         )
-        workflow.connect([(alff_plot, ds_alff_plot, [("desc", "desc")])])
+        workflow.connect([
+            (inputnode, alff_plot, [
+                ("lh_midthickness", "lh_underlay"),
+                ("rh_midthickness", "rh_underlay"),
+            ]),
+            (alff_plot, ds_alff_plot, [("desc", "desc")]),
+        ])  # fmt:skip
     else:
         alff_plot = pe.Node(
             PlotNifti(name_source=name_source),
@@ -289,7 +304,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold"]),
+        niu.IdentityInterface(fields=["denoised_bold", "lh_midthickness", "rh_midthickness"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -348,6 +363,12 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         PlotDenseCifti(base_desc="reho"),
         name="reho_cifti_plot",
     )
+    workflow.connect([
+        (inputnode, reho_plot, [
+            ("lh_midthickness", "lh_underlay"),
+            ("rh_midthickness", "rh_underlay"),
+        ]),
+    ])  # fmt:skip
 
     ds_reho_plot = pe.Node(
         DerivativesDataSink(
