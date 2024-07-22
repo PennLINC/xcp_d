@@ -996,7 +996,10 @@ class PlotCiftiParcellation(SimpleInterface):
             subplot.set_axis_off()
 
         vmin, vmax = self.inputs.vmin, self.inputs.vmax
+        threshold = 0.01
         if vmin == vmax:
+            threshold = None
+
             # Define vmin and vmax based on all of the files
             vmin, vmax = np.inf, -np.inf
             for cortical_file in cortical_files:
@@ -1034,6 +1037,7 @@ class PlotCiftiParcellation(SimpleInterface):
             plot_surf_stat_map(
                 lh,
                 lh_surf_data,
+                threshold=threshold,
                 vmin=vmin,
                 vmax=vmax,
                 hemi="left",
