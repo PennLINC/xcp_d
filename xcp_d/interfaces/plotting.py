@@ -1006,6 +1006,7 @@ class PlotCiftiParcellation(SimpleInterface):
                 img_data = nb.load(cortical_file).get_fdata()
                 vmin = np.min([np.nanmin(img_data), vmin])
                 vmax = np.max([np.nanmax(img_data), vmax])
+            vmin = 0
 
         for i_file in range(n_files):
             subplot = subplots[i_file]
@@ -1051,6 +1052,7 @@ class PlotCiftiParcellation(SimpleInterface):
             plot_surf_stat_map(
                 rh,
                 rh_surf_data,
+                threshold=threshold,
                 vmin=vmin,
                 vmax=vmax,
                 hemi="right",
@@ -1064,6 +1066,7 @@ class PlotCiftiParcellation(SimpleInterface):
             plot_surf_stat_map(
                 lh,
                 lh_surf_data,
+                threshold=threshold,
                 vmin=vmin,
                 vmax=vmax,
                 hemi="left",
@@ -1077,6 +1080,7 @@ class PlotCiftiParcellation(SimpleInterface):
             plot_surf_stat_map(
                 rh,
                 rh_surf_data,
+                threshold=threshold,
                 vmin=vmin,
                 vmax=vmax,
                 hemi="right",
