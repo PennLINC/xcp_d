@@ -135,7 +135,7 @@ def init_single_subject_wf(subject_id: str):
     t2w_available = subj_data["t2w"] is not None
     anat_mod = "t1w" if t1w_available else "t2w"
 
-    mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
+    mesh_available, standard_space_mesh, software, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
         participant_label=subject_id,
     )
@@ -167,6 +167,8 @@ def init_single_subject_wf(subject_id: str):
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
+                "lh_subject_sphere",
+                "rh_subject_sphere",
                 # morphometry files
                 "sulcal_depth",
                 "sulcal_curv",
@@ -191,6 +193,8 @@ def init_single_subject_wf(subject_id: str):
     inputnode.inputs.rh_pial_surf = mesh_files["rh_pial_surf"]
     inputnode.inputs.lh_wm_surf = mesh_files["lh_wm_surf"]
     inputnode.inputs.rh_wm_surf = mesh_files["rh_wm_surf"]
+    inputnode.inputs.lh_subject_sphere = mesh_files["lh_subject_sphere"]
+    inputnode.inputs.rh_subject_sphere = mesh_files["rh_subject_sphere"]
 
     # optional surface shape files (used by surface-warping workflow)
     inputnode.inputs.sulcal_depth = morphometry_files["sulcal_depth"]
@@ -305,12 +309,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
-            subject_id=subject_id,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
             morphometry_files=morph_file_types,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
+            software=software,
         )
 
         workflow.connect([
@@ -319,6 +323,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("lh_subject_sphere", "inputnode.lh_subject_sphere"),
+                ("rh_subject_sphere", "inputnode.rh_subject_sphere"),
                 ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
                 ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ]),
