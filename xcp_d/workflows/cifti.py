@@ -298,6 +298,10 @@ the following post-processing was performed.
     reho_wf = init_reho_cifti_wf(name_source=bold_file, mem_gb=mem_gbx)
 
     workflow.connect([
+        (inputnode, reho_wf, [
+            ("lh_midthickness", "inputnode.lh_midthickness"),
+            ("rh_midthickness", "inputnode.rh_midthickness"),
+        ]),
         (denoise_bold_wf, reho_wf, [
             ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
         ]),
