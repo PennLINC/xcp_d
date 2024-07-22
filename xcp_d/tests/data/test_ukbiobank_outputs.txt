@@ -51,6 +51,10 @@ atlases/atlas-HCP
 atlases/atlas-HCP/atlas-HCP_dseg.json
 atlases/atlas-HCP/atlas-HCP_dseg.tsv
 atlases/atlas-HCP/atlas-HCP_space-MNI152NLin6Asym_dseg.nii.gz
+atlases/atlas-MyersLabonte
+atlases/atlas-MyersLabonte/atlas-MyersLabonte_dseg.json
+atlases/atlas-MyersLabonte/atlas-MyersLabonte_dseg.tsv
+atlases/atlas-MyersLabonte/atlas-MyersLabonte_space-MNI152NLin6Asym_dseg.nii.gz
 atlases/atlas-Tian
 atlases/atlas-Tian/atlas-Tian_dseg.json
 atlases/atlas-Tian/atlas-Tian_dseg.tsv
@@ -211,6 +215,16 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-H
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-HCP_stat-pearsoncorrelation_relmat.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-HCP_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-HCP_stat-reho_bold.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-alff_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-alff_bold.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-coverage_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-coverage_bold.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-mean_timeseries.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-mean_timeseries.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-pearsoncorrelation_relmat.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-reho_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-MyersLabonte_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-Tian_stat-alff_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-Tian_stat-alff_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_seg-Tian_stat-coverage_bold.json

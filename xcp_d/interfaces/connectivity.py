@@ -406,6 +406,8 @@ class ConnectPlot(SimpleInterface):
 
     def _run_interface(self, runtime):
         priority_list = [
+            "MIDB",
+            "MyersLabonte",
             "4S156Parcels",
             "4S456Parcels",
             "Gordon",
@@ -432,10 +434,7 @@ class ConnectPlot(SimpleInterface):
                 break
 
         COMMUNITY_LOOKUP = {
-            "4S156Parcels": "network_label",
-            "4S456Parcels": "network_label",
             "Glasser": "community_yeo",
-            "Gordon": "community",
         }
 
         if len(selected_atlases) == 4:

@@ -17,7 +17,10 @@ def test_get_atlas_names():
 
 def test_get_atlas_nifti():
     """Test xcp_d.utils.atlas.get_atlas_nifti."""
-    selected_atlases = atlas.select_atlases(atlases=["4S156Parcels", "4S256Parcels"], subset="all")
+    selected_atlases = atlas.select_atlases(
+        atlases=["4S156Parcels", "4S256Parcels", "Tian"],
+        subset="all",
+    )
     for selected_atlas in selected_atlases:
         atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_nifti(selected_atlas)
         assert isinstance(atlas_file, str)
@@ -33,7 +36,10 @@ def test_get_atlas_nifti():
 
 def test_get_atlas_cifti():
     """Test xcp_d.utils.atlas.get_atlas_cifti."""
-    selected_atlases = atlas.select_atlases(atlases=["4S156Parcels", "4S256Parcels"], subset="all")
+    selected_atlases = atlas.select_atlases(
+        atlases=["4S156Parcels", "4S256Parcels", "MIDB", "MyersLabonte", "Tian"],
+        subset="all",
+    )
     for selected_atlas in selected_atlases:
         atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_cifti(selected_atlas)
         assert isinstance(atlas_file, str)
