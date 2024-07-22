@@ -776,7 +776,7 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     outputnode = pe.Node(
         niu.IdentityInterface(fields=["midthickness"]),
-        name="inputnode",
+        name="outputnode",
     )
 
     generate_midthickness = pe.Node(
