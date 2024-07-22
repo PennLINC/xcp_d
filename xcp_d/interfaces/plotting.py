@@ -1261,6 +1261,9 @@ class PlotDenseCifti(SimpleInterface):
             figure=fig,
         )
 
+        inner_subplots[0].set_title("Left Hemisphere", fontsize=10)
+        inner_subplots[1].set_title("Right Hemisphere", fontsize=10)
+
         for ax in inner_subplots:
             ax.set_rasterized(True)
 
