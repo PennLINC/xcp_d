@@ -6,7 +6,6 @@ Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
 
-import json
 import os
 import warnings
 from pathlib import Path
