@@ -157,7 +157,6 @@ def init_single_subject_wf(subject_id: str):
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "subj_data",  # not currently used, but will be in future
                 "t1w",
                 "t2w",  # optional
                 "anat_brainmask",  # used to estimate head radius and for QC metrics
@@ -182,7 +181,6 @@ def init_single_subject_wf(subject_id: str):
         ),
         name="inputnode",
     )
-    inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.anat_brainmask = subj_data["anat_brainmask"]
