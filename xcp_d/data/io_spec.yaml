@@ -1,0 +1,152 @@
+queries:
+    base:
+        # brain mask in same standard space as BOLD data
+        anat_brainmask:
+            datatype: anat
+            desc: brain
+            extension: .nii.gz
+            suffix: mask
+        # native anatomical-space dseg file
+        anat_dseg:
+            datatype: anat
+            desc: null
+            extension: .nii.gz
+            space: null
+            suffix: dseg
+        # transform from native anatomical (T1w or T2w) space to same standard space as BOLD
+        # "to" entity will be set later
+        anat_to_template_xfm:
+            datatype: anat
+            from:
+            - T1w
+            - T2w
+            suffix: xfm
+        # all preprocessed BOLD files in the right space/resolution/density
+        bold:
+            datatype: func
+            desc:
+            - preproc
+            - null
+            suffix: bold
+        # native T1w-space, preprocessed T1w file
+        t1w:
+            datatype: anat
+            desc: preproc
+            extension: .nii.gz
+            space: null
+            suffix: T1w
+        # native T2w-space or T1w-space, preprocessed T2w file
+        t2w:
+            datatype: anat
+            desc: preproc
+            extension: .nii.gz
+            space:
+            - null
+            - T1w
+            suffix: T2w
+        # transform from standard space to anatomical (T1w or T2w) space
+        # "from" entity will be set later
+        template_to_anat_xfm:
+            datatype: anat
+            suffix: xfm
+            to:
+            - T1w
+            - T2w
+    mesh:
+        # Pial surface mesh in fsnative space (fsLR-space mesh will be searched for separately)
+        lh_pial_surf:
+            datatype: anat
+            desc: null
+            extension: .surf.gii
+            hemi: L
+            suffix: pial
+        # Subject's surface sphere to be used to warp fsnative meshes to fsLR space
+        lh_subject_sphere:
+            datatype: anat
+            desc: reg
+            extension: .surf.gii
+            hemi: L
+            space: null
+            suffix: sphere
+        # White matter surface mesh in fsnative space (fsLR-space mesh will be searched for separately)
+        lh_wm_surf:
+            datatype: anat
+            desc: null
+            extension: .surf.gii
+            hemi: L
+            suffix:
+            - smoothwm
+            - white
+        # Pial surface mesh in fsnative space (fsLR-space mesh will be searched for separately)
+        rh_pial_surf:
+            datatype: anat
+            desc: null
+            extension: .surf.gii
+            hemi: R
+            suffix: pial
+        # Subject's surface sphere to be used to warp fsnative meshes to fsLR space
+        rh_subject_sphere:
+            datatype: anat
+            desc: reg
+            extension: .surf.gii
+            hemi: R
+            space: null
+            suffix: sphere
+        # White matter surface mesh in fsnative space (fsLR-space mesh will be searched for separately)
+        rh_wm_surf:
+            datatype: anat
+            desc: null
+            extension: .surf.gii
+            hemi: R
+            suffix:
+            - smoothwm
+            - white
+    morphometry:
+        # Cortical thickness in fsLR space CIFTI
+        cortical_thickness:
+            datatype: anat
+            den: 91k
+            desc: null
+            extension: .dscalar.nii
+            space: fsLR
+            suffix: thickness
+        # Corrected cortical thickness in fsLR space CIFTI
+        cortical_thickness_corr:
+            datatype: anat
+            den: 91k
+            desc: corrected
+            extension: .dscalar.nii
+            space: fsLR
+            suffix: thickness
+        # Myelin map in fsLR space CIFTI
+        myelin:
+            datatype: anat
+            den: 91k
+            desc: null
+            extension: .dscalar.nii
+            space: fsLR
+            suffix: myelinw
+        # Smoothed myelin map in fsLR space CIFTI
+        myelin_smoothed:
+            datatype: anat
+            den: 91k
+            desc: smoothed
+            extension: .dscalar.nii
+            space: fsLR
+            suffix: myelinw
+        # Sulcal curvature in fsLR space CIFTI
+        sulcal_curv:
+            datatype: anat
+            den: 91k
+            desc: null
+            extension: .dscalar.nii
+            space: fsLR
+            suffix: curv
+        # Sulcal depth in fsLR space CIFTI
+        sulcal_depth:
+            datatype: anat
+            den: 91k
+            desc: null
+            extension: .dscalar.nii
+            space: fsLR
+            suffix: sulc

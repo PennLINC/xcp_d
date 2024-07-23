@@ -5,6 +5,8 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+
+import json
 import os
 import warnings
 from pathlib import Path
@@ -16,6 +18,7 @@ from packaging.version import Version
 
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import ensure_list
+from xcp_d.data import load as load_data
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -165,59 +168,8 @@ def collect_data(
     %(layout)s
     subj_data : dict
     """
-    queries = {
-        # all preprocessed BOLD files in the right space/resolution/density
-        "bold": {
-            "datatype": "func",
-            "suffix": "bold",
-            "desc": ["preproc", None],
-        },
-        # native T1w-space, preprocessed T1w file
-        "t1w": {
-            "datatype": "anat",
-            "space": None,
-            "desc": "preproc",
-            "suffix": "T1w",
-            "extension": ".nii.gz",
-        },
-        # native T2w-space, preprocessed T1w file
-        "t2w": {
-            "datatype": "anat",
-            "space": [None, "T1w"],
-            "desc": "preproc",
-            "suffix": "T2w",
-            "extension": ".nii.gz",
-        },
-        # native T1w-space dseg file
-        "anat_dseg": {
-            "datatype": "anat",
-            "space": None,
-            "desc": None,
-            "suffix": "dseg",
-            "extension": ".nii.gz",
-        },
-        # transform from standard space to T1w or T2w space
-        # "from" entity will be set later
-        "template_to_anat_xfm": {
-            "datatype": "anat",
-            "to": ["T1w", "T2w"],
-            "suffix": "xfm",
-        },
-        # brain mask in same standard space as BOLD data
-        "anat_brainmask": {
-            "datatype": "anat",
-            "desc": "brain",
-            "suffix": "mask",
-            "extension": ".nii.gz",
-        },
-        # transform from T1w or T2w space to standard space
-        # "to" entity will be set later
-        "anat_to_template_xfm": {
-            "datatype": "anat",
-            "from": ["T1w", "T2w"],
-            "suffix": "xfm",
-        },
-    }
+    _spec = yaml.safe_load(load_data.readable("io_spec.yaml").read_text())
+    queries = _spec["queries"]["base"]
     if input_type in ("hcp", "dcan", "ukb"):
         # HCP/DCAN data have anats only in standard space
         queries["t1w"]["space"] = "MNI152NLin6Asym"
@@ -352,7 +304,10 @@ def collect_data(
             else:
                 subj_data[field] = None
 
-    LOGGER.log(25, f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
+    LOGGER.log(
+        25,
+        f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}",
+    )
 
     return subj_data
 
@@ -386,52 +341,8 @@ def collect_mesh_data(layout, participant_label, bids_filters):
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    queries = {
-        "lh_pial_surf": {
-            "datatype": "anat",
-            "hemi": "L",
-            "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
-        },
-        "rh_pial_surf": {
-            "datatype": "anat",
-            "hemi": "R",
-            "desc": None,
-            "suffix": "pial",
-            "extension": ".surf.gii",
-        },
-        "lh_wm_surf": {
-            "datatype": "anat",
-            "hemi": "L",
-            "desc": None,
-            "suffix": ["smoothwm", "white"],
-            "extension": ".surf.gii",
-        },
-        "rh_wm_surf": {
-            "datatype": "anat",
-            "hemi": "R",
-            "desc": None,
-            "suffix": ["smoothwm", "white"],
-            "extension": ".surf.gii",
-        },
-        "lh_subject_sphere": {
-            "datatype": "anat",
-            "hemi": "L",
-            "space": None,
-            "desc": "reg",
-            "suffix": "sphere",
-            "extension": ".surf.gii",
-        },
-        "rh_subject_sphere": {
-            "datatype": "anat",
-            "hemi": "R",
-            "space": None,
-            "desc": "reg",
-            "suffix": "sphere",
-            "extension": ".surf.gii",
-        },
-    }
+    _spec = yaml.safe_load(load_data.readable("io_spec.yaml").read_text())
+    queries = _spec["queries"]["mesh"]
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
@@ -544,56 +455,8 @@ def collect_morphometry_data(layout, participant_label, bids_filters):
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
     """
-    queries = {
-        "sulcal_depth": {
-            "datatype": "anat",
-            "space": "fsLR",
-            "den": "91k",
-            "desc": None,
-            "suffix": "sulc",
-            "extension": ".dscalar.nii",
-        },
-        "sulcal_curv": {
-            "datatype": "anat",
-            "space": "fsLR",
-            "den": "91k",
-            "desc": None,
-            "suffix": "curv",
-            "extension": ".dscalar.nii",
-        },
-        "cortical_thickness": {
-            "datatype": "anat",
-            "space": "fsLR",
-            "den": "91k",
-            "desc": None,
-            "suffix": "thickness",
-            "extension": ".dscalar.nii",
-        },
-        "cortical_thickness_corr": {
-            "datatype": "anat",
-            "space": "fsLR",
-            "den": "91k",
-            "desc": "corrected",
-            "suffix": "thickness",
-            "extension": ".dscalar.nii",
-        },
-        "myelin": {
-            "datatype": "anat",
-            "space": "fsLR",
-            "den": "91k",
-            "desc": None,
-            "suffix": "myelinw",
-            "extension": ".dscalar.nii",
-        },
-        "myelin_smoothed": {
-            "datatype": "anat",
-            "space": "fsLR",
-            "den": "91k",
-            "desc": "smoothed",
-            "suffix": "myelinw",
-            "extension": ".dscalar.nii",
-        },
-    }
+    _spec = yaml.safe_load(load_data.readable("io_spec.yaml").read_text())
+    queries = _spec["queries"]["morphometry"]
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
