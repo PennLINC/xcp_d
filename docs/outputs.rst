@@ -374,4 +374,4 @@ These files have the following keys:
 References
 **********
 
-..footbibliography::
+.. footbibliography::
