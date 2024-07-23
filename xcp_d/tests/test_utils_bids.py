@@ -126,13 +126,17 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
     # Dataset without mesh files
     layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False)
-    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is False
     assert standard_space_mesh is False
 
     # Dataset with native-space mesh files (one file matching each query)
     layout = BIDSLayout(datasets["pnc"], validate=False)
-    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is True
     assert standard_space_mesh is False
 
@@ -153,7 +157,9 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
         (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
-    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is True
     assert standard_space_mesh is True
 
@@ -179,7 +185,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     with pytest.raises(ValueError, match="More than one surface found"):
-        xbids.collect_mesh_data(layout, "1648798153")
+        xbids.collect_mesh_data(layout, "1648798153", bids_filters={})
 
 
 def test_write_dataset_description(datasets, tmp_path_factory, caplog):
