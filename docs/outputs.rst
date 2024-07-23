@@ -368,3 +368,10 @@ These files have the following keys:
 6. ``remaining_seconds``: a whole number that represents the amount of time remaining after
    thresholding
 7. ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the remaining frames
+
+
+**********
+References
+**********
+
+.. footbibliography::
