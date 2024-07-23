@@ -396,8 +396,10 @@ def collect_mesh_data(layout, participant_label, bids_filters):
             mesh_files[dtype] = surface_files_[0]
 
         elif len(surface_files_) == 0:
-            mesh_available = False
             mesh_files[dtype] = None
+            # We don't need subject spheres if we have standard-space meshes already
+            if not ("subject_sphere" in dtype and standard_space_mesh):
+                mesh_available = False
 
         else:
             mesh_available = False
