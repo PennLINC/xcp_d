@@ -851,7 +851,11 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             mem_gb=mem_gb["resampled"],
         )
         workflow.connect([
-            (inputnode, plot_parcellated_reho, [("atlases", "labels")]),
+            (inputnode, plot_parcellated_reho, [
+                ("atlases", "labels"),
+                ("lh_midthickness", "lh_underlay"),
+                ("rh_midthickness", "rh_underlay"),
+            ]),
             (parcellate_reho_wf, plot_parcellated_reho, [
                 ("outputnode.parcellated_cifti", "in_files"),
             ]),
@@ -902,7 +906,11 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 mem_gb=mem_gb["resampled"],
             )
             workflow.connect([
-                (inputnode, plot_parcellated_alff, [("atlases", "labels")]),
+                (inputnode, plot_parcellated_alff, [
+                    ("atlases", "labels"),
+                    ("lh_midthickness", "lh_underlay"),
+                    ("rh_midthickness", "rh_underlay"),
+                ]),
                 (parcellate_alff_wf, plot_parcellated_alff, [
                     ("outputnode.parcellated_cifti", "in_files"),
                 ]),
