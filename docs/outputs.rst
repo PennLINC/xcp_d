@@ -125,6 +125,10 @@ Surface mesh files
 If the ``--warp-surfaces-native2std`` option is selected, and reconstructed surfaces are available
 in the preprocessed dataset, then these surfaces will be warped to fsLR space at 32k density.
 
+The resulting mesh files will reflect the subject's morphology with the same geometry and density
+as fsLR-32k surfaces, which may be useful for visualizing fsLR-space derivatives on a subject's
+brain.
+
 .. code-block::
 
    xcp_d/

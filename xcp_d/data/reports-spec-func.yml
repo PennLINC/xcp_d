@@ -30,7 +30,22 @@ sections:
       datatype: figures
       desc: coverage
       suffix: bold
-    caption:  Parcellation coverage.
+    caption: |
+      Parcellation coverage.
+    subtitle: Coverage
+  - bids:
+      datatype: figures
+      desc: coverageParcellatedStandard
+      suffix: bold
+    caption: |
+      Parcellation coverage, overlaid on the fsLR template surface.
+    subtitle: Coverage
+  - bids:
+      datatype: figures
+      desc: coverageParcellatedSubject
+      suffix: bold
+    caption: |
+      Parcellation coverage, overlaid on the subject's surface warped to the fsLR template.
     subtitle: Coverage
   - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
     caption:  This plot shows heatmaps from ROI-to-ROI correlations from one to four atlases.
@@ -44,15 +59,39 @@ sections:
     subtitle: ALFF
   - bids:
       datatype: figures
-      desc: alffSurfacePlot
+      desc: alffSurfaceStandard
       suffix: bold
-    caption:  ALFF, or amplitude of low frequency fluctuations.
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations, overlaid on the fsLR template surface.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffSurfaceSubject
+      suffix: bold
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations, overlaid on the subject's surface
+      warped to the fsLR template.
     subtitle: ALFF
   - bids:
       datatype: figures
       desc: alffParcellated
       suffix: bold
     caption:  Parcellated ALFF.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffParcellatedStandard
+      suffix: bold
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations, overlaid on the fsLR template surface.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffParcellatedSubject
+      suffix: bold
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations, overlaid on the subject's surface
+      warped to the fsLR template.
     subtitle: ALFF
   - bids:
       datatype: figures
@@ -63,15 +102,40 @@ sections:
     subtitle: ReHo
   - bids:
       datatype: figures
-      desc: rehoSurfacePlot
+      desc: rehoSurfaceStandard
       suffix: bold
-    caption:  ReHo, or regional homogeneity.
+    caption: |
+      ReHo, or regional homogeneity.
+      Overlaid on the fsLR midthickness surface.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoSurfaceSubject
+      suffix: bold
+    caption: |
+      ReHo, or regional homogeneity.
+      Overlaid on the participant's midthickness surface mapped onto fsLR space.
     subtitle: ReHo
   - bids:
       datatype: figures
       desc: rehoParcellated
       suffix: bold
     caption:  Parcellated ReHo.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoParcellatedStandard
+      suffix: bold
+    caption: |
+      ReHo, or regional homogeneity, overlaid on the fsLR template surface.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoParcellatedSubject
+      suffix: bold
+    caption: |
+      ReHo, or regional homogeneity, overlaid on the subject's surface
+      warped to the fsLR template.
     subtitle: ReHo
 - name: About
   reportlets:
