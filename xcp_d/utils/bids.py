@@ -167,7 +167,11 @@ def collect_data(
     """
     queries = {
         # all preprocessed BOLD files in the right space/resolution/density
-        "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
+        "bold": {
+            "datatype": "func",
+            "suffix": "bold",
+            "desc": ["preproc", None],
+        },
         # native T1w-space, preprocessed T1w file
         "t1w": {
             "datatype": "anat",
@@ -226,8 +230,9 @@ def collect_data(
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
-    for acq, entities in bids_filters.items():
-        queries[acq].update(entities)
+    for acq in queries.keys():
+        if acq in bids_filters:
+            queries[acq].update(bids_filters[acq])
 
     # Select the best available space.
     if "space" in queries["bold"]:
@@ -353,7 +358,7 @@ def collect_data(
 
 
 @fill_doc
-def collect_mesh_data(layout, participant_label):
+def collect_mesh_data(layout, participant_label, bids_filters):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
@@ -381,38 +386,82 @@ def collect_mesh_data(layout, participant_label):
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    base_queries = {
-        "pial_surf": {
+    queries = {
+        "lh_pial_surf": {
+            "datatype": "anat",
+            "hemi": "L",
             "desc": None,
             "suffix": "pial",
+            "extension": ".surf.gii",
         },
-        "wm_surf": {
+        "rh_pial_surf": {
+            "datatype": "anat",
+            "hemi": "R",
+            "desc": None,
+            "suffix": "pial",
+            "extension": ".surf.gii",
+        },
+        "lh_wm_surf": {
+            "datatype": "anat",
+            "hemi": "L",
             "desc": None,
             "suffix": ["smoothwm", "white"],
+            "extension": ".surf.gii",
+        },
+        "rh_wm_surf": {
+            "datatype": "anat",
+            "hemi": "R",
+            "desc": None,
+            "suffix": ["smoothwm", "white"],
+            "extension": ".surf.gii",
+        },
+        "lh_subject_sphere": {
+            "datatype": "anat",
+            "hemi": "L",
+            "space": None,
+            "desc": "reg",
+            "suffix": "sphere",
+            "extension": ".surf.gii",
+        },
+        "rh_subject_sphere": {
+            "datatype": "anat",
+            "hemi": "R",
+            "space": None,
+            "desc": "reg",
+            "suffix": "sphere",
+            "extension": ".surf.gii",
         },
     }
 
-    standard_space_mesh = True
-    for name, query in base_queries.items():
-        # First, try to grab the first base surface file in standard space.
-        # If it's not available, switch to native T1w-space data.
-        for hemisphere in ["L", "R"]:
-            temp_files = layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                hemi=hemisphere,
-                space="fsLR",
-                den="32k",
-                extension=".surf.gii",
-                **query,
-            )
+    # Apply filters. These may override anything.
+    bids_filters = bids_filters or {}
+    for acq in queries.keys():
+        if acq in bids_filters:
+            queries[acq].update(bids_filters[acq])
 
-            if len(temp_files) == 0:
-                LOGGER.info("No standard-space surfaces found.")
-                standard_space_mesh = False
-            elif len(temp_files) > 1:
-                LOGGER.warning(f"{name}: More than one standard-space surface found.")
+    # First, try to grab the first base surface file in standard (fsLR) space.
+    # If it's not available, switch to native fsnative-space data.
+    standard_space_mesh = True
+    for name, query in queries.items():
+        # Don't look for fsLR-space versions of the subject spheres.
+        if "subject_sphere" in name:
+            continue
+
+        temp_files = layout.get(
+            return_type="file",
+            subject=participant_label,
+            space="fsLR",
+            den="32k",
+            **query,
+        )
+
+        if len(temp_files) == 0:
+            standard_space_mesh = False
+        elif len(temp_files) > 1:
+            LOGGER.warning(f"{name}: More than one standard-space surface found.")
+
+    if not standard_space_mesh:
+        LOGGER.info("No standard-space surfaces found.")
 
     # Now that we know if there are standard-space surfaces available, we can grab the files.
     query_extras = {}
@@ -420,27 +469,15 @@ def collect_mesh_data(layout, participant_label):
         query_extras = {
             "space": None,
         }
-        # We need the subject spheres if we're using native-space surfaces.
-        base_queries["subject_sphere"] = {
-            "space": None,
-            "desc": "reg",
-            "suffix": "sphere",
-        }
 
     initial_mesh_files = {}
-    queries = {}
-    for name, query in base_queries.items():
-        for hemisphere in ["L", "R"]:
-            key = f"{hemisphere.lower()}h_{name}"
-            queries[key] = {
-                "subject": participant_label,
-                "datatype": "anat",
-                "hemi": hemisphere,
-                "extension": ".surf.gii",
-                **query,
-                **query_extras,
-            }
-            initial_mesh_files[key] = layout.get(return_type="file", **queries[key])
+    for name, query in queries.items():
+        queries[name] = {
+            "subject": participant_label,
+            **query,
+            **query_extras,
+        }
+        initial_mesh_files[name] = layout.get(return_type="file", **queries[name])
 
     mesh_files = {}
     mesh_available = True
@@ -460,9 +497,6 @@ def collect_mesh_data(layout, participant_label):
                 f"Surfaces found:\n\t{surface_str}\n"
                 f"Query: {queries[dtype]}"
             )
-
-    mesh_files["lh_subject_sphere"] = mesh_files.get("lh_subject_sphere", None)
-    mesh_files["rh_subject_sphere"] = mesh_files.get("rh_subject_sphere", None)
 
     # Check for *_space-dhcpAsym_desc-reg_sphere.surf.gii
     # If we find it, we assume segmentation was done with MCRIBS. Otherwise, assume FreeSurfer.
@@ -489,7 +523,7 @@ def collect_mesh_data(layout, participant_label):
 
 
 @fill_doc
-def collect_morphometry_data(layout, participant_label):
+def collect_morphometry_data(layout, participant_label, bids_filters):
     """Collect morphometry surface files from preprocessed derivatives.
 
     This function will look for fsLR-space, 91k-resolution morphometry CIFTI files.
@@ -511,41 +545,127 @@ def collect_morphometry_data(layout, participant_label):
         If the surface files weren't found, then the paths will be Nones.
     """
     queries = {
-        "sulcal_depth": {
+        "lh_sulcal_depth": {
+            "datatype": "anat",
+            "hemi": "L",
+            "space": "fsLR",
+            "den": "91k",
             "desc": None,
             "suffix": "sulc",
+            "extension": ".dscalar.nii",
         },
-        "sulcal_curv": {
+        "rh_sulcal_depth": {
+            "datatype": "anat",
+            "hemi": "R",
+            "space": "fsLR",
+            "den": "91k",
+            "desc": None,
+            "suffix": "sulc",
+            "extension": ".dscalar.nii",
+        },
+        "lh_sulcal_curv": {
+            "datatype": "anat",
+            "hemi": "L",
+            "space": "fsLR",
+            "den": "91k",
             "desc": None,
             "suffix": "curv",
+            "extension": ".dscalar.nii",
         },
-        "cortical_thickness": {
+        "rh_sulcal_curv": {
+            "datatype": "anat",
+            "hemi": "R",
+            "space": "fsLR",
+            "den": "91k",
+            "desc": None,
+            "suffix": "curv",
+            "extension": ".dscalar.nii",
+        },
+        "lh_cortical_thickness": {
+            "datatype": "anat",
+            "hemi": "L",
+            "space": "fsLR",
+            "den": "91k",
             "desc": None,
             "suffix": "thickness",
+            "extension": ".dscalar.nii",
         },
-        "cortical_thickness_corr": {
+        "rh_cortical_thickness": {
+            "datatype": "anat",
+            "hemi": "R",
+            "space": "fsLR",
+            "den": "91k",
+            "desc": None,
+            "suffix": "thickness",
+            "extension": ".dscalar.nii",
+        },
+        "lh_cortical_thickness_corr": {
+            "datatype": "anat",
+            "hemi": "L",
+            "space": "fsLR",
+            "den": "91k",
             "desc": "corrected",
             "suffix": "thickness",
+            "extension": ".dscalar.nii",
         },
-        "myelin": {
+        "rh_cortical_thickness_corr": {
+            "datatype": "anat",
+            "hemi": "R",
+            "space": "fsLR",
+            "den": "91k",
+            "desc": "corrected",
+            "suffix": "thickness",
+            "extension": ".dscalar.nii",
+        },
+        "lh_myelin": {
+            "datatype": "anat",
+            "hemi": "L",
+            "space": "fsLR",
+            "den": "91k",
             "desc": None,
             "suffix": "myelinw",
+            "extension": ".dscalar.nii",
         },
-        "myelin_smoothed": {
+        "rh_myelin": {
+            "datatype": "anat",
+            "hemi": "R",
+            "space": "fsLR",
+            "den": "91k",
+            "desc": None,
+            "suffix": "myelinw",
+            "extension": ".dscalar.nii",
+        },
+        "lh_myelin_smoothed": {
+            "datatype": "anat",
+            "hemi": "L",
+            "space": "fsLR",
+            "den": "91k",
             "desc": "smoothed",
             "suffix": "myelinw",
+            "extension": ".dscalar.nii",
+        },
+        "rh_myelin_smoothed": {
+            "datatype": "anat",
+            "hemi": "R",
+            "space": "fsLR",
+            "den": "91k",
+            "desc": "smoothed",
+            "suffix": "myelinw",
+            "extension": ".dscalar.nii",
         },
     }
+
+    # Apply filters. These may override anything.
+    bids_filters = bids_filters or {}
+    for acq in queries.keys():
+        if acq in bids_filters:
+            queries[acq].update(bids_filters[acq])
 
     morphometry_files = {}
     for name, query in queries.items():
         files = layout.get(
             return_type="file",
             subject=participant_label,
-            datatype="anat",
-            space="fsLR",
-            den="91k",
-            extension=".dscalar.nii",
             **query,
         )
         if len(files) == 1:

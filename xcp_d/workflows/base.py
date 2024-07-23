@@ -138,10 +138,12 @@ def init_single_subject_wf(subject_id: str):
     mesh_available, standard_space_mesh, software, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
         participant_label=subject_id,
+        bids_filters=config.execution.bids_filters,
     )
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
+        bids_filters=config.execution.bids_filters,
     )
 
     # determine the appropriate post-processing workflow
