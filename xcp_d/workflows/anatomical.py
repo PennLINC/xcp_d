@@ -268,6 +268,8 @@ def init_postprocess_surfaces_wf(
     fsnative space, this workflow will warp them to fsLR space.
     If process-surfaces is enabled and the mesh files are already in fsLR space,
     they will be copied to the output directory.
+    These fsLR-space mesh files retain the subject's morphology,
+    and are thus useful for visualizing fsLR-space statistical derivatives on the subject's brain.
 
     As long as process-surfaces is enabled and mesh files (in either space) are available,
     HCP-style midthickness, inflated, and very-inflated surfaces will be generated from them.
@@ -357,6 +359,17 @@ def init_postprocess_surfaces_wf(
         ),
         name="inputnode",
     )
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "lh_midthickness",
+                "rh_midthickness",
+            ],
+        ),
+        name="outputnode",
+    )
+    workflow.add_nodes([outputnode])  # outputnode may not be used
+
     workflow.__desc__ = ""
 
     if abcc_qc and mesh_available:
@@ -421,6 +434,8 @@ def init_postprocess_surfaces_wf(
         workflow.connect([
             (inputnode, hcp_surface_wfs["lh"], [("lh_pial_surf", "inputnode.name_source")]),
             (inputnode, hcp_surface_wfs["rh"], [("rh_pial_surf", "inputnode.name_source")]),
+            (hcp_surface_wfs["lh"], outputnode, [("outputnode.midthickness", "lh_midthickness")]),
+            (hcp_surface_wfs["rh"], outputnode, [("outputnode.midthickness", "rh_midthickness")]),
         ])  # fmt:skip
 
     if mesh_available and standard_space_mesh:
@@ -724,6 +739,11 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
         name="inputnode",
     )
 
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["midthickness"]),
+        name="outputnode",
+    )
+
     generate_midthickness = pe.Node(
         SurfaceAverage(),
         name="generate_midthickness",
@@ -735,6 +755,7 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
             ("pial_surf", "surface_in1"),
             ("wm_surf", "surface_in2"),
         ]),
+        (generate_midthickness, outputnode, [("out_file", "midthickness")]),
     ])  # fmt:skip
 
     ds_midthickness = pe.Node(

@@ -83,6 +83,11 @@ def init_alff_wf(
     using a Lomb-Scargle periodogram
     :footcite:p:`lomb1976least,scargle1982studies,townsend2010fast,taylorlomb`.
 
+    This workflow will also generate a plot of the ALFF map.
+    For CIFTI data, the plot will be overlaid on the midthickness surface-
+    either the subject's surface warped to fsLR space (when the anatomical workflow is enabled)
+    or the fsLR 32k midthickness surface template.
+
     References
     ----------
     .. footbibliography::
@@ -117,11 +122,20 @@ series to retain the original scaling.
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold", "bold_mask", "temporal_mask"]),
+        niu.IdentityInterface(
+            fields=[
+                "denoised_bold",
+                "bold_mask",
+                "temporal_mask",
+                # only used for CIFTI data if the anatomical workflow is enabled
+                "lh_midthickness",
+                "rh_midthickness",
+            ],
+        ),
         name="inputnode",
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["alff", "smoothed_alff", "alffplot"]),
+        niu.IdentityInterface(fields=["alff", "smoothed_alff"]),
         name="outputnode",
     )
 
@@ -132,20 +146,48 @@ series to retain the original scaling.
         name="alff_compt",
         n_procs=omp_nthreads,
     )
-
-    plot_interface = PlotDenseCifti if (file_format == "cifti") else PlotNifti
-    alff_plot = pe.Node(
-        plot_interface(name_source=name_source),
-        name="alff_plot",
-    )
     workflow.connect([
         (inputnode, alff_compt, [
             ("denoised_bold", "in_file"),
             ("bold_mask", "mask"),
             ("temporal_mask", "temporal_mask"),
         ]),
-        (alff_compt, alff_plot, [("alff", "in_file")]),
         (alff_compt, outputnode, [("alff", "alff")])
+    ])  # fmt:skip
+
+    # Plot the ALFF map
+    ds_alff_plot = pe.Node(
+        DerivativesDataSink(
+            base_directory=output_dir,
+            source_file=name_source,
+            datatype="figures",
+        ),
+        name="ds_alff_plot",
+        run_without_submitting=False,
+    )
+
+    if file_format == "cifti":
+        alff_plot = pe.Node(
+            PlotDenseCifti(base_desc="alff"),
+            name="alff_plot",
+        )
+        workflow.connect([
+            (inputnode, alff_plot, [
+                ("lh_midthickness", "lh_underlay"),
+                ("rh_midthickness", "rh_underlay"),
+            ]),
+            (alff_plot, ds_alff_plot, [("desc", "desc")]),
+        ])  # fmt:skip
+    else:
+        alff_plot = pe.Node(
+            PlotNifti(name_source=name_source),
+            name="alff_plot",
+        )
+        ds_alff_plot.inputs.desc = "alffVolumetricPlot"
+
+    workflow.connect([
+        (alff_compt, alff_plot, [("alff", "in_file")]),
+        (alff_plot, ds_alff_plot, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     if smoothing:  # If we want to smooth
@@ -206,18 +248,6 @@ series to retain the original scaling.
                 (fix_cifti_intent, outputnode, [("out_file", "smoothed_alff")]),
             ])  # fmt:skip
 
-    ds_alff_plot = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            source_file=name_source,
-            desc="alffSurfacePlot" if (file_format == "cifti") else "alffVolumetricPlot",
-            datatype="figures",
-        ),
-        name="ds_alff_plot",
-        run_without_submitting=False,
-    )
-    workflow.connect([(alff_plot, ds_alff_plot, [("out_file", "in_file")])])
-
     return workflow
 
 
@@ -263,6 +293,13 @@ def init_reho_cifti_wf(
     -------
     reho
         ReHo in a CIFTI file.
+
+    Notes
+    -----
+    This workflow will also generate a plot of the ReHo map.
+    The plot will be overlaid on the midthickness surface-
+    either the subject's surface warped to fsLR space (when the anatomical workflow is enabled)
+    or the fsLR 32k midthickness surface template.
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """
@@ -279,7 +316,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold"]),
+        niu.IdentityInterface(fields=["denoised_bold", "lh_midthickness", "rh_midthickness"]),
         name="inputnode",
     )
     outputnode = pe.Node(
@@ -335,15 +372,20 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         n_procs=omp_nthreads,
     )
     reho_plot = pe.Node(
-        PlotDenseCifti(name_source=name_source),
+        PlotDenseCifti(base_desc="reho"),
         name="reho_cifti_plot",
     )
+    workflow.connect([
+        (inputnode, reho_plot, [
+            ("lh_midthickness", "lh_underlay"),
+            ("rh_midthickness", "rh_underlay"),
+        ]),
+    ])  # fmt:skip
 
     ds_reho_plot = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             source_file=name_source,
-            desc="rehoSurfacePlot",
             datatype="figures",
         ),
         name="ds_reho_plot",
@@ -364,7 +406,10 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (subcortical_reho, merge_cifti, [("out_file", "volume_all")]),
         (merge_cifti, outputnode, [("out_file", "reho")]),
         (merge_cifti, reho_plot, [("out_file", "in_file")]),
-        (reho_plot, ds_reho_plot, [("out_file", "in_file")]),
+        (reho_plot, ds_reho_plot, [
+            ("out_file", "in_file"),
+            ("desc", "desc"),
+        ]),
     ])  # fmt:skip
 
     return workflow

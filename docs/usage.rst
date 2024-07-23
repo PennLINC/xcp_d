@@ -51,6 +51,7 @@ Command-Line Arguments
 .. argparse::
    :ref: xcp_d.cli.parser._build_parser
    :prog: xcp_d
+   :func: _build_parser
 
    --band-stop-min : @after
       For the "notch" filter option, we recommend the following values.
