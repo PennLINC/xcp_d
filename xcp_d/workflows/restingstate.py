@@ -83,6 +83,11 @@ def init_alff_wf(
     using a Lomb-Scargle periodogram
     :footcite:p:`lomb1976least,scargle1982studies,townsend2010fast,taylorlomb`.
 
+    This workflow will also generate a plot of the ALFF map.
+    For CIFTI data, the plot will be overlaid on the midthickness surface-
+    either the subject's surface warped to fsLR space (when the anatomical workflow is enabled)
+    or the fsLR 32k midthickness surface template.
+
     References
     ----------
     .. footbibliography::
@@ -288,6 +293,13 @@ def init_reho_cifti_wf(
     -------
     reho
         ReHo in a CIFTI file.
+
+    Notes
+    -----
+    This workflow will also generate a plot of the ReHo map.
+    The plot will be overlaid on the midthickness surface-
+    either the subject's surface warped to fsLR space (when the anatomical workflow is enabled)
+    or the fsLR 32k midthickness surface template.
     """
     workflow = Workflow(name=name)
     workflow.__desc__ = """

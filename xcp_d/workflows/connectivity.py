@@ -522,6 +522,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivity_wf"):
     """Extract CIFTI time series.
 
+    This will parcellate the CIFTI file using the selected atlases and compute functional
+    connectivity between all regions for the selected atlases.
+    It will also parcellate ReHo and ALFF maps if they are provided.
+
     Workflow Graph
         .. workflow::
             :graph2use: orig

@@ -305,6 +305,8 @@ def init_postprocess_surfaces_wf(
     fsnative space, this workflow will warp them to fsLR space.
     If process-surfaces is enabled and the mesh files are already in fsLR space,
     they will be copied to the output directory.
+    These fsLR-space mesh files retain the subject's morphology,
+    and are thus useful for visualizing fsLR-space statistical derivatives on the subject's brain.
 
     As long as process-surfaces is enabled and mesh files (in either space) are available,
     HCP-style midthickness, inflated, and very-inflated surfaces will be generated from them.
