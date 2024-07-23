@@ -181,10 +181,6 @@ def pnc_data(datasets):
             "res-2_desc-preproc_T1w.nii.gz"
         ),
     )
-    files["anat_dseg"] = os.path.join(
-        anat_dir,
-        "sub-1648798153_ses-PNC1_acq-refaced_desc-aseg_dseg.nii.gz",
-    )
 
     return files
 
