@@ -236,7 +236,7 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
         (bad_morph_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
 
     layout = BIDSLayout(bad_morph_dir, validate=False)
-    with pytest.raises(ValueError, match="More than one surface found"):
+    with pytest.raises(ValueError, match="More than one .* found"):
         xbids.collect_morphometry_data(layout, "1648798153", bids_filters={})
 
     # If we include BIDS filters, we should be able to ignore the existing files
