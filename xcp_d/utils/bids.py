@@ -15,9 +15,9 @@ import yaml
 from nipype import logging
 from packaging.version import Version
 
+from xcp_d.data import load as load_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import ensure_list
-from xcp_d.data import load as load_data
 
 LOGGER = logging.getLogger("nipype.utils")
 
