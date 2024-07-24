@@ -1008,7 +1008,7 @@ class PlotCiftiParcellation(SimpleInterface):
 
             plot_obj = Plot(lh, rh)
 
-            # add schaefer parcellation (no color bar needed)
+            LOGGER.info(f"Adding {atlas_name} to the plot.")
             data_img = nb.load(data_file)
             img_data = data_img.get_fdata()
             img_axes = [data_img.header.get_axis(i) for i in range(data_img.ndim)]
@@ -1022,6 +1022,7 @@ class PlotCiftiParcellation(SimpleInterface):
                 img_axes[1],
                 "CIFTI_STRUCTURE_CORTEX_RIGHT",
             )
+            LOGGER.info(f"Data sizes: {lh_data.shape} {rh_data.shape}")
             plot_obj.add_layer(
                 {"left": np.squeeze(lh_data), "right": np.squeeze(rh_data)},
                 cmap="cool",
@@ -1043,6 +1044,8 @@ class PlotCiftiParcellation(SimpleInterface):
                 atlas_axes[1],
                 "CIFTI_STRUCTURE_CORTEX_RIGHT",
             )
+
+            LOGGER.info(f"Atlas sizes: {lh_atlas.shape} {rh_atlas.shape}")
             plot_obj.add_layer(
                 {"left": np.squeeze(lh_atlas), "right": np.squeeze(rh_atlas)},
                 cmap="gray",
