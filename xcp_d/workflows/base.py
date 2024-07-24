@@ -138,10 +138,12 @@ def init_single_subject_wf(subject_id: str):
     mesh_available, standard_space_mesh, software, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
         participant_label=subject_id,
+        bids_filters=config.execution.bids_filters,
     )
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
+        bids_filters=config.execution.bids_filters,
     )
 
     # determine the appropriate post-processing workflow
@@ -155,7 +157,6 @@ def init_single_subject_wf(subject_id: str):
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "subj_data",  # not currently used, but will be in future
                 "t1w",
                 "t2w",  # optional
                 "anat_brainmask",  # used to estimate head radius and for QC metrics
@@ -179,7 +180,6 @@ def init_single_subject_wf(subject_id: str):
         ),
         name="inputnode",
     )
-    inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.anat_brainmask = subj_data["anat_brainmask"]

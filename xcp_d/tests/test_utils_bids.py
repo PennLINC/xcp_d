@@ -126,13 +126,17 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
     # Dataset without mesh files
     layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False)
-    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is False
     assert standard_space_mesh is False
 
     # Dataset with native-space mesh files (one file matching each query)
     layout = BIDSLayout(datasets["pnc"], validate=False)
-    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is True
     assert standard_space_mesh is False
 
@@ -153,7 +157,9 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
         (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
-    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(layout, "1648798153")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is True
     assert standard_space_mesh is True
 
@@ -179,7 +185,72 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     with pytest.raises(ValueError, match="More than one surface found"):
-        xbids.collect_mesh_data(layout, "1648798153")
+        xbids.collect_mesh_data(layout, "1648798153", bids_filters={})
+
+    # If we include BIDS filters, we should be able to ignore the existing files
+    layout = BIDSLayout(datasets["pnc"], validate=False)
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout,
+        "1648798153",
+        bids_filters={
+            "lh_pial_surf": {"acquisition": "test"},
+            "rh_pial_surf": {"acquisition": "test"},
+            "lh_wm_surf": {"acquisition": "test"},
+            "rh_wm_surf": {"acquisition": "test"},
+            "lh_subject_sphere": {"acquisition": "test"},
+            "rh_subject_sphere": {"acquisition": "test"},
+        },
+    )
+    assert mesh_available is False
+    assert standard_space_mesh is False
+
+
+def test_collect_morphometry_data(datasets, tmp_path_factory):
+    """Test collect_morphometry_data."""
+    # Dataset without morphometry files
+    layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False)
+    morph_file_types, _ = xbids.collect_morphometry_data(layout, "1648798153", bids_filters={})
+    assert morph_file_types == []
+
+    # Dataset with morphometry files (one file matching each query)
+    layout = BIDSLayout(datasets["pnc"], validate=False)
+    morph_file_types, _ = xbids.collect_morphometry_data(layout, "1648798153", bids_filters={})
+    assert morph_file_types == ["cortical_thickness", "sulcal_curv", "sulcal_depth"]
+
+    # Dataset with multiple files matching each query (raises an error)
+    bad_morph_dir = tmp_path_factory.mktemp("bad_morph")
+    shutil.copyfile(
+        os.path.join(datasets["pnc"], "dataset_description.json"),
+        bad_morph_dir / "dataset_description.json",
+    )
+    os.makedirs(bad_morph_dir / "sub-1648798153/ses-PNC1/anat", exist_ok=True)
+    files = [
+        "sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-91k_thickness.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced2_space-fsLR_den-91k_thickness.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-91k_sulc.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced2_space-fsLR_den-91k_sulc.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-91k_curv.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced2_space-fsLR_den-91k_curv.dscalar.nii",
+    ]
+    for f in files:
+        (bad_morph_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
+
+    layout = BIDSLayout(bad_morph_dir, validate=False)
+    with pytest.raises(ValueError, match="More than one .* found"):
+        xbids.collect_morphometry_data(layout, "1648798153", bids_filters={})
+
+    # If we include BIDS filters, we should be able to ignore the existing files
+    layout = BIDSLayout(datasets["pnc"], validate=False)
+    morph_file_types, _ = xbids.collect_morphometry_data(
+        layout,
+        "1648798153",
+        bids_filters={
+            "cortical_thickness": {"acquisition": "test"},
+            "sulcal_curv": {"acquisition": "test"},
+            "sulcal_depth": {"acquisition": "test"},
+        },
+    )
+    assert morph_file_types == []
 
 
 def test_write_dataset_description(datasets, tmp_path_factory, caplog):
