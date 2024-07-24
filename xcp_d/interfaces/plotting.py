@@ -1005,6 +1005,10 @@ class PlotCiftiParcellation(SimpleInterface):
                 f"{atlas_name}.svg",
                 newpath=runtime.cwd,
             )
+            lh_img = nb.load(lh)
+            rh_img = nb.load(rh)
+            LOGGER.info(f"Underlay files: {lh} {rh}")
+            LOGGER.info(f"Underlay sizes: {lh_img.shape} {rh_img.shape}")
 
             plot_obj = Plot(lh, rh)
 
