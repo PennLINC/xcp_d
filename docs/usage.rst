@@ -152,6 +152,7 @@ This argument must point to a JSON file, containing filters that will be fed int
 The keys in this JSON file are unique to XCP-D.
 They are our internal terms for different inputs that will be selected from the preprocessed
 dataset.
+The full list of keys can be found in the file ``xcp_d/data/io_spec.yaml``.
 
 ``"bold"`` determines which preprocessed BOLD files will be chosen.
 You can set a number of entities here, including "session", "task", "space", "resolution", and
@@ -166,7 +167,7 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 ``"t1w"`` selects a native T1w-space, preprocessed T1w file.
 
 ``"t2w"`` selects a native T1w-space, preprocessed T2w file.
-If not T1w file is available, this file will be in T2w space.
+If a T1w file is not available, this file will be in T2w space.
 
 ``"anat_dseg"`` selects a segmentation file in the same space as the BOLD data.
 This file is not used for anything.
@@ -181,6 +182,9 @@ The standard space that will be used depends on the ``"bold"`` files that are se
 
 ``"template_to_anat_xfm"`` selects a transform from standard space to T1w/T2w space.
 Again, the standard space is determined based on other files.
+
+There are additional keys that control how mesh and morphometry files are selected.
+Please refer to ``io_spec.yaml`` for more information on them.
 
 
 Example bids-filter-file
