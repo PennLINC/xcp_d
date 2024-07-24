@@ -66,7 +66,7 @@ def get_atlas_nifti(atlas):
     atlas : {"4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", \
              "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", \
              "4S956Parcels", "4S1056Parcels", "Glasser", "Gordon", \
-             "Tian", "HCP", "MyersLabonte"}
+             "Tian", "HCP"}
         The name of the NIFTI atlas to fetch.
 
     Returns
@@ -95,16 +95,6 @@ def get_atlas_nifti(atlas):
         atlas_file = join("/AtlasPack", atlas_fname)
         atlas_labels_file = join("/AtlasPack", tsv_fname)
         atlas_metadata_file = f"/AtlasPack/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json"
-    elif "MyersLabonte" in atlas:
-        atlas_file = str(
-            load_data(
-                "atlases/tpl-MNI152NLin6Asym_atlas-MyersLabonte_res-02_desc-thresh50_dseg.nii.gz"
-            )
-        )
-        atlas_labels_file = str(load_data("atlases/atlas-MyersLabonte_desc-thresh50_dseg.tsv"))
-        atlas_metadata_file = str(
-            load_data("atlases/tpl-MNI152NLin6Asym_atlas-MyersLabonte_desc-thresh50_dseg.json")
-        )
     else:
         atlas_file = str(load_data(f"atlases/{atlas_fname}"))
         atlas_labels_file = str(load_data(f"atlases/{tsv_fname}"))
