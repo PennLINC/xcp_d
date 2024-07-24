@@ -858,6 +858,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         workflow.connect([
             (inputnode, plot_parcellated_reho, [
                 ("atlases", "labels"),
+                ("atlas_files", "atlas_files"),
                 ("lh_midthickness", "lh_underlay"),
                 ("rh_midthickness", "rh_underlay"),
             ]),
@@ -913,6 +914,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             workflow.connect([
                 (inputnode, plot_parcellated_alff, [
                     ("atlases", "labels"),
+                    ("atlas_files", "atlas_files"),
                     ("lh_midthickness", "lh_underlay"),
                     ("rh_midthickness", "rh_underlay"),
                 ]),

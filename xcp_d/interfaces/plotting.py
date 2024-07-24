@@ -978,12 +978,13 @@ class PlotCiftiParcellation(SimpleInterface):
             for i, atlas in enumerate(self.inputs.labels)
             if atlas in self.inputs.cortical_atlases
         ]
-        atlas_names = [
-            atlas for atlas in self.inputs.labels if atlas in self.inputs.cortical_atlases
+        keep_idx = [
+            i
+            for i, atlas in enumerate(self.inputs.labels)
+            if atlas in self.inputs.cortical_atlases
         ]
-        atlas_files = [
-            atlas for atlas in self.inputs.atlas_files if atlas in self.inputs.cortical_atlases
-        ]
+        atlas_names = [self.inputs.labels[i] for i in keep_idx]
+        atlas_files = [self.inputs.atlas_files[i] for i in keep_idx]
 
         vmin, vmax = self.inputs.vmin, self.inputs.vmax
         if vmin == vmax:
