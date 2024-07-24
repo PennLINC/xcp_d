@@ -1008,7 +1008,10 @@ class PlotCiftiParcellation(SimpleInterface):
             lh_img = nb.load(lh)
             rh_img = nb.load(rh)
             LOGGER.info(f"Underlay files: {lh} {rh}")
-            LOGGER.info(f"Underlay sizes: {lh_img.shape} {rh_img.shape}")
+            LOGGER.info(
+                "Underlay sizes: "
+                f"{lh_img.agg_data()[0].shape[0]} {rh_img.agg_data()[0].shape[0]}"
+            )
 
             plot_obj = Plot(lh, rh)
 
@@ -1065,7 +1068,6 @@ class PlotCiftiParcellation(SimpleInterface):
 
         # Now build the combined figure
         # Load SVG files and get their sizes
-        direction = "vertical"
         widths, heights = [], []
         for figure_file in figure_files:
             svg_obj = sg.fromfile(figure_file)
@@ -1077,15 +1079,23 @@ class PlotCiftiParcellation(SimpleInterface):
             widths.append(width)
             heights.append(height)
 
-        # Calculate total width and height for the new SVG
-        if direction == "vertical":
-            total_width = max(widths)
-            total_height = sum(heights)
-            y_offset = 0
+        cell_width, cell_height = max(widths), max(heights)
+        max_columns = 2
+        if len(figure_files) == 1:
+            total_width = cell_width
+            total_height = cell_height
+            loc_idx = [(0, 0)]
         else:
-            total_width = sum(widths)
-            total_height = max(heights)
-            x_offset = 0
+            n_rows = int(np.ceil(len(figure_files) / max_columns))
+            n_columns = max_columns
+            total_width = cell_width * n_columns
+            total_height = cell_height * n_rows
+
+            loc_idx = []
+            for i_row in range(n_rows):
+                row_idx = [j for j in range(len(figure_files)) if (j // max_columns) == i_row]
+                for j_col, idx in enumerate(row_idx):
+                    loc_idx.append((i_row, j_col))
 
         # Create new SVG figure
         new_svg = sg.SVGFigure(width=f"{total_width}px", height=f"{total_height}px")
@@ -1096,14 +1106,7 @@ class PlotCiftiParcellation(SimpleInterface):
         for i_fig, figure_file in enumerate(figure_files):
             svg_obj = sg.fromfile(figure_file)
             fig = svg_obj.getroot()
-
-            if direction == "vertical":
-                fig.moveto(0, y_offset)
-                y_offset += heights[i_fig]
-            else:
-                fig.moveto(x_offset, 0)
-                x_offset += widths[i_fig]
-
+            fig.moveto(loc_idx[i_fig][0] * cell_height, loc_idx[i_fig][1] * cell_width)
             new_svg.append(fig)
 
         self._results["out_file"] = fname_presuffix(
