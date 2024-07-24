@@ -1081,7 +1081,9 @@ class PlotCiftiParcellation(SimpleInterface):
             x_offset = 0
 
         # Create new SVG figure
-        new_svg = sg.SVGFigure(total_width, total_height)
+        new_svg = sg.SVGFigure(width=f"{total_width}px", height=f"{total_height}px")
+        # for some reason, the width and height params aren't retained, so set them again
+        new_svg.set_size((f"{total_width}px", f"{total_height}px"))
 
         # Add each SVG to the new figure
         for i_fig, figure_file in enumerate(figure_files):
