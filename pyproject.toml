@@ -45,6 +45,7 @@ dependencies = [
     "surfplot ~= 0.2.0",  # for surface plots
     "templateflow ~= 24.2.0",
     "toml",
+    "vtk ~= 9.2.6",
 ]
 dynamic = ["version"]
 
