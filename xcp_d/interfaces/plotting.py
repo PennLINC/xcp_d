@@ -1012,12 +1012,12 @@ class PlotCiftiParcellation(SimpleInterface):
             img_data = data_img.get_fdata()
             img_axes = [data_img.header.get_axis(i) for i in range(data_img.ndim)]
             lh_data = surf_data_from_cifti(
-                img_data,
+                np.squeeze(img_data),
                 img_axes[1],
                 "CIFTI_STRUCTURE_CORTEX_LEFT",
             )
             rh_data = surf_data_from_cifti(
-                img_data,
+                np.squeeze(img_data),
                 img_axes[1],
                 "CIFTI_STRUCTURE_CORTEX_RIGHT",
             )
