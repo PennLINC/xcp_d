@@ -1094,7 +1094,7 @@ class PlotCiftiParcellation(SimpleInterface):
             loc_idx = []
             for i_row in range(n_rows):
                 row_idx = [j for j in range(len(figure_files)) if (j // max_columns) == i_row]
-                for j_col, idx in enumerate(row_idx):
+                for j_col in range(len(row_idx)):
                     loc_idx.append((i_row, j_col))
 
         # Create new SVG figure
@@ -1106,7 +1106,9 @@ class PlotCiftiParcellation(SimpleInterface):
         for i_fig, figure_file in enumerate(figure_files):
             svg_obj = sg.fromfile(figure_file)
             fig = svg_obj.getroot()
-            fig.moveto(loc_idx[i_fig][0] * cell_height, loc_idx[i_fig][1] * cell_width)
+            offset0 = loc_idx[i_fig][1] * cell_width
+            offset1 = loc_idx[i_fig][0] * cell_height
+            fig.moveto(offset0, offset1)
             new_svg.append(fig)
 
         self._results["out_file"] = fname_presuffix(
