@@ -3,6 +3,7 @@
 """Plotting interfaces."""
 import json
 import os
+import re
 
 import matplotlib.pyplot as plt
 import nibabel as nb
@@ -1012,17 +1013,17 @@ class PlotCiftiParcellation(SimpleInterface):
             img_data = data_img.get_fdata()
             img_axes = [data_img.header.get_axis(i) for i in range(data_img.ndim)]
             lh_data = surf_data_from_cifti(
-                np.squeeze(img_data),
+                img_data,
                 img_axes[1],
                 "CIFTI_STRUCTURE_CORTEX_LEFT",
             )
             rh_data = surf_data_from_cifti(
-                np.squeeze(img_data),
+                img_data,
                 img_axes[1],
                 "CIFTI_STRUCTURE_CORTEX_RIGHT",
             )
             plot_obj.add_layer(
-                {"left": lh_data, "right": rh_data},
+                {"left": np.squeeze(lh_data), "right": np.squeeze(rh_data)},
                 cmap="cool",
                 color_range=(vmin, vmax),
                 cbar=True,
@@ -1049,6 +1050,8 @@ class PlotCiftiParcellation(SimpleInterface):
                 cbar=False,
             )
             fig = plot_obj.build()
+            fig.suptitle(atlas_name, fontsize=16)
+            fig.tight_layout()
             fig.savefig(temp_file)
             figure_files.append(temp_file)
             plt.close(fig)
@@ -1056,12 +1059,16 @@ class PlotCiftiParcellation(SimpleInterface):
         # Now build the combined figure
         # Load SVG files and get their sizes
         direction = "vertical"
-        svg_objects = [sg.fromfile(svg_path) for svg_path in figure_files]
-        figures = [svg_obj.getroot() for svg_obj in svg_objects]
         widths, heights = [], []
-        for fig in figures:
-            widths.append(fig.width)
-            heights.append(fig.height)
+        for figure_file in figure_files:
+            svg_obj = sg.fromfile(figure_file)
+            fig = svg_obj.getroot()
+
+            # Original size is represented as string (example: '600px'); convert to float
+            width = float(re.sub("[^0-9]", "", svg_obj.width))
+            height = float(re.sub("[^0-9]", "", svg_obj.height))
+            widths.append(width)
+            heights.append(height)
 
         # Calculate total width and height for the new SVG
         if direction == "vertical":
@@ -1077,15 +1084,18 @@ class PlotCiftiParcellation(SimpleInterface):
         new_svg = sg.SVGFigure(total_width, total_height)
 
         # Add each SVG to the new figure
-        for fig in figures:
+        for i_fig, figure_file in enumerate(figure_files):
+            svg_obj = sg.fromfile(figure_file)
+            fig = svg_obj.getroot()
+
             if direction == "vertical":
                 fig.moveto(0, y_offset)
-                y_offset += fig.height
+                y_offset += heights[i_fig]
             else:
                 fig.moveto(x_offset, 0)
-                x_offset += fig.width
+                x_offset += widths[i_fig]
 
-        new_svg.append(figures)
+            new_svg.append(fig)
 
         self._results["out_file"] = fname_presuffix(
             data_files[0],
@@ -1093,8 +1103,7 @@ class PlotCiftiParcellation(SimpleInterface):
             newpath=runtime.cwd,
             use_ext=False,
         )
-        new_svg.savefig(self._results["out_file"])
-        plt.close(fig)
+        new_svg.save(self._results["out_file"])
 
         return runtime
 
