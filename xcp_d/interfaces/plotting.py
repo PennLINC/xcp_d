@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting interfaces."""
-import json
 import os
 
 import matplotlib.pyplot as plt
@@ -33,7 +32,7 @@ from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
-from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
+from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -205,22 +204,11 @@ class CensoringPlot(SimpleInterface):
 
 
 class _QCPlotsInputSpec(BaseInterfaceInputSpec):
-    name_source = File(
-        exists=False,
-        mandatory=True,
-        desc=(
-            "Preprocessed BOLD file. Used to find files. "
-            "In the case of the concatenation workflow, "
-            "this may be a nonexistent file "
-            "(i.e., the preprocessed BOLD file, with the run entity removed)."
-        ),
-    )
     bold_file = File(
         exists=True,
         mandatory=True,
         desc="Preprocessed BOLD file, after dummy scan removal. Used in carpet plot.",
     )
-    dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
     temporal_mask = traits.Either(
         File(exists=True),
         Undefined,
@@ -247,19 +235,9 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
 
     # Inputs used only for nifti data
     seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
-    anat_brainmask = File(
-        exists=True,
-        mandatory=False,
-        desc="Anatomically-derived brain mask in anatomical space.",
-    )
-    template_mask = File(exists=True, mandatory=False, desc="Template mask")
-    bold2T1w_mask = File(exists=True, mandatory=False, desc="BOLD mask in MNI space")
-    bold2temp_mask = File(exists=True, mandatory=False, desc="BOLD mask in anatomical space")
 
 
 class _QCPlotsOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, desc="QC TSV file.")
-    qc_metadata = File(exists=True, desc="Sidecar JSON for QC TSV file.")
     raw_qcplot = File(exists=True, desc="qc plot before regression")
     clean_qcplot = File(exists=True, desc="qc plot after regression")
 
@@ -276,12 +254,10 @@ class QCPlots(SimpleInterface):
     .. doctest::
     qcplots = QCPlots()
     qcplots.inputs.cleaned_file = datafile
-    qcplots.inputs.name_source = rawbold
     qcplots.inputs.bold_file = rawbold
     qcplots.inputs.TR = TR
     qcplots.inputs.temporal_mask = temporalmask
     qcplots.inputs.mask_file = mask
-    qcplots.inputs.dummy_scans = dummy_scans
     qcplots.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
@@ -303,22 +279,14 @@ class QCPlots(SimpleInterface):
             head_radius=self.inputs.head_radius,
         )
 
-        # Get rmsd
-        rmsd = confounds_df["rmsd"].to_numpy()
-
         # Determine number of dummy volumes and load temporal mask
-        dummy_scans = self.inputs.dummy_scans
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
             tmask_arr = censoring_df["framewise_displacement"].values
         else:
             tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
 
-        num_censored_volumes = int(tmask_arr.sum())
-        num_retained_volumes = int((tmask_arr == 0).sum())
-
         # Apply temporal mask to interpolated/full data
-        rmsd_censored = rmsd[tmask_arr == 0]
         postproc_fd_timeseries = preproc_fd_timeseries[tmask_arr == 0]
 
         # get QC plot names
@@ -390,173 +358,6 @@ class QCPlots(SimpleInterface):
             bbox_inches="tight",
         )
         plt.close(postproc_fig)
-
-        # Get the different components in the bold file name
-        # eg: ['sub-colornest001', 'ses-1'], etc.
-        _, bold_file_name = os.path.split(self.inputs.name_source)
-        bold_file_name_components = bold_file_name.split("_")
-
-        # Fill out dictionary with entities from filename
-        qc_values_dict = {}
-        for entity in bold_file_name_components[:-1]:
-            qc_values_dict[entity.split("-")[0]] = entity.split("-")[1]
-
-        # Calculate QC measures
-        mean_fd = np.mean(preproc_fd_timeseries)
-        mean_fd_post_censoring = np.mean(postproc_fd_timeseries)
-        mean_relative_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
-        mean_dvars_before_processing = np.mean(dvars_before_processing)
-        mean_dvars_after_processing = np.mean(dvars_after_processing)
-        fd_dvars_correlation_initial = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[
-            0, 1
-        ]
-        fd_dvars_correlation_final = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[
-            0, 1
-        ]
-        rmsd_max_value = np.nanmax(rmsd_censored)
-
-        # A summary of all the values
-        qc_values_dict.update(
-            {
-                "mean_fd": [mean_fd],
-                "mean_fd_post_censoring": [mean_fd_post_censoring],
-                "mean_relative_rms": [mean_relative_rms],
-                "max_relative_rms": [rmsd_max_value],
-                "mean_dvars_initial": [mean_dvars_before_processing],
-                "mean_dvars_final": [mean_dvars_after_processing],
-                "num_dummy_volumes": [dummy_scans],
-                "num_censored_volumes": [num_censored_volumes],
-                "num_retained_volumes": [num_retained_volumes],
-                "fd_dvars_correlation_initial": [fd_dvars_correlation_initial],
-                "fd_dvars_correlation_final": [fd_dvars_correlation_final],
-            }
-        )
-
-        qc_metadata = {
-            "mean_fd": {
-                "LongName": "Mean Framewise Displacement",
-                "Description": (
-                    "Average framewise displacement without any motion parameter filtering. "
-                    "This value includes high-motion outliers, but not dummy volumes. "
-                    "FD is calculated according to the Power definition."
-                ),
-                "Units": "mm / volume",
-                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
-            },
-            "mean_fd_post_censoring": {
-                "LongName": "Mean Framewise Displacement After Censoring",
-                "Description": (
-                    "Average framewise displacement without any motion parameter filtering. "
-                    "This value does not include high-motion outliers or dummy volumes. "
-                    "FD is calculated according to the Power definition."
-                ),
-                "Units": "mm / volume",
-                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
-            },
-            "mean_relative_rms": {
-                "LongName": "Mean Relative Root Mean Squared",
-                "Description": (
-                    "Average relative root mean squared calculated from motion parameters, "
-                    "after removal of dummy volumes and high-motion outliers. "
-                    "Relative in this case means 'relative to the previous scan'."
-                ),
-                "Units": "arbitrary",
-            },
-            "max_relative_rms": {
-                "LongName": "Maximum Relative Root Mean Squared",
-                "Description": (
-                    "Maximum relative root mean squared calculated from motion parameters, "
-                    "after removal of dummy volumes and high-motion outliers. "
-                    "Relative in this case means 'relative to the previous scan'."
-                ),
-                "Units": "arbitrary",
-            },
-            "mean_dvars_initial": {
-                "LongName": "Mean DVARS Before Postprocessing",
-                "Description": (
-                    "Average DVARS (temporal derivative of root mean squared variance over "
-                    "voxels) calculated from the preprocessed BOLD file, after dummy scan removal."
-                ),
-                "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
-            },
-            "mean_dvars_final": {
-                "LongName": "Mean DVARS After Postprocessing",
-                "Description": (
-                    "Average DVARS (temporal derivative of root mean squared variance over "
-                    "voxels) calculated from the denoised BOLD file."
-                ),
-                "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
-            },
-            "num_dummy_volumes": {
-                "LongName": "Number of Dummy Volumes",
-                "Description": (
-                    "The number of non-steady state volumes removed from the time series by XCP-D."
-                ),
-            },
-            "num_censored_volumes": {
-                "LongName": "Number of Censored Volumes",
-                "Description": (
-                    "The number of high-motion outlier volumes censored by XCP-D. "
-                    "This does not include dummy volumes."
-                ),
-            },
-            "num_retained_volumes": {
-                "LongName": "Number of Retained Volumes",
-                "Description": (
-                    "The number of volumes retained in the denoised dataset. "
-                    "This does not include dummy volumes or high-motion outliers."
-                ),
-            },
-            "fd_dvars_correlation_initial": {
-                "LongName": "FD-DVARS Correlation Before Postprocessing",
-                "Description": (
-                    "The Pearson correlation coefficient between framewise displacement and DVARS "
-                    "(temporal derivative of root mean squared variance over voxels), "
-                    "after removal of dummy volumes, but before removal of high-motion outliers."
-                ),
-            },
-            "fd_dvars_correlation_final": {
-                "LongName": "FD-DVARS Correlation After Postprocessing",
-                "Description": (
-                    "The Pearson correlation coefficient between framewise displacement and DVARS "
-                    "(temporal derivative of root mean squared variance over voxels), "
-                    "after postprocessing. "
-                    "The FD time series is unfiltered, but censored. "
-                    "The DVARS time series is calculated from the denoised BOLD data."
-                ),
-            },
-        }
-
-        if self.inputs.bold2T1w_mask:  # If a bold mask in T1w is provided
-            # Compute quality of registration
-            registration_qc, registration_metadata = compute_registration_qc(
-                bold2t1w_mask=self.inputs.bold2T1w_mask,
-                anat_brainmask=self.inputs.anat_brainmask,
-                bold2template_mask=self.inputs.bold2temp_mask,
-                template_mask=self.inputs.template_mask,
-            )
-            qc_values_dict.update(registration_qc)  # Add values to dictionary
-            qc_metadata.update(registration_metadata)
-
-        # Convert dictionary to df and write out the qc file
-        df = pd.DataFrame(qc_values_dict)
-        self._results["qc_file"] = fname_presuffix(
-            self.inputs.cleaned_file,
-            suffix="qc_bold.tsv",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        df.to_csv(self._results["qc_file"], index=False, header=True, sep="\t")
-
-        # Write out the metadata file
-        self._results["qc_metadata"] = fname_presuffix(
-            self.inputs.cleaned_file,
-            suffix="qc_bold.json",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        with open(self._results["qc_metadata"], "w") as fo:
-            json.dump(qc_metadata, fo, indent=4, sort_keys=True)
 
         return runtime
 
