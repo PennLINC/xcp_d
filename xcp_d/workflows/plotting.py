@@ -328,12 +328,10 @@ def init_qc_report_wf(
         )
         workflow.connect([
             (inputnode, make_qc_plots_nipreps, [
-                ("name_source", "name_source"),
                 ("preprocessed_bold", "bold_file"),
                 ("censored_denoised_bold", "cleaned_file"),
                 ("fmriprep_confounds_file", "fmriprep_confounds_file"),
                 ("temporal_mask", "temporal_mask"),
-                ("dummy_scans", "dummy_scans"),
             ]),
         ])  # fmt:skip
 
