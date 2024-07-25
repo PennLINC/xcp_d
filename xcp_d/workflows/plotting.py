@@ -11,8 +11,8 @@ from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.interfaces.utils import ABCCQC, LINCQC
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.qcmetrics import make_abcc_qc_file
 from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
 
 
@@ -157,7 +157,6 @@ def init_qc_report_wf(
             n_procs=omp_nthreads,
             mem_gb=1,
         )
-
         workflow.connect([
             (inputnode, warp_boldmask_to_t1w, [
                 ("bold_mask", "input_image"),
@@ -179,7 +178,6 @@ def init_qc_report_wf(
             n_procs=omp_nthreads,
             mem_gb=1,
         )
-
         workflow.connect([
             (inputnode, warp_boldmask_to_mni, [("bold_mask", "input_image")]),
             (get_native2space_transforms, warp_boldmask_to_mni, [
@@ -220,7 +218,6 @@ def init_qc_report_wf(
             ),
             name="get_std2native_transform",
         )
-
         workflow.connect([(inputnode, get_mni_to_bold_xfms, [("name_source", "bold_file")])])
 
         # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
@@ -268,26 +265,24 @@ def init_qc_report_wf(
             n_procs=omp_nthreads,
             mem_gb=3,
         )
-
         workflow.connect([
             (inputnode, warp_dseg_to_bold, [("boldref", "reference_image")]),
             (add_xfm_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
         ])  # fmt:skip
 
     if config.workflow.linc_qc:
-        qc_report = pe.Node(
-            QCPlots(
+        make_linc_qc = pe.Node(
+            LINCQC(
                 TR=TR,
                 head_radius=head_radius,
                 template_mask=nlin2009casym_brain_mask,
             ),
-            name="qc_report",
+            name="make_linc_qc",
             mem_gb=2,
             n_procs=omp_nthreads,
         )
-
         workflow.connect([
-            (inputnode, qc_report, [
+            (inputnode, make_linc_qc, [
                 ("name_source", "name_source"),
                 ("preprocessed_bold", "bold_file"),
                 ("censored_denoised_bold", "cleaned_file"),
@@ -295,19 +290,18 @@ def init_qc_report_wf(
                 ("temporal_mask", "temporal_mask"),
                 ("dummy_scans", "dummy_scans"),
             ]),
-            (qc_report, outputnode, [("qc_file", "qc_file")]),
+            (make_linc_qc, outputnode, [("qc_file", "qc_file")]),
         ])  # fmt:skip
 
         if config.workflow.file_format == "nifti":
             workflow.connect([
-                (inputnode, qc_report, [("bold_mask", "mask_file")]),
-                (warp_dseg_to_bold, qc_report, [("output_image", "seg_file")]),
-                (warp_boldmask_to_t1w, qc_report, [("output_image", "bold2T1w_mask")]),
-                (warp_boldmask_to_mni, qc_report, [("output_image", "bold2temp_mask")]),
-                (warp_anatmask_to_t1w, qc_report, [("output_image", "anat_brainmask")]),
+                (inputnode, make_linc_qc, [("bold_mask", "bold_mask_inputspace")]),
+                (warp_boldmask_to_t1w, make_linc_qc, [("output_image", "bold_mask_anatspace")]),
+                (warp_boldmask_to_mni, make_linc_qc, [("output_image", "bold_mask_stdspace")]),
+                (warp_anatmask_to_t1w, make_linc_qc, [("output_image", "anat_mask_anatspace")]),
             ])  # fmt:skip
         else:
-            qc_report.inputs.mask_file = None
+            make_linc_qc.inputs.bold_mask_inputspace = None
 
         ds_qc_metadata = pe.Node(
             DerivativesDataSink(
@@ -321,40 +315,60 @@ def init_qc_report_wf(
             name="ds_qc_metadata",
             run_without_submitting=True,
         )
-
         workflow.connect([
             (inputnode, ds_qc_metadata, [("name_source", "source_file")]),
-            (qc_report, ds_qc_metadata, [("qc_metadata", "in_file")]),
+            (make_linc_qc, ds_qc_metadata, [("qc_metadata", "in_file")]),
         ])  # fmt:skip
 
-        ds_report_preprocessing = pe.Node(
+        make_qc_plots_nipreps = pe.Node(
+            QCPlots(TR=TR, head_radius=head_radius),
+            name="make_qc_plots_nipreps",
+            mem_gb=2,
+            n_procs=omp_nthreads,
+        )
+        workflow.connect([
+            (inputnode, make_qc_plots_nipreps, [
+                ("preprocessed_bold", "bold_file"),
+                ("censored_denoised_bold", "cleaned_file"),
+                ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+                ("temporal_mask", "temporal_mask"),
+            ]),
+        ])  # fmt:skip
+
+        if config.workflow.file_format == "nifti":
+            workflow.connect([
+                (inputnode, make_qc_plots_nipreps, [("bold_mask", "mask_file")]),
+                (warp_dseg_to_bold, make_qc_plots_nipreps, [("output_image", "seg_file")]),
+            ])  # fmt:skip
+        else:
+            make_qc_plots_nipreps.inputs.mask_file = None
+
+        ds_preproc_qc_plot_nipreps = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 desc="preprocessing",
                 datatype="figures",
             ),
-            name="ds_report_preprocessing",
+            name="ds_preproc_qc_plot_nipreps",
             run_without_submitting=False,
         )
-
         workflow.connect([
-            (inputnode, ds_report_preprocessing, [("name_source", "source_file")]),
-            (qc_report, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
+            (inputnode, ds_preproc_qc_plot_nipreps, [("name_source", "source_file")]),
+            (make_qc_plots_nipreps, ds_preproc_qc_plot_nipreps, [("raw_qcplot", "in_file")]),
         ])  # fmt:skip
 
-        ds_report_postprocessing = pe.Node(
+        ds_postproc_qc_plot_nipreps = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 desc="postprocessing",
                 datatype="figures",
             ),
-            name="ds_report_postprocessing",
+            name="ds_postproc_qc_plot_nipreps",
             run_without_submitting=False,
         )
-
         workflow.connect([
-            (inputnode, ds_report_postprocessing, [("name_source", "source_file")]),
-            (qc_report, ds_report_postprocessing, [("clean_qcplot", "in_file")]),
+            (inputnode, ds_postproc_qc_plot_nipreps, [("name_source", "source_file")]),
+            (make_qc_plots_nipreps, ds_postproc_qc_plot_nipreps, [("clean_qcplot", "in_file")]),
         ])  # fmt:skip
 
         functional_qc = pe.Node(
@@ -363,10 +377,9 @@ def init_qc_report_wf(
             run_without_submitting=False,
             mem_gb=2,
         )
-
         workflow.connect([
             (inputnode, functional_qc, [("name_source", "bold_file")]),
-            (qc_report, functional_qc, [("qc_file", "qc_file")]),
+            (make_linc_qc, functional_qc, [("qc_file", "qc_file")]),
         ])  # fmt:skip
 
         ds_report_qualitycontrol = pe.Node(
@@ -378,7 +391,6 @@ def init_qc_report_wf(
             name="ds_report_qualitycontrol",
             run_without_submitting=False,
         )
-
         workflow.connect([
             (inputnode, ds_report_qualitycontrol, [("name_source", "source_file")]),
             (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
@@ -388,19 +400,13 @@ def init_qc_report_wf(
         workflow.add_nodes([outputnode])
 
     if config.workflow.abcc_qc:
-        make_abcc_qc_file_node = pe.Node(
-            Function(
-                input_names=["filtered_motion", "TR"],
-                output_names=["dcan_df_file"],
-                function=make_abcc_qc_file,
-            ),
-            name="make_abcc_qc_file_node",
+        make_abcc_qc = pe.Node(
+            ABCCQC(TR=TR),
+            name="make_abcc_qc",
+            mem_gb=2,
+            n_procs=omp_nthreads,
         )
-        make_abcc_qc_file_node.inputs.TR = TR
-
-        workflow.connect([
-            (inputnode, make_abcc_qc_file_node, [("filtered_motion", "filtered_motion")]),
-        ])  # fmt:skip
+        workflow.connect([(inputnode, make_abcc_qc, [("filtered_motion", "filtered_motion")])])
 
         ds_abcc_qc = pe.Node(
             DerivativesDataSink(
@@ -413,22 +419,20 @@ def init_qc_report_wf(
             name="ds_abcc_qc",
             run_without_submitting=True,
         )
-
         workflow.connect([
             (inputnode, ds_abcc_qc, [("name_source", "source_file")]),
-            (make_abcc_qc_file_node, ds_abcc_qc, [("dcan_df_file", "in_file")]),
+            (make_abcc_qc, ds_abcc_qc, [("qc_file", "in_file")]),
         ])  # fmt:skip
 
         # Generate preprocessing and postprocessing carpet plots.
-        plot_execsummary_carpets_dcan = pe.Node(
+        make_qc_plots_es = pe.Node(
             QCPlotsES(TR=TR, standardize=config.workflow.params == "none"),
-            name="plot_execsummary_carpets_dcan",
+            name="make_qc_plots_es",
             mem_gb=2,
             n_procs=omp_nthreads,
         )
-
         workflow.connect([
-            (inputnode, plot_execsummary_carpets_dcan, [
+            (inputnode, make_qc_plots_es, [
                 ("preprocessed_bold", "preprocessed_bold"),
                 ("denoised_interpolated_bold", "denoised_interpolated_bold"),
                 ("filtered_motion", "filtered_motion"),
@@ -439,46 +443,38 @@ def init_qc_report_wf(
 
         if config.workflow.file_format == "nifti":
             workflow.connect([
-                (inputnode, plot_execsummary_carpets_dcan, [("bold_mask", "mask")]),
-                (warp_dseg_to_bold, plot_execsummary_carpets_dcan, [
-                    ("output_image", "seg_data"),
-                ]),
+                (inputnode, make_qc_plots_es, [("bold_mask", "mask")]),
+                (warp_dseg_to_bold, make_qc_plots_es, [("output_image", "seg_data")]),
             ])  # fmt:skip
 
-        ds_preproc_execsummary_carpet_dcan = pe.Node(
+        ds_preproc_qc_plot_es = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["den"],
                 datatype="figures",
                 desc="preprocESQC",
             ),
-            name="ds_preproc_execsummary_carpet_dcan",
+            name="ds_preproc_qc_plot_es",
             run_without_submitting=True,
         )
-
         workflow.connect([
-            (inputnode, ds_preproc_execsummary_carpet_dcan, [("name_source", "source_file")]),
-            (plot_execsummary_carpets_dcan, ds_preproc_execsummary_carpet_dcan, [
-                ("before_process", "in_file"),
-            ]),
+            (inputnode, ds_preproc_qc_plot_es, [("name_source", "source_file")]),
+            (make_qc_plots_es, ds_preproc_qc_plot_es, [("before_process", "in_file")]),
         ])  # fmt:skip
 
-        ds_postproc_execsummary_carpet_dcan = pe.Node(
+        ds_postproc_qc_plot_es = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
                 dismiss_entities=["den"],
                 datatype="figures",
                 desc="postprocESQC",
             ),
-            name="ds_postproc_execsummary_carpet_dcan",
+            name="ds_postproc_qc_plot_es",
             run_without_submitting=True,
         )
-
         workflow.connect([
-            (inputnode, ds_postproc_execsummary_carpet_dcan, [("name_source", "source_file")]),
-            (plot_execsummary_carpets_dcan, ds_postproc_execsummary_carpet_dcan, [
-                ("after_process", "in_file"),
-            ]),
+            (inputnode, ds_postproc_qc_plot_es, [("name_source", "source_file")]),
+            (make_qc_plots_es, ds_postproc_qc_plot_es, [("after_process", "in_file")]),
         ])  # fmt:skip
 
     return workflow
