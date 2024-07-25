@@ -295,13 +295,13 @@ def init_qc_report_wf(
 
         if config.workflow.file_format == "nifti":
             workflow.connect([
-                (inputnode, make_linc_qc, [("bold_mask", "bold_mask_nativespace")]),
-                (warp_boldmask_to_t1w, make_linc_qc, [("output_image", "bold_mask_inputspace")]),
+                (inputnode, make_linc_qc, [("bold_mask", "bold_mask_inputspace")]),
+                (warp_boldmask_to_t1w, make_linc_qc, [("output_image", "bold_mask_anatspace")]),
                 (warp_boldmask_to_mni, make_linc_qc, [("output_image", "bold_mask_stdspace")]),
                 (warp_anatmask_to_t1w, make_linc_qc, [("output_image", "anat_mask_anatspace")]),
             ])  # fmt:skip
         else:
-            make_linc_qc.inputs.mask_file = None
+            make_linc_qc.inputs.bold_mask_inputspace = None
 
         ds_qc_metadata = pe.Node(
             DerivativesDataSink(

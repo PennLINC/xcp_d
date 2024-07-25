@@ -252,27 +252,7 @@ class _LINCQCOutputSpec(TraitedSpec):
 
 
 class LINCQC(SimpleInterface):
-    """Generate pre- and post-processing quality control (QC) figures.
-
-    Examples
-    --------
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    qcplots = QCPlots()
-    qcplots.inputs.cleaned_file = datafile
-    qcplots.inputs.name_source = rawbold
-    qcplots.inputs.bold_file = rawbold
-    qcplots.inputs.TR = TR
-    qcplots.inputs.temporal_mask = temporalmask
-    qcplots.inputs.bold_mask_inputspace = mask
-    qcplots.inputs.dummy_scans = dummy_scans
-    qcplots.run()
-    .. testcleanup::
-    >>> tmpdir.cleanup()
-    """
+    """Calculate QC metrics used by the LINC lab."""
 
     input_spec = _LINCQCInputSpec
     output_spec = _LINCQCOutputSpec
