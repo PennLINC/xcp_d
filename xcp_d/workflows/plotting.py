@@ -321,11 +321,7 @@ def init_qc_report_wf(
         ])  # fmt:skip
 
         make_qc_plots_nipreps = pe.Node(
-            QCPlots(
-                TR=TR,
-                head_radius=head_radius,
-                template_mask=nlin2009casym_brain_mask,
-            ),
+            QCPlots(TR=TR, head_radius=head_radius),
             name="make_qc_plots_nipreps",
             mem_gb=2,
             n_procs=omp_nthreads,
