@@ -1,3 +1,7 @@
+.. _PennLINC: https://www.pennlinc.io/
+.. _DCAN: https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/
+.. _ABCD: https://abcdstudy.org/
+.. _HBCD: https://hbcdstudy.org/
 .. _Nipype: http://nipype.readthedocs.io/en/latest/
 .. _BIDS: http://bids.neuroimaging.io
 .. _`BIDS Derivatives`: https://docs.google.com/document/d/17ebopupQxuRwp7U7TFvS6BH03ALJOgGHufxK8ToAvyI

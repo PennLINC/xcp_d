@@ -15,29 +15,48 @@ from xcp_d.workflows import anatomical
 def surface_files(datasets, tmp_path_factory):
     """Collect real and fake surface files to test the anatomical workflow."""
     tmpdir = tmp_path_factory.mktemp("surface_files")
-    anat_dir = os.path.join(datasets["ds001419"], "sub-01", "anat")
+    anat_dir = os.path.join(datasets["pnc"], "sub-1648798153", "ses-PNC1", "anat")
 
     files = {
-        "native_lh_pial": os.path.join(anat_dir, "sub-01_hemi-L_pial.surf.gii"),
-        "native_lh_wm": os.path.join(anat_dir, "sub-01_hemi-L_smoothwm.surf.gii"),
-        "native_rh_pial": os.path.join(anat_dir, "sub-01_hemi-R_pial.surf.gii"),
-        "native_rh_wm": os.path.join(anat_dir, "sub-01_hemi-R_smoothwm.surf.gii"),
+        "native_lh_pial": os.path.join(
+            anat_dir, "sub-1648798153_ses-PNC1_acq-refaced_hemi-L_pial.surf.gii"
+        ),
+        "native_lh_wm": os.path.join(
+            anat_dir, "sub-1648798153_ses-PNC1_acq-refaced_hemi-L_white.surf.gii"
+        ),
+        "native_rh_pial": os.path.join(
+            anat_dir, "sub-1648798153_ses-PNC1_acq-refaced_hemi-R_pial.surf.gii"
+        ),
+        "native_rh_wm": os.path.join(
+            anat_dir, "sub-1648798153_ses-PNC1_acq-refaced_hemi-R_white.surf.gii"
+        ),
     }
     final_files = files.copy()
     for fref, fpath in files.items():
         std_fref = fref.replace("native_", "fsLR_")
         std_fname = os.path.basename(fpath)
-        std_fname = std_fname.replace("sub-01_", "sub-01_space-fsLR_den-32k_")
+        std_fname = std_fname.replace(
+            "sub-1648798153_ses-PNC1_acq-refaced_",
+            "sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-32k_",
+        )
         std_fpath = os.path.join(tmpdir, std_fname)
         shutil.copyfile(fpath, std_fpath)
         final_files[std_fref] = std_fpath
+
+    final_files["lh_subject_sphere"] = os.path.join(
+        anat_dir,
+        "sub-1648798153_ses-PNC1_acq-refaced_hemi-L_desc-reg_sphere.surf.gii",
+    )
+    final_files["rh_subject_sphere"] = os.path.join(
+        anat_dir,
+        "sub-1648798153_ses-PNC1_acq-refaced_hemi-R_desc-reg_sphere.surf.gii",
+    )
 
     return final_files
 
 
 def test_warp_surfaces_to_template_wf(
-    datasets,
-    ds001419_data,
+    pnc_data,
     surface_files,
     tmp_path_factory,
 ):
@@ -47,12 +66,9 @@ def test_warp_surfaces_to_template_wf(
     """
     tmpdir = tmp_path_factory.mktemp("test_warp_surfaces_to_template_wf")
 
-    subject_id = "01"
-
     wf = anatomical.init_warp_surfaces_to_template_wf(
-        fmri_dir=datasets["ds001419"],
-        subject_id=subject_id,
         output_dir=tmpdir,
+        software="FreeSurfer",
         omp_nthreads=1,
     )
 
@@ -60,15 +76,17 @@ def test_warp_surfaces_to_template_wf(
     wf.inputs.inputnode.rh_pial_surf = surface_files["native_rh_pial"]
     wf.inputs.inputnode.lh_wm_surf = surface_files["native_lh_wm"]
     wf.inputs.inputnode.rh_wm_surf = surface_files["native_rh_wm"]
+    wf.inputs.inputnode.lh_subject_sphere = surface_files["lh_subject_sphere"]
+    wf.inputs.inputnode.rh_subject_sphere = surface_files["rh_subject_sphere"]
     # transforms (only used if warp_to_standard is True)
-    wf.inputs.inputnode.anat_to_template_xfm = ds001419_data["anat_to_template_xfm"]
-    wf.inputs.inputnode.template_to_anat_xfm = ds001419_data["template_to_anat_xfm"]
+    wf.inputs.inputnode.anat_to_template_xfm = pnc_data["anat_to_template_xfm"]
+    wf.inputs.inputnode.template_to_anat_xfm = pnc_data["template_to_anat_xfm"]
 
     wf.base_dir = tmpdir
     wf.run()
 
     # All of the possible fsLR surfaces should be available.
-    out_anat_dir = os.path.join(tmpdir, "sub-01", "anat")
+    out_anat_dir = os.path.join(tmpdir, "sub-1648798153", "ses-PNC1", "anat")
     for key, filename in surface_files.items():
         if "fsLR" in key:
             out_fname = os.path.basename(filename)

@@ -50,11 +50,6 @@ class DerivativesDataSink(BaseDerivativesDataSink):
 
 
 class _CollectRegistrationFilesInputSpec(BaseInterfaceInputSpec):
-    segmentation_dir = Directory(
-        exists=True,
-        required=True,
-        desc="Path to FreeSurfer or MCRIBS derivatives.",
-    )
     software = traits.Enum(
         "FreeSurfer",
         "MCRIBS",
@@ -67,17 +62,9 @@ class _CollectRegistrationFilesInputSpec(BaseInterfaceInputSpec):
         required=True,
         desc="The hemisphere being used.",
     )
-    participant_id = traits.Str(
-        required=True,
-        desc="Participant ID. Used to select the subdirectory of the FreeSurfer derivatives.",
-    )
 
 
 class _CollectRegistrationFilesOutputSpec(TraitedSpec):
-    subject_sphere = File(
-        exists=True,
-        desc="Subject-space sphere.",
-    )
     source_sphere = File(
         exists=True,
         desc="Source-space sphere (namely, fsaverage).",
@@ -104,27 +91,13 @@ class CollectRegistrationFiles(SimpleInterface):
     output_spec = _CollectRegistrationFilesOutputSpec
 
     def _run_interface(self, runtime):
-        import os
-
         from templateflow.api import get as get_template
 
         hemisphere = self.inputs.hemisphere
-        hstr = f"{hemisphere.lower()}h"
-        participant_id = self.inputs.participant_id
-        if not participant_id.startswith("sub-"):
-            participant_id = f"sub-{participant_id}"
 
         if self.inputs.software == "FreeSurfer":
-            # Find the subject's sphere in the FreeSurfer derivatives.
-            # In fMRIPrep derivatives, sub-<subject_label>_hemi-[LR]_desc-reg_sphere.surf.gii
-            self._results["subject_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                participant_id,
-                "surf",
-                f"{hstr}.sphere.reg",
-            )
-
-            # Load the fsaverage-164k sphere.
+            # Load the fsaverage-164k sphere
+            # FreeSurfer: tpl-fsaverage_hemi-?_den-164k_sphere.surf.gii
             self._results["source_sphere"] = str(
                 get_template(
                     template="fsaverage",
@@ -161,51 +134,39 @@ class CollectRegistrationFiles(SimpleInterface):
             )
 
         elif self.inputs.software == "MCRIBS":
-            # Find the subject's sphere in the MCRIBS derivatives.
-            self._results["subject_sphere"] = os.path.join(
-                self.inputs.segmentation_dir,
-                participant_id,
-                "freesurfer",
-                participant_id,
-                "surf",
-                f"{hstr}.sphere.reg2",
-            )
-
-            # Load the fsaverage-41k sphere.
             self._results["source_sphere"] = str(
                 get_template(
                     template="fsaverage",
                     space=None,
                     hemi=hemisphere,
                     density="41k",
-                    desc="reg",
+                    desc=None,
                     suffix="sphere",
-                )
+                ),
             )
 
-            # Load the fsaverage-to-dhcpSym warp sphere.
             self._results["sphere_to_sphere"] = str(
                 get_template(
-                    template="dhcpSym",
+                    template="dhcpAsym",
                     cohort="42",
                     space="fsaverage",
                     hemi=hemisphere,
                     density="41k",
                     desc="reg",
                     suffix="sphere",
-                )
+                ),
             )
 
-            # Load the dhcpSym-32k-in-fsLR space sphere.
             self._results["target_sphere"] = str(
                 get_template(
-                    template="dhcpSym",
+                    template="dhcpAsym",
                     cohort="42",
-                    space="fsLR",
+                    space=None,
                     hemi=hemisphere,
                     density="32k",
+                    desc=None,
                     suffix="sphere",
-                )
+                ),
             )
 
         return runtime

@@ -38,10 +38,10 @@ dependencies = [
     "psutil >= 5.4",  # for sentry
     "pybids ~= 0.16.4",
     "pyyaml",
-    "scikit-learn <= 1.5.0",
-    "scipy >= 1.8.0,<= 1.13.1",  # nipype needs networkx, which needs scipy > 1.8.0
+    "scikit-learn <= 1.5.1",
+    "scipy <= 1.14.0,>= 1.14.0",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.6.0",  # for usage reports
+    "sentry-sdk ~= 2.10.0",  # for usage reports
     "templateflow ~= 24.2.0",
     "toml",
 ]
@@ -61,7 +61,7 @@ doc = [
     "pydotplus",
     "recommonmark",
     "sphinx >= 4.2.0",
-    "sphinx-argparse",
+    "sphinx-argparse != 0.5.0",
     "sphinx-markdown-tables",
     "sphinx_rtd_theme",
     "sphinxcontrib-apidoc",
@@ -170,14 +170,16 @@ per-file-ignores = [
 ]
 
 [tool.pytest.ini_options]
-addopts = '-m "not ds001419_nifti and not ds001419_cifti and not ukbiobank and not pnc_cifti and not pnc_cifti_t2wonly and not fmriprep_without_freesurfer and not nibabies"'
+addopts = '-m "not integration"'
 markers = [
+    "integration: mark test as an integration test",
     "ds001419_nifti: mark NIfTI integration test for fMRIPrep derivatives from ds001419",
     "ds001419_cifti: mark CIFTI integration test for fMRIPrep derivatives from ds001419",
     "ukbiobank: mark integration test for UK Biobank derivatives with NIfTI settings",
     "pnc_cifti: mark integration test for fMRIPrep derivatives with CIFTI settings",
     "pnc_cifti_t2wonly: mark integration test for fMRIPrep derivatives with CIFTI settings and a simulated T2w file",
     "fmriprep_without_freesurfer: mark integration test for fMRIPrep derivatives without FreeSurfer",
+    "fmriprep_without_freesurfer_with_main: mark integration test for fMRIPrep derivatives without FreeSurfer using main function",
     "nibabies: mark integration test for nibabies derivatives",
 ]
 env = [

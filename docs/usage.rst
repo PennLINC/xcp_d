@@ -34,7 +34,7 @@ command-line structure, for example:
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <output_dir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d <fmriprep_dir> <output_dir> --file-format cifti --despike --head_radius 40 -w /wkdir --smoothing 6
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
@@ -51,6 +51,7 @@ Command-Line Arguments
 .. argparse::
    :ref: xcp_d.cli.parser._build_parser
    :prog: xcp_d
+   :func: _build_parser
 
    --band-stop-min : @after
       For the "notch" filter option, we recommend the following values.
@@ -151,6 +152,7 @@ This argument must point to a JSON file, containing filters that will be fed int
 The keys in this JSON file are unique to XCP-D.
 They are our internal terms for different inputs that will be selected from the preprocessed
 dataset.
+The full list of keys can be found in the file ``xcp_d/data/io_spec.yaml``.
 
 ``"bold"`` determines which preprocessed BOLD files will be chosen.
 You can set a number of entities here, including "session", "task", "space", "resolution", and
@@ -165,11 +167,14 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 ``"t1w"`` selects a native T1w-space, preprocessed T1w file.
 
 ``"t2w"`` selects a native T1w-space, preprocessed T2w file.
+If a T1w file is not available, this file will be in T2w space.
 
-``"anat_dseg"`` selects a native T1w-space segmentation file.
-This file is primarily used for figures.
+``"anat_dseg"`` selects a segmentation file in the same space as the BOLD data.
+This file is not used for anything.
 
-``"anat_brainmask"`` selects a native T1w-space brain mask.
+``"anat_brainmask"`` selects an anatomically-derived brain mask in the same space as the BOLD data.
+This file is used (1) to estimate head radius for FD calculation and
+(2) to calculate coregistration quality metrics.
 
 ``"anat_to_template_xfm"`` selects a transform from T1w (or T2w, if no T1w image is available)
 space to standard space.
@@ -177,6 +182,9 @@ The standard space that will be used depends on the ``"bold"`` files that are se
 
 ``"template_to_anat_xfm"`` selects a transform from standard space to T1w/T2w space.
 Again, the standard space is determined based on other files.
+
+There are additional keys that control how mesh and morphometry files are selected.
+Please refer to ``io_spec.yaml`` for more information on them.
 
 
 Example bids-filter-file
@@ -195,11 +203,14 @@ In this example file, we only run XCP-D on resting-state preprocessed BOLD runs 
    }
 
 
+****************************
+Running XCP-D via containers
+****************************
+
 .. _run_docker:
 
-***********************************
-Running XCP-D via Docker containers
-***********************************
+Docker
+======
 
 If you are running XCP-D locally, we recommend Docker.
 See :ref:`installation_container_technologies` for installation instructions.
@@ -220,48 +231,46 @@ A Docker container can be created using the following command:
       -v /dset/derivatives/freesurfer:/freesurfer:ro \  # Necessary for fMRIPrep versions <22.0.2
       pennlinc/xcp_d:latest \
       /fmriprep /out participant \
-      --cifti --despike --head_radius 40 -w /work --smoothing 6
-
+      --file-format cifti --despike --head_radius 40 -w /work --smoothing 6
 
 .. _run_singularity:
 
-****************************************
-Running XCP-D via Singularity containers
-****************************************
+Apptainer
+=========
 
 If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using
-Singularity.
+Apptainer.
 See :ref:`installation_container_technologies` for installation instructions.
 
 .. warning::
 
-   XCP-D (and perhaps other Docker-based Singularity images) may not work with
-   Singularity <=2.4.
-   We strongly recommend using Singularity 3+.
+   XCP-D (and perhaps other Docker-based Apptainer images) may not work with
+   Apptainer <=2.4.
+   We strongly recommend using Apptainer 3+.
    For more information, see `this xcp_d issue <https://github.com/PennLINC/xcp_d/issues/793>`_ and
-   `this Singularity issue <https://github.com/apptainer/singularity/issues/884>`_.
+   `this Apptainer issue <https://github.com/apptainer/singularity/issues/884>`_.
 
 If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run
 *xcp_d*.
 
 .. code-block:: bash
 
-    singularity run --cleanenv xcp_d.simg \
-        path/to/data/fmri_dir  \
-        path/to/output/dir \
+    singularity run --cleanenv xcp_d.sif \
+        /dset/derivatives/fmriprep  \
+        /dset/derivatives/xcp_d \
         --participant-label label
 
 
 Relevant aspects of the ``$HOME`` directory within the container
 ================================================================
 
-By default, Singularity will bind the user's ``$HOME`` directory on the host
+By default, Apptainer will bind the user's ``$HOME`` directory on the host
 into the ``/home/$USER`` directory (or equivalent) in the container.
 Most of the time, it will also redefine the ``$HOME`` environment variable and
 update it to point to the corresponding mount point in ``/home/$USER``.
 However, these defaults can be overwritten in your system.
 It is recommended that you check your settings with your system's administrator.
-If your Singularity installation allows it, you can work around the ``$HOME``
+If your Apptainer installation allows it, you can work around the ``$HOME``
 specification, combining the bind mounts argument (``-B``) with the home overwrite
 argument (``--home``) as follows:
 

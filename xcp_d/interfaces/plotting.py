@@ -247,10 +247,14 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
 
     # Inputs used only for nifti data
     seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
-    anat_brainmask = File(exists=True, mandatory=False, desc="Mask in T1W")
+    anat_brainmask = File(
+        exists=True,
+        mandatory=False,
+        desc="Anatomically-derived brain mask in anatomical space.",
+    )
     template_mask = File(exists=True, mandatory=False, desc="Template mask")
-    bold2T1w_mask = File(exists=True, mandatory=False, desc="Bold mask in MNI")
-    bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
+    bold2T1w_mask = File(exists=True, mandatory=False, desc="BOLD mask in MNI space")
+    bold2temp_mask = File(exists=True, mandatory=False, desc="BOLD mask in anatomical space")
 
 
 class _QCPlotsOutputSpec(TraitedSpec):
@@ -901,10 +905,27 @@ class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
         usedefault=True,
         desc="Maximum value for the colormap.",
     )
+    base_desc = traits.Str(
+        mandatory=False,
+        default_value="",
+        usedefault=True,
+        desc="Base description for the output file.",
+    )
+    lh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Left hemisphere underlay.",
+    )
+    rh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Right hemisphere underlay.",
+    )
 
 
 class _PlotCiftiParcellationOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="Output file.")
+    desc = traits.Str(desc="Description of the output file.")
 
 
 class PlotCiftiParcellation(SimpleInterface):
@@ -917,24 +938,30 @@ class PlotCiftiParcellation(SimpleInterface):
         assert len(self.inputs.in_files) == len(self.inputs.labels)
         assert len(self.inputs.cortical_atlases) > 0
 
-        rh = str(
-            get_template(
-                template="fsLR",
-                hemi="R",
-                density="32k",
-                suffix="midthickness",
-                extension=".surf.gii",
+        if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
+            self._results["desc"] = f"{self.inputs.base_desc}ParcellatedStandard"
+            rh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="R",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
             )
-        )
-        lh = str(
-            get_template(
-                template="fsLR",
-                hemi="L",
-                density="32k",
-                suffix="midthickness",
-                extension=".surf.gii",
+            lh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="L",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
             )
-        )
+        else:
+            self._results["desc"] = f"{self.inputs.base_desc}ParcellatedSubject"
+            rh = self.inputs.rh_underlay
+            lh = self.inputs.lh_underlay
 
         # Create Figure and GridSpec.
         # One subplot for each file. Each file will then have four subplots, arranged in a square.
@@ -969,15 +996,17 @@ class PlotCiftiParcellation(SimpleInterface):
             subplot.set_axis_off()
 
         vmin, vmax = self.inputs.vmin, self.inputs.vmax
+        threshold = 0.01
         if vmin == vmax:
+            threshold = None
+
             # Define vmin and vmax based on all of the files
             vmin, vmax = np.inf, -np.inf
-            LOGGER.warning(f"Setting vmin={vmin}, vmax={vmax}")
             for cortical_file in cortical_files:
                 img_data = nb.load(cortical_file).get_fdata()
                 vmin = np.min([np.nanmin(img_data), vmin])
                 vmax = np.max([np.nanmax(img_data), vmax])
-                LOGGER.warning(f"Setting vmin={vmin}, vmax={vmax}")
+            vmin = 0
 
         for i_file in range(n_files):
             subplot = subplots[i_file]
@@ -1009,6 +1038,7 @@ class PlotCiftiParcellation(SimpleInterface):
             plot_surf_stat_map(
                 lh,
                 lh_surf_data,
+                threshold=threshold,
                 vmin=vmin,
                 vmax=vmax,
                 hemi="left",
@@ -1022,6 +1052,7 @@ class PlotCiftiParcellation(SimpleInterface):
             plot_surf_stat_map(
                 rh,
                 rh_surf_data,
+                threshold=threshold,
                 vmin=vmin,
                 vmax=vmax,
                 hemi="right",
@@ -1035,6 +1066,7 @@ class PlotCiftiParcellation(SimpleInterface):
             plot_surf_stat_map(
                 lh,
                 lh_surf_data,
+                threshold=threshold,
                 vmin=vmin,
                 vmax=vmax,
                 hemi="left",
@@ -1048,6 +1080,7 @@ class PlotCiftiParcellation(SimpleInterface):
             plot_surf_stat_map(
                 rh,
                 rh_surf_data,
+                threshold=threshold,
                 vmin=vmin,
                 vmax=vmax,
                 hemi="right",
@@ -1093,15 +1126,27 @@ class _PlotDenseCiftiInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="CIFTI file to plot.",
     )
-    name_source = File(
-        exists=False,
-        mandatory=True,
-        desc="File to use as the name source. Unused but retained for compatibility.",
+    base_desc = traits.Str(
+        mandatory=False,
+        default_value="",
+        usedefault=True,
+        desc="Base description for the output file.",
+    )
+    lh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Left hemisphere underlay.",
+    )
+    rh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Right hemisphere underlay.",
     )
 
 
 class _PlotDenseCiftiOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="Output file.")
+    desc = traits.Str(desc="Description of the output file.")
 
 
 class PlotDenseCifti(SimpleInterface):
@@ -1111,30 +1156,52 @@ class PlotDenseCifti(SimpleInterface):
     output_spec = _PlotDenseCiftiOutputSpec
 
     def _run_interface(self, runtime):
-        rh = str(
-            get_template(
-                template="fsLR",
-                hemi="R",
-                density="32k",
-                suffix="midthickness",
-                extension=".surf.gii",
+        if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
+            self._results["desc"] = f"{self.inputs.base_desc}SurfaceStandard"
+            rh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="R",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
             )
-        )
-        lh = str(
-            get_template(
-                template="fsLR",
-                hemi="L",
-                density="32k",
-                suffix="midthickness",
-                extension=".surf.gii",
+            lh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="L",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
             )
-        )
+        else:
+            self._results["desc"] = f"{self.inputs.base_desc}SurfaceSubject"
+            rh = self.inputs.rh_underlay
+            lh = self.inputs.lh_underlay
 
         cifti = nb.load(self.inputs.in_file)
         cifti_data = cifti.get_fdata()
         cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
 
-        fig, axes = plt.subplots(figsize=(4, 4), ncols=2, nrows=2, subplot_kw={"projection": "3d"})
+        # Create Figure and GridSpec.
+        fig = plt.figure(constrained_layout=False)
+        fig.set_size_inches(6.5, 6)
+        # Add an additional column for the colorbar
+        gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 0.05])
+        subplot_gridspec = gs[0, 0]
+        subplot = fig.add_subplot(subplot_gridspec)
+        colorbar_gridspec = gs[0, 1]
+
+        subplot.set_axis_off()
+
+        # Create 4 Axes (2 rows, 2 columns) from the subplot
+        gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot_gridspec)
+        inner_subplots = [
+            fig.add_subplot(gs_inner[i, j], projection="3d") for i in range(2) for j in range(2)
+        ]
+
         lh_surf_data = surf_data_from_cifti(
             cifti_data,
             cifti_axes[1],
@@ -1146,13 +1213,8 @@ class PlotDenseCifti(SimpleInterface):
             "CIFTI_STRUCTURE_CORTEX_RIGHT",
         )
 
-        vmax = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
-        vmin = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
-
-        axes[0, 0].set_rasterized(True)
-        axes[0, 1].set_rasterized(True)
-        axes[1, 0].set_rasterized(True)
-        axes[1, 1].set_rasterized(True)
+        vmax = np.nanmax([np.nanmax(lh_surf_data), np.nanmax(rh_surf_data)])
+        vmin = np.nanmin([np.nanmin(lh_surf_data), np.nanmin(rh_surf_data)])
 
         plot_surf_stat_map(
             lh,
@@ -1162,20 +1224,9 @@ class PlotDenseCifti(SimpleInterface):
             hemi="left",
             view="lateral",
             engine="matplotlib",
+            cmap="cool",
             colorbar=False,
-            axes=axes[0, 0],
-            figure=fig,
-        )
-        plot_surf_stat_map(
-            lh,
-            lh_surf_data,
-            vmin=vmin,
-            vmax=vmax,
-            hemi="left",
-            view="medial",
-            engine="matplotlib",
-            colorbar=False,
-            axes=axes[1, 0],
+            axes=inner_subplots[0],
             figure=fig,
         )
         plot_surf_stat_map(
@@ -1186,8 +1237,22 @@ class PlotDenseCifti(SimpleInterface):
             hemi="right",
             view="lateral",
             engine="matplotlib",
+            cmap="cool",
             colorbar=False,
-            axes=axes[0, 1],
+            axes=inner_subplots[1],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            lh,
+            lh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="left",
+            view="medial",
+            engine="matplotlib",
+            cmap="cool",
+            colorbar=False,
+            axes=inner_subplots[2],
             figure=fig,
         )
         plot_surf_stat_map(
@@ -1198,12 +1263,24 @@ class PlotDenseCifti(SimpleInterface):
             hemi="right",
             view="medial",
             engine="matplotlib",
+            cmap="cool",
             colorbar=False,
-            axes=axes[1, 1],
+            axes=inner_subplots[3],
             figure=fig,
         )
-        axes[0, 0].set_title("Left Hemisphere", fontsize=10)
-        axes[0, 1].set_title("Right Hemisphere", fontsize=10)
+
+        inner_subplots[0].set_title("Left Hemisphere", fontsize=10)
+        inner_subplots[1].set_title("Right Hemisphere", fontsize=10)
+
+        for ax in inner_subplots:
+            ax.set_rasterized(True)
+
+        # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
+        sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
+
+        colorbar_ax = fig.add_subplot(colorbar_gridspec)
+        # Add a colorbar to colorbar_ax using the ScalarMappable
+        fig.colorbar(sm, cax=colorbar_ax)
 
         self._results["out_file"] = fname_presuffix(
             self.inputs.in_file,

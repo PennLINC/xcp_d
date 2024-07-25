@@ -26,9 +26,9 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
     Parameters
     ----------
     bold2t1w_mask : :obj:`str`
-        Path to the BOLD mask in T1w space.
+        Path to the BOLD mask in anatomical (T1w or T2w) space.
     anat_brainmask : :obj:`str`
-        Path to the T1w mask.
+        Path to the anatomically-derived brain mask in anatomical space.
     bold2template_mask : :obj:`str`
         Path to the BOLD mask in template space.
     template_mask : :obj:`str`
@@ -292,7 +292,7 @@ def compute_dvars(
     return dvars_nstd, dvars_stdz
 
 
-def make_dcan_qc_file(filtered_motion, TR):
+def make_abcc_qc_file(filtered_motion, TR):
     """Make DCAN HDF5 file from single motion file.
 
     NOTE: This is a Node function.
@@ -313,7 +313,7 @@ def make_dcan_qc_file(filtered_motion, TR):
 
     from xcp_d.utils.qcmetrics import make_dcan_df
 
-    dcan_df_file = os.path.abspath("desc-dcan_qc.hdf5")
+    dcan_df_file = os.path.abspath("desc-abcc_qc.hdf5")
 
     make_dcan_df(filtered_motion, dcan_df_file, TR)
     return dcan_df_file
