@@ -1,17 +1,18 @@
 """Quality control metrics."""
 
-import h5py
 import nibabel as nb
 import numpy as np
-import pandas as pd
 from nipype import logging
-
-from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.utils")
 
 
-def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, template_mask):
+def compute_registration_qc(
+    bold_mask_anatspace,
+    anat_mask_anatspace,
+    bold_mask_stdspace,
+    template_mask,
+):
     """Compute quality of registration metrics.
 
     This function will calculate a series of metrics, including:
@@ -25,14 +26,14 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
 
     Parameters
     ----------
-    bold2t1w_mask : :obj:`str`
-        Path to the BOLD mask in anatomical (T1w or T2w) space.
-    anat_brainmask : :obj:`str`
+    bold_mask_anatspace : :obj:`str`
+        Path to the BOLD brain mask in anatomical (T1w or T2w) space.
+    anat_mask_anatspace : :obj:`str`
         Path to the anatomically-derived brain mask in anatomical space.
-    bold2template_mask : :obj:`str`
-        Path to the BOLD mask in template space.
+    bold_mask_stdspace : :obj:`str`
+        Path to the BOLD brain mask in template space.
     template_mask : :obj:`str`
-        Path to the template mask.
+        Path to the template's official brain mask.
 
     Returns
     -------
@@ -41,18 +42,18 @@ def compute_registration_qc(bold2t1w_mask, anat_brainmask, bold2template_mask, t
     qc_metadata : dict
         Metadata describing the QC measures.
     """
-    bold2t1w_mask_arr = nb.load(bold2t1w_mask).get_fdata()
-    t1w_mask_arr = nb.load(anat_brainmask).get_fdata()
-    bold2template_mask_arr = nb.load(bold2template_mask).get_fdata()
+    bold_mask_anatspace_arr = nb.load(bold_mask_anatspace).get_fdata()
+    anat_mask_anatspace_arr = nb.load(anat_mask_anatspace).get_fdata()
+    bold_mask_stdspace_arr = nb.load(bold_mask_stdspace).get_fdata()
     template_mask_arr = nb.load(template_mask).get_fdata()
 
     reg_qc = {
-        "coreg_dice": [dice(bold2t1w_mask_arr, t1w_mask_arr)],
-        "coreg_correlation": [pearson(bold2t1w_mask_arr, t1w_mask_arr)],
-        "coreg_overlap": [overlap(bold2t1w_mask_arr, t1w_mask_arr)],
-        "norm_dice": [dice(bold2template_mask_arr, template_mask_arr)],
-        "norm_correlation": [pearson(bold2template_mask_arr, template_mask_arr)],
-        "norm_overlap": [overlap(bold2template_mask_arr, template_mask_arr)],
+        "coreg_dice": [dice(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
+        "coreg_correlation": [pearson(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
+        "coreg_overlap": [overlap(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
+        "norm_dice": [dice(bold_mask_stdspace_arr, template_mask_arr)],
+        "norm_correlation": [pearson(bold_mask_stdspace_arr, template_mask_arr)],
+        "norm_overlap": [overlap(bold_mask_stdspace_arr, template_mask_arr)],
     }
     qc_metadata = {
         "coreg_dice": {
@@ -290,107 +291,3 @@ def compute_dvars(
     dvars_stdz = np.insert(dvars_stdz, 0, 0)
 
     return dvars_nstd, dvars_stdz
-
-
-def make_abcc_qc_file(filtered_motion, TR):
-    """Make DCAN HDF5 file from single motion file.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    filtered_motion_file : :obj:`str`
-        File from which to extract information.
-    TR : :obj:`float`
-        Repetition time.
-
-    Returns
-    -------
-    dcan_df_file : :obj:`str`
-        Name of the HDF5-format file that is created.
-    """
-    import os
-
-    from xcp_d.utils.qcmetrics import make_dcan_df
-
-    dcan_df_file = os.path.abspath("desc-abcc_qc.hdf5")
-
-    make_dcan_df(filtered_motion, dcan_df_file, TR)
-    return dcan_df_file
-
-
-@fill_doc
-def make_dcan_df(filtered_motion, name, TR):
-    """Create an HDF5-format file containing a DCAN-format dataset.
-
-    Parameters
-    ----------
-    %(filtered_motion)s
-    name : :obj:`str`
-        Name of the HDF5-format file to be created.
-    %(TR)s
-
-    Notes
-    -----
-    The metrics in the file are:
-
-    -   ``FD_threshold``: a number >= 0 that represents the FD threshold used to calculate
-        the metrics in this list.
-    -   ``frame_removal``: a binary vector/array the same length as the number of frames
-        in the concatenated time series, indicates whether a frame is removed (1) or not (0)
-    -   ``format_string`` (legacy): a string that denotes how the frames were excluded.
-        This uses a notation devised by Avi Snyder.
-    -   ``total_frame_count``: a whole number that represents the total number of frames
-        in the concatenated series
-    -   ``remaining_frame_count``: a whole number that represents the number of remaining
-        frames in the concatenated series
-    -   ``remaining_seconds``: a whole number that represents the amount of time remaining
-        after thresholding
-    -   ``remaining_frame_mean_FD``: a number >= 0 that represents the mean FD of the
-        remaining frames
-    """
-    LOGGER.debug(f"Generating DCAN file: {name}")
-
-    # Load filtered framewise_displacement values from file
-    filtered_motion_df = pd.read_table(filtered_motion)
-    fd = filtered_motion_df["framewise_displacement"].values
-
-    with h5py.File(name, "w") as dcan:
-        for thresh in np.linspace(0, 1, 101):
-            thresh = np.around(thresh, 2)
-
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/skip",
-                data=0,
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/binary_mask",
-                data=(fd > thresh).astype(int),
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/threshold",
-                data=thresh,
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/total_frame_count",
-                data=len(fd),
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_total_frame_count",
-                data=len(fd[fd <= thresh]),
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_seconds",
-                data=len(fd[fd <= thresh]) * TR,
-                dtype="float",
-            )
-            dcan.create_dataset(
-                f"/dcan_motion/fd_{thresh}/remaining_frame_mean_FD",
-                data=(fd[fd <= thresh]).mean(),
-                dtype="float",
-            )
