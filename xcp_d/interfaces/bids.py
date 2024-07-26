@@ -108,6 +108,7 @@ class CollectRegistrationFiles(SimpleInterface):
 
             # TODO: Collect from templateflow once it's uploaded.
             # FreeSurfer: fs_?/fs_?-to-fs_LR_fsaverage.?_LR.spherical_std.164k_fs_?.surf.gii
+            # Should be tpl-fsLR_hemi-?_space-fsaverage_den-164k_sphere.surf.gii on TemplateFlow
             self._results["sphere_to_sphere"] = str(
                 load_data(
                     f"standard_mesh_atlases/fs_{hemisphere}/"
