@@ -903,7 +903,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     -------
     world_xfm
         The affine portion of the volumetric anatomical-to-template transform,
-        in FSL (FLIRT) format.
+        in NIfTI (world) format.
     merged_warpfield
         The warpfield portion of the volumetric anatomical-to-template transform,
         in FSL (FNIRT) format.
@@ -1160,7 +1160,7 @@ def init_warp_one_hemisphere_wf(
         in fsnative space.
     world_xfm
         The affine portion of the volumetric anatomical-to-template transform,
-        in FSL (FLIRT) format.
+        in NIfTI (world) format.
     merged_warpfield
         The warpfield portion of the volumetric anatomical-to-template transform,
         in FSL (FNIRT) format.
