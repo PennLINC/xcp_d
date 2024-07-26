@@ -1184,28 +1184,26 @@ def init_warp_one_hemisphere_wf(
 
     1. Collect the registration files needed for the warp.
     2. Convert the subject's sphere to a GIFTI file.
+        - This step is unnecessary since fMRIPrep and Nibabies already write out a GIFTI file.
     3. Project the subject's fsnative-in-fsaverage sphere to a high-resolution
        target-sphere-in-fsaverage-space.
        This retains the subject's fsnative sphere's resolution and vertices
        (e.g., 120079 vertices), but the coordinates are now aligned to the target sphere's space.
         - For Freesurfer, this is the fsLR-164k-in-fsaverage sphere.
         - For MCRIBS, this is the dhcpAsym-41k-in-fsaverage sphere.
+        - Nibabies and fMRIPrep do this already to produce the
+          space-<fsLR|dhcpAsym>_desc-reg_sphere files, so XCP-D could directly use those and skip
+          this step.
     4. Apply the warped sphere from the previous step to warp the pial and white matter surfaces
        to the target space. This includes downsampling to 32k.
         - For Freesurfer, this means the coordinates for these files are fsLR-32k.
         - For MCRIBS, this means the coordinates for these files are dhcpAsym-32k.
     5. Apply the anatomical-to-template affine transform to the 32k surfaces.
-       I don't know why.
     6. Apply the anatomical-to-template warpfield to the 32k surfaces.
-       I don't know why.
-
-    Open questions:
-
-    1. What does applying the anat-to-template affine and warpfield do?
-    2. Do the anat-to-template affine and warpfield need to be set to a specific template?
-    3. Do we still need to convert the subject sphere since it's already a gifti?
-    4. Why doesn't the fsnative-to-anat transform come into play if we're using anat-to-template
-       transforms?
+       This and the previous step make it so you can overlay the pial and white matter surfaces
+       on the associated volumetric template (e.g., for XCP-D's brainsprite).
+        - This important thing is that the volumetric template must match the template space
+          used here.
     """
     workflow = Workflow(name=name)
 
