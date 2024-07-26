@@ -870,6 +870,8 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     """Modify ANTS-style fMRIPrep transforms to work with Connectome Workbench/FSL FNIRT.
 
+    XXX: Does this only work if the template is MNI152NLin6Asym?
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -893,18 +895,21 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     Inputs
     ------
     anat_to_template_xfm
-        ANTS/fMRIPrep-style H5 transform from T1w image to template.
+        ANTS/fMRIPrep-style H5 transform from anatomical image to template.
     template_to_anat_xfm
-        ANTS/fMRIPrep-style H5 transform from template to T1w image.
+        ANTS/fMRIPrep-style H5 transform from template to anatomical image.
 
     Outputs
     -------
     world_xfm
-        TODO: Add description.
+        The affine portion of the volumetric anatomical-to-template transform,
+        in FSL (FLIRT) format.
     merged_warpfield
-        TODO: Add description.
+        The warpfield portion of the volumetric anatomical-to-template transform,
+        in FSL (FNIRT) format.
     merged_inv_warpfield
-        TODO: Add description.
+        The warpfield portion of the volumetric template-to-anatomical transform,
+        in FSL (FNIRT) format.
     """
     workflow = Workflow(name=name)
 
@@ -919,7 +924,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     )
 
     # Now we can start the actual workflow.
-    # use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms
+    # Use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms.
     disassemble_h5 = pe.Node(
         CompositeTransformUtil(
             process="disassemble",
@@ -928,7 +933,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         name="disassemble_h5",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
-    )  # MB
+    )
     workflow.connect([(inputnode, disassemble_h5, [("anat_to_template_xfm", "in_file")])])
 
     # Nipype's CompositeTransformUtil assumes a certain file naming and
@@ -945,32 +950,27 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
     )
     workflow.connect([(inputnode, disassemble_h5_inv, [("template_to_anat_xfm", "in_file")])])
 
-    # convert affine from ITK binary to txt
-    convert_ants_transform = pe.Node(
+    # Convert anat-to-template affine from ITK binary to txt
+    convert_ants_xfm = pe.Node(
         ConvertTransformFile(dimension=3),
-        name="convert_ants_transform",
+        name="convert_ants_xfm",
     )
-    workflow.connect([
-        (disassemble_h5, convert_ants_transform, [("affine_transform", "in_transform")]),
-    ])  # fmt:skip
+    workflow.connect([(disassemble_h5, convert_ants_xfm, [("affine_transform", "in_transform")])])
 
-    # change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
+    # Change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
     # since wb_command doesn't recognize "AffineTransform"
-    # (AffineTransform is a subclass of MatrixOffsetTransformBase
-    # which makes this okay to do AFAIK)
+    # (AffineTransform is a subclass of MatrixOffsetTransformBase which prob makes this okay to do)
     change_xfm_type = pe.Node(ChangeXfmType(), name="change_xfm_type")
-    workflow.connect([
-        (convert_ants_transform, change_xfm_type, [("out_transform", "in_transform")]),
-    ])  # fmt:skip
+    workflow.connect([(convert_ants_xfm, change_xfm_type, [("out_transform", "in_transform")])])
 
-    # convert affine xfm to "world" so it works with -surface-apply-affine
+    # Convert affine xfm to "world" so it works with -surface-apply-affine
     convert_xfm2world = pe.Node(
         ConvertAffine(fromwhat="itk", towhat="world"),
         name="convert_xfm2world",
     )
     workflow.connect([(change_xfm_type, convert_xfm2world, [("out_transform", "in_file")])])
 
-    # use C3d to separate the combined warpfield xfm into x, y, and z components
+    # Use C3d to separate the combined warpfield xfm into x, y, and z components
     get_xyz_components = pe.Node(
         C3d(
             is_4d=True,
@@ -996,7 +996,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         (disassemble_h5_inv, get_inv_xyz_components, [("displacement_field", "in_file")]),
     ])  # fmt:skip
 
-    # select x-component after separating warpfield above
+    # Select x-component after separating warpfield above
     select_x_component = pe.Node(
         niu.Select(index=[0]),
         name="select_x_component",
@@ -1010,7 +1010,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         n_procs=omp_nthreads,
     )
 
-    # select y-component
+    # Select y-component
     select_y_component = pe.Node(
         niu.Select(index=[1]),
         name="select_y_component",
@@ -1024,7 +1024,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         n_procs=omp_nthreads,
     )
 
-    # select z-component
+    # Select z-component
     select_z_component = pe.Node(
         niu.Select(index=[2]),
         name="select_z_component",
@@ -1046,7 +1046,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         (get_inv_xyz_components, select_inv_z_component, [("out_files", "inlist")]),
     ])  # fmt:skip
 
-    # reverse y-component of the warpfield
+    # Reverse y-component of the warpfield
     # (need to do this when converting a warpfield from ANTs to FNIRT format
     # for use with wb_command -surface-apply-warpfield)
     reverse_y_component = pe.Node(
@@ -1122,6 +1122,12 @@ def init_warp_one_hemisphere_wf(
 ):
     """Apply transforms to warp one hemisphere's surface files into standard space.
 
+    Basically, the resulting surface files will have the same vertices as the standard-space
+    surfaces, but the coordinates/mesh of those vertices will be the subject's native-space
+    coordinates/mesh.
+    This way we can visualize surface statistical maps on the subject's unique morphology
+    (sulci, gyri, etc.).
+
     Workflow Graph
         .. workflow::
             :graph2use: orig
@@ -1150,15 +1156,24 @@ def init_warp_one_hemisphere_wf(
     Inputs
     ------
     hemi_files : list of str
-        A list of surface files for the requested hemisphere, in fsnative space.
+        A list of surface files (i.e., pial and white matter) for the requested hemisphere,
+        in fsnative space.
     world_xfm
+        The affine portion of the volumetric anatomical-to-template transform,
+        in FSL (FLIRT) format.
     merged_warpfield
+        The warpfield portion of the volumetric anatomical-to-template transform,
+        in FSL (FNIRT) format.
     merged_inv_warpfield
+        The warpfield portion of the volumetric template-to-anatomical transform,
+        in FSL (FNIRT) format.
     subject_sphere
+        The subject's fsnative sphere registration file (sphere.reg in FreeSurfer parlance).
 
     Outputs
     -------
-    warped_hemi_files
+    warped_hemi_files : list of str
+        The ``hemi_files`` warped from fsnative space to standard space.
     """
     workflow = Workflow(name=name)
 
@@ -1174,6 +1189,10 @@ def init_warp_one_hemisphere_wf(
         ),
         name="inputnode",
     )
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=["warped_hemi_files"]),
+        name="outputnode",
+    )
 
     collect_registration_files = pe.Node(
         CollectRegistrationFiles(hemisphere=hemisphere, software=software),
@@ -1182,7 +1201,8 @@ def init_warp_one_hemisphere_wf(
         n_procs=1,
     )
 
-    # NOTE: What does this step do?
+    # XXX: Given that fMRIPrep and Nibabies write out the subject spheres as surf.gii,
+    # I think this is unnecessary.
     sphere_to_surf_gii = pe.Node(
         MRIsConvert(out_datatype="gii"),
         name="sphere_to_surf_gii",
@@ -1192,6 +1212,9 @@ def init_warp_one_hemisphere_wf(
     workflow.connect([(inputnode, sphere_to_surf_gii, [("subject_sphere", "in_file")])])
 
     # NOTE: What does this step do?
+    # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
+    # fsLR-in-fsaverage (fsLR vertices with coordinates on the fsaverage sphere) sphere?
+    # So what's the result? The fsLR or dhcpAsym vertices with coordinates on the fsnative sphere?
     surface_sphere_project_unproject = pe.Node(
         SurfaceSphereProjectUnproject(),
         name="surface_sphere_project_unproject",
@@ -1204,10 +1227,10 @@ def init_warp_one_hemisphere_wf(
         (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
     ])  # fmt:skip
 
-    # resample the surfaces to fsLR-32k
-    # NOTE: Does that mean the data are in fsLR-164k before this?
+    # Resample the pial and white matter surfaces from fsnative to fsLR-32k
+    # (or is it dhcpAsym for mcribs?)
     resample_to_fsLR32k = pe.MapNode(
-        CiftiSurfaceResample(metric="BARYCENTRIC"),
+        CiftiSurfaceResample(method="BARYCENTRIC"),
         name="resample_to_fsLR32k",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -1219,7 +1242,7 @@ def init_warp_one_hemisphere_wf(
         (surface_sphere_project_unproject, resample_to_fsLR32k, [("out_file", "current_sphere")]),
     ])  # fmt:skip
 
-    # apply affine to 32k surfs
+    # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
     # NOTE: What does this step do? Aren't the data in fsLR-32k from resample_to_fsLR32k?
     apply_affine_to_fsLR32k = pe.MapNode(
         ApplyAffine(),
@@ -1233,7 +1256,7 @@ def init_warp_one_hemisphere_wf(
         (resample_to_fsLR32k, apply_affine_to_fsLR32k, [("out_file", "in_file")]),
     ])  # fmt:skip
 
-    # apply FNIRT-format warpfield
+    # Apply FNIRT-format (forward) anatomical-to-template warpfield
     # NOTE: What does this step do?
     apply_warpfield_to_fsLR32k = pe.MapNode(
         ApplyWarpfield(),
@@ -1248,13 +1271,6 @@ def init_warp_one_hemisphere_wf(
             ("merged_inv_warpfield", "warpfield"),
         ]),
         (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [("out_file", "in_file")]),
-    ])  # fmt:skip
-
-    outputnode = pe.Node(
-        niu.IdentityInterface(fields=["warped_hemi_files"]),
-        name="outputnode",
-    )
-    workflow.connect([
         (apply_warpfield_to_fsLR32k, outputnode, [("out_file", "warped_hemi_files")]),
     ])  # fmt:skip
 

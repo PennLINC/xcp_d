@@ -294,6 +294,40 @@ class _SurfaceSphereProjectUnprojectOutputSpec(TraitedSpec):
 class SurfaceSphereProjectUnproject(WBCommand):
     """Copy registration deformations to different sphere.
 
+    A surface registration starts with an input sphere,
+    and moves its vertices around on the sphere until it matches the template data.
+    This means that the registration deformation is actually represented as the difference
+    between two separate files - the starting sphere, and the registered sphere.
+    Since the starting sphere of the registration may not have vertex correspondence to any
+    other sphere (often, it is a native sphere),
+    it can be inconvenient to manipulate or compare these deformations across subjects, etc.
+
+    The purpose of this command is to be able to apply these deformations onto a new sphere
+    of the user's choice,
+    to make it easier to compare or manipulate them.
+    Common uses are to concatenate two successive separate registrations
+    (e.g. Human to Chimpanzee, and then Chimpanzee to Macaque)
+    or inversion (for dedrifting or symmetric registration schemes).
+
+    <sphere-in> must already be considered to be in alignment with one of the two ends of the
+    registration (if your registration is Human to Chimpanzee,
+    <sphere-in> must be in register with either Human or Chimpanzee).
+
+    The 'project-to' sphere must be the side of the registration that is aligned with <sphere-in>
+    (if your registration is Human to Chimpanzee, and <sphere-in> is aligned with Human, then
+    'project-to' should be the original Human sphere).
+
+    The 'unproject-from' sphere must be the remaining sphere of the registration
+    (original vs deformed/registered).
+    The output is as if you had run the same registration with <sphere-in> as the starting sphere,
+    in the direction of deforming the 'project-to' sphere to create the 'unproject-from' sphere.
+
+    Note that this command cannot check for you what spheres are aligned with other spheres,
+    and using the wrong spheres or in the incorrect order will not necessarily cause an error
+    message.
+    In some cases, it may be useful to use a new, arbitrary sphere as the input,
+    which can be created with the -surface-create-sphere command.
+
     .. code-block::
 
         wb_command -surface-sphere-project-unproject
@@ -615,37 +649,55 @@ class CiftiParcellateWorkbench(WBCommand):
 
 
 class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
-    """Input specification for the CiftiSurfaceResample command."""
+    """Input specification for the CiftiSurfaceResample command.
+
+    Resamples a surface file, given two spherical surfaces that are in register.
+    If ADAP_BARY_AREA is used, exactly one of -area-surfs or -area-metrics must be specified.
+    This method is not generally recommended for surface resampling,
+    but is provided for completeness.
+
+    For cut surfaces (including flatmaps), use -surface-cut-resample.
+
+    Instead of resampling a spherical surface,
+    the -surface-sphere-project-unproject command is recommended.
+    """
 
     in_file = File(
         exists=True,
         mandatory=True,
-        argstr="%s ",
+        argstr="%s",
         position=0,
-        desc="the gifti file",
+        desc="the surface file to resample",
     )
 
     current_sphere = File(
         exists=True,
         position=1,
-        argstr=" %s",
-        desc=" the current sphere surface in gifti for in_file",
+        argstr="%s",
+        desc="a sphere surface with the mesh that the input surface is currently on",
     )
 
     new_sphere = File(
         exists=True,
         position=2,
-        argstr=" %s",
-        desc=" the new sphere surface to be resample the in_file to, eg fsaverag5 or fsl32k",
+        argstr="%s",
+        desc=(
+            "a sphere surface that is in register with <current-sphere> "
+            "and has the desired output mesh"
+        ),
     )
-
-    metric = traits.Str(
-        argstr=" %s ",
+    method = traits.Enum(
+        "BARYCENTRIC",
+        "ADAP_BARY_AREA",
+        argstr="%s",
         position=3,
-        desc=" fixed for anatomic",
-        default="  BARYCENTRIC  ",
+        desc=(
+            "the method name. "
+            "The BARYCENTRIC method is generally recommended for anatomical surfaces, "
+            "in order to minimize smoothing."
+        ),
+        default="BARYCENTRIC",
     )
-
     out_file = File(
         name_source=["in_file"],
         name_template="resampled_%s.gii",
@@ -653,7 +705,7 @@ class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
         extensions=[".shape.gii", ".surf.gii"],
         argstr="%s",
         position=4,
-        desc="The gifti output, either left and right",
+        desc="The output surface file.",
     )
 
 
@@ -664,14 +716,14 @@ class _CiftiSurfaceResampleOutputSpec(TraitedSpec):
 
 
 class CiftiSurfaceResample(WBCommand):
-    """Resample a surface from one sphere to another.
+    """Resample a surface to a different mesh.
 
     TODO: Improve documentation.
     """
 
     input_spec = _CiftiSurfaceResampleInputSpec
     output_spec = _CiftiSurfaceResampleOutputSpec
-    _cmd = "wb_command  -surface-resample"
+    _cmd = "wb_command -surface-resample"
 
 
 class _CiftiSeparateMetricInputSpec(CommandLineInputSpec):
