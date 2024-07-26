@@ -71,7 +71,7 @@ class _CollectRegistrationFilesOutputSpec(TraitedSpec):
     )
     target_sphere = File(
         exists=True,
-        desc="Target-space sphere (fsLR for FreeSurfer, dHCP-in-fsLR for MCRIBS).",
+        desc="Target-space sphere (fsLR for FreeSurfer, dhcpAsym for MCRIBS).",
     )
     sphere_to_sphere = File(
         exists=True,

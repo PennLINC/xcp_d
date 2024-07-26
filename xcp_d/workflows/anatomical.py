@@ -1174,6 +1174,16 @@ def init_warp_one_hemisphere_wf(
     -------
     warped_hemi_files : list of str
         The ``hemi_files`` warped from fsnative space to standard space.
+
+    Notes
+    -----
+    Open questions:
+
+    1. What does applying the anat-to-template affine and warpfield do?
+    2. Do the anat-to-template affine and warpfield need to be set to a specific template?
+    3. Do we still need to convert the subject sphere since it's already a gifti?
+    4. Why doesn't the fsnative-to-anat transform come into play if we're using anat-to-template
+       transforms?
     """
     workflow = Workflow(name=name)
 
@@ -1213,7 +1223,8 @@ def init_warp_one_hemisphere_wf(
 
     # NOTE: What does this step do?
     # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
-    # fsLR-in-fsaverage (fsLR vertices with coordinates on the fsaverage sphere) sphere?
+    # fsLR/dhcpAsym-in-fsaverage
+    # (fsLR or dhcpAsym vertices with coordinates on the fsaverage sphere) sphere?
     # So what's the result? The fsLR or dhcpAsym vertices with coordinates on the fsnative sphere?
     surface_sphere_project_unproject = pe.Node(
         SurfaceSphereProjectUnproject(),
@@ -1227,8 +1238,7 @@ def init_warp_one_hemisphere_wf(
         (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
     ])  # fmt:skip
 
-    # Resample the pial and white matter surfaces from fsnative to fsLR-32k
-    # (or is it dhcpAsym for mcribs?)
+    # Resample the pial and white matter surfaces from fsnative to fsLR-32k or dhcpAsym-32k
     resample_to_fsLR32k = pe.MapNode(
         CiftiSurfaceResample(method="BARYCENTRIC"),
         name="resample_to_fsLR32k",
@@ -1243,7 +1253,7 @@ def init_warp_one_hemisphere_wf(
     ])  # fmt:skip
 
     # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
-    # NOTE: What does this step do? Aren't the data in fsLR-32k from resample_to_fsLR32k?
+    # NOTE: What does this step do? Aren't the data in fsLR/dhcpAsym-32k from resample_to_fsLR32k?
     apply_affine_to_fsLR32k = pe.MapNode(
         ApplyAffine(),
         name="apply_affine_to_fsLR32k",
