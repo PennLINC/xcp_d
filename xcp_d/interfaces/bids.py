@@ -71,7 +71,7 @@ class _CollectRegistrationFilesOutputSpec(TraitedSpec):
     )
     target_sphere = File(
         exists=True,
-        desc="Target-space sphere (fsLR for FreeSurfer, dHCP-in-fsLR for MCRIBS).",
+        desc="Target-space sphere (fsLR for FreeSurfer, dhcpSym-in-fsLR for MCRIBS).",
     )
     sphere_to_sphere = File(
         exists=True,
@@ -80,15 +80,18 @@ class _CollectRegistrationFilesOutputSpec(TraitedSpec):
 
 
 class CollectRegistrationFiles(SimpleInterface):
-    """Collect registration files for fsnative-to-fsLR transformation."""
+    """Collect registration files for fsnative-to-fsLR transformation.
+
+    TODO: Collect from the preprocessing derivatives if they're a compliant version.
+    Namely, fMRIPrep >= 23.1.2, Nibabies >= 24.0.0a1.
+    XXX: Wait until the Config object is up and running, so we have access to the BIDSLayout.
+    """
 
     input_spec = _CollectRegistrationFilesInputSpec
     output_spec = _CollectRegistrationFilesOutputSpec
 
     def _run_interface(self, runtime):
         from templateflow.api import get as get_template
-
-        from xcp_d.data import load as load_data
 
         hemisphere = self.inputs.hemisphere
 
@@ -106,17 +109,19 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # FreeSurfer: fs_?/fs_?-to-fs_LR_fsaverage.?_LR.spherical_std.164k_fs_?.surf.gii
+            # Load the fsaverage-to-fsLR warp sphere.
             self._results["sphere_to_sphere"] = str(
-                load_data(
-                    f"standard_mesh_atlases/fs_{hemisphere}/"
-                    f"fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std."
-                    f"164k_fs_{hemisphere}.surf.gii"
+                get_template(
+                    template="fsaverage",
+                    space="fsLR",
+                    hemi=hemisphere,
+                    density="164k",
+                    desc=None,
+                    suffix="sphere",
                 )
             )
 
-            # FreeSurfer: tpl-fsLR_hemi-?_den-32k_sphere.surf.gii
+            # Load the fsLR-32k sphere.
             self._results["target_sphere"] = str(
                 get_template(
                     template="fsLR",
