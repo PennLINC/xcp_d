@@ -297,7 +297,7 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
     assert opts.input_type == "fmriprep"
-    assert opts.linc_qc is False
+    assert opts.linc_qc is True
     assert opts.output_correlations is False
     assert opts.process_surfaces is True
 
@@ -332,7 +332,7 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     assert opts.fd_thresh == 0.3
     assert opts.file_format == "cifti"
     assert opts.input_type == "nibabies"
-    assert opts.linc_qc is False
+    assert opts.linc_qc is True
     assert opts.output_correlations is False
     assert opts.process_surfaces is True
 
