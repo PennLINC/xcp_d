@@ -57,6 +57,7 @@ which may be overridden by the user:
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Censoring is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
+-  ``--linc-qc``: The LINC QC file will be created by default.
 
 Optional Parameters
 -------------------
@@ -106,6 +107,7 @@ which may be overridden by the user:
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
+-  ``--linc-qc``: The LINC QC file will be created by default.
 
 Required Parameters
 -------------------
@@ -126,8 +128,6 @@ Optional Parameters
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
    as well as the special value "all", which uses all of the low-motion data from the run.
--  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``abcd`` mode.
-   If you would like to create these files, you must include the ``--linc-qc`` flag.
 
 
 hbcd Mode
@@ -158,6 +158,7 @@ which may be overridden by the user:
 -  ``--input-type nibabies``: Nibabies outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
+-  ``--linc-qc``: The LINC QC file will be created by default.
 
 Required Parameters
 -------------------
@@ -178,8 +179,6 @@ Optional Parameters
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
    as well as the special value "all", which uses all of the low-motion data from the run.
--  ``--linc-qc``: By default, XCP-D will not create the LINC QC file when run in the ``hbcd`` mode.
-   If you would like to create these files, you must include the ``--linc-qc`` flag.
 
 
 Major Differences Between Modes

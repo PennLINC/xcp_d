@@ -36,12 +36,12 @@ dependencies = [
     "packaging",  # for version string parsing
     "pandas",
     "psutil >= 5.4",  # for sentry
-    "pybids ~= 0.16.4",
+    "pybids ~= 0.17.0",
     "pyyaml",
     "scikit-learn <= 1.5.1",
     "scipy <= 1.14.0,>= 1.14.0",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.10.0",  # for usage reports
+    "sentry-sdk ~= 2.11.0",  # for usage reports
     "templateflow ~= 24.2.0",
     "toml",
 ]

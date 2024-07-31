@@ -53,13 +53,15 @@ queries:
             extension: .surf.gii
             hemi: L
             suffix: pial
-        # Subject's surface sphere to be used to warp fsnative meshes to fsLR space
+        # Subject's surface sphere to be used to warp fsnative meshes to fsaverage space
         lh_subject_sphere:
             datatype: anat
             desc: reg
             extension: .surf.gii
             hemi: L
-            space: null
+            space:
+            - null
+            - fsaverage
             suffix: sphere
         # White matter surface mesh in fsnative space (fsLR-space mesh will be searched for separately)
         lh_wm_surf:
@@ -77,13 +79,15 @@ queries:
             extension: .surf.gii
             hemi: R
             suffix: pial
-        # Subject's surface sphere to be used to warp fsnative meshes to fsLR space
+        # Subject's surface sphere to be used to warp fsnative meshes to fsaverage space
         rh_subject_sphere:
             datatype: anat
             desc: reg
             extension: .surf.gii
             hemi: R
-            space: null
+            space:
+            - null
+            - fsaverage
             suffix: sphere
         # White matter surface mesh in fsnative space (fsLR-space mesh will be searched for separately)
         rh_wm_surf:

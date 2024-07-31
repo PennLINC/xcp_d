@@ -560,8 +560,11 @@ This option is only allowed for the "abcd" and "hbcd" modes.
     g_dcan.add_argument(
         "--linc-qc",
         "--linc_qc",
-        action="store_true",
+        nargs="?",
+        const=None,
         default="auto",
+        choices=["y", "n"],
+        action=parser_utils.YesNoAction,
         dest="linc_qc",
         help="""\
 Run LINC QC.
@@ -574,8 +577,11 @@ This will calculate QC metrics from the LINC pipeline.
     g_linc.add_argument(
         "--abcc-qc",
         "--abcc_qc",
-        action="store_true",
+        nargs="?",
+        const=None,
         default="auto",
+        choices=["y", "n"],
+        action=parser_utils.YesNoAction,
         dest="abcc_qc",
         help="""\
 Run ABCC QC.
@@ -931,7 +937,7 @@ def _validate_parameters(opts, build_log, parser):
 
     # Check parameters based on the mode
     if opts.mode == "abcd":
-        opts.abcc_qc = True
+        opts.abcc_qc = True if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
         opts.dcan_correlation_lengths = (
             [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
@@ -940,7 +946,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
         opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
-        opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
+        opts.linc_qc = True if (opts.linc_qc == "auto") else opts.linc_qc
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
         opts.output_correlations = True if "all" in opts.dcan_correlation_lengths else False
@@ -951,7 +957,7 @@ def _validate_parameters(opts, build_log, parser):
         # Remove "all" from the list of correlation lengths
         opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != "all"]
     elif opts.mode == "hbcd":
-        opts.abcc_qc = True
+        opts.abcc_qc = True if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
         opts.dcan_correlation_lengths = (
             [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
@@ -960,7 +966,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
         opts.input_type = "nibabies" if opts.input_type == "auto" else opts.input_type
-        opts.linc_qc = False if (opts.linc_qc == "auto") else opts.linc_qc
+        opts.linc_qc = True if (opts.linc_qc == "auto") else opts.linc_qc
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
         opts.output_correlations = True if "all" in opts.dcan_correlation_lengths else False
@@ -977,7 +983,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
         opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
-        opts.linc_qc = True
+        opts.linc_qc = True if (opts.linc_qc == "auto") else opts.linc_qc
         opts.output_correlations = True
         opts.output_interpolated = False
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces

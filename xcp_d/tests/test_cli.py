@@ -203,6 +203,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "300",
         "480",
         "all",
+        "--linc-qc=n",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -258,6 +259,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "--despike=n",
         "--disable-bandpass-filter",
         "--create-matrices=all",
+        "--linc-qc=n",
     ]
     _run_and_generate(
         test_name=test_name,
@@ -431,6 +433,7 @@ def test_nibabies(data_dir, output_dir, working_dir):
         "--fd-thresh=0",
         "--create-matrices=all",
         "--motion-filter-type=none",
+        "--linc-qc=n",
     ]
     _run_and_generate(
         test_name=test_name,
