@@ -89,8 +89,6 @@ Small patch release for manuscript's executive summary.
 
 **There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
 
-## What's Changed
-
 ### 🐛 Bug Fixes
 
 * Drop concatenated rest-as-run section from executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1156
