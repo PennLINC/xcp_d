@@ -1,6 +1,46 @@
 # What's New
 
 
+## 0.8.0
+
+This is a backwards-incompatible release that will be used to postprocess the beta version of the first release of the HBCD dataset.
+There are two major breaking changes.
+First, there is a new required `--mode` parameter that automatically defines sets of parameters to match recommendations from different studies/labs.
+Each parameter that the `--mode` parameter controls can be overridden, so users should be able to reproduce their original settings from previous versions of XCP-D.
+Second, XCP-D now loads certain sphere files from the BIDS derivatives, rather than non-BIDS Freesurfer or MCRIBS folders.
+This means that the anatomical workflow (`--warp-surfaces-native2std`) will only work for fMRIPrep versions >= 23.1.0 and Nibabies versions >= 23.1.0.
+The rest of XCP-D should still work for versions of fMRIPrep and Nibabies that were supported previously, but we cannot guarantee this.
+
+### 🛠 Breaking Changes
+
+* Add required `--mode` parameter to define sets of parameters by @tsalo in https://github.com/PennLINC/xcp_d/pull/1109
+* Load spheres for anatomical workflow from TemplateFlow and BIDS derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/1207
+
+### 🎉 Exciting New Features
+
+* Add discretized MID-B and Myers-Labonte atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/1192
+* Plot CIFTI maps on subject-specific surfaces when available by @tsalo in https://github.com/PennLINC/xcp_d/pull/1208
+* Allow bids-filter-file terms for mesh and morphometry files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1210
+
+### 🐛 Bug Fixes
+
+* Generate session-wise executive summaries by @tsalo in https://github.com/PennLINC/xcp_d/pull/1202
+* Look for space entity in T2w-only anatomical inputs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1203
+* Use standard-space anatomical brain mask by @tsalo in https://github.com/PennLINC/xcp_d/pull/1204
+* Drop volumetric Myers-Labonte atlas by @tsalo in https://github.com/PennLINC/xcp_d/pull/1212
+* Enable linc-qc for abcd and hbcd modes by default by @tsalo in https://github.com/PennLINC/xcp_d/pull/1220
+
+### Other Changes
+
+* Document anatomical workflow in more detail by @tsalo in https://github.com/PennLINC/xcp_d/pull/1191
+* Fix up documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1209
+* Reorganize QC interfaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1215
+* Allow `space-fsaverage` for sphere files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1217
+* Continue to improve documentation of anatomical workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/1216
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.5...0.8.0
+
+
 ## 0.7.5
 
 This is a patch release that fixes how the correlation matrix plot is generated when users select only one atlas for parcellation.
