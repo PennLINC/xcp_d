@@ -32,6 +32,7 @@ def base_opts():
         "mode": "linc",
         "file_format": "auto",
         "input_type": "auto",
+        "params": "36P",
         "high_pass": 0.01,
         "low_pass": 0.1,
         "bandpass_filter": True,
