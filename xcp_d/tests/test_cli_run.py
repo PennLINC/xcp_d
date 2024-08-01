@@ -127,6 +127,18 @@ def test_validate_parameters_06(base_opts, base_parser, capsys):
     assert "In order to perform surface normalization" in stderr
 
 
+def test_validate_parameters_07(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters custom confounds + none."""
+    opts = deepcopy(base_opts)
+    opts.params = "none"
+    opts.custom_confounds = "something.txt"
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.params == "custom"
+    assert "Overriding the 'none' value and setting to 'custom'" in caplog.text
+
+
 def test_validate_parameters_motion_filtering(base_opts, base_parser, caplog, capsys):
     """Test parser._validate_parameters."""
     opts = deepcopy(base_opts)
