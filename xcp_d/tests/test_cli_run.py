@@ -127,8 +127,12 @@ def test_validate_parameters_06(base_opts, base_parser, capsys):
     assert "In order to perform surface normalization" in stderr
 
 
-def test_validate_parameters_07(base_opts, base_parser, caplog):
+def test_validate_parameters_07(base_opts, base_parser, caplog, tmp_path_factory):
     """Test parser._validate_parameters custom confounds + none."""
+    tmpdir = tmp_path_factory.mktemp("test_validate_parameters_07")
+    confounds_file = os.path.join(tmpdir, "confounds.tsv")
+    Path(confounds_file).touch()  # create the file
+
     opts = deepcopy(base_opts)
     opts.params = "none"
     opts.custom_confounds = "something.txt"
