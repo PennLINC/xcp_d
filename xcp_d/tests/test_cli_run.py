@@ -131,12 +131,12 @@ def test_validate_parameters_06(base_opts, base_parser, capsys):
 def test_validate_parameters_07(base_opts, base_parser, caplog, tmp_path_factory):
     """Test parser._validate_parameters custom confounds + none."""
     tmpdir = tmp_path_factory.mktemp("test_validate_parameters_07")
-    confounds_file = os.path.join(tmpdir, "confounds.tsv")
-    Path(confounds_file).touch()  # create the file
+    confounds_path = Path(os.path.join(tmpdir, "confounds.tsv"))
+    confounds_path.touch()  # create the file
 
     opts = deepcopy(base_opts)
     opts.params = "none"
-    opts.custom_confounds = "something.txt"
+    opts.custom_confounds = confounds_path
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
