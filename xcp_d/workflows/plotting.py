@@ -1,4 +1,4 @@
-"""Plotting workflows."""
+"""Workflows for generating plots from imaging data."""
 
 from nipype.interfaces import fsl
 from nipype.interfaces import utility as niu

@@ -1,3 +1,5 @@
+"""Workflows for processing volumetric anatomical data."""
+
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe

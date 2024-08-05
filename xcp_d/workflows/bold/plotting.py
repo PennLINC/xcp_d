@@ -1,4 +1,4 @@
-"""Workflows for generating the executive summary."""
+"""Workflows for generating plots from functional data."""
 
 import fnmatch
 import os
