@@ -2,28 +2,13 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et
 """Nipype workflows for xcp_d."""
 
-from xcp_d.workflows import (
-    anatomical,
-    base,
-    bold,
-    cifti,
-    connectivity,
-    execsummary,
-    outputs,
-    plotting,
-    postprocessing,
-    restingstate,
-)
+from xcp_d.workflows import anatomical, base, bold, execsummary, parcellation, plotting
 
 __all__ = [
     "anatomical",
     "base",
     "bold",
-    "cifti",
-    "connectivity",
     "execsummary",
-    "outputs",
+    "parcellation",
     "plotting",
-    "postprocessing",
-    "restingstate",
 ]
