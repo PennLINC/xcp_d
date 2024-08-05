@@ -15,7 +15,7 @@ from xcp_d.interfaces.connectivity import TSVConnect
 from xcp_d.utils.bids import _make_xcpd_uri, _make_xcpd_uri_lol
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _make_dictionary, _select_first
-from xcp_d.workflows.plotting import init_qc_report_wf
+from xcp_d.workflows.bold.plotting import init_qc_report_wf
 
 
 @fill_doc
