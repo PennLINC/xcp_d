@@ -25,7 +25,7 @@ from xcp_d.interfaces.workbench import (  # MB,TM
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.workflows.anatomical.outputs import init_copy_inputs_to_outputs_wf
-from xcp_d.workflows.execsummary import init_brainsprite_figures_wf
+from xcp_d.workflows.anatomical.plotting import init_brainsprite_figures_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 

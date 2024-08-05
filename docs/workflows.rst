@@ -816,7 +816,7 @@ the ``denoised, interpolated BOLD``, the temporal mask, and the filtered motion 
 
 Quality control
 ===============
-:func:`~xcp_d.workflows.plotting.init_qc_report_wf`
+:func:`~xcp_d.workflows.bold.plotting.init_qc_report_wf`
 
 The quality control (QC) in ``XCP-D`` estimates the quality of BOLD data before and after
 regression and also estimates BOLD-T1w coregistration and BOLD-Template normalization

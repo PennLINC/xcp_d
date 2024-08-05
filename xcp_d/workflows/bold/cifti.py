@@ -15,13 +15,15 @@ from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.workflows.bold.connectivity import init_functional_connectivity_cifti_wf
 from xcp_d.workflows.bold.metrics import init_alff_wf, init_reho_cifti_wf
 from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
+from xcp_d.workflows.bold.plotting import (
+    init_execsummary_functional_plots_wf,
+    init_qc_report_wf,
+)
 from xcp_d.workflows.bold.postprocessing import (
     init_denoise_bold_wf,
     init_despike_wf,
     init_prepare_confounds_wf,
 )
-from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
-from xcp_d.workflows.plotting import init_qc_report_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 

@@ -9,7 +9,7 @@ from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import list_to_str
-from xcp_d.workflows.execsummary import init_execsummary_anatomical_plots_wf
+from xcp_d.workflows.anatomical.plotting import init_execsummary_anatomical_plots_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 

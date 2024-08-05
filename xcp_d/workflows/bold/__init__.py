@@ -7,6 +7,8 @@ from xcp_d.workflows.bold import (
     metrics,
     nifti,
     outputs,
+    plotting,
+    postprocessing,
 )
 
 __all__ = [
@@ -16,4 +18,6 @@ __all__ = [
     "metrics",
     "nifti",
     "outputs",
+    "plotting",
+    "postprocessing",
 ]
