@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Workflows for post-processing the BOLD data."""
+"""Workflows for post-processing NIfTI-format BOLD data."""
+
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -12,16 +13,18 @@ from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _create_mem_gb
-from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
-from xcp_d.workflows.execsummary import init_execsummary_functional_plots_wf
-from xcp_d.workflows.outputs import init_postproc_derivatives_wf
-from xcp_d.workflows.plotting import init_qc_report_wf
-from xcp_d.workflows.postprocessing import (
+from xcp_d.workflows.bold.connectivity import init_functional_connectivity_nifti_wf
+from xcp_d.workflows.bold.metrics import init_alff_wf, init_reho_nifti_wf
+from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
+from xcp_d.workflows.bold.plotting import (
+    init_execsummary_functional_plots_wf,
+    init_qc_report_wf,
+)
+from xcp_d.workflows.bold.postprocessing import (
     init_denoise_bold_wf,
     init_despike_wf,
     init_prepare_confounds_wf,
 )
-from xcp_d.workflows.restingstate import init_alff_wf, init_reho_nifti_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -49,7 +52,7 @@ def init_postprocess_nifti_wf(
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
             from xcp_d.utils.bids import collect_data, collect_run_data
-            from xcp_d.workflows.bold import init_postprocess_nifti_wf
+            from xcp_d.workflows.bold.nifti import init_postprocess_nifti_wf
 
             with mock_config():
                 bold_file = str(

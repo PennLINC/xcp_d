@@ -12,7 +12,7 @@ from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.utils.write_save import read_ndata, write_ndata
-from xcp_d.workflows import restingstate
+from xcp_d.workflows.bold import metrics
 
 
 def test_nifti_alff(ds001419_data, tmp_path_factory):
@@ -41,7 +41,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         config.workflow.smoothing = 6
         config.nipype.omp_nthreads = 2
 
-        alff_wf = restingstate.init_alff_wf(
+        alff_wf = metrics.init_alff_wf(
             name_source=bold_file,
             TR=TR,
             mem_gb=mem_gbx,
@@ -84,7 +84,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         # the amplitude in low frequencies for a voxel
         tempdir = tmp_path_factory.mktemp("test_nifti_alff_02")
 
-        alff_wf = restingstate.init_alff_wf(
+        alff_wf = metrics.init_alff_wf(
             name_source=bold_file,
             TR=TR,
             mem_gb=mem_gbx,
@@ -128,7 +128,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         config.workflow.smoothing = 6
         config.nipype.omp_nthreads = 2
 
-        alff_wf = restingstate.init_alff_wf(
+        alff_wf = metrics.init_alff_wf(
             name_source=bold_file,
             TR=TR,
             mem_gb=mem_gbx,
@@ -216,7 +216,7 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
         config.execution.xcp_d_dir = tempdir
         config.nipype.omp_nthreads = 2
 
-        reho_wf = restingstate.init_reho_nifti_wf(name_source=bold_file, mem_gb=mem_gbx)
+        reho_wf = metrics.init_reho_nifti_wf(name_source=bold_file, mem_gb=mem_gbx)
         reho_wf.inputs.inputnode.bold_mask = bold_mask
         reho_wf.base_dir = tempdir
         reho_wf.inputs.inputnode.denoised_bold = bold_file
@@ -272,7 +272,7 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
         config.execution.xcp_d_dir = tempdir
         config.nipype.omp_nthreads = 2
 
-        reho_wf = restingstate.init_reho_cifti_wf(
+        reho_wf = metrics.init_reho_cifti_wf(
             name_source=source_file,
             mem_gb=mem_gbx,
             name="orig_reho_wf",
@@ -296,7 +296,7 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
         # Run ReHo again
         assert os.path.isfile(noisy_bold_file)
 
-        reho_wf = restingstate.init_reho_cifti_wf(
+        reho_wf = metrics.init_reho_cifti_wf(
             name_source=source_file,
             mem_gb=mem_gbx,
             name="noisy_reho_wf",

@@ -245,7 +245,7 @@ See :ref:`usage_inputs` for information on input dataset structures.
 
 Anatomical processing
 =====================
-:func:`~xcp_d.workflows.anatomical.init_postprocess_anat_wf`
+:func:`~xcp_d.workflows.anatomical.volume.init_postprocess_anat_wf`
 
 XCP-D performs minimal postprocessing on anatomical derivatives from the preprocessing pipeline.
 This includes applying existing transforms to preprocessed T1w and T2w volumes,
@@ -255,7 +255,7 @@ while retaining the original resolution.
 
 Surface normalization
 ---------------------
-:func:`~xcp_d.workflows.anatomical.init_warp_surfaces_to_template_wf`
+:func:`~xcp_d.workflows.anatomical.surface.init_warp_surfaces_to_template_wf`
 
 If the ``--warp-surfaces-native2std`` flag is used,
 then fsnative surface files from the preprocessing derivatives will be warped to fsLR-32k space.
@@ -267,7 +267,7 @@ then fsnative surface files from the preprocessing derivatives will be warped to
 
 Identification of high-motion outlier volumes
 =============================================
-:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
+:func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.censoring.GenerateConfounds`
 
 XCP-D uses framewise displacement to identify high-motion outlier volumes.
@@ -282,7 +282,7 @@ The threshold used to identify outlier volumes can be set with the ``--fd-thresh
 
 Motion parameter filtering [OPTIONAL]
 -------------------------------------
-:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
+:func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
 :func:`~xcp_d.utils.confounds.load_motion`
 
@@ -336,7 +336,7 @@ per :footcite:t:`gratton2020removal`.
 
 Framewise displacement calculation and thresholding
 ---------------------------------------------------
-:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
+:func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.censoring.GenerateConfounds`,
 :func:`~xcp_d.utils.modified_data.compute_fd`
 
@@ -357,7 +357,7 @@ These volumes will later be removed from the denoised data.
 
 Confound regressor selection
 ============================
-:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
+:func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :func:`~xcp_d.interfaces.censoring.GenerateConfounds`
 
 The confound regressor configurations in the table below are implemented in XCP-D,
@@ -533,7 +533,7 @@ For more information about confound regressor selection, please refer to :footci
 
 Dummy scan removal [OPTIONAL]
 =============================
-:func:`~xcp_d.workflows.postprocessing.init_prepare_confounds_wf`,
+:func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.censoring.RemoveDummyVolumes`
 
 XCP-D allows the first *N* volumes to be removed before processing.
@@ -548,7 +548,7 @@ or they may rely on the preprocessing pipeline's estimated non-steady-state volu
 
 Despiking [OPTIONAL]
 ====================
-:func:`~xcp_d.workflows.postprocessing.init_despike_wf`
+:func:`~xcp_d.workflows.bold.postprocessing.init_despike_wf`
 
 Despiking is a process in which large spikes in the BOLD times series are truncated.
 Despiking reduces/limits the amplitude or magnitude of the large spikes but preserves those
@@ -697,7 +697,7 @@ These include regional homogeneity (ReHo) and amplitude of low-frequency fluctua
 
 ALFF
 ----
-:func:`~xcp_d.workflows.restingstate.init_alff_wf`
+:func:`~xcp_d.workflows.bold.metrics.init_alff_wf`
 
 Amplitude of low-frequency fluctuation (ALFF) is a measure that ostensibly localizes
 spontaneous neural activity in resting-state BOLD data.
@@ -730,8 +730,8 @@ Smoothed ALFF derivatives will also be generated if the ``--smoothing`` flag is 
 
 ReHo
 ----
-:func:`~xcp_d.workflows.restingstate.init_reho_nifti_wf`,
-:func:`~xcp_d.workflows.restingstate.init_reho_cifti_wf`
+:func:`~xcp_d.workflows.bold.metrics.init_reho_nifti_wf`,
+:func:`~xcp_d.workflows.bold.metrics.init_reho_cifti_wf`
 
 Regional Homogeneity (ReHo) is a measure of local temporal uniformity in the BOLD signal computed at each voxel of the processed image.
 Greater ReHo values correspond to greater synchrony among BOLD activity patterns measured in a local neighborhood of voxels, with neighborhood size determined by a user-specified radius of voxels.
@@ -744,8 +744,8 @@ For subcortical voxels in the CIFTIs, 3dReho is used with the same parameters th
 
 Parcellation and functional connectivity estimation [OPTIONAL]
 ==============================================================
-:func:`~xcp_d.workflows.connectivity.init_functional_connectivity_nifti_wf`,
-:func:`~xcp_d.workflows.connectivity.init_functional_connectivity_cifti_wf`
+:func:`~xcp_d.workflows.bold.connectivity.init_functional_connectivity_nifti_wf`,
+:func:`~xcp_d.workflows.bold.connectivity.init_functional_connectivity_cifti_wf`
 
 If the user chooses,
 the ``denoised BOLD`` is fed into a functional connectivity workflow,
@@ -790,7 +790,7 @@ which improves reproducibility.
 
 Smoothing [OPTIONAL]
 ====================
-:func:`~xcp_d.workflows.postprocessing.init_resd_smoothing_wf`
+:func:`~xcp_d.workflows.bold.postprocessing.init_resd_smoothing_wf`
 
 The ``denoised BOLD`` may optionally be smoothed with a Gaussian kernel.
 This smoothing kernel is set with the ``--smoothing`` parameter.
@@ -798,7 +798,7 @@ This smoothing kernel is set with the ``--smoothing`` parameter.
 
 Concatenation of functional derivatives [OPTIONAL]
 ==================================================
-:func:`~xcp_d.workflows.concatenation.init_concatenate_data_wf`
+:func:`~xcp_d.workflows.bold.concatenation.init_concatenate_data_wf`
 
 If the ``--combine-runs`` flag is included, then BOLD runs will be grouped by task and concatenated.
 Several concatenated derivatives will be generated, including the ``denoised BOLD``,
@@ -816,7 +816,7 @@ the ``denoised, interpolated BOLD``, the temporal mask, and the filtered motion 
 
 Quality control
 ===============
-:func:`~xcp_d.workflows.plotting.init_qc_report_wf`
+:func:`~xcp_d.workflows.bold.plotting.init_qc_report_wf`
 
 The quality control (QC) in ``XCP-D`` estimates the quality of BOLD data before and after
 regression and also estimates BOLD-T1w coregistration and BOLD-Template normalization

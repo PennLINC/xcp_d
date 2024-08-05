@@ -1,4 +1,4 @@
-"""Tests for the xcp_d.workflows.anatomical module."""
+"""Tests for the xcp_d.workflows.anatomical.surface module."""
 
 import os
 import shutil
@@ -66,7 +66,7 @@ def test_warp_surfaces_to_template_wf(
     """
     tmpdir = tmp_path_factory.mktemp("test_warp_surfaces_to_template_wf")
 
-    wf = anatomical.init_warp_surfaces_to_template_wf(
+    wf = anatomical.surface.init_warp_surfaces_to_template_wf(
         output_dir=tmpdir,
         software="FreeSurfer",
         omp_nthreads=1,
@@ -95,7 +95,7 @@ def test_warp_surfaces_to_template_wf(
 
 
 def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
-    """Test xcp_d.workflows.anatomical.init_postprocess_anat_wf."""
+    """Test xcp_d.workflows.anatomical.volume.init_postprocess_anat_wf."""
     tmpdir = tmp_path_factory.mktemp("test_postprocess_anat_wf")
 
     anat_to_template_xfm = ds001419_data["anat_to_template_xfm"]
@@ -110,7 +110,7 @@ def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
         config.nipype.omp_nthreads = 1
         config.nipype.mem_gb = 0.1
 
-        wf = anatomical.init_postprocess_anat_wf(
+        wf = anatomical.volume.init_postprocess_anat_wf(
             t1w_available=True,
             t2w_available=True,
             target_space="MNI152NLin2009cAsym",

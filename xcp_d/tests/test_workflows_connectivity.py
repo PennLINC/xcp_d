@@ -17,11 +17,11 @@ from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.utils import _create_mem_gb, get_std2bold_xfms
 from xcp_d.utils.write_save import read_ndata, write_ndata
-from xcp_d.workflows.connectivity import (
+from xcp_d.workflows.bold.connectivity import (
     init_functional_connectivity_cifti_wf,
     init_functional_connectivity_nifti_wf,
-    init_load_atlases_wf,
 )
+from xcp_d.workflows.parcellation import init_load_atlases_wf
 
 np.set_printoptions(threshold=sys.maxsize)
 
