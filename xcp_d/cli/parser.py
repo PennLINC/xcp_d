@@ -1090,6 +1090,14 @@ def _validate_parameters(opts, build_log, parser):
             "you must enable cifti processing (--file-format cifti)."
         )
 
+    # Warn if the user combines custom confounds with the 'none' parameter set
+    if opts.params == "none" and opts.custom_confounds:
+        build_log.warning(
+            "Custom confounds were provided, but --nuisance-regressors was set to none. "
+            "Overriding the 'none' value and setting to 'custom'."
+        )
+        opts.params = "custom"
+
     if error_messages:
         error_message_str = "Errors detected in parameter parsing:\n\t- " + "\n\t- ".join(
             error_messages

@@ -1,11 +1,11 @@
-"""Test xcp_d.workflows.execsummary."""
+"""Test xcp_d.workflows.plotting."""
 
 import os
 
 from nilearn import image
 
 from xcp_d.tests.utils import get_nodes
-from xcp_d.workflows import execsummary
+from xcp_d.workflows import plotting
 
 
 def test_init_plot_custom_slices_wf(ds001419_data, tmp_path_factory):
@@ -17,7 +17,7 @@ def test_init_plot_custom_slices_wf(ds001419_data, tmp_path_factory):
     img_3d = image.index_img(nifti_file, 5)
     img_3d.to_filename(nifti_3d)
 
-    wf = execsummary.init_plot_custom_slices_wf(
+    wf = plotting.init_plot_custom_slices_wf(
         output_dir=tmpdir,
         desc="SubcorticalOnAtlas",
         name="plot_custom_slices_wf",

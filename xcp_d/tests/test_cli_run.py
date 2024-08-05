@@ -32,6 +32,7 @@ def base_opts():
         "mode": "linc",
         "file_format": "auto",
         "input_type": "auto",
+        "params": "36P",
         "high_pass": 0.01,
         "low_pass": 0.1,
         "bandpass_filter": True,
@@ -125,6 +126,22 @@ def test_validate_parameters_06(base_opts, base_parser, capsys):
     stderr = capsys.readouterr().err
     assert "--warp-surfaces-native2std is not supported" in stderr
     assert "In order to perform surface normalization" in stderr
+
+
+def test_validate_parameters_07(base_opts, base_parser, caplog, tmp_path_factory):
+    """Test parser._validate_parameters custom confounds + none."""
+    tmpdir = tmp_path_factory.mktemp("test_validate_parameters_07")
+    confounds_path = Path(os.path.join(tmpdir, "confounds.tsv"))
+    confounds_path.touch()  # create the file
+
+    opts = deepcopy(base_opts)
+    opts.params = "none"
+    opts.custom_confounds = confounds_path
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.params == "custom"
+    assert "Overriding the 'none' value and setting to 'custom'" in caplog.text
 
 
 def test_validate_parameters_motion_filtering(base_opts, base_parser, caplog, capsys):

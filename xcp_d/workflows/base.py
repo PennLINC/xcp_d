@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
+
 import os
 import sys
 from copy import deepcopy
@@ -36,17 +37,13 @@ from xcp_d.utils.bids import (
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import calculate_exact_scans, flag_bad_run
 from xcp_d.utils.utils import estimate_brain_radius
-from xcp_d.workflows.anatomical import (
-    init_postprocess_anat_wf,
-    init_postprocess_surfaces_wf,
-)
-from xcp_d.workflows.bold import init_postprocess_nifti_wf
-from xcp_d.workflows.cifti import init_postprocess_cifti_wf
-from xcp_d.workflows.concatenation import init_concatenate_data_wf
-from xcp_d.workflows.connectivity import (
-    init_load_atlases_wf,
-    init_parcellate_surfaces_wf,
-)
+from xcp_d.workflows.anatomical.parcellation import init_parcellate_surfaces_wf
+from xcp_d.workflows.anatomical.surface import init_postprocess_surfaces_wf
+from xcp_d.workflows.anatomical.volume import init_postprocess_anat_wf
+from xcp_d.workflows.bold.cifti import init_postprocess_cifti_wf
+from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
+from xcp_d.workflows.bold.nifti import init_postprocess_nifti_wf
+from xcp_d.workflows.parcellation import init_load_atlases_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
