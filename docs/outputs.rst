@@ -107,7 +107,7 @@ Atlases are written out to the ``atlases`` subfolder, following BEP038.
 Anatomical Outputs
 ******************
 
-Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation images in MNI space.
+Anatomical outputs consist of anatomical preprocessed T1w and/or T2w images in MNI space.
 
 .. code-block::
 
@@ -116,7 +116,6 @@ Anatomical outputs consist of anatomical preprocessed T1w/T2w and segmentation i
          anat/
             <source_entities>_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
             <source_entities>_space-MNI152NLin6Asym_desc-preproc_T2w.nii.gz
-            <source_entities>_space-MNI152NLin6Asym_dseg.nii.gz
 
 
 Surface mesh files

@@ -67,7 +67,6 @@ sub-01.html
 sub-01/ses-1mo
 sub-01/ses-1mo/anat
 sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_desc-preproc_T1w.nii.gz
-sub-01/ses-1mo/anat/sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_dseg.nii.gz
 sub-01/ses-1mo/func
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-abcc_qc.hdf5
 sub-01/ses-1mo/func/sub-01_ses-1mo_task-rest_acq-PA_run-001_desc-preproc_design.json

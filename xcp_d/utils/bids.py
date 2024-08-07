@@ -173,8 +173,6 @@ def collect_data(
         # HCP/DCAN data have anats only in standard space
         queries["t1w"]["space"] = "MNI152NLin6Asym"
         queries["t2w"]["space"] = "MNI152NLin6Asym"
-        queries["anat_dseg"]["desc"] = "aparcaseg"
-        queries["anat_dseg"]["space"] = "MNI152NLin6Asym"
         queries["anat_brainmask"]["space"] = "MNI152NLin6Asym"
 
     queries["bold"]["extension"] = ".dtseries.nii" if (file_format == "cifti") else ".nii.gz"
@@ -272,8 +270,6 @@ def collect_data(
         LOGGER.warning("T2w found, but no T1w. Enabling T2w-only processing.")
         queries["template_to_anat_xfm"]["to"] = "T2w"
         queries["anat_to_template_xfm"]["from"] = "T2w"
-        # Nibabies may include space-T2w for some derivatives
-        queries["anat_dseg"]["space"] = ["T2w", None]
 
     # Search for the files.
     subj_data = {
