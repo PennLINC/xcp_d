@@ -32,7 +32,7 @@ def base_opts():
         "mode": "linc",
         "file_format": "auto",
         "input_type": "auto",
-        "params": "36P",
+        "params": "auto",
         "high_pass": 0.01,
         "low_pass": 0.1,
         "bandpass_filter": True,
@@ -338,6 +338,39 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     opts.mode = "hbcd"
     opts.motion_filter_type = "lp"
     opts.band_stop_min = 10
+
+    # hbcd mode does use abcc_qc but doesn't use linc_qc
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.abcc_qc is True
+    assert opts.combine_runs is True
+    assert opts.dcan_correlation_lengths == []
+    assert opts.despike is True
+    assert opts.fd_thresh == 0.3
+    assert opts.file_format == "cifti"
+    assert opts.input_type == "nibabies"
+    assert opts.linc_qc is True
+    assert opts.output_correlations is False
+    assert opts.process_surfaces is True
+
+    opts.dcan_correlation_lengths = ["300", "all"]
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    assert opts.dcan_correlation_lengths == ["300"]
+    assert opts.output_correlations is True
+
+    # --motion-filter-type is required
+    opts.motion_filter_type = None
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--motion-filter-type' is required for" in stderr
+
+
+def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with hbcd mode."""
+    opts = deepcopy(base_opts)
+    opts.mode = "none"
 
     # hbcd mode does use abcc_qc but doesn't use linc_qc
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)

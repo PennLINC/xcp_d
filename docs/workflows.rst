@@ -35,6 +35,9 @@ based on recommended processing pipelines for different studies.
 XCP-D can be run in one of three modes: ``linc``, ``abcd``, or ``hbcd``.
 Each mode is designed by a different group, and has different requirements.
 
+Users may also run XCP-D in ``none`` mode, in which case almost all of the parameters must be
+defined by the user.
+
 
 linc Mode
 =========
