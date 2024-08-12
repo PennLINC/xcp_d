@@ -367,24 +367,38 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     assert "'--motion-filter-type' is required for" in stderr
 
 
-def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
-    """Test parser._validate_parameters with hbcd mode."""
+def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with none mode."""
     opts = deepcopy(base_opts)
     opts.mode = "none"
 
-    # hbcd mode does use abcc_qc but doesn't use linc_qc
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--abcc-qc' (y or n) is required for 'none' mode." in stderr
+    assert "'--combine-runs' (y or n) is required for 'none' mode." in stderr
+    assert "'--despike' (y or n) is required for 'none' mode." in stderr
+    assert "'--fd-thresh' is required for 'none' mode." in stderr
+    assert "'--file-format' is required for 'none' mode." in stderr
+    assert "'--input-type' is required for 'none' mode." in stderr
+    assert "'--linc-qc' (y or n) is required for 'none' mode." in stderr
+    assert "'--motion-filter-type' is required for 'none' mode." in stderr
+    assert "'--nuisance-regressors' is required for 'none' mode." in stderr
+    assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
+
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert opts.abcc_qc is True
-    assert opts.combine_runs is True
+    assert opts.abcc_qc == "auto"
+    assert opts.combine_runs == "auto"
     assert opts.dcan_correlation_lengths == []
-    assert opts.despike is True
-    assert opts.fd_thresh == 0.3
-    assert opts.file_format == "cifti"
-    assert opts.input_type == "nibabies"
-    assert opts.linc_qc is True
+    assert opts.despike == "auto"
+    assert opts.fd_thresh == "auto"
+    assert opts.file_format == "auto"
+    assert opts.input_type == "auto"
+    assert opts.linc_qc == "auto"
     assert opts.output_correlations is False
-    assert opts.process_surfaces is True
+    assert opts.process_surfaces == "auto"
 
     opts.dcan_correlation_lengths = ["300", "all"]
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
