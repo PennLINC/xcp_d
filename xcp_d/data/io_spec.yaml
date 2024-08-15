@@ -11,7 +11,10 @@ queries:
             datatype: anat
             desc: null
             extension: .nii.gz
-            space: null
+            space:
+            - T1w
+            - T2w
+            - null
             suffix: dseg
         # transform from native anatomical (T1w or T2w) space to same standard space as BOLD
         # "to" entity will be set later
@@ -33,7 +36,9 @@ queries:
             datatype: anat
             desc: preproc
             extension: .nii.gz
-            space: null
+            space:
+            - null
+            - T2w
             suffix: T1w
         # native T2w-space or T1w-space, preprocessed T2w file
         t2w:
