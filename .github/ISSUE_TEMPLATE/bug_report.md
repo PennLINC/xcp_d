@@ -13,7 +13,7 @@ assignees: ''
 <!--Please fill in the following details-->
 - xcp_d version:
 - Docker version:
-- Singularity version:
+- Apptainer version:
 
 ### What were you trying to do?
 
