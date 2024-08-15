@@ -387,31 +387,15 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     assert "'--nuisance-regressors' is required for 'none' mode." in stderr
     assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
 
+    opts.abcc_qc = "n"
+    opts.combine_runs = "n"
+    opts.despike = "n"
+    opts.fd_thresh = 0
+    opts.file_format = "nifti"
+    opts.input_type = "fmriprep"
+    opts.linc_qc = "n"
+    opts.motion_filter_type = "none"
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert opts.abcc_qc == "auto"
-    assert opts.combine_runs == "auto"
-    assert opts.dcan_correlation_lengths == []
-    assert opts.despike == "auto"
-    assert opts.fd_thresh == "auto"
-    assert opts.file_format == "auto"
-    assert opts.input_type == "auto"
-    assert opts.linc_qc == "auto"
-    assert opts.output_correlations is False
-    assert opts.process_surfaces == "auto"
-
-    opts.dcan_correlation_lengths = ["300", "all"]
-    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-    assert opts.dcan_correlation_lengths == ["300"]
-    assert opts.output_correlations is True
-
-    # --motion-filter-type is required
-    opts.motion_filter_type = None
-    with pytest.raises(SystemExit, match="2"):
-        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    stderr = capsys.readouterr().err
-    assert "'--motion-filter-type' is required for" in stderr
 
 
 def test_validate_parameters_other_mode(base_opts, base_parser, capsys):

@@ -43,7 +43,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         dataset_dir,
         out_dir,
         "participant",
-        "--mode=linc",
+        "--mode=none",
         f"-w={work_dir}",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=aroma_gsr",
@@ -55,6 +55,10 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--skip-parcellation",
         "--min-time=100",
         "--combine-runs",
+        "--output-type=censored",
+        "--combine-runs=n",
+        "--linc-qc=y",
+        "--abcc-qc=n",
     ]
     _run_and_generate(
         test_name=test_name,
