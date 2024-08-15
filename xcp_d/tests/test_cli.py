@@ -59,6 +59,10 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--combine-runs=n",
         "--linc-qc=y",
         "--abcc-qc=n",
+        "--despike=n",
+        "--file-format=nifti",
+        "--input-type=fmriprep",
+        "--warp-surfaces-native2std=n",
     ]
     _run_and_generate(
         test_name=test_name,
