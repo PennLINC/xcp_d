@@ -56,7 +56,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         "--min-time=100",
         "--combine-runs",
         "--output-type=censored",
-        "--combine-runs=n",
+        "--combine-runs=y",
         "--linc-qc=y",
         "--abcc-qc=n",
         "--despike=n",
