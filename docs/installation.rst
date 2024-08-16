@@ -14,10 +14,10 @@ There are two ways to install *XCP-D*:
 **********************
 Container Technologies
 **********************
-*XCP-D* is ideally run via a Docker or Singularity container. If you are running *XCP-D* locally,
+*XCP-D* is ideally run via a Docker or Apptainer container. If you are running *XCP-D* locally,
 we suggest Docker_.
 However, for security reasons, many :abbr:`HPCs (High-Performance Computing)` do not allow Docker
-containers, but do allow Singularity_ containers.
+containers, but do allow Apptainer_ containers.
 The improved security for multi-tenant systems comes at the price of some limitations and extra
 steps necessary for execution.
 
@@ -41,17 +41,15 @@ The image can also be found here: https://hub.docker.com/r/pennlinc/xcp_d
 or through a lightweight wrapper that was created for convenience.
 
 
-.. _installation_singularity:
+.. _installation_apptainer:
 
-Singularity Installation
+Apptainer Installation
 ========================
 
-**Singularity version >= 2.5**:
-If the version of Singularity installed on your :abbr:`HPC (High-Performance Computing)` system is
-modern enough, you can create a Singularity image directly on the system using the following
+You can create an Apptainer image directly on the system using the following
 command: ::
 
-    $ singularity build xcp_d-<version>.simg docker://pennlinc/xcp_d:<version>
+    $ apptainer build xcp_d-<version>.simg docker://pennlinc/xcp_d:<version>
 
 where ``<version>`` should be replaced with the desired version of *xcp-d* that you want to
 download.
@@ -65,7 +63,7 @@ Manually Prepared Environment (Python 3.10)
 .. warning::
 
    This method is not recommended! Please use container alternatives
-   in :ref:`run_docker`, and :ref:`run_singularity`.
+   in :ref:`run_docker`, and :ref:`run_apptainer`.
 
 XCP-D requires some `External Dependencies`_.
 These tools must be installed and their binaries available in the system's ``$PATH``.

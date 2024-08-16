@@ -233,7 +233,7 @@ A Docker container can be created using the following command:
       /fmriprep /out participant \
       --file-format cifti --despike --head_radius 40 -w /work --smoothing 6
 
-.. _run_singularity:
+.. _run_apptainer:
 
 Apptainer
 =========
@@ -242,20 +242,12 @@ If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommen
 Apptainer.
 See :ref:`installation_container_technologies` for installation instructions.
 
-.. warning::
-
-   XCP-D (and perhaps other Docker-based Apptainer images) may not work with
-   Apptainer <=2.4.
-   We strongly recommend using Apptainer 3+.
-   For more information, see `this xcp_d issue <https://github.com/PennLINC/xcp_d/issues/793>`_ and
-   `this Apptainer issue <https://github.com/apptainer/singularity/issues/884>`_.
-
 If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run
 *xcp_d*.
 
 .. code-block:: bash
 
-    singularity run --cleanenv xcp_d.sif \
+    apptainer run --cleanenv xcp_d.sif \
         /dset/derivatives/fmriprep  \
         /dset/derivatives/xcp_d \
         --participant-label label
@@ -276,7 +268,7 @@ argument (``--home``) as follows:
 
 .. code-block:: bash
 
-    singularity run -B $HOME:/home/xcp \
+    apptainer run -B $HOME:/home/xcp \
         --home /home/xcp \
         --cleanenv xcp_d.simg \
         <xcp_d arguments>
@@ -403,7 +395,7 @@ for example, ``--nuisance-regressors 36P`` in the call.
 
 .. code-block:: bash
 
-   singularity run --cleanenv -B /my/project/directory:/mnt xcpabcd_latest.simg \
+   apptainer run --cleanenv -B /my/project/directory:/mnt xcpabcd_latest.simg \
       /mnt/input/fmriprep \
       /mnt/output/directory \
       participant \
