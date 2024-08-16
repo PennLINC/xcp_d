@@ -51,6 +51,7 @@ def base_opts():
         "abcc_qc": "auto",
         "linc_qc": "auto",
         "combine_runs": "auto",
+        "output_type": "auto",
     }
     opts = FakeOptions(**opts_dict)
     return opts
