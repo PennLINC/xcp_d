@@ -397,8 +397,8 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     opts.input_type = "fmriprep"
     opts.linc_qc = False
     opts.motion_filter_type = "none"
-    opts.nuisance_regressors = "36P"
     opts.output_type = "censored"
+    opts.params = "36P"
     opts.process_surfaces = False
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
