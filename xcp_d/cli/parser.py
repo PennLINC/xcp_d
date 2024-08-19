@@ -1032,6 +1032,7 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.fd_thresh == "auto":
             error_messages.append("'--fd-thresh' is required for 'none' mode.")
+            opts.fd_thresh = 0  # just to satisfy later checks, not to actually use
 
         if opts.file_format == "auto":
             error_messages.append("'--file-format' is required for 'none' mode.")
