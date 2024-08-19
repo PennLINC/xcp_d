@@ -386,6 +386,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     assert "'--linc-qc' (y or n) is required for 'none' mode." in stderr
     assert "'--motion-filter-type' is required for 'none' mode." in stderr
     assert "'--nuisance-regressors' is required for 'none' mode." in stderr
+    assert "'--output-type' is required for 'none' mode." in stderr
     assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
 
     opts.abcc_qc = False
@@ -395,7 +396,10 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     opts.file_format = "nifti"
     opts.input_type = "fmriprep"
     opts.linc_qc = False
-    opts.motion_filter_type = None
+    opts.motion_filter_type = "none"
+    opts.nuisance_regressors = "36P"
+    opts.output_type = "censored"
+    opts.process_surfaces = False
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
