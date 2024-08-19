@@ -388,14 +388,14 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     assert "'--nuisance-regressors' is required for 'none' mode." in stderr
     assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
 
-    opts.abcc_qc = "n"
-    opts.combine_runs = "n"
-    opts.despike = "n"
+    opts.abcc_qc = False
+    opts.combine_runs = False
+    opts.despike = False
     opts.fd_thresh = 0
     opts.file_format = "nifti"
     opts.input_type = "fmriprep"
-    opts.linc_qc = "n"
-    opts.motion_filter_type = "none"
+    opts.linc_qc = False
+    opts.motion_filter_type = None
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
