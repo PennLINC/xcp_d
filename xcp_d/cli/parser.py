@@ -70,7 +70,7 @@ def _build_parser():
         "--mode",
         dest="mode",
         action="store",
-        choices=["abcd", "hbcd", "linc"],
+        choices=["abcd", "hbcd", "linc", "none"],
         required=True,
         help=(
             "The mode of operation for XCP-D. "
@@ -272,7 +272,7 @@ def _build_parser():
             # GSR-only for UKB
             "gsr_only",
         ],
-        default="36P",
+        default="auto",
         type=str,
         help=(
             "Nuisance parameters to be selected. "
@@ -434,6 +434,21 @@ This parameter can be disabled by providing a zero or a negative value.
 
 The default is 240 (4 minutes).
 """,
+    )
+    g_censor.add_argument(
+        "--output-type",
+        dest="output_type",
+        default="auto",
+        action="store",
+        choices=["auto", "censored", "interpolated"],
+        help=(
+            "The type of output to generate. "
+            "If 'auto', the output type will be inferred from the processing mode. "
+            "If 'censored', the BOLD outputs (dense and parcellated time series) will be "
+            "censored. "
+            "If 'interpolated', the BOLD outputs (dense and parcellated time series) will be "
+            "interpolated."
+        ),
     )
 
     g_temporal_filter = parser.add_argument_group(
@@ -927,13 +942,14 @@ def _validate_parameters(opts, build_log, parser):
         opts.custom_confounds = str(opts.custom_confounds.resolve())
 
     # Check parameter value types/valid values
-    assert opts.mode in ("abcd", "hbcd", "linc"), f"Unsupported mode '{opts.mode}'."
-    assert opts.despike in (True, False, "auto")
-    assert opts.process_surfaces in (True, False, "auto")
-    assert opts.combine_runs in (True, False, "auto")
-    assert opts.file_format in ("nifti", "cifti", "auto")
     assert opts.abcc_qc in (True, False, "auto")
+    assert opts.combine_runs in (True, False, "auto")
+    assert opts.despike in (True, False, "auto")
+    assert opts.file_format in ("nifti", "cifti", "auto")
     assert opts.linc_qc in (True, False, "auto")
+    assert opts.mode in ("abcd", "hbcd", "linc", "none"), f"Unsupported mode '{opts.mode}'."
+    assert opts.output_type in ("censored", "interpolated", "auto")
+    assert opts.process_surfaces in (True, False, "auto")
 
     # Check parameters based on the mode
     if opts.mode == "abcd":
@@ -950,7 +966,10 @@ def _validate_parameters(opts, build_log, parser):
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
         opts.output_correlations = True if "all" in opts.dcan_correlation_lengths else False
-        opts.output_interpolated = True
+        if opts.output_type == "censored":
+            error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
+        opts.output_type = "interpolated"
+        opts.params = "36P" if opts.params == "auto" else opts.params
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
         )
@@ -970,7 +989,10 @@ def _validate_parameters(opts, build_log, parser):
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
         opts.output_correlations = True if "all" in opts.dcan_correlation_lengths else False
-        opts.output_interpolated = True
+        if opts.output_type == "censored":
+            error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
+        opts.output_type = "interpolated"
+        opts.params = "36P" if opts.params == "auto" else opts.params
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
         )
@@ -985,10 +1007,60 @@ def _validate_parameters(opts, build_log, parser):
         opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == "auto") else opts.linc_qc
         opts.output_correlations = True
-        opts.output_interpolated = False
+        if opts.output_type == "interpolated":
+            error_messages.append(
+                f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
+            )
+        opts.output_type = "censored"
+        opts.params = "36P" if opts.params == "auto" else opts.params
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
+    elif opts.mode == "none":
+        if opts.abcc_qc == "auto":
+            error_messages.append("'--abcc-qc' (y or n) is required for 'none' mode.")
+
+        if opts.combine_runs == "auto":
+            error_messages.append("'--combine-runs' (y or n) is required for 'none' mode.")
+
+        opts.dcan_correlation_lengths = (
+            [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
+        )
+
+        if opts.despike == "auto":
+            error_messages.append("'--despike' (y or n) is required for 'none' mode.")
+
+        if opts.fd_thresh == "auto":
+            error_messages.append("'--fd-thresh' is required for 'none' mode.")
+            opts.fd_thresh = 0  # just to satisfy later checks, not to actually use
+
+        if opts.file_format == "auto":
+            error_messages.append("'--file-format' is required for 'none' mode.")
+
+        if opts.input_type == "auto":
+            error_messages.append("'--input-type' is required for 'none' mode.")
+
+        if opts.linc_qc == "auto":
+            error_messages.append("'--linc-qc' (y or n) is required for 'none' mode.")
+
+        if opts.motion_filter_type is None:
+            error_messages.append("'--motion-filter-type' is required for 'none' mode.")
+
+        opts.output_correlations = True if "all" in opts.dcan_correlation_lengths else False
+
+        if opts.output_type == "auto":
+            error_messages.append("'--output-type' is required for 'none' mode.")
+
+        if opts.params == "auto":
+            error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
+
+        if opts.process_surfaces == "auto":
+            error_messages.append(
+                "'--warp-surfaces-native2std' (y or n) is required for 'none' mode."
+            )
+
+        # Remove "all" from the list of correlation lengths
+        opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != "all"]
 
     # Bandpass filter parameters
     if opts.high_pass <= 0 and opts.low_pass <= 0:
@@ -1014,6 +1086,8 @@ def _validate_parameters(opts, build_log, parser):
             f"The following parameters will have no effect:\n\t{ignored_params}"
         )
         opts.min_time = 0
+
+    opts.output_interpolated = True if opts.output_type == "interpolated" else False
 
     # Motion filtering parameters
     if opts.motion_filter_type == "none":

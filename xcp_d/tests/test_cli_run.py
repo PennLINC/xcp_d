@@ -32,7 +32,7 @@ def base_opts():
         "mode": "linc",
         "file_format": "auto",
         "input_type": "auto",
-        "params": "36P",
+        "params": "auto",
         "high_pass": 0.01,
         "low_pass": 0.1,
         "bandpass_filter": True,
@@ -51,6 +51,7 @@ def base_opts():
         "abcc_qc": "auto",
         "linc_qc": "auto",
         "combine_runs": "auto",
+        "output_type": "auto",
     }
     opts = FakeOptions(**opts_dict)
     return opts
@@ -365,6 +366,41 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
 
     stderr = capsys.readouterr().err
     assert "'--motion-filter-type' is required for" in stderr
+
+
+def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with none mode."""
+    opts = deepcopy(base_opts)
+    opts.mode = "none"
+
+    with pytest.raises(SystemExit, match="2"):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--abcc-qc' (y or n) is required for 'none' mode." in stderr
+    assert "'--combine-runs' (y or n) is required for 'none' mode." in stderr
+    assert "'--despike' (y or n) is required for 'none' mode." in stderr
+    assert "'--fd-thresh' is required for 'none' mode." in stderr
+    assert "'--file-format' is required for 'none' mode." in stderr
+    assert "'--input-type' is required for 'none' mode." in stderr
+    assert "'--linc-qc' (y or n) is required for 'none' mode." in stderr
+    assert "'--motion-filter-type' is required for 'none' mode." in stderr
+    assert "'--nuisance-regressors' is required for 'none' mode." in stderr
+    assert "'--output-type' is required for 'none' mode." in stderr
+    assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
+
+    opts.abcc_qc = False
+    opts.combine_runs = False
+    opts.despike = False
+    opts.fd_thresh = 0
+    opts.file_format = "nifti"
+    opts.input_type = "fmriprep"
+    opts.linc_qc = False
+    opts.motion_filter_type = "none"
+    opts.output_type = "censored"
+    opts.params = "36P"
+    opts.process_surfaces = False
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
