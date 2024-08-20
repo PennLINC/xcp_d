@@ -1,6 +1,38 @@
 # What's New
 
 
+## 0.8.2
+
+This release adds the "none" option for the mode parameter.
+
+### 🎉 Exciting New Features
+
+* Implement "none" mode by @tsalo in https://github.com/PennLINC/xcp_d/pull/1232
+
+### 🐛 Bug Fixes
+
+* Account for floating point issues in ALFF time array creation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1236
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.1...0.8.2
+
+
+## 0.8.1
+
+Patch release for HBCD to support Nibabies runs with both T1w and T2w data.
+
+### 🐛 Bug Fixes
+
+* Explicitly check for `-p none` and `--custom-confounds` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1222
+
+### Other Changes
+
+* Restructure XCP-D to better match fMRIPrep by @tsalo in https://github.com/PennLINC/xcp_d/pull/1225
+* Document the apptainer version requirements by @tsalo in https://github.com/PennLINC/xcp_d/pull/1233
+* Make collect_data work for T1w+T2w nibabies derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/1234
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.0...0.8.1
+
+
 ## 0.8.0
 
 This is a backwards-incompatible release that will be used to postprocess the beta version of the first release of the HBCD dataset.
