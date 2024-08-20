@@ -162,7 +162,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
             voxel_data_censored -= np.mean(voxel_data_censored)
             voxel_data_censored /= np.std(voxel_data_censored)
 
-            time_arr = np.arange(0, n_volumes * TR, TR)
+            time_arr = np.arange(n_volumes) * TR
             assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
             time_arr = time_arr[sample_mask]
             frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
