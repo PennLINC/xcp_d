@@ -269,7 +269,7 @@ def collect_data(
     if not t1w_files and not t2w_files:
         raise FileNotFoundError("No T1w or T2w files found.")
     elif t1w_files and t2w_files:
-        LOGGER.warning("Both T1w and T1w found. Checking for T1w-space T2w.")
+        LOGGER.warning("Both T1w and T2w found. Checking for T1w-space T2w.")
         temp_query = queries["t2w"].copy()
         temp_query["space"] = "T1w"
         temp_t2w_files = layout.get(return_type="file", subject=participant_label, **temp_query)
