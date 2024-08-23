@@ -2,7 +2,7 @@
 
 ## 0.8.3
 
-This patch release fixes a bug introduced in 0.8.0.
+This patch release fixes a bug introduced in 0.8.1.
 
 ### 🐛 Bug Fixes
 
