@@ -21,6 +21,29 @@ which tracks the latest release
 (see :doc:`installation` for the basic procedure for running).
 
 
+.. _contrib_modes:
+
+*******************
+Adding a new "mode"
+*******************
+
+*XCP-D*'s "modes" define sets of default parameters according to a specific use case,
+usually linked to a specific dataset or organization.
+If you would like to see a new mode added to *XCP-D*, follow these steps:
+
+1. Compile information about the mode you would like to add.
+   This should include:
+
+   - A description of the mode.
+   - A citation for the mode. In order to be included in *XCP-D*, the mode must be published
+     in a peer-reviewed journal, or at least must be established in an existing project.
+   - A list of the default parameters that should be set for this mode.
+   - Any additional information that would be helpful for users to know about this mode.
+2. Open an issue on the *XCP-D* GitHub repository using the "Mode request" template.
+3. We may follow up with you about the parameters you have chosen, to ensure that XCP-D is able to
+   support them.
+
+
 ***********
 Style guide
 ***********
