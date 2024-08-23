@@ -41,7 +41,7 @@ defined by the user.
 .. important::
 
    If you have a "mode" you would like to see supported by XCP-D, follow the instructions in
-   :ref:`_contrib_modes`.
+   :ref:`contrib_modes`.
 
 
 linc Mode

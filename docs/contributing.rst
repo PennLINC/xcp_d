@@ -39,9 +39,8 @@ If you would like to see a new mode added to *XCP-D*, follow these steps:
      in a peer-reviewed journal, or at least must be established in an existing project.
    - A list of the default parameters that should be set for this mode.
    - Any additional information that would be helpful for users to know about this mode.
-
-1. Open an issue on the *XCP-D* GitHub repository using the "Mode request" template.
-1. We may follow up with you about the parameters you have chosen, to ensure that XCP-D is able to
+2. Open an issue on the *XCP-D* GitHub repository using the "Mode request" template.
+3. We may follow up with you about the parameters you have chosen, to ensure that XCP-D is able to
    support them.
 
 
