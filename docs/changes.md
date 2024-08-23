@@ -1,5 +1,19 @@
 # What's New
 
+## 0.8.3
+
+This patch release fixes a bug introduced in 0.8.1.
+
+### 🐛 Bug Fixes
+
+* Fix collection in case of derivatives with T1w and T2w but T1w is primary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1240
+
+### Other Changes
+
+* Document how to request a new mode by @tsalo in https://github.com/PennLINC/xcp_d/pull/1238
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.2...0.8.3
+
 
 ## 0.8.2
 
