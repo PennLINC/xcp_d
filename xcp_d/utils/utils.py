@@ -420,7 +420,7 @@ def denoise_with_nilearn(
     outlier_idx = list(np.where(~sample_mask)[0])
 
     # Determine which steps to apply
-    detrend_and_denoise = (confounds is not None) and (voxelwise_confounds is not None)
+    detrend_and_denoise = (confounds is not None) or (voxelwise_confounds is not None)
     censor_and_interpolate = bool(outlier_idx)
 
     if detrend_and_denoise:
