@@ -420,24 +420,26 @@ def denoise_with_nilearn(
     outlier_idx = list(np.where(~sample_mask)[0])
 
     # Determine which steps to apply
-    detrend_and_denoise = (confounds is not None) or (voxelwise_confounds is not None)
+    have_confounds = confounds is not None
+    have_voxelwise_confounds = voxelwise_confounds is not None
+    detrend_and_denoise = have_confounds or have_voxelwise_confounds
     censor_and_interpolate = bool(outlier_idx)
 
     if detrend_and_denoise:
-        if confounds:
+        if have_confounds:
             confounds_arr = confounds.to_numpy().copy()
 
-        if voxelwise_confounds:
+        if have_voxelwise_confounds:
             voxelwise_confounds = [arr.copy() for arr in voxelwise_confounds]
 
     if censor_and_interpolate:
         # Replace high-motion volumes in the BOLD data and confounds with interpolated values.
         preprocessed_bold = _interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
         if detrend_and_denoise:
-            if confounds:
+            if have_confounds:
                 confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
 
-            if voxelwise_confounds:
+            if have_voxelwise_confounds:
                 voxelwise_confounds = [
                     _interpolate(arr=arr, sample_mask=sample_mask, TR=TR)
                     for arr in voxelwise_confounds
@@ -447,10 +449,10 @@ def denoise_with_nilearn(
         # Detrend the interpolated data and confounds.
         # This also mean-centers the data and confounds.
         preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=False)
-        if confounds:
+        if have_confounds:
             confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
 
-        if voxelwise_confounds:
+        if have_voxelwise_confounds:
             voxelwise_confounds = [
                 standardize_signal(arr, detrend=True, standardize=False)
                 for arr in voxelwise_confounds
@@ -468,10 +470,10 @@ def denoise_with_nilearn(
         }
         preprocessed_bold = butterworth(signals=preprocessed_bold, **butterworth_kwargs)
         if detrend_and_denoise:
-            if confounds:
+            if have_confounds:
                 confounds_arr = butterworth(signals=confounds_arr, **butterworth_kwargs)
 
-            if voxelwise_confounds:
+            if have_voxelwise_confounds:
                 voxelwise_confounds = [
                     butterworth(signals=arr, **butterworth_kwargs) for arr in voxelwise_confounds
                 ]
@@ -480,7 +482,7 @@ def denoise_with_nilearn(
         # Censor the data and confounds
         censored_bold = preprocessed_bold[sample_mask, :]
 
-        if confounds and not voxelwise_confounds:
+        if have_confounds and not voxelwise_confounds:
             # Estimate betas using only the censored data
             censored_confounds = confounds_arr[sample_mask, :]
             betas = np.linalg.lstsq(censored_confounds, censored_bold, rcond=None)[0]
@@ -493,7 +495,7 @@ def denoise_with_nilearn(
             # Loop over voxels
             for i_voxel in range(n_voxels):
                 design_matrix = []
-                if confounds:
+                if have_confounds:
                     design_matrix.append(confounds_arr.copy())
 
                 for voxelwise_arr in voxelwise_confounds:
