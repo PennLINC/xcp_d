@@ -245,6 +245,10 @@ def test_denoise_with_nilearn_voxelwise():
     n_voxels, n_volumes, n_confounds, n_voxelwise_confounds = 1000, 300, 5, 3
     data_arr = np.random.random((n_volumes, n_voxels))
     confounds = np.random.random((n_volumes, n_confounds))
+    confounds_df = pd.DataFrame(
+        confounds,
+        columns=[f"confound_{i}" for i in range(n_confounds)],
+    )
     voxelwise_confounds = [
         np.random.random((n_volumes, n_voxels)) for _ in range(n_voxelwise_confounds)
     ]
@@ -253,7 +257,7 @@ def test_denoise_with_nilearn_voxelwise():
 
     # Denoising with bandpass filtering and censoring
     params = {
-        "confounds": confounds,
+        "confounds": confounds_df,
         "voxelwise_confounds": voxelwise_confounds,
         "sample_mask": sample_mask,
         "low_pass": low_pass,
@@ -266,7 +270,7 @@ def test_denoise_with_nilearn_voxelwise():
 
     # Denoising without bandpass filtering
     params = {
-        "confounds": confounds,
+        "confounds": confounds_df,
         "voxelwise_confounds": voxelwise_confounds,
         "sample_mask": sample_mask,
         "low_pass": None,
