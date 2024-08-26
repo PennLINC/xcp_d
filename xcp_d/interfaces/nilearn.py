@@ -319,6 +319,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds=confounds_df,
+            voxelwise_confounds=None,
             sample_mask=sample_mask,
             low_pass=low_pass,
             high_pass=high_pass,
@@ -395,6 +396,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds=confounds_df,
+            voxelwise_confounds=None,
             sample_mask=sample_mask,
             low_pass=low_pass,
             high_pass=high_pass,
