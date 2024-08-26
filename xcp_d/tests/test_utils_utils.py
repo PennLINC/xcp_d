@@ -123,6 +123,7 @@ def test_denoise_with_nilearn():
     # First, try out filtering without censoring or denoising
     params = {
         "confounds": None,
+        "voxelwise_confounds": None,
         "sample_mask": np.ones(n_volumes, dtype=bool),
         "low_pass": low_pass,
         "high_pass": high_pass,
@@ -140,6 +141,7 @@ def test_denoise_with_nilearn():
     sample_mask[150:160] = False
     params = {
         "confounds": confounds_df,
+        "voxelwise_confounds": None,
         "sample_mask": sample_mask,
         "low_pass": None,
         "high_pass": None,
@@ -159,6 +161,7 @@ def test_denoise_with_nilearn():
     # Denoise without censoring or filtering
     params = {
         "confounds": confounds_df,
+        "voxelwise_confounds": None,
         "sample_mask": np.ones(n_volumes, dtype=bool),
         "low_pass": None,
         "high_pass": None,
@@ -179,6 +182,7 @@ def test_denoise_with_nilearn():
     sample_mask[150:160] = False
     params = {
         "confounds": None,
+        "voxelwise_confounds": None,
         "sample_mask": sample_mask,
         "low_pass": low_pass,
         "high_pass": high_pass,
@@ -206,6 +210,7 @@ def test_denoise_with_nilearn():
     # Run without denoising or filtering (censoring + interpolation only)
     params = {
         "confounds": None,
+        "voxelwise_confounds": None,
         "sample_mask": sample_mask,
         "low_pass": None,
         "high_pass": None,
