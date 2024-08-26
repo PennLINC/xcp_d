@@ -496,7 +496,8 @@ def denoise_with_nilearn(
             for i_voxel in range(n_voxels):
                 design_matrix = censored_confounds.copy()
                 for voxelwise_arr in voxelwise_confounds:
-                    design_matrix = np.hstack((design_matrix, voxelwise_arr[sample_mask, i_voxel]))
+                    temp_voxelwise = voxelwise_arr[sample_mask, i_voxel]
+                    design_matrix = np.hstack((design_matrix, temp_voxelwise[:, None]))
 
                 # Estimate betas using only the censored data
                 betas = np.linalg.lstsq(design_matrix, censored_bold[:, i_voxel], rcond=None)[0]
