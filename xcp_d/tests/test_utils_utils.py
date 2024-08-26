@@ -231,6 +231,74 @@ def test_denoise_with_nilearn():
     _check_signal(out_arr, filtered_signals, sample_mask)
 
 
+def test_denoise_with_nilearn_voxelwise():
+    """Test xcp_d.utils.utils.denoise_with_nilearn with voxel-wise regressors.
+
+    Just a smoke test.
+    """
+    high_pass, low_pass, filter_order, TR = 0.01, 0.08, 2, 2
+    n_voxels, n_volumes, n_confounds, n_voxelwise_confounds = 1000, 300, 5, 3
+    data_arr = np.random.random((n_volumes, n_voxels))
+    confounds = np.random.random((n_volumes, n_confounds))
+    voxelwise_confounds = [
+        np.random.random((n_volumes, n_voxels)) for _ in range(n_voxelwise_confounds)
+    ]
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[40:60] = False
+
+    # Denoising with bandpass filtering and censoring
+    params = {
+        "confounds": confounds,
+        "voxelwise_confounds": voxelwise_confounds,
+        "sample_mask": sample_mask,
+        "low_pass": low_pass,
+        "high_pass": high_pass,
+        "filter_order": filter_order,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+
+    # Denoising without bandpass filtering
+    params = {
+        "confounds": confounds,
+        "voxelwise_confounds": voxelwise_confounds,
+        "sample_mask": sample_mask,
+        "low_pass": None,
+        "high_pass": None,
+        "filter_order": None,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+
+    # Denoising with bandpass filtering but no general confounds
+    params = {
+        "confounds": None,
+        "voxelwise_confounds": voxelwise_confounds,
+        "sample_mask": sample_mask,
+        "low_pass": low_pass,
+        "high_pass": high_pass,
+        "filter_order": filter_order,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+
+    # Denoising without bandpass filtering or general confounds
+    params = {
+        "confounds": None,
+        "voxelwise_confounds": voxelwise_confounds,
+        "sample_mask": sample_mask,
+        "low_pass": None,
+        "high_pass": None,
+        "filter_order": None,
+        "TR": TR,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+
+
 def _check_trend(data, trend, sample_mask, atol=0.01):
     """Ensure that the trend was removed by the denoising process."""
     trend_corr = np.corrcoef(trend[sample_mask], data[sample_mask, :].T)[0, 1:]
