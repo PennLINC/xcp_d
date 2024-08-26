@@ -481,10 +481,10 @@ def denoise_with_nilearn(
     if detrend_and_denoise:
         # Censor the data and confounds
         censored_bold = preprocessed_bold[sample_mask, :]
-        censored_confounds = confounds_arr[sample_mask, :]
 
         if not voxelwise_confounds:
             # Estimate betas using only the censored data
+            censored_confounds = confounds_arr[sample_mask, :]
             betas = np.linalg.lstsq(censored_confounds, censored_bold, rcond=None)[0]
 
             # Denoise the interpolated data.
@@ -494,13 +494,18 @@ def denoise_with_nilearn(
         else:
             # Loop over voxels
             for i_voxel in range(n_voxels):
-                design_matrix = censored_confounds.copy()
+                design_matrix = confounds_arr.copy()
                 for voxelwise_arr in voxelwise_confounds:
-                    temp_voxelwise = voxelwise_arr[sample_mask, i_voxel]
+                    temp_voxelwise = voxelwise_arr[:, i_voxel]
                     design_matrix = np.hstack((design_matrix, temp_voxelwise[:, None]))
 
                 # Estimate betas using only the censored data
-                betas = np.linalg.lstsq(design_matrix, censored_bold[:, i_voxel], rcond=None)[0]
+                censored_design_matrix = design_matrix[sample_mask, :]
+                betas = np.linalg.lstsq(
+                    censored_design_matrix,
+                    censored_bold[:, i_voxel],
+                    rcond=None,
+                )[0]
 
                 # Denoise the interpolated data.
                 # The low-motion volumes of the denoised, interpolated data will be the same as the
