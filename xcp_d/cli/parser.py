@@ -36,6 +36,7 @@ def _build_parser():
     IsFile = partial(parser_utils._is_file, parser=parser)
     PositiveInt = partial(parser_utils._min_one, parser=parser)
     BIDSFilter = partial(parser_utils._bids_filter, parser=parser)
+    BuiltinAtlasOrDataset = partial(parser_utils._builtin_atlas_or_dataset, parser=parser)
 
     # important parameters required
     parser.add_argument(
@@ -511,13 +512,15 @@ The default is 240 (4 minutes).
     all_atlases = select_atlases(atlases=None, subset="all")
     g_atlases.add_argument(
         "--atlases",
-        action="store",
+        action=BuiltinAtlasOrDataset,
         nargs="+",
         metavar="ATLAS",
-        choices=all_atlases,
         default=all_atlases,
         dest="atlases",
-        help="Selection of atlases to apply to the data. All are used by default.",
+        help=(
+            "Selection of atlases to apply to the data. "
+            "All of XCP-D's built-in atlases are used by default."
+        ),
     )
     g_atlases.add_argument(
         "--skip-parcellation",

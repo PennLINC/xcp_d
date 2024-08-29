@@ -126,6 +126,20 @@ def _bids_filter(value, parser):
             raise parser.error(f"Path does not exist: <{value}>.")
 
 
+def _builtin_atlas_or_dataset(value, parser):
+    """Ensure a given value is a valid built-in atlas or an Atlas dataset."""
+    from xcp_d.utils.atlas import select_atlases
+
+    all_atlases = select_atlases(atlases=None, subset="all")
+
+    if value in all_atlases:
+        return value
+    elif Path(value).is_dir():
+        return Path(value).absolute()
+    else:
+        raise parser.error(f"Invalid value for atlas: <{value}>.")
+
+
 def _min_one(value, parser):
     """Ensure an argument is not lower than 1."""
     value = int(value)
