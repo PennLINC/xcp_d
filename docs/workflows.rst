@@ -35,6 +35,14 @@ based on recommended processing pipelines for different studies.
 XCP-D can be run in one of three modes: ``linc``, ``abcd``, or ``hbcd``.
 Each mode is designed by a different group, and has different requirements.
 
+Users may also run XCP-D in ``none`` mode, in which case almost all of the parameters must be
+defined by the user.
+
+.. important::
+
+   If you have a "mode" you would like to see supported by XCP-D, follow the instructions in
+   :ref:`contrib_modes`.
+
 
 linc Mode
 =========
@@ -53,7 +61,7 @@ Defaults
 By default, the ``linc`` mode will apply the following parameters,
 which may be overridden by the user:
 
--  ``--file-format nifti``: NIFTI files are used as input.
+-  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Censoring is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.

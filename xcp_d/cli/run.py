@@ -142,7 +142,7 @@ def main():
         boiler_file = config.execution.xcp_d_dir / "logs" / "CITATION.md"
         if boiler_file.exists():
             if config.environment.exec_env in (
-                "singularity",
+                "apptainer",
                 "docker",
             ):
                 boiler_file = Path("<OUTPUT_PATH>") / boiler_file.relative_to(

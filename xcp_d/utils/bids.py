@@ -266,6 +266,51 @@ def collect_data(
     t2w_files = layout.get(return_type="file", subject=participant_label, **queries["t2w"])
     if not t1w_files and not t2w_files:
         raise FileNotFoundError("No T1w or T2w files found.")
+    elif t1w_files and t2w_files:
+        LOGGER.warning("Both T1w and T2w found. Checking for T1w-space T2w.")
+        temp_query = queries["t2w"].copy()
+        temp_query["space"] = "T1w"
+        temp_t2w_files = layout.get(return_type="file", subject=participant_label, **temp_query)
+        if not temp_t2w_files:
+            LOGGER.warning("No T1w-space T2w found. Checking for T2w-space T1w.")
+            temp_query = queries["t1w"].copy()
+            temp_query["space"] = "T2w"
+            temp_t1w_files = layout.get(
+                return_type="file",
+                subject=participant_label,
+                **temp_query,
+            )
+            queries["t1w"]["space"] = "T2w"
+            if not temp_t1w_files:
+                LOGGER.warning("No T2w-space T1w found. Attempting T2w-only processing.")
+                temp_query = queries["anat_to_template_xfm"].copy()
+                temp_query["from"] = "T2w"
+                temp_xfm_files = layout.get(
+                    return_type="file",
+                    subject=participant_label,
+                    **temp_query,
+                )
+                if not temp_xfm_files:
+                    LOGGER.warning(
+                        "T2w-to-template transform not found. Attempting T1w-only processing."
+                    )
+                    queries["t1w"]["space"] = ["T1w", None]
+                    queries["template_to_anat_xfm"]["to"] = "T1w"
+                    queries["anat_to_template_xfm"]["from"] = "T1w"
+                    # Nibabies may include space-T1w for some derivatives
+                    queries["anat_dseg"]["space"] = ["T1w", None]
+                else:
+                    LOGGER.info("Performing T2w-only processing.")
+                    queries["template_to_anat_xfm"]["to"] = "T2w"
+                    queries["anat_to_template_xfm"]["from"] = "T2w"
+                    # Nibabies may include space-T2w for some derivatives
+                    queries["anat_dseg"]["space"] = ["T2w", None]
+            else:
+                LOGGER.warning("T2w-space T1w found. Processing anatomical images in T2w space.")
+        else:
+            LOGGER.warning("T1w-space T2w found. Processing anatomical images in T1w space.")
+            queries["t2w"]["space"] = "T1w"
+            queries["t1w"]["space"] = ["T1w", None]
     elif t2w_files and not t1w_files:
         LOGGER.warning("T2w found, but no T1w. Enabling T2w-only processing.")
         queries["template_to_anat_xfm"]["to"] = "T2w"

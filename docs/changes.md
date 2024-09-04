@@ -1,5 +1,51 @@
 # What's New
 
+## 0.8.3
+
+This patch release fixes a bug introduced in 0.8.1.
+
+### 🐛 Bug Fixes
+
+* Fix collection in case of derivatives with T1w and T2w but T1w is primary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1240
+
+### Other Changes
+
+* Document how to request a new mode by @tsalo in https://github.com/PennLINC/xcp_d/pull/1238
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.2...0.8.3
+
+
+## 0.8.2
+
+This release adds the "none" option for the mode parameter.
+
+### 🎉 Exciting New Features
+
+* Implement "none" mode by @tsalo in https://github.com/PennLINC/xcp_d/pull/1232
+
+### 🐛 Bug Fixes
+
+* Account for floating point issues in ALFF time array creation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1236
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.1...0.8.2
+
+
+## 0.8.1
+
+Patch release for HBCD to support Nibabies runs with both T1w and T2w data.
+
+### 🐛 Bug Fixes
+
+* Explicitly check for `-p none` and `--custom-confounds` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1222
+
+### Other Changes
+
+* Restructure XCP-D to better match fMRIPrep by @tsalo in https://github.com/PennLINC/xcp_d/pull/1225
+* Document the apptainer version requirements by @tsalo in https://github.com/PennLINC/xcp_d/pull/1233
+* Make collect_data work for T1w+T2w nibabies derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/1234
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.0...0.8.1
+
 
 ## 0.8.0
 

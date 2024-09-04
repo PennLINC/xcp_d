@@ -18,7 +18,7 @@ requires-python = ">=3.10"
 dependencies = [
     'importlib_resources; python_version < "3.11"',
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
-    "bids-validator <= 1.14.6",
+    "bids-validator <= 1.14.7.post0",
     "h5py <= 3.11.0",  # for DCAN motion file
     "indexed_gzip ~= 1.8.7",  # for loading imgs in nibabel
     "jinja2 ~= 3.1.2",  # for executive summary
@@ -28,7 +28,7 @@ dependencies = [
     "nibabel >= 3.2.1",
     "nilearn == 0.10.4",  # 0.10.2 raises error with compcor from fMRIPrep 23
     "nipype ~= 1.8.5",
-    "nireports ~= 23.2.1",
+    "nireports ~= 24.0.2",
     "niworkflows == 1.11.0",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
@@ -39,9 +39,9 @@ dependencies = [
     "pybids ~= 0.17.0",
     "pyyaml",
     "scikit-learn <= 1.5.1",
-    "scipy <= 1.14.0,>= 1.14.0",  # nipype needs networkx, which needs scipy > 1.8.0
+    "scipy >= 1.14.0,<= 1.14.1",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.11.0",  # for usage reports
+    "sentry-sdk ~= 2.13.0",  # for usage reports
     "templateflow ~= 24.2.0",
     "toml",
 ]
