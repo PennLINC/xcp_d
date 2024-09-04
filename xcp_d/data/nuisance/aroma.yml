@@ -1,0 +1,19 @@
+-   dataset: fmriprep
+    query:
+        description: confounds
+        extension: .tsv
+        suffix: timeseries
+    columns:
+    - trans_x
+    - trans_y
+    - trans_z
+    - rot_x
+    - rot_y
+    - rot_z
+-   dataset: fmripost-aroma
+    query:
+        description: confounds
+        extension: .tsv
+        suffix: timeseries
+    columns:
+    - r"aroma_orth_motion_.*"
