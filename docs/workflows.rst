@@ -61,7 +61,7 @@ Defaults
 By default, the ``linc`` mode will apply the following parameters,
 which may be overridden by the user:
 
--  ``--file-format nifti``: NIFTI files are used as input.
+-  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Censoring is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
