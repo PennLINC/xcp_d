@@ -288,6 +288,7 @@ def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is False
     assert opts.linc_qc is True
+    assert opts.file_format == "cifti"
 
     # --create-matrices is not supported
     opts.dcan_correlation_lengths = [300]
@@ -649,7 +650,7 @@ def test_build_parser_05(tmp_path_factory, mode, process_surfaces, expectation):
 @pytest.mark.parametrize(
     "mode,file_format,expectation",
     [
-        ("linc", "auto", "nifti"),
+        ("linc", "auto", "cifti"),
         ("abcd", "auto", "cifti"),
         ("hbcd", "auto", "cifti"),
         ("linc", "nifti", "nifti"),
