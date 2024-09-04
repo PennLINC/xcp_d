@@ -297,14 +297,10 @@ def collect_data(
                     queries["t1w"]["space"] = ["T1w", None]
                     queries["template_to_anat_xfm"]["to"] = "T1w"
                     queries["anat_to_template_xfm"]["from"] = "T1w"
-                    # Nibabies may include space-T1w for some derivatives
-                    queries["anat_dseg"]["space"] = ["T1w", None]
                 else:
                     LOGGER.info("Performing T2w-only processing.")
                     queries["template_to_anat_xfm"]["to"] = "T2w"
                     queries["anat_to_template_xfm"]["from"] = "T2w"
-                    # Nibabies may include space-T2w for some derivatives
-                    queries["anat_dseg"]["space"] = ["T2w", None]
             else:
                 LOGGER.warning("T2w-space T1w found. Processing anatomical images in T2w space.")
         else:
