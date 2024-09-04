@@ -169,9 +169,6 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 ``"t2w"`` selects a native T1w-space, preprocessed T2w file.
 If a T1w file is not available, this file will be in T2w space.
 
-``"anat_dseg"`` selects a segmentation file in the same space as the BOLD data.
-This file is not used for anything.
-
 ``"anat_brainmask"`` selects an anatomically-derived brain mask in the same space as the BOLD data.
 This file is used (1) to estimate head radius for FD calculation and
 (2) to calculate coregistration quality metrics.
