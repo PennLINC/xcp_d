@@ -90,6 +90,8 @@ The :py:mod:`config` is responsible for other conveniency actions.
 import os
 from multiprocessing import set_start_method
 
+from templateflow.conf import TF_LAYOUT
+
 # Disable NiPype etelemetry always
 _disable_et = bool(os.getenv("NO_ET") is not None or os.getenv("NIPYPE_NO_ET") is not None)
 os.environ["NIPYPE_NO_ET"] = "1"
@@ -373,6 +375,8 @@ class execution(_Config):
 
     fmri_dir = None
     """An existing path to the preprocessing derivatives dataset, which must be BIDS-compliant."""
+    derivatives = {}
+    """Path(s) to search for pre-computed derivatives"""
     aggr_ses_reports = None
     """Maximum number of sessions aggregated in one subject's visual report."""
     bids_database_dir = None
@@ -421,11 +425,14 @@ class execution(_Config):
     """Path to a working directory where intermediate results will be available."""
     write_graph = None
     """Write out the computational graph corresponding to the planned preprocessing."""
+    dataset_links = {}
+    """A dictionary of dataset links to be used to track Sources in sidecars."""
 
     _layout = None
 
     _paths = (
         "fmri_dir",
+        "derivatives",
         "bids_database_dir",
         "xcp_d_dir",
         "fs_license_file",
@@ -434,6 +441,7 @@ class execution(_Config):
         "output_dir",
         "templateflow_home",
         "work_dir",
+        "dataset_links",
     )
 
     @classmethod
@@ -485,6 +493,7 @@ class execution(_Config):
             cls.bids_database_dir = _db_path
 
         cls.layout = cls._layout
+
         if cls.bids_filters:
             from bids.layout import Query
 
@@ -503,6 +512,14 @@ class execution(_Config):
             for acq, filters in cls.bids_filters.items():
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
+
+        dataset_links = {
+            'preprocessed': cls.fmri_dir,
+            'templateflow': Path(TF_LAYOUT.root),
+        }
+        for deriv_name, deriv_path in cls.derivatives.items():
+            dataset_links[deriv_name] = deriv_path
+        cls.dataset_links = dataset_links
 
         if "all" in cls.debug:
             cls.debug = list(DEBUG_MODES)

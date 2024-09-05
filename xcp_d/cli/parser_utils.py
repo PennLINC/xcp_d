@@ -142,3 +142,21 @@ class YesNoAction(Action):
         lookup = {"y": True, "n": False, None: True, "auto": "auto"}
         assert values in lookup.keys(), f"Invalid value '{values}' for {self.dest}"
         setattr(namespace, self.dest, lookup[values])
+
+
+class ToDict(Action):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: N805
+        d = {}
+        for spec in values:
+            try:
+                name, loc = spec.split('=')
+                loc = Path(loc)
+            except ValueError:
+                loc = Path(spec)
+                name = loc.name
+
+            if name in d:
+                raise ValueError(f'Received duplicate derivative name: {name}')
+
+            d[name] = loc
+        setattr(namespace, self.dest, d)

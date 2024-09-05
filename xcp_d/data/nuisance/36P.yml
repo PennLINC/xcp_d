@@ -8,7 +8,7 @@ description: |
 	and quadratic expansion of six motion parameters, tissue signals and
 	their temporal derivatives [@benchmarkp;@satterthwaite_2013].
 confounds:
-- dataset: preproc
+- dataset: preprocessed
 	query:
 		space: null
 		description: confounds

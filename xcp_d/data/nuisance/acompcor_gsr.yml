@@ -11,7 +11,7 @@ description: |
     the associated cosine basis regressors were included.
     This has the effect of high-pass filtering the data as well.
 confounds:
--   dataset: preproc
+-   dataset: preprocessed
     query:
         space: null
         description: confounds

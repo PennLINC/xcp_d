@@ -126,6 +126,19 @@ def _build_parser():
         ),
     )
     g_bids.add_argument(
+        '-d',
+        '--derivatives',
+        action=parser_utils.ToDict,
+        metavar='PACKAGE=PATH',
+        type=str,
+        nargs='+',
+        help=(
+            'Search PATH(s) for pre-computed derivatives. '
+            'These may be provided as named folders '
+            '(e.g., `--derivatives smriprep=/path/to/smriprep`).'
+        ),
+    )
+    g_bids.add_argument(
         "--bids-database-dir",
         metavar="PATH",
         type=Path,

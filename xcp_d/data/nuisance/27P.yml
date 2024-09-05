@@ -8,7 +8,7 @@ description: |
 	mean global signal, mean white matter signal, and mean cerebrospinal fluid signal
 	[@benchmarkp;@satterthwaite_2013].
 confounds:
--	dataset: preproc
+-	dataset: preprocessed
 	query:
 		space: null
 		description: confounds

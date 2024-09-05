@@ -10,7 +10,7 @@ description: |
 	In addition to the 36 regressors described above, the time-lagged global signal
 	from rapidtide was included as a voxel-wise nuisance regressor.
 confounds:
--	dataset: preproc
+-	dataset: preprocessed
 	query:
 		space: null
 		description: confounds

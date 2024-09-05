@@ -160,7 +160,11 @@ def main():
         from xcp_d.reports.core import generate_reports
 
         # Write dataset description before generating reports
-        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+        write_dataset_description(
+            config.execution.fmri_dir,
+            config.execution.xcp_d_dir,
+            dataset_links=config.execution.dataset_links,
+        )
 
         if config.execution.atlases:
             write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")

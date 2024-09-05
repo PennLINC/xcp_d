@@ -7,7 +7,7 @@ description: |
     and their quadratic expansion of those six motion parameters and their
     temporal derivatives [@benchmarkp;@satterthwaite_2013].
 confounds:
--   dataset: preproc
+-   dataset: preprocessed
     query:
         space: null
         description: confounds
