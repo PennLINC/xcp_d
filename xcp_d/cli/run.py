@@ -21,7 +21,7 @@ def main():
     from xcp_d.cli.workflow import build_workflow
     from xcp_d.utils.bids import (
         write_atlas_dataset_description,
-        write_dataset_description,
+        write_derivative_description,
     )
 
     parse_args(args=sys.argv[1:])
@@ -160,7 +160,7 @@ def main():
         from xcp_d.reports.core import generate_reports
 
         # Write dataset description before generating reports
-        write_dataset_description(
+        write_derivative_description(
             config.execution.fmri_dir,
             config.execution.xcp_d_dir,
             dataset_links=config.execution.dataset_links,
