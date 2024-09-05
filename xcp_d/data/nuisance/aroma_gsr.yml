@@ -5,7 +5,8 @@ description: |
     mean cerebrospinal fluid signal, and mean global signal were selected as
     nuisance regressors [@benchmarkp;@satterthwaite_2013].
 confounds:
--   dataset: preprocessed
+-   name: preproc_confounds
+    dataset: preprocessed
     query:
         description: confounds
         extension: .tsv
@@ -14,7 +15,8 @@ confounds:
     - global_signal
     - csf
     - white_matter
--   dataset: fmripost-aroma
+-   name: aroma_confounds
+    dataset: fmripost-aroma
     query:
         description: confounds
         extension: .tsv

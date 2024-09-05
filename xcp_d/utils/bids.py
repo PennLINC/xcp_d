@@ -12,6 +12,7 @@ from pathlib import Path
 
 import nibabel as nb
 import yaml
+from bids.layout import BIDSLayout
 from nipype import logging
 from packaging.version import Version
 
@@ -651,6 +652,87 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     run_data.update(metadata)
 
     return run_data
+
+
+def collect_confounds(
+    bold_file: str,
+    preproc_dataset: BIDSLayout,
+    derivatives_datasets: dict[str, Path | BIDSLayout] | None,
+    entities: dict | None,
+    confound_spec: dict,
+    spec: dict | None = None,
+    patterns: list[str] | None = None,
+    allow_multiple: bool = False,
+):
+    """Gather confounds files from derivatives datasets and compose a cache."""
+    import json
+    import re
+
+    from bids.layout.index import BIDSLayoutIndexer
+
+    # Recommended after PyBIDS 12.1
+    ignore_patterns = [
+        "code",
+        "stimuli",
+        "models",
+        re.compile(r"\/\.\w+|^\.\w+"),  # hidden files
+        re.compile(
+            r"sub-[a-zA-Z0-9]+(/ses-[a-zA-Z0-9]+)?/(anat|beh|dwi|eeg|ieeg|meg|perf|pet|physio)"
+        ),
+    ]
+    _indexer = BIDSLayoutIndexer(
+        validate=False,
+        ignore=ignore_patterns,
+        index_metadata=False,  # we don't need metadata to find confound files
+    )
+
+    if not entities:
+        entities = {}
+
+    if spec is None or patterns is None:
+        _spec = json.loads(load_data.readable("io_spec.json").read_text())
+
+        if spec is None:
+            spec = _spec["queries"]
+
+        if patterns is None:
+            patterns = _spec["patterns"]
+
+    # Step 0: Determine derivatives we care about for confounds.
+    req_datasets = []
+    for confound_def in confound_spec["confounds"]:
+        req_datasets.extend(confound_def["dataset"])
+
+    req_datasets = sorted(list(set(req_datasets)))
+
+    # Step 1: Build a dictionary of dataset: layout pairs.
+    layout_dict = {}
+    layout_dict["preprocessed"] = preproc_dataset
+    if derivatives_datasets is not None:
+        for k, v in derivatives_datasets.items():
+            # Don't index datasets we don't need for confounds.
+            if k not in req_datasets:
+                continue
+
+            if isinstance(v, Path):
+                layout_dict[k] = BIDSLayout(
+                    v,
+                    config=["bids", "derivatives"],
+                    indexer=_indexer,
+                )
+            else:
+                layout_dict[k] = v
+
+    # Step 2: Loop over the confounds spec and search for each file in the corresponding dataset.
+    confounds = dict()
+    for confound_def in confound_spec["confounds"]:
+        layout = layout_dict[confound_def["dataset"]]
+        # TODO: Build a query based on the bold file
+        query = confound_def["query"]
+        confound_file = layout.get(**query)
+        confounds[confound_def["name"]] = confound_file[0] if confound_file else None
+
+    return confounds
 
 
 def write_derivative_description(fmri_dir, output_dir, atlases=None, dataset_links=None):

@@ -94,6 +94,9 @@ def build_workflow(config_file, retval):
         f"Run identifier: {config.execution.run_uuid}.",
     ]
 
+    if config.execution.derivatives:
+        init_msg += [f"Searching for derivatives: {config.execution.derivatives}."]
+
     build_log.log(25, f"\n{' ' * 11}* ".join(init_msg))
 
     retval["workflow"] = init_xcpd_wf()
