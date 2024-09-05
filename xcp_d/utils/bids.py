@@ -470,9 +470,6 @@ def collect_mesh_data(layout, participant_label, bids_filters):
     if mesh_available:
         LOGGER.log(25, f"Assuming segmentation was performed with {software}.")
 
-    if not mesh_files["lh_subject_sphere"]:
-        raise Exception(queries["lh_subject_sphere"])
-
     return mesh_available, standard_space_mesh, software, mesh_files
 
 
