@@ -662,7 +662,6 @@ def collect_confounds(
     confound_spec: dict,
     spec: dict | None = None,
     patterns: list[str] | None = None,
-    allow_multiple: bool = False,
 ):
     """Gather confounds files from derivatives datasets and compose a cache."""
     import json
