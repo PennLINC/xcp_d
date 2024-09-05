@@ -1,14 +1,14 @@
-name: 36P
+name: 27P
 description: |
-	In total, 36 nuisance regressors were selected from the preprocessing confounds,
-	according to the '36P' strategy.
+	In total, 27 nuisance regressors were selected from the preprocessing confounds,
+	according to the '27P' strategy.
 	These nuisance regressors included
-	six motion parameters, mean global signal, mean white matter signal,
-	mean cerebrospinal fluid signal with their temporal derivatives,
-	and quadratic expansion of six motion parameters, tissue signals and
-	their temporal derivatives [@benchmarkp;@satterthwaite_2013].
+	fsix {fstr}motion parameters with their temporal derivatives,
+	quadratic expansion of those six motion parameters and their derivatives,
+	mean global signal, mean white matter signal, and mean cerebrospinal fluid signal
+	[@benchmarkp;@satterthwaite_2013].
 confounds:
-- dataset: preproc
+-	dataset: preproc
 	query:
 		space: null
 		description: confounds
@@ -40,14 +40,5 @@ confounds:
 	- rot_z_power2
 	- rot_z_derivative1_power2
 	- global_signal
-	- global_signal_derivative1
-	- global_signal_power2
-	- global_signal_derivative1_power2
 	- csf
-	- csf_derivative1
-	- csf_power2
-	- csf_derivative1_power2
 	- white_matter
-	- white_matter_derivative1
-	- white_matter_power2
-	- white_matter_derivative1_power2
