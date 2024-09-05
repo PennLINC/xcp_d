@@ -422,8 +422,10 @@ def collect_mesh_data(layout, participant_label, bids_filters):
         queries[name] = {
             "subject": participant_label,
             **query,
-            **query_extras,
         }
+        if "subject_sphere" not in name:
+            queries[name].update(query_extras)
+
         initial_mesh_files[name] = layout.get(return_type="file", **queries[name])
 
     mesh_files = {}
@@ -467,6 +469,9 @@ def collect_mesh_data(layout, participant_label, bids_filters):
     )
     if mesh_available:
         LOGGER.log(25, f"Assuming segmentation was performed with {software}.")
+
+    if not mesh_files["lh_subject_sphere"]:
+        raise Exception(queries["lh_subject_sphere"])
 
     return mesh_available, standard_space_mesh, software, mesh_files
 
