@@ -422,8 +422,10 @@ def collect_mesh_data(layout, participant_label, bids_filters):
         queries[name] = {
             "subject": participant_label,
             **query,
-            **query_extras,
         }
+        if "subject_sphere" not in name:
+            queries[name].update(query_extras)
+
         initial_mesh_files[name] = layout.get(return_type="file", **queries[name])
 
     mesh_files = {}
