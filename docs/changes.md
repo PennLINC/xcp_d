@@ -1,5 +1,32 @@
 # What's New
 
+## 0.9.0
+
+This backwards-incompatible makes two important breaking changes.
+First, we changd the default file format for 'linc' mode from NIfTI to CIFTI.
+Second, XCP-D no longer ingresses and warps the anatomical tissue segmentation file (`*_dseg.nii.gz`),
+since no one was using it and it's easy enough to collect separately.
+
+Additionally, this release fixes a bug with the collection of sphere files needed to warp fsnative surfaces to fsLR space,
+which should only affect derivatives from fMRIPrep and Nibabies versions >= 24.0.0
+(i.e., versions that include `space-fsnative` in the spheres' filenames).
+
+### 🛠 Breaking Changes
+
+* Change linc mode default file format to CIFTI by @tsalo in https://github.com/PennLINC/xcp_d/pull/1248
+* Stop ingressing anatomical-space tissue segmentation file by @tsalo in https://github.com/PennLINC/xcp_d/pull/1190
+
+### 🎉 Exciting New Features
+
+* Internally support voxel-wise confounds by @tsalo in https://github.com/PennLINC/xcp_d/pull/1244
+
+### 🐛 Bug Fixes
+
+* Fix subject sphere query by @tsalo in https://github.com/PennLINC/xcp_d/pull/1249
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.3...0.9.0
+
+
 ## 0.8.3
 
 This patch release fixes a bug introduced in 0.8.1.
