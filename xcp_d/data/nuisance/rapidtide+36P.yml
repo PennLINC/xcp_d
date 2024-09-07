@@ -55,6 +55,6 @@ confounds:
 		- white_matter_derivative1_power2
 -	dataset: fmripost-rapidtide
 	query:
-		description: confounds
+		description: LFO
 		extension: .nii.gz
 		suffix: timeseries
