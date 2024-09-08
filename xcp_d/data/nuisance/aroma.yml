@@ -13,7 +13,7 @@ confounds:
     columns:
     - csf
     - white_matter
--   dataset: fmripost-aroma
+-   dataset: aroma
     query:
         description: confounds
         extension: .tsv

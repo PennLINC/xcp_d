@@ -16,7 +16,7 @@ confounds:
     - csf
     - white_matter
 -   name: aroma_confounds
-    dataset: fmripost-aroma
+    dataset: aroma
     query:
         description: confounds
         extension: .tsv

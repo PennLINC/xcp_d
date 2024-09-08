@@ -53,7 +53,7 @@ confounds:
 		- white_matter_derivative1
 		- white_matter_power2
 		- white_matter_derivative1_power2
--	dataset: fmripost-rapidtide
+-	dataset: rapidtide
 	query:
 		description: LFO
 		extension: .nii.gz
