@@ -149,14 +149,40 @@ class ToDict(Action):
         d = {}
         for spec in values:
             try:
-                name, loc = spec.split('=')
+                name, loc = spec.split("=")
                 loc = Path(loc)
             except ValueError:
                 loc = Path(spec)
                 name = loc.name
 
             if name in d:
-                raise ValueError(f'Received duplicate derivative name: {name}')
+                raise ValueError(f"Received duplicate derivative name: {name}")
 
             d[name] = loc
         setattr(namespace, self.dest, d)
+
+
+class ConfoundsAction(Action):
+    """A custom argparse "store" action to handle a path or ."""
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+        """Call the argument."""
+        builtins = [
+            "auto",
+            "27P",
+            "36P",
+            "24P",
+            "acompcor",
+            "aroma",
+            "acompcor_gsr",
+            "aroma_gsr",
+            "none",
+            "gsr_only",
+        ]
+        if values in builtins:
+            setattr(namespace, self.dest, values)
+        else:
+            if not Path(values).exists():
+                raise parser.error(f"Nuisance configuration does not exist: <{values}>.")
+
+            setattr(namespace, self.dest, Path(values))

@@ -409,8 +409,6 @@ class execution(_Config):
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
     """Folder where derivatives will be stored."""
-    custom_confounds = None
-    """A path to a folder containing custom confounds to include in the postprocessing."""
     atlases = []
     """Selection of atlases to apply to the data."""
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
@@ -549,7 +547,7 @@ class workflow(_Config):
     """Postprocessing pipeline type."""
     despike = None
     """Despike the BOLD data before postprocessing."""
-    params = None
+    confounds_config = None
     """Nuisance regressors to include in the postprocessing."""
     smoothing = None
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""

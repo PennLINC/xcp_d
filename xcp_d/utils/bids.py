@@ -762,9 +762,7 @@ def write_derivative_description(fmri_dir, output_dir, atlases=None, dataset_lin
 
     # Check if the dataset type is derivative
     if "DatasetType" not in desc.keys():
-        LOGGER.warning(
-            f"DatasetType key not in {orig_dset_description}. Assuming 'derivative'."
-        )
+        LOGGER.warning(f"DatasetType key not in {orig_dset_description}. Assuming 'derivative'.")
         desc["DatasetType"] = "derivative"
 
     if desc.get("DatasetType", "derivative") != "derivative":

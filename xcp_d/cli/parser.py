@@ -9,6 +9,7 @@ import os
 import sys
 
 from xcp_d import config
+from xcp_d.data import load as load_data
 
 
 def _build_parser():
@@ -270,41 +271,13 @@ def _build_parser():
         "-p",
         "--nuisance-regressors",
         "--nuisance_regressors",
-        dest="params",
+        dest="confounds_config",
         required=False,
-        choices=[
-            "27P",
-            "36P",
-            "24P",
-            "acompcor",
-            "aroma",
-            "acompcor_gsr",
-            "aroma_gsr",
-            "custom",
-            "none",
-            # GSR-only for UKB
-            "gsr_only",
-        ],
+        action=parser_utils.ConfoundsAction,
         default="auto",
-        type=str,
         help=(
             "Nuisance parameters to be selected. "
             "Descriptions of each of the options are included in xcp_d's documentation."
-        ),
-    )
-    g_param.add_argument(
-        "-c",
-        "--custom-confounds",
-        "--custom_confounds",
-        dest="custom_confounds",
-        required=False,
-        default=None,
-        type=PathExists,
-        help=(
-            "Custom confounds to be added to the nuisance regressors. "
-            "Must be a folder containing confounds files, "
-            "in which the file with the name matching the preprocessing confounds file will be "
-            "selected."
         ),
     )
     g_param.add_argument(
@@ -926,6 +899,8 @@ def _validate_parameters(opts, build_log, parser):
     import os
     from pathlib import Path
 
+    import yaml
+
     opts.fmri_dir = opts.fmri_dir.resolve()
     opts.output_dir = opts.output_dir.resolve()
     opts.work_dir = opts.work_dir.resolve()
@@ -949,10 +924,6 @@ def _validate_parameters(opts, build_log, parser):
             )
 
         os.environ["FS_LICENSE"] = str(fs_license_file)
-
-    # Resolve custom confounds folder
-    if opts.custom_confounds:
-        opts.custom_confounds = str(opts.custom_confounds.resolve())
 
     # Check parameter value types/valid values
     assert opts.abcc_qc in (True, False, "auto")
@@ -982,7 +953,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.output_type == "censored":
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = "interpolated"
-        opts.params = "36P" if opts.params == "auto" else opts.params
+        opts.confounds_config = "36P" if opts.confounds_config == "auto" else opts.confounds_config
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
         )
@@ -1005,7 +976,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.output_type == "censored":
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = "interpolated"
-        opts.params = "36P" if opts.params == "auto" else opts.params
+        opts.confounds_config = "36P" if opts.confounds_config == "auto" else opts.confounds_config
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
         )
@@ -1025,7 +996,7 @@ def _validate_parameters(opts, build_log, parser):
                 f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
             )
         opts.output_type = "censored"
-        opts.params = "36P" if opts.params == "auto" else opts.params
+        opts.confounds_config = "36P" if opts.confounds_config == "auto" else opts.confounds_config
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
@@ -1064,7 +1035,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.output_type == "auto":
             error_messages.append("'--output-type' is required for 'none' mode.")
 
-        if opts.params == "auto":
+        if opts.confounds_config == "auto":
             error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
         if opts.process_surfaces == "auto":
@@ -1074,6 +1045,16 @@ def _validate_parameters(opts, build_log, parser):
 
         # Remove "all" from the list of correlation lengths
         opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != "all"]
+
+    # Load the confound configuration file
+    confounds_config = opts.confounds_config
+    if isinstance(confounds_config, str) and confounds_config != "none":
+        confounds_config = load_data.readable(f"nuisance/{confounds_config}.yml")
+
+    if confounds_config != "none":
+        opts.confounds_config = yaml.safe_load(confounds_config.read_text())
+    else:
+        opts.confounds_config = None
 
     # Bandpass filter parameters
     if opts.high_pass <= 0 and opts.low_pass <= 0:
@@ -1176,14 +1157,6 @@ def _validate_parameters(opts, build_log, parser):
             "In order to perform surface normalization (--warp-surfaces-native2std), "
             "you must enable cifti processing (--file-format cifti)."
         )
-
-    # Warn if the user combines custom confounds with the 'none' parameter set
-    if opts.params == "none" and opts.custom_confounds:
-        build_log.warning(
-            "Custom confounds were provided, but --nuisance-regressors was set to none. "
-            "Overriding the 'none' value and setting to 'custom'."
-        )
-        opts.params = "custom"
 
     if error_messages:
         error_message_str = "Errors detected in parameter parsing:\n\t- " + "\n\t- ".join(
