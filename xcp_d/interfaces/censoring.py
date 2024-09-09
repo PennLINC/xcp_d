@@ -47,7 +47,7 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
             "May be None if denoising is disabled."
         ),
     )
-    fmriprep_confounds_file = File(
+    motion = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds tsv. Used for motion-based censoring.",
@@ -102,7 +102,7 @@ class RemoveDummyVolumes(SimpleInterface):
     def _run_interface(self, runtime):
         dummy_scans = _infer_dummy_scans(
             dummy_scans=self.inputs.dummy_scans,
-            confounds_file=self.inputs.fmriprep_confounds_file,
+            confounds_file=self.inputs.motion,
         )
 
         self._results["dummy_scans"] = dummy_scans
@@ -112,7 +112,7 @@ class RemoveDummyVolumes(SimpleInterface):
             # write the output out
             self._results["bold_file_dropped_TR"] = self.inputs.bold_file
             self._results["fmriprep_confounds_file_dropped_TR"] = (
-                self.inputs.fmriprep_confounds_file
+                self.inputs.motion
             )
             self._results["confounds_file_dropped_TR"] = self.inputs.confounds_file
             self._results["motion_file_dropped_TR"] = self.inputs.motion_file
@@ -127,7 +127,7 @@ class RemoveDummyVolumes(SimpleInterface):
             use_ext=True,
         )
         self._results["fmriprep_confounds_file_dropped_TR"] = fname_presuffix(
-            self.inputs.fmriprep_confounds_file,
+            self.inputs.motion,
             newpath=runtime.cwd,
             suffix="_fmriprep_dropped",
             use_ext=True,
@@ -150,7 +150,7 @@ class RemoveDummyVolumes(SimpleInterface):
         dropped_image.to_filename(self._results["bold_file_dropped_TR"])
 
         # Drop the first N rows from the pandas dataframe
-        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
+        fmriprep_confounds_df = pd.read_table(self.inputs.motion)
         fmriprep_confounds_df_dropped = fmriprep_confounds_df.drop(np.arange(dummy_scans))
         fmriprep_confounds_df_dropped.to_csv(
             self._results["fmriprep_confounds_file_dropped_TR"],
@@ -376,7 +376,7 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
         desc="Framewise displacement threshold. All values above this will be dropped.",
     )
     head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
-    fmriprep_confounds_file = File(
+    motion = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds tsv.",
@@ -417,19 +417,6 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
 
 
 class _GenerateConfoundsOutputSpec(TraitedSpec):
-    filtered_confounds_file = File(
-        exists=True,
-        desc=(
-            "The original fMRIPrep confounds, with the motion parameters and their Volterra "
-            "expansion regressors replaced with filtered versions."
-        ),
-    )
-    confounds_file = traits.Either(
-        File(exists=True),
-        None,
-        desc="The selected confounds. This may include custom confounds as well.",
-    )
-    confounds_metadata = traits.Dict(desc="Metadata associated with the confounds_file output.")
     motion_file = File(
         exists=True,
         desc="The filtered motion parameters.",
@@ -457,7 +444,6 @@ class GenerateConfounds(SimpleInterface):
     output_spec = _GenerateConfoundsOutputSpec
 
     def _run_interface(self, runtime):
-        fmriprep_confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
         band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
             motion_filter_type=self.inputs.motion_filter_type,
             band_stop_min=self.inputs.band_stop_min,
@@ -466,7 +452,7 @@ class GenerateConfounds(SimpleInterface):
         )
 
         motion_df = load_motion(
-            fmriprep_confounds_df.copy(),
+            self.inputs.motion,
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,
@@ -481,46 +467,10 @@ class GenerateConfounds(SimpleInterface):
         )
         motion_df["framewise_displacement"] = fd_timeseries
 
-        # A file to house the modified fMRIPrep confounds.
-        self._results["filtered_confounds_file"] = fname_presuffix(
-            self.inputs.fmriprep_confounds_file,
-            suffix="_filtered",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-
-        # Replace original motion parameters with filtered versions
-        for col in motion_df.columns.tolist():
-            # Check that the column already exists, in case fMRIPrep changes column names.
-            # We don't want to use the original motion parameters accidentally.
-            if col not in fmriprep_confounds_df.columns:
-                raise ValueError(
-                    f"Column '{col}' not found in confounds "
-                    f"{self.inputs.fmriprep_confounds_file}. "
-                    "Please open an issue on GitHub."
-                )
-
-            fmriprep_confounds_df[col] = motion_df[col]
-
-        fmriprep_confounds_df.to_csv(
-            self._results["filtered_confounds_file"],
-            sep="\t",
-            index=False,
-        )
-
-        # Load nuisance regressors, but use filtered motion parameters.
-        confounds_df, confounds_metadata = load_confound_matrix(
-            params=self.inputs.params,
-            img_file=self.inputs.in_file,
-            confounds_file=self._results["filtered_confounds_file"],
-            confounds_json_file=self.inputs.fmriprep_confounds_json,
-            custom_confounds=self.inputs.custom_confounds_file,
-        )
-
         # Compile motion metadata from confounds metadata, adding in filtering info
         motion_metadata = {}
         for col in motion_df.columns.tolist():
-            col_metadata = confounds_metadata.get(col, {})
+            col_metadata = self.inputs.motion_metadata.get(col, {})
             if col == "framewise_displacement":
                 col_metadata["Description"] = (
                     "Framewise displacement calculated according to Power et al. (2012)."
@@ -555,77 +505,14 @@ class GenerateConfounds(SimpleInterface):
 
         self._results["motion_metadata"] = motion_metadata
 
-        if confounds_df is not None:
-            # Update confounds metadata with modified motion metadata
-            for col in motion_df.columns.tolist():
-                if col in confounds_df.columns:
-                    base_metadata = confounds_metadata.get(col, {})
-                    base_metadata.update(motion_metadata[col])
-                    confounds_metadata[col] = base_metadata
-
-            # Orthogonalize full nuisance regressors w.r.t. any signal regressors
-            signal_columns = [c for c in confounds_df.columns if c.startswith("signal__")]
-            if signal_columns:
-                LOGGER.warning(
-                    "Signal columns detected. "
-                    "Orthogonalizing nuisance columns w.r.t. the following signal columns: "
-                    f"{', '.join(signal_columns)}"
-                )
-                noise_columns = [c for c in confounds_df.columns if not c.startswith("signal__")]
-
-                orth_cols = [f"{c}_orth" for c in noise_columns]
-                orth_confounds_df = pd.DataFrame(
-                    index=confounds_df.index,
-                    columns=orth_cols,
-                )
-
-                # Do the orthogonalization
-                signal_regressors = confounds_df[signal_columns].to_numpy()
-                noise_regressors = confounds_df[noise_columns].to_numpy()
-                signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
-                pred_noise_regressors = np.dot(signal_regressors, signal_betas)
-                orth_noise_regressors = noise_regressors - pred_noise_regressors
-
-                # Replace the old data
-                orth_confounds_df.loc[:, orth_cols] = orth_noise_regressors
-                confounds_df = orth_confounds_df
-
-                for col in noise_columns:
-                    desc_str = (
-                        "This regressor is orthogonalized with respect to the 'signal' regressors "
-                        f"({', '.join(signal_columns)}) after dummy scan removal, "
-                        "but prior to any censoring."
-                    )
-
-                    col_metadata = {}
-                    if col in confounds_metadata.keys():
-                        col_metadata = confounds_metadata.pop(col)
-                        if "Description" in col_metadata.keys():
-                            desc_str = f"{col_metadata['Description']} {desc_str}"
-
-                    col_metadata["Description"] = desc_str
-                    confounds_metadata[f"{col}_orth"] = col_metadata
-
-        self._results["confounds_metadata"] = confounds_metadata
-
-        # get the output
-        self._results["motion_file"] = fname_presuffix(
-            self.inputs.fmriprep_confounds_file,
+        # Store the filtered motion parameters
+        self._results["motion"] = fname_presuffix(
+            self.inputs.motion,
             suffix="_motion",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        motion_df.to_csv(self._results["motion_file"], sep="\t", index=False)
-
-        self._results["confounds_file"] = None
-        if confounds_df is not None:
-            self._results["confounds_file"] = fname_presuffix(
-                self.inputs.fmriprep_confounds_file,
-                suffix="_confounds",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            confounds_df.to_csv(self._results["confounds_file"], sep="\t", index=False)
+        motion_df.to_csv(self._results["motion"], sep="\t", index=False)
 
         # Generate temporal mask with all timepoints have FD over threshold set to 1.
         outlier_mask = np.zeros(len(fd_timeseries), dtype=int)

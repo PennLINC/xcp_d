@@ -179,10 +179,11 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
     inputnode.inputs.bold_mask = run_data["boldmask"]
-    inputnode.inputs.fmriprep_confounds_file = run_data["confounds"]
-    inputnode.inputs.fmriprep_confounds_json = run_data["confounds_json"]
+    inputnode.inputs.motion = run_data["motion"]
     inputnode.inputs.dummy_scans = dummy_scans
     inputnode.inputs.atlases = atlases
+
+    # Load confounds according to the config
 
     # Load custom confounds
     # We need to run this function directly to access information in the confounds that is
@@ -204,7 +205,7 @@ the following post-processing was performed.
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
+                "motion",
                 "filtered_motion",
                 "temporal_mask",
                 "denoised_bold",
@@ -253,8 +254,8 @@ the following post-processing was performed.
     workflow.connect([
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
-            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
-            ("fmriprep_confounds_json", "inputnode.fmriprep_confounds_json"),
+            ("motion", "inputnode.motion"),
+            ("motion_json", "inputnode.fmriprep_confounds_json"),
         ]),
         (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
         (prepare_confounds_wf, outputnode, [

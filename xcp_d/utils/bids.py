@@ -558,7 +558,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     bids_file = layout.get_file(bold_file)
     run_data, metadata = {}, {}
 
-    run_data["confounds"] = layout.get_nearest(
+    run_data["motion"] = layout.get_nearest(
         bids_file.path,
         strict=True,
         ignore_strict_entities=["space", "res", "den", "desc", "suffix", "extension"],
@@ -566,10 +566,9 @@ def collect_run_data(layout, bold_file, file_format, target_space):
         suffix="timeseries",
         extension=".tsv",
     )
-    if not run_data["confounds"]:
+    if not run_data["motion"]:
         raise FileNotFoundError(f"No confounds file detected for {bids_file.path}")
 
-    run_data["confounds_json"] = layout.get_nearest(run_data["confounds"], extension=".json")
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
     if "RepetitionTime" not in metadata["bold_metadata"].keys():

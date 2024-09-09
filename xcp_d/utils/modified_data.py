@@ -137,7 +137,7 @@ def downcast_to_32(in_file):
 
 @fill_doc
 def flag_bad_run(
-    fmriprep_confounds_file,
+    motion_file,
     dummy_scans,
     TR,
     motion_filter_type,
@@ -151,7 +151,8 @@ def flag_bad_run(
 
     Parameters
     ----------
-    %(fmriprep_confounds_file)s
+    motion_file
+        Tabular confounds file containing motion parameters.
     %(dummy_scans)s
     %(TR)s
     %(motion_filter_type)s
@@ -173,11 +174,11 @@ def flag_bad_run(
 
     dummy_scans = _infer_dummy_scans(
         dummy_scans=dummy_scans,
-        confounds_file=fmriprep_confounds_file,
+        confounds_file=motion_file,
     )
 
     # Read in fmriprep confounds tsv to calculate FD
-    fmriprep_confounds_df = pd.read_table(fmriprep_confounds_file)
+    fmriprep_confounds_df = pd.read_table(motion_file)
 
     # Remove dummy volumes
     fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))

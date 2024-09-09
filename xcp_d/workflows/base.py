@@ -424,7 +424,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             )
 
             post_scrubbing_duration = flag_bad_run(
-                fmriprep_confounds_file=run_data["confounds"],
+                motion_file=run_data["motion"],
                 dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
                 motion_filter_type=config.workflow.motion_filter_type,
