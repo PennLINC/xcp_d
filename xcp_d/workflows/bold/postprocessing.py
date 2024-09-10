@@ -175,11 +175,11 @@ def init_prepare_confounds_wf(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold",
-                "fmriprep_confounds_file",  # used to calculate motion in concatenation workflow
-                "confounds_file",
+                "confounds_tsv",
+                "confounds_images",
                 "confounds_metadata",
                 "dummy_scans",
-                "filtered_motion",
+                "motion_file",
                 "motion_metadata",
                 "temporal_mask",
                 "temporal_mask_metadata",
@@ -224,8 +224,8 @@ def init_prepare_confounds_wf(
             fields=[
                 "preprocessed_bold",
                 "dummy_scans",
-                "fmriprep_confounds_file",
-                "confounds_file",
+                "confounds_tsv",
+                "confounds_images",
                 "motion_file",
                 "temporal_mask",
             ]
@@ -246,17 +246,15 @@ def init_prepare_confounds_wf(
                 ("dummy_scans", "dummy_scans"),
             ]),
             (generate_confounds, remove_dummy_scans, [
-                ("confounds_file", "confounds_file"),
+                ("confounds_tsv", "confounds_tsv"),
+                ("confounds_images", "confounds_images"),
                 ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
-                # fMRIPrep confounds file is needed for filtered motion.
-                # The selected confounds are not guaranteed to include motion params.
-                ("filtered_confounds_file", "fmriprep_confounds_file"),
             ]),
             (remove_dummy_scans, dummy_scan_buffer, [
                 ("bold_file_dropped_TR", "preprocessed_bold"),
-                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
-                ("confounds_file_dropped_TR", "confounds_file"),
+                ("confounds_tsv_dropped_TR", "confounds_tsv"),
+                ("confounds_images_dropped_TR", "confounds_images"),
                 ("motion_file_dropped_TR", "motion_file"),
                 ("temporal_mask_dropped_TR", "temporal_mask"),
                 ("dummy_scans", "dummy_scans"),
@@ -269,22 +267,20 @@ def init_prepare_confounds_wf(
                 ("preprocessed_bold", "preprocessed_bold"),
             ]),
             (generate_confounds, dummy_scan_buffer, [
-                ("confounds_file", "confounds_file"),
+                ("confounds_tsv", "confounds_tsv"),
+                ("confounds_images", "confounds_images"),
                 ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
-                # fMRIPrep confounds file is needed for filtered motion.
-                # The selected confounds are not guaranteed to include motion params.
-                ("filtered_confounds_file", "fmriprep_confounds_file"),
             ]),
         ])  # fmt:skip
 
     workflow.connect([
         (dummy_scan_buffer, outputnode, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("confounds_file", "confounds_file"),
-            ("motion_file", "filtered_motion"),
             ("dummy_scans", "dummy_scans"),
+            ("confounds_tsv", "confounds_tsv"),
+            ("confounds_images", "confounds_images"),
+            ("motion_file", "motion_file"),
         ]),
     ])  # fmt:skip
 
@@ -358,8 +354,7 @@ def init_prepare_confounds_wf(
 
     workflow.connect([
         # use the full version of the confounds, for dummy scans in the figure
-        (inputnode, censor_report, [("fmriprep_confounds_file", "fmriprep_confounds_file")]),
-        (generate_confounds, censor_report, [("motion_file", "filtered_motion")]),
+        (generate_confounds, censor_report, [("motion_file", "motion_file")]),
         (dummy_scan_buffer, censor_report, [("dummy_scans", "dummy_scans")]),
         (outputnode, censor_report, [("temporal_mask", "temporal_mask")]),
     ])  # fmt:skip

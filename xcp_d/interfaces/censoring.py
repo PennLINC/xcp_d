@@ -17,7 +17,6 @@ from nipype.interfaces.base import (
 from xcp_d.utils.confounds import (
     _infer_dummy_scans,
     _modify_motion_filter,
-    load_confound_matrix,
     load_motion,
 )
 from xcp_d.utils.filemanip import fname_presuffix
@@ -38,7 +37,7 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
             "calculated in an earlier workflow from dummy_scans."
         ),
     )
-    confounds_file = traits.Either(
+    confounds_tsv = traits.Either(
         File(exists=True),
         None,
         mandatory=True,
@@ -47,15 +46,16 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
             "May be None if denoising is disabled."
         ),
     )
-    motion = File(
-        exists=True,
+    confounds_images = traits.Either(
+        traits.List(File(exists=True)),
+        None,
         mandatory=True,
-        desc="fMRIPrep confounds tsv. Used for motion-based censoring.",
+        desc="List of images with confounds. May be None if denoising is disabled.",
     )
     motion_file = File(
         exists=True,
         mandatory=True,
-        desc="Confounds file containing only filtered motion parameters.",
+        desc="TSV file with motion regressors. Used for motion-based censoring.",
     )
     temporal_mask = File(
         exists=True,
@@ -65,23 +65,28 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
 
 
 class _RemoveDummyVolumesOutputSpec(TraitedSpec):
-    confounds_file_dropped_TR = traits.Either(
-        File(exists=True),
-        None,
-        desc="TSV file with selected confounds for denoising, after removing TRs.",
-    )
-    fmriprep_confounds_file_dropped_TR = File(
-        exists=True,
-        desc="fMRIPrep confounds tsv after removing TRs. Used for motion-based censoring.",
-    )
     bold_file_dropped_TR = File(
         exists=True,
         desc="bold or cifti with volumes dropped",
     )
     dummy_scans = traits.Int(desc="Number of volumes dropped.")
+    confounds_tsv_dropped_TR = traits.Either(
+        File(exists=True),
+        None,
+        desc=(
+            "TSV file with selected confounds for denoising. "
+            "May be None if denoising is disabled."
+        ),
+    )
+    confounds_images_dropped_TR = traits.Either(
+        traits.List(File(exists=True)),
+        None,
+        mandatory=True,
+        desc="List of images with confounds. May be None if denoising is disabled.",
+    )
     motion_file_dropped_TR = File(
         exists=True,
-        desc="Confounds file containing only filtered motion parameters.",
+        desc="TSV file with motion parameters.",
     )
     temporal_mask_dropped_TR = File(
         exists=True,
@@ -111,10 +116,8 @@ class RemoveDummyVolumes(SimpleInterface):
         if dummy_scans == 0:
             # write the output out
             self._results["bold_file_dropped_TR"] = self.inputs.bold_file
-            self._results["fmriprep_confounds_file_dropped_TR"] = (
-                self.inputs.motion
-            )
-            self._results["confounds_file_dropped_TR"] = self.inputs.confounds_file
+            self._results["confounds_tsv_dropped_TR"] = self.inputs.confounds_tsv
+            self._results["confounds_images_dropped_TR"] = self.inputs.confounds_images
             self._results["motion_file_dropped_TR"] = self.inputs.motion_file
             self._results["temporal_mask_dropped_TR"] = self.inputs.temporal_mask
             return runtime
@@ -126,14 +129,8 @@ class RemoveDummyVolumes(SimpleInterface):
             suffix="_dropped",
             use_ext=True,
         )
-        self._results["fmriprep_confounds_file_dropped_TR"] = fname_presuffix(
-            self.inputs.motion,
-            newpath=runtime.cwd,
-            suffix="_fmriprep_dropped",
-            use_ext=True,
-        )
         self._results["motion_file_dropped_TR"] = fname_presuffix(
-            self.inputs.bold_file,
+            self.inputs.motion_file,
             suffix="_motion_dropped.tsv",
             newpath=os.getcwd(),
             use_ext=False,
@@ -144,36 +141,37 @@ class RemoveDummyVolumes(SimpleInterface):
             newpath=os.getcwd(),
             use_ext=False,
         )
+        if self.inputs.confounds_tsv is not None:
+            self._results["confounds_tsv_dropped_TR"] = fname_presuffix(
+                self.inputs.bold_file,
+                suffix="_confounds_dropped.tsv",
+                newpath=os.getcwd(),
+                use_ext=False,
+            )
+            confounds_df = pd.read_table(self.inputs.confounds_tsv)
+            confounds_df_dropped = confounds_df.drop(np.arange(dummy_scans))
+            confounds_df_dropped.to_csv(
+                self._results["confounds_tsv_dropped_TR"],
+                sep="\t",
+                index=False,
+            )
+
+        if self.inputs.confounds_images is not None:
+            self._results["confounds_images_dropped_TR"] = []
+            for i_file, confound_file in enumerate(self.inputs.confounds_images):
+                confound_file_dropped = fname_presuffix(
+                    confound_file,
+                    suffix=f"_conf{i_file}_dropped",
+                    newpath=os.getcwd(),
+                    use_ext=True,
+                )
+                dropped_confounds_image = _drop_dummy_scans(confound_file, dummy_scans=dummy_scans)
+                dropped_confounds_image.to_filename(confound_file_dropped)
+                self._results["confounds_images_dropped_TR"].append(confound_file_dropped)
 
         # Remove the dummy volumes
         dropped_image = _drop_dummy_scans(self.inputs.bold_file, dummy_scans=dummy_scans)
         dropped_image.to_filename(self._results["bold_file_dropped_TR"])
-
-        # Drop the first N rows from the pandas dataframe
-        fmriprep_confounds_df = pd.read_table(self.inputs.motion)
-        fmriprep_confounds_df_dropped = fmriprep_confounds_df.drop(np.arange(dummy_scans))
-        fmriprep_confounds_df_dropped.to_csv(
-            self._results["fmriprep_confounds_file_dropped_TR"],
-            sep="\t",
-            index=False,
-        )
-
-        # Drop the first N rows from the confounds file
-        self._results["confounds_file_dropped_TR"] = None
-        if self.inputs.confounds_file:
-            self._results["confounds_file_dropped_TR"] = fname_presuffix(
-                self.inputs.bold_file,
-                suffix="_selected_confounds_dropped.tsv",
-                newpath=os.getcwd(),
-                use_ext=False,
-            )
-            confounds_df = pd.read_table(self.inputs.confounds_file)
-            confounds_df_dropped = confounds_df.drop(np.arange(dummy_scans))
-            confounds_df_dropped.to_csv(
-                self._results["confounds_file_dropped_TR"],
-                sep="\t",
-                index=False,
-            )
 
         # Drop the first N rows from the motion file
         motion_df = pd.read_table(self.inputs.motion_file)
