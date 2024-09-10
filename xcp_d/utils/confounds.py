@@ -88,6 +88,61 @@ def load_motion(
     return motion_confounds_df
 
 
+def load_confounds(confounds_dict, confound_config):
+    """Load confounds according to a configuration file."""
+    import re
+
+    confounds_images = []
+    for confound_name, confound_file in confounds_dict.items():
+        confound_params = confound_config["confounds"][confound_name]
+        if "columns" in confound_params:
+            # Tabular confounds
+            columns = confound_params["columns"]
+            confound_df = pd.read_table(confound_file)
+            new_confound_df = pd.DataFrame(index=confound_df.index)
+            available_columns = confound_df.columns.tolist()
+            for column in columns:
+                if column.startswith("^"):
+                    # Regular expression
+                    found_columns = [
+                        col_name
+                        for col_name in available_columns
+                        if re.match(column, col_name, re.IGNORECASE)
+                    ]
+                    if not found_columns:
+                        raise ValueError(
+                            f"No columns found matching regular expression '{column}'"
+                        )
+                    for found_column in found_columns:
+                        if found_column in new_confound_df:
+                            raise ValueError(
+                                f"Duplicate column name ({found_column}) in confounds "
+                                "configuration."
+                            )
+
+                        new_confound_df[found_column] = confound_df[found_column]
+
+                else:
+                    if column not in confound_df.columns:
+                        raise ValueError(f"Column '{column}' not found in confounds file.")
+
+                    if column in new_confound_df:
+                        raise ValueError(
+                            f"Duplicate column name ({column}) in confounds configuration."
+                        )
+                    new_confound_df[column] = confound_df[column]
+        else:
+            # Voxelwise confounds
+            confounds_images.append(confound_file)
+
+    if new_confound_df.empty:
+        return None, confounds_images
+
+    confounds_tsv = os.path.join(os.getcwd(), "confounds.tsv")
+    new_confound_df.to_csv(confounds_tsv, sep="\t", index=False)
+    return confounds_tsv, confounds_images
+
+
 @fill_doc
 def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
     """Identify a custom confounds file.

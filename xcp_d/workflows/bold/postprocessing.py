@@ -160,9 +160,9 @@ def init_prepare_confounds_wf(
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "fmriprep_confounds_json",
-                "custom_confounds_file",
+                "motion_file",
+                "motion_json",
+                "confounds_files",
                 "dummy_scans",
             ],
         ),
