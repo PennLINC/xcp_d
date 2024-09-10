@@ -3,10 +3,11 @@ description: |
     Nuisance regressors were selected according to the 'gsr_only' strategy.
     Mean global signal was selected as the only nuisance regressor.
 confounds:
--   dataset: preprocessed
-    query:
-        description: confounds
-        extension: .tsv
-        suffix: timeseries
-    columns:
-    - global_signal
+    preproc_confounds:
+        dataset: preprocessed
+        query:
+            description: confounds
+            extension: .tsv
+            suffix: timeseries
+        columns:
+        - global_signal

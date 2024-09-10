@@ -252,7 +252,7 @@ def test_motion_filtering_lp():
 
     # Confirm the LP filter runs with reasonable parameters
     raw_data = raw_data[:, None]  # add singleton row dimension
-    lowpass_data_test = confounds.motion_regression_filter(
+    lowpass_data_test = confounds.filter_motion(
         raw_data,
         TR=TR,
         motion_filter_type="lp",
@@ -266,7 +266,7 @@ def test_motion_filtering_lp():
 
     # Using a filter type other than notch or lp should raise an exception.
     with pytest.raises(ValueError, match="Motion filter type 'fail' not supported."):
-        confounds.motion_regression_filter(
+        confounds.filter_motion(
             raw_data,
             TR=TR,
             motion_filter_type="fail",
@@ -300,7 +300,7 @@ def test_motion_filtering_notch():
 
     # Repeat for notch filter
     raw_data = raw_data[:, None]  # add singleton row dimension
-    notch_data_test = confounds.motion_regression_filter(
+    notch_data_test = confounds.filter_motion(
         raw_data,
         TR=TR,  # 1.25 Hz
         motion_filter_type="notch",

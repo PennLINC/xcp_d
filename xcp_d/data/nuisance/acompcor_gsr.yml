@@ -11,28 +11,29 @@ description: |
     the associated cosine basis regressors were included.
     This has the effect of high-pass filtering the data as well.
 confounds:
--   dataset: preprocessed
-    query:
-        space: null
-        description: confounds
-        extension: .tsv
-        suffix: timeseries
-    columns:
-    - trans_x
-    - trans_x_derivative1
-    - trans_y
-    - trans_y_derivative1
-    - trans_z
-    - trans_z_derivative1
-    - rot_x
-    - rot_x_derivative1
-    - rot_y
-    - rot_y_derivative1
-    - rot_z
-    - rot_z_derivative1
-    - global_signal
-    - csf
-    - white_matter
-    - ^w_comp_cor_0[1-5]$
-    - ^c_comp_cor_0[1-5]$
-    - ^cosine_\d+$
+    preproc_confounds:
+        dataset: preprocessed
+        query:
+            space: null
+            description: confounds
+            extension: .tsv
+            suffix: timeseries
+        columns:
+        - trans_x
+        - trans_x_derivative1
+        - trans_y
+        - trans_y_derivative1
+        - trans_z
+        - trans_z_derivative1
+        - rot_x
+        - rot_x_derivative1
+        - rot_y
+        - rot_y_derivative1
+        - rot_z
+        - rot_z_derivative1
+        - global_signal
+        - csf
+        - white_matter
+        - ^w_comp_cor_0[1-5]$
+        - ^c_comp_cor_0[1-5]$
+        - ^cosine_\d+$
