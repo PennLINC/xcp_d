@@ -3,6 +3,7 @@
 """Confound matrix selection based on Ciric et al. 2007."""
 import os
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -68,6 +69,9 @@ def load_motion(
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     # Select the motion columns from the overall confounds DataFrame
+    if isinstance(confounds_df, (str, Path)):
+        confounds_df = pd.read_table(confounds_df)
+
     motion_confounds_df = confounds_df[
         ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
     ]

@@ -168,7 +168,7 @@ resolution.
                 ),
                 name="warp_t1w_to_template",
                 mem_gb=2,
-                omp_nthreads=omp_nthreads,
+                n_procs=omp_nthreads,
             )
             workflow.connect([
                 (inputnode, warp_t1w_to_template, [
@@ -189,7 +189,7 @@ resolution.
                 ),
                 name="warp_t2w_to_template",
                 mem_gb=2,
-                omp_nthreads=omp_nthreads,
+                n_procs=omp_nthreads,
             )
             workflow.connect([
                 (inputnode, warp_t2w_to_template, [

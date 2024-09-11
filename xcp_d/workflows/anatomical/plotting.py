@@ -108,7 +108,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             ),
             name=f"get_number_of_frames_{image_type}",
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         workflow.connect([
             (inputnode, get_number_of_frames, [(inputnode_anat_name, "anat_file")]),
@@ -132,7 +132,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             name=f"modify_brainsprite_template_scene_{image_type}",
             iterfield=["slice_number"],
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
         workflow.connect([
@@ -157,7 +157,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             name=f"create_framewise_pngs_{image_type}",
             iterfield=["scene_file"],
             mem_gb=1,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         workflow.connect([
             (modify_brainsprite_template_scene, create_framewise_pngs, [
@@ -174,7 +174,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             ),
             name=f"make_mosaic_{image_type}",
             mem_gb=1,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
 
         workflow.connect([(create_framewise_pngs, make_mosaic_node, [("out_file", "png_files")])])
@@ -211,7 +211,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             ),
             name=f"modify_pngs_template_scene_{image_type}",
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
         workflow.connect([
@@ -238,7 +238,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             name=f"create_scenewise_pngs_{image_type}",
             iterfield=["scene_name_or_number"],
             mem_gb=1,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         workflow.connect([
             (modify_pngs_template_scene, create_scenewise_pngs, [("out_file", "scene_file")]),

@@ -121,7 +121,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
             name="warp_atlases_to_bold_space",
             iterfield=["input_image"],
             mem_gb=2,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
 
         workflow.connect([

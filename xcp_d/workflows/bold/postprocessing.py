@@ -201,7 +201,7 @@ def init_prepare_confounds_wf(
         ),
         name="process_motion",
         mem_gb=1,
-        omp_nthreads=config.nipype.omp_nthreads,
+        n_procs=1,
     )
 
     workflow.connect([
@@ -225,7 +225,7 @@ def init_prepare_confounds_wf(
         ),
         name="generate_confounds",
         mem_gb=2,
-        omp_nthreads=config.nipype.omp_nthreads,
+        n_procs=1,
     )
 
     # Load and filter confounds
@@ -368,7 +368,7 @@ def init_prepare_confounds_wf(
         ),
         name="censor_report",
         mem_gb=2,
-        omp_nthreads=config.nipype.omp_nthreads,
+        n_procs=1,
     )
 
     workflow.connect([
@@ -449,7 +449,7 @@ def init_despike_wf(TR, name="despike_wf"):
         DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
         name="despike3d",
         mem_gb=4,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
 
     if file_format == "cifti":
@@ -463,7 +463,7 @@ and converted back to CIFTI format.
             CiftiConvert(target="to"),
             name="convert_to_nifti",
             mem_gb=4,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         workflow.connect([
             (inputnode, convert_to_nifti, [("bold_file", "in_file")]),
@@ -475,7 +475,7 @@ and converted back to CIFTI format.
             CiftiConvert(target="from", TR=TR),
             name="convert_to_cifti",
             mem_gb=4,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         workflow.connect([
             (inputnode, convert_to_cifti, [("bold_file", "cifti_template")]),
@@ -630,7 +630,7 @@ approach.
         ),
         name="regress_and_filter_bold",
         mem_gb=mem_gb["timeseries"],
-        omp_nthreads=config.nipype.omp_nthreads,
+        n_procs=1,
     )
 
     workflow.connect([
@@ -651,7 +651,7 @@ approach.
         Censor(),
         name="censor_interpolated_data",
         mem_gb=mem_gb["resampled"],
-        omp_nthreads=config.nipype.omp_nthreads,
+        n_procs=1,
     )
 
     workflow.connect([
@@ -773,7 +773,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
             ),
             name="cifti_smoothing",
             mem_gb=mem_gb["timeseries"],
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
 
         # Always check the intent code in CiftiSmooth's output file
@@ -781,7 +781,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
             FixCiftiIntent(),
             name="fix_cifti_intent",
             mem_gb=1,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         workflow.connect([
             (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
@@ -797,7 +797,7 @@ The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str
             Smooth(fwhm=smoothing),  # FWHM = kernel size
             name="nifti_smoothing",
             mem_gb=mem_gb["timeseries"],
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
         )
         workflow.connect([
             (smooth_data, outputnode, [("out_file", "smoothed_bold")]),

@@ -802,7 +802,7 @@ def write_derivative_description(fmri_dir, output_dir, atlases=None, dataset_lin
         desc["DatasetLinks"][k] = str(v)
 
     xcpd_dset_description = Path(output_dir / "dataset_description.json")
-    if xcpd_dset_description.isfile():
+    if xcpd_dset_description.is_file():
         old_desc = json.loads(xcpd_dset_description.read_text())
 
         old_version = old_desc["GeneratedBy"][0]["Version"]

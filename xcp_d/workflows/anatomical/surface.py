@@ -251,7 +251,7 @@ def init_postprocess_surfaces_wf(
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             output_dir=output_dir,
             software=software,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
             name="warp_surfaces_to_template_wf",
         )
         workflow.connect([
@@ -387,7 +387,7 @@ def init_warp_surfaces_to_template_wf(
     # First, we create the Connectome WorkBench-compatible transform files.
     update_xfm_wf = init_ants_xfm_to_fsl_wf(
         mem_gb=1,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
         name="update_xfm_wf",
     )
     workflow.connect([
@@ -418,7 +418,7 @@ def init_warp_surfaces_to_template_wf(
             hemisphere=hemi,
             software=software,
             mem_gb=2,
-            omp_nthreads=omp_nthreads,
+            n_procs=omp_nthreads,
             name=f"{hemi_label}_apply_transforms_wf",
         )
         workflow.connect([
@@ -532,7 +532,7 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
         SurfaceAverage(),
         name="generate_midthickness",
         mem_gb=2,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([
         (inputnode, generate_midthickness, [
@@ -565,7 +565,7 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     inflate_surface = pe.Node(
         SurfaceGenerateInflated(iterations_scale_value=0.75),
         mem_gb=2,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
         name="inflate_surface",
     )
     workflow.connect([
@@ -679,7 +679,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         ),
         name="disassemble_h5",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([(inputnode, disassemble_h5, [("anat_to_template_xfm", "in_file")])])
 
@@ -693,7 +693,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         ),
         name="disassemble_h5_inv",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([(inputnode, disassemble_h5_inv, [("template_to_anat_xfm", "in_file")])])
 
@@ -726,7 +726,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         ),
         name="get_xyz_components",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     get_inv_xyz_components = pe.Node(
         C3d(
@@ -736,7 +736,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         ),
         name="get_inv_xyz_components",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([
         (disassemble_h5, get_xyz_components, [("displacement_field", "in_file")]),
@@ -748,13 +748,13 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         niu.Select(index=[0]),
         name="select_x_component",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     select_inv_x_component = pe.Node(
         niu.Select(index=[0]),
         name="select_inv_x_component",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
 
     # Select y-component
@@ -762,13 +762,13 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         niu.Select(index=[1]),
         name="select_y_component",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     select_inv_y_component = pe.Node(
         niu.Select(index=[1]),
         name="select_inv_y_component",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
 
     # Select z-component
@@ -776,13 +776,13 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         niu.Select(index=[2]),
         name="select_z_component",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     select_inv_z_component = pe.Node(
         niu.Select(index=[2]),
         name="select_inv_z_component",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([
         (get_xyz_components, select_x_component, [("out_files", "inlist")]),
@@ -800,13 +800,13 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         BinaryMath(expression="img * -1"),
         name="reverse_y_component",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     reverse_inv_y_component = pe.Node(
         BinaryMath(expression="img * -1"),
         name="reverse_inv_y_component",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([
         (select_y_component, reverse_y_component, [("out", "in_file")]),
@@ -818,13 +818,13 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         niu.Merge(3),
         name="collect_new_components",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     collect_new_inv_components = pe.Node(
         niu.Merge(3),
         name="collect_new_inv_components",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([
         (select_x_component, collect_new_components, [("out", "in1")]),
@@ -840,13 +840,13 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
         Merge(),
         name="remerge_warpfield",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     remerge_inv_warpfield = pe.Node(
         Merge(),
         name="remerge_inv_warpfield",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([
         (collect_new_components, remerge_warpfield, [("out", "in_files")]),
@@ -984,7 +984,7 @@ def init_warp_one_hemisphere_wf(
         MRIsConvert(out_datatype="gii"),
         name="sphere_to_surf_gii",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
     workflow.connect([(inputnode, sphere_to_surf_gii, [("subject_sphere", "in_file")])])
 
@@ -1010,7 +1010,7 @@ def init_warp_one_hemisphere_wf(
         CiftiSurfaceResample(method="BARYCENTRIC"),
         name="resample_to_fsLR32k",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
     workflow.connect([
@@ -1025,7 +1025,7 @@ def init_warp_one_hemisphere_wf(
         ApplyAffine(),
         name="apply_affine_to_fsLR32k",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
     workflow.connect([
@@ -1039,7 +1039,7 @@ def init_warp_one_hemisphere_wf(
         ApplyWarpfield(),
         name="apply_warpfield_to_fsLR32k",
         mem_gb=mem_gb,
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
         iterfield=["in_file"],
     )
     workflow.connect([

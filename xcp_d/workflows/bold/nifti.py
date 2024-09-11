@@ -218,7 +218,7 @@ the following post-processing was performed.
         ConvertTo32(),
         name="downcast_data",
         mem_gb=mem_gbx["timeseries"],
-        omp_nthreads=omp_nthreads,
+        n_procs=omp_nthreads,
     )
 
     workflow.connect([
