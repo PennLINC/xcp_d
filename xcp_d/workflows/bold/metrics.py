@@ -145,7 +145,6 @@ series to retain the original scaling.
         ComputeALFF(TR=TR, low_pass=low_pass, high_pass=high_pass),
         mem_gb=mem_gb["resampled"],
         name="alff_compt",
-        n_procs=omp_nthreads,
     )
     workflow.connect([
         (inputnode, alff_compt, [
@@ -201,7 +200,6 @@ series to retain the original scaling.
             smooth_data = pe.Node(
                 Smooth(fwhm=smoothing),
                 name="niftismoothing",
-                n_procs=omp_nthreads,
             )
             workflow.connect([
                 (alff_compt, smooth_data, [("alff", "in_file")]),
@@ -241,7 +239,6 @@ series to retain the original scaling.
                 FixCiftiIntent(),
                 name="fix_cifti_intent",
                 mem_gb=mem_gb["resampled"],
-                n_procs=omp_nthreads,
             )
             workflow.connect([
                 (alff_compt, smooth_data, [("alff", "in_file")]),
@@ -330,19 +327,16 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         CiftiSeparateMetric(metric="CORTEX_LEFT", direction="COLUMN"),
         name="separate_lh",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
     rh_surf = pe.Node(
         CiftiSeparateMetric(metric="CORTEX_RIGHT", direction="COLUMN"),
         name="separate_rh",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
     subcortical_nifti = pe.Node(
         CiftiSeparateVolumeAll(direction="COLUMN"),
         name="separate_subcortical",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
 
     # Calculate the reho by hemipshere
@@ -350,19 +344,16 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         SurfaceReHo(surf_hemi="L"),
         name="reho_lh",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
     rh_reho = pe.Node(
         SurfaceReHo(surf_hemi="R"),
         name="reho_rh",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
         ReHoNamePatch(neighborhood="vertices"),
         name="reho_subcortical",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
 
     # Merge the surfaces and subcortical structures back into a CIFTI

@@ -54,7 +54,6 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     atlases = config.execution.atlases
     output_dir = config.execution.xcp_d_dir
     file_format = config.workflow.file_format
-    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -121,7 +120,6 @@ def init_load_atlases_wf(name="load_atlases_wf"):
             name="warp_atlases_to_bold_space",
             iterfield=["input_image"],
             mem_gb=2,
-            n_procs=omp_nthreads,
         )
 
         workflow.connect([

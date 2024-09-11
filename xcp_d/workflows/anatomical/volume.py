@@ -78,7 +78,6 @@ def init_postprocess_anat_wf(
     workflow = Workflow(name=name)
     output_dir = config.execution.xcp_d_dir
     input_type = config.workflow.input_type
-    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -168,7 +167,6 @@ resolution.
                 ),
                 name="warp_t1w_to_template",
                 mem_gb=2,
-                n_procs=omp_nthreads,
             )
             workflow.connect([
                 (inputnode, warp_t1w_to_template, [
@@ -189,7 +187,6 @@ resolution.
                 ),
                 name="warp_t2w_to_template",
                 mem_gb=2,
-                n_procs=omp_nthreads,
             )
             workflow.connect([
                 (inputnode, warp_t2w_to_template, [

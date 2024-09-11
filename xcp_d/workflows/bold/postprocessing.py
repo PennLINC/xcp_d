@@ -108,7 +108,6 @@ def init_prepare_confounds_wf(
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
     fd_thresh = config.workflow.fd_thresh
-    omp_nthreads = config.nipype.omp_nthreads
 
     dummy_scans_str = ""
     if dummy_scans == "auto":
@@ -201,7 +200,6 @@ def init_prepare_confounds_wf(
         ),
         name="generate_confounds",
         mem_gb=2,
-        omp_nthreads=omp_nthreads,
     )
 
     # Load and filter confounds
@@ -353,7 +351,6 @@ def init_prepare_confounds_wf(
         ),
         name="censor_report",
         mem_gb=2,
-        n_procs=omp_nthreads,
     )
 
     workflow.connect([
@@ -534,7 +531,6 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     bandpass_filter = config.workflow.bandpass_filter
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
-    omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """\
 
@@ -618,7 +614,6 @@ approach.
         ),
         name="regress_and_filter_bold",
         mem_gb=mem_gb["timeseries"],
-        n_procs=omp_nthreads,
     )
 
     workflow.connect([
@@ -638,7 +633,6 @@ approach.
         Censor(),
         name="censor_interpolated_data",
         mem_gb=mem_gb["resampled"],
-        omp_nthreads=omp_nthreads,
     )
 
     workflow.connect([
@@ -768,7 +762,6 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
             FixCiftiIntent(),
             name="fix_cifti_intent",
             mem_gb=1,
-            n_procs=omp_nthreads,
         )
         workflow.connect([
             (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
@@ -784,7 +777,6 @@ The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str
             Smooth(fwhm=smoothing),  # FWHM = kernel size
             name="nifti_smoothing",
             mem_gb=mem_gb["timeseries"],
-            n_procs=omp_nthreads,
         )
         workflow.connect([
             (smooth_data, outputnode, [("out_file", "smoothed_bold")]),
