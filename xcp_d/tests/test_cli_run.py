@@ -32,7 +32,6 @@ def base_opts():
         "mode": "linc",
         "file_format": "auto",
         "input_type": "auto",
-        "params": "auto",
         "high_pass": 0.01,
         "low_pass": 0.1,
         "bandpass_filter": True,
@@ -45,7 +44,6 @@ def base_opts():
         "process_surfaces": "auto",
         "fs_license_file": Path(os.environ["FS_LICENSE"]),
         "atlases": ["Glasser"],
-        "custom_confounds": None,
         "dcan_correlation_lengths": None,
         "despike": "auto",
         "abcc_qc": "auto",
@@ -137,7 +135,6 @@ def test_validate_parameters_07(base_opts, base_parser, caplog, tmp_path_factory
 
     opts = deepcopy(base_opts)
     opts.params = "none"
-    opts.custom_confounds = confounds_path
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 

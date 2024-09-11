@@ -159,13 +159,6 @@ custom_confounds_folder : :obj:`str` or None
 """
 
 docdict[
-    "custom_confounds_file"
-] = """
-custom_confounds_file : :obj:`str` or None
-    Path to custom nuisance regressors.
-"""
-
-docdict[
     "head_radius"
 ] = """
 head_radius : :obj:`float` or "auto"

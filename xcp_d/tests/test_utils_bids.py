@@ -537,13 +537,3 @@ def test_make_preproc_uri():
 
     xbids._make_preproc_uri([out_file], fmri_dir="/path/to/dset")
     assert uri == ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"]
-
-
-def test_make_custom_uri():
-    """Test _make_custom_uri."""
-    out_file = "/path/to/dset/sub-01_task-rest_bold.nii.gz"
-    uri = xbids._make_custom_uri(out_file)
-    assert uri == ["bids:custom_confounds:sub-01_task-rest_bold.nii.gz"]
-
-    xbids._make_custom_uri([out_file])
-    assert uri == ["bids:custom_confounds:sub-01_task-rest_bold.nii.gz"]

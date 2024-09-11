@@ -295,19 +295,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     temp_dir = os.path.join(output_dir, test_name)
     out_dir = os.path.join(temp_dir, "xcp_d")
     work_dir = os.path.join(working_dir, test_name)
-    custom_confounds_dir = os.path.join(temp_dir, "custom_confounds")
-    os.makedirs(custom_confounds_dir, exist_ok=True)
-
-    # Create custom confounds folder
-    for run_number in [1, 2]:
-        out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
-        out_file = os.path.join(custom_confounds_dir, out_file)
-        confounds_df = pd.DataFrame(
-            columns=["a", "b"],
-            data=np.random.random((16, 2)),
-        )
-        confounds_df.to_csv(out_file, sep="\t", index=False)
-        LOGGER.warning(f"Created custom confounds file at {out_file}.")
 
     parameters = [
         dataset_dir,
@@ -325,7 +312,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--disable-bandpass-filter",
         "--min-time=20",
         "--dummy-scans=1",
-        f"--custom_confounds={custom_confounds_dir}",
         "--abcc-qc",
     ]
 
@@ -364,19 +350,6 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     temp_dir = os.path.join(output_dir, f"{test_name}_with_main")
     out_dir = os.path.join(temp_dir, "xcp_d")
     work_dir = os.path.join(working_dir, f"{test_name}_with_main")
-    custom_confounds_dir = os.path.join(temp_dir, "custom_confounds")
-    os.makedirs(custom_confounds_dir, exist_ok=True)
-
-    # Create custom confounds folder
-    for run_number in [1, 2]:
-        out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
-        out_file = os.path.join(custom_confounds_dir, out_file)
-        confounds_df = pd.DataFrame(
-            columns=["a", "b"],
-            data=np.random.random((16, 2)),
-        )
-        confounds_df.to_csv(out_file, sep="\t", index=False)
-        LOGGER.warning(f"Created custom confounds file at {out_file}.")
 
     parameters = [
         dataset_dir,
@@ -394,7 +367,6 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
         "--disable-bandpass-filter",
         "--min-time=20",
         "--dummy-scans=1",
-        f"--custom_confounds={custom_confounds_dir}",
         "--abcc-qc",
     ]
 

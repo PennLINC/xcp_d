@@ -150,8 +150,6 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
 #     # Run workflow
 #     remvtr = RemoveDummyVolumes()
 #     remvtr.inputs.bold_file = boldfile
-#     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
-#     remvtr.inputs.custom_confounds = custom_confounds_tsv
 #     remvtr.inputs.dummy_scans = 5
 #     results = remvtr.run(cwd=temp_dir)
 
@@ -177,8 +175,6 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
 #     # Run workflow
 #     remvtr = RemoveDummyVolumes()
 #     remvtr.inputs.bold_file = boldfile
-#     remvtr.inputs.fmriprep_confounds_file = confounds_tsv
-#     remvtr.inputs.custom_confounds = custom_confounds_tsv
 #     remvtr.inputs.dummy_scans = 5
 #     results = remvtr.run(cwd=temp_dir)
 

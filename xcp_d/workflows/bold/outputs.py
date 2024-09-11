@@ -10,7 +10,6 @@ from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.utils.bids import (
     _make_atlas_uri,
-    _make_custom_uri,
     _make_preproc_uri,
     _make_xcpd_uri,
     get_entity,
@@ -24,7 +23,6 @@ def init_postproc_derivatives_wf(
     name_source,
     source_metadata,
     exact_scans,
-    custom_confounds_file,
     name="postproc_derivatives_wf",
 ):
     """Write out the xcp_d derivatives in BIDS format.
@@ -43,7 +41,6 @@ def init_postproc_derivatives_wf(
                     name_source="/path/to/file.nii.gz",
                     source_metadata={},
                     exact_scans=[],
-                    custom_confounds_file=None,
                     name="postproc_derivatives_wf",
                 )
 
@@ -53,8 +50,6 @@ def init_postproc_derivatives_wf(
         bold or cifti files
     source_metadata : :obj:`dict`
     %(exact_scans)s
-    custom_confounds_file
-        Only used for Sources metadata.
     %(name)s
         Default is "connectivity_wf".
 
@@ -241,9 +236,7 @@ def init_postproc_derivatives_wf(
 
     if params != "none":
         confounds_src = pe.Node(
-            niu.Merge(
-                numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if custom_confounds_file else 0))
-            ),
+            niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0))),
             name="confounds_src",
             run_without_submitting=True,
             mem_gb=1,
@@ -255,12 +248,6 @@ def init_postproc_derivatives_wf(
                     (("out_file", _make_xcpd_uri, output_dir), "in2"),
                 ]),
             ])  # fmt:skip
-
-            if custom_confounds_file:
-                confounds_src.inputs.in3 = _make_custom_uri(custom_confounds_file)
-
-        elif custom_confounds_file:
-            confounds_src.inputs.in2 = _make_custom_uri(custom_confounds_file)
 
         ds_confounds = pe.Node(
             DerivativesDataSink(
