@@ -457,14 +457,14 @@ class ProcessMotion(SimpleInterface):
         motion_metadata = {}
         for col in motion_df.columns.tolist():
             col_metadata = self.inputs.motion_metadata.get(col, {})
-            if col == "framewise_displacement":
+            if col.startswith("framewise_displacement"):
                 col_metadata["Description"] = (
                     "Framewise displacement calculated according to Power et al. (2012)."
                 )
                 col_metadata["Units"] = "mm"
                 col_metadata["HeadRadius"] = self.inputs.head_radius
 
-            if self.inputs.motion_filter_type == "lp":
+            if self.inputs.motion_filter_type == "lp" and col.endswith("_filtered"):
                 filters = col_metadata.get("SoftwareFilters", {})
                 filters["Butterworth low-pass filter"] = {
                     "cutoff": band_stop_min_adjusted / 60,
@@ -474,7 +474,7 @@ class ProcessMotion(SimpleInterface):
                 }
                 col_metadata["SoftwareFilters"] = filters
 
-            elif self.inputs.motion_filter_type == "notch":
+            elif self.inputs.motion_filter_type == "notch" and col.endswith("_filtered"):
                 filters = col_metadata.get("SoftwareFilters", {})
                 filters["IIR notch digital filter"] = {
                     "cutoff": [

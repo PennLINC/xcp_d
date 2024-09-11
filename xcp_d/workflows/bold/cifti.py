@@ -103,7 +103,7 @@ def init_postprocess_cifti_wf(
     t2w
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
-    %(fmriprep_confounds_file)s
+    preproc_confounds_file
     fmriprep_confounds_json
     %(dummy_scans)s
 
@@ -112,8 +112,6 @@ def init_postprocess_cifti_wf(
     %(name_source)s
     preprocessed_bold : :obj:`str`
         The preprocessed BOLD file, after dummy scan removal.
-    %(fmriprep_confounds_file)s
-        After dummy scan removal.
     motion_file
     %(temporal_mask)s
     %(denoised_interpolated_bold)s
@@ -327,7 +325,7 @@ the following post-processing was performed.
 
     workflow.connect([
         (inputnode, postproc_derivatives_wf, [
-            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
+            ("motion_file", "inputnode.preproc_confounds_file"),
             ("atlas_files", "inputnode.atlas_files"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [

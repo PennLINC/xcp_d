@@ -101,9 +101,9 @@ TR : :obj:`float`
 """
 
 docdict[
-    "fmriprep_confounds_file"
+    "preproc_confounds_file"
 ] = """
-fmriprep_confounds_file : :obj:`str`
+preproc_confounds_file : :obj:`str`
     Confounds TSV file from preprocessing derivatives.
 """
 

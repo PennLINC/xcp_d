@@ -395,8 +395,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "filtered_motion",
+                "motion_file",
                 "temporal_mask",
                 "denoised_bold",
                 "denoised_interpolated_bold",

@@ -114,8 +114,8 @@ def init_postprocess_nifti_wf(
     anat_brainmask
         T1w brain mask in standard space, used for transforms in the QC report workflow.
         Fed from the subject workflow.
-    %(fmriprep_confounds_file)s
-    fmriprep_confounds_json
+    motion_file
+    motion_json
     %(dummy_scans)s
 
     Outputs
@@ -123,9 +123,8 @@ def init_postprocess_nifti_wf(
     %(name_source)s
     preprocessed_bold : :obj:`str`
         The preprocessed BOLD file, after dummy scan removal.
-    motion_file
     %(temporal_mask)s
-    %(fmriprep_confounds_file)s
+    motion_file
         After dummy scan removal.
     %(denoised_interpolated_bold)s
     %(smoothed_denoised_bold)s
@@ -346,7 +345,7 @@ the following post-processing was performed.
 
     workflow.connect([
         (inputnode, postproc_derivatives_wf, [
-            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
+            ("motion_file", "inputnode.preproc_confounds_file"),
             ("atlas_files", "inputnode.atlas_files"),
         ]),
         (prepare_confounds_wf, postproc_derivatives_wf, [

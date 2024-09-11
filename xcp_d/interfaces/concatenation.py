@@ -62,21 +62,13 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Preprocessed BOLD files, after dummy volume removal.",
     )
-    fmriprep_confounds_file = traits.List(
+    motion_file = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
         ),
         mandatory=True,
         desc="TSV files with fMRIPrep confounds for individual BOLD runs.",
-    )
-    filtered_motion = traits.List(
-        traits.Either(
-            File(exists=True),
-            Undefined,
-        ),
-        mandatory=True,
-        desc="TSV files with filtered motion parameters, used for FD calculation.",
     )
     temporal_mask = traits.List(
         traits.Either(
@@ -145,13 +137,9 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
         File(exists=True),
         desc="Preprocessed BOLD files, after dummy volume removal.",
     )
-    fmriprep_confounds_file = traits.List(
+    motion_file = traits.List(
         File(exists=True),
         desc="fMRIPrep confounds files, after dummy volume removal.",
-    )
-    filtered_motion = traits.List(
-        File(exists=True),
-        desc="TSV files with filtered motion parameters, used for FD calculation.",
     )
     temporal_mask = traits.List(
         traits.Either(
@@ -222,8 +210,7 @@ class FilterOutFailedRuns(SimpleInterface):
         denoised_bold = self.inputs.denoised_bold
         inputs_to_filter = {
             "preprocessed_bold": self.inputs.preprocessed_bold,
-            "fmriprep_confounds_file": self.inputs.fmriprep_confounds_file,
-            "filtered_motion": self.inputs.filtered_motion,
+            "motion_file": self.inputs.motion_file,
             "temporal_mask": self.inputs.temporal_mask,
             "denoised_interpolated_bold": self.inputs.denoised_interpolated_bold,
             "censored_denoised_bold": self.inputs.censored_denoised_bold,
@@ -260,15 +247,10 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Preprocessed BOLD files, after dummy volume removal.",
     )
-    fmriprep_confounds_file = traits.List(
+    motion_file = traits.List(
         File(exists=True),
         mandatory=True,
         desc="TSV files with fMRIPrep confounds for individual BOLD runs.",
-    )
-    filtered_motion = traits.List(
-        File(exists=True),
-        mandatory=True,
-        desc="TSV files with filtered motion parameters, used for FD calculation.",
     )
     temporal_mask = traits.List(
         traits.Either(
@@ -323,13 +305,9 @@ class _ConcatenateInputsOutputSpec(TraitedSpec):
         exists=True,
         desc="Concatenated preprocessed BOLD file.",
     )
-    fmriprep_confounds_file = File(
+    motion_file = File(
         exists=True,
         desc="Concatenated TSV file with fMRIPrep confounds.",
-    )
-    filtered_motion = File(
-        exists=True,
-        desc="Concatenated TSV file with filtered motion parameters, used for FD calculation.",
     )
     temporal_mask = traits.Either(
         File(exists=True),
@@ -385,8 +363,7 @@ class ConcatenateInputs(SimpleInterface):
             "censored_denoised_bold": self.inputs.censored_denoised_bold,
             "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
             "timeseries_ciftis": self.inputs.timeseries_ciftis,
-            "fmriprep_confounds_file": self.inputs.fmriprep_confounds_file,
-            "filtered_motion": self.inputs.filtered_motion,
+            "motion_file": self.inputs.motion_file,
             "temporal_mask": self.inputs.temporal_mask,
             "timeseries": self.inputs.timeseries,
         }

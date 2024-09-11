@@ -34,7 +34,11 @@ def compute_fd(confound, head_radius=50):
         The framewise displacement time series.
     """
     confound = confound.replace(np.nan, 0)
-    mpars = confound[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]].to_numpy()
+    motion_columns = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
+    if all([f"{col}_filtered" in confound.columns for col in motion_columns]):
+        motion_columns = [f"{col}_filtered" for col in motion_columns]
+
+    mpars = confound[motion_columns].to_numpy()
     diff = mpars[:-1, :6] - mpars[1:, :6]
     diff[:, 3:6] *= head_radius
     fd_res = np.abs(diff).sum(axis=1)

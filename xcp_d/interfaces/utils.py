@@ -19,9 +19,8 @@ from nipype.interfaces.base import (
     traits_extension,
 )
 
-from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import compute_fd, downcast_to_32
+from xcp_d.utils.modified_data import downcast_to_32
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
 from xcp_d.utils.write_save import read_ndata
 
@@ -172,7 +171,7 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
         Undefined,
         desc="Temporal mask",
     )
-    fmriprep_confounds_file = File(
+    motion_file = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds file, after dummy scans removal",
@@ -245,14 +244,9 @@ class LINCQC(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        preproc_motion_df = load_motion(
-            confounds_df.copy(),
-            TR=self.inputs.TR,
-            motion_filter_type=None,
-        )
-        preproc_fd = compute_fd(confound=preproc_motion_df, head_radius=self.inputs.head_radius)
-        rmsd = confounds_df["rmsd"].to_numpy()
+        motion_df = pd.read_table(self.inputs.motion_file)
+        preproc_fd = motion_df["framewise_displacement"].to_numpy()
+        rmsd = motion_df["rmsd"].to_numpy()
 
         # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans

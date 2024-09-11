@@ -85,7 +85,7 @@ def init_prepare_confounds_wf(
     Outputs
     -------
     preprocessed_bold : :obj:`str`
-    %(fmriprep_confounds_file)s
+    motion_file
     confounds_tsv : :obj:`str`
         The selected confounds, potentially including custom confounds, after dummy scan removal.
     confounds_images : :obj:`list` of :obj:`str`

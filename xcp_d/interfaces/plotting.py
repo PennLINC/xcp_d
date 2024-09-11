@@ -39,8 +39,7 @@ LOGGER = logging.getLogger("nipype.interface")
 
 
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
-    fmriprep_confounds_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
-    filtered_motion = File(exists=True, mandatory=True, desc="Filtered motion file.")
+    motion_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
     temporal_mask = File(
         exists=True,
         mandatory=True,
@@ -70,16 +69,8 @@ class CensoringPlot(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        preproc_motion_df = load_motion(
-            confounds_df.copy(),
-            TR=self.inputs.TR,
-            motion_filter_type=None,
-        )
-        preproc_fd_timeseries = compute_fd(
-            confound=preproc_motion_df,
-            head_radius=self.inputs.head_radius,
-        )
+        motion_df = pd.read_table(self.inputs.motion_file)
+        preproc_fd_timeseries = motion_df["framewise_displacement"].values
 
         # Load temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
@@ -120,9 +111,7 @@ class CensoringPlot(SimpleInterface):
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
-            filtered_fd_timeseries = pd.read_table(self.inputs.filtered_motion)[
-                "framewise_displacement"
-            ]
+            filtered_fd_timeseries = motion_df["framewise_displacement_filtered"].values
 
             ax.plot(
                 time_array,
@@ -214,7 +203,7 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
         Undefined,
         desc="Temporal mask",
     )
-    fmriprep_confounds_file = File(
+    motion_file = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds file, after dummy scans removal",
@@ -268,16 +257,8 @@ class QCPlots(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        preproc_motion_df = load_motion(
-            confounds_df.copy(),
-            TR=self.inputs.TR,
-            motion_filter_type=None,
-        )
-        preproc_fd_timeseries = compute_fd(
-            confound=preproc_motion_df,
-            head_radius=self.inputs.head_radius,
-        )
+        motion_df = pd.read_table(self.inputs.motion_file)
+        preproc_fd_timeseries = motion_df["framewise_displacement"].values
 
         # Determine number of dummy volumes and load temporal mask
         if isdefined(self.inputs.temporal_mask):
@@ -376,7 +357,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
     )
-    filtered_motion = File(
+    motion_file = File(
         exists=True,
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
@@ -460,7 +441,7 @@ class QCPlotsES(SimpleInterface):
             preprocessed_bold=self.inputs.preprocessed_bold,
             denoised_interpolated_bold=self.inputs.denoised_interpolated_bold,
             TR=self.inputs.TR,
-            filtered_motion=self.inputs.filtered_motion,
+            motion_file=self.inputs.motion_file,
             temporal_mask=self.inputs.temporal_mask,
             preprocessed_figure=preprocessed_figure,
             denoised_figure=denoised_figure,
