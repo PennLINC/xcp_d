@@ -657,13 +657,9 @@ def collect_confounds(
     bold_file: str,
     preproc_dataset: BIDSLayout,
     derivatives_datasets: dict[str, Path | BIDSLayout] | None,
-    entities: dict | None,
     confound_spec: dict,
-    spec: dict | None = None,
-    patterns: list[str] | None = None,
 ):
     """Gather confounds files from derivatives datasets and compose a cache."""
-    import json
     import re
 
     from bids.layout.index import BIDSLayoutIndexer
@@ -684,22 +680,10 @@ def collect_confounds(
         index_metadata=False,  # we don't need metadata to find confound files
     )
 
-    if not entities:
-        entities = {}
-
-    if spec is None or patterns is None:
-        _spec = json.loads(load_data.readable("io_spec.json").read_text())
-
-        if spec is None:
-            spec = _spec["queries"]
-
-        if patterns is None:
-            patterns = _spec["patterns"]
-
     # Step 0: Determine derivatives we care about for confounds.
     req_datasets = []
-    for confound_def in confound_spec["confounds"]:
-        req_datasets.extend(confound_def["dataset"])
+    for confound_def in confound_spec["confounds"].values():
+        req_datasets.append(confound_def["dataset"])
 
     req_datasets = sorted(list(set(req_datasets)))
 
@@ -710,9 +694,10 @@ def collect_confounds(
         for k, v in derivatives_datasets.items():
             # Don't index datasets we don't need for confounds.
             if k not in req_datasets:
+                print(f"Not required: {k}")
                 continue
 
-            if isinstance(v, Path):
+            if isinstance(v, (Path, str)):
                 layout_dict[k] = BIDSLayout(
                     v,
                     config=["bids", "derivatives"],
@@ -723,12 +708,20 @@ def collect_confounds(
 
     # Step 2: Loop over the confounds spec and search for each file in the corresponding dataset.
     confounds = dict()
-    for confound_def in confound_spec["confounds"]:
+    for confound_name, confound_def in confound_spec["confounds"].items():
         layout = layout_dict[confound_def["dataset"]]
-        # TODO: Build a query based on the bold file
         query = confound_def["query"]
+        bold_file_entities = bold_file.get_entities()
+        query = {**bold_file_entities, **query}
         confound_file = layout.get(**query)
-        confounds[confound_def["name"]] = confound_file[0] if confound_file else None
+        if not confound_file:
+            raise FileNotFoundError(f"Could not find confound file for {confound_name}")
+
+        confound_file = confound_file[0]
+        confound_metadata = confound_file.get_metadata()
+        confounds[confound_name] = {}
+        confounds[confound_name]["file"] = confound_file
+        confounds[confound_name]["metadata"] = confound_metadata
 
     return confounds
 

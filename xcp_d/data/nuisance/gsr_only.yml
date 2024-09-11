@@ -6,7 +6,7 @@ confounds:
     preproc_confounds:
         dataset: preprocessed
         query:
-            description: confounds
+            desc: confounds
             extension: .tsv
             suffix: timeseries
         columns:

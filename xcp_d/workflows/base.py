@@ -26,6 +26,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     _get_tr,
+    collect_confounds,
     collect_data,
     collect_mesh_data,
     collect_morphometry_data,
@@ -417,6 +418,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 file_format=config.workflow.file_format,
                 target_space=target_space,
             )
+            confounds_dict = collect_confounds(
+                bold_file=bold_file,
+                preproc_dataset=config.execution.layout,
+                derivatives_datasets=config.execution.derivatives,
+                confound_spec=config.workflow.confounds_config,
+            )
+            run_data["confounds"] = confounds_dict
 
             post_scrubbing_duration = flag_bad_run(
                 motion_file=run_data["motion"],

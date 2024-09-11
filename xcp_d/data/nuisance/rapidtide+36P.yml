@@ -14,7 +14,7 @@ confounds:
 		dataset: preprocessed
 		query:
 			space: null
-			description: confounds
+			desc: confounds
 			extension: .tsv
 			suffix: timeseries
 			columns:
@@ -45,6 +45,6 @@ confounds:
 	rapidtide_slfo:
 		dataset: rapidtide
 		query:
-			description: LFO
+			desc: LFO
 			extension: .nii.gz
 			suffix: timeseries

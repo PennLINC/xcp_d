@@ -548,7 +548,7 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
         desc="Preprocessed BOLD file",
     )
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
-    confounds_dict = traits.Dict(
+    confounds_files = traits.Dict(
         mandatory=True,
         desc=(
             "Dictionary of confound names and paths to corresponding files. "
@@ -620,7 +620,7 @@ class GenerateConfounds(SimpleInterface):
 
     Parameters
     ----------
-    confounds_dict : dict
+    confounds_files : dict
         Dictionary of confound names and paths to corresponding files.
         Keys are confound names, values are dictionaries with keys "file" and "metadata".
     confound_config : dict
@@ -649,7 +649,7 @@ class GenerateConfounds(SimpleInterface):
         from xcp_d.utils.bids import make_bids_uri
         from xcp_d.utils.confounds import filter_motion, volterra
 
-        if self.inputs.confounds_dict is None:
+        if self.inputs.confounds_files is None:
             return None, [], {}
 
         in_img = nb.load(self.inputs.in_file)
@@ -663,7 +663,7 @@ class GenerateConfounds(SimpleInterface):
         confounds_images = []
         confounds_metadata = {}
         confound_files = []
-        for confound_name, confound_info in self.inputs.confounds_dict.items():
+        for confound_name, confound_info in self.inputs.confounds_files.items():
             confound_file = confound_info["file"]
             confound_files.append(confound_file)
             confound_metadata = confound_info["metadata"]
