@@ -117,7 +117,7 @@ def init_postprocess_surfaces_wf(
 
     abcc_qc = config.workflow.abcc_qc
     process_surfaces = config.workflow.process_surfaces
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -509,7 +509,7 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(

@@ -85,7 +85,7 @@ def init_qc_report_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -540,7 +540,7 @@ def init_execsummary_functional_plots_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     layout = config.execution.layout
 
     inputnode = pe.Node(

@@ -74,7 +74,7 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
     fd_thresh = config.workflow.fd_thresh

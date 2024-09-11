@@ -33,7 +33,7 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     bold_file = ds001419_data["nifti_file"]
 
     with mock_config():
-        config.execution.xcp_d_dir = tmpdir
+        config.execution.output_dir = tmpdir
         config.workflow.file_format = "nifti"
         config.execution.atlases = ["4S156Parcels", "Glasser"]
         config.nipype.omp_nthreads = 1
@@ -58,7 +58,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     bold_file = ds001419_data["cifti_file"]
 
     with mock_config():
-        config.execution.xcp_d_dir = tmpdir
+        config.execution.output_dir = tmpdir
         config.workflow.file_format = "cifti"
         config.execution.atlases = ["4S156Parcels", "Glasser"]
         config.nipype.omp_nthreads = 1
@@ -137,7 +137,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
     # Let's define the inputs and create the workflow
     with mock_config():
-        config.execution.xcp_d_dir = tmpdir
+        config.execution.output_dir = tmpdir
         config.workflow.bandpass_filter = False
         config.workflow.min_coverage = 0.5
         config.nipype.omp_nthreads = 2
@@ -265,7 +265,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
     # Create the node and a tmpdir to write its results out to
     with mock_config():
-        config.execution.xcp_d_dir = tmpdir
+        config.execution.output_dir = tmpdir
         config.workflow.bandpass_filter = False
         config.workflow.min_coverage = 0.5
         config.nipype.omp_nthreads = 2

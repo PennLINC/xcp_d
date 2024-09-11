@@ -76,7 +76,7 @@ def init_postprocess_anat_wf(
         Path to the preprocessed T2w file in standard space.
     """
     workflow = Workflow(name=name)
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     input_type = config.workflow.input_type
     omp_nthreads = config.nipype.omp_nthreads
 

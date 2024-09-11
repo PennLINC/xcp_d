@@ -98,7 +98,7 @@ def init_postproc_derivatives_wf(
     params = config.workflow.params
     atlases = config.execution.atlases
     file_format = config.workflow.file_format
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(

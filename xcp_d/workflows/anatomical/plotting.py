@@ -67,7 +67,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(

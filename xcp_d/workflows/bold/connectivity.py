@@ -69,7 +69,7 @@ def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
 
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
@@ -281,7 +281,7 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
 
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 

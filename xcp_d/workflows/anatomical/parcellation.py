@@ -53,7 +53,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     atlases = config.execution.atlases
 
     SURF_DESCS = {

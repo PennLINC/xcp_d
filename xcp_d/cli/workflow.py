@@ -42,7 +42,7 @@ def build_workflow(config_file, retval):
     msg = check_pipeline_version(
         "XCP-D",
         version,
-        config.execution.xcp_d_dir / "dataset_description.json",
+        config.execution.output_dir / "dataset_description.json",
     )
     if msg is not None:
         build_log.warning(msg)
@@ -72,7 +72,7 @@ def build_workflow(config_file, retval):
 
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
-            output_dir=config.execution.xcp_d_dir,
+            output_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
             session_list=session_list,
@@ -137,7 +137,7 @@ def build_boilerplate(config_file, workflow):
     from xcp_d import config
 
     config.load(config_file)
-    logs_path = config.execution.xcp_d_dir / "logs"
+    logs_path = config.execution.output_dir / "logs"
     boilerplate = workflow.visit_desc()
     citation_files = {ext: logs_path / f"CITATION.{ext}" for ext in ("bib", "tex", "md", "html")}
 

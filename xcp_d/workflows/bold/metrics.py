@@ -95,7 +95,7 @@ def init_alff_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
     fd_thresh = config.workflow.fd_thresh
@@ -313,7 +313,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 *3dReHo* [@taylor2013fatcat].
 """
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -459,7 +459,7 @@ def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """

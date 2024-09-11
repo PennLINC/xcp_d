@@ -19,7 +19,7 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
 
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(

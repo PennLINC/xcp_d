@@ -48,7 +48,7 @@ def init_copy_inputs_to_outputs_wf(name="copy_inputs_to_outputs_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(
