@@ -14,6 +14,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
     GenerateConfounds,
+    ProcessMotion,
     RandomCensor,
     RemoveDummyVolumes,
 )
@@ -36,7 +37,6 @@ def init_prepare_confounds_wf(
     TR,
     exact_scans,
     head_radius,
-    custom_confounds_file,
     name="prepare_confounds_wf",
 ):
     """Prepare confounds.
@@ -58,7 +58,6 @@ def init_prepare_confounds_wf(
                     TR=0.8,
                     exact_scans=[],
                     head_radius=70,
-                    custom_confounds_file=None,
                     name="prepare_confounds_wf",
                 )
 
@@ -68,7 +67,6 @@ def init_prepare_confounds_wf(
     %(exact_scans)s
     %(head_radius)s
         This will already be estimated before this workflow.
-    %(custom_confounds_file)s
     %(name)s
         Default is "prepare_confounds_wf".
 
@@ -76,10 +74,11 @@ def init_prepare_confounds_wf(
     ------
     %(name_source)s
     preprocessed_bold : :obj:`str`
-    %(fmriprep_confounds_file)s
-    fmriprep_confounds_json : :obj:`str`
+    motion_file : :obj:`str`
+        The motion parameters estimated by fMRIPrep.
+    motion_json : :obj:`str`
         JSON file associated with the fMRIPrep confounds TSV.
-    %(custom_confounds_file)s
+    confounds_files : :obj:`dict`
     %(dummy_scans)s
         Set from the parameter.
 
@@ -87,8 +86,9 @@ def init_prepare_confounds_wf(
     -------
     preprocessed_bold : :obj:`str`
     %(fmriprep_confounds_file)s
-    confounds_file : :obj:`str`
+    confounds_tsv : :obj:`str`
         The selected confounds, potentially including custom confounds, after dummy scan removal.
+    confounds_images : :obj:`list` of :obj:`str`
     confounds_metadata : :obj:`dict`
     %(dummy_scans)s
         If originally set to "auto", this output will have the actual number of dummy volumes.
@@ -99,16 +99,12 @@ def init_prepare_confounds_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
-    params = config.workflow.params
     dummy_scans = config.workflow.dummy_scans
-    random_seed = config.seeds.master
     motion_filter_type = config.workflow.motion_filter_type
     band_stop_min = config.workflow.band_stop_min
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
     fd_thresh = config.workflow.fd_thresh
-    omp_nthreads = config.nipype.omp_nthreads
 
     dummy_scans_str = ""
     if dummy_scans == "auto":
@@ -132,13 +128,13 @@ def init_prepare_confounds_wf(
         motion_filter_order=motion_filter_order,
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
-        head_radius=head_radius,
         TR=TR,
     )
 
     if (fd_thresh > 0) or exact_scans:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
+            head_radius=head_radius,
             fd_thresh=fd_thresh,
             exact_scans=exact_scans,
         )
@@ -146,9 +142,13 @@ def init_prepare_confounds_wf(
         censoring_description = ""
 
     confounds_description = describe_regression(
-        params=params,
-        custom_confounds_file=custom_confounds_file,
+        confounds_config=config.workflow.confounds_config,
         motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        TR=TR,
+        fd_thresh=fd_thresh,
     )
 
     workflow.__desc__ = (
@@ -160,37 +160,36 @@ def init_prepare_confounds_wf(
             fields=[
                 "name_source",
                 "preprocessed_bold",
+                "dummy_scans",
                 "motion_file",
                 "motion_json",
                 "confounds_files",
-                "dummy_scans",
             ],
         ),
         name="inputnode",
     )
     inputnode.inputs.dummy_scans = dummy_scans
-    inputnode.inputs.custom_confounds_file = custom_confounds_file
 
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold",
-                "confounds_tsv",
-                "confounds_images",
-                "confounds_metadata",
                 "dummy_scans",
                 "motion_file",
                 "motion_metadata",
                 "temporal_mask",
                 "temporal_mask_metadata",
+                "confounds_tsv",
+                "confounds_images",
+                "confounds_metadata",
             ],
         ),
         name="outputnode",
     )
 
-    generate_confounds = pe.Node(
-        GenerateConfounds(
-            params=params,
+    # Filter motion parameters and calculate FD for censoring
+    process_motion = pe.Node(
+        ProcessMotion(
             TR=TR,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
@@ -199,23 +198,42 @@ def init_prepare_confounds_wf(
             fd_thresh=fd_thresh,
             head_radius=head_radius,
         ),
+        name="process_motion",
+        mem_gb=1,
+        omp_nthreads=config.nipype.omp_nthreads,
+    )
+
+    workflow.connect([
+        (inputnode, process_motion, [
+            ("motion_file", "motion_file"),
+            ("motion_json", "motion_json"),
+        ]),
+        (process_motion, outputnode, [("motion_metadata", "motion_metadata")]),
+    ])  # fmt:skip
+
+    generate_confounds = pe.Node(
+        GenerateConfounds(
+            confounds_config=config.workflow.confounds_config,
+            TR=TR,
+            dataset_links=config.execution.dataset_links,
+            out_dir=config.execution.output_dir,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+        ),
         name="generate_confounds",
         mem_gb=2,
-        omp_nthreads=omp_nthreads,
+        omp_nthreads=config.nipype.omp_nthreads,
     )
 
     # Load and filter confounds
     workflow.connect([
         (inputnode, generate_confounds, [
             ("name_source", "in_file"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("fmriprep_confounds_json", "fmriprep_confounds_json"),
-            ("custom_confounds_file", "custom_confounds_file"),
+            ("confounds_files", "confounds_files"),
         ]),
-        (generate_confounds, outputnode, [
-            ("motion_metadata", "motion_metadata"),
-            ("confounds_metadata", "confounds_metadata"),
-        ]),
+        (generate_confounds, outputnode, [("confounds_metadata", "confounds_metadata")]),
     ])  # fmt:skip
 
     # A buffer node to hold either the original files or the files with the first N vols removed.
@@ -245,11 +263,13 @@ def init_prepare_confounds_wf(
                 ("preprocessed_bold", "bold_file"),
                 ("dummy_scans", "dummy_scans"),
             ]),
+            (process_motion, remove_dummy_scans, [
+                ("motion_file", "motion_file"),
+                ("temporal_mask", "temporal_mask"),
+            ]),
             (generate_confounds, remove_dummy_scans, [
                 ("confounds_tsv", "confounds_tsv"),
                 ("confounds_images", "confounds_images"),
-                ("motion_file", "motion_file"),
-                ("temporal_mask", "temporal_mask"),
             ]),
             (remove_dummy_scans, dummy_scan_buffer, [
                 ("bold_file_dropped_TR", "preprocessed_bold"),
@@ -266,11 +286,13 @@ def init_prepare_confounds_wf(
                 ("dummy_scans", "dummy_scans"),
                 ("preprocessed_bold", "preprocessed_bold"),
             ]),
+            (process_motion, dummy_scan_buffer, [
+                ("motion_file", "motion_file"),
+                ("temporal_mask", "temporal_mask"),
+            ]),
             (generate_confounds, dummy_scan_buffer, [
                 ("confounds_tsv", "confounds_tsv"),
                 ("confounds_images", "confounds_images"),
-                ("motion_file", "motion_file"),
-                ("temporal_mask", "temporal_mask"),
             ]),
         ])  # fmt:skip
 
@@ -278,20 +300,20 @@ def init_prepare_confounds_wf(
         (dummy_scan_buffer, outputnode, [
             ("preprocessed_bold", "preprocessed_bold"),
             ("dummy_scans", "dummy_scans"),
+            ("motion_file", "motion_file"),
             ("confounds_tsv", "confounds_tsv"),
             ("confounds_images", "confounds_images"),
-            ("motion_file", "motion_file"),
         ]),
     ])  # fmt:skip
 
     if config.workflow.dcan_correlation_lengths:
         random_censor = pe.Node(
-            RandomCensor(exact_scans=exact_scans, random_seed=random_seed),
+            RandomCensor(exact_scans=exact_scans, random_seed=config.seeds.master),
             name="random_censor",
         )
 
         workflow.connect([
-            (generate_confounds, random_censor, [
+            (process_motion, random_censor, [
                 ("temporal_mask_metadata", "temporal_mask_metadata"),
             ]),
             (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
@@ -302,13 +324,11 @@ def init_prepare_confounds_wf(
         ])  # fmt:skip
     else:
         workflow.connect([
-            (generate_confounds, outputnode, [
-                ("temporal_mask_metadata", "temporal_mask_metadata"),
-            ]),
+            (process_motion, outputnode, [("temporal_mask_metadata", "temporal_mask_metadata")]),
             (dummy_scan_buffer, outputnode, [("temporal_mask", "temporal_mask")]),
         ])  # fmt:skip
 
-    if params != "none":
+    if config.workflow.confounds_config is not None:
         plot_design_matrix = pe.Node(
             niu.Function(
                 input_names=["design_matrix", "temporal_mask"],
@@ -319,25 +339,23 @@ def init_prepare_confounds_wf(
         )
 
         workflow.connect([
-            (dummy_scan_buffer, plot_design_matrix, [("confounds_file", "design_matrix")]),
+            (dummy_scan_buffer, plot_design_matrix, [("confounds_tsv", "design_matrix")]),
             (outputnode, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
         ])  # fmt:skip
 
-        ds_design_matrix_plot = pe.Node(
+        ds_report_design_matrix = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["space", "res", "den", "desc"],
-                datatype="figures",
                 suffix="design",
                 extension=".svg",
             ),
-            name="ds_design_matrix_plot",
+            name="ds_report_design_matrix",
             run_without_submitting=False,
         )
 
         workflow.connect([
-            (inputnode, ds_design_matrix_plot, [("name_source", "source_file")]),
-            (plot_design_matrix, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
+            (inputnode, ds_report_design_matrix, [("name_source", "source_file")]),
+            (plot_design_matrix, ds_report_design_matrix, [("design_matrix_figure", "in_file")]),
         ])  # fmt:skip
 
     censor_report = pe.Node(
@@ -349,20 +367,18 @@ def init_prepare_confounds_wf(
         ),
         name="censor_report",
         mem_gb=2,
-        n_procs=omp_nthreads,
+        omp_nthreads=config.nipype.omp_nthreads,
     )
 
     workflow.connect([
         # use the full version of the confounds, for dummy scans in the figure
-        (generate_confounds, censor_report, [("motion_file", "motion_file")]),
+        (process_motion, censor_report, [("motion_file", "motion_file")]),
         (dummy_scan_buffer, censor_report, [("dummy_scans", "dummy_scans")]),
         (outputnode, censor_report, [("temporal_mask", "temporal_mask")]),
     ])  # fmt:skip
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
-            datatype="figures",
             desc="censoring",
             suffix="motion",
             extension=".svg",
@@ -529,7 +545,6 @@ def init_denoise_bold_wf(TR, mem_gb, name="denoise_bold_wf"):
     bandpass_filter = config.workflow.bandpass_filter
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
-    omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """\
 
@@ -584,8 +599,9 @@ approach.
             fields=[
                 "preprocessed_bold",
                 "temporal_mask",
+                "confounds_tsv",
+                "confounds_images",
                 "mask",  # only used for NIFTIs
-                "confounds_file",
             ],
         ),
         name="inputnode",
@@ -613,13 +629,14 @@ approach.
         ),
         name="regress_and_filter_bold",
         mem_gb=mem_gb["timeseries"],
-        n_procs=omp_nthreads,
+        omp_nthreads=config.nipype.omp_nthreads,
     )
 
     workflow.connect([
         (inputnode, regress_and_filter_bold, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("confounds_file", "confounds_file"),
+            ("confounds_tsv", "confounds_tsv"),
+            ("confounds_images", "confounds_images"),
             ("temporal_mask", "temporal_mask"),
         ]),
         (regress_and_filter_bold, outputnode, [
@@ -633,7 +650,7 @@ approach.
         Censor(),
         name="censor_interpolated_data",
         mem_gb=mem_gb["resampled"],
-        omp_nthreads=omp_nthreads,
+        omp_nthreads=config.nipype.omp_nthreads,
     )
 
     workflow.connect([

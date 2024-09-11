@@ -245,11 +245,15 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
             "but without any additional censoring."
         ),
     )
-    confounds_file = traits.Either(
+    confounds_tsv = traits.Either(
         File(exists=True),
         None,
         mandatory=True,
         desc="A tab-delimited file containing the confounds to remove from the BOLD data.",
+    )
+    confounds_images = traits.List(
+        File(exists=True),
+        desc="A list of 4D images containing voxelwise confounds.",
     )
     temporal_mask = File(
         exists=True,
@@ -308,18 +312,25 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
         sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
         confounds_df = None
-        if self.inputs.confounds_file:
-            confounds_df = pd.read_table(self.inputs.confounds_file)
+        if self.inputs.confounds_tsv:
+            confounds_df = pd.read_table(self.inputs.confounds_tsv)
             if confounds_df.shape[0] != n_volumes:
                 raise ValueError(
                     f"Confounds file has {confounds_df.shape[0]} rows, "
                     f"but BOLD data has {n_volumes} volumes."
                 )
 
+            # Drop all-NaN columns representing voxel-wise confounds
+            confounds_df = confounds_df.dropna(axis=1, how="all")
+
+        voxelwise_confounds = None
+        if self.inputs.confounds_images:
+            voxelwise_confounds = [read_ndata(f) for f in self.inputs.confounds_images]
+
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds=confounds_df,
-            voxelwise_confounds=None,
+            voxelwise_confounds=voxelwise_confounds,
             sample_mask=sample_mask,
             low_pass=low_pass,
             high_pass=high_pass,
@@ -385,18 +396,27 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         sample_mask = ~censoring_df["framewise_displacement"].to_numpy().astype(bool)
 
         confounds_df = None
-        if self.inputs.confounds_file:
-            confounds_df = pd.read_table(self.inputs.confounds_file)
+        if self.inputs.confounds_tsv:
+            confounds_df = pd.read_table(self.inputs.confounds_tsv)
             if confounds_df.shape[0] != n_volumes:
                 raise ValueError(
                     f"Confounds file has {confounds_df.shape[0]} rows, "
                     f"but BOLD data has {n_volumes} volumes."
                 )
 
+            # Drop all-NaN columns representing voxel-wise confounds
+            confounds_df = confounds_df.dropna(axis=1, how="all")
+
+        voxelwise_confounds = None
+        if self.inputs.confounds_images:
+            voxelwise_confounds = []
+            for f in self.inputs.confounds_images:
+                voxelwise_confounds.append(masking.apply_mask(imgs=f, mask_img=self.inputs.mask))
+
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
             confounds=confounds_df,
-            voxelwise_confounds=None,
+            voxelwise_confounds=voxelwise_confounds,
             sample_mask=sample_mask,
             low_pass=low_pass,
             high_pass=high_pass,

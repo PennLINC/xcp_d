@@ -10,7 +10,6 @@ from num2words import num2words
 
 from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
-from xcp_d.utils.confounds import get_custom_confounds
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.workflows.bold.connectivity import init_functional_connectivity_nifti_wf
@@ -144,7 +143,6 @@ def init_postprocess_nifti_wf(
     workflow = Workflow(name=name)
 
     bandpass_filter = config.workflow.bandpass_filter
-    custom_confounds_folder = config.execution.custom_confounds
     dummy_scans = config.workflow.dummy_scans
     despike = config.workflow.despike
     atlases = config.execution.atlases
@@ -158,14 +156,14 @@ def init_postprocess_nifti_wf(
                 "bold_file",
                 "boldref",
                 "bold_mask",
-                "custom_confounds_file",
                 "template_to_anat_xfm",
                 "t1w",
                 "t2w",
                 "anat_native",
                 "anat_brainmask",
-                "fmriprep_confounds_file",
-                "fmriprep_confounds_json",
+                "motion_file",
+                "motion_json",
+                "confounds_files",
                 "dummy_scans",
                 # if parcellation is performed
                 "atlases",
@@ -179,19 +177,13 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
     inputnode.inputs.bold_mask = run_data["boldmask"]
-    inputnode.inputs.motion = run_data["motion"]
+    inputnode.inputs.motion_file = run_data["motion"]
+    inputnode.inputs.motion_json = run_data["motion_json"]
+    inputnode.inputs.confounds_files = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
     inputnode.inputs.atlases = atlases
 
     # Load confounds according to the config
-
-    # Load custom confounds
-    # We need to run this function directly to access information in the confounds that is
-    # used for the boilerplate.
-    custom_confounds_file = get_custom_confounds(
-        custom_confounds_folder,
-        run_data["confounds"],
-    )
 
     workflow.__desc__ = f"""\
 
@@ -205,8 +197,7 @@ the following post-processing was performed.
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "motion",
-                "filtered_motion",
+                "motion_file",
                 "temporal_mask",
                 "denoised_bold",
                 "denoised_interpolated_bold",
@@ -248,18 +239,18 @@ the following post-processing was performed.
         TR=TR,
         exact_scans=exact_scans,
         head_radius=head_radius,
-        custom_confounds_file=custom_confounds_file,
     )
 
     workflow.connect([
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
-            ("motion", "inputnode.motion"),
-            ("motion_json", "inputnode.fmriprep_confounds_json"),
+            ("motion_file", "inputnode.motion_file"),
+            ("motion_json", "inputnode.motion_json"),
+            ("confounds_files", "inputnode.confounds_files"),
         ]),
         (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
         (prepare_confounds_wf, outputnode, [
-            ("outputnode.fmriprep_confounds_file", "fmriprep_confounds_file"),
+            ("outputnode.motion_file", "motion_file"),
             ("outputnode.preprocessed_bold", "preprocessed_bold"),
         ]),
     ])  # fmt:skip
@@ -270,7 +261,8 @@ the following post-processing was performed.
         (downcast_data, denoise_bold_wf, [("bold_mask", "inputnode.mask")]),
         (prepare_confounds_wf, denoise_bold_wf, [
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-            ("outputnode.confounds_file", "inputnode.confounds_file"),
+            ("outputnode.confounds_tsv", "inputnode.confounds_tsv"),
+            ("outputnode.confounds_images", "inputnode.confounds_images"),
         ]),
         (denoise_bold_wf, outputnode, [
             ("outputnode.denoised_interpolated_bold", "denoised_interpolated_bold"),
@@ -337,9 +329,8 @@ the following post-processing was performed.
         (prepare_confounds_wf, qc_report_wf, [
             ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),
             ("outputnode.dummy_scans", "inputnode.dummy_scans"),
-            ("outputnode.fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
+            ("outputnode.motion_file", "inputnode.motion_file"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-            ("outputnode.filtered_motion", "inputnode.filtered_motion"),
         ]),
         (denoise_bold_wf, qc_report_wf, [
             ("outputnode.denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
@@ -351,7 +342,6 @@ the following post-processing was performed.
         name_source=bold_file,
         source_metadata=run_data["bold_metadata"],
         exact_scans=exact_scans,
-        custom_confounds_file=custom_confounds_file,
     )
 
     workflow.connect([
@@ -360,9 +350,9 @@ the following post-processing was performed.
             ("atlas_files", "inputnode.atlas_files"),
         ]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
-            ("outputnode.confounds_file", "inputnode.confounds_file"),
+            ("outputnode.confounds_tsv", "inputnode.confounds_tsv"),
             ("outputnode.confounds_metadata", "inputnode.confounds_metadata"),
-            ("outputnode.filtered_motion", "inputnode.filtered_motion"),
+            ("outputnode.motion_file", "inputnode.motion_file"),
             ("outputnode.motion_metadata", "inputnode.motion_metadata"),
             ("outputnode.temporal_mask", "inputnode.temporal_mask"),
             ("outputnode.temporal_mask_metadata", "inputnode.temporal_mask_metadata"),

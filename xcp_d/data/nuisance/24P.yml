@@ -1,11 +1,11 @@
 name: 24P
 description: |
     In total, 24 nuisance regressors were selected from the preprocessing confounds,
-    according to the '24P' strategy.
+    according to the '24P' strategy [@benchmarkp;@satterthwaite_2013].
     These nuisance regressors included
     six motion parameters with their temporal derivatives,
     and their quadratic expansion of those six motion parameters and their
-    temporal derivatives [@benchmarkp;@satterthwaite_2013].
+    temporal derivatives.
 confounds:
     preproc_confounds:
         dataset: preprocessed

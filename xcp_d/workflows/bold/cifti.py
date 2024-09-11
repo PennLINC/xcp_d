@@ -147,11 +147,10 @@ def init_postprocess_cifti_wf(
             fields=[
                 "bold_file",
                 "boldref",
-                "custom_confounds_file",
                 "t1w",
                 "t2w",
-                "fmriprep_confounds_file",
-                "fmriprep_confounds_json",
+                "motion_file",
+                "motion_json",
                 "dummy_scans",
                 # if parcellation is performed
                 "atlases",
@@ -232,18 +231,16 @@ the following post-processing was performed.
         TR=TR,
         exact_scans=exact_scans,
         head_radius=head_radius,
-        custom_confounds_file=custom_confounds_file,
     )
 
     workflow.connect([
         (inputnode, prepare_confounds_wf, [
             ("bold_file", "inputnode.name_source"),
-            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
-            ("fmriprep_confounds_json", "inputnode.fmriprep_confounds_json"),
+            ("motion_file", "inputnode.motion_file"),
+            ("motion_json", "inputnode.motion_json"),
+            ("confounds_files", "inputnode.confounds_files"),
         ]),
-        (downcast_data, prepare_confounds_wf, [
-            ("bold_file", "inputnode.preprocessed_bold"),
-        ]),
+        (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
         (prepare_confounds_wf, outputnode, [
             ("outputnode.fmriprep_confounds_file", "fmriprep_confounds_file"),
             ("outputnode.preprocessed_bold", "preprocessed_bold"),

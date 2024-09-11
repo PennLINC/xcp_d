@@ -360,13 +360,7 @@ class RandomCensor(SimpleInterface):
         return runtime
 
 
-class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        desc="BOLD file after denoising, interpolation, and filtering",
-    )
-    params = traits.Str(mandatory=True, desc="Parameter set for regression.")
+class _ProcessMotionInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     fd_thresh = traits.Float(
         mandatory=False,
@@ -379,16 +373,10 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="fMRIPrep confounds tsv.",
     )
-    fmriprep_confounds_json = File(
+    motion_json = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds json.",
-    )
-    custom_confounds_file = traits.Either(
-        None,
-        File(exists=True),
-        mandatory=True,
-        desc="Custom confounds tsv.",
     )
     motion_filter_type = traits.Either(
         None,
@@ -414,7 +402,7 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
     )
 
 
-class _GenerateConfoundsOutputSpec(TraitedSpec):
+class _ProcessMotionOutputSpec(TraitedSpec):
     motion_file = File(
         exists=True,
         desc="The filtered motion parameters.",
@@ -432,14 +420,11 @@ class _GenerateConfoundsOutputSpec(TraitedSpec):
     )
 
 
-class GenerateConfounds(SimpleInterface):
-    """Load, consolidate, and filter confounds.
+class ProcessMotion(SimpleInterface):
+    """Load and filter motion regressors in order to generate a temporal mask."""
 
-    Also, generate the temporal mask.
-    """
-
-    input_spec = _GenerateConfoundsInputSpec
-    output_spec = _GenerateConfoundsOutputSpec
+    input_spec = _ProcessMotionInputSpec
+    output_spec = _ProcessMotionOutputSpec
 
     def _run_interface(self, runtime):
         band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
@@ -545,6 +530,316 @@ class GenerateConfounds(SimpleInterface):
         }
         self._results["temporal_mask_metadata"] = outliers_metadata
 
+        return runtime
+
+
+class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Preprocessed BOLD file",
+    )
+    TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
+    confounds_dict = traits.Dict(
+        mandatory=True,
+        desc=(
+            "Dictionary of confound names and paths to corresponding files. "
+            "Keys are confound names, values are dictionaries with keys 'file' and 'metadata'."
+        ),
+    )
+    confound_config = traits.Dict(
+        mandatory=True,
+        desc="Configuration file for confounds.",
+    )
+    dataset_links = traits.Dict(
+        mandatory=True,
+        desc="Dataset links for the XCP-D run.",
+    )
+    out_dir = traits.Str(
+        mandatory=True,
+        desc=(
+            "Output directory for the XCP-D run. "
+            "Not used to write out any files- just used for dataset links."
+        ),
+    )
+    motion_filter_type = traits.Either(
+        None,
+        traits.Str,
+        mandatory=True,
+    )
+    motion_filter_order = traits.Either(
+        None,
+        traits.Int,
+        mandatory=True,
+    )
+    band_stop_min = traits.Either(
+        None,
+        traits.Float,
+        mandatory=True,
+        desc="Lower frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
+    )
+    band_stop_max = traits.Either(
+        None,
+        traits.Float,
+        mandatory=True,
+        desc="Upper frequency for the band-stop motion filter, in breaths-per-minute (bpm).",
+    )
+
+
+class _GenerateConfoundsOutputSpec(TraitedSpec):
+    confounds_tsv = File(
+        exists=True,
+        desc="The aggregated confounds in a tabular file.",
+    )
+    confounds_images = traits.List(
+        File(exists=True),
+        desc="The aggregated confounds in image files.",
+    )
+    confounds_metadata = traits.Dict(desc="Metadata associated with the confounds output.")
+
+
+class GenerateConfounds(SimpleInterface):
+    """Load confounds according to a configuration file.
+
+    This function basically checks that each confounds file has the right number of volumes,
+    selects the requisite columns from each input tabular file, and puts those columns into a
+    single tabular file.
+
+    It also applies the motion filter to motion-based regressors, if any are detected.
+    NOTE: This interface identifies motion-based regressors based on their names.
+    If the names of the motion-based regressors are not as expected,
+    the motion filter will not be applied.
+
+    Parameters
+    ----------
+    confounds_dict : dict
+        Dictionary of confound names and paths to corresponding files.
+        Keys are confound names, values are dictionaries with keys "file" and "metadata".
+    confound_config : dict
+        Configuration file for confounds.
+    n_volumes : int
+        Number of volumes in the fMRI data.
+
+    Returns
+    -------
+    confounds_tsv : str or None
+        Path to the TSV file containing combined tabular confounds.
+        None if no tabular confounds are present.
+    confounds_images : list of str
+        List of paths to the voxelwise confounds images.
+    """
+
+    input_spec = _GenerateConfoundsInputSpec
+    output_spec = _GenerateConfoundsOutputSpec
+
+    def _run_interface(self, runtime):
+        import re
+
+        import nibabel as nb
+        import pandas as pd
+
+        from xcp_d.utils.bids import make_bids_uri
+        from xcp_d.utils.confounds import filter_motion, volterra
+
+        if self.inputs.confounds_dict is None:
+            return None, [], {}
+
+        in_img = nb.load(self.inputs.in_file)
+        if in_img.ndim == 2:  # CIFTI
+            n_volumes = in_img.shape[0]
+        else:  # NIfTI
+            n_volumes = in_img.shape[3]
+
+        new_confound_df = pd.DataFrame(index=np.arange(n_volumes))
+
+        confounds_images = []
+        confounds_metadata = {}
+        confound_files = []
+        for confound_name, confound_info in self.inputs.confounds_dict.items():
+            confound_file = confound_info["file"]
+            confound_files.append(confound_file)
+            confound_metadata = confound_info["metadata"]
+            confound_params = self.inputs.confound_config["confounds"][confound_name]
+            if "columns" in confound_params:  # Tabular confounds
+                confound_df = pd.read_table(confound_file)
+                if confound_df.shape[0] != n_volumes:
+                    raise ValueError(
+                        f"Number of volumes in confounds file ({confound_df.shape[0]}) "
+                        f"does not match number of volumes in the fMRI data ({n_volumes})."
+                    )
+
+                available_columns = confound_df.columns.tolist()
+                required_columns = confound_params["columns"]
+                for column in required_columns:
+                    if column.startswith("^"):
+                        # Regular expression
+                        found_columns = [
+                            col_name
+                            for col_name in available_columns
+                            if re.match(column, col_name, re.IGNORECASE)
+                        ]
+                        if not found_columns:
+                            raise ValueError(
+                                f"No columns found matching regular expression '{column}'"
+                            )
+
+                        for found_column in found_columns:
+                            if found_column in new_confound_df:
+                                raise ValueError(
+                                    f"Duplicate column name ({found_column}) in confounds "
+                                    "configuration."
+                                )
+
+                            new_confound_df[found_column] = confound_df[found_column]
+                    else:
+                        if column not in confound_df.columns:
+                            raise ValueError(f"Column '{column}' not found in confounds file.")
+
+                        if column in new_confound_df:
+                            raise ValueError(
+                                f"Duplicate column name ({column}) in confounds configuration."
+                            )
+
+                        new_confound_df[column] = confound_df[column]
+
+                # Collect column metadata
+                for column in new_confound_df.columns:
+                    if column in confound_metadata:
+                        confounds_metadata[column] = confound_metadata[column]
+                    else:
+                        confounds_metadata[column] = {}
+
+                    confounds_metadata[column]["Sources"] = make_bids_uri(
+                        in_files=[confound_file],
+                        dataset_links=self.inputs.dataset_links,
+                        out_dir=self.inputs.out_dir,
+                    )
+            else:  # Voxelwise confounds
+                confound_img = nb.load(confound_file)
+                if confound_img.ndim == 2:  # CIFTI
+                    n_volumes_check = confound_img.shape[0]
+                else:  # NIfTI
+                    n_volumes_check = confound_img.shape[3]
+
+                if n_volumes_check != n_volumes:
+                    raise ValueError(
+                        f"Number of volumes in confounds image ({n_volumes_check}) "
+                        f"does not match number of volumes in the fMRI data ({n_volumes})."
+                    )
+
+                confounds_images.append(confound_file)
+
+                # Collect image metadata
+                new_confound_df.loc[:, confound_name] = np.nan  # fill with NaNs as a placeholder
+                confounds_metadata[confound_name] = confound_metadata
+                confounds_metadata[confound_name]["Sources"] = make_bids_uri(
+                    in_files=[confound_file],
+                    dataset_links=self.inputs.dataset_links,
+                    out_dir=self.inputs.out_dir,
+                )
+                confounds_metadata[confound_name]["Description"] = (
+                    "A placeholder column representing a voxel-wise confound. "
+                    "The actual confound data are stored in an imaging file."
+                )
+
+        confounds_metadata["Sources"] = make_bids_uri(
+            in_files=confound_files,
+            dataset_links=self.inputs.dataset_links,
+            out_dir=self.inputs.out_dir,
+        )
+
+        if self.inputs.motion_filter_type:
+            # Filter the motion parameters
+            # 1. Pop out the 6 basic motion parameters
+            # 2. Filter them
+            # 3. Calculate the Volterra expansion of the filtered parameters
+            # 4. For each selected motion confound, remove that column and replace with the
+            #    filtered version. Include `_filtered` in the new column name.
+            motion_params = ["trans_x", "trans_y", "tran_z", "rot_x", "rot_y", "rot_z"]
+            motion_based_params = [
+                c for c in new_confound_df.columns if any(c.startswith(p) for p in motion_params)
+            ]
+            # Motion-based regressors detected
+            if len(motion_based_params):
+                # Check the motion filter parameters
+                band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
+                    motion_filter_type=self.inputs.motion_filter_type,
+                    band_stop_min=self.inputs.band_stop_min,
+                    band_stop_max=self.inputs.band_stop_max,
+                    TR=self.inputs.TR,
+                )
+
+                # Filter the base motion parameters and calculate the Volterra expansion
+                base_motion_columns = [c for c in new_confound_df.columns if c in motion_params]
+                motion_df = new_confound_df[base_motion_columns]
+                motion_df.values = filter_motion(
+                    data=motion_df.to_numpy(),
+                    TR=self.inputs.TR,
+                    motion_filter_type=self.inputs.motion_filter_type,
+                    band_stop_min=band_stop_min_adjusted,
+                    band_stop_max=band_stop_max_adjusted,
+                    motion_filter_order=self.inputs.motion_filter_order,
+                )
+                motion_df = volterra(motion_df)
+
+                # Patch in the filtered motion parameters to the confounds DataFrame
+                overlapping_columns = [
+                    c for c in new_confound_df.columns if c in motion_df.columns
+                ]
+                motion_unfiltered = [
+                    c for c in motion_based_params if c not in overlapping_columns
+                ]
+                if motion_unfiltered:
+                    raise ValueError(
+                        f"Motion-based regressors {motion_unfiltered} were not filtered."
+                    )
+
+                # Select the relevant filtered motion parameter columns
+                motion_df = motion_df[overlapping_columns]
+                motion_df.columns = [f"{c}_filtered" for c in motion_df.columns]
+
+                # Replace the original motion columns with the filtered versions
+                new_confound_df.drop(columns=overlapping_columns, inplace=True)
+                new_confound_df = pd.concat([new_confound_df, motion_df], axis=1)
+
+                # Replace the original motion metadata with the filtered versions
+                for column in overlapping_columns:
+                    col_metadata = confounds_metadata[column]
+
+                    if self.inputs.motion_filter_type == "lp":
+                        filters = col_metadata.get("SoftwareFilters", {})
+                        filters["Butterworth low-pass filter"] = {
+                            "cutoff": band_stop_min_adjusted / 60,
+                            "order": self.inputs.motion_filter_order,
+                            "cutoff units": "Hz",
+                            "function": "scipy.signal.filtfilt",
+                        }
+                        col_metadata["SoftwareFilters"] = filters
+
+                    elif self.inputs.motion_filter_type == "notch":
+                        filters = col_metadata.get("SoftwareFilters", {})
+                        filters["IIR notch digital filter"] = {
+                            "cutoff": [
+                                band_stop_max_adjusted / 60,
+                                band_stop_min_adjusted / 60,
+                            ],
+                            "order": self.inputs.motion_filter_order,
+                            "cutoff units": "Hz",
+                            "function": "scipy.signal.filtfilt",
+                        }
+                        col_metadata["SoftwareFilters"] = filters
+
+                    confounds_metadata[f"{column}_filtered"] = col_metadata
+                    confounds_metadata.pop(column, None)
+
+        self._results["confounds_tsv"] = fname_presuffix(
+            "desc-confounds_timeseries.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        new_confound_df.to_csv(self._results["confounds_tsv"], sep="\t", index=False)
+        self._results["confounds_images"] = confounds_images
+        self._results["confounds_metadata"] = confounds_metadata
         return runtime
 
 
