@@ -555,7 +555,7 @@ class _GenerateConfoundsInputSpec(BaseInterfaceInputSpec):
             "Keys are confound names, values are dictionaries with keys 'file' and 'metadata'."
         ),
     )
-    confound_config = traits.Dict(
+    confounds_config = traits.Dict(
         mandatory=True,
         desc="Configuration file for confounds.",
     )
@@ -623,7 +623,7 @@ class GenerateConfounds(SimpleInterface):
     confounds_files : dict
         Dictionary of confound names and paths to corresponding files.
         Keys are confound names, values are dictionaries with keys "file" and "metadata".
-    confound_config : dict
+    confounds_config : dict
         Configuration file for confounds.
     n_volumes : int
         Number of volumes in the fMRI data.
@@ -667,7 +667,7 @@ class GenerateConfounds(SimpleInterface):
             confound_file = confound_info["file"]
             confound_files.append(confound_file)
             confound_metadata = confound_info["metadata"]
-            confound_params = self.inputs.confound_config["confounds"][confound_name]
+            confound_params = self.inputs.confounds_config["confounds"][confound_name]
             if "columns" in confound_params:  # Tabular confounds
                 confound_df = pd.read_table(confound_file)
                 if confound_df.shape[0] != n_volumes:

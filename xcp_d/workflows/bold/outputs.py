@@ -90,7 +90,6 @@ def init_postproc_derivatives_wf(
     bpf_order = config.workflow.bpf_order
     fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
-    params = config.workflow.params
     atlases = config.execution.atlases
     file_format = config.workflow.file_format
     output_dir = config.execution.output_dir
@@ -150,7 +149,6 @@ def init_postproc_derivatives_wf(
 
     # Create dictionary of basic information
     cleaned_data_dictionary = {
-        "NuisanceParameters": params,
         **source_metadata,
     }
     software_filters = None
@@ -200,7 +198,13 @@ def init_postproc_derivatives_wf(
     ])  # fmt:skip
 
     merge_dense_src = pe.Node(
-        niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if params != "none" else 0))),
+        niu.Merge(
+            numinputs=(
+                1
+                + (1 if fd_thresh > 0 else 0)
+                + (1 if config.execution.confounds_config != "none" else 0)
+            ),
+        ),
         name="merge_dense_src",
         run_without_submitting=True,
         mem_gb=1,
@@ -211,7 +215,14 @@ def init_postproc_derivatives_wf(
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
-                dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
+                dismiss_entities=[
+                    "segmentation",
+                    "den",
+                    "res",
+                    "space",
+                    "cohort",
+                    "desc",
+                ],
                 suffix="outliers",
                 extension=".tsv",
                 source_file=name_source,
@@ -234,7 +245,7 @@ def init_postproc_derivatives_wf(
             ]),
         ])  # fmt:skip
 
-    if params != "none":
+    if config.execution.confounds_config is not None:
         confounds_src = pe.Node(
             niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0))),
             name="confounds_src",

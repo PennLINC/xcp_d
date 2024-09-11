@@ -431,7 +431,7 @@ def init_qc_report_wf(
 
         # Generate preprocessing and postprocessing carpet plots.
         make_qc_plots_es = pe.Node(
-            QCPlotsES(TR=TR, standardize=config.workflow.params == "none"),
+            QCPlotsES(TR=TR, standardize=config.execution.confounds_config is None),
             name="make_qc_plots_es",
             mem_gb=2,
             n_procs=omp_nthreads,

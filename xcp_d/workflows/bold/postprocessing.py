@@ -217,7 +217,7 @@ def init_prepare_confounds_wf(
             confounds_config=yaml.safe_load(config.execution.confounds_config.read_text()),
             TR=TR,
             dataset_links=config.execution.dataset_links,
-            out_dir=config.execution.output_dir,
+            out_dir=str(config.execution.output_dir),
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
             motion_filter_type=motion_filter_type,
