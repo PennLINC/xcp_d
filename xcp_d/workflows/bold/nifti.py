@@ -218,7 +218,7 @@ the following post-processing was performed.
         ConvertTo32(),
         name="downcast_data",
         mem_gb=mem_gbx["timeseries"],
-        n_procs=omp_nthreads,
+        omp_nthreads=omp_nthreads,
     )
 
     workflow.connect([
@@ -249,7 +249,6 @@ the following post-processing was performed.
         ]),
         (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
         (prepare_confounds_wf, outputnode, [
-            ("outputnode.motion_file", "motion_file"),
             ("outputnode.preprocessed_bold", "preprocessed_bold"),
         ]),
     ])  # fmt:skip

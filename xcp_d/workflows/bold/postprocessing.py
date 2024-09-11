@@ -449,7 +449,7 @@ def init_despike_wf(TR, name="despike_wf"):
         DespikePatch(outputtype="NIFTI_GZ", args="-nomask -NEW"),
         name="despike3d",
         mem_gb=4,
-        n_procs=omp_nthreads,
+        omp_nthreads=omp_nthreads,
     )
 
     if file_format == "cifti":
@@ -463,7 +463,7 @@ and converted back to CIFTI format.
             CiftiConvert(target="to"),
             name="convert_to_nifti",
             mem_gb=4,
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
         )
         workflow.connect([
             (inputnode, convert_to_nifti, [("bold_file", "in_file")]),
@@ -475,7 +475,7 @@ and converted back to CIFTI format.
             CiftiConvert(target="from", TR=TR),
             name="convert_to_cifti",
             mem_gb=4,
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
         )
         workflow.connect([
             (inputnode, convert_to_cifti, [("bold_file", "cifti_template")]),
@@ -773,7 +773,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
             ),
             name="cifti_smoothing",
             mem_gb=mem_gb["timeseries"],
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
         )
 
         # Always check the intent code in CiftiSmooth's output file
@@ -781,7 +781,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
             FixCiftiIntent(),
             name="fix_cifti_intent",
             mem_gb=1,
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
         )
         workflow.connect([
             (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
@@ -797,7 +797,7 @@ The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str
             Smooth(fwhm=smoothing),  # FWHM = kernel size
             name="nifti_smoothing",
             mem_gb=mem_gb["timeseries"],
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
         )
         workflow.connect([
             (smooth_data, outputnode, [("out_file", "smoothed_bold")]),

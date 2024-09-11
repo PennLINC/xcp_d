@@ -73,7 +73,7 @@ def init_postproc_derivatives_wf(
         smoothed alff
     reho
     parcellated_reho
-    confounds_file
+    confounds_tsv
     confounds_metadata
     motion_file
     motion_metadata
@@ -101,7 +101,7 @@ def init_postproc_derivatives_wf(
                 "preproc_confounds_file",
                 # postprocessed outputs
                 "atlas_files",  # for Sources
-                "confounds_file",
+                "confounds_tsv",
                 "confounds_metadata",
                 "coverage",
                 "timeseries",
@@ -274,7 +274,7 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([
             (inputnode, ds_confounds, [
-                ("confounds_file", "in_file"),
+                ("confounds_tsv", "in_file"),
                 ("confounds_metadata", "meta_dict"),
             ]),
             (confounds_src, ds_confounds, [("out", "Sources")]),
