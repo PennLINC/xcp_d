@@ -407,7 +407,7 @@ class _ProcessMotionOutputSpec(TraitedSpec):
         exists=True,
         desc="The filtered motion parameters.",
     )
-    motion_metadata = traits.Dict(desc="Metadata associated with the filtered_motion output.")
+    motion_metadata = traits.Dict(desc="Metadata associated with the motion_file output.")
     temporal_mask = File(
         exists=True,
         desc=(

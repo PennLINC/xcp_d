@@ -92,7 +92,7 @@ def init_prepare_confounds_wf(
     confounds_metadata : :obj:`dict`
     %(dummy_scans)s
         If originally set to "auto", this output will have the actual number of dummy volumes.
-    %(filtered_motion)s
+    motion_file
     motion_metadata : :obj:`dict`
     %(temporal_mask)s
     temporal_mask_metadata : :obj:`dict`

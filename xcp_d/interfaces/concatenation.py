@@ -369,7 +369,7 @@ class ConcatenateInputs(SimpleInterface):
         }
 
         run_index, n_volumes = [], 0
-        for run_motion in self.inputs.filtered_motion[:-1]:
+        for run_motion in self.inputs.motion_file[:-1]:
             n_volumes = n_volumes + pd.read_table(run_motion).shape[0]
             run_index.append(n_volumes)
 

@@ -183,23 +183,21 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         ]),
     ])  # fmt:skip
 
-    ds_filtered_motion = pe.Node(
+    ds_motion_file = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
             dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
             suffix="motion",
             extension=".tsv",
         ),
-        name="ds_filtered_motion",
+        name="ds_motion_file",
         run_without_submitting=True,
         mem_gb=1,
     )
     workflow.connect([
-        (clean_name_source, ds_filtered_motion, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_filtered_motion, [("motion_file", "in_file")]),
-        (filter_runs, ds_filtered_motion, [
-            (("motion_file", _make_xcpd_uri, output_dir), "Sources"),
-        ]),
+        (clean_name_source, ds_motion_file, [("name_source", "source_file")]),
+        (concatenate_inputs, ds_motion_file, [("motion_file", "in_file")]),
+        (filter_runs, ds_motion_file, [(("motion_file", _make_xcpd_uri, output_dir), "Sources")]),
     ])  # fmt:skip
 
     if fd_thresh > 0:

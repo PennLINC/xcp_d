@@ -430,9 +430,9 @@ despike : :obj:`bool`
 """
 
 docdict[
-    "filtered_motion"
+    "motion_file"
 ] = """
-filtered_motion : :obj:`str`
+motion_file : :obj:`str`
     Framewise displacement timeseries, potentially after bandstop or low-pass filtering.
     This is a TSV file with one column: 'framewise_displacement'.
 """

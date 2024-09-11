@@ -28,9 +28,7 @@ from nipype.interfaces.base import (
 from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
 from templateflow.api import get as get_template
 
-from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import compute_fd
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
 from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata
@@ -258,7 +256,10 @@ class QCPlots(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        preproc_fd_timeseries = motion_df["framewise_displacement"].values
+        if "framewise_displacement_filtered" in motion_df.columns:
+            preproc_fd_timeseries = motion_df["framewise_displacement_filtered"].values
+        else:
+            preproc_fd_timeseries = motion_df["framewise_displacement"].values
 
         # Determine number of dummy volumes and load temporal mask
         if isdefined(self.inputs.temporal_mask):

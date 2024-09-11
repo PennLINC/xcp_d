@@ -323,7 +323,7 @@ class LINCQC(SimpleInterface):
                     "This value includes high-motion outliers, but not dummy volumes. "
                     "FD is calculated according to the Power definition."
                 ),
-                "Units": "mm / volume",
+                "Units": "mm",
                 "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
             },
             "mean_fd_post_censoring": {
@@ -333,7 +333,7 @@ class LINCQC(SimpleInterface):
                     "This value does not include high-motion outliers or dummy volumes. "
                     "FD is calculated according to the Power definition."
                 ),
-                "Units": "mm / volume",
+                "Units": "mm",
                 "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
             },
             "mean_relative_rms": {
@@ -445,7 +445,7 @@ class LINCQC(SimpleInterface):
 
 
 class _ABCCQCInputSpec(BaseInterfaceInputSpec):
-    filtered_motion = File(
+    motion_file = File(
         exists=True,
         mandatory=True,
         desc="",
@@ -487,15 +487,18 @@ class ABCCQC(SimpleInterface):
         TR = self.inputs.TR
 
         self._results["qc_file"] = fname_presuffix(
-            self.inputs.filtered_motion,
+            self.inputs.motion_file,
             suffix="qc_bold.hdf5",
             newpath=runtime.cwd,
             use_ext=False,
         )
 
         # Load filtered framewise_displacement values from file
-        filtered_motion_df = pd.read_table(self.inputs.filtered_motion)
-        fd = filtered_motion_df["framewise_displacement"].values
+        motion_df = pd.read_table(self.inputs.motion_file)
+        if "framewise_displacement_filtered" in motion_df.columns:
+            fd = motion_df["framewise_displacement_filtered"].values
+        else:
+            fd = motion_df["framewise_displacement"].values
 
         with h5py.File(self._results["qc_file"], "w") as dcan:
             for thresh in np.linspace(0, 1, 101):
