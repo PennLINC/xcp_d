@@ -87,7 +87,7 @@ def load_motion(
             columns=[f"{c}_filtered" for c in motion_confounds_df.columns],
         )
         motion_confounds_df = pd.concat(
-            [motion_confounds_df, filtered_motion_confounds_df],
+            [motion_confounds_df, filtered_motion_confounds_df, confounds_df[["rmsd"]]],
             axis=1,
         )
 

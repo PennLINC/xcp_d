@@ -16,7 +16,7 @@ LOGGER = logging.getLogger("nipype.utils")
 
 
 @fill_doc
-def compute_fd(confound, head_radius=50):
+def compute_fd(confound, head_radius=50, filtered=False):
     """Compute framewise displacement.
 
     NOTE: TS- Which kind of FD? Power?
@@ -35,7 +35,7 @@ def compute_fd(confound, head_radius=50):
     """
     confound = confound.replace(np.nan, 0)
     motion_columns = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
-    if all([f"{col}_filtered" in confound.columns for col in motion_columns]):
+    if filtered:
         motion_columns = [f"{col}_filtered" for col in motion_columns]
 
     mpars = confound[motion_columns].to_numpy()
@@ -202,7 +202,11 @@ def flag_bad_run(
         band_stop_min=band_stop_min_adjusted,
         band_stop_max=band_stop_max_adjusted,
     )
-    fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
+    fd_arr = compute_fd(
+        confound=motion_df,
+        head_radius=head_radius,
+        filtered=bool(motion_filter_type),
+    )
     return np.sum(fd_arr <= fd_thresh) * TR
 
 
