@@ -497,13 +497,13 @@ class ProcessMotion(SimpleInterface):
         self._results["motion_metadata"] = motion_metadata
 
         # Store the filtered motion parameters
-        self._results["motion"] = fname_presuffix(
-            self.inputs.motion,
+        self._results["motion_file"] = fname_presuffix(
+            self.inputs.motion_file,
             suffix="_motion",
             newpath=runtime.cwd,
             use_ext=True,
         )
-        motion_df.to_csv(self._results["motion"], sep="\t", index=False)
+        motion_df.to_csv(self._results["motion_file"], sep="\t", index=False)
 
         # Generate temporal mask with all timepoints have FD over threshold set to 1.
         outlier_mask = np.zeros(len(fd_timeseries), dtype=int)

@@ -560,7 +560,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     bids_file = layout.get_file(bold_file)
     run_data, metadata = {}, {}
 
-    run_data["motion"] = layout.get_nearest(
+    run_data["motion_file"] = layout.get_nearest(
         bids_file.path,
         strict=True,
         ignore_strict_entities=["space", "res", "den", "desc", "suffix", "extension"],
@@ -568,7 +568,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
         suffix="timeseries",
         extension=".tsv",
     )
-    if not run_data["motion"]:
+    if not run_data["motion_file"]:
         raise FileNotFoundError(f"No confounds file detected for {bids_file.path}")
 
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
@@ -666,6 +666,8 @@ def collect_confounds(
 
     from bids.layout.index import BIDSLayoutIndexer
 
+    bold_file = preproc_dataset.get_file(bold_file)
+
     # Recommended after PyBIDS 12.1
     ignore_patterns = [
         "code",
@@ -712,12 +714,13 @@ def collect_confounds(
     confounds = dict()
     for confound_name, confound_def in confound_spec["confounds"].items():
         layout = layout_dict[confound_def["dataset"]]
-        query = confound_def["query"]
         bold_file_entities = bold_file.get_entities()
-        query = {**bold_file_entities, **query}
+        query = {**bold_file_entities, **confound_def["query"]}
         confound_file = layout.get(**query)
         if not confound_file:
-            raise FileNotFoundError(f"Could not find confound file for {confound_name}")
+            raise FileNotFoundError(
+                f"Could not find confound file for {confound_name} with query {query}"
+            )
 
         confound_file = confound_file[0]
         confound_metadata = confound_file.get_metadata()
@@ -1224,18 +1227,6 @@ def _make_preproc_uri(out_file, fmri_dir):
         return [_make_uri(of, "preprocessed", fmri_dir) for of in out_file]
     else:
         return [_make_uri(out_file, "preprocessed", fmri_dir)]
-
-
-def _make_custom_uri(out_file):
-    """Convert custom confounds' path to BIDS URI."""
-    import os
-
-    from xcp_d.utils.bids import _make_uri
-
-    if isinstance(out_file, list):
-        return [_make_uri(of, "custom_confounds", os.path.dirname(of)) for of in out_file]
-    else:
-        return [_make_uri(out_file, "custom_confounds", os.path.dirname(out_file))]
 
 
 def check_pipeline_version(pipeline_name, cvers, data_desc):

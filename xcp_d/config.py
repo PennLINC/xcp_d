@@ -229,6 +229,8 @@ class _Config:
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     setattr(cls, k, [Path(val).absolute() for val in v])
+                elif isinstance(v, dict):
+                    setattr(cls, k, {key: Path(val).absolute() for key, val in v.items()})
                 else:
                     setattr(cls, k, Path(v).absolute())
             elif hasattr(cls, k):
@@ -254,6 +256,8 @@ class _Config:
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     v = [str(val) for val in v]
+                elif isinstance(v, dict):
+                    v = {key: str(val) for key, val in v.items()}
                 else:
                     v = str(v)
             if isinstance(v, SpatialReferences):
@@ -387,6 +391,8 @@ class execution(_Config):
     """A dictionary of BIDS selection filters."""
     boilerplate_only = None
     """Only generate a boilerplate."""
+    confounds_config = None
+    """Nuisance regressors to include in the postprocessing."""
     debug = []
     """Debug mode(s)."""
     fs_license_file = _fs_license
@@ -437,6 +443,7 @@ class execution(_Config):
         "templateflow_home",
         "work_dir",
         "dataset_links",
+        "confounds_config",
     )
 
     @classmethod
@@ -544,8 +551,6 @@ class workflow(_Config):
     """Postprocessing pipeline type."""
     despike = None
     """Despike the BOLD data before postprocessing."""
-    confounds_config = None
-    """Nuisance regressors to include in the postprocessing."""
     smoothing = None
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     output_interpolated = None

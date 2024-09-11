@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing BOLD data."""
 
+import yaml
 from nipype.interfaces import utility as niu
 from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
@@ -142,7 +143,7 @@ def init_prepare_confounds_wf(
         censoring_description = ""
 
     confounds_description = describe_regression(
-        confounds_config=config.workflow.confounds_config,
+        confounds_config=yaml.safe_load(config.execution.confounds_config.read_text()),
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
         band_stop_min=band_stop_min,
@@ -213,7 +214,7 @@ def init_prepare_confounds_wf(
 
     generate_confounds = pe.Node(
         GenerateConfounds(
-            confounds_config=config.workflow.confounds_config,
+            confounds_config=yaml.safe_load(config.execution.confounds_config.read_text()),
             TR=TR,
             dataset_links=config.execution.dataset_links,
             out_dir=config.execution.output_dir,
@@ -328,7 +329,7 @@ def init_prepare_confounds_wf(
             (dummy_scan_buffer, outputnode, [("temporal_mask", "temporal_mask")]),
         ])  # fmt:skip
 
-    if config.workflow.confounds_config is not None:
+    if config.execution.confounds_config is not None:
         plot_design_matrix = pe.Node(
             niu.Function(
                 input_names=["design_matrix", "temporal_mask"],

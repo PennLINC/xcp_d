@@ -13,6 +13,7 @@ import nilearn
 import numpy as np
 import scipy
 import templateflow
+import yaml
 from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -422,12 +423,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 bold_file=bold_file,
                 preproc_dataset=config.execution.layout,
                 derivatives_datasets=config.execution.derivatives,
-                confound_spec=config.workflow.confounds_config,
+                confound_spec=yaml.safe_load(config.execution.confounds_config.read_text()),
             )
             run_data["confounds"] = confounds_dict
 
             post_scrubbing_duration = flag_bad_run(
-                motion_file=run_data["motion"],
+                motion_file=run_data["motion_file"],
                 dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
                 motion_filter_type=config.workflow.motion_filter_type,

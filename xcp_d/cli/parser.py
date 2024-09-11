@@ -896,8 +896,6 @@ def _validate_parameters(opts, build_log, parser):
     import os
     from pathlib import Path
 
-    import yaml
-
     opts.fmri_dir = opts.fmri_dir.resolve()
     opts.output_dir = opts.output_dir.resolve()
     opts.work_dir = opts.work_dir.resolve()
@@ -1047,9 +1045,11 @@ def _validate_parameters(opts, build_log, parser):
     confounds_config = opts.confounds_config
     if isinstance(confounds_config, str) and confounds_config != "none":
         confounds_config = load_data.readable(f"nuisance/{confounds_config}.yml")
+    elif isinstance(confounds_config, str):
+        confounds_config = Path(confounds_config)
 
     if confounds_config != "none":
-        opts.confounds_config = yaml.safe_load(confounds_config.read_text())
+        opts.confounds_config = confounds_config
     else:
         opts.confounds_config = None
 

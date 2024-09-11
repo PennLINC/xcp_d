@@ -103,8 +103,8 @@ def init_postprocess_cifti_wf(
     t2w
         Preprocessed T2w image, warped to standard space.
         Fed from the subject workflow.
-    preproc_confounds_file
-    fmriprep_confounds_json
+    motion_file
+    motion_json
     %(dummy_scans)s
 
     Outputs
