@@ -387,7 +387,6 @@ def init_warp_surfaces_to_template_wf(
     # First, we create the Connectome WorkBench-compatible transform files.
     update_xfm_wf = init_ants_xfm_to_fsl_wf(
         mem_gb=1,
-        omp_nthreads=omp_nthreads,
         name="update_xfm_wf",
     )
     workflow.connect([
@@ -611,7 +610,7 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
 
 @fill_doc
-def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
+def init_ants_xfm_to_fsl_wf(mem_gb, name="ants_xfm_to_fsl_wf"):
     """Modify ANTS-style fMRIPrep transforms to work with Connectome Workbench/FSL FNIRT.
 
     XXX: Does this only work if the template is MNI152NLin6Asym?
@@ -625,14 +624,12 @@ def init_ants_xfm_to_fsl_wf(mem_gb, omp_nthreads, name="ants_xfm_to_fsl_wf"):
 
             wf = init_ants_xfm_to_fsl_wf(
                 mem_gb=0.1,
-                omp_nthreads=1,
                 name="ants_xfm_to_fsl_wf",
             )
 
     Parameters
     ----------
     %(mem_gb)s
-    %(omp_nthreads)s
     %(name)s
         Default is "ants_xfm_to_fsl_wf".
 
