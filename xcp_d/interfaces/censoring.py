@@ -107,7 +107,7 @@ class RemoveDummyVolumes(SimpleInterface):
     def _run_interface(self, runtime):
         dummy_scans = _infer_dummy_scans(
             dummy_scans=self.inputs.dummy_scans,
-            confounds_file=self.inputs.motion,
+            confounds_file=self.inputs.motion_file,
         )
 
         self._results["dummy_scans"] = dummy_scans
@@ -368,7 +368,7 @@ class _ProcessMotionInputSpec(BaseInterfaceInputSpec):
         desc="Framewise displacement threshold. All values above this will be dropped.",
     )
     head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
-    motion = File(
+    motion_file = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds tsv.",
@@ -435,7 +435,7 @@ class ProcessMotion(SimpleInterface):
         )
 
         motion_df = load_motion(
-            self.inputs.motion,
+            self.inputs.motion_file,
             TR=self.inputs.TR,
             motion_filter_type=self.inputs.motion_filter_type,
             motion_filter_order=self.inputs.motion_filter_order,

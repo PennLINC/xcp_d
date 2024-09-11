@@ -571,6 +571,8 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     if not run_data["motion_file"]:
         raise FileNotFoundError(f"No confounds file detected for {bids_file.path}")
 
+    run_data["motion_json"] = layout.get_nearest(run_data["motion_file"], extension=".json")
+
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
