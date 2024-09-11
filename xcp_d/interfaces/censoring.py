@@ -449,11 +449,14 @@ class ProcessMotion(SimpleInterface):
             head_radius=self.inputs.head_radius,
             filtered=False,
         )
-        motion_df["framewise_displacement_filtered"] = compute_fd(
-            confound=motion_df,
-            head_radius=self.inputs.head_radius,
-            filtered=True,
-        )
+        fd_timeseries = motion_df["framewise_displacement"].to_numpy()
+        if self.inputs.motion_filter_type:
+            motion_df["framewise_displacement_filtered"] = compute_fd(
+                confound=motion_df,
+                head_radius=self.inputs.head_radius,
+                filtered=True,
+            )
+            fd_timeseries = motion_df["framewise_displacement_filtered"].to_numpy()
 
         # Compile motion metadata from confounds metadata, adding in filtering info
         motion_metadata = {}
