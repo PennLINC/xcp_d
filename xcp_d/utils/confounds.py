@@ -82,9 +82,13 @@ def load_motion(
             band_stop_max=band_stop_max,
             motion_filter_order=motion_filter_order,
         )
-        motion_confounds_df = pd.DataFrame(
+        filtered_motion_confounds_df = pd.DataFrame(
             data=motion_confounds,
-            columns=motion_confounds_df.columns,
+            columns=[f"{c}_filtered" for c in motion_confounds_df.columns],
+        )
+        motion_confounds_df = pd.concat(
+            [motion_confounds_df, filtered_motion_confounds_df],
+            axis=1,
         )
 
     return motion_confounds_df
