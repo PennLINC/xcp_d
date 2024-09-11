@@ -103,7 +103,6 @@ def init_postprocess_nifti_wf(
     bold_mask
         bold_mask from fmriprep
         Loaded in this workflow.
-    %(custom_confounds_file)s
     %(template_to_anat_xfm)s
         Fed from the subject workflow.
     t1w
@@ -124,7 +123,7 @@ def init_postprocess_nifti_wf(
     %(name_source)s
     preprocessed_bold : :obj:`str`
         The preprocessed BOLD file, after dummy scan removal.
-    %(filtered_motion)s
+    motion_file
     %(temporal_mask)s
     %(fmriprep_confounds_file)s
         After dummy scan removal.
@@ -155,12 +154,8 @@ def init_postprocess_nifti_wf(
             fields=[
                 "bold_file",
                 "boldref",
-                "bold_mask",
-                "template_to_anat_xfm",
                 "t1w",
                 "t2w",
-                "anat_native",
-                "anat_brainmask",
                 "motion_file",
                 "motion_json",
                 "confounds_files",
@@ -169,6 +164,11 @@ def init_postprocess_nifti_wf(
                 "atlases",
                 "atlas_files",
                 "atlas_labels_files",
+                # NIfTI only
+                "bold_mask",
+                "template_to_anat_xfm",
+                "anat_native",
+                "anat_brainmask",
             ],
         ),
         name="inputnode",
@@ -177,7 +177,7 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.bold_file = bold_file
     inputnode.inputs.boldref = run_data["boldref"]
     inputnode.inputs.bold_mask = run_data["boldmask"]
-    inputnode.inputs.motion_file = run_data["motion"]
+    inputnode.inputs.motion_file = run_data["motion_file"]
     inputnode.inputs.motion_json = run_data["motion_json"]
     inputnode.inputs.confounds_files = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
@@ -364,7 +364,7 @@ the following post-processing was performed.
         (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
         (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
         (postproc_derivatives_wf, outputnode, [
-            ("outputnode.filtered_motion", "filtered_motion"),
+            ("outputnode.motion_file", "motion_file"),
             ("outputnode.temporal_mask", "temporal_mask"),
             ("outputnode.denoised_bold", "denoised_bold"),
             ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
