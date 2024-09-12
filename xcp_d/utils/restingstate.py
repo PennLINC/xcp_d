@@ -141,9 +141,9 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
+        # Check if the voxel's data are all the same value (esp. zeros).
+        # Set ALFF to 0 in that case and move on to the next voxel.
         if np.std(voxel_data) == 0:
-            # Check if the voxel's data are all the same value (esp. zeros).
-            # Set ALFF to 0 in that case and move on to the next voxel.
             alff[i_voxel] = 0
             continue
 
