@@ -139,8 +139,20 @@ class ComputeALFF(SimpleInterface):
     output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
+        import gc
+
+        import numpy as np
+
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+        n_voxels, n_volumes = data_matrix.shape
+
+        # Split the data_matrix into n_threads chunks of voxels
+        voxel_indices = np.array_split(np.arange(n_voxels), self.inputs.n_threads)
+        split_arrays = np.array_split(data_matrix, self.inputs.n_threads, axis=0)
+
+        del data_matrix
+        gc.collect()
 
         sample_mask = None
         temporal_mask = self.inputs.temporal_mask
@@ -148,16 +160,24 @@ class ComputeALFF(SimpleInterface):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
             sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
+            assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
-        # compute the ALFF
-        alff_mat = compute_alff(
-            data_matrix=data_matrix,
-            low_pass=self.inputs.low_pass,
-            high_pass=self.inputs.high_pass,
-            TR=self.inputs.TR,
-            sample_mask=sample_mask,
-            n_threads=self.inputs.n_threads,
-        )
+        alff_mat = np.zeros(n_voxels)
+        for i_thread in range(self.inputs.n_threads):
+            thread_data = split_arrays[i_thread]
+            thread_idx = voxel_indices[i_thread]
+
+            # compute the ALFF
+            alff_mat[thread_idx] = compute_alff(
+                data_matrix=thread_data,
+                low_pass=self.inputs.low_pass,
+                high_pass=self.inputs.high_pass,
+                TR=self.inputs.TR,
+                sample_mask=sample_mask,
+            )
+
+        # Add extra dimension to the matrix
+        alff_mat = alff_mat[:, None]
 
         # Write out the data
         if self.inputs.in_file.endswith(".dtseries.nii"):
