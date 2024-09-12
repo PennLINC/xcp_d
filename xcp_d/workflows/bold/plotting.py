@@ -87,7 +87,6 @@ def init_qc_report_wf(
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
-    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -159,10 +158,11 @@ def init_qc_report_wf(
             ApplyTransforms(
                 dimension=3,
                 interpolation="NearestNeighbor",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_boldmask_to_t1w",
-            n_procs=omp_nthreads,
             mem_gb=1,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_boldmask_to_t1w, [
@@ -180,10 +180,11 @@ def init_qc_report_wf(
                 dimension=3,
                 reference_image=nlin2009casym_brain_mask,
                 interpolation="NearestNeighbor",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_boldmask_to_mni",
-            n_procs=omp_nthreads,
             mem_gb=1,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_boldmask_to_mni, [("bold_mask", "input_image")]),
@@ -198,10 +199,11 @@ def init_qc_report_wf(
             ApplyTransforms(
                 dimension=3,
                 interpolation="NearestNeighbor",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_anatmask_to_t1w",
-            n_procs=omp_nthreads,
             mem_gb=1,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_anatmask_to_t1w, [
@@ -267,10 +269,11 @@ def init_qc_report_wf(
                 dimension=3,
                 input_image=dseg_file,
                 interpolation="GenericLabel",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_dseg_to_bold",
-            n_procs=omp_nthreads,
             mem_gb=3,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_dseg_to_bold, [("boldref", "reference_image")]),
@@ -286,7 +289,6 @@ def init_qc_report_wf(
             ),
             name="make_linc_qc",
             mem_gb=2,
-            n_procs=omp_nthreads,
         )
         workflow.connect([
             (inputnode, make_linc_qc, [
@@ -331,7 +333,6 @@ def init_qc_report_wf(
             QCPlots(TR=TR, head_radius=head_radius),
             name="make_qc_plots_nipreps",
             mem_gb=2,
-            n_procs=omp_nthreads,
         )
         workflow.connect([
             (inputnode, make_qc_plots_nipreps, [
@@ -411,7 +412,6 @@ def init_qc_report_wf(
             ABCCQC(TR=TR),
             name="make_abcc_qc",
             mem_gb=2,
-            n_procs=omp_nthreads,
         )
         workflow.connect([(inputnode, make_abcc_qc, [("filtered_motion", "filtered_motion")])])
 
@@ -436,7 +436,6 @@ def init_qc_report_wf(
             QCPlotsES(TR=TR, standardize=config.workflow.params == "none"),
             name="make_qc_plots_es",
             mem_gb=2,
-            n_procs=omp_nthreads,
         )
         workflow.connect([
             (inputnode, make_qc_plots_es, [
