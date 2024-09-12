@@ -21,11 +21,15 @@ from xcp_d.utils.write_save import get_cifti_intents
 iflogger = logging.getLogger("nipype.interface")
 
 
-class WBCommandInputSpec(CommandLineInputSpec):
+class _WBCommandInputSpec(CommandLineInputSpec):
     num_threads = traits.Int(1, usedefault=True, nohash=True, desc="set number of threads")
 
 
 class WBCommand(WBCommandBase):
+    """A base interface for wb_command.
+
+    This inherits from Nipype's WBCommand interface, but adds a num_threads input.
+    """
 
     @property
     def num_threads(self):
@@ -44,7 +48,7 @@ class WBCommand(WBCommandBase):
 
     def _nthreads_update(self):
         """Update environment with new number of threads."""
-        self.inputs.environ["OMP_NUM_THREADS"] = "%d" % self.inputs.num_threads
+        self.inputs.environ["OMP_NUM_THREADS"] = str(self.inputs.num_threads)
 
 
 class _FixCiftiIntentInputSpec(BaseInterfaceInputSpec):
@@ -99,7 +103,7 @@ class FixCiftiIntent(SimpleInterface):
         return runtime
 
 
-class _ConvertAffineInputSpec(WBCommandInputSpec):
+class _ConvertAffineInputSpec(_WBCommandInputSpec):
     """Input specification for ConvertAffine."""
 
     fromwhat = traits.Str(
@@ -144,7 +148,7 @@ class ConvertAffine(WBCommand):
     _cmd = "wb_command -convert-affine"
 
 
-class _ApplyAffineInputSpec(WBCommandInputSpec):
+class _ApplyAffineInputSpec(_WBCommandInputSpec):
     """Input specification for ApplyAffine."""
 
     in_file = File(
@@ -203,7 +207,7 @@ class ApplyAffine(WBCommand):
     _cmd = "wb_command -surface-apply-affine"
 
 
-class _ApplyWarpfieldInputSpec(WBCommandInputSpec):
+class _ApplyWarpfieldInputSpec(_WBCommandInputSpec):
     """Input specification for ApplyWarpfield."""
 
     in_file = File(
@@ -267,7 +271,7 @@ class ApplyWarpfield(WBCommand):
     _cmd = "wb_command -surface-apply-warpfield"
 
 
-class _SurfaceSphereProjectUnprojectInputSpec(WBCommandInputSpec):
+class _SurfaceSphereProjectUnprojectInputSpec(_WBCommandInputSpec):
     """Input specification for SurfaceSphereProjectUnproject."""
 
     in_file = File(
@@ -358,7 +362,7 @@ class SurfaceSphereProjectUnproject(WBCommand):
     _cmd = "wb_command -surface-sphere-project-unproject"
 
 
-class _ChangeXfmTypeInputSpec(WBCommandInputSpec):
+class _ChangeXfmTypeInputSpec(_WBCommandInputSpec):
     in_transform = File(exists=True, argstr="%s", mandatory=True, position=0)
 
 
@@ -387,7 +391,7 @@ class ChangeXfmType(SimpleInterface):
         return runtime
 
 
-class _SurfaceAverageInputSpec(WBCommandInputSpec):
+class _SurfaceAverageInputSpec(_WBCommandInputSpec):
     """Input specification for SurfaceAverage."""
 
     surface_in1 = File(
@@ -451,7 +455,7 @@ class SurfaceAverage(WBCommand):
     _cmd = "wb_command -surface-average"
 
 
-class _SurfaceGenerateInflatedInputSpec(WBCommandInputSpec):
+class _SurfaceGenerateInflatedInputSpec(_WBCommandInputSpec):
     """Input specification for SurfaceGenerateInflated."""
 
     anatomical_surface_in = File(
@@ -517,7 +521,7 @@ class SurfaceGenerateInflated(WBCommand):
     _cmd = "wb_command -surface-generate-inflated"
 
 
-class _CiftiParcellateWorkbenchInputSpec(WBCommandInputSpec):
+class _CiftiParcellateWorkbenchInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiParcellateWorkbench command."""
 
     in_file = File(
@@ -659,7 +663,7 @@ class CiftiParcellateWorkbench(WBCommand):
     _cmd = "wb_command -cifti-parcellate"
 
 
-class _CiftiSurfaceResampleInputSpec(WBCommandInputSpec):
+class _CiftiSurfaceResampleInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiSurfaceResample command.
 
     Resamples a surface file, given two spherical surfaces that are in register.
@@ -735,7 +739,7 @@ class CiftiSurfaceResample(WBCommand):
     _cmd = "wb_command -surface-resample"
 
 
-class _CiftiSeparateMetricInputSpec(WBCommandInputSpec):
+class _CiftiSeparateMetricInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiSeparateMetric command."""
 
     in_file = File(
@@ -800,7 +804,7 @@ class CiftiSeparateMetric(WBCommand):
     _cmd = "wb_command  -cifti-separate "
 
 
-class _CiftiSeparateVolumeAllInputSpec(WBCommandInputSpec):
+class _CiftiSeparateVolumeAllInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiSeparateVolumeAll command."""
 
     in_file = File(
@@ -868,7 +872,7 @@ class CiftiSeparateVolumeAll(WBCommand):
     _cmd = "wb_command  -cifti-separate "
 
 
-class _CiftiCreateDenseScalarInputSpec(WBCommandInputSpec):
+class _CiftiCreateDenseScalarInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiSeparateVolumeAll command."""
 
     out_file = File(
@@ -960,7 +964,7 @@ class CiftiCreateDenseScalar(WBCommand):
         return outputs
 
 
-class _ShowSceneInputSpec(WBCommandInputSpec):
+class _ShowSceneInputSpec(_WBCommandInputSpec):
     scene_file = File(
         exists=True,
         mandatory=True,
@@ -1084,7 +1088,7 @@ class ShowScene(WBCommand):
         )
 
 
-class _CiftiConvertInputSpec(WBCommandInputSpec):
+class _CiftiConvertInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiConvert command."""
 
     target = traits.Enum(
@@ -1166,7 +1170,7 @@ class CiftiConvert(WBCommand):
         return outputs
 
 
-class _CiftiCreateDenseFromTemplateInputSpec(WBCommandInputSpec):
+class _CiftiCreateDenseFromTemplateInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiCreateDenseFromTemplate command."""
 
     template_cifti = File(
@@ -1285,7 +1289,7 @@ class CiftiCreateDenseFromTemplate(WBCommand):
         return outputs
 
 
-class _CiftiMathInputSpec(WBCommandInputSpec):
+class _CiftiMathInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiMath command."""
 
     data = File(
@@ -1346,7 +1350,7 @@ class CiftiMath(WBCommand):
     _cmd = "wb_command -cifti-math"
 
 
-class _CiftiCorrelationInputSpec(WBCommandInputSpec):
+class _CiftiCorrelationInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiCorrelation command."""
 
     in_file = File(
@@ -1393,7 +1397,7 @@ class CiftiCorrelation(WBCommand):
     _cmd = "wb_command -cifti-correlation"
 
 
-class _CiftiSmoothInputSpec(WBCommandInputSpec):
+class _CiftiSmoothInputSpec(_WBCommandInputSpec):
     in_file = File(
         exists=True,
         mandatory=True,
