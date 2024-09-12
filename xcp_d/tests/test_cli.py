@@ -474,7 +474,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
 
         retval = build_workflow(config_file, retval={})
         xcpd_wf = retval["workflow"]
-        xcpd_wf.run()
+        xcpd_wf.run(**config.nipype.get_plugin())
         write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
         if config.execution.atlases:
             write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
