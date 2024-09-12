@@ -5,11 +5,11 @@ import re
 import tempfile
 
 import numpy as np
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.nilearn import Smooth
+from xcp_d.interfaces.workbench import CiftiSmooth
 from xcp_d.utils.utils import fwhm2sigma
 
 
@@ -123,8 +123,10 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)
             direction="COLUMN",  # which direction to smooth along@
             right_surf=right_surf,
             left_surf=left_surf,
+            num_threads=1,
         ),
         name="cifti_smoothing",
+        n_procs=1,
     )
     smooth_data.inputs.in_file = in_file
     smooth_data.base_dir = tmpdir
