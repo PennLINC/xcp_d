@@ -158,9 +158,11 @@ def init_qc_report_wf(
             ApplyTransforms(
                 dimension=3,
                 interpolation="NearestNeighbor",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_boldmask_to_t1w",
             mem_gb=1,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_boldmask_to_t1w, [
@@ -178,9 +180,11 @@ def init_qc_report_wf(
                 dimension=3,
                 reference_image=nlin2009casym_brain_mask,
                 interpolation="NearestNeighbor",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_boldmask_to_mni",
             mem_gb=1,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_boldmask_to_mni, [("bold_mask", "input_image")]),
@@ -195,9 +199,11 @@ def init_qc_report_wf(
             ApplyTransforms(
                 dimension=3,
                 interpolation="NearestNeighbor",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_anatmask_to_t1w",
             mem_gb=1,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_anatmask_to_t1w, [
@@ -263,9 +269,11 @@ def init_qc_report_wf(
                 dimension=3,
                 input_image=dseg_file,
                 interpolation="GenericLabel",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_dseg_to_bold",
             mem_gb=3,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_dseg_to_bold, [("boldref", "reference_image")]),

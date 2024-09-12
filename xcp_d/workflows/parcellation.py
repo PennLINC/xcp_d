@@ -116,10 +116,12 @@ def init_load_atlases_wf(name="load_atlases_wf"):
                 interpolation="GenericLabel",
                 input_image_type=3,
                 dimension=3,
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_atlases_to_bold_space",
             iterfield=["input_image"],
             mem_gb=2,
+            n_procs=config.nipype.omp_nthreads,
         )
 
         workflow.connect([

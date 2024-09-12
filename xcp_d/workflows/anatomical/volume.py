@@ -160,13 +160,14 @@ resolution.
             # Warp the native T1w-space T1w, T1w segmentation, and T2w files to standard space.
             warp_t1w_to_template = pe.Node(
                 ApplyTransforms(
-                    num_threads=2,
                     interpolation="LanczosWindowedSinc",
                     input_image_type=3,
                     dimension=3,
+                    num_threads=config.nipype.omp_nthreads,
                 ),
                 name="warp_t1w_to_template",
                 mem_gb=2,
+                n_procs=config.nipype.omp_nthreads,
             )
             workflow.connect([
                 (inputnode, warp_t1w_to_template, [
@@ -180,13 +181,14 @@ resolution.
         if t2w_available:
             warp_t2w_to_template = pe.Node(
                 ApplyTransforms(
-                    num_threads=2,
                     interpolation="LanczosWindowedSinc",
                     input_image_type=3,
                     dimension=3,
+                    num_threads=config.nipype.omp_nthreads,
                 ),
                 name="warp_t2w_to_template",
                 mem_gb=2,
+                n_procs=config.nipype.omp_nthreads,
             )
             workflow.connect([
                 (inputnode, warp_t2w_to_template, [
