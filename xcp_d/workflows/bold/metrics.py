@@ -101,7 +101,6 @@ def init_alff_wf(
     fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
-    omp_nthreads = config.nipype.omp_nthreads
 
     periodogram_desc = ""
     if fd_thresh > 0:
