@@ -101,6 +101,18 @@ def mesh_adjacency(hemi):
     return adjacency_matrix
 
 
+def compute_alff_chunk(args):
+    """Compute ALFF on a chunk of data."""
+    thread_data, low_pass, high_pass, TR, sample_mask = args
+    return compute_alff(
+        data_matrix=thread_data,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        TR=TR,
+        sample_mask=sample_mask,
+    )
+
+
 def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
     """Compute amplitude of low-frequency fluctuation (ALFF).
 

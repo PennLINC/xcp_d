@@ -23,7 +23,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.restingstate import compute_2d_reho, compute_alff, mesh_adjacency
+from xcp_d.utils.restingstate import compute_2d_reho, mesh_adjacency
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -140,8 +140,11 @@ class ComputeALFF(SimpleInterface):
 
     def _run_interface(self, runtime):
         import gc
+        from multiprocessing import Pool
 
         import numpy as np
+
+        from xcp_d.utils.restingstate import compute_alff_chunk
 
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
@@ -163,18 +166,21 @@ class ComputeALFF(SimpleInterface):
             assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
         alff_mat = np.zeros(n_voxels)
-        for i_thread in range(self.inputs.n_threads):
-            thread_data = split_arrays[i_thread]
-            thread_idx = voxel_indices[i_thread]
+        with Pool(processes=self.inputs.n_threads) as pool:
+            args = [
+                (
+                    split_arrays[i_thread],
+                    self.inputs.low_pass,
+                    self.inputs.high_pass,
+                    self.inputs.TR,
+                    sample_mask,
+                )
+                for i_thread in range(self.inputs.n_threads)
+            ]
+            results = pool.map(compute_alff_chunk, args)
 
-            # compute the ALFF
-            alff_mat[thread_idx] = compute_alff(
-                data_matrix=thread_data,
-                low_pass=self.inputs.low_pass,
-                high_pass=self.inputs.high_pass,
-                TR=self.inputs.TR,
-                sample_mask=sample_mask,
-            )
+        for i_thread, result in enumerate(results):
+            alff_mat[voxel_indices[i_thread]] = result
 
         # Add extra dimension to the matrix
         alff_mat = alff_mat[:, None]
