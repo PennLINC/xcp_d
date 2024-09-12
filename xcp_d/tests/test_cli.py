@@ -452,6 +452,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
     parameters.append("--stop-on-first-crash")
     parameters.append("--notrack")
     parameters.append("-v")
+    parameters.append("-v")
 
     # Add concurrency options if they're not already specified
     parameters = update_resources(parameters)
