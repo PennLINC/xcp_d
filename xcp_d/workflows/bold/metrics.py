@@ -231,7 +231,7 @@ series to retain the original scaling.
                 ),
                 name="ciftismoothing",
                 mem_gb=mem_gb["resampled"],
-                n_procs=omp_nthreads,
+                n_procs=1,
             )
 
             # Always check the intent code in CiftiSmooth's output file
@@ -311,7 +311,6 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 """
 
     output_dir = config.execution.xcp_d_dir
-    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["denoised_bold", "lh_midthickness", "rh_midthickness"]),
@@ -361,7 +360,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         CiftiCreateDenseFromTemplate(from_cropped=True, out_file="reho.dscalar.nii"),
         name="merge_cifti",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
+        n_procs=1,
     )
     reho_plot = pe.Node(
         PlotDenseCifti(base_desc="reho"),
@@ -451,7 +450,6 @@ def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
-    omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """
 Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood voxels using
@@ -469,7 +467,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
         ReHoNamePatch(neighborhood="vertices"),
         name="reho_3d",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
+        n_procs=1,
     )
     # Get the svg
     reho_plot = pe.Node(

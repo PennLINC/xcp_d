@@ -18,6 +18,7 @@ from xcp_d.tests.utils import (
     check_affines,
     check_generated_files,
     download_test_data,
+    update_resources,
     get_test_data_path,
     list_files,
 )
@@ -91,8 +92,6 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "participant",
         "--mode=abcd",
         f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=acompcor_gsr",
         "--warp_surfaces_native2std=n",
@@ -141,8 +140,6 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         "--warp-surfaces-native2std=n",
         "--combine-runs=n",
         f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
         "--input-type=ukb",
         "--nuisance-regressors=gsr_only",
         "--dummy-scans=4",
@@ -191,8 +188,6 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "participant",
         "--mode=abcd",
         f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
         "--min-time=60",
         "--nuisance-regressors=acompcor_gsr",
@@ -251,8 +246,6 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         "participant",
         "--mode=abcd",
         f"-w={work_dir}",
-        "--nthreads=2",
-        "--omp-nthreads=2",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=none",
         "--head_radius=40",
@@ -459,6 +452,9 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
     parameters.append("--stop-on-first-crash")
     parameters.append("--notrack")
     parameters.append("-v")
+
+    # Add concurrency options if they're not already specified
+    parameters = update_resources(parameters)
 
     if test_main:
         # This runs, but for some reason doesn't count toward coverage.

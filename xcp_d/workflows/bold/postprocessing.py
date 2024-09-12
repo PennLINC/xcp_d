@@ -448,7 +448,7 @@ and converted back to CIFTI format.
             CiftiConvert(target="to"),
             name="convert_to_nifti",
             mem_gb=4,
-            n_procs=omp_nthreads,
+            n_procs=1,
         )
         workflow.connect([
             (inputnode, convert_to_nifti, [("bold_file", "in_file")]),
@@ -460,7 +460,7 @@ and converted back to CIFTI format.
             CiftiConvert(target="from", TR=TR),
             name="convert_to_cifti",
             mem_gb=4,
-            n_procs=omp_nthreads,
+            n_procs=1,
         )
         workflow.connect([
             (inputnode, convert_to_cifti, [("bold_file", "cifti_template")]),
@@ -711,7 +711,6 @@ def init_resd_smoothing_wf(mem_gb, name="resd_smoothing_wf"):
     workflow = Workflow(name=name)
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
-    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(niu.IdentityInterface(fields=["bold_file"]), name="inputnode")
     outputnode = pe.Node(niu.IdentityInterface(fields=["smoothed_bold"]), name="outputnode")
@@ -754,7 +753,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
             ),
             name="cifti_smoothing",
             mem_gb=mem_gb["timeseries"],
-            n_procs=omp_nthreads,
+            n_procs=1,
         )
 
         # Always check the intent code in CiftiSmooth's output file
