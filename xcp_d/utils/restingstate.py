@@ -135,14 +135,17 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
     ----------
     .. footbibliography::
     """
+    fs = 1 / TR  # sampling frequency
     n_voxels, n_volumes = data_matrix.shape
-    fs = 1 / TR
 
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
         if np.std(voxel_data) == 0:
+            # Check if the voxel's data are all the same value (esp. zeros).
+            # Set ALFF to 0 in that case and move on to the next voxel.
             alff[i_voxel] = 0
+            continue
 
         # We will normalize data matrix over time.
         # This will ensure that the power spectra from the standard and Lomb-Scargle periodograms
