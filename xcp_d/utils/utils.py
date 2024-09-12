@@ -96,7 +96,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
         # MNIInfant --> MNI152NLin2009cAsym
         MNIInfant_to_MNI152NLin2009cAsym = str(
             load_data(
-                "transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+                "transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
             )
         )
         xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
