@@ -150,10 +150,12 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
                 scene_name_or_number=1,
                 image_width=900,
                 image_height=800,
+                num_threads=config.nipype.omp_nthreads,
             ),
             name=f"create_framewise_pngs_{image_type}",
             iterfield=["scene_file"],
             mem_gb=1,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (modify_brainsprite_template_scene, create_framewise_pngs, [

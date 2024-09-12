@@ -305,9 +305,11 @@ def init_parcellate_cifti_wf(
                 direction="COLUMN",
                 only_numeric=True,
                 out_file="parcellated_atlas.pscalar.nii",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="parcellate_coverage",
             iterfield=["atlas_label"],
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, parcellate_coverage, [("atlas_files", "atlas_label")]),
@@ -340,10 +342,12 @@ def init_parcellate_cifti_wf(
             direction="COLUMN",
             only_numeric=True,
             out_file=f"parcellated_data.{'ptseries' if compute_mask else 'pscalar'}.nii",
+            num_threads=config.nipype.omp_nthreads,
         ),
         name="parcellate_data",
         iterfield=["atlas_label"],
         mem_gb=mem_gb["resampled"],
+        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
         (inputnode, parcellate_data, [
@@ -355,10 +359,14 @@ def init_parcellate_cifti_wf(
 
     # Threshold node coverage values based on coverage threshold.
     threshold_coverage = pe.MapNode(
-        CiftiMath(expression=f"data > {config.workflow.min_coverage}"),
+        CiftiMath(
+            expression=f"data > {config.workflow.min_coverage}",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="threshold_coverage",
         iterfield=["data"],
         mem_gb=mem_gb["resampled"],
+        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([(coverage_buffer, threshold_coverage, [("coverage_cifti", "data")])])
 

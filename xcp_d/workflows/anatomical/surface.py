@@ -527,9 +527,10 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     )
 
     generate_midthickness = pe.Node(
-        SurfaceAverage(),
+        SurfaceAverage(num_threads=config.nipype.omp_nthreads),
         name="generate_midthickness",
         mem_gb=2,
+        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
         (inputnode, generate_midthickness, [
@@ -560,8 +561,12 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     # Generate (very-)inflated surface from standard-space midthickness surface.
     inflate_surface = pe.Node(
-        SurfaceGenerateInflated(iterations_scale_value=0.75),
+        SurfaceGenerateInflated(
+            iterations_scale_value=0.75,
+            num_threads=config.nipype.omp_nthreads,
+        ),
         mem_gb=2,
+        n_procs=config.nipype.omp_nthreads,
         name="inflate_surface",
     )
     workflow.connect([
@@ -699,13 +704,18 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name="ants_xfm_to_fsl_wf"):
     # Change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
     # since wb_command doesn't recognize "AffineTransform"
     # (AffineTransform is a subclass of MatrixOffsetTransformBase which prob makes this okay to do)
-    change_xfm_type = pe.Node(ChangeXfmType(), name="change_xfm_type")
+    change_xfm_type = pe.Node(
+        ChangeXfmType(num_threads=config.nipype.omp_nthreads),
+        name="change_xfm_type",
+        n_procs=config.nipype.omp_nthreads,
+    )
     workflow.connect([(convert_ants_xfm, change_xfm_type, [("out_transform", "in_transform")])])
 
     # Convert affine xfm to "world" so it works with -surface-apply-affine
     convert_xfm2world = pe.Node(
-        ConvertAffine(fromwhat="itk", towhat="world"),
+        ConvertAffine(fromwhat="itk", towhat="world", num_threads=config.nipype.omp_nthreads),
         name="convert_xfm2world",
+        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([(change_xfm_type, convert_xfm2world, [("out_transform", "in_file")])])
 
@@ -972,8 +982,9 @@ def init_warp_one_hemisphere_wf(
     # (fsLR or dhcpAsym vertices with coordinates on the fsaverage sphere) sphere?
     # So what's the result? The fsLR or dhcpAsym vertices with coordinates on the fsnative sphere?
     surface_sphere_project_unproject = pe.Node(
-        SurfaceSphereProjectUnproject(),
+        SurfaceSphereProjectUnproject(num_threads=omp_nthreads),
         name="surface_sphere_project_unproject",
+        n_procs=omp_nthreads,
     )
     workflow.connect([
         (collect_registration_files, surface_sphere_project_unproject, [
@@ -985,7 +996,7 @@ def init_warp_one_hemisphere_wf(
 
     # Resample the pial and white matter surfaces from fsnative to fsLR-32k or dhcpAsym-32k
     resample_to_fsLR32k = pe.MapNode(
-        CiftiSurfaceResample(method="BARYCENTRIC"),
+        CiftiSurfaceResample(method="BARYCENTRIC", num_threads=omp_nthreads),
         name="resample_to_fsLR32k",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -1000,7 +1011,7 @@ def init_warp_one_hemisphere_wf(
     # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
     # NOTE: What does this step do? Aren't the data in fsLR/dhcpAsym-32k from resample_to_fsLR32k?
     apply_affine_to_fsLR32k = pe.MapNode(
-        ApplyAffine(),
+        ApplyAffine(num_threads=omp_nthreads),
         name="apply_affine_to_fsLR32k",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
@@ -1014,7 +1025,7 @@ def init_warp_one_hemisphere_wf(
     # Apply FNIRT-format (forward) anatomical-to-template warpfield
     # NOTE: What does this step do?
     apply_warpfield_to_fsLR32k = pe.MapNode(
-        ApplyWarpfield(),
+        ApplyWarpfield(num_threads=omp_nthreads),
         name="apply_warpfield_to_fsLR32k",
         mem_gb=mem_gb,
         n_procs=omp_nthreads,

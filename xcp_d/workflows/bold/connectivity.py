@@ -420,9 +420,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     if config.workflow.output_correlations:
         # Correlate the parcellated data
         correlate_bold = pe.MapNode(
-            CiftiCorrelation(),
+            CiftiCorrelation(num_threads=config.nipype.omp_nthreads),
             name="correlate_bold",
             iterfield=["in_file"],
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (parcellated_bold_buffer, correlate_bold, [("parcellated_cifti", "in_file")]),

@@ -227,10 +227,11 @@ series to retain the original scaling.
                     direction="COLUMN",
                     right_surf=rh_midthickness,
                     left_surf=lh_midthickness,
+                    num_threads=config.nipype.omp_nthreads,
                 ),
                 name="ciftismoothing",
                 mem_gb=mem_gb["resampled"],
-                n_procs=1,
+                n_procs=config.nipype.omp_nthreads,
             )
 
             # Always check the intent code in CiftiSmooth's output file
@@ -322,19 +323,33 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Extract left and right hemispheres via Connectome Workbench
     lh_surf = pe.Node(
-        CiftiSeparateMetric(metric="CORTEX_LEFT", direction="COLUMN"),
+        CiftiSeparateMetric(
+            metric="CORTEX_LEFT",
+            direction="COLUMN",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="separate_lh",
         mem_gb=mem_gb["resampled"],
+        n_procs=config.nipype.omp_nthreads,
     )
     rh_surf = pe.Node(
-        CiftiSeparateMetric(metric="CORTEX_RIGHT", direction="COLUMN"),
+        CiftiSeparateMetric(
+            metric="CORTEX_RIGHT",
+            direction="COLUMN",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="separate_rh",
         mem_gb=mem_gb["resampled"],
+        n_procs=config.nipype.omp_nthreads,
     )
     subcortical_nifti = pe.Node(
-        CiftiSeparateVolumeAll(direction="COLUMN"),
+        CiftiSeparateVolumeAll(
+            direction="COLUMN",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="separate_subcortical",
         mem_gb=mem_gb["resampled"],
+        n_procs=config.nipype.omp_nthreads,
     )
 
     # Calculate the reho by hemipshere
@@ -356,10 +371,14 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
-        CiftiCreateDenseFromTemplate(from_cropped=True, out_file="reho.dscalar.nii"),
+        CiftiCreateDenseFromTemplate(
+            from_cropped=True,
+            out_file="reho.dscalar.nii",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="merge_cifti",
         mem_gb=mem_gb["resampled"],
-        n_procs=1,
+        n_procs=config.nipype.omp_nthreads,
     )
     reho_plot = pe.Node(
         PlotDenseCifti(base_desc="reho"),
