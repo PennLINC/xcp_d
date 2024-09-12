@@ -18,7 +18,7 @@ def test_compute_alff(ds001419_data):
     bold_mask = ds001419_data["brain_mask_file"]
 
     # Let's initialize the ALFF node
-    TR = 2
+    TR = 3
     bold_data = masking.apply_mask(bold_file, bold_mask).T
 
     original_alff = compute_alff(
@@ -29,16 +29,13 @@ def test_compute_alff(ds001419_data):
         sample_mask=None,
     )
 
-    original_alff_data_mean = original_alff.mean()
-
     # Now let's do an FFT
     # Let's work with a single voxel
     voxel_data = bold_data[2, :]
     fft_data = np.fft.fft(voxel_data)
     mean = fft_data.mean()
 
-    # Let's increase the values of the first few frequency's amplitudes
-    # to create fake data
+    # Let's increase the values of the first few frequencies' amplitudes to create fake data
     fft_data[:11] += 300 * mean
 
     # Let's convert this back into time domain
@@ -57,8 +54,5 @@ def test_compute_alff(ds001419_data):
         sample_mask=None,
     )
 
-    # Let's get the new ALFF mean
-    new_alff_data_mean = new_alff.mean()
-
     # Now let's make sure ALFF has increased ...
-    assert new_alff_data_mean > original_alff_data_mean
+    assert new_alff[2] > original_alff[2]
