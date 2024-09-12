@@ -3,7 +3,6 @@
 """Workflows for calculating BOLD metrics (ALFF and ReHo)."""
 
 from nipype.interfaces import utility as niu
-from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
@@ -17,6 +16,7 @@ from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiSeparateMetric,
     CiftiSeparateVolumeAll,
+    CiftiSmooth,
     FixCiftiIntent,
 )
 from xcp_d.utils.doc import fill_doc

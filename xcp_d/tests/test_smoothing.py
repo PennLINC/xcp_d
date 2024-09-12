@@ -5,11 +5,11 @@ import re
 import tempfile
 
 import numpy as np
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
 
 from xcp_d.interfaces.nilearn import Smooth
+from xcp_d.interfaces.workbench import CiftiSmooth
 from xcp_d.utils.utils import fwhm2sigma
 
 

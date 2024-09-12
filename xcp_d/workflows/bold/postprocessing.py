@@ -3,7 +3,6 @@
 """Workflows for post-processing BOLD data."""
 
 from nipype.interfaces import utility as niu
-from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
@@ -20,7 +19,7 @@ from xcp_d.interfaces.censoring import (
 from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
 from xcp_d.interfaces.plotting import CensoringPlot
 from xcp_d.interfaces.restingstate import DespikePatch
-from xcp_d.interfaces.workbench import CiftiConvert, FixCiftiIntent
+from xcp_d.interfaces.workbench import CiftiConvert, CiftiSmooth, FixCiftiIntent
 from xcp_d.utils.boilerplate import (
     describe_censoring,
     describe_motion_parameters,
