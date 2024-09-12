@@ -147,33 +147,21 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask, n_threads
         assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
     alff = np.zeros(n_voxels)
-    for i_voxel in range(n_voxels):
-        voxel_data = data_matrix[i_voxel, :]
-        alff[i_voxel] = _compute_alff_voxel(
-            voxel_data=voxel_data,
-            sample_mask=sample_mask,
-            n_volumes=n_volumes,
-            TR=TR,
-            fs=fs,
-            high_pass=high_pass,
-            low_pass=low_pass,
-        )
-
-        with ProcessPoolExecutor(max_workers=n_threads) as executor:
-            futures = [
-                executor.submit(
-                    process_voxel,
-                    i_voxel,
-                    data_matrix,
-                    sample_mask,
-                    TR,
-                    high_pass,
-                    low_pass,
-                )
-                for i_voxel in range(n_voxels)
-            ]
-            for i, future in enumerate(futures):
-                alff[i] = future.result()
+    with ProcessPoolExecutor(max_workers=n_threads) as executor:
+        futures = [
+            executor.submit(
+                process_voxel,
+                i_voxel,
+                data_matrix,
+                sample_mask,
+                TR,
+                high_pass,
+                low_pass,
+            )
+            for i_voxel in range(n_voxels)
+        ]
+        for i, future in enumerate(futures):
+            alff[i] = future.result()
 
     assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
 
