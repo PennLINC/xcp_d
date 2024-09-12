@@ -107,6 +107,11 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         desc="Temporal mask.",
     )
+    n_threads = traits.Int(
+        1,
+        usedefault=True,
+        desc="number of threads to use",
+    )
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
@@ -151,6 +156,7 @@ class ComputeALFF(SimpleInterface):
             high_pass=self.inputs.high_pass,
             TR=self.inputs.TR,
             sample_mask=sample_mask,
+            n_threads=self.inputs.n_threads,
         )
 
         # Write out the data

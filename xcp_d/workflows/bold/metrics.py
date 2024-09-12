@@ -142,7 +142,7 @@ series to retain the original scaling.
 
     # compute alff
     alff_compt = pe.Node(
-        ComputeALFF(TR=TR, low_pass=low_pass, high_pass=high_pass),
+        ComputeALFF(TR=TR, low_pass=low_pass, high_pass=high_pass, n_threads=omp_nthreads),
         mem_gb=mem_gb["resampled"],
         name="alff_compt",
         n_procs=omp_nthreads,
