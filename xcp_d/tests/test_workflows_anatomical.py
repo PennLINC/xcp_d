@@ -67,10 +67,7 @@ def test_warp_surfaces_to_template_wf(
     tmpdir = tmp_path_factory.mktemp("test_warp_surfaces_to_template_wf")
 
     with mock_config():
-        config.execution.xcp_d_dir = tmpdir
-        config.workflow.input_type = "fmriprep"
         config.nipype.omp_nthreads = 1
-        config.nipype.mem_gb = 0.1
 
         wf = anatomical.surface.init_warp_surfaces_to_template_wf(
             output_dir=tmpdir,
