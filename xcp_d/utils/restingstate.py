@@ -139,7 +139,6 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask, n_threads
     """
     from concurrent.futures import ProcessPoolExecutor
 
-    fs = 1 / TR  # sampling frequency
     n_voxels, n_volumes = data_matrix.shape
 
     if sample_mask is not None:
