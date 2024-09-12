@@ -66,24 +66,30 @@ def test_warp_surfaces_to_template_wf(
     """
     tmpdir = tmp_path_factory.mktemp("test_warp_surfaces_to_template_wf")
 
-    wf = anatomical.surface.init_warp_surfaces_to_template_wf(
-        output_dir=tmpdir,
-        software="FreeSurfer",
-        omp_nthreads=1,
-    )
+    with mock_config():
+        config.execution.xcp_d_dir = tmpdir
+        config.workflow.input_type = "fmriprep"
+        config.nipype.omp_nthreads = 1
+        config.nipype.mem_gb = 0.1
 
-    wf.inputs.inputnode.lh_pial_surf = surface_files["native_lh_pial"]
-    wf.inputs.inputnode.rh_pial_surf = surface_files["native_rh_pial"]
-    wf.inputs.inputnode.lh_wm_surf = surface_files["native_lh_wm"]
-    wf.inputs.inputnode.rh_wm_surf = surface_files["native_rh_wm"]
-    wf.inputs.inputnode.lh_subject_sphere = surface_files["lh_subject_sphere"]
-    wf.inputs.inputnode.rh_subject_sphere = surface_files["rh_subject_sphere"]
-    # transforms (only used if warp_to_standard is True)
-    wf.inputs.inputnode.anat_to_template_xfm = pnc_data["anat_to_template_xfm"]
-    wf.inputs.inputnode.template_to_anat_xfm = pnc_data["template_to_anat_xfm"]
+        wf = anatomical.surface.init_warp_surfaces_to_template_wf(
+            output_dir=tmpdir,
+            software="FreeSurfer",
+            omp_nthreads=1,
+        )
 
-    wf.base_dir = tmpdir
-    wf.run()
+        wf.inputs.inputnode.lh_pial_surf = surface_files["native_lh_pial"]
+        wf.inputs.inputnode.rh_pial_surf = surface_files["native_rh_pial"]
+        wf.inputs.inputnode.lh_wm_surf = surface_files["native_lh_wm"]
+        wf.inputs.inputnode.rh_wm_surf = surface_files["native_rh_wm"]
+        wf.inputs.inputnode.lh_subject_sphere = surface_files["lh_subject_sphere"]
+        wf.inputs.inputnode.rh_subject_sphere = surface_files["rh_subject_sphere"]
+        # transforms (only used if warp_to_standard is True)
+        wf.inputs.inputnode.anat_to_template_xfm = pnc_data["anat_to_template_xfm"]
+        wf.inputs.inputnode.template_to_anat_xfm = pnc_data["template_to_anat_xfm"]
+
+        wf.base_dir = tmpdir
+        wf.run()
 
     # All of the possible fsLR surfaces should be available.
     out_anat_dir = os.path.join(tmpdir, "sub-1648798153", "ses-PNC1", "anat")
