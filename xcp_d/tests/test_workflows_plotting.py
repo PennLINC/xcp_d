@@ -8,6 +8,7 @@ from xcp_d import config
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.workflows import plotting
+from xcp_d.workflows.base import clean_datasinks
 
 
 def test_init_plot_custom_slices_wf(ds001419_data, tmp_path_factory):
@@ -30,6 +31,7 @@ def test_init_plot_custom_slices_wf(ds001419_data, tmp_path_factory):
         wf.inputs.inputnode.overlay_file = nifti_3d
         wf.inputs.inputnode.underlay_file = ds001419_data["t1w_mni"]
         wf.base_dir = tmpdir
+        wf = clean_datasinks(wf)
         wf_res = wf.run()
 
         nodes = get_nodes(wf_res)

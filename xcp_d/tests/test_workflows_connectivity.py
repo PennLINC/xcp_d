@@ -287,6 +287,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.inputs.inputnode.atlas_files = atlas_files
         connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
         connectivity_wf.base_dir = tmpdir
+        connectivity_wf = clean_datasinks(connectivity_wf)
         connectivity_wf_res = connectivity_wf.run()
 
         nodes = get_nodes(connectivity_wf_res)
