@@ -555,3 +555,30 @@ def _create_mem_gb(bold_fname):
         mem_gbz["resampled"] = 3
 
     return mem_gbz
+
+
+def _make_dictionary(metadata=None, **kwargs):
+    """Create or modify a dictionary.
+
+    This will add kwargs to a metadata dictionary if the dictionary is provided,
+    or create a dictionary from scratch if not.
+    """
+    from copy import deepcopy
+
+    from bids.utils import listify
+
+    if metadata:
+        out_metadata = deepcopy(metadata)
+        for key, value in kwargs.items():
+            if key not in metadata.keys():
+                out_metadata[key] = value
+            elif isinstance(value, list) or isinstance(out_metadata[key], list):
+                # Append the values if they're a list
+                out_metadata[key] = listify(out_metadata[key]) + listify(value)
+            else:
+                # Overwrite the old value
+                out_metadata[key] = value
+
+        return out_metadata
+    else:
+        return dict(kwargs)
