@@ -251,7 +251,7 @@ def init_postprocess_surfaces_wf(
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
             output_dir=output_dir,
             software=software,
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
             name="warp_surfaces_to_template_wf",
         )
         workflow.connect([
@@ -417,7 +417,7 @@ def init_warp_surfaces_to_template_wf(
             hemisphere=hemi,
             software=software,
             mem_gb=2,
-            n_procs=omp_nthreads,
+            omp_nthreads=omp_nthreads,
             name=f"{hemi_label}_apply_transforms_wf",
         )
         workflow.connect([
