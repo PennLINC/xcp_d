@@ -1,5 +1,6 @@
 """Interfaces for the post-processing workflows."""
 
+import json
 import os
 
 import nibabel as nb
@@ -423,6 +424,9 @@ class ProcessMotion(SimpleInterface):
     output_spec = _ProcessMotionOutputSpec
 
     def _run_interface(self, runtime):
+        with open(self.inputs.motion_json, "r") as f:
+            motion_metadata = json.load(f)
+
         band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
             motion_filter_type=self.inputs.motion_filter_type,
             band_stop_min=self.inputs.band_stop_min,
@@ -455,9 +459,8 @@ class ProcessMotion(SimpleInterface):
             fd_timeseries = motion_df["framewise_displacement_filtered"].to_numpy()
 
         # Compile motion metadata from confounds metadata, adding in filtering info
-        motion_metadata = {}
         for col in motion_df.columns.tolist():
-            col_metadata = self.inputs.motion_metadata.get(col, {})
+            col_metadata = motion_metadata.get(col, {})
             if col.startswith("framewise_displacement"):
                 col_metadata["Description"] = (
                     "Framewise displacement calculated according to Power et al. (2012)."
