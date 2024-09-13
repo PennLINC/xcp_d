@@ -52,7 +52,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     workflow = Workflow(name=name)
     atlases = config.execution.atlases
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     file_format = config.workflow.file_format
 
     inputnode = pe.Node(

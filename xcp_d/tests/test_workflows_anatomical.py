@@ -107,7 +107,7 @@ def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
     shutil.copyfile(t1w, t2w)
 
     with mock_config():
-        config.execution.xcp_d_dir = tmpdir
+        config.execution.output_dir = tmpdir
         config.workflow.input_type = "fmriprep"
         config.nipype.omp_nthreads = 1
         config.nipype.mem_gb = 0.1

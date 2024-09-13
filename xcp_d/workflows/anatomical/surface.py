@@ -117,7 +117,7 @@ def init_postprocess_surfaces_wf(
 
     abcc_qc = config.workflow.abcc_qc
     process_surfaces = config.workflow.process_surfaces
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -456,7 +456,6 @@ def init_warp_surfaces_to_template_wf(
 
         ds_standard_space_surfaces = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 space="fsLR",
                 den="32k",
                 extension=".surf.gii",  # the extension is taken from the in_file by default
@@ -508,8 +507,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -542,7 +539,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     ds_midthickness = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             check_hdr=False,
             space="fsLR",
             den="32k",
@@ -575,7 +571,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     ds_inflated = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             check_hdr=False,
             space="fsLR",
             den="32k",
@@ -594,7 +589,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     ds_vinflated = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             check_hdr=False,
             space="fsLR",
             den="32k",

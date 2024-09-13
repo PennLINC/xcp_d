@@ -19,8 +19,6 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
 
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -45,22 +43,20 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
         ]),
     ])  # fmt:skip
 
-    ds_overlay_figure = pe.Node(
+    ds_report_overlay_figure = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             dismiss_entities=["den"],
-            datatype="figures",
             desc=desc,
             extension=".png",
         ),
-        name="ds_overlay_figure",
+        name="ds_report_overlay_figure",
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([
-        (inputnode, ds_overlay_figure, [("name_source", "source_file")]),
-        (plot_overlay_figure, ds_overlay_figure, [("out_files", "in_file")]),
+        (inputnode, ds_report_overlay_figure, [("name_source", "source_file")]),
+        (plot_overlay_figure, ds_report_overlay_figure, [("out_files", "in_file")]),
     ])  # fmt:skip
 
     reformat_for_brain_swipes = pe.Node(FormatForBrainSwipes(), name="reformat_for_brain_swipes")
@@ -68,22 +64,20 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
         (plot_overlay_figure, reformat_for_brain_swipes, [("slicewise_files", "in_files")]),
     ])  # fmt:skip
 
-    ds_reformatted_figure = pe.Node(
+    ds_report_reformatted_figure = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             dismiss_entities=["den"],
-            datatype="figures",
             desc=f"{desc}BrainSwipes",
             extension=".png",
         ),
-        name="ds_reformatted_figure",
+        name="ds_report_reformatted_figure",
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([
-        (inputnode, ds_reformatted_figure, [("name_source", "source_file")]),
-        (reformat_for_brain_swipes, ds_reformatted_figure, [("out_file", "in_file")]),
+        (inputnode, ds_report_reformatted_figure, [("name_source", "source_file")]),
+        (reformat_for_brain_swipes, ds_report_reformatted_figure, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     return workflow
@@ -91,7 +85,6 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
 
 @fill_doc
 def init_plot_custom_slices_wf(
-    output_dir,
     desc,
     name="plot_custom_slices_wf",
 ):
@@ -108,7 +101,6 @@ def init_plot_custom_slices_wf(
             from xcp_d.workflows.execsummary import init_plot_custom_slices_wf
 
             wf = init_plot_custom_slices_wf(
-                output_dir=".",
                 desc="AtlasOnSubcorticals",
                 name="plot_custom_slices_wf",
             )
@@ -175,21 +167,19 @@ def init_plot_custom_slices_wf(
 
     workflow.connect([(make_image, combine_images, [("out_file", "in_files")])])
 
-    ds_overlay_figure = pe.Node(
+    ds_report_overlay_figure = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             dismiss_entities=["den"],
-            datatype="figures",
             desc=desc,
             extension=".png",
         ),
-        name="ds_overlay_figure",
+        name="ds_report_overlay_figure",
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
     workflow.connect([
-        (inputnode, ds_overlay_figure, [("name_source", "source_file")]),
-        (combine_images, ds_overlay_figure, [("out_file", "in_file")]),
+        (inputnode, ds_report_overlay_figure, [("name_source", "source_file")]),
+        (combine_images, ds_report_overlay_figure, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     return workflow

@@ -98,7 +98,6 @@ def init_prepare_confounds_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
     params = config.workflow.params
     dummy_scans = config.workflow.dummy_scans
     random_seed = config.seeds.master
@@ -324,21 +323,19 @@ def init_prepare_confounds_wf(
             (outputnode, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
         ])  # fmt:skip
 
-        ds_design_matrix_plot = pe.Node(
+        ds_report_design_matrix = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["space", "res", "den", "desc"],
-                datatype="figures",
                 suffix="design",
                 extension=".svg",
             ),
-            name="ds_design_matrix_plot",
+            name="ds_report_design_matrix",
             run_without_submitting=False,
         )
 
         workflow.connect([
-            (inputnode, ds_design_matrix_plot, [("name_source", "source_file")]),
-            (plot_design_matrix, ds_design_matrix_plot, [("design_matrix_figure", "in_file")]),
+            (inputnode, ds_report_design_matrix, [("name_source", "source_file")]),
+            (plot_design_matrix, ds_report_design_matrix, [("design_matrix_figure", "in_file")]),
         ])  # fmt:skip
 
     censor_report = pe.Node(
@@ -362,8 +359,6 @@ def init_prepare_confounds_wf(
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
-            datatype="figures",
             desc="censoring",
             suffix="motion",
             extension=".svg",

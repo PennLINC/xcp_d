@@ -33,7 +33,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
     mem_gbx = _create_mem_gb(bold_file)
 
     with mock_config():
-        config.execution.xcp_d_dir = tempdir
+        config.execution.output_dir = tempdir
         config.workflow.file_format = "nifti"
         config.workflow.low_pass = 0.08
         config.workflow.high_pass = 0.01
@@ -120,7 +120,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
     tempdir = tmp_path_factory.mktemp("test_cifti_alff_01")
 
     with mock_config():
-        config.execution.xcp_d_dir = tempdir
+        config.execution.output_dir = tempdir
         config.workflow.file_format = "cifti"
         config.workflow.low_pass = 0.08
         config.workflow.high_pass = 0.01
@@ -213,7 +213,7 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
 
     # Set up and run the ReHo wf in a tempdir
     with mock_config():
-        config.execution.xcp_d_dir = tempdir
+        config.execution.output_dir = tempdir
         config.nipype.omp_nthreads = 2
 
         reho_wf = metrics.init_reho_nifti_wf(name_source=bold_file, mem_gb=mem_gbx)
@@ -269,7 +269,7 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
 
     # Set up and run the ReHo wf in a tempdir
     with mock_config():
-        config.execution.xcp_d_dir = tempdir
+        config.execution.output_dir = tempdir
         config.nipype.omp_nthreads = 2
 
         reho_wf = metrics.init_reho_cifti_wf(

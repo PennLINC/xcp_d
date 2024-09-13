@@ -18,7 +18,6 @@ def test_init_plot_custom_slices_wf(ds001419_data, tmp_path_factory):
     img_3d.to_filename(nifti_3d)
 
     wf = plotting.init_plot_custom_slices_wf(
-        output_dir=tmpdir,
         desc="SubcorticalOnAtlas",
         name="plot_custom_slices_wf",
     )
