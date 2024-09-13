@@ -1,8 +1,23 @@
 # What's New
 
+
+## 0.9.1
+
+This release improves performance with multi-core processing.
+
+### Other Changes
+
+* Remove n_procs for nodes that do not use multiple cores by @tsalo in https://github.com/PennLINC/xcp_d/pull/1256
+* Remove unused data files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1259
+* Parallelize ALFF by @tsalo in https://github.com/PennLINC/xcp_d/pull/1258
+* Replace internal data module with acres by @tsalo in https://github.com/PennLINC/xcp_d/pull/1260
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.9.0...0.9.1
+
+
 ## 0.9.0
 
-This backwards-incompatible makes two important breaking changes.
+This backwards-incompatible release makes two important breaking changes.
 First, we changd the default file format for 'linc' mode from NIfTI to CIFTI.
 Second, XCP-D no longer ingresses and warps the anatomical tissue segmentation file (`*_dseg.nii.gz`),
 since no one was using it and it's easy enough to collect separately.
