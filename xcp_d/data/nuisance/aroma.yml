@@ -8,6 +8,9 @@ confounds:
     preproc_confounds:
         dataset: preprocessed
         query:
+            space: null
+            res: null
+            den: null
             desc: confounds
             extension: .tsv
             suffix: timeseries
@@ -17,7 +20,10 @@ confounds:
     aroma_confounds:
         dataset: aroma
         query:
-            desc: confounds
+            space: null
+            res: null
+            den: null
+            desc: aroma
             extension: .tsv
             suffix: timeseries
         columns:

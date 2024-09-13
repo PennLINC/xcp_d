@@ -15,6 +15,8 @@ confounds:
         dataset: preprocessed
         query:
             space: null
+            res: null
+            den: null
             desc: confounds
             extension: .tsv
             suffix: timeseries
