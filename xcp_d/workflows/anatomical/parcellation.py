@@ -104,9 +104,13 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
     for file_to_parcellate in files_to_parcellate:
         resample_atlas_to_surface = pe.MapNode(
-            CiftiCreateDenseFromTemplate(out_file="resampled_atlas.dlabel.nii"),
+            CiftiCreateDenseFromTemplate(
+                out_file="resampled_atlas.dlabel.nii",
+                num_threads=config.nipype.omp_nthreads,
+            ),
             name=f"resample_atlas_to_{file_to_parcellate}",
             iterfield=["label"],
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, resample_atlas_to_surface, [(file_to_parcellate, "template_cifti")]),

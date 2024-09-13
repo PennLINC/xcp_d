@@ -54,7 +54,6 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     atlases = config.execution.atlases
     output_dir = config.execution.output_dir
     file_format = config.workflow.file_format
-    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -117,11 +116,12 @@ def init_load_atlases_wf(name="load_atlases_wf"):
                 interpolation="GenericLabel",
                 input_image_type=3,
                 dimension=3,
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_atlases_to_bold_space",
             iterfield=["input_image"],
             mem_gb=2,
-            n_procs=omp_nthreads,
+            n_procs=config.nipype.omp_nthreads,
         )
 
         workflow.connect([
@@ -307,9 +307,11 @@ def init_parcellate_cifti_wf(
                 direction="COLUMN",
                 only_numeric=True,
                 out_file="parcellated_atlas.pscalar.nii",
+                num_threads=config.nipype.omp_nthreads,
             ),
             name="parcellate_coverage",
             iterfield=["atlas_label"],
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, parcellate_coverage, [("atlas_files", "atlas_label")]),
@@ -342,10 +344,12 @@ def init_parcellate_cifti_wf(
             direction="COLUMN",
             only_numeric=True,
             out_file=f"parcellated_data.{'ptseries' if compute_mask else 'pscalar'}.nii",
+            num_threads=config.nipype.omp_nthreads,
         ),
         name="parcellate_data",
         iterfield=["atlas_label"],
         mem_gb=mem_gb["resampled"],
+        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
         (inputnode, parcellate_data, [
@@ -357,10 +361,14 @@ def init_parcellate_cifti_wf(
 
     # Threshold node coverage values based on coverage threshold.
     threshold_coverage = pe.MapNode(
-        CiftiMath(expression=f"data > {config.workflow.min_coverage}"),
+        CiftiMath(
+            expression=f"data > {config.workflow.min_coverage}",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="threshold_coverage",
         iterfield=["data"],
         mem_gb=mem_gb["resampled"],
+        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([(coverage_buffer, threshold_coverage, [("coverage_cifti", "data")])])
 

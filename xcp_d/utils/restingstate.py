@@ -101,7 +101,19 @@ def mesh_adjacency(hemi):
     return adjacency_matrix
 
 
-def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
+def compute_alff_chunk(args):
+    """Compute ALFF on a chunk of data."""
+    thread_data, low_pass, high_pass, TR, sample_mask = args
+    return compute_alff(
+        data_matrix=thread_data,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        TR=TR,
+        sample_mask=sample_mask,
+    )
+
+
+def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
     """Compute amplitude of low-frequency fluctuation (ALFF).
 
     Parameters
@@ -137,10 +149,6 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     """
     fs = 1 / TR  # sampling frequency
     n_voxels, n_volumes = data_matrix.shape
-
-    if sample_mask is not None:
-        sample_mask = sample_mask.astype(bool)
-        assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
@@ -206,8 +214,4 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         alff[i_voxel] *= sd_scale
 
     assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
-
-    # Add second dimension to array
-    alff = alff[:, None]
-
     return alff

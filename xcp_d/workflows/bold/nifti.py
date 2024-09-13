@@ -144,7 +144,6 @@ def init_postprocess_nifti_wf(
     dummy_scans = config.workflow.dummy_scans
     despike = config.workflow.despike
     atlases = config.execution.atlases
-    omp_nthreads = config.nipype.omp_nthreads
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
@@ -218,7 +217,6 @@ the following post-processing was performed.
         ConvertTo32(),
         name="downcast_data",
         mem_gb=mem_gbx["timeseries"],
-        n_procs=omp_nthreads,
     )
 
     workflow.connect([

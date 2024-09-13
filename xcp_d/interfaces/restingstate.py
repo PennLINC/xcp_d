@@ -23,7 +23,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.restingstate import compute_2d_reho, compute_alff, mesh_adjacency
+from xcp_d.utils.restingstate import compute_2d_reho, mesh_adjacency
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
@@ -107,6 +107,11 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         desc="Temporal mask.",
     )
+    n_threads = traits.Int(
+        1,
+        usedefault=True,
+        desc="number of threads to use",
+    )
 
 
 class _ComputeALFFOutputSpec(TraitedSpec):
@@ -134,8 +139,23 @@ class ComputeALFF(SimpleInterface):
     output_spec = _ComputeALFFOutputSpec
 
     def _run_interface(self, runtime):
+        import gc
+        from multiprocessing import Pool
+
+        import numpy as np
+
+        from xcp_d.utils.restingstate import compute_alff_chunk
+
         # Get the nifti/cifti into matrix form
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+        n_voxels, n_volumes = data_matrix.shape
+
+        # Split the data_matrix into n_threads chunks of voxels
+        voxel_indices = np.array_split(np.arange(n_voxels), self.inputs.n_threads)
+        split_arrays = np.array_split(data_matrix, self.inputs.n_threads, axis=0)
+
+        del data_matrix
+        gc.collect()
 
         sample_mask = None
         temporal_mask = self.inputs.temporal_mask
@@ -143,15 +163,27 @@ class ComputeALFF(SimpleInterface):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
             sample_mask = ~censoring_df["framewise_displacement"].values.astype(bool)
+            assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
 
-        # compute the ALFF
-        alff_mat = compute_alff(
-            data_matrix=data_matrix,
-            low_pass=self.inputs.low_pass,
-            high_pass=self.inputs.high_pass,
-            TR=self.inputs.TR,
-            sample_mask=sample_mask,
-        )
+        alff_mat = np.zeros(n_voxels)
+        with Pool(processes=self.inputs.n_threads) as pool:
+            args = [
+                (
+                    split_arrays[i_thread],
+                    self.inputs.low_pass,
+                    self.inputs.high_pass,
+                    self.inputs.TR,
+                    sample_mask,
+                )
+                for i_thread in range(self.inputs.n_threads)
+            ]
+            results = pool.map(compute_alff_chunk, args)
+
+        for i_thread, result in enumerate(results):
+            alff_mat[voxel_indices[i_thread]] = result
+
+        # Add extra dimension to the matrix
+        alff_mat = alff_mat[:, None]
 
         # Write out the data
         if self.inputs.in_file.endswith(".dtseries.nii"):
