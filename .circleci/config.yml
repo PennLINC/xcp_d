@@ -149,7 +149,15 @@ jobs:
           name: Run full xcp_d on nifti without freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer
             # remove nifti files before uploading artifacts
@@ -183,7 +191,15 @@ jobs:
           name: Run full xcp_d on nifti without freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer_with_main" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer_with_main" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer_with_main
             # remove nifti files before uploading artifacts
@@ -217,7 +233,15 @@ jobs:
           name: Run full xcp_d on nifti with freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "ds001419_nifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "ds001419_nifti" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_nifti
             # remove nifti files before uploading artifacts
@@ -251,7 +275,15 @@ jobs:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "ds001419_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "ds001419_cifti" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
             # remove nifti files before uploading artifacts
@@ -285,7 +317,15 @@ jobs:
           name: Run full xcp_d on UK Biobank data
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "ukbiobank" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "ukbiobank" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ukbiobank
             # remove nifti files before uploading artifacts
@@ -319,7 +359,15 @@ jobs:
           name: Run full xcp_d on nibabies
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "nibabies" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "nibabies" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.nibabies
             # remove nifti files before uploading artifacts
@@ -353,7 +401,15 @@ jobs:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
           command: |
-            pytest -rP -o log_cli=true -m "pnc_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "pnc_cifti" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_cifti
             # remove nifti files before uploading artifacts
@@ -387,7 +443,15 @@ jobs:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
           command: |
-            pytest -rP -o log_cli=true -m "pnc_cifti_t2wonly" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "pnc_cifti_t2wonly" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_cifti_t2wonly
             # remove nifti files before uploading artifacts
@@ -429,7 +493,10 @@ jobs:
           command: |
             pytest \
               -n ${CIRCLE_CPUS} \
-              --cov-append --cov-report term-missing --cov=xcp_d \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
               --data_dir=/src/xcp_d/.circleci/data \
               --output_dir=/src/xcp_d/.circleci/out \
               --working_dir=/src/xcp_d/.circleci/work \
