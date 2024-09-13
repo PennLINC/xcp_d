@@ -7,16 +7,9 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.utils.bids import (
-    _make_atlas_uri,
-    _make_custom_uri,
-    _make_preproc_uri,
-    _make_xcpd_uri,
-    get_entity,
-)
+from xcp_d.interfaces.bids import BIDSURI, DerivativesDataSink
+from xcp_d.utils.bids import get_entity
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _make_dictionary
 
 
 @fill_doc
@@ -154,6 +147,25 @@ def init_postproc_derivatives_wf(
         name="outputnode",
     )
 
+    bold_sources = pe.Node(
+        BIDSURI(
+            numinputs=1,
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(output_dir),
+        ),
+        name="sources",
+    )
+    bold_sources.inputs.in1 = name_source
+    confound_sources = pe.Node(
+        BIDSURI(
+            numinputs=1,
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(output_dir),
+        ),
+        name="confounds",
+    )
+    workflow.connect([(inputnode, confound_sources, [("fmriprep_confounds_file", "in1")])])
+
     # Create dictionary of basic information
     cleaned_data_dictionary = {
         "NuisanceParameters": params,
@@ -182,8 +194,6 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
 
-    preproc_bold_src = _make_preproc_uri(name_source, fmri_dir)
-
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
             base_directory=output_dir,
@@ -201,8 +211,8 @@ def init_postproc_derivatives_wf(
         (inputnode, ds_filtered_motion, [
             ("motion_metadata", "meta_dict"),
             ("filtered_motion", "in_file"),
-            (("fmriprep_confounds_file", _make_preproc_uri, fmri_dir), "Sources"),
         ]),
+        (confound_sources, ds_filtered_motion, [("out", "Sources")]),
         (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
     ])  # fmt:skip
 
@@ -212,9 +222,19 @@ def init_postproc_derivatives_wf(
         run_without_submitting=True,
         mem_gb=1,
     )
-    merge_dense_src.inputs.in1 = preproc_bold_src
+    workflow.connect([(bold_sources, merge_dense_src, [("out", "in1")])])
 
     if fd_thresh > 0:
+        filtered_motion_src = pe.Node(
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
+            ),
+            name="filtered_motion_src",
+        )
+        workflow.connect([(ds_filtered_motion, filtered_motion_src, [("out_file", "in1")])])
+
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
                 base_directory=output_dir,
@@ -229,18 +249,27 @@ def init_postproc_derivatives_wf(
             run_without_submitting=True,
             mem_gb=1,
         )
+
         workflow.connect([
             (inputnode, ds_temporal_mask, [
                 ("temporal_mask_metadata", "meta_dict"),
                 ("temporal_mask", "in_file"),
             ]),
-            (ds_filtered_motion, ds_temporal_mask, [
-                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
+            (filtered_motion_src, ds_temporal_mask, [("out", "Sources")]),
             (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
-            (ds_temporal_mask, merge_dense_src, [
-                (("out_file", _make_xcpd_uri, output_dir), "in2"),
-            ]),
+        ])  # fmt:skip
+
+        temporal_mask_src = pe.Node(
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
+            ),
+            name="temporal_mask_src",
+        )
+        workflow.connect([
+            (ds_temporal_mask, temporal_mask_src, [("out_file", "in1")]),
+            (temporal_mask_src, merge_dense_src, [("out", "in2")]),
         ])  # fmt:skip
 
     if params != "none":

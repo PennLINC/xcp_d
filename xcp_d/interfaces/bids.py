@@ -11,15 +11,17 @@ from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     Directory,
+    DynamicTraitedSpec,
     File,
     SimpleInterface,
     TraitedSpec,
     traits,
 )
+from nipype.interfaces.io import add_traits
 from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
 
 from xcp_d.data import load as load_data
-from xcp_d.utils.bids import get_entity
+from xcp_d.utils.bids import _get_bidsuris, get_entity
 
 # NOTE: Modified for xcpd's purposes
 xcp_d_spec = loads(load_data("xcp_d_bids_config.json").read_text())

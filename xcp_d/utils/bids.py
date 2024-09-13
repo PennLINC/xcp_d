@@ -12,7 +12,10 @@ from pathlib import Path
 
 import nibabel as nb
 import yaml
+from bids.utils import listify
 from nipype import logging
+from nipype.interfaces.base import isdefined
+from nipype.interfaces.utility.base import _ravel
 from packaging.version import Version
 
 from xcp_d.data import load as load_data
@@ -655,7 +658,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confounds_folder=None):
+def write_dataset_description(fmri_dir, output_dir, dataset_links=None):
     """Write dataset_description.json file for derivatives.
 
     Parameters
@@ -664,10 +667,8 @@ def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confoun
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
         Path to the output xcp-d dataset.
-    atlases : :obj:`list` of :obj:`str`, optional
-        Names of requested XCP-D atlases.
-    custom_confounds_folder : :obj:`str`, optional
-        Path to the folder containing custom confounds files.
+    dataset_links : :obj:`dict`, optional
+        Dictionary of dataset links to include in the dataset description.
     """
     import json
     import os
@@ -707,25 +708,8 @@ def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confoun
     dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
 
     # Add DatasetLinks
-    if "DatasetLinks" not in dset_desc.keys():
-        dset_desc["DatasetLinks"] = {}
-
-    if "preprocessed" in dset_desc["DatasetLinks"].keys():
-        LOGGER.warning("'preprocessed' is already a dataset link. Overwriting.")
-
-    dset_desc["DatasetLinks"]["preprocessed"] = str(fmri_dir)
-
-    if atlases:
-        if "atlases" in dset_desc["DatasetLinks"].keys():
-            LOGGER.warning("'atlases' is already a dataset link. Overwriting.")
-
-        dset_desc["DatasetLinks"]["atlases"] = os.path.join(output_dir, "atlases")
-
-    if custom_confounds_folder:
-        if "custom_confounds" in dset_desc["DatasetLinks"].keys():
-            LOGGER.warning("'custom_confounds' is already a dataset link. Overwriting.")
-
-        dset_desc["DatasetLinks"]["custom_confounds"] = str(custom_confounds_folder)
+    if dataset_links:
+        dset_desc["DatasetLinks"] = {k: str(v) for k, v in dataset_links.items()}
 
     xcpd_dset_description = os.path.join(output_dir, "dataset_description.json")
     if os.path.isfile(xcpd_dset_description):
@@ -1025,78 +1009,6 @@ def group_across_runs(in_files):
     return out_files
 
 
-def _make_uri(in_file, dataset_name, dataset_path):
-    """Convert a filename to a BIDS URI.
-
-    Raises
-    ------
-    ValueError
-        If ``in_file`` is not relative to ``dataset_path``.
-    """
-    bids_uri = f"bids:{dataset_name}:{str(Path(in_file).relative_to(dataset_path))}"
-    return bids_uri
-
-
-def _make_xcpd_uri(out_file, output_dir):
-    """Convert postprocessing derivative's path to BIDS URI."""
-    from xcp_d.utils.bids import _make_uri
-
-    if isinstance(out_file, list):
-        return [_make_uri(of, "", output_dir) for of in out_file]
-    else:
-        return [_make_uri(out_file, "", output_dir)]
-
-
-def _make_xcpd_uri_lol(in_list, output_dir):
-    """Call _make_xcpd_uri on a list of lists and then transpose the result."""
-    from xcp_d.utils.bids import _make_xcpd_uri
-    from xcp_d.utils.utils import _transpose_lol
-
-    out = []
-    for sublist in in_list:
-        sublist_out = _make_xcpd_uri(sublist, output_dir)
-        out.append(sublist_out)
-
-    out_lol = _transpose_lol(out)
-    return out_lol
-
-
-def _make_atlas_uri(out_file, output_dir):
-    """Convert postprocessing atlas derivative's path to BIDS URI."""
-    import os
-
-    from xcp_d.utils.bids import _make_uri
-
-    dataset_path = os.path.join(output_dir, "atlases")
-
-    if isinstance(out_file, list):
-        return [_make_uri(of, "atlas", dataset_path) for of in out_file]
-    else:
-        return [_make_uri(out_file, "atlas", dataset_path)]
-
-
-def _make_preproc_uri(out_file, fmri_dir):
-    """Convert preprocessing derivative's path to BIDS URI."""
-    from xcp_d.utils.bids import _make_uri
-
-    if isinstance(out_file, list):
-        return [_make_uri(of, "preprocessed", fmri_dir) for of in out_file]
-    else:
-        return [_make_uri(out_file, "preprocessed", fmri_dir)]
-
-
-def _make_custom_uri(out_file):
-    """Convert custom confounds' path to BIDS URI."""
-    import os
-
-    from xcp_d.utils.bids import _make_uri
-
-    if isinstance(out_file, list):
-        return [_make_uri(of, "custom_confounds", os.path.dirname(of)) for of in out_file]
-    else:
-        return [_make_uri(out_file, "custom_confounds", os.path.dirname(out_file))]
-
-
 def check_pipeline_version(pipeline_name, cvers, data_desc):
     """Search for existing BIDS pipeline output and compares against current pipeline version.
 
@@ -1131,3 +1043,81 @@ def check_pipeline_version(pipeline_name, cvers, data_desc):
 
     if Version(cvers).public != Version(dvers).public:
         return f"Previous output generated by version {dvers} found."
+
+
+def _find_nearest_path(path_dict, input_path):
+    """Find the nearest relative path from an input path to a dictionary of paths.
+
+    If ``input_path`` is not relative to any of the paths in ``path_dict``,
+    the absolute path string is returned.
+    If ``input_path`` is already a BIDS-URI, then it will be returned unmodified.
+
+    Parameters
+    ----------
+    path_dict : dict of (str, Path)
+        A dictionary of paths.
+    input_path : Path
+        The input path to match.
+
+    Returns
+    -------
+    matching_path : str
+        The nearest relative path from the input path to a path in the dictionary.
+        This is either the concatenation of the associated key from ``path_dict``
+        and the relative path from the associated value from ``path_dict`` to ``input_path``,
+        or the absolute path to ``input_path`` if no matching path is found from ``path_dict``.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> path_dict = {
+    ...     'bids::': Path('/data/derivatives/fmriprep'),
+    ...     'bids:raw:': Path('/data'),
+    ...     'bids:deriv-0:': Path('/data/derivatives/source-1'),
+    ... }
+    >>> input_path = Path('/data/derivatives/source-1/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # match to 'bids:deriv-0:'
+    'bids:deriv-0:sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = Path('/out/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # no match- absolute path
+    '/out/sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = Path('/data/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # match to 'bids:raw:'
+    'bids:raw:sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = 'bids::sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> _find_nearest_path(path_dict, input_path)  # already a BIDS-URI
+    'bids::sub-01/func/sub-01_task-rest_bold.nii.gz'
+    """
+    # Don't modify BIDS-URIs
+    if isinstance(input_path, str) and input_path.startswith("bids:"):
+        return input_path
+
+    input_path = Path(input_path)
+    matching_path = None
+    for key, path in path_dict.items():
+        if input_path.is_relative_to(path):
+            relative_path = input_path.relative_to(path)
+            if (matching_path is None) or (len(relative_path.parts) < len(matching_path.parts)):
+                matching_key = key
+                matching_path = relative_path
+
+    if matching_path is None:
+        matching_path = str(input_path.absolute())
+    else:
+        matching_path = f"{matching_key}{matching_path}"
+
+    return matching_path
+
+
+def _get_bidsuris(in_files, dataset_links, out_dir):
+    """Convert input paths to BIDS-URIs using a dictionary of dataset links."""
+    in_files = listify(in_files)
+    in_files = _ravel(in_files)
+    # Remove undefined inputs
+    in_files = [f for f in in_files if isdefined(f)]
+    # Convert the dataset links to BIDS URI prefixes
+    updated_keys = {f"bids:{k}:": Path(v) for k, v in dataset_links.items()}
+    updated_keys["bids::"] = Path(out_dir)
+    # Convert the paths to BIDS URIs
+    out = [_find_nearest_path(updated_keys, f) for f in in_files]
+    return out
