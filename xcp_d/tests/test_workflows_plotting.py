@@ -4,6 +4,8 @@ import os
 
 from nilearn import image
 
+from xcp_d import config
+from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.workflows import plotting
 
@@ -17,15 +19,19 @@ def test_init_plot_custom_slices_wf(ds001419_data, tmp_path_factory):
     img_3d = image.index_img(nifti_file, 5)
     img_3d.to_filename(nifti_3d)
 
-    wf = plotting.init_plot_custom_slices_wf(
-        desc="SubcorticalOnAtlas",
-        name="plot_custom_slices_wf",
-    )
-    wf.inputs.inputnode.name_source = nifti_file
-    wf.inputs.inputnode.overlay_file = nifti_3d
-    wf.inputs.inputnode.underlay_file = ds001419_data["t1w_mni"]
-    wf.base_dir = tmpdir
-    wf_res = wf.run()
-    nodes = get_nodes(wf_res)
-    overlay_figure = nodes["plot_custom_slices_wf.ds_overlay_figure"].get_output("out_file")
-    assert os.path.isfile(overlay_figure)
+    with mock_config():
+        config.execution.output_dir = tmpdir
+
+        wf = plotting.init_plot_custom_slices_wf(
+            desc="SubcorticalOnAtlas",
+            name="plot_custom_slices_wf",
+        )
+        wf.inputs.inputnode.name_source = nifti_file
+        wf.inputs.inputnode.overlay_file = nifti_3d
+        wf.inputs.inputnode.underlay_file = ds001419_data["t1w_mni"]
+        wf.base_dir = tmpdir
+        wf_res = wf.run()
+
+        nodes = get_nodes(wf_res)
+        overlay_figure = nodes["plot_custom_slices_wf.ds_overlay_figure"].get_output("out_file")
+        assert os.path.isfile(overlay_figure)

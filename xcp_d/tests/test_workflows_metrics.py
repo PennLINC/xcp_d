@@ -12,6 +12,7 @@ from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.utils.write_save import read_ndata, write_ndata
+from xcp_d.workflows.base import clean_datasinks
 from xcp_d.workflows.bold import metrics
 
 
@@ -51,6 +52,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         alff_wf.base_dir = tempdir
         alff_wf.inputs.inputnode.bold_mask = bold_mask
         alff_wf.inputs.inputnode.denoised_bold = bold_file
+        alff_wf = clean_datasinks(alff_wf)
         compute_alff_res = alff_wf.run()
 
         nodes = get_nodes(compute_alff_res)
@@ -137,6 +139,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         alff_wf.base_dir = tempdir
         alff_wf.inputs.inputnode.bold_mask = bold_mask
         alff_wf.inputs.inputnode.denoised_bold = bold_file
+        alff_wf = clean_datasinks(alff_wf)
         compute_alff_res = alff_wf.run()
 
         nodes = get_nodes(compute_alff_res)
@@ -220,6 +223,7 @@ def test_nifti_reho(ds001419_data, tmp_path_factory):
         reho_wf.inputs.inputnode.bold_mask = bold_mask
         reho_wf.base_dir = tempdir
         reho_wf.inputs.inputnode.denoised_bold = bold_file
+        reho_wf = clean_datasinks(reho_wf)
         reho_res = reho_wf.run()
 
         nodes = get_nodes(reho_res)
@@ -279,6 +283,7 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
         )
         reho_wf.base_dir = tempdir
         reho_wf.inputs.inputnode.denoised_bold = orig_bold_file
+        reho_wf = clean_datasinks(reho_wf)
         reho_res = reho_wf.run()
 
         nodes = get_nodes(reho_res)
@@ -303,6 +308,7 @@ def test_cifti_reho(ds001419_data, tmp_path_factory):
         )
         reho_wf.base_dir = tempdir
         reho_wf.inputs.inputnode.denoised_bold = noisy_bold_file
+        reho_wf = clean_datasinks(reho_wf)
         reho_res = reho_wf.run()
 
         nodes = get_nodes(reho_res)

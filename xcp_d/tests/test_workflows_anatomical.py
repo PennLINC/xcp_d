@@ -68,9 +68,9 @@ def test_warp_surfaces_to_template_wf(
 
     with mock_config():
         config.nipype.omp_nthreads = 1
+        config.execution.output_dir = tmpdir
 
         wf = anatomical.surface.init_warp_surfaces_to_template_wf(
-            output_dir=tmpdir,
             software="FreeSurfer",
             omp_nthreads=1,
         )
