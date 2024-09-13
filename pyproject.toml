@@ -17,6 +17,7 @@ license = {file = "LICENSE"}
 requires-python = ">=3.10"
 dependencies = [
     'importlib_resources; python_version < "3.11"',
+    "acres",
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
     "bids-validator <= 1.14.7.post0",
     "h5py <= 3.11.0",  # for DCAN motion file
