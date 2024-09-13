@@ -138,7 +138,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     ds_atlas = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
-        name="ds_atlas",
+        name="copy_atlas",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
@@ -152,7 +152,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     ds_atlas_labels_file = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
-        name="ds_atlas_labels_file",
+        name="copy_atlas_labels_file",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
@@ -166,7 +166,7 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     ds_atlas_metadata = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
-        name="ds_atlas_metadata",
+        name="copy_atlas_metadata",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
