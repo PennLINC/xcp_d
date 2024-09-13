@@ -18,11 +18,14 @@ from xcp_d.tests.utils import (
     check_affines,
     check_generated_files,
     download_test_data,
-    update_resources,
     get_test_data_path,
     list_files,
+    update_resources,
 )
-from xcp_d.utils.bids import write_atlas_dataset_description, write_derivative_description
+from xcp_d.utils.bids import (
+    write_atlas_dataset_description,
+    write_derivative_description,
+)
 
 LOGGER = logging.getLogger("nipype.utils")
 

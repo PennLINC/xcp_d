@@ -14,11 +14,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.confounds import (
-    _infer_dummy_scans,
-    _modify_motion_filter,
-    load_motion,
-)
+from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd
 from xcp_d.utils.write_save import write_ndata

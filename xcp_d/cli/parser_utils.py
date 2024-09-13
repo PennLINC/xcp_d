@@ -145,7 +145,10 @@ class YesNoAction(Action):
 
 
 class ToDict(Action):
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: N805
+    """A custom argparse "store" action to handle a list of key=value pairs."""
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+        """Call the argument."""
         d = {}
         for spec in values:
             try:
