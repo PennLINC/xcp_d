@@ -1163,6 +1163,7 @@ def _find_nearest_path(path_dict, input_path):
 
 
 def make_bids_uri(in_files, dataset_links, out_dir):
+    """Create a BIDS-URI for each input file."""
     # Convert the dataset links to BIDS URI prefixes
     updated_keys = {f"bids:{k}:": Path(v) for k, v in dataset_links.items()}
     updated_keys["bids::"] = Path(out_dir)
