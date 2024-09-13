@@ -280,3 +280,41 @@ class CopyAtlas(SimpleInterface):
         self._results["out_file"] = out_file
 
         return runtime
+
+
+class _BIDSURIInputSpec(DynamicTraitedSpec):
+    dataset_links = traits.Dict(mandatory=True, desc="Dataset links")
+    out_dir = traits.Str(mandatory=True, desc="Output directory")
+
+
+class _BIDSURIOutputSpec(TraitedSpec):
+    out = traits.List(
+        traits.Str,
+        desc="BIDS URI(s) for file",
+    )
+
+
+class BIDSURI(SimpleInterface):
+    """Convert input filenames to BIDS URIs, based on links in the dataset.
+
+    This interface can combine multiple lists of inputs.
+    """
+
+    input_spec = _BIDSURIInputSpec
+    output_spec = _BIDSURIOutputSpec
+
+    def __init__(self, numinputs=0, **inputs):
+        super().__init__(**inputs)
+        self._numinputs = numinputs
+        if numinputs >= 1:
+            input_names = [f"in{i + 1}" for i in range(numinputs)]
+        else:
+            input_names = []
+        add_traits(self.inputs, input_names)
+
+    def _run_interface(self, runtime):
+        inputs = [getattr(self.inputs, f"in{i + 1}") for i in range(self._numinputs)]
+        uris = _get_bidsuris(inputs, self.inputs.dataset_links, self.inputs.out_dir)
+        self._results["out"] = uris
+
+        return runtime
