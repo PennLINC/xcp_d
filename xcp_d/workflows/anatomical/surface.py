@@ -117,7 +117,6 @@ def init_postprocess_surfaces_wf(
 
     abcc_qc = config.workflow.abcc_qc
     process_surfaces = config.workflow.process_surfaces
-    output_dir = config.execution.output_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -249,7 +248,6 @@ def init_postprocess_surfaces_wf(
         workflow.__desc__ += " fsnative-space surfaces were then warped to fsLR space."
         # Mesh files are in fsnative and must be warped to fsLR.
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
-            output_dir=output_dir,
             software=software,
             omp_nthreads=omp_nthreads,
             name="warp_surfaces_to_template_wf",
@@ -296,7 +294,6 @@ def init_postprocess_surfaces_wf(
 
 @fill_doc
 def init_warp_surfaces_to_template_wf(
-    output_dir,
     software,
     omp_nthreads,
     name="warp_surfaces_to_template_wf",
@@ -311,7 +308,6 @@ def init_warp_surfaces_to_template_wf(
             from xcp_d.workflows.anatomical.surface import init_warp_surfaces_to_template_wf
 
             wf = init_warp_surfaces_to_template_wf(
-                output_dir=".",
                 software="FreeSurfer",
                 omp_nthreads=1,
                 name="warp_surfaces_to_template_wf",
@@ -319,7 +315,6 @@ def init_warp_surfaces_to_template_wf(
 
     Parameters
     ----------
-    %(output_dir)s
     software : {"MCRIBS", "FreeSurfer"}
         The software used to generate the surfaces.
     %(omp_nthreads)s
