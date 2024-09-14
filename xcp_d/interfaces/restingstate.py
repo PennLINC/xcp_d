@@ -111,6 +111,7 @@ class _ComputeALFFInputSpec(BaseInterfaceInputSpec):
         1,
         usedefault=True,
         desc="number of threads to use",
+        nohash=True,
     )
 
 
