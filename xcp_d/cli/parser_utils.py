@@ -126,18 +126,21 @@ def _bids_filter(value, parser):
             raise parser.error(f"Path does not exist: <{value}>.")
 
 
-def _builtin_atlas_or_dataset(value, parser):
-    """Ensure a given value is a valid built-in atlas or an Atlas dataset."""
-    from xcp_d.utils.atlas import select_atlases
+class BuiltinAtlasOrDataset(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+        from xcp_d.utils.atlas import select_atlases
 
-    all_atlases = select_atlases(atlases=None, subset="all")
+        all_atlases = select_atlases(atlases=None, subset="all")
 
-    if value in all_atlases:
-        return value
-    elif Path(value).is_dir():
-        return Path(value).absolute()
-    else:
-        raise parser.error(f"Invalid value for atlas: <{value}>.")
+        validated_values = []
+        for value in values:
+            if value in all_atlases:
+                validated_values.append(value)
+            elif Path(value).is_dir():
+                validated_values.append(Path(value).absolute())
+            else:
+                raise parser.error(f"Invalid value for atlas: <{value}>.")
+        setattr(namespace, self.dest, validated_values)
 
 
 def _min_one(value, parser):

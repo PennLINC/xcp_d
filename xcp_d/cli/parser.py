@@ -36,7 +36,6 @@ def _build_parser():
     IsFile = partial(parser_utils._is_file, parser=parser)
     PositiveInt = partial(parser_utils._min_one, parser=parser)
     BIDSFilter = partial(parser_utils._bids_filter, parser=parser)
-    BuiltinAtlasOrDataset = partial(parser_utils._builtin_atlas_or_dataset, parser=parser)
 
     # important parameters required
     parser.add_argument(
@@ -512,7 +511,7 @@ The default is 240 (4 minutes).
     all_atlases = select_atlases(atlases=None, subset="all")
     g_atlases.add_argument(
         "--atlases",
-        action=BuiltinAtlasOrDataset,
+        action=parser_utils.BuiltinAtlasOrDataset,
         nargs="+",
         metavar="ATLAS",
         default=all_atlases,
