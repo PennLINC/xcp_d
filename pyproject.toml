@@ -17,6 +17,7 @@ license = {file = "LICENSE"}
 requires-python = ">=3.10"
 dependencies = [
     'importlib_resources; python_version < "3.11"',
+    "acres",
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
     "bids-validator <= 1.14.7.post0",
     "h5py <= 3.11.0",  # for DCAN motion file
@@ -38,10 +39,10 @@ dependencies = [
     "psutil >= 5.4",  # for sentry
     "pybids ~= 0.17.0",
     "pyyaml",
-    "scikit-learn <= 1.5.1",
+    "scikit-learn <= 1.5.2",
     "scipy >= 1.14.0,<= 1.14.1",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.13.0",  # for usage reports
+    "sentry-sdk ~= 2.14.0",  # for usage reports
     "templateflow ~= 24.2.0",
     "toml",
 ]
@@ -81,6 +82,7 @@ tests = [
     "pep8-naming",
     "pytest",
     "pytest-cov",
+    "pytest-xdist",
     "pytest-env",
 ]
 maint = [

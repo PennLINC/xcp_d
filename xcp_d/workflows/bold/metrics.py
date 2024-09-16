@@ -3,7 +3,6 @@
 """Workflows for calculating BOLD metrics (ALFF and ReHo)."""
 
 from nipype.interfaces import utility as niu
-from nipype.interfaces.workbench.cifti import CiftiSmooth
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
@@ -17,6 +16,7 @@ from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiSeparateMetric,
     CiftiSeparateVolumeAll,
+    CiftiSmooth,
     FixCiftiIntent,
 )
 from xcp_d.utils.doc import fill_doc
@@ -101,7 +101,6 @@ def init_alff_wf(
     fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
-    omp_nthreads = config.nipype.omp_nthreads
 
     periodogram_desc = ""
     if fd_thresh > 0:
@@ -142,10 +141,15 @@ series to retain the original scaling.
 
     # compute alff
     alff_compt = pe.Node(
-        ComputeALFF(TR=TR, low_pass=low_pass, high_pass=high_pass),
+        ComputeALFF(
+            TR=TR,
+            low_pass=low_pass,
+            high_pass=high_pass,
+            n_threads=config.nipype.omp_nthreads,
+        ),
         mem_gb=mem_gb["resampled"],
         name="alff_compt",
-        n_procs=omp_nthreads,
+        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
         (inputnode, alff_compt, [
@@ -201,7 +205,6 @@ series to retain the original scaling.
             smooth_data = pe.Node(
                 Smooth(fwhm=smoothing),
                 name="niftismoothing",
-                n_procs=omp_nthreads,
             )
             workflow.connect([
                 (alff_compt, smooth_data, [("alff", "in_file")]),
@@ -230,10 +233,11 @@ series to retain the original scaling.
                     direction="COLUMN",
                     right_surf=rh_midthickness,
                     left_surf=lh_midthickness,
+                    num_threads=config.nipype.omp_nthreads,
                 ),
                 name="ciftismoothing",
                 mem_gb=mem_gb["resampled"],
-                n_procs=omp_nthreads,
+                n_procs=config.nipype.omp_nthreads,
             )
 
             # Always check the intent code in CiftiSmooth's output file
@@ -241,7 +245,6 @@ series to retain the original scaling.
                 FixCiftiIntent(),
                 name="fix_cifti_intent",
                 mem_gb=mem_gb["resampled"],
-                n_procs=omp_nthreads,
             )
             workflow.connect([
                 (alff_compt, smooth_data, [("alff", "in_file")]),
@@ -314,7 +317,6 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 """
 
     output_dir = config.execution.xcp_d_dir
-    omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["denoised_bold", "lh_midthickness", "rh_midthickness"]),
@@ -327,22 +329,33 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     # Extract left and right hemispheres via Connectome Workbench
     lh_surf = pe.Node(
-        CiftiSeparateMetric(metric="CORTEX_LEFT", direction="COLUMN"),
+        CiftiSeparateMetric(
+            metric="CORTEX_LEFT",
+            direction="COLUMN",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="separate_lh",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
+        n_procs=config.nipype.omp_nthreads,
     )
     rh_surf = pe.Node(
-        CiftiSeparateMetric(metric="CORTEX_RIGHT", direction="COLUMN"),
+        CiftiSeparateMetric(
+            metric="CORTEX_RIGHT",
+            direction="COLUMN",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="separate_rh",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
+        n_procs=config.nipype.omp_nthreads,
     )
     subcortical_nifti = pe.Node(
-        CiftiSeparateVolumeAll(direction="COLUMN"),
+        CiftiSeparateVolumeAll(
+            direction="COLUMN",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="separate_subcortical",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
+        n_procs=config.nipype.omp_nthreads,
     )
 
     # Calculate the reho by hemipshere
@@ -350,27 +363,28 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         SurfaceReHo(surf_hemi="L"),
         name="reho_lh",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
     rh_reho = pe.Node(
         SurfaceReHo(surf_hemi="R"),
         name="reho_rh",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
     subcortical_reho = pe.Node(
         ReHoNamePatch(neighborhood="vertices"),
         name="reho_subcortical",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
     )
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
-        CiftiCreateDenseFromTemplate(from_cropped=True, out_file="reho.dscalar.nii"),
+        CiftiCreateDenseFromTemplate(
+            from_cropped=True,
+            out_file="reho.dscalar.nii",
+            num_threads=config.nipype.omp_nthreads,
+        ),
         name="merge_cifti",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
+        n_procs=config.nipype.omp_nthreads,
     )
     reho_plot = pe.Node(
         PlotDenseCifti(base_desc="reho"),
@@ -460,7 +474,6 @@ def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
     workflow = Workflow(name=name)
 
     output_dir = config.execution.xcp_d_dir
-    omp_nthreads = config.nipype.omp_nthreads
 
     workflow.__desc__ = """
 Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood voxels using
@@ -478,7 +491,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
         ReHoNamePatch(neighborhood="vertices"),
         name="reho_3d",
         mem_gb=mem_gb["resampled"],
-        n_procs=omp_nthreads,
+        n_procs=1,
     )
     # Get the svg
     reho_plot = pe.Node(

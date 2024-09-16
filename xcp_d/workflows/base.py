@@ -157,7 +157,6 @@ def init_single_subject_wf(subject_id: str):
                 "t1w",
                 "t2w",  # optional
                 "anat_brainmask",  # used to estimate head radius and for QC metrics
-                "anat_dseg",
                 "template_to_anat_xfm",  # not used by cifti workflow
                 "anat_to_template_xfm",
                 # mesh files
@@ -181,7 +180,6 @@ def init_single_subject_wf(subject_id: str):
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.anat_brainmask = subj_data["anat_brainmask"]
-    inputnode.inputs.anat_dseg = subj_data["anat_dseg"]
     inputnode.inputs.template_to_anat_xfm = subj_data["template_to_anat_xfm"]
     inputnode.inputs.anat_to_template_xfm = subj_data["anat_to_template_xfm"]
 
@@ -291,7 +289,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("anat_dseg", "inputnode.anat_dseg"),
             ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
         ]),
     ])  # fmt:skip
@@ -467,7 +464,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 exact_scans=exact_scans,
-                name=f"{config.workflow.file_format}_postprocess_{run_counter}_wf",
+                name=f"postprocess_{run_counter}_wf",
             )
             run_counter += 1
 

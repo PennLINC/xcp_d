@@ -6,16 +6,6 @@ queries:
             desc: brain
             extension: .nii.gz
             suffix: mask
-        # native anatomical-space dseg file
-        anat_dseg:
-            datatype: anat
-            desc: null
-            extension: .nii.gz
-            space:
-            - T1w
-            - T2w
-            - null
-            suffix: dseg
         # transform from native anatomical (T1w or T2w) space to same standard space as BOLD
         # "to" entity will be set later
         anat_to_template_xfm:

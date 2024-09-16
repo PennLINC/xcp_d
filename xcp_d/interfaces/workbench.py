@@ -13,12 +13,42 @@ from nipype.interfaces.base import (
     isdefined,
     traits,
 )
-from nipype.interfaces.workbench.base import WBCommand
+from nipype.interfaces.workbench.base import WBCommand as WBCommandBase
 
 from xcp_d.utils.filemanip import fname_presuffix, split_filename
 from xcp_d.utils.write_save import get_cifti_intents
 
 iflogger = logging.getLogger("nipype.interface")
+
+
+class _WBCommandInputSpec(CommandLineInputSpec):
+    num_threads = traits.Int(1, usedefault=True, nohash=True, desc="set number of threads")
+
+
+class WBCommand(WBCommandBase):
+    """A base interface for wb_command.
+
+    This inherits from Nipype's WBCommand interface, but adds a num_threads input.
+    """
+
+    @property
+    def num_threads(self):
+        """Get number of threads."""
+        return self.inputs.num_threads
+
+    @num_threads.setter
+    def num_threads(self, value):
+        self.inputs.num_threads = value
+
+    def __init__(self, **inputs):
+        super().__init__(**inputs)
+
+        if hasattr(self.inputs, "num_threads"):
+            self.inputs.on_trait_change(self._nthreads_update, "num_threads")
+
+    def _nthreads_update(self):
+        """Update environment with new number of threads."""
+        self.inputs.environ["OMP_NUM_THREADS"] = str(self.inputs.num_threads)
 
 
 class _FixCiftiIntentInputSpec(BaseInterfaceInputSpec):
@@ -73,7 +103,7 @@ class FixCiftiIntent(SimpleInterface):
         return runtime
 
 
-class _ConvertAffineInputSpec(CommandLineInputSpec):
+class _ConvertAffineInputSpec(_WBCommandInputSpec):
     """Input specification for ConvertAffine."""
 
     fromwhat = traits.Str(
@@ -82,7 +112,6 @@ class _ConvertAffineInputSpec(CommandLineInputSpec):
         position=0,
         desc="world, itk, or flirt",
     )
-
     in_file = File(
         exists=True,
         mandatory=True,
@@ -90,7 +119,6 @@ class _ConvertAffineInputSpec(CommandLineInputSpec):
         position=1,
         desc="The input file",
     )
-
     towhat = traits.Str(
         mandatory=True,
         argstr="-to-%s",
@@ -120,7 +148,7 @@ class ConvertAffine(WBCommand):
     _cmd = "wb_command -convert-affine"
 
 
-class _ApplyAffineInputSpec(CommandLineInputSpec):
+class _ApplyAffineInputSpec(_WBCommandInputSpec):
     """Input specification for ApplyAffine."""
 
     in_file = File(
@@ -130,7 +158,6 @@ class _ApplyAffineInputSpec(CommandLineInputSpec):
         position=0,
         desc="The input file",
     )
-
     affine = File(
         exists=True,
         mandatory=True,
@@ -138,7 +165,6 @@ class _ApplyAffineInputSpec(CommandLineInputSpec):
         position=1,
         desc="The affine file",
     )
-
     out_file = File(
         argstr="%s",
         name_source="in_file",
@@ -181,7 +207,7 @@ class ApplyAffine(WBCommand):
     _cmd = "wb_command -surface-apply-affine"
 
 
-class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
+class _ApplyWarpfieldInputSpec(_WBCommandInputSpec):
     """Input specification for ApplyWarpfield."""
 
     in_file = File(
@@ -191,7 +217,6 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
         position=0,
         desc="The input file",
     )
-
     warpfield = File(
         exists=True,
         mandatory=True,
@@ -199,7 +224,6 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
         position=1,
         desc="The warpfield file",
     )
-
     out_file = File(
         argstr="%s",
         name_source="in_file",
@@ -207,7 +231,6 @@ class _ApplyWarpfieldInputSpec(CommandLineInputSpec):
         extensions=[".surf.gii", ".shape.gii"],
         position=2,
     )
-
     forward_warp = File(
         argstr="-fnirt %s",
         position=3,
@@ -248,7 +271,7 @@ class ApplyWarpfield(WBCommand):
     _cmd = "wb_command -surface-apply-warpfield"
 
 
-class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
+class _SurfaceSphereProjectUnprojectInputSpec(_WBCommandInputSpec):
     """Input specification for SurfaceSphereProjectUnproject."""
 
     in_file = File(
@@ -258,7 +281,6 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
         position=0,
         desc="a sphere with the desired output mesh",
     )
-
     sphere_project_to = File(
         exists=True,
         mandatory=True,
@@ -266,7 +288,6 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
         position=1,
         desc="a sphere that aligns with sphere-in",
     )
-
     sphere_unproject_from = File(
         exists=True,
         mandatory=True,
@@ -274,7 +295,6 @@ class _SurfaceSphereProjectUnprojectInputSpec(CommandLineInputSpec):
         position=2,
         desc="deformed to the desired output space",
     )
-
     out_file = File(
         name_source="in_file",
         name_template="%s_deformed.surf.gii",
@@ -342,7 +362,7 @@ class SurfaceSphereProjectUnproject(WBCommand):
     _cmd = "wb_command -surface-sphere-project-unproject"
 
 
-class _ChangeXfmTypeInputSpec(CommandLineInputSpec):
+class _ChangeXfmTypeInputSpec(_WBCommandInputSpec):
     in_transform = File(exists=True, argstr="%s", mandatory=True, position=0)
 
 
@@ -371,7 +391,7 @@ class ChangeXfmType(SimpleInterface):
         return runtime
 
 
-class _SurfaceAverageInputSpec(CommandLineInputSpec):
+class _SurfaceAverageInputSpec(_WBCommandInputSpec):
     """Input specification for SurfaceAverage."""
 
     surface_in1 = File(
@@ -381,7 +401,6 @@ class _SurfaceAverageInputSpec(CommandLineInputSpec):
         position=1,
         desc="specify a surface to include in the average",
     )
-
     surface_in2 = File(
         exists=True,
         mandatory=True,
@@ -389,7 +408,6 @@ class _SurfaceAverageInputSpec(CommandLineInputSpec):
         position=2,
         desc="specify a surface to include in the average",
     )
-
     out_file = File(
         name_source="surface_in1",
         keep_extension=False,
@@ -437,7 +455,7 @@ class SurfaceAverage(WBCommand):
     _cmd = "wb_command -surface-average"
 
 
-class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
+class _SurfaceGenerateInflatedInputSpec(_WBCommandInputSpec):
     """Input specification for SurfaceGenerateInflated."""
 
     anatomical_surface_in = File(
@@ -447,7 +465,6 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         position=0,
         desc="the anatomical surface",
     )
-
     inflated_out_file = File(
         name_source="anatomical_surface_in",
         keep_extension=False,
@@ -456,7 +473,6 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         position=1,
         desc="output - the output inflated surface",
     )
-
     very_inflated_out_file = File(
         name_source="anatomical_surface_in",
         keep_extension=False,
@@ -465,7 +481,6 @@ class _SurfaceGenerateInflatedInputSpec(CommandLineInputSpec):
         position=2,
         desc="output - the output very inflated surface",
     )
-
     iterations_scale_value = traits.Float(
         mandatory=False,
         argstr="-iterations-scale %f",
@@ -506,7 +521,7 @@ class SurfaceGenerateInflated(WBCommand):
     _cmd = "wb_command -surface-generate-inflated"
 
 
-class _CiftiParcellateWorkbenchInputSpec(CommandLineInputSpec):
+class _CiftiParcellateWorkbenchInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiParcellateWorkbench command."""
 
     in_file = File(
@@ -648,7 +663,7 @@ class CiftiParcellateWorkbench(WBCommand):
     _cmd = "wb_command -cifti-parcellate"
 
 
-class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
+class _CiftiSurfaceResampleInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiSurfaceResample command.
 
     Resamples a surface file, given two spherical surfaces that are in register.
@@ -669,14 +684,12 @@ class _CiftiSurfaceResampleInputSpec(CommandLineInputSpec):
         position=0,
         desc="the surface file to resample",
     )
-
     current_sphere = File(
         exists=True,
         position=1,
         argstr="%s",
         desc="a sphere surface with the mesh that the input surface is currently on",
     )
-
     new_sphere = File(
         exists=True,
         position=2,
@@ -726,7 +739,7 @@ class CiftiSurfaceResample(WBCommand):
     _cmd = "wb_command -surface-resample"
 
 
-class _CiftiSeparateMetricInputSpec(CommandLineInputSpec):
+class _CiftiSeparateMetricInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiSeparateMetric command."""
 
     in_file = File(
@@ -791,7 +804,7 @@ class CiftiSeparateMetric(WBCommand):
     _cmd = "wb_command  -cifti-separate "
 
 
-class _CiftiSeparateVolumeAllInputSpec(CommandLineInputSpec):
+class _CiftiSeparateVolumeAllInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiSeparateVolumeAll command."""
 
     in_file = File(
@@ -859,7 +872,7 @@ class CiftiSeparateVolumeAll(WBCommand):
     _cmd = "wb_command  -cifti-separate "
 
 
-class _CiftiCreateDenseScalarInputSpec(CommandLineInputSpec):
+class _CiftiCreateDenseScalarInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiSeparateVolumeAll command."""
 
     out_file = File(
@@ -951,7 +964,7 @@ class CiftiCreateDenseScalar(WBCommand):
         return outputs
 
 
-class _ShowSceneInputSpec(CommandLineInputSpec):
+class _ShowSceneInputSpec(_WBCommandInputSpec):
     scene_file = File(
         exists=True,
         mandatory=True,
@@ -1075,7 +1088,7 @@ class ShowScene(WBCommand):
         )
 
 
-class _CiftiConvertInputSpec(CommandLineInputSpec):
+class _CiftiConvertInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiConvert command."""
 
     target = traits.Enum(
@@ -1157,7 +1170,7 @@ class CiftiConvert(WBCommand):
         return outputs
 
 
-class _CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
+class _CiftiCreateDenseFromTemplateInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiCreateDenseFromTemplate command."""
 
     template_cifti = File(
@@ -1276,7 +1289,7 @@ class CiftiCreateDenseFromTemplate(WBCommand):
         return outputs
 
 
-class _CiftiMathInputSpec(CommandLineInputSpec):
+class _CiftiMathInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiMath command."""
 
     data = File(
@@ -1337,7 +1350,7 @@ class CiftiMath(WBCommand):
     _cmd = "wb_command -cifti-math"
 
 
-class _CiftiCorrelationInputSpec(CommandLineInputSpec):
+class _CiftiCorrelationInputSpec(_WBCommandInputSpec):
     """Input specification for the CiftiCorrelation command."""
 
     in_file = File(
@@ -1382,3 +1395,149 @@ class CiftiCorrelation(WBCommand):
     input_spec = _CiftiCorrelationInputSpec
     output_spec = _CiftiCorrelationOutputSpec
     _cmd = "wb_command -cifti-correlation"
+
+
+class _CiftiSmoothInputSpec(_WBCommandInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        argstr="%s",
+        position=0,
+        desc="The input CIFTI file",
+    )
+    sigma_surf = traits.Float(
+        mandatory=True,
+        argstr="%s",
+        position=1,
+        desc="the sigma for the gaussian surface smoothing kernel, in mm",
+    )
+    sigma_vol = traits.Float(
+        mandatory=True,
+        argstr="%s",
+        position=2,
+        desc="the sigma for the gaussian volume smoothing kernel, in mm",
+    )
+    direction = traits.Enum(
+        "ROW",
+        "COLUMN",
+        mandatory=True,
+        argstr="%s",
+        position=3,
+        desc="which dimension to smooth along, ROW or COLUMN",
+    )
+    out_file = File(
+        name_source=["in_file"],
+        name_template="smoothed_%s.nii",
+        keep_extension=True,
+        argstr="%s",
+        position=4,
+        desc="The output CIFTI",
+    )
+    left_surf = File(
+        exists=True,
+        mandatory=True,
+        position=5,
+        argstr="-left-surface %s",
+        desc="Specify the left surface to use",
+    )
+    left_corrected_areas = File(
+        exists=True,
+        position=6,
+        argstr="-left-corrected-areas %s",
+        desc="vertex areas (as a metric) to use instead of computing them from "
+        "the left surface.",
+    )
+    right_surf = File(
+        exists=True,
+        mandatory=True,
+        position=7,
+        argstr="-right-surface %s",
+        desc="Specify the right surface to use",
+    )
+    right_corrected_areas = File(
+        exists=True,
+        position=8,
+        argstr="-right-corrected-areas %s",
+        desc="vertex areas (as a metric) to use instead of computing them from "
+        "the right surface",
+    )
+    cerebellum_surf = File(
+        exists=True,
+        position=9,
+        argstr="-cerebellum-surface %s",
+        desc="specify the cerebellum surface to use",
+    )
+    cerebellum_corrected_areas = File(
+        exists=True,
+        position=10,
+        requires=["cerebellum_surf"],
+        argstr="cerebellum-corrected-areas %s",
+        desc="vertex areas (as a metric) to use instead of computing them from "
+        "the cerebellum surface",
+    )
+    cifti_roi = File(
+        exists=True,
+        position=11,
+        argstr="-cifti-roi %s",
+        desc="CIFTI file for ROI smoothing",
+    )
+    fix_zeros_vol = traits.Bool(
+        position=12,
+        argstr="-fix-zeros-volume",
+        desc="treat values of zero in the volume as missing data",
+    )
+    fix_zeros_surf = traits.Bool(
+        position=13,
+        argstr="-fix-zeros-surface",
+        desc="treat values of zero on the surface as missing data",
+    )
+    merged_volume = traits.Bool(
+        position=14,
+        argstr="-merged-volume",
+        desc="smooth across subcortical structure boundaries",
+    )
+
+
+class _CiftiSmoothOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="output CIFTI file")
+
+
+class CiftiSmooth(WBCommand):
+    """Smooth a CIFTI file.
+
+    The input cifti file must have a brain models mapping on the chosen
+    dimension, columns for .dtseries, and either for .dconn.  By default,
+    data in different structures is smoothed independently (i.e., "parcel
+    constrained" smoothing), so volume structures that touch do not smooth
+    across this boundary.  Specify ``merged_volume`` to ignore these
+    boundaries. Surface smoothing uses the ``GEO_GAUSS_AREA`` smoothing method.
+
+    The ``*_corrected_areas`` options are intended for when it is unavoidable
+    to smooth on group average surfaces, it is only an approximate correction
+    for the reduction of structure in a group average surface.  It is better
+    to smooth the data on individuals before averaging, when feasible.
+
+    The ``fix_zeros_*`` options will treat values of zero as lack of data, and
+    not use that value when generating the smoothed values, but will fill
+    zeros with extrapolated values.  The ROI should have a brain models
+    mapping along columns, exactly matching the mapping of the chosen
+    direction in the input file.  Data outside the ROI is ignored.
+
+    >>> from xcp_d.interfaces.workbench import CiftiSmooth
+    >>> smooth = CiftiSmooth()
+    >>> smooth.inputs.in_file = 'sub-01_task-rest.dtseries.nii'
+    >>> smooth.inputs.sigma_surf = 4
+    >>> smooth.inputs.sigma_vol = 4
+    >>> smooth.inputs.direction = 'COLUMN'
+    >>> smooth.inputs.right_surf = 'sub-01.R.midthickness.32k_fs_LR.surf.gii'
+    >>> smooth.inputs.left_surf = 'sub-01.L.midthickness.32k_fs_LR.surf.gii'
+    >>> smooth.cmdline
+    'wb_command -cifti-smoothing sub-01_task-rest.dtseries.nii 4.0 4.0 COLUMN \
+    smoothed_sub-01_task-rest.dtseries.nii \
+    -left-surface sub-01.L.midthickness.32k_fs_LR.surf.gii \
+    -right-surface sub-01.R.midthickness.32k_fs_LR.surf.gii'
+    """
+
+    input_spec = _CiftiSmoothInputSpec
+    output_spec = _CiftiSmoothOutputSpec
+    _cmd = "wb_command -cifti-smoothing"

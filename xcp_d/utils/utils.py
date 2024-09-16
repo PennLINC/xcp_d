@@ -96,7 +96,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
         # MNIInfant --> MNI152NLin2009cAsym
         MNIInfant_to_MNI152NLin2009cAsym = str(
             load_data(
-                "transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+                "transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
             )
         )
         xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
@@ -222,74 +222,6 @@ def fwhm2sigma(fwhm):
         Sigma.
     """
     return fwhm / np.sqrt(8 * np.log(2))
-
-
-def butter_bandpass(
-    data,
-    sampling_rate,
-    low_pass,
-    high_pass,
-    padtype="constant",
-    padlen=None,
-    order=2,
-):
-    """Apply a Butterworth bandpass filter to data.
-
-    Parameters
-    ----------
-    data : (T, S) numpy.ndarray
-        Time by voxels/vertices array of data.
-    sampling_rate : float
-        Sampling frequency. 1/TR(s).
-    low_pass : float
-        frequency, in Hertz
-    high_pass : float
-        frequency, in Hertz
-    padlen
-    padtype
-    order : int
-        The order of the filter.
-
-    Returns
-    -------
-    filtered_data : (T, S) numpy.ndarray
-        The filtered data.
-    """
-    from scipy.signal import butter, filtfilt
-
-    if low_pass > 0 and high_pass > 0:
-        btype = "bandpass"
-        filt_input = [high_pass, low_pass]
-    elif high_pass > 0:
-        btype = "highpass"
-        filt_input = high_pass
-    elif low_pass > 0:
-        btype = "lowpass"
-        filt_input = low_pass
-    else:
-        raise ValueError("Filter parameters are not valid.")
-
-    b, a = butter(
-        order,
-        filt_input,
-        btype=btype,
-        output="ba",
-        fs=sampling_rate,  # eliminates need to normalize cutoff frequencies
-    )
-
-    filtered_data = np.zeros_like(data)  # create something to populate filtered values with
-
-    # apply the filter, loop through columns of regressors
-    for i_voxel in range(filtered_data.shape[1]):
-        filtered_data[:, i_voxel] = filtfilt(
-            b,
-            a,
-            data[:, i_voxel],
-            padtype=padtype,
-            padlen=padlen,
-        )
-
-    return filtered_data
 
 
 @fill_doc

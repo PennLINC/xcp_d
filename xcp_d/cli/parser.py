@@ -1006,7 +1006,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
-        opts.file_format = "nifti" if (opts.file_format == "auto") else opts.file_format
+        opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
         opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == "auto") else opts.linc_qc
         opts.output_correlations = True

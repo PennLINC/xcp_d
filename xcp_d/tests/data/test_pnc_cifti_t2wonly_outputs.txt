@@ -19,7 +19,6 @@ sub-1648798153.html
 sub-1648798153/ses-PNC1
 sub-1648798153/ses-PNC1/anat
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_desc-preproc_T2w.nii.gz
-sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_dseg.nii.gz
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-32k_hemi-L_desc-hcp_inflated.surf.gii
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-32k_hemi-L_desc-hcp_midthickness.surf.gii
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-32k_hemi-L_desc-hcp_vinflated.surf.gii

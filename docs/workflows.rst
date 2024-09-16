@@ -61,7 +61,7 @@ Defaults
 By default, the ``linc`` mode will apply the following parameters,
 which may be overridden by the user:
 
--  ``--file-format nifti``: NIFTI files are used as input.
+-  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Censoring is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
@@ -872,8 +872,7 @@ Second, XCP-D outputs processed BOLD data, including denoised unsmoothed and smo
 MNI152NLin2009cAsym and fsLR-32k spaces, parcellated time series, functional connectivity matrices,
 and ALFF and ReHo (smoothed and unsmoothed).
 
-Third, the anatomical data (processed T1w processed and segmentation files) are copied from
-fMRIPrep.
+Third, the anatomical data (processed T1w and/or T2w files) are copied from fMRIPrep.
 If both images are not in MNI152NLin6Asym space, they are resampled to MNI space.
 The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space
 (fsLR-32K).

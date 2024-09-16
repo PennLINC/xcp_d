@@ -52,6 +52,7 @@ jobs:
           paths:
             - /src/xcp_d/.circleci/data/ds001419-fmriprep
     # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    # Why do we need a big executor for this job?
     resource_class: large
 
   download_data_pnc:
@@ -128,6 +129,9 @@ jobs:
 
   nifti_without_freesurfer:
     <<: *dockersetup
+    resource_class: large
+    environment:
+      CIRCLE_CPUS: 4
     steps:
       - checkout
       - run:
@@ -145,7 +149,15 @@ jobs:
           name: Run full xcp_d on nifti without freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer
             # remove nifti files before uploading artifacts
@@ -159,6 +171,9 @@ jobs:
 
   nifti_without_freesurfer_with_main:
     <<: *dockersetup
+    resource_class: medium
+    environment:
+      CIRCLE_CPUS: 2
     steps:
       - checkout
       - run:
@@ -176,7 +191,15 @@ jobs:
           name: Run full xcp_d on nifti without freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer_with_main" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer_with_main" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer_with_main
             # remove nifti files before uploading artifacts
@@ -190,6 +213,9 @@ jobs:
 
   ds001419_nifti:
     <<: *dockersetup
+    resource_class: large
+    environment:
+      CIRCLE_CPUS: 4
     steps:
       - checkout
       - run:
@@ -207,7 +233,15 @@ jobs:
           name: Run full xcp_d on nifti with freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "ds001419_nifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "ds001419_nifti" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_nifti
             # remove nifti files before uploading artifacts
@@ -218,11 +252,12 @@ jobs:
             - .coverage.ds001419_nifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_nifti/
-    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
-    resource_class: large
 
   ds001419_cifti:
     <<: *dockersetup
+    resource_class: large
+    environment:
+      CIRCLE_CPUS: 4
     steps:
       - checkout
       - run:
@@ -240,7 +275,15 @@ jobs:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "ds001419_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "ds001419_cifti" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
             # remove nifti files before uploading artifacts
@@ -251,11 +294,12 @@ jobs:
             - .coverage.ds001419_cifti
       - store_artifacts:
           path: /src/xcp_d/.circleci/out/test_ds001419_cifti/
-    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
-    resource_class: large
 
   ukbiobank:
     <<: *dockersetup
+    resource_class: medium
+    environment:
+      CIRCLE_CPUS: 2
     steps:
       - checkout
       - run:
@@ -273,7 +317,15 @@ jobs:
           name: Run full xcp_d on UK Biobank data
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "ukbiobank" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "ukbiobank" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ukbiobank
             # remove nifti files before uploading artifacts
@@ -287,6 +339,9 @@ jobs:
 
   nibabies:
     <<: *dockersetup
+    resource_class: medium
+    environment:
+      CIRCLE_CPUS: 2
     steps:
       - checkout
       - run:
@@ -304,7 +359,15 @@ jobs:
           name: Run full xcp_d on nibabies
           no_output_timeout: 1h
           command: |
-            pytest -rP -o log_cli=true -m "nibabies" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "nibabies" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.nibabies
             # remove nifti files before uploading artifacts
@@ -318,6 +381,9 @@ jobs:
 
   pnc_cifti:
     <<: *dockersetup
+    resource_class: medium
+    environment:
+      CIRCLE_CPUS: 2
     steps:
       - checkout
       - run:
@@ -335,7 +401,15 @@ jobs:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
           command: |
-            pytest -rP -o log_cli=true -m "pnc_cifti" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "pnc_cifti" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_cifti
             # remove nifti files before uploading artifacts
@@ -349,6 +423,9 @@ jobs:
 
   pnc_cifti_t2wonly:
     <<: *dockersetup
+    resource_class: medium
+    environment:
+      CIRCLE_CPUS: 2
     steps:
       - checkout
       - run:
@@ -366,7 +443,15 @@ jobs:
           name: Run full xcp_d on cifti with freesurfer
           no_output_timeout: 5h
           command: |
-            pytest -rP -o log_cli=true -m "pnc_cifti_t2wonly" --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest -rP -o log_cli=true -m "pnc_cifti_t2wonly" \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_cifti_t2wonly
             # remove nifti files before uploading artifacts
@@ -380,6 +465,9 @@ jobs:
 
   pytests:
     <<: *dockersetup
+    resource_class: large
+    environment:
+      CIRCLE_CPUS: 4
     steps:
       - checkout
       - run:
@@ -403,7 +491,16 @@ jobs:
           name: Run pytest on the tests directory
           no_output_timeout: 1h
           command: |
-            pytest --cov-append --cov-report term-missing --cov=xcp_d --data_dir=/src/xcp_d/.circleci/data --output_dir=/src/xcp_d/.circleci/out --working_dir=/src/xcp_d/.circleci/work xcp_d
+            pytest \
+              -n ${CIRCLE_CPUS} \
+              --cov-append \
+              --cov-branch \
+              --cov-report term-missing \
+              --cov=xcp_d \
+              --data_dir=/src/xcp_d/.circleci/data \
+              --output_dir=/src/xcp_d/.circleci/out \
+              --working_dir=/src/xcp_d/.circleci/work \
+              xcp_d
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.pytests
       - persist_to_workspace:
