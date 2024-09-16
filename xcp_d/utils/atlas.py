@@ -96,10 +96,11 @@ def get_atlas_nifti(atlas):
         atlas_labels_file = join("/AtlasPack", tsv_fname)
         atlas_metadata_file = f"/AtlasPack/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json"
     else:
-        atlas_file = str(load_data(f"atlases/{atlas_fname}"))
-        atlas_labels_file = str(load_data(f"atlases/{tsv_fname}"))
+        atlas_dir = f"atlases/atlas-{atlas}/"
+        atlas_file = str(load_data(f"{atlas_dir}/{atlas_fname}"))
+        atlas_labels_file = str(load_data(f"{atlas_dir}/{tsv_fname}"))
         atlas_metadata_file = str(
-            load_data(f"atlases/tpl-MNI152NLin6Asym_atlas-{atlas}_dseg.json")
+            load_data(f"{atlas_dir}/atlas-{atlas}_space-MNI152NLin6Asym_dseg.json")
         )
 
     if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
@@ -143,25 +144,32 @@ def get_atlas_cifti(atlas):
         atlas_labels_file = f"/AtlasPack/atlas-{atlas}_dseg.tsv"
         atlas_metadata_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_dseg.json"
     elif "MIDB" in atlas:
+        atlas_dir = f"atlases/atlas-{atlas}/"
         atlas_file = str(
-            load_data("atlases/tpl-fsLR_atlas-MIDB_den-32k_desc-abcdThresh75_dseg.dlabel.nii")
+            load_data(
+                f"{atlas_dir}/atlas-{atlas}_space-fsLR_den-32k_desc-abcdThresh75_dseg.dlabel.nii"
+            )
         )
-        atlas_labels_file = str(load_data(f"atlases/atlas-{atlas}_dseg.tsv"))
+        atlas_labels_file = str(load_data(f"{atlas_dir}/atlas-{atlas}_dseg.tsv"))
         atlas_metadata_file = str(
-            load_data("atlases/tpl-fsLR_atlas-MIDB_den-32k_desc-abcdThresh75_dseg.json")
+            load_data(f"{atlas_dir}/atlas-{atlas}_space-fsLR_den-32k_desc-abcdThresh75_dseg.json")
         )
     elif "MyersLabonte" in atlas:
         atlas_file = str(
-            load_data("atlases/tpl-fsLR_atlas-MyersLabonte_den-32k_desc-thresh50_dseg.dlabel.nii")
+            load_data(
+                f"{atlas_dir}/atlas-{atlas}_space-fsLR_den-32k_desc-thresh50_dseg.dlabel.nii"
+            )
         )
-        atlas_labels_file = str(load_data("atlases/atlas-MyersLabonte_desc-thresh50_dseg.tsv"))
+        atlas_labels_file = str(load_data(f"{atlas_dir}/atlas-{atlas}_desc-thresh50_dseg.tsv"))
         atlas_metadata_file = str(
-            load_data("atlases/tpl-fsLR_atlas-MyersLabonte_den-32k_desc-thresh50_dseg.json")
+            load_data(f"{atlas_dir}/atlas-{atlas}_space-fsLR_den-32k_desc-thresh50_dseg.json")
         )
     else:
-        atlas_file = str(load_data(f"atlases/tpl-fsLR_atlas-{atlas}_den-32k_dseg.dlabel.nii"))
-        atlas_labels_file = str(load_data(f"atlases/atlas-{atlas}_dseg.tsv"))
-        atlas_metadata_file = str(load_data(f"atlases/tpl-fsLR_atlas-{atlas}_dseg.json"))
+        atlas_file = str(
+            load_data(f"{atlas_dir}/atlas-{atlas}_space-fsLR_den-32k_dseg.dlabel.nii")
+        )
+        atlas_labels_file = str(load_data(f"{atlas_dir}/atlas-{atlas}_dseg.tsv"))
+        atlas_metadata_file = str(load_data(f"{atlas_dir}/atlas-{atlas}_space-fsLR_dseg.json"))
 
     if not (isfile(atlas_file) and isfile(atlas_labels_file) and isfile(atlas_metadata_file)):
         raise FileNotFoundError(

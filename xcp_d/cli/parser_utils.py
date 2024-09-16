@@ -127,7 +127,10 @@ def _bids_filter(value, parser):
 
 
 class BuiltinAtlasOrDataset(argparse.Action):
+    """A custom argparse "store" action to handle built-in atlases or datasets."""
+
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+        """Call the argument."""
         from xcp_d.utils.atlas import select_atlases
 
         all_atlases = select_atlases(atlases=None, subset="all")
