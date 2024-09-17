@@ -39,7 +39,7 @@ dependencies = [
     "psutil >= 5.4",  # for sentry
     "pybids ~= 0.17.0",
     "pyyaml",
-    "scikit-learn <= 1.5.1",
+    "scikit-learn <= 1.5.2",
     "scipy >= 1.14.0,<= 1.14.1",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
     "sentry-sdk ~= 2.14.0",  # for usage reports
