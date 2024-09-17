@@ -716,6 +716,9 @@ def write_derivative_description(
 
     dataset_links = dataset_links.copy()
 
+    # Replace local templateflow path with URL
+    dataset_links["templateflow"] = "https://github.com/templateflow/templateflow"
+
     if atlases:
         dataset_links["atlases"] = os.path.join(output_dir, "atlases")
 
