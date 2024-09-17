@@ -290,8 +290,8 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
         tmpdir,
         tmpdir,
         atlases=["Gordon"],
-        custom_confounds_folder="/fake/path4",
-        dataset_links={"preprocessed": "/fake/path1"},
+        custom_confounds_folder="/fake/path5",
+        dataset_links={"preprocessed": "/fake/path2"},
     )
     assert "'preprocessed' is already a dataset link" in caplog.text
     assert "'custom_confounds' is already a dataset link" in caplog.text
