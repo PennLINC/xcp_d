@@ -26,7 +26,7 @@ A Python module to maintain unique, run-wide *XCP-D* settings.
 This module implements the memory structures to keep a consistent, singleton config.
 Settings are passed across processes via filesystem, and a copy of the settings for
 each run and subject is left under
-``<xcp_d_dir>/sub-<participant_id>/log/<run_unique_id>/xcp_d.toml``.
+``<output_dir>/sub-<participant_id>/log/<run_unique_id>/xcp_d.toml``.
 Settings are stored using :abbr:`ToML (Tom's Markup Language)`.
 The module has a :py:func:`~xcp_d.config.to_filename` function to allow writing out
 the settings to hard disk in *ToML* format, which looks like:
@@ -391,8 +391,6 @@ class execution(_Config):
     """Only generate a boilerplate."""
     debug = []
     """Debug mode(s)."""
-    xcp_d_dir = None
-    """Root of XCP-D BIDS Derivatives dataset."""
     fs_license_file = _fs_license
     """An existing file containing a FreeSurfer license."""
     layout = None
@@ -435,7 +433,6 @@ class execution(_Config):
     _paths = (
         "fmri_dir",
         "bids_database_dir",
-        "xcp_d_dir",
         "fs_license_file",
         "layout",
         "log_dir",
