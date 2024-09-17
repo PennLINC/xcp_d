@@ -82,13 +82,17 @@ def get_atlas_nifti(atlas):
 
     from xcp_d.data import load as load_data
 
-    if "4S" in atlas or atlas in ("Glasser", "Gordon"):
+    if "4S" in atlas:
         # 1 mm3 atlases
         atlas_fname = f"tpl-MNI152NLin6Asym_atlas-{atlas}_res-01_dseg.nii.gz"
         tsv_fname = f"atlas-{atlas}_dseg.tsv"
+    elif atlas in ("Glasser", "Gordon"):
+        # 1 mm3 atlases
+        atlas_fname = f"atlas-{atlas}_space-MNI152NLin6Asym_res-01_dseg.nii.gz"
+        tsv_fname = f"atlas-{atlas}_dseg.tsv"
     else:
         # 2 mm3 atlases
-        atlas_fname = f"tpl-MNI152NLin6Asym_atlas-{atlas}_res-02_dseg.nii.gz"
+        atlas_fname = f"atlas-{atlas}_space-MNI152NLin6Asym_res-02_dseg.nii.gz"
         tsv_fname = f"atlas-{atlas}_dseg.tsv"
 
     if "4S" in atlas:
@@ -139,12 +143,13 @@ def get_atlas_cifti(atlas):
 
     from xcp_d.data import load as load_data
 
+    atlas_dir = f"atlases/atlas-{atlas}/"
+
     if "4S" in atlas:
         atlas_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_den-91k_dseg.dlabel.nii"
         atlas_labels_file = f"/AtlasPack/atlas-{atlas}_dseg.tsv"
         atlas_metadata_file = f"/AtlasPack/tpl-fsLR_atlas-{atlas}_dseg.json"
     elif "MIDB" in atlas:
-        atlas_dir = f"atlases/atlas-{atlas}/"
         atlas_file = str(
             load_data(
                 f"{atlas_dir}/atlas-{atlas}_space-fsLR_den-32k_desc-abcdThresh75_dseg.dlabel.nii"
