@@ -14,7 +14,6 @@ bids_description_hash = "123456"
 bids_filters = {}
 boilerplate_only = false
 debug = []
-xcp_d_dir = "ds000005/derivatives/xcp_d"
 fs_license_file = "/opt/freesurfer/license.txt"
 log_dir = "/opt/xcp_d"
 log_level = 40

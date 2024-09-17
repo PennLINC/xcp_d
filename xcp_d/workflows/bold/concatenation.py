@@ -74,7 +74,7 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
     motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
@@ -190,7 +190,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     ds_filtered_motion = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
             desc="filtered" if motion_filter_type else None,
             suffix="motion",
@@ -211,7 +210,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     if fd_thresh > 0:
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
                 suffix="outliers",
                 extension=".tsv",
@@ -232,7 +230,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     if file_format == "cifti":
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["den"],
                 desc="denoised",
                 den="91k",
@@ -246,7 +243,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     dismiss_entities=["den"],
                     desc="denoisedSmoothed",
                     den="91k",
@@ -260,7 +256,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     else:
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 desc="denoised",
                 extension=".nii.gz",
                 compression=True,
@@ -273,7 +268,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     desc="denoisedSmoothed",
                     extension=".nii.gz",
                     compression=True,
@@ -323,7 +317,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["desc", "den", "res"],
                 statistic="mean",
                 suffix="timeseries",
@@ -377,7 +370,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         ds_correlations = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["desc"],
                 statistic="pearsoncorrelation",
                 suffix="relmat",
@@ -416,7 +408,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
             ds_timeseries_cifti_files = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
                     den="91k",

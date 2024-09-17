@@ -95,7 +95,6 @@ def init_alff_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
     fd_thresh = config.workflow.fd_thresh
@@ -161,13 +160,11 @@ series to retain the original scaling.
     ])  # fmt:skip
 
     # Plot the ALFF map
-    ds_alff_plot = pe.Node(
+    ds_report_alff = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
-            datatype="figures",
         ),
-        name="ds_alff_plot",
+        name="ds_report_alff",
         run_without_submitting=False,
     )
 
@@ -181,18 +178,18 @@ series to retain the original scaling.
                 ("lh_midthickness", "lh_underlay"),
                 ("rh_midthickness", "rh_underlay"),
             ]),
-            (alff_plot, ds_alff_plot, [("desc", "desc")]),
+            (alff_plot, ds_report_alff, [("desc", "desc")]),
         ])  # fmt:skip
     else:
         alff_plot = pe.Node(
             PlotNifti(name_source=name_source),
             name="alff_plot",
         )
-        ds_alff_plot.inputs.desc = "alffVolumetricPlot"
+        ds_report_alff.inputs.desc = "alffVolumetricPlot"
 
     workflow.connect([
         (alff_compt, alff_plot, [("alff", "in_file")]),
-        (alff_plot, ds_alff_plot, [("out_file", "in_file")]),
+        (alff_plot, ds_report_alff, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     if smoothing:  # If we want to smooth
@@ -316,8 +313,6 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 *3dReHo* [@taylor2013fatcat].
 """
 
-    output_dir = config.execution.xcp_d_dir
-
     inputnode = pe.Node(
         niu.IdentityInterface(fields=["denoised_bold", "lh_midthickness", "rh_midthickness"]),
         name="inputnode",
@@ -397,13 +392,11 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         ]),
     ])  # fmt:skip
 
-    ds_reho_plot = pe.Node(
+    ds_report_reho = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
-            datatype="figures",
         ),
-        name="ds_reho_plot",
+        name="ds_report_reho",
         run_without_submitting=False,
     )
 
@@ -421,7 +414,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         (subcortical_reho, merge_cifti, [("out_file", "volume_all")]),
         (merge_cifti, outputnode, [("out_file", "reho")]),
         (merge_cifti, reho_plot, [("out_file", "in_file")]),
-        (reho_plot, ds_reho_plot, [
+        (reho_plot, ds_report_reho, [
             ("out_file", "in_file"),
             ("desc", "desc"),
         ]),
@@ -473,8 +466,6 @@ def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
-
     workflow.__desc__ = """
 Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood voxels using
 *AFNI*'s *3dReHo* [@taylor2013fatcat].
@@ -499,14 +490,12 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
         name="reho_nifti_plot",
     )
 
-    ds_reho_plot = pe.Node(
+    ds_report_reho = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
             desc="rehoVolumetricPlot",
-            datatype="figures",
         ),
-        name="ds_reho_plot",
+        name="ds_report_reho",
         run_without_submitting=False,
     )
 
@@ -518,7 +507,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
         ]),
         (compute_reho, outputnode, [("out_file", "reho")]),
         (compute_reho, reho_plot, [("out_file", "in_file")]),
-        (reho_plot, ds_reho_plot, [("out_file", "in_file")]),
+        (reho_plot, ds_report_reho, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     return workflow

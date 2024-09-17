@@ -53,7 +53,6 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
     atlases = config.execution.atlases
 
     SURF_DESCS = {
@@ -135,7 +134,6 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
         # Write out the parcellated files
         ds_parcellated_surface = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["hemi", "desc", "den", "res"],
                 desc=SURF_DESCS[file_to_parcellate],
                 statistic="mean",

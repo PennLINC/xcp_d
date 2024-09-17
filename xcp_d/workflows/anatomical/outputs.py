@@ -6,7 +6,6 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.utils import FilterUndefined
 from xcp_d.utils.doc import fill_doc
@@ -47,8 +46,6 @@ def init_copy_inputs_to_outputs_wf(name="copy_inputs_to_outputs_wf"):
     myelin_smoothed
     """
     workflow = Workflow(name=name)
-
-    output_dir = config.execution.xcp_d_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -97,10 +94,7 @@ def init_copy_inputs_to_outputs_wf(name="copy_inputs_to_outputs_wf"):
     workflow.connect([(collect_files, filter_out_undefined, [("out", "inlist")])])
 
     ds_copied_outputs = pe.MapNode(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            check_hdr=False,
-        ),
+        DerivativesDataSink(check_hdr=False),
         name="ds_copied_outputs",
         run_without_submitting=True,
         mem_gb=1,
