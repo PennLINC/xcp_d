@@ -722,6 +722,10 @@ def write_derivative_description(
     if custom_confounds_folder:
         dataset_links["custom_confounds"] = str(custom_confounds_folder)
 
+    # Add DatasetLinks
+    if "DatasetLinks" not in desc.keys():
+        desc["DatasetLinks"] = {}
+
     for k, v in dataset_links.items():
         if k in desc["DatasetLinks"].keys() and desc["DatasetLinks"][k] != str(v):
             LOGGER.warning(f"'{k}' is already a dataset link. Overwriting.")
