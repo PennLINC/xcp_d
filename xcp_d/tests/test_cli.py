@@ -22,7 +22,7 @@ from xcp_d.tests.utils import (
     get_test_data_path,
     list_files,
 )
-from xcp_d.utils.bids import write_atlas_dataset_description, write_dataset_description
+from xcp_d.utils.bids import write_atlas_dataset_description, write_derivative_description
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -475,7 +475,11 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         retval = build_workflow(config_file, retval={})
         xcpd_wf = retval["workflow"]
         xcpd_wf.run(**config.nipype.get_plugin())
-        write_dataset_description(config.execution.fmri_dir, config.execution.output_dir)
+        write_derivative_description(
+            config.execution.fmri_dir,
+            config.execution.output_dir,
+            dataset_links=config.execution.dataset_links,
+        )
         if config.execution.atlases:
             write_atlas_dataset_description(config.execution.output_dir / "atlases")
 
