@@ -78,7 +78,7 @@ def init_xcpd_wf():
         single_subject_wf = init_single_subject_wf(subject_id)
 
         single_subject_wf.config["execution"]["crashdump_dir"] = str(
-            config.execution.xcp_d_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
+            config.execution.output_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
         )
         for node in single_subject_wf._get_all_nodes():
             node.config = deepcopy(single_subject_wf.config)
@@ -87,7 +87,7 @@ def init_xcpd_wf():
 
         # Dump a copy of the config file into the log directory
         log_dir = (
-            config.execution.xcp_d_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
+            config.execution.output_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
         )
         log_dir.mkdir(exist_ok=True, parents=True)
         config.to_filename(log_dir / "xcp_d.toml")
@@ -257,9 +257,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     ds_report_summary = pe.Node(
         DerivativesDataSink(
-            base_directory=config.execution.xcp_d_dir,
             source_file=preproc_files[0],
-            datatype="figures",
             desc="summary",
         ),
         name="ds_report_summary",
@@ -267,10 +265,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     ds_report_about = pe.Node(
         DerivativesDataSink(
-            base_directory=config.execution.xcp_d_dir,
             source_file=preproc_files[0],
             desc="about",
-            datatype="figures",
         ),
         name="ds_report_about",
         run_without_submitting=True,
@@ -539,8 +535,18 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (about, ds_report_about, [("out_report", "in_file")]),
     ])  # fmt:skip
 
+    return clean_datasinks(workflow)
+
+
+def clean_datasinks(workflow):
+    """Clean DerivativesDataSinks in a workflow."""
     for node in workflow.list_node_names():
-        if node.split(".")[-1].startswith("ds_"):
+        node_name = node.split(".")[-1]
+        if node_name.startswith("ds_"):
             workflow.get_node(node).interface.out_path_base = ""
+            workflow.get_node(node).interface.inputs.base_directory = config.execution.output_dir
+
+        if node_name.startswith("ds_report_"):
+            workflow.get_node(node).interface.inputs.datatype = "figures"
 
     return workflow

@@ -67,8 +67,6 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -176,20 +174,18 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
 
         workflow.connect([(create_framewise_pngs, make_mosaic_node, [("out_file", "png_files")])])
 
-        ds_mosaic_file = pe.Node(
+        ds_report_mosaic_file = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["desc"],
                 desc="mosaic",
-                datatype="figures",
                 suffix=f"{image_type}w",
             ),
-            name=f"ds_mosaic_file_{image_type}",
+            name=f"ds_report_mosaic_file_{image_type}",
             run_without_submitting=False,
         )
         workflow.connect([
-            (inputnode, ds_mosaic_file, [(inputnode_anat_name, "source_file")]),
-            (make_mosaic_node, ds_mosaic_file, [("mosaic_file", "in_file")]),
+            (inputnode, ds_report_mosaic_file, [(inputnode_anat_name, "source_file")]),
+            (make_mosaic_node, ds_report_mosaic_file, [("mosaic_file", "in_file")]),
         ])  # fmt:skip
 
         # Start working on the selected PNG images for the button
@@ -242,22 +238,20 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name="brainsprite_
             ]),
         ])  # fmt:skip
 
-        ds_scenewise_pngs = pe.MapNode(
+        ds_report_scenewise_pngs = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["desc"],
-                datatype="figures",
                 suffix=f"{image_type}w",
             ),
-            name=f"ds_scenewise_pngs_{image_type}",
+            name=f"ds_report_scenewise_pngs_{image_type}",
             run_without_submitting=False,
             iterfield=["desc", "in_file"],
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
         workflow.connect([
-            (inputnode, ds_scenewise_pngs, [(inputnode_anat_name, "source_file")]),
-            (get_png_scene_names, ds_scenewise_pngs, [("scene_descriptions", "desc")]),
-            (create_scenewise_pngs, ds_scenewise_pngs, [("out_file", "in_file")]),
+            (inputnode, ds_report_scenewise_pngs, [(inputnode_anat_name, "source_file")]),
+            (get_png_scene_names, ds_report_scenewise_pngs, [("scene_descriptions", "desc")]),
+            (create_scenewise_pngs, ds_report_scenewise_pngs, [("out_file", "in_file")]),
         ])  # fmt:skip
 
     return workflow

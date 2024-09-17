@@ -61,7 +61,7 @@ def mock_config():
 
     config.execution.work_dir = Path(mkdtemp())
     config.execution.fmri_dir = Path(doc.download_example_data(out_dir=mkdtemp()))
-    config.execution.xcp_d_dir = Path(mkdtemp())
+    config.execution.output_dir = Path(mkdtemp())
     config.execution.bids_database_dir = None
     config.execution._layout = None
     config.execution.init()
@@ -69,7 +69,7 @@ def mock_config():
     yield
 
     shutil.rmtree(config.execution.work_dir)
-    shutil.rmtree(config.execution.xcp_d_dir)
+    shutil.rmtree(config.execution.output_dir)
 
     if not _old_fs:
         del os.environ["FREESURFER_HOME"]

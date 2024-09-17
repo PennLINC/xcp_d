@@ -475,9 +475,9 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         retval = build_workflow(config_file, retval={})
         xcpd_wf = retval["workflow"]
         xcpd_wf.run(**config.nipype.get_plugin())
-        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+        write_dataset_description(config.execution.fmri_dir, config.execution.output_dir)
         if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
+            write_atlas_dataset_description(config.execution.output_dir / "atlases")
 
         build_boilerplate(str(config_file), xcpd_wf)
         session_list = (
@@ -487,12 +487,12 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         )
         generate_reports(
             subject_list=config.execution.participant_label,
-            output_dir=config.execution.xcp_d_dir,
+            output_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
             session_list=session_list,
         )
 
     output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
-    check_generated_files(config.execution.xcp_d_dir, output_list_file)
-    check_affines(config.execution.fmri_dir, config.execution.xcp_d_dir, input_type=input_type)
+    check_generated_files(config.execution.output_dir, output_list_file)
+    check_affines(config.execution.fmri_dir, config.execution.output_dir, input_type=input_type)
