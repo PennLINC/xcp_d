@@ -112,7 +112,7 @@ def get_atlas_nifti(atlas):
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
 
-    return atlas_file, atlas_labels_file, atlas_metadata_file
+    return {"image": atlas_file, "labels": atlas_labels_file, "metadata": atlas_metadata_file}
 
 
 def get_atlas_cifti(atlas):
@@ -181,4 +181,43 @@ def get_atlas_cifti(atlas):
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
 
-    return atlas_file, atlas_labels_file, atlas_metadata_file
+    return {"image": atlas_file, "labels": atlas_labels_file, "metadata": atlas_metadata_file}
+
+
+def collect_atlases(datasets, bids_filters={}):
+    """Collect atlases from a list of BIDS-Atlas datasets.
+
+    Parameters
+    ----------
+    datasets : list of str or BIDSLayout
+
+    Returns
+    -------
+    atlases : dict
+    """
+    from xcp_d.data import load as load_data
+
+    atlas_cfg = load_data("atlas_bids_config.json")
+
+    atlases = {}
+    for dataset in datasets:
+        if isinstance(dataset, str):
+            from bids.layout import BIDSLayout
+
+            layout = BIDSLayout(dataset, config=[atlas_cfg])
+        else:
+            layout = dataset
+
+        assert layout.get_dataset_description().get("DatasetType") == "atlas"
+
+        for atlas in layout.get_atlases(**bids_filters):
+            atlas_image = layout.get(atlas=atlas, **bids_filters, return_type="file")[0]
+            atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
+            atlas_metadata = layout.get_nearest(atlas_image, extension=".json", strict=False)
+            atlases[atlas] = {
+                "image": atlas_image,
+                "labels": atlas_labels,
+                "metadata": atlas_metadata,
+            }
+
+    return atlases
