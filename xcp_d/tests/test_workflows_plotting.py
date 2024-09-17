@@ -35,5 +35,5 @@ def test_init_plot_custom_slices_wf(ds001419_data, tmp_path_factory):
         wf_res = wf.run()
 
         nodes = get_nodes(wf_res)
-        overlay_figure = nodes["plot_custom_slices_wf.ds_overlay_figure"].get_output("out_file")
+        overlay_figure = nodes["plot_custom_slices_wf.ds_report_overlay"].get_output("out_file")
         assert os.path.isfile(overlay_figure)

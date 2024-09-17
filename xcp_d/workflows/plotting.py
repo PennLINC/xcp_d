@@ -43,20 +43,20 @@ def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
         ]),
     ])  # fmt:skip
 
-    ds_report_overlay_figure = pe.Node(
+    ds_report_overlay = pe.Node(
         DerivativesDataSink(
             dismiss_entities=["den"],
             desc=desc,
             extension=".png",
         ),
-        name="ds_report_overlay_figure",
+        name="ds_report_overlay",
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
 
     workflow.connect([
-        (inputnode, ds_report_overlay_figure, [("name_source", "source_file")]),
-        (plot_overlay_figure, ds_report_overlay_figure, [("out_files", "in_file")]),
+        (inputnode, ds_report_overlay, [("name_source", "source_file")]),
+        (plot_overlay_figure, ds_report_overlay, [("out_files", "in_file")]),
     ])  # fmt:skip
 
     reformat_for_brain_swipes = pe.Node(FormatForBrainSwipes(), name="reformat_for_brain_swipes")
@@ -167,19 +167,19 @@ def init_plot_custom_slices_wf(
 
     workflow.connect([(make_image, combine_images, [("out_file", "in_files")])])
 
-    ds_report_overlay_figure = pe.Node(
+    ds_report_overlay = pe.Node(
         DerivativesDataSink(
             dismiss_entities=["den"],
             desc=desc,
             extension=".png",
         ),
-        name="ds_report_overlay_figure",
+        name="ds_report_overlay",
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
     workflow.connect([
-        (inputnode, ds_report_overlay_figure, [("name_source", "source_file")]),
-        (combine_images, ds_report_overlay_figure, [("out_file", "in_file")]),
+        (inputnode, ds_report_overlay, [("name_source", "source_file")]),
+        (combine_images, ds_report_overlay, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     return workflow

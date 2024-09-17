@@ -90,13 +90,13 @@ def test_warp_surfaces_to_template_wf(
         wf = clean_datasinks(wf)
         wf.run()
 
-    # All of the possible fsLR surfaces should be available.
-    out_anat_dir = os.path.join(tmpdir, "sub-1648798153", "ses-PNC1", "anat")
-    for key, filename in surface_files.items():
-        if "fsLR" in key:
-            out_fname = os.path.basename(filename)
-            out_file = os.path.join(out_anat_dir, out_fname)
-            assert os.path.isfile(out_file), "\n".join(sorted(os.listdir(out_anat_dir)))
+        # All of the possible fsLR surfaces should be available.
+        out_anat_dir = os.path.join(tmpdir, "sub-1648798153", "ses-PNC1", "anat")
+        for key, filename in surface_files.items():
+            if "fsLR" in key:
+                out_fname = os.path.basename(filename)
+                out_file = os.path.join(out_anat_dir, out_fname)
+                assert os.path.isfile(out_file), "\n".join(sorted(os.listdir(tmpdir)))
 
 
 def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
