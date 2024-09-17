@@ -655,7 +655,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confounds_folder=None):
+def write_derivative_description(fmri_dir, output_dir, atlases=None, custom_confounds_folder=None):
     """Write dataset_description.json file for derivatives.
 
     Parameters
