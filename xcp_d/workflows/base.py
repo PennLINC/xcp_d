@@ -5,6 +5,7 @@
 import os
 import sys
 from copy import deepcopy
+from pathlib import Path
 
 import bids
 import matplotlib
@@ -24,6 +25,7 @@ from xcp_d.__about__ import __version__
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
+from xcp_d.utils.atlas import collect_atlases
 from xcp_d.utils.bids import (
     _get_tr,
     collect_data,
@@ -140,6 +142,11 @@ def init_single_subject_wf(subject_id: str):
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
+        bids_filters=config.execution.bids_filters,
+    )
+    atlas_datasets = [p for p in config.execution.atlases if isinstance(p, Path)]
+    atlases = collect_atlases(
+        datasets=atlas_datasets,
         bids_filters=config.execution.bids_filters,
     )
 
