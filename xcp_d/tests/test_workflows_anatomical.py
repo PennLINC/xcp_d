@@ -9,6 +9,7 @@ from xcp_d import config
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.workflows import anatomical
+from xcp_d.workflows.base import clean_datasinks
 
 
 @pytest.fixture
@@ -68,9 +69,9 @@ def test_warp_surfaces_to_template_wf(
 
     with mock_config():
         config.nipype.omp_nthreads = 1
+        config.execution.output_dir = tmpdir
 
         wf = anatomical.surface.init_warp_surfaces_to_template_wf(
-            output_dir=tmpdir,
             software="FreeSurfer",
             omp_nthreads=1,
         )
@@ -86,15 +87,16 @@ def test_warp_surfaces_to_template_wf(
         wf.inputs.inputnode.template_to_anat_xfm = pnc_data["template_to_anat_xfm"]
 
         wf.base_dir = tmpdir
+        wf = clean_datasinks(wf)
         wf.run()
 
-    # All of the possible fsLR surfaces should be available.
-    out_anat_dir = os.path.join(tmpdir, "sub-1648798153", "ses-PNC1", "anat")
-    for key, filename in surface_files.items():
-        if "fsLR" in key:
-            out_fname = os.path.basename(filename)
-            out_file = os.path.join(out_anat_dir, out_fname)
-            assert os.path.isfile(out_file), "\n".join(sorted(os.listdir(out_anat_dir)))
+        # All of the possible fsLR surfaces should be available.
+        out_anat_dir = os.path.join(tmpdir, "sub-1648798153", "ses-PNC1", "anat")
+        for key, filename in surface_files.items():
+            if "fsLR" in key:
+                out_fname = os.path.basename(filename)
+                out_file = os.path.join(out_anat_dir, out_fname)
+                assert os.path.isfile(out_file), "\n".join(sorted(os.listdir(tmpdir)))
 
 
 def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
@@ -123,6 +125,7 @@ def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
         wf.inputs.inputnode.t1w = t1w
         wf.inputs.inputnode.t2w = t2w
         wf.base_dir = tmpdir
+        wf = clean_datasinks(wf)
         wf_res = wf.run()
 
         wf_nodes = get_nodes(wf_res)

@@ -136,45 +136,45 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     else:
         workflow.connect([(atlas_file_grabber, atlas_buffer, [("atlas_file", "atlas_file")])])
 
-    ds_atlas = pe.MapNode(
+    copy_atlas = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
         name="copy_atlas",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
-    ds_atlas.inputs.atlas = atlases
+    copy_atlas.inputs.atlas = atlases
 
     workflow.connect([
-        (inputnode, ds_atlas, [("name_source", "name_source")]),
-        (atlas_buffer, ds_atlas, [("atlas_file", "in_file")]),
-        (ds_atlas, outputnode, [("out_file", "atlas_files")]),
+        (inputnode, copy_atlas, [("name_source", "name_source")]),
+        (atlas_buffer, copy_atlas, [("atlas_file", "in_file")]),
+        (copy_atlas, outputnode, [("out_file", "atlas_files")]),
     ])  # fmt:skip
 
-    ds_atlas_labels_file = pe.MapNode(
+    copy_atlas_labels_file = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
         name="copy_atlas_labels_file",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
-    ds_atlas_labels_file.inputs.atlas = atlases
+    copy_atlas_labels_file.inputs.atlas = atlases
 
     workflow.connect([
-        (inputnode, ds_atlas_labels_file, [("name_source", "name_source")]),
-        (atlas_file_grabber, ds_atlas_labels_file, [("atlas_labels_file", "in_file")]),
-        (ds_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
+        (inputnode, copy_atlas_labels_file, [("name_source", "name_source")]),
+        (atlas_file_grabber, copy_atlas_labels_file, [("atlas_labels_file", "in_file")]),
+        (copy_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
     ])  # fmt:skip
 
-    ds_atlas_metadata = pe.MapNode(
+    copy_atlas_metadata = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
         name="copy_atlas_metadata",
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
-    ds_atlas_metadata.inputs.atlas = atlases
+    copy_atlas_metadata.inputs.atlas = atlases
 
     workflow.connect([
-        (inputnode, ds_atlas_metadata, [("name_source", "name_source")]),
-        (atlas_file_grabber, ds_atlas_metadata, [("atlas_metadata_file", "in_file")]),
+        (inputnode, copy_atlas_metadata, [("name_source", "name_source")]),
+        (atlas_file_grabber, copy_atlas_metadata, [("atlas_metadata_file", "in_file")]),
     ])  # fmt:skip
 
     return workflow

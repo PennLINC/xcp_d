@@ -178,7 +178,6 @@ def init_postproc_derivatives_wf(
 
     ds_motion = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
             dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
             suffix="motion",
@@ -214,15 +213,7 @@ def init_postproc_derivatives_wf(
     if fd_thresh > 0:
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
-                dismiss_entities=[
-                    "segmentation",
-                    "den",
-                    "res",
-                    "space",
-                    "cohort",
-                    "desc",
-                ],
+                dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
                 suffix="outliers",
                 extension=".tsv",
                 source_file=name_source,
@@ -262,7 +253,6 @@ def init_postproc_derivatives_wf(
 
         ds_confounds = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["space", "cohort", "den", "res"],
                 datatype="func",
@@ -286,7 +276,6 @@ def init_postproc_derivatives_wf(
     # Write out derivatives via DerivativesDataSink
     ds_denoised_bold = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
             dismiss_entities=["den"],
             cohort=cohort,
@@ -310,7 +299,6 @@ def init_postproc_derivatives_wf(
     if config.workflow.linc_qc:
         ds_qc_file = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
@@ -329,7 +317,6 @@ def init_postproc_derivatives_wf(
         # Write out derivatives via DerivativesDataSink
         ds_smoothed_bold = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["den"],
                 cohort=cohort,
@@ -394,7 +381,6 @@ def init_postproc_derivatives_wf(
         # TODO: Add brain mask to Sources (for NIfTIs).
         ds_coverage = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
@@ -433,7 +419,6 @@ def init_postproc_derivatives_wf(
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
@@ -478,7 +463,6 @@ def init_postproc_derivatives_wf(
 
             ds_correlations = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["desc", "den", "res"],
                     cohort=cohort,
@@ -506,7 +490,6 @@ def init_postproc_derivatives_wf(
         if file_format == "cifti":
             ds_coverage_ciftis = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     check_hdr=False,
                     dismiss_entities=["desc"],
@@ -546,7 +529,6 @@ def init_postproc_derivatives_wf(
 
             ds_timeseries_ciftis = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
@@ -591,7 +573,6 @@ def init_postproc_derivatives_wf(
 
                 ds_correlation_ciftis = pe.MapNode(
                     DerivativesDataSink(
-                        base_directory=output_dir,
                         source_file=name_source,
                         check_hdr=False,
                         dismiss_entities=["desc", "den"],
@@ -632,7 +613,6 @@ def init_postproc_derivatives_wf(
 
             ds_correlations_exact = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["desc", "den", "res"],
                     cohort=cohort,
@@ -654,7 +634,6 @@ def init_postproc_derivatives_wf(
     # Resting state metric outputs
     ds_reho = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
             check_hdr=False,
             dismiss_entities=["desc", "den"],
@@ -695,7 +674,6 @@ def init_postproc_derivatives_wf(
 
         ds_parcellated_reho = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
@@ -720,7 +698,6 @@ def init_postproc_derivatives_wf(
     if bandpass_filter:
         ds_alff = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
@@ -744,7 +721,6 @@ def init_postproc_derivatives_wf(
         if smoothing:
             ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["den"],
                     cohort=cohort,
@@ -790,7 +766,6 @@ def init_postproc_derivatives_wf(
 
             ds_parcellated_alff = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["desc", "den", "res"],
                     cohort=cohort,

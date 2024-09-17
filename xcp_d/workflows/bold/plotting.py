@@ -85,8 +85,6 @@ def init_qc_report_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.output_dir
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -312,7 +310,6 @@ def init_qc_report_wf(
 
         ds_qc_metadata = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=list(DerivativesDataSink._allowed_entities),
                 allowed_entities=["desc"],
                 desc="linc",
@@ -349,32 +346,24 @@ def init_qc_report_wf(
         else:
             make_qc_plots_nipreps.inputs.mask_file = None
 
-        ds_preproc_qc_plot_nipreps = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                desc="preprocessing",
-                datatype="figures",
-            ),
-            name="ds_preproc_qc_plot_nipreps",
+        ds_report_preproc_qc_nipreps = pe.Node(
+            DerivativesDataSink(desc="preprocessing"),
+            name="ds_report_preproc_qc_nipreps",
             run_without_submitting=False,
         )
         workflow.connect([
-            (inputnode, ds_preproc_qc_plot_nipreps, [("name_source", "source_file")]),
-            (make_qc_plots_nipreps, ds_preproc_qc_plot_nipreps, [("raw_qcplot", "in_file")]),
+            (inputnode, ds_report_preproc_qc_nipreps, [("name_source", "source_file")]),
+            (make_qc_plots_nipreps, ds_report_preproc_qc_nipreps, [("raw_qcplot", "in_file")]),
         ])  # fmt:skip
 
-        ds_postproc_qc_plot_nipreps = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                desc="postprocessing",
-                datatype="figures",
-            ),
-            name="ds_postproc_qc_plot_nipreps",
+        ds_report_postproc_qc_nipreps = pe.Node(
+            DerivativesDataSink(desc="postprocessing"),
+            name="ds_report_postproc_qc_nipreps",
             run_without_submitting=False,
         )
         workflow.connect([
-            (inputnode, ds_postproc_qc_plot_nipreps, [("name_source", "source_file")]),
-            (make_qc_plots_nipreps, ds_postproc_qc_plot_nipreps, [("clean_qcplot", "in_file")]),
+            (inputnode, ds_report_postproc_qc_nipreps, [("name_source", "source_file")]),
+            (make_qc_plots_nipreps, ds_report_postproc_qc_nipreps, [("clean_qcplot", "in_file")]),
         ])  # fmt:skip
 
         functional_qc = pe.Node(
@@ -389,11 +378,7 @@ def init_qc_report_wf(
         ])  # fmt:skip
 
         ds_report_qualitycontrol = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                desc="qualitycontrol",
-                datatype="figures",
-            ),
+            DerivativesDataSink(desc="qualitycontrol"),
             name="ds_report_qualitycontrol",
             run_without_submitting=False,
         )
@@ -415,7 +400,6 @@ def init_qc_report_wf(
 
         ds_abcc_qc = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 datatype="func",
                 desc="abcc",
                 suffix="qc",
@@ -451,34 +435,30 @@ def init_qc_report_wf(
                 (warp_dseg_to_bold, make_qc_plots_es, [("output_image", "seg_data")]),
             ])  # fmt:skip
 
-        ds_preproc_qc_plot_es = pe.Node(
+        ds_report_preproc_qc_es = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["den"],
-                datatype="figures",
                 desc="preprocESQC",
             ),
-            name="ds_preproc_qc_plot_es",
+            name="ds_report_preproc_qc_es",
             run_without_submitting=True,
         )
         workflow.connect([
-            (inputnode, ds_preproc_qc_plot_es, [("name_source", "source_file")]),
-            (make_qc_plots_es, ds_preproc_qc_plot_es, [("before_process", "in_file")]),
+            (inputnode, ds_report_preproc_qc_es, [("name_source", "source_file")]),
+            (make_qc_plots_es, ds_report_preproc_qc_es, [("before_process", "in_file")]),
         ])  # fmt:skip
 
-        ds_postproc_qc_plot_es = pe.Node(
+        ds_report_postproc_qc_es = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["den"],
-                datatype="figures",
                 desc="postprocESQC",
             ),
-            name="ds_postproc_qc_plot_es",
+            name="ds_report_postproc_qc_es",
             run_without_submitting=True,
         )
         workflow.connect([
-            (inputnode, ds_postproc_qc_plot_es, [("name_source", "source_file")]),
-            (make_qc_plots_es, ds_postproc_qc_plot_es, [("after_process", "in_file")]),
+            (inputnode, ds_report_postproc_qc_es, [("name_source", "source_file")]),
+            (make_qc_plots_es, ds_report_postproc_qc_es, [("after_process", "in_file")]),
         ])  # fmt:skip
 
     return workflow
@@ -539,7 +519,6 @@ def init_execsummary_functional_plots_wf(
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.output_dir
     layout = config.execution.layout
 
     inputnode = pe.Node(
@@ -584,20 +563,18 @@ def init_execsummary_functional_plots_wf(
     else:
         bold_t1w_registration_file = bold_t1w_registration_files[0]
 
-        ds_registration_figure = pe.Node(
+        ds_report_registration = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 in_file=bold_t1w_registration_file,
                 dismiss_entities=["den"],
-                datatype="figures",
                 desc="bbregister",
             ),
-            name="ds_registration_figure",
+            name="ds_report_registration",
             run_without_submitting=True,
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
 
-        workflow.connect([(inputnode, ds_registration_figure, [("preproc_nifti", "source_file")])])
+        workflow.connect([(inputnode, ds_report_registration, [("preproc_nifti", "source_file")])])
 
     # Calculate the mean bold image
     calculate_mean_bold = pe.Node(
@@ -612,20 +589,18 @@ def init_execsummary_functional_plots_wf(
     workflow.connect([(calculate_mean_bold, plot_meanbold, [("out_file", "in_file")])])
 
     # Write out the figures.
-    ds_meanbold_figure = pe.Node(
+    ds_report_meanbold = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             dismiss_entities=["den"],
-            datatype="figures",
             desc="mean",
         ),
-        name="ds_meanbold_figure",
+        name="ds_report_meanbold",
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
     workflow.connect([
-        (inputnode, ds_meanbold_figure, [("preproc_nifti", "source_file")]),
-        (plot_meanbold, ds_meanbold_figure, [("out_file", "in_file")]),
+        (inputnode, ds_report_meanbold, [("preproc_nifti", "source_file")]),
+        (plot_meanbold, ds_report_meanbold, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     # Plot the reference bold image
@@ -633,20 +608,18 @@ def init_execsummary_functional_plots_wf(
     workflow.connect([(inputnode, plot_boldref, [("boldref", "in_file")])])
 
     # Write out the figures.
-    ds_boldref_figure = pe.Node(
+    ds_report_boldref = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             dismiss_entities=["den"],
-            datatype="figures",
             desc="boldref",
         ),
-        name="ds_boldref_figure",
+        name="ds_report_boldref",
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
     workflow.connect([
-        (inputnode, ds_boldref_figure, [("preproc_nifti", "source_file")]),
-        (plot_boldref, ds_boldref_figure, [("out_file", "in_file")]),
+        (inputnode, ds_report_boldref, [("preproc_nifti", "source_file")]),
+        (plot_boldref, ds_report_boldref, [("out_file", "in_file")]),
     ])  # fmt:skip
 
     # Start plotting the overlay figures

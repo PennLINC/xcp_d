@@ -76,7 +76,6 @@ def init_postprocess_anat_wf(
         Path to the preprocessed T2w file in standard space.
     """
     workflow = Workflow(name=name)
-    output_dir = config.execution.output_dir
     input_type = config.workflow.input_type
 
     inputnode = pe.Node(
@@ -109,7 +108,6 @@ def init_postprocess_anat_wf(
     if t1w_available:
         ds_t1w_std = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 space=target_space,
                 cohort=cohort,
                 extension=".nii.gz",
@@ -125,7 +123,6 @@ def init_postprocess_anat_wf(
     if t2w_available:
         ds_t2w_std = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 space=target_space,
                 cohort=cohort,
                 extension=".nii.gz",

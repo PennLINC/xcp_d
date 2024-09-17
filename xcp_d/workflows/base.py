@@ -543,6 +543,11 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (about, ds_report_about, [("out_report", "in_file")]),
     ])  # fmt:skip
 
+    return clean_datasinks(workflow)
+
+
+def clean_datasinks(workflow):
+    """Clean DerivativesDataSinks in a workflow."""
     for node in workflow.list_node_names():
         node_name = node.split(".")[-1]
         if node_name.startswith("ds_"):

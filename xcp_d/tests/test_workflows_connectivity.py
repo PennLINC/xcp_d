@@ -17,6 +17,7 @@ from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.utils import _create_mem_gb, get_std2bold_xfms
 from xcp_d.utils.write_save import read_ndata, write_ndata
+from xcp_d.workflows.base import clean_datasinks
 from xcp_d.workflows.bold.connectivity import (
     init_functional_connectivity_cifti_wf,
     init_functional_connectivity_nifti_wf,
@@ -70,7 +71,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         load_atlases_wf_res = load_atlases_wf.run()
 
         nodes = get_nodes(load_atlases_wf_res)
-        atlas_names = nodes["load_atlases_wf.ds_atlas"].get_output("out_file")
+        atlas_names = nodes["load_atlases_wf.copy_atlas"].get_output("out_file")
         assert len(atlas_names) == 2
 
 
@@ -157,6 +158,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.inputs.inputnode.atlas_files = warped_atlases
         connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
         connectivity_wf.base_dir = tmpdir
+        connectivity_wf = clean_datasinks(connectivity_wf)
         connectivity_wf_res = connectivity_wf.run()
 
         nodes = get_nodes(connectivity_wf_res)
@@ -285,6 +287,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.inputs.inputnode.atlas_files = atlas_files
         connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
         connectivity_wf.base_dir = tmpdir
+        connectivity_wf = clean_datasinks(connectivity_wf)
         connectivity_wf_res = connectivity_wf.run()
 
         nodes = get_nodes(connectivity_wf_res)

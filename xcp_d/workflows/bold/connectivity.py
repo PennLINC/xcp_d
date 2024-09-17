@@ -69,7 +69,6 @@ def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
 
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.output_dir
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
@@ -163,18 +162,16 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (functional_connectivity, connectivity_plot, [("correlations", "correlations_tsv")]),
         ])  # fmt:skip
 
-        ds_connectivity_plot = pe.Node(
+        ds_report_connectivity_plot = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 desc="connectivityplot",
-                datatype="figures",
             ),
-            name="ds_connectivity_plot",
+            name="ds_report_connectivity_plot",
             run_without_submitting=False,
         )
         workflow.connect([
-            (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
-            (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
+            (inputnode, ds_report_connectivity_plot, [("name_source", "source_file")]),
+            (connectivity_plot, ds_report_connectivity_plot, [("connectplot", "in_file")]),
         ])  # fmt:skip
 
     parcellate_reho = pe.MapNode(
@@ -281,7 +278,6 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
 
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.output_dir
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
@@ -375,17 +371,14 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (parcellate_bold_wf, plot_coverage, [("outputnode.coverage_cifti", "in_files")]),
         ])  # fmt:skip
 
-        ds_plot_coverage = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                datatype="figures",
-            ),
-            name="ds_plot_coverage",
+        ds_report_coverage = pe.Node(
+            DerivativesDataSink(),
+            name="ds_report_coverage",
             run_without_submitting=False,
         )
         workflow.connect([
-            (inputnode, ds_plot_coverage, [("name_source", "source_file")]),
-            (plot_coverage, ds_plot_coverage, [
+            (inputnode, ds_report_coverage, [("name_source", "source_file")]),
+            (plot_coverage, ds_report_coverage, [
                 ("out_file", "in_file"),
                 ("desc", "desc"),
             ]),
@@ -456,19 +449,17 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (dconn_to_tsv, connectivity_plot, [("out_file", "correlations_tsv")]),
         ])  # fmt:skip
 
-        ds_connectivity_plot = pe.Node(
+        ds_report_connectivity = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 desc="connectivityplot",
-                datatype="figures",
             ),
-            name="ds_connectivity_plot",
+            name="ds_report_connectivity",
             run_without_submitting=False,
             mem_gb=0.1,
         )
         workflow.connect([
-            (inputnode, ds_connectivity_plot, [("name_source", "source_file")]),
-            (connectivity_plot, ds_connectivity_plot, [("connectplot", "in_file")]),
+            (inputnode, ds_report_connectivity, [("name_source", "source_file")]),
+            (connectivity_plot, ds_report_connectivity, [("connectplot", "in_file")]),
         ])  # fmt:skip
 
     # Perform exact-time correlations
@@ -561,17 +552,14 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-        ds_plot_reho = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                datatype="figures",
-            ),
-            name="ds_plot_reho",
+        ds_report_reho = pe.Node(
+            DerivativesDataSink(),
+            name="ds_report_reho",
             run_without_submitting=False,
         )
         workflow.connect([
-            (inputnode, ds_plot_reho, [("name_source", "source_file")]),
-            (plot_parcellated_reho, ds_plot_reho, [
+            (inputnode, ds_report_reho, [("name_source", "source_file")]),
+            (plot_parcellated_reho, ds_report_reho, [
                 ("desc", "desc"),
                 ("out_file", "in_file"),
             ]),
@@ -616,17 +604,14 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ]),
             ])  # fmt:skip
 
-            ds_plot_alff = pe.Node(
-                DerivativesDataSink(
-                    base_directory=output_dir,
-                    datatype="figures",
-                ),
-                name="ds_plot_alff",
+            ds_report_alff = pe.Node(
+                DerivativesDataSink(),
+                name="ds_report_alff",
                 run_without_submitting=False,
             )
             workflow.connect([
-                (inputnode, ds_plot_alff, [("name_source", "source_file")]),
-                (plot_parcellated_alff, ds_plot_alff, [
+                (inputnode, ds_report_alff, [("name_source", "source_file")]),
+                (plot_parcellated_alff, ds_report_alff, [
                     ("out_file", "in_file"),
                     ("desc", "desc"),
                 ]),
