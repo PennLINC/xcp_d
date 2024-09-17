@@ -90,6 +90,8 @@ The :py:mod:`config` is responsible for other conveniency actions.
 import os
 from multiprocessing import set_start_method
 
+from templateflow.conf import TF_LAYOUT
+
 # Disable NiPype etelemetry always
 _disable_et = bool(os.getenv("NO_ET") is not None or os.getenv("NIPYPE_NO_ET") is not None)
 os.environ["NIPYPE_NO_ET"] = "1"
@@ -227,6 +229,8 @@ class _Config:
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     setattr(cls, k, [Path(val).absolute() for val in v])
+                elif isinstance(v, dict):
+                    setattr(cls, k, {key: Path(val).absolute() for key, val in v.items()})
                 else:
                     setattr(cls, k, Path(v).absolute())
             elif hasattr(cls, k):
@@ -252,6 +256,8 @@ class _Config:
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     v = [str(val) for val in v]
+                elif isinstance(v, dict):
+                    v = {key: str(val) for key, val in v.items()}
                 else:
                     v = str(v)
             if isinstance(v, SpatialReferences):
@@ -421,6 +427,8 @@ class execution(_Config):
     """Path to a working directory where intermediate results will be available."""
     write_graph = None
     """Write out the computational graph corresponding to the planned preprocessing."""
+    dataset_links = {}
+    """A dictionary of dataset links to be used to track Sources in sidecars."""
 
     _layout = None
 
@@ -434,6 +442,7 @@ class execution(_Config):
         "output_dir",
         "templateflow_home",
         "work_dir",
+        "dataset_links",
     )
 
     @classmethod
@@ -503,6 +512,12 @@ class execution(_Config):
             for acq, filters in cls.bids_filters.items():
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
+
+        dataset_links = {
+            'preprocessed': cls.fmri_dir,
+            'templateflow': Path(TF_LAYOUT.root),
+        }
+        cls.dataset_links = dataset_links
 
         if "all" in cls.debug:
             cls.debug = list(DEBUG_MODES)

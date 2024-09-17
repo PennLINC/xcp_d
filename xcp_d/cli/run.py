@@ -160,7 +160,13 @@ def main():
         from xcp_d.reports.core import generate_reports
 
         # Write dataset description before generating reports
-        write_derivative_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+        write_derivative_description(
+            config.execution.fmri_dir,
+            config.execution.xcp_d_dir,
+            atlases=config.execution.atlases,
+            custom_confounds_folder=config.execution.custom_confounds,
+            dataset_links=config.execution.dataset_links,
+        )
 
         if config.execution.atlases:
             write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
