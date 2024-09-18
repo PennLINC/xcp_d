@@ -779,7 +779,7 @@ class GenerateConfounds(SimpleInterface):
                 # Filter the base motion parameters and calculate the Volterra expansion
                 base_motion_columns = [c for c in new_confound_df.columns if c in motion_params]
                 motion_df = new_confound_df[base_motion_columns]
-                motion_df.values = filter_motion(
+                motion_df.loc[:, :] = filter_motion(
                     data=motion_df.to_numpy(),
                     TR=self.inputs.TR,
                     motion_filter_type=self.inputs.motion_filter_type,

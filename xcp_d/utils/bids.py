@@ -715,6 +715,12 @@ def collect_confounds(
     # Step 2: Loop over the confounds spec and search for each file in the corresponding dataset.
     confounds = dict()
     for confound_name, confound_def in confound_spec["confounds"].items():
+        if confound_def["dataset"] not in layout_dict.keys():
+            raise ValueError(
+                f"Missing dataset required by confound spec: *{confound_def['dataset']}*. "
+                "Did you provide it with the `--derivatives` flag?"
+            )
+
         layout = layout_dict[confound_def["dataset"]]
         bold_file_entities = bold_file.get_entities()
         query = {**bold_file_entities, **confound_def["query"]}
