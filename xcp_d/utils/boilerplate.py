@@ -146,14 +146,19 @@ def describe_regression(
     desc : :obj:`str`
         A text description of the regression.
     """
+    if confounds_config is None:
+        return "No nuisance regression was performed."
+
     desc = confounds_config["description"]
 
     if (fd_thresh > 0) and motion_filter_type:
+        # Censoring was done, so just refer back to the earlier description of the filter
         desc += (
             " Any motion parameters in the confounds file were filtered using the same "
             "parameters as described above and the Volterra expansion was calculated."
         )
     elif motion_filter_type:
+        # Censoring was not done, so describe the filter here
         desc += " " + describe_motion_parameters(
             motion_filter_type=motion_filter_type,
             motion_filter_order=motion_filter_order,

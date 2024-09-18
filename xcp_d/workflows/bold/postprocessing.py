@@ -141,8 +141,13 @@ def init_prepare_confounds_wf(
     else:
         censoring_description = ""
 
+    if config.execution.confounds_config is None:
+        confounds_config = None
+    else:
+        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+
     confounds_description = describe_regression(
-        confounds_config=yaml.safe_load(config.execution.confounds_config.read_text()),
+        confounds_config=confounds_config,
         motion_filter_type=motion_filter_type,
         motion_filter_order=motion_filter_order,
         band_stop_min=band_stop_min,
