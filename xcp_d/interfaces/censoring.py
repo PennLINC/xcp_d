@@ -768,7 +768,7 @@ class GenerateConfounds(SimpleInterface):
             # 3. Calculate the Volterra expansion of the filtered parameters
             # 4. For each selected motion confound, remove that column and replace with the
             #    filtered version. Include `_filtered` in the new column name.
-            motion_params = ["trans_x", "trans_y", "tran_z", "rot_x", "rot_y", "rot_z"]
+            motion_params = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
             motion_based_params = [
                 c for c in new_confound_df.columns if any(c.startswith(p) for p in motion_params)
             ]
@@ -794,6 +794,7 @@ class GenerateConfounds(SimpleInterface):
                     motion_filter_order=self.inputs.motion_filter_order,
                 )
                 motion_df = volterra(motion_df)
+                motion_df.fillna(0, inplace=True)
 
                 # Patch in the filtered motion parameters to the confounds DataFrame
                 overlapping_columns = [
