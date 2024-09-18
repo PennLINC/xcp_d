@@ -38,4 +38,4 @@ confounds:
         - white_matter
         - ^w_comp_cor_0[1-5]$
         - ^c_comp_cor_0[1-5]$
-        - ^cosine_\d+$
+        - ^cosine\d+$
