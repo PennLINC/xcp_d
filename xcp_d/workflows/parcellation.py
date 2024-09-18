@@ -48,12 +48,26 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     atlas_files
     atlas_labels_files
     """
+    from pathlib import Path
+
     from xcp_d.interfaces.bids import CopyAtlas
+    from xcp_d.utils.atlas import collect_atlases
 
     workflow = Workflow(name=name)
-    atlases = config.execution.atlases
     output_dir = config.execution.output_dir
     file_format = config.workflow.file_format
+
+    atlas_datasets = [p for p in config.execution.atlases if isinstance(p, Path)]
+    atlases = collect_atlases(
+        datasets=atlas_datasets,
+        bids_filters=config.execution.bids_filters,
+    )
+
+    # Write a description
+    workflow.__desc__ = """
+#### Segmentations
+Atlases were warped to MNI space.
+    """
 
     inputnode = pe.Node(
         niu.IdentityInterface(

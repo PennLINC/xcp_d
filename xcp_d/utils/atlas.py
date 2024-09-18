@@ -208,13 +208,15 @@ def collect_atlases(datasets, bids_filters={}):
         else:
             layout = dataset
 
-        assert layout.get_dataset_description().get("DatasetType") == "atlas"
+        description = layout.get_dataset_description()
+        assert description.get("DatasetType") == "atlas"
 
         for atlas in layout.get_atlases(**bids_filters):
             atlas_image = layout.get(atlas=atlas, **bids_filters, return_type="file")[0]
             atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
             atlas_metadata = layout.get_nearest(atlas_image, extension=".json", strict=False)
             atlases[atlas] = {
+                "dataset": description.get("Name", layout.root),
                 "image": atlas_image,
                 "labels": atlas_labels,
                 "metadata": atlas_metadata,
