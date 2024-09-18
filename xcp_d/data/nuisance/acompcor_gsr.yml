@@ -15,6 +15,7 @@ confounds:
         dataset: preprocessed
         query:
             space: null
+            cohort: null
             res: null
             den: null
             desc: confounds

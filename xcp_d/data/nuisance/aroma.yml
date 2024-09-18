@@ -9,6 +9,7 @@ confounds:
         dataset: preprocessed
         query:
             space: null
+            cohort: null
             res: null
             den: null
             desc: confounds
@@ -21,6 +22,7 @@ confounds:
         dataset: aroma
         query:
             space: null
+            cohort: null
             res: null
             den: null
             desc: aroma
