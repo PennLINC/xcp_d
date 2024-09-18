@@ -48,8 +48,6 @@ def update_resources(parameters):
     return parameters
 
 
-
-
 def get_nodes(wf_results):
     """Load nodes from a Nipype workflow's results."""
     return {node.fullname: node for node in wf_results.nodes}

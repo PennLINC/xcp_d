@@ -211,29 +211,32 @@ def init_prepare_confounds_wf(
         (process_motion, outputnode, [("motion_metadata", "motion_metadata")]),
     ])  # fmt:skip
 
-    generate_confounds = pe.Node(
-        GenerateConfounds(
-            confounds_config=yaml.safe_load(config.execution.confounds_config.read_text()),
-            TR=TR,
-            dataset_links=config.execution.dataset_links,
-            out_dir=str(config.execution.output_dir),
-            band_stop_min=band_stop_min,
-            band_stop_max=band_stop_max,
-            motion_filter_type=motion_filter_type,
-            motion_filter_order=motion_filter_order,
-        ),
-        name="generate_confounds",
-        mem_gb=2,
-    )
+    if config.execution.confounds_config is not None:
+        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
 
-    # Load and filter confounds
-    workflow.connect([
-        (inputnode, generate_confounds, [
-            ("name_source", "in_file"),
-            ("confounds_files", "confounds_files"),
-        ]),
-        (generate_confounds, outputnode, [("confounds_metadata", "confounds_metadata")]),
-    ])  # fmt:skip
+        generate_confounds = pe.Node(
+            GenerateConfounds(
+                confounds_config=confounds_config,
+                TR=TR,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(config.execution.output_dir),
+                band_stop_min=band_stop_min,
+                band_stop_max=band_stop_max,
+                motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
+            ),
+            name="generate_confounds",
+            mem_gb=2,
+        )
+
+        # Load and filter confounds
+        workflow.connect([
+            (inputnode, generate_confounds, [
+                ("name_source", "in_file"),
+                ("confounds_files", "confounds_files"),
+            ]),
+            (generate_confounds, outputnode, [("confounds_metadata", "confounds_metadata")]),
+        ])  # fmt:skip
 
     # A buffer node to hold either the original files or the files with the first N vols removed.
     dummy_scan_buffer = pe.Node(
@@ -266,10 +269,6 @@ def init_prepare_confounds_wf(
                 ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
             ]),
-            (generate_confounds, remove_dummy_scans, [
-                ("confounds_tsv", "confounds_tsv"),
-                ("confounds_images", "confounds_images"),
-            ]),
             (remove_dummy_scans, dummy_scan_buffer, [
                 ("bold_file_dropped_TR", "preprocessed_bold"),
                 ("confounds_tsv_dropped_TR", "confounds_tsv"),
@@ -279,6 +278,14 @@ def init_prepare_confounds_wf(
                 ("dummy_scans", "dummy_scans"),
             ]),
         ])  # fmt:skip
+
+        if config.execution.confounds_config is not None:
+            workflow.connect([
+                (generate_confounds, remove_dummy_scans, [
+                    ("confounds_tsv", "confounds_tsv"),
+                    ("confounds_images", "confounds_images"),
+                ]),
+            ])  # fmt:skip
     else:
         workflow.connect([
             (inputnode, dummy_scan_buffer, [
@@ -289,21 +296,31 @@ def init_prepare_confounds_wf(
                 ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
             ]),
-            (generate_confounds, dummy_scan_buffer, [
-                ("confounds_tsv", "confounds_tsv"),
-                ("confounds_images", "confounds_images"),
-            ]),
         ])  # fmt:skip
+
+        if config.execution.confounds_config is not None:
+            workflow.connect([
+                (generate_confounds, dummy_scan_buffer, [
+                    ("confounds_tsv", "confounds_tsv"),
+                    ("confounds_images", "confounds_images"),
+                ]),
+            ])  # fmt:skip
 
     workflow.connect([
         (dummy_scan_buffer, outputnode, [
             ("preprocessed_bold", "preprocessed_bold"),
             ("dummy_scans", "dummy_scans"),
             ("motion_file", "motion_file"),
-            ("confounds_tsv", "confounds_tsv"),
-            ("confounds_images", "confounds_images"),
         ]),
     ])  # fmt:skip
+
+    if config.execution.confounds_config is not None:
+        workflow.connect([
+            (dummy_scan_buffer, outputnode, [
+                ("confounds_tsv", "confounds_tsv"),
+                ("confounds_images", "confounds_images"),
+            ]),
+        ])  # fmt:skip
 
     if config.workflow.dcan_correlation_lengths:
         random_censor = pe.Node(

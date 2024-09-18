@@ -421,16 +421,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 target_space=target_space,
             )
             if isinstance(config.execution.confounds_config, Path):
-                confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+                confounds_dict = collect_confounds(
+                    bold_file=bold_file,
+                    preproc_dataset=config.execution.layout,
+                    derivatives_datasets=config.execution.derivatives,
+                    confound_spec=yaml.safe_load(config.execution.confounds_config.read_text()),
+                )
+                run_data["confounds"] = confounds_dict
             else:
-                confounds_config = None
-            confounds_dict = collect_confounds(
-                bold_file=bold_file,
-                preproc_dataset=config.execution.layout,
-                derivatives_datasets=config.execution.derivatives,
-                confound_spec=confounds_config,
-            )
-            run_data["confounds"] = confounds_dict
+                run_data["confounds"] = None
 
             post_scrubbing_duration = flag_bad_run(
                 motion_file=run_data["motion_file"],

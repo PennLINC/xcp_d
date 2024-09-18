@@ -661,7 +661,7 @@ def collect_confounds(
     bold_file: str,
     preproc_dataset: BIDSLayout,
     derivatives_datasets: dict[str, Path | BIDSLayout] | None,
-    confound_spec: dict,
+    confound_spec: dict | None,
 ):
     """Gather confounds files from derivatives datasets and compose a cache."""
     import re

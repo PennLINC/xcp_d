@@ -12,6 +12,7 @@ from nipype.interfaces.base import (
     File,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
 
@@ -117,6 +118,16 @@ class RemoveDummyVolumes(SimpleInterface):
             self._results["confounds_images_dropped_TR"] = self.inputs.confounds_images
             self._results["motion_file_dropped_TR"] = self.inputs.motion_file
             self._results["temporal_mask_dropped_TR"] = self.inputs.temporal_mask
+
+            if (
+                isdefined(self.inputs.confounds_images)
+                and self.inputs.confounds_images is not None
+            ):
+                self._results["confounds_images_dropped_TR"] = self.inputs.confounds_images
+
+            if isdefined(self.inputs.confounds_tsv) and self.inputs.confounds_tsv is not None:
+                self._results["confounds_tsv_dropped_TR"] = self.inputs.confounds_tsv
+
             return runtime
 
         # get the file names to output to
@@ -138,7 +149,7 @@ class RemoveDummyVolumes(SimpleInterface):
             newpath=os.getcwd(),
             use_ext=False,
         )
-        if self.inputs.confounds_tsv is not None:
+        if isdefined(self.inputs.confounds_tsv) and self.inputs.confounds_tsv is not None:
             self._results["confounds_tsv_dropped_TR"] = fname_presuffix(
                 self.inputs.bold_file,
                 suffix="_confounds_dropped.tsv",
@@ -153,7 +164,7 @@ class RemoveDummyVolumes(SimpleInterface):
                 index=False,
             )
 
-        if self.inputs.confounds_images is not None:
+        if isdefined(self.inputs.confounds_images) and self.inputs.confounds_images is not None:
             self._results["confounds_images_dropped_TR"] = []
             for i_file, confound_file in enumerate(self.inputs.confounds_images):
                 confound_file_dropped = fname_presuffix(
