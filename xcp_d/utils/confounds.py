@@ -60,6 +60,7 @@ def load_motion(
     motion_confounds_df : pandas.DataFrame
         The six motion regressors.
         The three rotations are listed first, then the three translations.
+        Plus rmsd, and possibly filtered motion regressors.
 
     References
     ----------
@@ -91,9 +92,15 @@ def load_motion(
             columns=[f"{c}_filtered" for c in motion_confounds_df.columns],
         )
         motion_confounds_df = pd.concat(
-            [motion_confounds_df, filtered_motion_confounds_df, confounds_df[["rmsd"]]],
+            [motion_confounds_df, filtered_motion_confounds_df],
             axis=1,
         )
+
+    # Add RMSD column (used for QC measures later on)
+    motion_confounds_df = pd.concat(
+        [motion_confounds_df, confounds_df[["rmsd"]]],
+        axis=1,
+    )
 
     return motion_confounds_df
 

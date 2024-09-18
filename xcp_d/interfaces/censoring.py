@@ -709,6 +709,9 @@ class GenerateConfounds(SimpleInterface):
 
                         new_confound_df[column] = confound_df[column]
 
+                    # Replace NaNs in new column with zeros
+                    new_confound_df[column].fillna(0, inplace=True)
+
                 # Collect column metadata
                 for column in new_confound_df.columns:
                     if column in confound_metadata:
