@@ -419,11 +419,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 file_format=config.workflow.file_format,
                 target_space=target_space,
             )
+            if config.execution.confounds_config != "none":
+                confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+            else:
+                confounds_config = None
             confounds_dict = collect_confounds(
                 bold_file=bold_file,
                 preproc_dataset=config.execution.layout,
                 derivatives_datasets=config.execution.derivatives,
-                confound_spec=yaml.safe_load(config.execution.confounds_config.read_text()),
+                confound_spec=confounds_config,
             )
             run_data["confounds"] = confounds_dict
 
