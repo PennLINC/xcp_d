@@ -1042,11 +1042,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != "all"]
 
     # Load the confound configuration file
-    if isinstance(opts.confounds_config, str) and opts.confounds_config != "none":
-        opts.confounds_config = load_data.readable(f"nuisance/{opts.confounds_config}.yml")
-    elif opts.confounds_config == "none":
+    if opts.confounds_config == "none":
         opts.confounds_config = None
-    else:
+    elif isinstance(opts.confounds_config, str):  # A builtin confound config
+        opts.confounds_config = load_data.readable(f"nuisance/{opts.confounds_config}.yml")
+    else:  # An external confound config
         opts.confounds_config = Path(opts.confounds_config).resolve()
 
     # Bandpass filter parameters

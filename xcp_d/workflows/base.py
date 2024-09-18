@@ -5,6 +5,7 @@
 import os
 import sys
 from copy import deepcopy
+from pathlib import Path
 
 import bids
 import matplotlib
@@ -419,7 +420,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 file_format=config.workflow.file_format,
                 target_space=target_space,
             )
-            if config.execution.confounds_config != "none":
+            if isinstance(config.execution.confounds_config, Path):
                 confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
             else:
                 confounds_config = None
