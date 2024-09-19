@@ -38,7 +38,7 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
     confounds_tsv = traits.Either(
         File(exists=True),
         None,
-        mandatory=True,
+        mandatory=False,
         desc=(
             "TSV file with selected confounds for denoising. "
             "May be None if denoising is disabled."
@@ -47,7 +47,7 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
     confounds_images = traits.Either(
         traits.List(File(exists=True)),
         None,
-        mandatory=True,
+        mandatory=False,
         desc="List of images with confounds. May be None if denoising is disabled.",
     )
     motion_file = File(
@@ -79,7 +79,6 @@ class _RemoveDummyVolumesOutputSpec(TraitedSpec):
     confounds_images_dropped_TR = traits.Either(
         traits.List(File(exists=True)),
         None,
-        mandatory=True,
         desc="List of images with confounds. May be None if denoising is disabled.",
     )
     motion_file_dropped_TR = File(
