@@ -248,7 +248,6 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
     confounds_tsv = traits.Either(
         File(exists=True),
         None,
-        mandatory=True,
         desc="A tab-delimited file containing the confounds to remove from the BOLD data.",
     )
     confounds_images = traits.List(
