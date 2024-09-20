@@ -184,7 +184,7 @@ def get_atlas_cifti(atlas):
     return {"image": atlas_file, "labels": atlas_labels_file, "metadata": atlas_metadata_file}
 
 
-def collect_atlases(datasets, bids_filters={}):
+def collect_atlases(datasets, file_format, bids_filters={}):
     """Collect atlases from a list of BIDS-Atlas datasets.
 
     Parameters
@@ -195,11 +195,21 @@ def collect_atlases(datasets, bids_filters={}):
     -------
     atlases : dict
     """
+    from pathlib import Path
+
     from xcp_d.data import load as load_data
 
     atlas_cfg = load_data("atlas_bids_config.json")
 
+    atlas_datasets = [p for p in datasets if isinstance(p, Path)]
+    builtin_atlases = sorted(list(set(datasets) - set(atlas_datasets)))
+
+    collection_func = get_atlas_nifti if file_format == "nifti" else get_atlas_cifti
+
     atlases = {}
+    for builtin_atlas in builtin_atlases:
+        atlases[builtin_atlas] = collection_func(builtin_atlas)
+
     for dataset in datasets:
         if isinstance(dataset, str):
             from bids.layout import BIDSLayout

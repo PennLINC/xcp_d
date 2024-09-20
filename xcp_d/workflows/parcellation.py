@@ -48,8 +48,6 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     atlas_files
     atlas_labels_files
     """
-    from pathlib import Path
-
     from xcp_d.interfaces.bids import CopyAtlas
     from xcp_d.utils.atlas import collect_atlases
 
@@ -57,9 +55,8 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     output_dir = config.execution.output_dir
     file_format = config.workflow.file_format
 
-    atlas_datasets = [p for p in config.execution.atlases if isinstance(p, Path)]
     atlases = collect_atlases(
-        datasets=atlas_datasets,
+        datasets=config.execution.atlases,
         bids_filters=config.execution.bids_filters,
     )
 
@@ -88,19 +85,33 @@ Atlases were warped to MNI space.
         name="outputnode",
     )
 
-    # get atlases via load_data
-    atlas_file_grabber = pe.MapNode(
-        Function(
-            input_names=["atlas"],
-            output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
-            function=get_atlas_cifti if file_format == "cifti" else get_atlas_nifti,
-        ),
-        name="atlas_file_grabber",
-        iterfield=["atlas"],
-    )
-    atlas_file_grabber.inputs.atlas = atlases
+    # Reorganize the atlas file information
+    atlas_names, atlas_files, atlas_labels_files, atlas_metadata_files = [], [], [], []
+    atlas_datasets = []
+    for atlas in atlases:
+        atlas_names.append(atlas["name"])
+        atlas_files.append(atlas["file"])
+        atlas_labels_files.append(atlas["labels"])
+        atlas_metadata_files.append(atlas["metadata"])
+        atlas_datasets.append(atlas["dataset"])
 
-    atlas_buffer = pe.Node(niu.IdentityInterface(fields=["atlas_file"]), name="atlas_buffer")
+    atlas_buffer = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "atlas_name",
+                "atlas_dataset",
+                "atlas_file",
+                "atlas_labels_file",
+                "atlas_metadata_file",
+            ],
+        ),
+        name="atlas_buffer",
+    )
+    atlas_buffer.inputs.atlas_name = atlas_names
+    atlas_buffer.inputs.atlas_dataset = atlas_datasets
+    atlas_buffer.inputs.atlas_file = atlas_files
+    atlas_buffer.inputs.atlas_labels_file = atlas_labels_files
+    atlas_buffer.inputs.atlas_metadata_file = atlas_metadata_files
 
     if file_format == "nifti":
         get_transforms_to_bold_space = pe.Node(
