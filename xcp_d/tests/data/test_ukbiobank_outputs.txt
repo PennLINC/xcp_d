@@ -69,10 +69,10 @@ sub-0000001/ses-01
 sub-0000001/ses-01/anat
 sub-0000001/ses-01/anat/sub-0000001_ses-01_space-MNI152NLin6Asym_desc-preproc_T1w.nii.gz
 sub-0000001/ses-01/func
-sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_motion.json
-sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_motion.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_desc-preproc_design.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_desc-preproc_design.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_motion.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_motion.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_outliers.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_outliers.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoisedSmoothed_bold.json

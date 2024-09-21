@@ -237,6 +237,8 @@ def init_postproc_derivatives_wf(
         ])  # fmt:skip
 
     if config.execution.confounds_config is not None:
+        # XXX: I need to combine collected confounds files as Sources here.
+        # Not just the preproc_confounds_file.
         confounds_src = pe.Node(
             niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0))),
             name="confounds_src",

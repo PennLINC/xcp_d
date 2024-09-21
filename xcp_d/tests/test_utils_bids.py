@@ -58,12 +58,12 @@ def test_collect_data_ds001419(datasets):
         file_format="nifti",
     )
 
-    assert len(subj_data["bold"]) == 5
-    assert "space-MNI152NLin2009cAsym" in subj_data["bold"][0]
+    assert len(subj_data["bold"]) == 4
+    assert "space-MNI152NLin6Asym" in subj_data["bold"][0]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_desc-preproc_T1w.nii.gz"
     assert "space-" not in subj_data["t1w"]
-    assert "to-MNI152NLin2009cAsym" in subj_data["anat_to_template_xfm"]
-    assert "from-MNI152NLin2009cAsym" in subj_data["template_to_anat_xfm"]
+    assert "to-MNI152NLin6Asym" in subj_data["anat_to_template_xfm"]
+    assert "from-MNI152NLin6Asym" in subj_data["template_to_anat_xfm"]
 
     # CIFTI workflow
     subj_data = xbids.collect_data(
@@ -78,8 +78,8 @@ def test_collect_data_ds001419(datasets):
     assert "space-fsLR" in subj_data["bold"][0]
     assert "space-" not in subj_data["t1w"]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_desc-preproc_T1w.nii.gz"
-    assert "to-MNI152NLin2009cAsym" in subj_data["anat_to_template_xfm"]
-    assert "from-MNI152NLin2009cAsym" in subj_data["template_to_anat_xfm"]
+    assert "to-MNI152NLin6Asym" in subj_data["anat_to_template_xfm"]
+    assert "from-MNI152NLin6Asym" in subj_data["template_to_anat_xfm"]
 
 
 def test_collect_data_nibabies(datasets):
@@ -282,16 +282,16 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     with open(dset_description, "r") as fo:
         desc = json.load(fo)
 
-    assert "'preprocessed' is already a dataset link" not in caplog.text
-    assert "'confounds' is already a dataset link" not in caplog.text
+    assert "DatasetLink 'preprocessed' does not match" not in caplog.text
+    assert "DatasetLink 'confounds' does not match" not in caplog.text
     xbids.write_derivative_description(
         tmpdir,
         tmpdir,
         atlases=["Gordon"],
         dataset_links={"preprocessed": "/fake/path2", "confounds": "/fake/path5"},
     )
-    assert "'preprocessed' is already a dataset link" in caplog.text
-    assert "'custom_confounds' is already a dataset link" in caplog.text
+    assert "DatasetLink 'preprocessed' does not match" in caplog.text
+    assert "DatasetLink 'confounds' does not match" in caplog.text
 
     # Now change the version and re-run the function.
     desc["GeneratedBy"][0]["Version"] = "0.0.1"

@@ -2,7 +2,7 @@
     "bold": {
         "task": ["imagery", "rest"],
         "run": ["01", "02", null],
-        "space": "MNI152NLin2009cAsym",
+        "space": "MNI152NLin6Asym",
         "res": "2"
     }
 }

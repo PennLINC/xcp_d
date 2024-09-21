@@ -9,20 +9,19 @@ templateflow_version = "0.4.2"
 version = "0.6.0"
 
 [execution]
-fmri_dir = "ds000005/"
 bids_description_hash = "123456"
 bids_filters = {}
 boilerplate_only = false
 debug = []
-output_dir = "ds000005/derivatives/xcp_d"
+fmri_dir = "ds000005/"
 fs_license_file = "/opt/freesurfer/license.txt"
 log_dir = "/opt/xcp_d"
 log_level = 40
 low_mem = false
 md_only_boilerplate = false
 notrack = false
+output_dir = "ds000005/derivatives/xcp_d"
 reports_only = false
-output_dir = "ds000005/derivatives"
 run_uuid = "20240205-123456"
 templateflow_home = "~/.cache/templateflow"
 work_dir = "work/"

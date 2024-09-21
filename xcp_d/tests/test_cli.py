@@ -37,6 +37,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     test_name = "test_ds001419_nifti"
 
     dataset_dir = download_test_data("ds001419", data_dir)
+    derivs_dir = download_test_data("ds001419-aroma", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
@@ -48,6 +49,8 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         out_dir,
         "participant",
         "--mode=none",
+        "--derivatives",
+        f"aroma={derivs_dir}",
         f"-w={work_dir}",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=aroma_gsr",

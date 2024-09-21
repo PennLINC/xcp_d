@@ -469,6 +469,11 @@ class ProcessMotion(SimpleInterface):
             fd_timeseries = motion_df["framewise_displacement_filtered"].to_numpy()
 
         # Compile motion metadata from confounds metadata, adding in filtering info
+        # First drop any columns that are not motion parameters
+        orig_motion_df = pd.read_table(self.inputs.motion_file)
+        orig_motion_cols = orig_motion_df.columns.tolist()
+        cols_to_drop = sorted(list(set(orig_motion_cols) - set(motion_df.columns.tolist())))
+        motion_metadata = {k: v for k, v in motion_metadata.items() if k not in cols_to_drop}
         for col in motion_df.columns.tolist():
             col_metadata = motion_metadata.get(col, {})
             if col.startswith("framewise_displacement"):
@@ -710,7 +715,16 @@ class GenerateConfounds(SimpleInterface):
                             new_confound_df[found_column] = confound_df[found_column]
 
                             # Replace NaNs in new column with zeros
-                            new_confound_df[found_column].fillna(0, inplace=True)
+                            new_confound_df.fillna({found_column: 0}, inplace=True)
+
+                            confounds_metadata[found_column] = confounds_metadata.get(
+                                found_column, {}
+                            )
+                            confounds_metadata[found_column]["Sources"] = make_bids_uri(
+                                in_files=[confound_file],
+                                dataset_links=self.inputs.dataset_links,
+                                out_dir=self.inputs.out_dir,
+                            )
                     else:
                         if column not in confound_df.columns:
                             raise ValueError(f"Column '{column}' not found in confounds file.")
@@ -723,7 +737,14 @@ class GenerateConfounds(SimpleInterface):
                         new_confound_df[column] = confound_df[column]
 
                         # Replace NaNs in new column with zeros
-                        new_confound_df[column].fillna(0, inplace=True)
+                        new_confound_df.fillna({column: 0}, inplace=True)
+
+                        confounds_metadata[column] = confounds_metadata.get(column, {})
+                        confounds_metadata[column]["Sources"] = make_bids_uri(
+                            in_files=[confound_file],
+                            dataset_links=self.inputs.dataset_links,
+                            out_dir=self.inputs.out_dir,
+                        )
 
                 # Collect column metadata
                 for column in new_confound_df.columns:
@@ -732,11 +753,6 @@ class GenerateConfounds(SimpleInterface):
                     else:
                         confounds_metadata[column] = {}
 
-                    confounds_metadata[column]["Sources"] = make_bids_uri(
-                        in_files=[confound_file],
-                        dataset_links=self.inputs.dataset_links,
-                        out_dir=self.inputs.out_dir,
-                    )
             else:  # Voxelwise confounds
                 confound_img = nb.load(confound_file)
                 if confound_img.ndim == 2:  # CIFTI
@@ -765,6 +781,7 @@ class GenerateConfounds(SimpleInterface):
                     "The actual confound data are stored in an imaging file."
                 )
 
+        # This actually gets overwritten in init_postproc_derivatives_wf.
         confounds_metadata["Sources"] = make_bids_uri(
             in_files=confound_files,
             dataset_links=self.inputs.dataset_links,

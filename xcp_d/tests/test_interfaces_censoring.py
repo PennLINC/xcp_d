@@ -2,11 +2,13 @@
 
 import json
 import os
+import yaml
 
 import nibabel as nb
 import numpy as np
 import pandas as pd
 
+from xcp_d.data import load as load_data
 from xcp_d.interfaces import censoring
 
 
@@ -28,38 +30,33 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
 
     # Modify JSON file
     metadata["trans_x"] = {"test": "hello"}
-    confounds_json = os.path.join(tmpdir, "edited_confounds.json")
-    with open(confounds_json, "w") as fo:
-        json.dump(metadata, fo)
 
     # Rename with same convention as initial confounds tsv
     confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
+    confounds_files = {"preproc_confounds": {"file": confounds_tsv, "metadata": metadata}}
 
     # Run workflow
+    config = load_data.readable("nuisance/24P.yml")
+    config = yaml.safe_load(config.read_text())
     interface = censoring.GenerateConfounds(
         in_file=in_file,
-        params="24P",
+        confounds_config=config,
         TR=0.8,
-        fd_thresh=0.3,
-        head_radius=50,
-        fmriprep_confounds_file=confounds_tsv,
-        fmriprep_confounds_json=confounds_json,
+        confounds_files=confounds_files,
         motion_filter_type=None,
-        motion_filter_order=4,
+        motion_filter_order=0,
         band_stop_min=0,
         band_stop_max=0,
+        dataset_links={},
+        out_dir=str(tmpdir),
     )
     results = interface.run(cwd=tmpdir)
 
-    assert os.path.isfile(results.outputs.filtered_confounds_file)
-    assert os.path.isfile(results.outputs.confounds_file)
-    assert os.path.isfile(results.outputs.motion_file)
-    assert os.path.isfile(results.outputs.temporal_mask)
-    out_confounds_file = results.outputs.confounds_file
+    assert os.path.isfile(results.outputs.confounds_tsv)
+    out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24(P)
-    assert sum(out_df.columns.str.endswith("_orth")) == 24  # all 24(P)
 
 
 def test_random_censor(tmp_path_factory):

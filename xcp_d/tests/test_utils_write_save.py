@@ -27,7 +27,7 @@ def test_read_ndata(ds001419_data):
         write_save.read_ndata(nifti_file, maskfile=None)
 
     nifti_data = write_save.read_ndata(nifti_file, maskfile=mask_file)
-    assert nifti_data.shape == (249657, 60)
+    assert nifti_data.shape == (242716, 60)
 
 
 def test_write_ndata(ds001419_data, tmp_path_factory):

@@ -61,6 +61,9 @@ def download_test_data(dset, data_dir=None):
         ),
         "nibabies": "https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz",
         "ds001419": "https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz",
+        "ds001419-aroma": (
+            "https://upenn.box.com/shared/static/dexcmnlj7yujudr3muu05kch66sko4mt.tar.gz"
+        ),
         "pnc": "https://upenn.box.com/shared/static/ui2847ys49d82pgn5ewai1mowcmsv2br.tar.gz",
         "ukbiobank": "https://upenn.box.com/shared/static/p5h1eg4p5cd2ef9ehhljlyh1uku0xe97.tar.gz",
     }
@@ -76,17 +79,17 @@ def download_test_data(dset, data_dir=None):
     if not data_dir:
         data_dir = os.path.join(os.path.dirname(get_test_data_path()), "test_data")
 
-    dset_name = dset
-    if dset == "ds001419":
-        dset_name = "ds001419-fmriprep"
-
-    out_dir = os.path.join(data_dir, dset_name)
+    out_dir = os.path.join(data_dir, dset)
 
     if os.path.isdir(out_dir):
         LOGGER.info(
             f"Dataset {dset} already exists. "
             "If you need to re-download the data, please delete the folder."
         )
+        if dset.startswith("ds001419"):
+            # These test datasets have an extra folder level
+            out_dir = os.path.join(out_dir, dset)
+
         return out_dir
     else:
         LOGGER.info(f"Downloading {dset} to {out_dir}")
@@ -95,6 +98,10 @@ def download_test_data(dset, data_dir=None):
     with requests.get(URLS[dset], stream=True) as req:
         with tarfile.open(fileobj=GzipFile(fileobj=BytesIO(req.content))) as t:
             t.extractall(out_dir)
+
+    if dset.startswith("ds001419"):
+        # These test datasets have an extra folder level
+        out_dir = os.path.join(out_dir, dset)
 
     return out_dir
 

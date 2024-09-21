@@ -934,6 +934,9 @@ def _validate_parameters(opts, build_log, parser):
     if opts.mode == "abcd":
         opts.abcc_qc = True if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
+        opts.confounds_config = (
+            "36P" if (opts.confounds_config == "auto") else opts.confounds_config
+        )
         opts.dcan_correlation_lengths = (
             [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
         )
@@ -957,6 +960,9 @@ def _validate_parameters(opts, build_log, parser):
     elif opts.mode == "hbcd":
         opts.abcc_qc = True if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
+        opts.confounds_config = (
+            "36P" if (opts.confounds_config == "auto") else opts.confounds_config
+        )
         opts.dcan_correlation_lengths = (
             [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
         )
@@ -980,6 +986,9 @@ def _validate_parameters(opts, build_log, parser):
     elif opts.mode == "linc":
         opts.abcc_qc = False if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
+        opts.confounds_config = (
+            "36P" if (opts.confounds_config == "auto") else opts.confounds_config
+        )
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
@@ -1001,6 +1010,9 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.combine_runs == "auto":
             error_messages.append("'--combine-runs' (y or n) is required for 'none' mode.")
+
+        if opts.confounds_config == "auto":
+            error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
         opts.dcan_correlation_lengths = (
             [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
@@ -1029,9 +1041,6 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.output_type == "auto":
             error_messages.append("'--output-type' is required for 'none' mode.")
-
-        if opts.confounds_config == "auto":
-            error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
         if opts.process_surfaces == "auto":
             error_messages.append(
