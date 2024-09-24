@@ -139,6 +139,24 @@ Command-Line Arguments
                This file is only created if the input type is "fmriprep" or "nibabies".
 
 
+**************
+Minimal Inputs
+**************
+
+The minimal inputs required to run XCP-D are:
+
+-  A native-space preprocessed T1w or T2w image.
+-  A preprocessed BOLD image in MNI152NLin6Asym, MNI152NLin2009cAsym,
+   MNIInfant (nibabies derivatives), or fsLR (CIFTI processing) space.
+-  The functional brain mask and boldref image in the same space as the preprocessed BOLD data.
+-  The confounds associated with the BOLD image, along with the associated JSON file.
+-  The anatomical brain mask in the same space as the preprocessed BOLD data.
+-  The transform from the native anatomical space to the standard space the BOLD image is in,
+   and its inverse.
+
+Surface files, such as the pial and white matter GIFTI files,
+may be required depending on the settings you use.
+
 .. _filter_files:
 
 ***************************************
@@ -170,8 +188,8 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 If a T1w file is not available, this file will be in T2w space.
 
 ``"anat_brainmask"`` selects an anatomically-derived brain mask in the same space as the BOLD data.
-This file is used (1) to estimate head radius for FD calculation and
-(2) to calculate coregistration quality metrics.
+This file is used (1) to estimate head radius for FD calculation (after warping to native space)
+and (2) to calculate coregistration quality metrics.
 
 ``"anat_to_template_xfm"`` selects a transform from T1w (or T2w, if no T1w image is available)
 space to standard space.
