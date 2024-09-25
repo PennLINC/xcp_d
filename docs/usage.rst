@@ -160,12 +160,14 @@ may be required depending on the settings you use.
 Below are an example lists of inputs.
 
 .. warning::
+
    Please note that the filenames may differ based on the pipeline,
    or even version of the pipeline, used for preprocessing.
 
 For NIfTI processing:
 
 .. code-block::
+
    sub-x/
       anat/
          sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
@@ -187,6 +189,7 @@ For NIfTI processing:
 For CIFTI processing:
 
 .. code-block::
+
    sub-x/
       anat/
          sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
@@ -207,6 +210,7 @@ For CIFTI processing:
 Surface files:
 
 .. code-block::
+
    sub-x/
       anat/
          # Mesh files in fsnative space, to be warped to fsLR space
