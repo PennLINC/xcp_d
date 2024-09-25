@@ -170,6 +170,7 @@ For NIfTI processing:
 
 .. code-block::
 
+   dataset_description.json
    sub-x/
       anat/
          sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
@@ -192,6 +193,7 @@ For CIFTI processing:
 
 .. code-block::
 
+   dataset_description.json
    sub-x/
       anat/
          sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
@@ -213,6 +215,7 @@ Surface files:
 
 .. code-block::
 
+   dataset_description.json
    sub-x/
       anat/
          # Mesh files in fsnative space, to be warped to fsLR space
