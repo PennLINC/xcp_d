@@ -1,6 +1,5 @@
 {
     "bold": {
-        "task": "imagery",
         "run": ["01", "02"]
     }
 }

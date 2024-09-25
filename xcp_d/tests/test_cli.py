@@ -92,6 +92,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "participant",
         "--mode=abcd",
         f"-w={work_dir}",
+        "--task-id=imagery",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=acompcor_gsr",
         "--warp_surfaces_native2std=n",
