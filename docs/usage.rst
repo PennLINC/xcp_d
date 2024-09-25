@@ -165,69 +165,66 @@ Below are an example lists of inputs.
 
 For NIfTI processing:
 
-```
-sub-x/
-   anat/
-      sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w
-      sub-x_desc-preproc_T1w.json
-      sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
-      sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
-      sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
-      sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
-   func/
-      sub-x_task-rest_desc-confounds_timeseries.tsv
-      sub-x_task-rest_desc-confounds_timeseries.json
-      sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz
-      sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.json
-      sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
-      sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
-      sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
-      sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.json
-```
+.. code-block::
+   sub-x/
+      anat/
+         sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
+         sub-x_desc-preproc_T1w.json
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
+         sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+      func/
+         sub-x_task-rest_desc-confounds_timeseries.tsv
+         sub-x_task-rest_desc-confounds_timeseries.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.json
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.json
 
 For CIFTI processing:
 
-```
-sub-x/
-   anat/
-      sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w
-      sub-x_desc-preproc_T1w.json
-      sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
-      sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
-      sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
-      sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
-   func/
-      sub-x_task-rest_desc-confounds_timeseries.tsv
-      sub-x_task-rest_desc-confounds_timeseries.json
-      sub-x_task-rest_space-fsLR_den-91k_bold.dtseries.nii
-      sub-x_task-rest_space-fsLR_den-91k_bold.json
-      sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz  # Needed for QC figures
-      sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
-      sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
-```
+.. code-block::
+   sub-x/
+      anat/
+         sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
+         sub-x_desc-preproc_T1w.json
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
+         sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+      func/
+         sub-x_task-rest_desc-confounds_timeseries.tsv
+         sub-x_task-rest_desc-confounds_timeseries.json
+         sub-x_task-rest_space-fsLR_den-91k_bold.dtseries.nii
+         sub-x_task-rest_space-fsLR_den-91k_bold.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz  # Needed for QC figures
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
 
 Surface files:
 
-```
-sub-x/
-   anat/
-      # Mesh files in fsnative space, to be warped to fsLR space
-      sub-x_hemi-L_pial.surf.gii
-      sub-x_hemi-R_pial.surf.gii
-      sub-x_hemi-L_white.surf.gii
-      sub-x_hemi-R_white.surf.gii
+.. code-block::
+   sub-x/
+      anat/
+         # Mesh files in fsnative space, to be warped to fsLR space
+         sub-x_hemi-L_pial.surf.gii
+         sub-x_hemi-R_pial.surf.gii
+         sub-x_hemi-L_white.surf.gii
+         sub-x_hemi-R_white.surf.gii
 
-      # Sphere files for registration
-      sub-x_hemi-L_space-fsaverage_desc-reg_sphere.surf.gii
-      sub-x_hemi-R_space-fsaverage_desc-reg_sphere.surf.gii
+         # Sphere files for registration
+         sub-x_hemi-L_space-fsaverage_desc-reg_sphere.surf.gii
+         sub-x_hemi-R_space-fsaverage_desc-reg_sphere.surf.gii
 
-      # Morphometry files in fsLR space, to be parcellated
-      sub-x_hemi-L_space-fsLR_den-91k_curv.dscalar.nii
-      sub-x_hemi-L_space-fsLR_den-91k_sulc.dscalar.nii
-      sub-x_hemi-L_space-fsLR_den-91k_thickness.dscalar.nii
-      sub-x_hemi-L_space-fsLR_den-91k_myelinw.dscalar.nii
-      sub-x_hemi-L_space-fsLR_den-91k_desc-smoothed_myelinw.dscalar.nii
-```
+         # Morphometry files in fsLR space, to be parcellated
+         sub-x_hemi-L_space-fsLR_den-91k_curv.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_sulc.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_thickness.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_myelinw.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_desc-smoothed_myelinw.dscalar.nii
 
 .. _filter_files:
 
