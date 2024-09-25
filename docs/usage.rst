@@ -164,6 +164,8 @@ Below are an example lists of inputs.
    Please note that the filenames may differ based on the pipeline,
    or even version of the pipeline, used for preprocessing.
 
+   The specific files required by XCP-D may also vary slightly depending on the settings you use.
+
 For NIfTI processing:
 
 .. code-block::
