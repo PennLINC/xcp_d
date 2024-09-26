@@ -222,7 +222,8 @@ def fslicense(working_dir):
     FS_LICENSE = os.path.join(working_dir, "license.txt")
     os.environ["FS_LICENSE"] = FS_LICENSE
     LICENSE_CODE = (
-        "bWF0dGhldy5jaWVzbGFrQHBzeWNoLnVjc2IuZWR1CjIwNzA2CipDZmVWZEg1VVQ4clkKRlNCWVouVWtlVElDdwo="
+        "c2Fsb3RAcGVubm1lZGljaW5lLnVwZW5uLmVkdQo3NjYxMwogKkM5ZzRCU1p5akN3UQogRlNpdDd3Vm0xYUdXYwog"
+        "cGR5TU93ZDFFYytLR3l0b1M5ZkVjbWJuNGx4YllYTWIrajI3c1E3TDYwQWtKb3Y2dkFDSEpMWkdEQ1Z0M2t6ZwoK"
     )
     with open(FS_LICENSE, "w") as f:
         f.write(base64.b64decode(LICENSE_CODE).decode())
