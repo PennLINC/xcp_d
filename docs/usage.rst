@@ -177,8 +177,8 @@ For NIfTI processing:
          sub-x_desc-preproc_T1w.json
          sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
          sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
-         sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
-         sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+         sub-x_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-x_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
       func/
          sub-x_task-rest_desc-confounds_timeseries.tsv
          sub-x_task-rest_desc-confounds_timeseries.json
@@ -200,8 +200,8 @@ For CIFTI processing:
          sub-x_desc-preproc_T1w.json
          sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
          sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
-         sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
-         sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+         sub-x_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-x_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
       func/
          sub-x_task-rest_desc-confounds_timeseries.tsv
          sub-x_task-rest_desc-confounds_timeseries.json
