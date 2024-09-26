@@ -694,7 +694,8 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         type=PathExists,
         help=(
             "Path to FreeSurfer license key file. Get it (for free) by registering "
-            "at https://surfer.nmr.mgh.harvard.edu/registration.html."
+            "at https://surfer.nmr.mgh.harvard.edu/registration.html. "
+            "This is not currently required, but may be in the future."
         ),
     )
     g_other.add_argument(
@@ -923,16 +924,16 @@ def _validate_parameters(opts, build_log, parser):
             os.environ["FS_LICENSE"] = str(opts.fs_license_file)
 
         else:
-            error_messages.append(f"Freesurfer license DNE: {opts.fs_license_file}.")
+            build_log.warning(f"Freesurfer license DNE: {opts.fs_license_file}.")
     else:
         fs_license_file = os.environ.get("FS_LICENSE", "/opt/freesurfer/license.txt")
         if not Path(fs_license_file).is_file():
-            error_messages.append(
-                "A valid FreeSurfer license file is required. "
+            build_log.warning(
+                "A valid FreeSurfer license file is recommended. "
                 "Set the FS_LICENSE environment variable or use the '--fs-license-file' flag."
             )
-
-        os.environ["FS_LICENSE"] = str(fs_license_file)
+        else:
+            os.environ["FS_LICENSE"] = str(fs_license_file)
 
     # Resolve custom confounds folder
     if opts.custom_confounds:
