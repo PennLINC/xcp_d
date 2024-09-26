@@ -84,7 +84,6 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "ds001419_cifti_filter.json")
-    fs_license_file = os.environ["FS_LICENSE"]
 
     parameters = [
         dataset_dir,
@@ -112,7 +111,6 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "4S256Parcels",
         "4S356Parcels",
         "4S456Parcels",
-        f"--fs-license-file={fs_license_file}",
         "--linc-qc",
     ]
     _run_and_generate(

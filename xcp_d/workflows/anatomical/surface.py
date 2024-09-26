@@ -5,7 +5,6 @@
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
-from nipype.interfaces.freesurfer import MRIsConvert
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
@@ -955,16 +954,6 @@ def init_warp_one_hemisphere_wf(
         n_procs=1,
     )
 
-    # XXX: Given that fMRIPrep and Nibabies write out the subject spheres as surf.gii,
-    # I think this is unnecessary.
-    sphere_to_surf_gii = pe.Node(
-        MRIsConvert(out_datatype="gii"),
-        name="sphere_to_surf_gii",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-    workflow.connect([(inputnode, sphere_to_surf_gii, [("subject_sphere", "in_file")])])
-
     # NOTE: What does this step do?
     # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
     # fsLR/dhcpAsym-in-fsaverage
@@ -976,11 +965,11 @@ def init_warp_one_hemisphere_wf(
         n_procs=omp_nthreads,
     )
     workflow.connect([
+        (inputnode, surface_sphere_project_unproject, [("subject_sphere", "in_file")]),
         (collect_registration_files, surface_sphere_project_unproject, [
             ("source_sphere", "sphere_project_to"),
             ("sphere_to_sphere", "sphere_unproject_from"),
         ]),
-        (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
     ])  # fmt:skip
 
     # Resample the pial and white matter surfaces from fsnative to fsLR-32k or dhcpAsym-32k
