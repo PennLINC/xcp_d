@@ -103,9 +103,9 @@ def build_workflow(config_file, retval):
 
     # Check for FS license after building the workflow
     if not check_valid_fs_license():
-        build_log.critical(
+        build_log.warning(
             """\
-ERROR: a valid license file is required for FreeSurfer to run. XCP-D looked for an existing \
+WARNING: a valid license file is recommended when running XCP-D. XCP-D looked for an existing \
 license file at several paths, in this order: 1) command line argument ``--fs-license-file``; \
 2) ``$FS_LICENSE`` environment variable; and 3) the ``$FREESURFER_HOME/license.txt`` path. Get it \
 (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"""

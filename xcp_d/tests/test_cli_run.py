@@ -43,7 +43,6 @@ def base_opts():
         "band_stop_max": None,
         "motion_filter_order": None,
         "process_surfaces": "auto",
-        "fs_license_file": Path(os.environ["FS_LICENSE"]),
         "atlases": ["Glasser"],
         "dcan_correlation_lengths": None,
         "despike": "auto",
@@ -225,8 +224,11 @@ def test_validate_parameters_bandpass_filter(base_opts, base_parser, caplog, cap
     assert "must be lower than" in capsys.readouterr().err
 
 
-def test_validate_parameters_fs_license(base_opts, base_parser, caplog, capsys, tmp_path_factory):
-    """Ensure parser._validate_parameters returns 2 when fs_license_file doesn't exist."""
+def _test_validate_parameters_fs_license(base_opts, base_parser, caplog, capsys, tmp_path_factory):
+    """Ensure parser._validate_parameters returns 2 when fs_license_file doesn't exist.
+
+    Not run now that the license isn't required.
+    """
     tmpdir = tmp_path_factory.mktemp("test_validate_parameters_fs_license")
 
     opts = deepcopy(base_opts)
