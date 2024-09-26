@@ -36,7 +36,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
     confounds_files = {"preproc_confounds": {"file": confounds_tsv, "metadata": metadata}}
 
-    # Run workflow
+    # Test with no motion filtering
     config = load_data.readable("nuisance/24P.yml")
     config = yaml.safe_load(config.read_text())
     interface = censoring.GenerateConfounds(
@@ -57,8 +57,32 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24(P)
+    assert "trans_x" in out_df.columns
 
-    # Run workflow with regular expression
+    # Test with motion filtering
+    config = load_data.readable("nuisance/24P.yml")
+    config = yaml.safe_load(config.read_text())
+    interface = censoring.GenerateConfounds(
+        in_file=in_file,
+        confounds_config=config,
+        TR=0.8,
+        confounds_files=confounds_files,
+        motion_filter_type="notch",
+        motion_filter_order=4,
+        band_stop_min=12,
+        band_stop_max=20,
+        dataset_links={},
+        out_dir=str(tmpdir),
+    )
+    results = interface.run(cwd=tmpdir)
+
+    assert os.path.isfile(results.outputs.confounds_tsv)
+    out_confounds_file = results.outputs.confounds_tsv
+    out_df = pd.read_table(out_confounds_file)
+    assert out_df.shape[1] == 24  # 24(P)
+    assert "trans_x_filtered" in out_df.columns
+
+    # Test with regular expressions in confounds_config
     config = load_data.readable("nuisance/acompcor_gsr.yml")
     config = yaml.safe_load(config.read_text())
     interface = censoring.GenerateConfounds(
@@ -78,7 +102,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert os.path.isfile(results.outputs.confounds_tsv)
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
-    assert out_df.shape[1] == 24  # 24 parameters
+    assert out_df.shape[1] == 31  # 31 parameters
 
 
 def test_process_motion(ds001419_data, tmp_path_factory):
@@ -93,7 +117,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
         motion_file=motion_file,
         motion_json=motion_json,
         TR=2.0,
-        fd_thresh=None,
+        fd_thresh=0,
         head_radius=50,
         motion_filter_type=None,
         motion_filter_order=None,
@@ -125,7 +149,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
         motion_file=motion_file,
         motion_json=motion_json,
         TR=2.0,
-        fd_thresh=None,
+        fd_thresh=0,
         head_radius=50,
         motion_filter_type="notch",
         motion_filter_order=4,
