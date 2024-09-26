@@ -291,8 +291,8 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     test_name = "test_fmriprep_without_freesurfer"
 
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
-    temp_dir = os.path.join(output_dir, test_name)
-    out_dir = os.path.join(temp_dir, "xcp_d")
+    tmpdir = os.path.join(output_dir, test_name)
+    out_dir = os.path.join(tmpdir, "xcp_d")
     work_dir = os.path.join(working_dir, test_name)
 
     parameters = [
@@ -339,8 +339,8 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     test_name = "test_fmriprep_without_freesurfer"
 
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
-    temp_dir = os.path.join(output_dir, f"{test_name}_with_main")
-    out_dir = os.path.join(temp_dir, "xcp_d")
+    tmpdir = os.path.join(output_dir, f"{test_name}_with_main")
+    out_dir = os.path.join(tmpdir, "xcp_d")
     work_dir = os.path.join(working_dir, f"{test_name}_with_main")
 
     parameters = [

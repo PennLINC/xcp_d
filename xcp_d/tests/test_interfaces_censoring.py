@@ -58,6 +58,227 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24(P)
 
+    # Run workflow with regular expression
+    config = load_data.readable("nuisance/acompcor_gsr.yml")
+    config = yaml.safe_load(config.read_text())
+    interface = censoring.GenerateConfounds(
+        in_file=in_file,
+        confounds_config=config,
+        TR=0.8,
+        confounds_files=confounds_files,
+        motion_filter_type=None,
+        motion_filter_order=0,
+        band_stop_min=0,
+        band_stop_max=0,
+        dataset_links={},
+        out_dir=str(tmpdir),
+    )
+    results = interface.run(cwd=tmpdir)
+
+    assert os.path.isfile(results.outputs.confounds_tsv)
+    out_confounds_file = results.outputs.confounds_tsv
+    out_df = pd.read_table(out_confounds_file)
+    assert out_df.shape[1] == 24  # 24 parameters
+
+
+def test_process_motion(ds001419_data, tmp_path_factory):
+    """Test censoring.ProcessMotion."""
+    tmpdir = tmp_path_factory.mktemp("test_process_motion")
+
+    motion_file = ds001419_data["confounds_file"]
+    motion_json = ds001419_data["confounds_json"]
+
+    # Basic test without filtering
+    interface = censoring.ProcessMotion(
+        motion_file=motion_file,
+        motion_json=motion_json,
+        TR=2.0,
+        fd_thresh=None,
+        head_radius=50,
+        motion_filter_type=None,
+        motion_filter_order=None,
+        band_stop_min=None,
+        band_stop_max=None,
+    )
+    results = interface.run(cwd=tmpdir)
+    assert os.path.isfile(results.outputs.motion_file)
+    assert os.path.isfile(results.outputs.temporal_mask)
+
+    # Basic test with censoring, but no filtering
+    interface = censoring.ProcessMotion(
+        motion_file=motion_file,
+        motion_json=motion_json,
+        TR=2.0,
+        fd_thresh=0.2,
+        head_radius=50,
+        motion_filter_type=None,
+        motion_filter_order=None,
+        band_stop_min=None,
+        band_stop_max=None,
+    )
+    results = interface.run(cwd=tmpdir)
+    assert os.path.isfile(results.outputs.motion_file)
+    assert os.path.isfile(results.outputs.temporal_mask)
+
+    # Basic test with filtering, but not censoring
+    interface = censoring.ProcessMotion(
+        motion_file=motion_file,
+        motion_json=motion_json,
+        TR=2.0,
+        fd_thresh=None,
+        head_radius=50,
+        motion_filter_type="notch",
+        motion_filter_order=4,
+        band_stop_min=12,
+        band_stop_max=20,
+    )
+    results = interface.run(cwd=tmpdir)
+    assert os.path.isfile(results.outputs.motion_file)
+    assert os.path.isfile(results.outputs.temporal_mask)
+
+    # Basic test with filtering and censoring
+    interface = censoring.ProcessMotion(
+        motion_file=motion_file,
+        motion_json=motion_json,
+        TR=2.0,
+        fd_thresh=0.2,
+        head_radius=50,
+        motion_filter_type="notch",
+        motion_filter_order=4,
+        band_stop_min=12,
+        band_stop_max=20,
+    )
+    results = interface.run(cwd=tmpdir)
+    assert os.path.isfile(results.outputs.motion_file)
+    assert os.path.isfile(results.outputs.temporal_mask)
+
+
+def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
+    """Test RemoveDummyVolumes() for NIFTI input data."""
+    # Define inputs
+    tmpdir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_nifti")
+
+    boldfile = ds001419_data["nifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+
+    # Find the original number of volumes acc. to nifti & confounds timeseries
+    original_confounds = pd.read_table(confounds_file)
+    original_nvols_nifti = nb.load(boldfile).shape[3]
+
+    # Test a nifti file with 0 volumes to remove
+    remove_nothing = censoring.RemoveDummyVolumes(
+        bold_file=boldfile,
+        confounds_tsv=confounds_file,
+        confounds_images=[boldfile],
+        motion_file=confounds_file,
+        temporal_mask=confounds_file,
+        dummy_scans=0,
+    )
+    results = remove_nothing.run(cwd=tmpdir)
+    undropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
+    # Were the files created?
+    assert os.path.exists(results.outputs.bold_file_dropped_TR)
+    assert os.path.exists(results.outputs.confounds_tsv_dropped_TR)
+    assert os.path.exists(results.outputs.confounds_images_dropped_TR[0])
+    # Have the confounds stayed the same shape?
+    assert undropped_confounds.shape == original_confounds.shape
+    # Has the nifti stayed the same shape?
+    assert (
+        nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3] == original_nvols_nifti
+    )
+
+    # Test a nifti file with 1-10 volumes to remove
+    for n in range(10):
+        remove_n_vols = censoring.RemoveDummyVolumes(
+            bold_file=boldfile,
+            confounds_tsv=confounds_file,
+            confounds_images=[boldfile],
+            motion_file=confounds_file,
+            temporal_mask=confounds_file,
+            dummy_scans=n,
+        )
+        results = remove_n_vols.run(cwd=tmpdir)
+        dropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
+        # Were the files created?
+        assert os.path.exists(results.outputs.bold_file_dropped_TR)
+        assert os.path.exists(results.outputs.confounds_tsv_dropped_TR)
+        assert os.path.exists(results.outputs.confounds_images_dropped_TR[0])
+        # Have the confounds changed correctly?
+        assert dropped_confounds.shape[0] == original_confounds.shape[0] - n
+        # Has the nifti changed correctly?
+        try:
+            assert (
+                nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
+                == original_nvols_nifti - n
+            )
+        except Exception as exc:
+            exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
+            print(f"Tests failing at N = {n}.")
+            raise Exception(f"Number of volumes in dropped nifti is {exc}.")
+
+
+def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
+    """Test RemoveDummyVolumes() for CIFTI input data."""
+    # Define inputs
+    tmpdir = tmp_path_factory.mktemp("test_RemoveDummyVolumes_cifti")
+
+    boldfile = ds001419_data["cifti_file"]
+    confounds_file = ds001419_data["confounds_file"]
+
+    # Find the original number of volumes acc. to cifti & confounds timeseries
+    original_confounds = pd.read_table(confounds_file)
+    original_nvols_cifti = nb.load(boldfile).shape[0]
+
+    # Test a cifti file with 0 volumes to remove
+    remove_nothing = censoring.RemoveDummyVolumes(
+        bold_file=boldfile,
+        confounds_tsv=confounds_file,
+        confounds_images=[boldfile],
+        motion_file=confounds_file,
+        temporal_mask=confounds_file,
+        dummy_scans=0,
+    )
+    results = remove_nothing.run(cwd=tmpdir)
+    undropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
+    # Were the files created?
+    assert os.path.exists(results.outputs.bold_file_dropped_TR)
+    assert os.path.exists(results.outputs.confounds_tsv_dropped_TR)
+    # Have the confounds stayed the same shape?
+    assert undropped_confounds.shape == original_confounds.shape
+    # Has the cifti stayed the same shape?
+    assert (
+        nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0] == original_nvols_cifti
+    )
+
+    # Test a cifti file with 1-10 volumes to remove
+    for n in range(10):
+        remove_n_vols = censoring.RemoveDummyVolumes(
+            bold_file=boldfile,
+            confounds_tsv=confounds_file,
+            confounds_images=[boldfile],
+            motion_file=confounds_file,
+            temporal_mask=confounds_file,
+            dummy_scans=n,
+        )
+
+        results = remove_n_vols.run(cwd=tmpdir)
+        dropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
+        # Were the files created?
+        assert os.path.exists(results.outputs.bold_file_dropped_TR)
+        assert os.path.exists(results.outputs.confounds_tsv_dropped_TR)
+        # Have the confounds changed correctly?
+        assert dropped_confounds.shape[0] == original_confounds.shape[0] - n
+        # Has the cifti changed correctly?
+        try:
+            assert (
+                nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
+                == original_nvols_cifti - n
+            )
+        except Exception as exc:
+            exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
+            print(f"Tests failing at N = {n}.")
+            raise Exception(f"Number of volumes in dropped cifti is {exc}.")
+
 
 def test_random_censor(tmp_path_factory):
     """Test RandomCensor."""
