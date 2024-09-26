@@ -50,6 +50,7 @@ def base_opts():
         "linc_qc": "auto",
         "combine_runs": "auto",
         "output_type": "auto",
+        "fs_license_file": None,
     }
     opts = FakeOptions(**opts_dict)
     return opts
