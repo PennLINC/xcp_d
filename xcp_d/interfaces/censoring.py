@@ -928,11 +928,11 @@ class GenerateConfounds(SimpleInterface):
                 )
             else:
                 # Do the orthogonalization
-                signal_regressors = new_confound_df[signal_regressors].to_numpy()
-                noise_regressors = new_confound_df[noise_regressors].to_numpy()
-                signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
-                pred_noise_regressors = np.dot(signal_regressors, signal_betas)
-                orth_noise_regressors = noise_regressors - pred_noise_regressors
+                signal_arr = new_confound_df[signal_regressors].to_numpy()
+                noise_arr = new_confound_df[noise_regressors].to_numpy()
+                signal_betas = np.linalg.lstsq(signal_arr, noise_arr, rcond=None)[0]
+                pred_noise_regressors = np.dot(signal_arr, signal_betas)
+                orth_noise_regressors = noise_arr - pred_noise_regressors
 
                 # Replace the old data
                 orth_confounds_df.loc[:, orth_cols] = orth_noise_regressors
