@@ -156,7 +156,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24 parameters (doesn't include 25th signal column)
     assert "signal__fingerpress_condition" not in out_df.columns
-    assert all([col.endswith("_orth") for col in df.columns]), df.columns.tolist()
+    assert all([col.endswith("_orth") for col in out_df.columns])
     assert "signal__fingerpress_condition" in results.outputs.confounds_metadata.keys()
 
     # Test with image-based confounds
@@ -210,13 +210,6 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     )
     with pytest.raises(NotImplementedError):
         results = interface.run(cwd=tmpdir)
-
-    assert os.path.isfile(results.outputs.confounds_tsv)
-    out_confounds_file = results.outputs.confounds_tsv
-    out_df = pd.read_table(out_confounds_file)
-    assert out_df.shape[1] == 25  # 24P + rapidtide (stand-in for the voxel-wise regressor)
-    assert os.path.isfile(results.outputs.confounds_images[0])
-    assert out_df["rapidtide_slfo"].isna().all()
 
 
 def test_process_motion(ds001419_data, tmp_path_factory):

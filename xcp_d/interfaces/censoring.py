@@ -954,16 +954,12 @@ class GenerateConfounds(SimpleInterface):
                 col_metadata["Description"] = desc_str
                 confounds_metadata[f"{col}_orth"] = col_metadata
 
-        self._results["confounds_metadata"] = confounds_metadata
-
         self._results["confounds_tsv"] = fname_presuffix(
             "desc-confounds_timeseries.tsv",
             newpath=runtime.cwd,
             use_ext=True,
         )
         new_confound_df.to_csv(self._results["confounds_tsv"], sep="\t", index=False)
-        if signal_regressors:
-            raise Exception(new_confound_df)
 
         self._results["confounds_images"] = confounds_images
         self._results["confounds_metadata"] = confounds_metadata
