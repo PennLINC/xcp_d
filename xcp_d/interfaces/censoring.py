@@ -937,7 +937,6 @@ class GenerateConfounds(SimpleInterface):
                 # Replace the old data
                 orth_confounds_df.loc[:, orth_cols] = orth_noise_regressors
                 new_confound_df = orth_confounds_df
-                raise Exception(new_confound_df)
 
             for col in noise_regressors:
                 desc_str = (
@@ -963,6 +962,9 @@ class GenerateConfounds(SimpleInterface):
             use_ext=True,
         )
         new_confound_df.to_csv(self._results["confounds_tsv"], sep="\t", index=False)
+        if signal_regressors:
+            raise Exception(new_confound_df)
+
         self._results["confounds_images"] = confounds_images
         self._results["confounds_metadata"] = confounds_metadata
         return runtime
