@@ -139,6 +139,102 @@ Command-Line Arguments
                This file is only created if the input type is "fmriprep" or "nibabies".
 
 
+**************
+Minimal Inputs
+**************
+
+The minimal inputs required to run XCP-D are:
+
+-  A native-space preprocessed T1w or T2w image.
+-  A preprocessed BOLD image in MNI152NLin6Asym, MNI152NLin2009cAsym,
+   MNIInfant (nibabies derivatives), or fsLR (CIFTI processing) space.
+-  The functional brain mask and boldref image in the same space as the preprocessed BOLD data.
+-  The confounds associated with the BOLD image, along with the associated JSON file.
+-  The anatomical brain mask in the same space as the preprocessed BOLD data.
+-  The transform from the native anatomical space to the standard space the BOLD image is in,
+   and its inverse.
+
+Surface files, such as the pial and white matter GIFTI files,
+may be required depending on the settings you use.
+
+Below are an example lists of inputs.
+
+.. warning::
+
+   Please note that the filenames may differ based on the pipeline,
+   or even version of the pipeline, used for preprocessing.
+
+   The specific files required by XCP-D may also vary slightly depending on the settings you use.
+
+For NIfTI processing:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
+         sub-x_desc-preproc_T1w.json
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
+         sub-x_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-x_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+      func/
+         sub-x_task-rest_desc-confounds_timeseries.tsv
+         sub-x_task-rest_desc-confounds_timeseries.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.json
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.json
+
+For CIFTI processing:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
+         sub-x_desc-preproc_T1w.json
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
+         sub-x_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-x_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+      func/
+         sub-x_task-rest_desc-confounds_timeseries.tsv
+         sub-x_task-rest_desc-confounds_timeseries.json
+         sub-x_task-rest_space-fsLR_den-91k_bold.dtseries.nii
+         sub-x_task-rest_space-fsLR_den-91k_bold.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz  # Needed for QC figures
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
+
+Surface files:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         # Mesh files in fsnative space, to be warped to fsLR space
+         sub-x_hemi-L_pial.surf.gii
+         sub-x_hemi-R_pial.surf.gii
+         sub-x_hemi-L_white.surf.gii
+         sub-x_hemi-R_white.surf.gii
+
+         # Sphere files for registration
+         sub-x_hemi-L_space-fsaverage_desc-reg_sphere.surf.gii
+         sub-x_hemi-R_space-fsaverage_desc-reg_sphere.surf.gii
+
+         # Morphometry files in fsLR space, to be parcellated
+         sub-x_hemi-L_space-fsLR_den-91k_curv.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_sulc.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_thickness.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_myelinw.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_desc-smoothed_myelinw.dscalar.nii
+
 .. _filter_files:
 
 ***************************************
@@ -170,8 +266,8 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 If a T1w file is not available, this file will be in T2w space.
 
 ``"anat_brainmask"`` selects an anatomically-derived brain mask in the same space as the BOLD data.
-This file is used (1) to estimate head radius for FD calculation and
-(2) to calculate coregistration quality metrics.
+This file is used (1) to estimate head radius for FD calculation (after warping to native space)
+and (2) to calculate coregistration quality metrics.
 
 ``"anat_to_template_xfm"`` selects a transform from T1w (or T2w, if no T1w image is available)
 space to standard space.
