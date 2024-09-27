@@ -256,6 +256,7 @@ class Censor(SimpleInterface):
             censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
             censoring_df.reset_index(drop=True, inplace=True)
 
+        retain_idx = censoring_df.loc[censoring_df[self.inputs.column] == 0].index.values
         motion_outliers = censoring_df.loc[censoring_df[self.inputs.column] != 0].index.values
 
         if motion_outliers.size == 0:  # No censoring needed
@@ -274,7 +275,7 @@ class Censor(SimpleInterface):
                     f"does not match the NIfTI ({img.shape[3]})."
                 )
 
-            data_censored = data[:, :, :, motion_outliers]
+            data_censored = data[:, :, :, retain_idx]
 
             img_censored = nb.Nifti1Image(
                 data_censored,
@@ -288,7 +289,7 @@ class Censor(SimpleInterface):
                     f"does not match the CIFTI ({img.shape[0]})."
                 )
 
-            data_censored = data[motion_outliers, :]
+            data_censored = data[retain_idx, :]
 
             time_axis, brain_model_axis = [img.header.get_axis(i) for i in range(img.ndim)]
             new_total_volumes = data_censored.shape[0]
