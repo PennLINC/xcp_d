@@ -160,6 +160,8 @@ class ToDict(Action):
 
             if name in d:
                 raise ValueError(f"Received duplicate derivative name: {name}")
+            elif name == "preprocessed":
+                raise ValueError("The 'preprocessed' derivative is reserved for internal use.")
 
             d[name] = loc
         setattr(namespace, self.dest, d)

@@ -666,7 +666,7 @@ approach.
         workflow.connect([(inputnode, regress_and_filter_bold, [("mask", "mask")])])
 
     censor_interpolated_data = pe.Node(
-        Censor(),
+        Censor(column="framewise_displacement"),
         name="censor_interpolated_data",
         mem_gb=mem_gb["resampled"],
     )
@@ -676,9 +676,7 @@ approach.
         (regress_and_filter_bold, censor_interpolated_data, [
             ("denoised_interpolated_bold", "in_file"),
         ]),
-        (censor_interpolated_data, outputnode, [
-            ("censored_denoised_bold", "censored_denoised_bold"),
-        ]),
+        (censor_interpolated_data, outputnode, [("out_file", "censored_denoised_bold")]),
     ])  # fmt:skip
 
     denoised_bold_buffer = pe.Node(
@@ -693,9 +691,7 @@ approach.
         ])  # fmt:skip
     else:
         workflow.connect([
-            (censor_interpolated_data, denoised_bold_buffer, [
-                ("censored_denoised_bold", "denoised_bold"),
-            ]),
+            (censor_interpolated_data, denoised_bold_buffer, [("out_file", "denoised_bold")]),
         ])  # fmt:skip
 
     workflow.connect([(denoised_bold_buffer, outputnode, [("denoised_bold", "denoised_bold")])])

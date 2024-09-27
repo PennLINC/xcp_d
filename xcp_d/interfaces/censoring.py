@@ -19,7 +19,6 @@ from nipype.interfaces.base import (
 from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd
-from xcp_d.utils.write_save import write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -215,17 +214,28 @@ class _CensorInputSpec(BaseInterfaceInputSpec):
             "This is a TSV file with one column: 'framewise_displacement'."
         ),
     )
+    column = traits.Str(
+        default="framewise_displacement",
+        usedefault=True,
+        mandatory=False,
+        desc="Column name in the temporal mask to use for censoring.",
+    )
 
 
 class _CensorOutputSpec(TraitedSpec):
-    censored_denoised_bold = File(
+    out_file = File(
         exists=True,
         desc="Censored BOLD file",
     )
 
 
 class Censor(SimpleInterface):
-    """Apply temporal mask to data."""
+    """Apply temporal mask to data.
+
+    If a column other than "framewise_displacement" is used, then this assumes that the outliers
+    flagged by "framewise_displacement" have already been removed from the BOLD file, and it
+    reduces the data further.
+    """
 
     input_spec = _CensorInputSpec
     output_spec = _CensorOutputSpec
@@ -233,54 +243,77 @@ class Censor(SimpleInterface):
     def _run_interface(self, runtime):
         # Read in temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
-        motion_outliers = censoring_df["framewise_displacement"].to_numpy()
+        img = nb.load(self.inputs.in_file)
 
-        if np.sum(motion_outliers) == 0:  # No censoring needed
+        if self.inputs.column not in censoring_df.columns:
+            raise ValueError(
+                f"Column '{self.inputs.column}' not found in temporal mask file "
+                f"({self.inputs.temporal_mask})."
+            )
+
+        # Drop the high-motion volumes, because the image is already censored
+        if self.inputs.column != "framewise_displacement":
+            censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
+            censoring_df.reset_index(drop=True, inplace=True)
+
+        motion_outliers = (censoring_df[self.inputs.column] != 0).index.values
+
+        if motion_outliers.size == 0:  # No censoring needed
             self._results["censored_denoised_bold"] = self.inputs.in_file
             return runtime
 
         # Read in other files
-        bold_img_interp = nb.load(self.inputs.in_file)
-        bold_data_interp = bold_img_interp.get_fdata()
+        img = nb.load(self.inputs.in_file)
+        data = img.get_fdata()
 
-        is_nifti = bold_img_interp.ndim > 2
+        is_nifti = img.ndim > 2
         if is_nifti:
-            bold_data_censored = bold_data_interp[:, :, :, motion_outliers == 0]
+            if censoring_df.shape[0] != img.shape[3]:
+                raise ValueError(
+                    f"Number of volumes in the temporal mask ({censoring_df.shape[0]}) "
+                    f"does not match the NIfTI ({img.shape[3]})."
+                )
 
-            bold_img_censored = nb.Nifti1Image(
-                bold_data_censored,
-                affine=bold_img_interp.affine,
-                header=bold_img_interp.header,
+            data_censored = data[:, :, :, motion_outliers]
+
+            img_censored = nb.Nifti1Image(
+                data_censored,
+                affine=img.affine,
+                header=img.header,
             )
         else:
-            bold_data_censored = bold_data_interp[motion_outliers == 0, :]
+            if censoring_df.shape[0] != img.shape[0]:
+                raise ValueError(
+                    f"Number of volumes in the temporal mask ({censoring_df.shape[0]}) "
+                    f"does not match the CIFTI ({img.shape[0]})."
+                )
 
-            time_axis, brain_model_axis = [
-                bold_img_interp.header.get_axis(i) for i in range(bold_img_interp.ndim)
-            ]
-            new_total_volumes = bold_data_censored.shape[0]
+            data_censored = data[motion_outliers, :]
+
+            time_axis, brain_model_axis = [img.header.get_axis(i) for i in range(img.ndim)]
+            new_total_volumes = data_censored.shape[0]
             censored_time_axis = time_axis[:new_total_volumes]
-            # Note: not an error. A time axis cannot be accessed with irregularly
-            # spaced values. Since we use the temporal_mask for marking the volumes removed,
+            # Note: not an error. A time axis cannot be accessed with irregularly spaced values.
+            # Since we use the temporal_mask for marking the volumes removed,
             # the time axis also is not used further in XCP-D.
             censored_header = nb.cifti2.Cifti2Header.from_axes(
                 (censored_time_axis, brain_model_axis)
             )
-            bold_img_censored = nb.Cifti2Image(
-                bold_data_censored,
+            img_censored = nb.Cifti2Image(
+                data_censored,
                 header=censored_header,
-                nifti_header=bold_img_interp.nifti_header,
+                nifti_header=img.nifti_header,
             )
 
         # get the output
-        self._results["censored_denoised_bold"] = fname_presuffix(
+        self._results["out_file"] = fname_presuffix(
             self.inputs.in_file,
             suffix="_censored",
             newpath=runtime.cwd,
             use_ext=True,
         )
 
-        bold_img_censored.to_filename(self._results["censored_denoised_bold"])
+        img_censored.to_filename(self._results["out_file"])
         return runtime
 
 
@@ -663,9 +696,6 @@ class GenerateConfounds(SimpleInterface):
         from xcp_d.utils.bids import make_bids_uri
         from xcp_d.utils.confounds import filter_motion, volterra
 
-        if self.inputs.confounds_files is None:
-            return None, [], {}
-
         in_img = nb.load(self.inputs.in_file)
         if in_img.ndim == 2:  # CIFTI
             n_volumes = in_img.shape[0]
@@ -881,73 +911,4 @@ class GenerateConfounds(SimpleInterface):
         new_confound_df.to_csv(self._results["confounds_tsv"], sep="\t", index=False)
         self._results["confounds_images"] = confounds_images
         self._results["confounds_metadata"] = confounds_metadata
-        return runtime
-
-
-class _ReduceCiftiInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        desc="CIFTI timeseries file to reduce.",
-    )
-    temporal_mask = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Temporal mask; all motion outlier volumes set to 1. "
-            "This is a TSV file with one column: 'framewise_displacement'."
-        ),
-    )
-    column = traits.Str(
-        mandatory=True,
-        desc="Column name in the temporal mask to use for censoring.",
-    )
-
-
-class _ReduceCiftiOutputSpec(TraitedSpec):
-    out_file = File(
-        exists=True,
-        desc="Censored CIFTI file.",
-    )
-
-
-class ReduceCifti(SimpleInterface):
-    """Remove flagged volumes from a CIFTI series file."""
-
-    input_spec = _ReduceCiftiInputSpec
-    output_spec = _ReduceCiftiOutputSpec
-
-    def _run_interface(self, runtime):
-        # Read in temporal mask
-        censoring_df = pd.read_table(self.inputs.temporal_mask)
-        img = nb.load(self.inputs.in_file)
-
-        if self.inputs.column not in censoring_df.columns:
-            raise ValueError(
-                f"Column '{self.inputs.column}' not found in temporal mask file "
-                f"({self.inputs.temporal_mask})."
-            )
-
-        # Drop the high-motion volumes, because the CIFTI is already censored
-        if self.inputs.column != "framewise_displacement":
-            censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
-            censoring_df.reset_index(drop=True, inplace=True)
-            if censoring_df.shape[0] != img.shape[0]:
-                raise ValueError(
-                    f"Number of volumes in the temporal mask ({censoring_df.shape[0]}) "
-                    f"does not match the CIFTI ({img.shape[0]})."
-                )
-
-        data = img.get_fdata()
-        retain_idx = (censoring_df[self.inputs.column] == 0).index.values
-        data = data[retain_idx, ...]
-
-        self._results["out_file"] = fname_presuffix(
-            self.inputs.in_file,
-            prefix=f"{self.inputs.column}_",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        write_ndata(data.T, template=self.inputs.in_file, filename=self._results["out_file"])
-
         return runtime

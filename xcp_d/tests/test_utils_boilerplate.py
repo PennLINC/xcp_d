@@ -131,6 +131,22 @@ def test_describe_regression(tmp_path_factory):
     _check_describe_regression_result("aroma_gsr", "AROMA motion-labeled components")
     _check_describe_regression_result(None, "No nuisance regression was performed")
 
+    # Try with motion filter
+    config = load_data.readable("nuisance/24P.yml")
+    config = yaml.safe_load(config.read_text())
+
+    result = boilerplate.describe_regression(
+        confounds_config=config,
+        motion_filter_type="lp",
+        motion_filter_order=4,
+        band_stop_min=6,
+        band_stop_max=0,
+        TR=0.8,
+        fd_thresh=0,
+    )
+    assert isinstance(result, str)
+
+    # Fails. Need to replace with a better test.
     with pytest.raises(TypeError, match="string indices must be integers"):
         boilerplate.describe_regression(
             confounds_config="test",

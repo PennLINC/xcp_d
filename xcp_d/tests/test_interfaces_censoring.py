@@ -59,7 +59,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert out_df.shape[1] == 24  # 24(P)
     assert "trans_x" in out_df.columns
 
-    # Test with motion filtering
+    # Test with notch motion filtering
     config = load_data.readable("nuisance/24P.yml")
     config = yaml.safe_load(config.read_text())
     interface = censoring.GenerateConfounds(
@@ -71,6 +71,29 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
         motion_filter_order=4,
         band_stop_min=12,
         band_stop_max=20,
+        dataset_links={},
+        out_dir=str(tmpdir),
+    )
+    results = interface.run(cwd=tmpdir)
+
+    assert os.path.isfile(results.outputs.confounds_tsv)
+    out_confounds_file = results.outputs.confounds_tsv
+    out_df = pd.read_table(out_confounds_file)
+    assert out_df.shape[1] == 24  # 24(P)
+    assert "trans_x_filtered" in out_df.columns
+
+    # Test with low-pass motion filtering
+    config = load_data.readable("nuisance/24P.yml")
+    config = yaml.safe_load(config.read_text())
+    interface = censoring.GenerateConfounds(
+        in_file=in_file,
+        confounds_config=config,
+        TR=0.8,
+        confounds_files=confounds_files,
+        motion_filter_type="lp",
+        motion_filter_order=4,
+        band_stop_min=6,
+        band_stop_max=0,
         dataset_links={},
         out_dir=str(tmpdir),
     )
@@ -103,6 +126,33 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 31  # 31 parameters
+
+    # Test with image-based confounds
+    config = load_data.readable("nuisance/rapidtide+36P.yml")
+    config = yaml.safe_load(config.read_text())
+    confounds_files = {
+        "preproc_confounds": {"file": confounds_tsv, "metadata": metadata},
+        "rapidtide_slfo": {"file": in_file, "metadata": {}},
+    }
+    interface = censoring.GenerateConfounds(
+        in_file=in_file,
+        confounds_config=config,
+        TR=0.8,
+        confounds_files=confounds_files,
+        motion_filter_type=None,
+        motion_filter_order=0,
+        band_stop_min=0,
+        band_stop_max=0,
+        dataset_links={},
+        out_dir=str(tmpdir),
+    )
+    results = interface.run(cwd=tmpdir)
+
+    assert os.path.isfile(results.outputs.confounds_tsv)
+    out_confounds_file = results.outputs.confounds_tsv
+    out_df = pd.read_table(out_confounds_file)
+    assert out_df.shape[1] == 37  # 36P + rapidtide (stand-in for the voxel-wise regressor)
+    assert os.path.isfile(results.output.confounds_images[0])
 
 
 def test_process_motion(ds001419_data, tmp_path_factory):
@@ -375,9 +425,10 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=nifti_file,
         temporal_mask=temporal_mask,
+        column="framewise_displacement",
     )
     results = interface.run(cwd=tmpdir)
-    out_file = results.outputs.censored_denoised_bold
+    out_file = results.outputs.out_file
     assert os.path.isfile(out_file)
     out_img = nb.load(out_file)
     assert out_img.shape[3] == n_volumes
@@ -386,9 +437,10 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=cifti_file,
         temporal_mask=temporal_mask,
+        column="framewise_displacement",
     )
     results = interface.run(cwd=tmpdir)
-    out_file = results.outputs.censored_denoised_bold
+    out_file = results.outputs.out_file
     assert os.path.isfile(out_file)
     out_img = nb.load(out_file)
     assert out_img.shape[0] == n_volumes
@@ -397,13 +449,18 @@ def test_censor(ds001419_data, tmp_path_factory):
     n_censored_volumes = 10
     n_retained_volumes = n_volumes - n_censored_volumes
     censoring_df.loc[range(10), "framewise_displacement"] = 1
+    # Add random censor column
+    censoring_df["random_censor"] = 0
+    censoring_df.loc[20:29, "random_censor"] = 1
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+
     interface = censoring.Censor(
         in_file=nifti_file,
         temporal_mask=temporal_mask,
+        column="framewise_displacement",
     )
     results = interface.run(cwd=tmpdir)
-    out_file = results.outputs.censored_denoised_bold
+    out_file = results.outputs.out_file
     assert os.path.isfile(out_file)
     out_img = nb.load(out_file)
     assert out_img.shape[3] == n_retained_volumes
@@ -412,9 +469,22 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=cifti_file,
         temporal_mask=temporal_mask,
+        column="framewise_displacement",
     )
     results = interface.run(cwd=tmpdir)
-    out_file = results.outputs.censored_denoised_bold
+    out_file = results.outputs.out_file
     assert os.path.isfile(out_file)
     out_img = nb.load(out_file)
     assert out_img.shape[0] == n_retained_volumes
+
+    # Test with additional censoring column
+    interface2 = censoring.Censor(
+        in_file=results.outputs.out_file,
+        temporal_mask=temporal_mask,
+        column="random_censor",
+    )
+    results2 = interface2.run(cwd=tmpdir)
+    out_file2 = results2.outputs.out_file
+    assert os.path.isfile(out_file2)
+    out_img2 = nb.load(out_file2)
+    assert out_img2.shape[0] == (out_img.shape[0] - 10)
