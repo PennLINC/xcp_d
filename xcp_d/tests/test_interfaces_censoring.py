@@ -156,7 +156,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24 parameters (doesn't include 25th signal column)
     assert "signal__fingerpress_condition" not in out_df.columns
-    assert all([col.endswith("_orth") for col in df.columns])
+    assert all([col.endswith("_orth") for col in df.columns]), df.columns.tolist()
     assert "signal__fingerpress_condition" in results.outputs.confounds_metadata.keys()
 
     # Test with image-based confounds
