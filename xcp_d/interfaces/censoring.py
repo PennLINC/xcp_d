@@ -259,7 +259,7 @@ class Censor(SimpleInterface):
         motion_outliers = censoring_df.loc[censoring_df[self.inputs.column] != 0].index.values
 
         if motion_outliers.size == 0:  # No censoring needed
-            self._results["censored_denoised_bold"] = self.inputs.in_file
+            self._results["out_file"] = self.inputs.in_file
             return runtime
 
         # Read in other files

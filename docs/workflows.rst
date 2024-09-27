@@ -415,27 +415,20 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
       -
       -
-   *  - acompcor_gsr
-      -  X, dX
-      -
-      -
-      - X
-      - 10 com, 5WM, 5CSF
-      -
    *  - acompcor
       - X, dX
       -
       -
       -
-      - 10 com, 5WM, 5CSF
+      - 5 WM, 5 CSF
       -
-   *  - aroma_gsr
-      - X, dX
-      - X
-      - X
-      - X
+   *  - acompcor_gsr
+      -  X, dX
+      -
       -
       - X
+      - 5 WM, 5 CSF
+      -
    *  - aroma
       - X, dX
       - X
@@ -443,6 +436,20 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       -
       -
       - X
+   *  - aroma_gsr
+      - X, dX
+      - X
+      - X
+      - X
+      -
+      - X
+   *  - gsr_only
+      -
+      -
+      -
+      - X
+      -
+      -
    *  - none
       -
       -

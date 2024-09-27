@@ -152,7 +152,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 25  # 24P + rapidtide (stand-in for the voxel-wise regressor)
-    assert os.path.isfile(results.output.confounds_images[0])
+    assert os.path.isfile(results.outputs.confounds_images[0])
 
 
 def test_process_motion(ds001419_data, tmp_path_factory):
@@ -445,7 +445,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     out_img = nb.load(out_file)
     assert out_img.shape[0] == n_volumes
 
-    # Test with a NIfTI file, with some censored volumes
+    # Create a temporal mask with some censored volumes
     n_censored_volumes = 10
     n_retained_volumes = n_volumes - n_censored_volumes
     censoring_df.loc[range(10), "framewise_displacement"] = 1
@@ -454,6 +454,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     censoring_df.loc[20:29, "random_censor"] = 1
     censoring_df.to_csv(temporal_mask, sep="\t", index=False)
 
+    # Test with a NIfTI file, with some censored volumes
     interface = censoring.Censor(
         in_file=nifti_file,
         temporal_mask=temporal_mask,
@@ -464,6 +465,18 @@ def test_censor(ds001419_data, tmp_path_factory):
     assert os.path.isfile(out_file)
     out_img = nb.load(out_file)
     assert out_img.shape[3] == n_retained_volumes
+
+    # Test with additional censoring column
+    interface2 = censoring.Censor(
+        in_file=results.outputs.out_file,
+        temporal_mask=temporal_mask,
+        column="random_censor",
+    )
+    results2 = interface2.run(cwd=tmpdir)
+    out_file2 = results2.outputs.out_file
+    assert os.path.isfile(out_file2)
+    out_img2 = nb.load(out_file2)
+    assert out_img2.shape[3] == (n_retained_volumes - 10)
 
     # Test with a CIFTI file, with some censored volumes
     interface = censoring.Censor(
@@ -487,4 +500,4 @@ def test_censor(ds001419_data, tmp_path_factory):
     out_file2 = results2.outputs.out_file
     assert os.path.isfile(out_file2)
     out_img2 = nb.load(out_file2)
-    assert out_img2.shape[0] == (out_img.shape[0] - 10)
+    assert out_img2.shape[0] == (n_retained_volumes - 10)
