@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""The xcp_d preprocessing worklow.
+"""The XCP-D preprocessing worklow.
 
-xcp_d preprocessing workflow
+XCP-D preprocessing workflow
 ============================
 """
 import os
@@ -62,7 +62,7 @@ def _build_parser():
         "analysis_level",
         action="store",
         choices=["participant"],
-        help="The analysis level for xcp_d. Must be specified as 'participant'.",
+        help="The analysis level for XCP-D. Must be specified as 'participant'.",
     )
 
     # Required "mode" argument
@@ -247,7 +247,7 @@ def _build_parser():
         metavar="{{auto,INT}}",
         help=(
             "Number of volumes to remove from the beginning of each run. "
-            "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
+            "If set to 'auto', XCP-D will extract non-steady-state volume indices from the "
             "preprocessing derivatives' confounds file."
         ),
     )
@@ -277,7 +277,10 @@ def _build_parser():
         default="auto",
         help=(
             "Nuisance parameters to be selected. "
-            "Descriptions of each of the options are included in xcp_d's documentation."
+            "This may be a string indicating one of XCP-D's built-in nuisance regression "
+            "strategies (e.g., '36P') or a path to a YAML file formatted according to XCP-D's "
+            "confound configuration file format. "
+            "Descriptions of each of the built-in options are included in XCP-D's documentation. "
         ),
     )
     g_param.add_argument(
@@ -622,7 +625,7 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         default=False,
         help=(
             "Clears working directory of contents. "
-            "Use of this flag is not recommended when running concurrent processes of xcp_d."
+            "Use of this flag is not recommended when running concurrent processes of XCP-D."
         ),
     )
     g_other.add_argument(

@@ -128,7 +128,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert out_df.shape[1] == 31  # 31 parameters
 
     # Test with image-based confounds
-    config = load_data.readable("nuisance/rapidtide+36P.yml")
+    config = load_data.readable("nuisance/rapidtide+24P.yml")
     config = yaml.safe_load(config.read_text())
     confounds_files = {
         "preproc_confounds": {"file": confounds_tsv, "metadata": metadata},
@@ -151,7 +151,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert os.path.isfile(results.outputs.confounds_tsv)
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
-    assert out_df.shape[1] == 37  # 36P + rapidtide (stand-in for the voxel-wise regressor)
+    assert out_df.shape[1] == 25  # 24P + rapidtide (stand-in for the voxel-wise regressor)
     assert os.path.isfile(results.output.confounds_images[0])
 
 

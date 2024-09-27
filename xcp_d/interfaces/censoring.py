@@ -256,7 +256,7 @@ class Censor(SimpleInterface):
             censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
             censoring_df.reset_index(drop=True, inplace=True)
 
-        motion_outliers = (censoring_df[self.inputs.column] != 0).index.values
+        motion_outliers = censoring_df.loc[censoring_df[self.inputs.column] != 0].index.values
 
         if motion_outliers.size == 0:  # No censoring needed
             self._results["censored_denoised_bold"] = self.inputs.in_file
