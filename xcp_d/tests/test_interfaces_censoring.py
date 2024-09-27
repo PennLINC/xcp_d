@@ -7,6 +7,7 @@ import yaml
 import nibabel as nb
 import numpy as np
 import pandas as pd
+import pytest
 
 from xcp_d.data import load as load_data
 from xcp_d.interfaces import censoring
@@ -34,6 +35,10 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     # Rename with same convention as initial confounds tsv
     confounds_tsv = os.path.join(tmpdir, "edited_confounds.tsv")
     df.to_csv(confounds_tsv, sep="\t", index=False, header=True)
+    confounds_tsv2 = os.path.join(tmpdir, "edited_confounds_with_signal.tsv")
+    df["signal__fingerpress_condition"] = np.random.random(df.shape[0])
+    df.to_csv(confounds_tsv2, sep="\t", index=False, header=True)
+
     confounds_files = {"preproc_confounds": {"file": confounds_tsv, "metadata": metadata}}
 
     # Test with no motion filtering
@@ -127,6 +132,33 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 31  # 31 parameters
 
+    # Test with signal regressors
+    config = load_data.readable("nuisance/24P.yml")
+    config = yaml.safe_load(config.read_text())
+    config["confounds"]["preproc_confounds"]["columns"].append("signal__fingerpress_condition")
+    confounds_files = {"preproc_confounds": {"file": confounds_tsv2, "metadata": metadata}}
+    interface = censoring.GenerateConfounds(
+        in_file=in_file,
+        confounds_config=config,
+        TR=0.8,
+        confounds_files=confounds_files,
+        motion_filter_type=None,
+        motion_filter_order=0,
+        band_stop_min=0,
+        band_stop_max=0,
+        dataset_links={},
+        out_dir=str(tmpdir),
+    )
+    results = interface.run(cwd=tmpdir)
+
+    assert os.path.isfile(results.outputs.confounds_tsv)
+    out_confounds_file = results.outputs.confounds_tsv
+    out_df = pd.read_table(out_confounds_file)
+    assert out_df.shape[1] == 24  # 24 parameters (doesn't include 25th signal column)
+    assert "signal__fingerpress_condition" not in out_df.columns
+    assert all([col.endswith("_orth") for col in df.columns])
+    assert "signal__fingerpress_condition" in results.outputs.confounds_metadata.keys()
+
     # Test with image-based confounds
     config = load_data.readable("nuisance/rapidtide+24P.yml")
     config = yaml.safe_load(config.read_text())
@@ -153,6 +185,38 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 25  # 24P + rapidtide (stand-in for the voxel-wise regressor)
     assert os.path.isfile(results.outputs.confounds_images[0])
+    assert out_df["rapidtide_slfo"].isna().all()
+
+    # Test with image-based confounds and a signal column (will fail)
+    config = load_data.readable("nuisance/rapidtide+24P.yml")
+    config = yaml.safe_load(config.read_text())
+    config["confounds"]["preproc_confounds"]["columns"].append("signal__fingerpress_condition")
+
+    confounds_files = {
+        "preproc_confounds": {"file": confounds_tsv2, "metadata": metadata},
+        "rapidtide_slfo": {"file": in_file, "metadata": {}},
+    }
+    interface = censoring.GenerateConfounds(
+        in_file=in_file,
+        confounds_config=config,
+        TR=0.8,
+        confounds_files=confounds_files,
+        motion_filter_type=None,
+        motion_filter_order=0,
+        band_stop_min=0,
+        band_stop_max=0,
+        dataset_links={},
+        out_dir=str(tmpdir),
+    )
+    with pytest.raises(NotImplementedError):
+        results = interface.run(cwd=tmpdir)
+
+    assert os.path.isfile(results.outputs.confounds_tsv)
+    out_confounds_file = results.outputs.confounds_tsv
+    out_df = pd.read_table(out_confounds_file)
+    assert out_df.shape[1] == 25  # 24P + rapidtide (stand-in for the voxel-wise regressor)
+    assert os.path.isfile(results.outputs.confounds_images[0])
+    assert out_df["rapidtide_slfo"].isna().all()
 
 
 def test_process_motion(ds001419_data, tmp_path_factory):

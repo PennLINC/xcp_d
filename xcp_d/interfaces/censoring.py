@@ -708,6 +708,7 @@ class GenerateConfounds(SimpleInterface):
         confounds_images = []
         confounds_metadata = {}
         confound_files = []
+        confounds_image_names = []
         for confound_name, confound_info in self.inputs.confounds_files.items():
             confound_file = confound_info["file"]
             confound_files.append(confound_file)
@@ -798,6 +799,7 @@ class GenerateConfounds(SimpleInterface):
                     )
 
                 confounds_images.append(confound_file)
+                confounds_image_names.append(confound_name)
 
                 # Collect image metadata
                 new_confound_df.loc[:, confound_name] = np.nan  # fill with NaNs as a placeholder
@@ -903,6 +905,56 @@ class GenerateConfounds(SimpleInterface):
 
                     confounds_metadata[f"{column}_filtered"] = col_metadata
                     confounds_metadata.pop(column, None)
+
+        # Orthogonalize nuisance regressors w.r.t. any signal regressors
+        signal_regressors = [c for c in new_confound_df.columns if c.startswith("signal__")]
+        if signal_regressors:
+            LOGGER.warning(
+                "Signal regressors detected. "
+                "Orthogonalizing nuisance regressors w.r.t. the following signal regressors: "
+                f"{', '.join(signal_regressors)}"
+            )
+            noise_regressors = [c for c in new_confound_df.columns if not c.startswith("signal__")]
+
+            orth_cols = [f"{c}_orth" for c in noise_regressors]
+            orth_confounds_df = pd.DataFrame(
+                index=new_confound_df.index,
+                columns=orth_cols,
+            )
+            if confounds_image_names:
+                raise NotImplementedError(
+                    "Orthogonalization of confounds with respect to signal regressors is not yet "
+                    "supported for voxelwise confounds."
+                )
+            else:
+                # Do the orthogonalization
+                signal_regressors = new_confound_df[signal_regressors].to_numpy()
+                noise_regressors = new_confound_df[noise_regressors].to_numpy()
+                signal_betas = np.linalg.lstsq(signal_regressors, noise_regressors, rcond=None)[0]
+                pred_noise_regressors = np.dot(signal_regressors, signal_betas)
+                orth_noise_regressors = noise_regressors - pred_noise_regressors
+
+                # Replace the old data
+                orth_confounds_df.loc[:, orth_cols] = orth_noise_regressors
+                new_confound_df = orth_confounds_df
+
+            for col in noise_regressors:
+                desc_str = (
+                    "This regressor is orthogonalized with respect to the 'signal' regressors "
+                    f"({', '.join(signal_regressors)}) after dummy scan removal, "
+                    "but prior to any censoring."
+                )
+
+                col_metadata = {}
+                if col in confounds_metadata.keys():
+                    col_metadata = confounds_metadata.pop(col)
+                    if "Description" in col_metadata.keys():
+                        desc_str = f"{col_metadata['Description']} {desc_str}"
+
+                col_metadata["Description"] = desc_str
+                confounds_metadata[f"{col}_orth"] = col_metadata
+
+        self._results["confounds_metadata"] = confounds_metadata
 
         self._results["confounds_tsv"] = fname_presuffix(
             "desc-confounds_timeseries.tsv",

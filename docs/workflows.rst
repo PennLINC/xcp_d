@@ -554,6 +554,8 @@ please refer to :footcite:t:`benchmarkp`.
    as those data have already been denoised with FSL FIX.
 
 
+.. _confound_config:
+
 The confound configuration file format
 --------------------------------------
 
