@@ -937,6 +937,7 @@ class GenerateConfounds(SimpleInterface):
                 # Replace the old data
                 orth_confounds_df.loc[:, orth_cols] = orth_noise_regressors
                 new_confound_df = orth_confounds_df
+                raise Exception(new_confound_df)
 
             for col in noise_regressors:
                 desc_str = (
