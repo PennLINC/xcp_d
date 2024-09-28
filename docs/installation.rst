@@ -51,7 +51,7 @@ command: ::
 
     $ apptainer build xcp_d-<version>.simg docker://pennlinc/xcp_d:<version>
 
-where ``<version>`` should be replaced with the desired version of *xcp-d* that you want to
+where ``<version>`` should be replaced with the desired version of *XCP-D* that you want to
 download.
 
 

@@ -29,7 +29,7 @@ class ExecutiveSummary(object):
     Parameters
     ----------
     xcpd_path : :obj:`str`
-        Path to the xcp-d derivatives.
+        Path to the XCP-D derivatives.
     subject_id : :obj:`str`
         Subject ID.
     session_id : None or :obj:`str`, optional
