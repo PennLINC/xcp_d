@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for post-processing BOLD data."""
 
+import yaml
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
@@ -13,6 +14,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
     GenerateConfounds,
+    ProcessMotion,
     RandomCensor,
     RemoveDummyVolumes,
 )
@@ -35,7 +37,6 @@ def init_prepare_confounds_wf(
     TR,
     exact_scans,
     head_radius,
-    custom_confounds_file,
     name="prepare_confounds_wf",
 ):
     """Prepare confounds.
@@ -57,7 +58,6 @@ def init_prepare_confounds_wf(
                     TR=0.8,
                     exact_scans=[],
                     head_radius=70,
-                    custom_confounds_file=None,
                     name="prepare_confounds_wf",
                 )
 
@@ -67,7 +67,6 @@ def init_prepare_confounds_wf(
     %(exact_scans)s
     %(head_radius)s
         This will already be estimated before this workflow.
-    %(custom_confounds_file)s
     %(name)s
         Default is "prepare_confounds_wf".
 
@@ -75,32 +74,32 @@ def init_prepare_confounds_wf(
     ------
     %(name_source)s
     preprocessed_bold : :obj:`str`
-    %(fmriprep_confounds_file)s
-    fmriprep_confounds_json : :obj:`str`
+    motion_file : :obj:`str`
+        The motion parameters estimated by fMRIPrep.
+    motion_json : :obj:`str`
         JSON file associated with the fMRIPrep confounds TSV.
-    %(custom_confounds_file)s
+    confounds_files : :obj:`dict`
     %(dummy_scans)s
         Set from the parameter.
 
     Outputs
     -------
     preprocessed_bold : :obj:`str`
-    %(fmriprep_confounds_file)s
-    confounds_file : :obj:`str`
+    motion_file
+    confounds_tsv : :obj:`str`
         The selected confounds, potentially including custom confounds, after dummy scan removal.
+    confounds_images : :obj:`list` of :obj:`str`
     confounds_metadata : :obj:`dict`
     %(dummy_scans)s
         If originally set to "auto", this output will have the actual number of dummy volumes.
-    %(filtered_motion)s
+    motion_file
     motion_metadata : :obj:`dict`
     %(temporal_mask)s
     temporal_mask_metadata : :obj:`dict`
     """
     workflow = Workflow(name=name)
 
-    params = config.workflow.params
     dummy_scans = config.workflow.dummy_scans
-    random_seed = config.seeds.master
     motion_filter_type = config.workflow.motion_filter_type
     band_stop_min = config.workflow.band_stop_min
     band_stop_max = config.workflow.band_stop_max
@@ -129,23 +128,32 @@ def init_prepare_confounds_wf(
         motion_filter_order=motion_filter_order,
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
-        head_radius=head_radius,
         TR=TR,
     )
 
     if (fd_thresh > 0) or exact_scans:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
+            head_radius=head_radius,
             fd_thresh=fd_thresh,
             exact_scans=exact_scans,
         )
     else:
         censoring_description = ""
 
+    if config.execution.confounds_config is None:
+        confounds_config = None
+    else:
+        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+
     confounds_description = describe_regression(
-        params=params,
-        custom_confounds_file=custom_confounds_file,
+        confounds_config=confounds_config,
         motion_filter_type=motion_filter_type,
+        motion_filter_order=motion_filter_order,
+        band_stop_min=band_stop_min,
+        band_stop_max=band_stop_max,
+        TR=TR,
+        fd_thresh=fd_thresh,
     )
 
     workflow.__desc__ = (
@@ -157,37 +165,36 @@ def init_prepare_confounds_wf(
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "fmriprep_confounds_json",
-                "custom_confounds_file",
                 "dummy_scans",
+                "motion_file",
+                "motion_json",
+                "confounds_files",
             ],
         ),
         name="inputnode",
     )
     inputnode.inputs.dummy_scans = dummy_scans
-    inputnode.inputs.custom_confounds_file = custom_confounds_file
 
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 "preprocessed_bold",
-                "fmriprep_confounds_file",  # used to calculate motion in concatenation workflow
-                "confounds_file",
-                "confounds_metadata",
                 "dummy_scans",
-                "filtered_motion",
+                "motion_file",
                 "motion_metadata",
                 "temporal_mask",
                 "temporal_mask_metadata",
+                "confounds_tsv",
+                "confounds_images",
+                "confounds_metadata",
             ],
         ),
         name="outputnode",
     )
 
-    generate_confounds = pe.Node(
-        GenerateConfounds(
-            params=params,
+    # Filter motion parameters and calculate FD for censoring
+    process_motion = pe.Node(
+        ProcessMotion(
             TR=TR,
             band_stop_min=band_stop_min,
             band_stop_max=band_stop_max,
@@ -196,23 +203,45 @@ def init_prepare_confounds_wf(
             fd_thresh=fd_thresh,
             head_radius=head_radius,
         ),
-        name="generate_confounds",
-        mem_gb=2,
+        name="process_motion",
+        mem_gb=1,
+        n_procs=1,
     )
 
-    # Load and filter confounds
     workflow.connect([
-        (inputnode, generate_confounds, [
-            ("name_source", "in_file"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("fmriprep_confounds_json", "fmriprep_confounds_json"),
-            ("custom_confounds_file", "custom_confounds_file"),
+        (inputnode, process_motion, [
+            ("motion_file", "motion_file"),
+            ("motion_json", "motion_json"),
         ]),
-        (generate_confounds, outputnode, [
-            ("motion_metadata", "motion_metadata"),
-            ("confounds_metadata", "confounds_metadata"),
-        ]),
+        (process_motion, outputnode, [("motion_metadata", "motion_metadata")]),
     ])  # fmt:skip
+
+    if config.execution.confounds_config is not None:
+        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+
+        generate_confounds = pe.Node(
+            GenerateConfounds(
+                confounds_config=confounds_config,
+                TR=TR,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(config.execution.output_dir),
+                band_stop_min=band_stop_min,
+                band_stop_max=band_stop_max,
+                motion_filter_type=motion_filter_type,
+                motion_filter_order=motion_filter_order,
+            ),
+            name="generate_confounds",
+            mem_gb=2,
+        )
+
+        # Load and filter confounds
+        workflow.connect([
+            (inputnode, generate_confounds, [
+                ("name_source", "in_file"),
+                ("confounds_files", "confounds_files"),
+            ]),
+            (generate_confounds, outputnode, [("confounds_metadata", "confounds_metadata")]),
+        ])  # fmt:skip
 
     # A buffer node to hold either the original files or the files with the first N vols removed.
     dummy_scan_buffer = pe.Node(
@@ -220,8 +249,8 @@ def init_prepare_confounds_wf(
             fields=[
                 "preprocessed_bold",
                 "dummy_scans",
-                "fmriprep_confounds_file",
-                "confounds_file",
+                "confounds_tsv",
+                "confounds_images",
                 "motion_file",
                 "temporal_mask",
             ]
@@ -241,57 +270,71 @@ def init_prepare_confounds_wf(
                 ("preprocessed_bold", "bold_file"),
                 ("dummy_scans", "dummy_scans"),
             ]),
-            (generate_confounds, remove_dummy_scans, [
-                ("confounds_file", "confounds_file"),
+            (process_motion, remove_dummy_scans, [
                 ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
-                # fMRIPrep confounds file is needed for filtered motion.
-                # The selected confounds are not guaranteed to include motion params.
-                ("filtered_confounds_file", "fmriprep_confounds_file"),
             ]),
             (remove_dummy_scans, dummy_scan_buffer, [
                 ("bold_file_dropped_TR", "preprocessed_bold"),
-                ("fmriprep_confounds_file_dropped_TR", "fmriprep_confounds_file"),
-                ("confounds_file_dropped_TR", "confounds_file"),
+                ("confounds_tsv_dropped_TR", "confounds_tsv"),
+                ("confounds_images_dropped_TR", "confounds_images"),
                 ("motion_file_dropped_TR", "motion_file"),
                 ("temporal_mask_dropped_TR", "temporal_mask"),
                 ("dummy_scans", "dummy_scans"),
             ]),
         ])  # fmt:skip
+
+        if config.execution.confounds_config is not None:
+            workflow.connect([
+                (generate_confounds, remove_dummy_scans, [
+                    ("confounds_tsv", "confounds_tsv"),
+                    ("confounds_images", "confounds_images"),
+                ]),
+            ])  # fmt:skip
     else:
         workflow.connect([
             (inputnode, dummy_scan_buffer, [
                 ("dummy_scans", "dummy_scans"),
                 ("preprocessed_bold", "preprocessed_bold"),
             ]),
-            (generate_confounds, dummy_scan_buffer, [
-                ("confounds_file", "confounds_file"),
+            (process_motion, dummy_scan_buffer, [
                 ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
-                # fMRIPrep confounds file is needed for filtered motion.
-                # The selected confounds are not guaranteed to include motion params.
-                ("filtered_confounds_file", "fmriprep_confounds_file"),
             ]),
         ])  # fmt:skip
+
+        if config.execution.confounds_config is not None:
+            workflow.connect([
+                (generate_confounds, dummy_scan_buffer, [
+                    ("confounds_tsv", "confounds_tsv"),
+                    ("confounds_images", "confounds_images"),
+                ]),
+            ])  # fmt:skip
 
     workflow.connect([
         (dummy_scan_buffer, outputnode, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("confounds_file", "confounds_file"),
-            ("motion_file", "filtered_motion"),
             ("dummy_scans", "dummy_scans"),
+            ("motion_file", "motion_file"),
         ]),
     ])  # fmt:skip
 
+    if config.execution.confounds_config is not None:
+        workflow.connect([
+            (dummy_scan_buffer, outputnode, [
+                ("confounds_tsv", "confounds_tsv"),
+                ("confounds_images", "confounds_images"),
+            ]),
+        ])  # fmt:skip
+
     if config.workflow.dcan_correlation_lengths:
         random_censor = pe.Node(
-            RandomCensor(exact_scans=exact_scans, random_seed=random_seed),
+            RandomCensor(exact_scans=exact_scans, random_seed=config.seeds.master),
             name="random_censor",
         )
 
         workflow.connect([
-            (generate_confounds, random_censor, [
+            (process_motion, random_censor, [
                 ("temporal_mask_metadata", "temporal_mask_metadata"),
             ]),
             (dummy_scan_buffer, random_censor, [("temporal_mask", "temporal_mask")]),
@@ -302,13 +345,11 @@ def init_prepare_confounds_wf(
         ])  # fmt:skip
     else:
         workflow.connect([
-            (generate_confounds, outputnode, [
-                ("temporal_mask_metadata", "temporal_mask_metadata"),
-            ]),
+            (process_motion, outputnode, [("temporal_mask_metadata", "temporal_mask_metadata")]),
             (dummy_scan_buffer, outputnode, [("temporal_mask", "temporal_mask")]),
         ])  # fmt:skip
 
-    if params != "none":
+    if config.execution.confounds_config is not None:
         plot_design_matrix = pe.Node(
             niu.Function(
                 input_names=["design_matrix", "temporal_mask"],
@@ -319,7 +360,7 @@ def init_prepare_confounds_wf(
         )
 
         workflow.connect([
-            (dummy_scan_buffer, plot_design_matrix, [("confounds_file", "design_matrix")]),
+            (dummy_scan_buffer, plot_design_matrix, [("confounds_tsv", "design_matrix")]),
             (outputnode, plot_design_matrix, [("temporal_mask", "temporal_mask")]),
         ])  # fmt:skip
 
@@ -351,8 +392,7 @@ def init_prepare_confounds_wf(
 
     workflow.connect([
         # use the full version of the confounds, for dummy scans in the figure
-        (inputnode, censor_report, [("fmriprep_confounds_file", "fmriprep_confounds_file")]),
-        (generate_confounds, censor_report, [("motion_file", "filtered_motion")]),
+        (process_motion, censor_report, [("motion_file", "motion_file")]),
         (dummy_scan_buffer, censor_report, [("dummy_scans", "dummy_scans")]),
         (outputnode, censor_report, [("temporal_mask", "temporal_mask")]),
     ])  # fmt:skip
@@ -579,8 +619,9 @@ approach.
             fields=[
                 "preprocessed_bold",
                 "temporal_mask",
+                "confounds_tsv",
+                "confounds_images",
                 "mask",  # only used for NIFTIs
-                "confounds_file",
             ],
         ),
         name="inputnode",
@@ -613,7 +654,8 @@ approach.
     workflow.connect([
         (inputnode, regress_and_filter_bold, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("confounds_file", "confounds_file"),
+            ("confounds_tsv", "confounds_tsv"),
+            ("confounds_images", "confounds_images"),
             ("temporal_mask", "temporal_mask"),
         ]),
         (regress_and_filter_bold, outputnode, [
@@ -624,7 +666,7 @@ approach.
         workflow.connect([(inputnode, regress_and_filter_bold, [("mask", "mask")])])
 
     censor_interpolated_data = pe.Node(
-        Censor(),
+        Censor(column="framewise_displacement"),
         name="censor_interpolated_data",
         mem_gb=mem_gb["resampled"],
     )
@@ -634,9 +676,7 @@ approach.
         (regress_and_filter_bold, censor_interpolated_data, [
             ("denoised_interpolated_bold", "in_file"),
         ]),
-        (censor_interpolated_data, outputnode, [
-            ("censored_denoised_bold", "censored_denoised_bold"),
-        ]),
+        (censor_interpolated_data, outputnode, [("out_file", "censored_denoised_bold")]),
     ])  # fmt:skip
 
     denoised_bold_buffer = pe.Node(
@@ -651,9 +691,7 @@ approach.
         ])  # fmt:skip
     else:
         workflow.connect([
-            (censor_interpolated_data, denoised_bold_buffer, [
-                ("censored_denoised_bold", "denoised_bold"),
-            ]),
+            (censor_interpolated_data, denoised_bold_buffer, [("out_file", "denoised_bold")]),
         ])  # fmt:skip
 
     workflow.connect([(denoised_bold_buffer, outputnode, [("denoised_bold", "denoised_bold")])])

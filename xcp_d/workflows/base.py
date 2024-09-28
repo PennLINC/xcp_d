@@ -5,6 +5,7 @@
 import os
 import sys
 from copy import deepcopy
+from pathlib import Path
 
 import bids
 import matplotlib
@@ -13,6 +14,7 @@ import nilearn
 import numpy as np
 import scipy
 import templateflow
+import yaml
 from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -26,6 +28,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     _get_tr,
+    collect_confounds,
     collect_data,
     collect_mesh_data,
     collect_morphometry_data,
@@ -391,8 +394,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "filtered_motion",
+                "motion_file",
                 "temporal_mask",
                 "denoised_bold",
                 "denoised_interpolated_bold",
@@ -418,9 +420,19 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 file_format=config.workflow.file_format,
                 target_space=target_space,
             )
+            if isinstance(config.execution.confounds_config, Path):
+                confounds_dict = collect_confounds(
+                    bold_file=bold_file,
+                    preproc_dataset=config.execution.layout,
+                    derivatives_datasets=config.execution.derivatives,
+                    confound_spec=yaml.safe_load(config.execution.confounds_config.read_text()),
+                )
+                run_data["confounds"] = confounds_dict
+            else:
+                run_data["confounds"] = None
 
             post_scrubbing_duration = flag_bad_run(
-                fmriprep_confounds_file=run_data["confounds"],
+                motion_file=run_data["motion_file"],
                 dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
                 motion_filter_type=config.workflow.motion_filter_type,

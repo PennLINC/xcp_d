@@ -379,6 +379,8 @@ class execution(_Config):
 
     fmri_dir = None
     """An existing path to the preprocessing derivatives dataset, which must be BIDS-compliant."""
+    derivatives = {}
+    """Path(s) to search for pre-computed derivatives"""
     aggr_ses_reports = None
     """Maximum number of sessions aggregated in one subject's visual report."""
     bids_database_dir = None
@@ -389,6 +391,8 @@ class execution(_Config):
     """A dictionary of BIDS selection filters."""
     boilerplate_only = None
     """Only generate a boilerplate."""
+    confounds_config = None
+    """Nuisance regressors to include in the postprocessing."""
     debug = []
     """Debug mode(s)."""
     fs_license_file = _fs_license
@@ -409,8 +413,6 @@ class execution(_Config):
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
     """Folder where derivatives will be stored."""
-    custom_confounds = None
-    """A path to a folder containing custom confounds to include in the postprocessing."""
     atlases = []
     """Selection of atlases to apply to the data."""
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
@@ -432,6 +434,7 @@ class execution(_Config):
 
     _paths = (
         "fmri_dir",
+        "derivatives",
         "bids_database_dir",
         "fs_license_file",
         "layout",
@@ -440,6 +443,7 @@ class execution(_Config):
         "templateflow_home",
         "work_dir",
         "dataset_links",
+        "confounds_config",
     )
 
     @classmethod
@@ -491,6 +495,7 @@ class execution(_Config):
             cls.bids_database_dir = _db_path
 
         cls.layout = cls._layout
+
         if cls.bids_filters:
             from bids.layout import Query
 
@@ -510,10 +515,17 @@ class execution(_Config):
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
 
+        if cls.task_id:
+            cls.bids_filters = cls.bids_filters or {}
+            cls.bids_filters["bold"] = cls.bids_filters.get("bold", {})
+            cls.bids_filters["bold"]["task"] = cls.task_id
+
         dataset_links = {
-            'preprocessed': cls.fmri_dir,
-            'templateflow': Path(TF_LAYOUT.root),
+            "preprocessed": cls.fmri_dir,
+            "templateflow": Path(TF_LAYOUT.root),
         }
+        for deriv_name, deriv_path in cls.derivatives.items():
+            dataset_links[deriv_name] = deriv_path
         cls.dataset_links = dataset_links
 
         if "all" in cls.debug:
@@ -544,8 +556,6 @@ class workflow(_Config):
     """Postprocessing pipeline type."""
     despike = None
     """Despike the BOLD data before postprocessing."""
-    params = None
-    """Nuisance regressors to include in the postprocessing."""
     smoothing = None
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     output_interpolated = None

@@ -1,19 +1,35 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Confound matrix selection based on Ciric et al. 2007."""
-import json
 import os
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from nilearn.interfaces.fmriprep.load_confounds import _load_single_confounds_file
 from nipype import logging
 from scipy.signal import butter, filtfilt, iirnotch
 
 from xcp_d.utils.doc import fill_doc
 
 LOGGER = logging.getLogger("nipype.utils")
+
+
+def volterra(df):
+    """Perform Volterra expansion."""
+    # Ignore pandas SettingWithCopyWarning
+    with pd.option_context("mode.chained_assignment", None):
+        columns = df.columns.tolist()
+        for col in columns:
+            new_col = f"{col}_derivative1"
+            df[new_col] = df[col].diff()
+
+        columns = df.columns.tolist()
+        for col in columns:
+            new_col = f"{col}_power2"
+            df[new_col] = df[col] ** 2
+
+    return df
 
 
 @fill_doc
@@ -44,6 +60,7 @@ def load_motion(
     motion_confounds_df : pandas.DataFrame
         The six motion regressors.
         The three rotations are listed first, then the three translations.
+        Plus rmsd, and possibly filtered motion regressors.
 
     References
     ----------
@@ -53,13 +70,16 @@ def load_motion(
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     # Select the motion columns from the overall confounds DataFrame
+    if isinstance(confounds_df, (str, Path)):
+        confounds_df = pd.read_table(confounds_df)
+
     motion_confounds_df = confounds_df[
         ["rot_x", "rot_y", "rot_z", "trans_x", "trans_y", "trans_z"]
     ]
 
     # Apply LP or notch filter
     if motion_filter_type in ("lp", "notch"):
-        motion_confounds = motion_regression_filter(
+        motion_confounds = filter_motion(
             data=motion_confounds_df.to_numpy(),
             TR=TR,
             motion_filter_type=motion_filter_type,
@@ -67,278 +87,32 @@ def load_motion(
             band_stop_max=band_stop_max,
             motion_filter_order=motion_filter_order,
         )
-        motion_confounds_df = pd.DataFrame(
+        filtered_motion_confounds_df = pd.DataFrame(
             data=motion_confounds,
-            columns=motion_confounds_df.columns,
+            columns=[f"{c}_filtered" for c in motion_confounds_df.columns],
+        )
+        motion_confounds_df = pd.concat(
+            [motion_confounds_df, filtered_motion_confounds_df],
+            axis=1,
         )
 
-    # Volterra expansion
-    # Ignore pandas SettingWithCopyWarning
-    with pd.option_context("mode.chained_assignment", None):
-        columns = motion_confounds_df.columns.tolist()
-        for col in columns:
-            new_col = f"{col}_derivative1"
-            motion_confounds_df[new_col] = motion_confounds_df[col].diff()
-
-        columns = motion_confounds_df.columns.tolist()
-        for col in columns:
-            new_col = f"{col}_power2"
-            motion_confounds_df[new_col] = motion_confounds_df[col] ** 2
+    # Add RMSD column (used for QC measures later on)
+    motion_confounds_df = pd.concat(
+        [motion_confounds_df, confounds_df[["rmsd"]]],
+        axis=1,
+    )
 
     return motion_confounds_df
 
 
 @fill_doc
-def get_custom_confounds(custom_confounds_folder, fmriprep_confounds_file):
-    """Identify a custom confounds file.
-
-    Parameters
-    ----------
-    %(custom_confounds_folder)s
-    %(fmriprep_confounds_file)s
-        We expect the custom confounds file to have the same name.
-
-    Returns
-    -------
-    %(custom_confounds_file)s
-    """
-    import os
-
-    if custom_confounds_folder is None:
-        return None
-
-    if not os.path.isdir(custom_confounds_folder):
-        raise FileNotFoundError(
-            f"Custom confounds location does not exist: {custom_confounds_folder}"
-        )
-
-    custom_confounds_filename = os.path.basename(fmriprep_confounds_file)
-    custom_confounds_file = os.path.abspath(
-        os.path.join(
-            custom_confounds_folder,
-            custom_confounds_filename,
-        )
-    )
-
-    if not os.path.isfile(custom_confounds_file):
-        raise FileNotFoundError(f"Custom confounds file not found: {custom_confounds_file}")
-
-    return custom_confounds_file
-
-
-def _get_acompcor_confounds(confounds_file):
-    confounds_df = pd.read_table(confounds_file)
-    csf_compcor_columns = [c for c in confounds_df.columns if c.startswith("c_comp_cor")]
-    wm_compcor_columns = [c for c in confounds_df.columns if c.startswith("w_comp_cor")]
-    if not csf_compcor_columns:
-        raise ValueError(f"No c_comp_cor columns in {confounds_file}")
-
-    if not wm_compcor_columns:
-        raise ValueError(f"No w_comp_cor columns in {confounds_file}")
-
-    csf_compcor_columns = csf_compcor_columns[: min((5, len(csf_compcor_columns)))]
-    wm_compcor_columns = wm_compcor_columns[: min((5, len(wm_compcor_columns)))]
-    selected_columns = csf_compcor_columns + wm_compcor_columns
-    return confounds_df[selected_columns]
-
-
-@fill_doc
-def load_confound_matrix(
-    params,
-    img_file,
-    confounds_file,
-    confounds_json_file,
-    custom_confounds=None,
-):
-    """Load a subset of the confounds associated with a given file.
-
-    Parameters
-    ----------
-    %(params)s
-    img_file : :obj:`str`
-        The path to the bold file. Used to load the AROMA mixing matrix, if necessary.
-    confounds_file : :obj:`str`
-        The fMRIPrep confounds file. Used to load most confounds.
-    confounds_json_file : :obj:`str`
-        The JSON file associated with the fMRIPrep confounds file.
-    custom_confounds : :obj:`str` or None, optional
-        Custom confounds TSV if there is one. Default is None.
-
-    Returns
-    -------
-    confounds_df : :obj:`pandas.DataFrame` or None
-        The loaded and selected confounds.
-        If "AROMA" is requested, then this DataFrame will include signal components as well.
-        These will be named something like "signal_[XX]".
-        If ``params`` is "none", ``confounds_df`` will be None.
-    confounds_metadata : :obj:`dict`
-        Metadata for the columns in the confounds file.
-    """
-    PARAM_KWARGS = {
-        # Get rot and trans values, as well as derivatives and square
-        "24P": {
-            "strategy": ["motion"],
-            "motion": "full",
-        },
-        # Get rot and trans values, as well as derivatives and square, WM, CSF,
-        "27P": {
-            "strategy": ["motion", "global_signal", "wm_csf"],
-            "motion": "full",
-            "global_signal": "basic",
-            "wm_csf": "basic",
-        },
-        # Get rot and trans values, as well as derivatives, WM, CSF,
-        # global signal, and square. Add the square and derivative of the WM, CSF
-        # and global signal as well.
-        "36P": {
-            "strategy": ["motion", "global_signal", "wm_csf"],
-            "motion": "full",
-            "global_signal": "full",
-            "wm_csf": "full",
-        },
-        # Get the rot and trans values, their derivative,
-        # as well as acompcor and cosine
-        "acompcor": {
-            "strategy": ["motion", "high_pass", "compcor"],
-            "motion": "derivatives",
-            "compcor": "anat_separated",
-            "n_compcor": 5,
-        },
-        # Get the rot and trans values, as well as their derivative,
-        # acompcor and cosine values as well as global signal
-        "acompcor_gsr": {
-            "strategy": ["motion", "high_pass", "compcor", "global_signal"],
-            "motion": "derivatives",
-            "compcor": "anat_separated",
-            "global_signal": "basic",
-            "n_compcor": 5,
-        },
-        # Get WM and CSF
-        # AROMA confounds are loaded separately
-        "aroma": {
-            "strategy": ["wm_csf"],
-            "wm_csf": "basic",
-        },
-        # Get WM, CSF, and global signal
-        # AROMA confounds are loaded separately
-        "aroma_gsr": {
-            "strategy": ["wm_csf", "global_signal"],
-            "wm_csf": "basic",
-            "global_signal": "basic",
-        },
-        # Get global signal only
-        "gsr_only": {
-            "strategy": ["global_signal"],
-            "global_signal": "basic",
-        },
-    }
-
-    if params == "none":
-        return None, {}
-
-    if params in PARAM_KWARGS:
-        kwargs = PARAM_KWARGS[params]
-
-        confounds_df = _load_single_confounds_file(
-            confounds_file=confounds_file,
-            demean=False,
-            confounds_json_file=confounds_json_file,
-            **kwargs,
-        )[1]
-
-    elif params == "custom":
-        # For custom confounds with no other confounds
-        confounds_df = pd.read_table(custom_confounds, sep="\t")
-
-    else:
-        raise ValueError(f"Unrecognized parameter string '{params}'")
-
-    # A workaround for the compcor bug in load_confounds with fMRIPrep v22+
-    if "acompcor" in params and all("comp_cor" not in col for col in confounds_df.columns):
-        LOGGER.warning("No aCompCor confounds detected with load_confounds. Extracting manually.")
-        confounds_df = pd.concat((_get_acompcor_confounds(confounds_file), confounds_df), axis=1)
-
-    if "aroma" in params:
-        ica_mixing_matrix = _get_mixing_matrix(img_file)
-        aroma_noise_comps_idx = _get_aroma_noise_comps(img_file)
-        labeled_ica_mixing_matrix = _label_mixing_matrix(ica_mixing_matrix, aroma_noise_comps_idx)
-        confounds_df = pd.concat([confounds_df, labeled_ica_mixing_matrix], axis=1)
-
-    if params != "custom" and custom_confounds is not None:
-        # For both custom and fMRIPrep confounds
-        custom_confounds_df = pd.read_table(custom_confounds, sep="\t")
-        confounds_df = pd.concat([custom_confounds_df, confounds_df], axis=1)
-
-    with open(confounds_json_file, "r") as fo:
-        full_confounds_metadata = json.load(fo)
-
-    confounds_metadata = {
-        k: v for k, v in full_confounds_metadata.items() if k in confounds_df.columns
-    }
-
-    return confounds_df, confounds_metadata
-
-
-def _get_mixing_matrix(img_file):
-    """Find AROMA (i.e., MELODIC) mixing matrix file for a given BOLD file."""
-    suffix = "_space-" + img_file.split("space-")[1]
-
-    mixing_candidates = [
-        img_file.replace(suffix, "_desc-MELODIC_mixing.tsv"),
-    ]
-
-    mixing_file = [cr for cr in mixing_candidates if os.path.isfile(cr)]
-
-    if not mixing_file:
-        raise FileNotFoundError(f"Could not find mixing matrix for {img_file}")
-
-    return mixing_file[0]
-
-
-def _get_aroma_noise_comps(img_file):
-    """Find AROMA noise components file for a given BOLD file."""
-    suffix = "_space-" + img_file.split("space-")[1]
-
-    index_candidates = [
-        img_file.replace(suffix, "_AROMAnoiseICs.csv"),
-    ]
-
-    index_file = [cr for cr in index_candidates if os.path.isfile(cr)]
-
-    if not index_file:
-        raise FileNotFoundError(f"Could not find AROMAnoiseICs file for {img_file}")
-
-    return index_file[0]
-
-
-def _label_mixing_matrix(mixing_file, noise_index_file):
-    """Prepend 'signal__' to any non-noise components in AROMA mixing matrix."""
-    mixing_matrix = np.loadtxt(mixing_file, delimiter="\t")
-    noise_index = np.loadtxt(noise_index_file, delimiter=",", dtype=int)
-    # shift noise index to start with zero
-    noise_index -= 1
-    all_index = np.arange(mixing_matrix.shape[1], dtype=int)
-    signal_index = np.setdiff1d(all_index, noise_index)
-    noise_components = mixing_matrix[:, noise_index]
-    signal_components = mixing_matrix[:, signal_index]
-    # basing naming convention on fMRIPrep confounds column names
-    noise_component_names = [f"aroma_motion_{i:03g}" for i in noise_index]
-    signal_component_names = [f"signal__aroma_signal_{i:03g}" for i in signal_index]
-
-    noise_component_df = pd.DataFrame(noise_components, columns=noise_component_names)
-    signal_component_df = pd.DataFrame(signal_components, columns=signal_component_names)
-    component_df = pd.concat((noise_component_df, signal_component_df), axis=1)
-    return component_df
-
-
-@fill_doc
-def motion_regression_filter(
+def filter_motion(
     data,
     TR,
     motion_filter_type,
     band_stop_min,
     band_stop_max,
-    motion_filter_order=4,
+    motion_filter_order,
 ):
     """Filter translation and rotation motion parameters.
 
