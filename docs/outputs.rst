@@ -315,14 +315,15 @@ Other outputs include quality control, framewise displacement, and confounds fil
 
       sub-<label>/[ses-<label>/]
          func/
-            <source_entities>[_desc-filtered]_motion.tsv
+            <source_entities>_motion.tsv
             <source_entities>_outliers.tsv
             <source_entities>_design.tsv
             <source_entities>_space-<label>_desc-linc_qc.tsv
 
-``[desc-filtered]_motion.tsv`` is a tab-delimited file with seven columns:
+``_motion.tsv`` is a tab-delimited file with seven columns:
 one for each of the six filtered motion parameters, as well as "framewise_displacement".
-If no motion filtering was applied, this file will not have the ``desc-filtered`` entity.
+If motion filtering was applied, this file will seven extra columns: the seven described above,
+with ``_filtered`` appended to each column.
 This file includes the high-motion volumes that are removed in most other derivatives.
 
 ``outliers.tsv`` is a tab-delimited file with one column: "framewise_displacement".

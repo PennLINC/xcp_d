@@ -302,9 +302,11 @@ Please refer to :footcite:t:`fair2020correction` and :footcite:t:`gratton2020rem
 more information.
 
 .. important::
-   Starting in version 0.4.0, if motion parameters are filtered in this step,
-   the filtered motion parameters (including FD, and any squared or derivative regressors)
-   will be used in the confound regression step.
+   Starting in version 0.4.0, if users request motion parameter filtering,
+   filtered motion parameters (including FD, and any squared or derivative regressors)
+   will be used for both outlier detection and confound regression.
+
+   Before that release, filtered motion parameters were only used for outlier detection.
 
 The two options for the motion-filtering parameter are "notch" (the band-stop filter) and
 "lp" (the low-pass filter).
@@ -368,19 +370,20 @@ Confound regressor selection
 :func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :func:`~xcp_d.interfaces.censoring.GenerateConfounds`
 
-The confound regressor configurations in the table below are implemented in XCP-D,
-with ``36P`` as the default.
-In addition to the standard confound regressors selected from fMRIPrep outputs,
-custom confounds can be added as described in :ref:`usage_custom_confounds`.
-If you want to use custom confounds, without any of the nuisance regressors described here,
-use ``--nuisance-regressors custom``.
+XCP-D supports several different confound regressor strategies.
+In addition to the built-in regressor sets described below,
+users may design their own confound configuration files and use those instead.
+The default confound regressor set depends on the mode in which XCP-D is run-
+this corresponds to ``--nuisance-regressors auto``.
 
 If you want to skip the denoising step completely, you can use ``--nuisance-regressors none``.
 
 .. important::
-   Starting in version 0.4.0, if motion parameters were filtered earlier in the workflow,
-   the filtered motion parameters (including FD, and any squared or derivative regressors)
-   will be used in the confound regression step.
+   Starting in version 0.4.0, if users request motion parameter filtering,
+   filtered motion parameters (including FD, and any squared or derivative regressors)
+   will be used for both outlier detection and confound regression.
+
+   Before that release, filtered motion parameters were only used for outlier detection.
 
 .. list-table:: Confound
 
@@ -412,27 +415,20 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       - X, X\ :sup:`2`, dX, dX\ :sup:`2`
       -
       -
-   *  - acompcor_gsr
-      -  X, dX
-      -
-      -
-      - X
-      - 10 com, 5WM, 5CSF
-      -
    *  - acompcor
       - X, dX
       -
       -
       -
-      - 10 com, 5WM, 5CSF
+      - 5 WM, 5 CSF
       -
-   *  - aroma_gsr
-      - X, dX
-      - X
-      - X
-      - X
+   *  - acompcor_gsr
+      -  X, dX
+      -
       -
       - X
+      - 5 WM, 5 CSF
+      -
    *  - aroma
       - X, dX
       - X
@@ -440,6 +436,20 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       -
       -
       - X
+   *  - aroma_gsr
+      - X, dX
+      - X
+      - X
+      - X
+      -
+      - X
+   *  - gsr_only
+      -
+      -
+      -
+      - X
+      -
+      -
    *  - none
       -
       -
@@ -448,7 +458,8 @@ If you want to skip the denoising step completely, you can use ``--nuisance-regr
       -
       -
 
-For more information about confound regressor selection, please refer to :footcite:t:`benchmarkp`.
+For more information about the built-in confound regressor sets,
+please refer to :footcite:t:`benchmarkp`.
 
 .. warning::
 
@@ -532,11 +543,100 @@ For more information about confound regressor selection, please refer to :footci
 
 .. important::
    fMRIPrep removed AROMA support in 23.1.0.
-   In the future, there will be an fMRIPost-AROMA BIDS App that runs AROMA on fMRIPrep outputs.
+   In order to use the ``aroma`` or ``aroma_gsr`` strategies,
+   please run ``fMRIPost-AROMA`` on your fMRIPrep outputs before running XCP-D.
+   You will need to supply the AROMA derivatives dataset to XCP-D via the ``--derivatives``
+   parameter (i.e., ``--derivatives aroma=/path/to/fmripost-aroma/dset``).
+
 
 .. warning::
    The strategy ``gsr_only`` is only appropriate for UK Biobank data,
    as those data have already been denoised with FSL FIX.
+
+
+.. _confound_config:
+
+The confound configuration file format
+--------------------------------------
+
+Users may design and employ their own custom confound configuration YAML files.
+These files are designed to allow inputs from multiple datasets,
+with flexible column and file selection.
+
+Each confound configuration file must contain a ``name``, a ``description``, and a ``confounds``
+section.
+The ``name`` and ``description`` are primarily used for documentation purposes,
+while the ``confounds`` section specifies which confounds will actually be used.
+
+The ``confounds`` section is a dictionary/object, with a unique key for each set of confounds.
+Each set of confounds must contain a ``dataset`` key, which specifies the dataset to use.
+The dataset must be linked to what the user provides in the ``--derivatives`` parameter,
+though the "preprocessed" key is a protected value for the dataset given to XCP-D as the
+``fmri_dir`` positional argument.
+For example, in the example below, three columns are collected from the fMRIPrep confounds file:
+"global_signal", "csf", and "white_matter".
+Other confounds must come from the "aroma" dataset (i.e., the output from fMRIPost-AROMA).
+Note that the "aroma" columns are selected using regular expressions, as they start with "^"
+and end with "$".
+XCP-D will collect any columns in the selected file that match the regular expression.
+
+Finally, there is the ``query`` field in each confound set.
+This defines the BIDS entities that will be used to find the confounds file associated with the
+preprocessed BOLD file that is being post-processed by XCP-D.
+
+```yaml
+name: aroma_gsr
+description: |
+   Nuisance regressors were selected according to the 'aroma_gsr' strategy.
+   AROMA motion-labeled components [@pruim2015ica], mean white matter signal,
+   mean cerebrospinal fluid signal, and mean global signal were selected as
+   nuisance regressors [@benchmarkp;@satterthwaite_2013].
+confounds:
+   preproc_confounds:
+      dataset: preprocessed
+      query:
+         space: null
+         cohort: null
+         res: null
+         den: null
+         desc: confounds
+         extension: .tsv
+         suffix: timeseries
+      columns:
+      - global_signal
+      - csf
+      - white_matter
+   aroma_confounds:
+      dataset: aroma
+      query:
+         space: null
+         cohort: null
+         res: null
+         den: null
+         desc: aroma
+         extension: .tsv
+         suffix: timeseries
+      columns:
+      - ^aroma_orth_motion_.*$
+```
+
+In addition to TSV-based confound files, XCP-D also supports the use of voxel-wise confound files.
+Take this partial example:
+
+```yaml
+confounds:
+    rapidtide_slfo:
+        dataset: rapidtide
+        query:
+            desc: LFO
+            extension: .nii.gz
+            suffix: timeseries
+```
+
+Note in this case that the confounds definition includes a query section, but not a columns section.
+This is because this query will return a 4D NIfTI file, rather than a TSV file.
+The corresponding voxel-wise confounds will be extracted from the 4D NIfTI file and regressed out
+of the BOLD data.
 
 
 Dummy scan removal [OPTIONAL]

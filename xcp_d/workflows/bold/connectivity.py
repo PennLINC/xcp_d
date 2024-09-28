@@ -271,7 +271,7 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
     parcellated_reho
     parcellated_alff
     """
-    from xcp_d.interfaces.censoring import ReduceCifti
+    from xcp_d.interfaces.censoring import Censor
     from xcp_d.interfaces.connectivity import CiftiToTSV, ConnectPlot
     from xcp_d.interfaces.plotting import PlotCiftiParcellation
     from xcp_d.interfaces.workbench import CiftiCorrelation
@@ -394,7 +394,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         # If we want interpolated time series, the parcellated CIFTI will have interpolated values,
         # but the correlation matrices should only include low-motion volumes.
         remove_outliers = pe.MapNode(
-            ReduceCifti(column="framewise_displacement"),
+            Censor(column="framewise_displacement"),
             name="remove_outliers",
             iterfield=["in_file"],
         )
@@ -480,7 +480,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
         for i_exact_scan, exact_scan in enumerate(exact_scans):
             reduce_exact_bold = pe.MapNode(
-                ReduceCifti(column=f"exact_{exact_scan}"),
+                Censor(column=f"exact_{exact_scan}"),
                 name=f"reduce_bold_{exact_scan}volumes",
                 iterfield=["in_file"],
             )

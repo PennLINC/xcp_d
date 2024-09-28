@@ -101,9 +101,9 @@ TR : :obj:`float`
 """
 
 docdict[
-    "fmriprep_confounds_file"
+    "preproc_confounds_file"
 ] = """
-fmriprep_confounds_file : :obj:`str`
+preproc_confounds_file : :obj:`str`
     Confounds TSV file from preprocessing derivatives.
 """
 
@@ -156,13 +156,6 @@ custom_confounds_folder : :obj:`str` or None
     Must be a folder containing confounds files,
     in which case the file with the name matching the preprocessing confounds file will be
     selected.
-"""
-
-docdict[
-    "custom_confounds_file"
-] = """
-custom_confounds_file : :obj:`str` or None
-    Path to custom nuisance regressors.
 """
 
 docdict[
@@ -430,9 +423,9 @@ despike : :obj:`bool`
 """
 
 docdict[
-    "filtered_motion"
+    "motion_file"
 ] = """
-filtered_motion : :obj:`str`
+motion_file : :obj:`str`
     Framewise displacement timeseries, potentially after bandstop or low-pass filtering.
     This is a TSV file with one column: 'framewise_displacement'.
 """

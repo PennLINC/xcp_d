@@ -12,8 +12,6 @@ a hard-limited memory-scope.
 
 def build_workflow(config_file, retval):
     """Create the Nipype Workflow that supports the whole execution graph."""
-    from niworkflows.utils.misc import check_valid_fs_license
-
     from xcp_d import config, data
     from xcp_d.reports.core import generate_reports
     from xcp_d.utils.bids import check_pipeline_version, collect_participants
@@ -94,21 +92,12 @@ def build_workflow(config_file, retval):
         f"Run identifier: {config.execution.run_uuid}.",
     ]
 
+    if config.execution.derivatives:
+        init_msg += [f"Searching for derivatives: {config.execution.derivatives}."]
+
     build_log.log(25, f"\n{' ' * 11}* ".join(init_msg))
 
     retval["workflow"] = init_xcpd_wf()
-
-    # Check for FS license after building the workflow
-    if not check_valid_fs_license():
-        build_log.critical(
-            """\
-ERROR: a valid license file is required for FreeSurfer to run. XCP-D looked for an existing \
-license file at several paths, in this order: 1) command line argument ``--fs-license-file``; \
-2) ``$FS_LICENSE`` environment variable; and 3) the ``$FREESURFER_HOME/license.txt`` path. Get it \
-(for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html"""
-        )
-        retval["return_code"] = 126  # 126 == Command invoked cannot execute.
-        return retval
 
     # Check workflow for missing commands
     missing = check_deps(retval["workflow"])

@@ -1,0 +1,33 @@
+name: aroma
+description: |
+    Nuisance regressors were selected according to the 'aroma' strategy.
+    AROMA motion-labeled components [@pruim2015ica], mean white matter signal,
+    and mean cerebrospinal fluid signal were selected as nuisance regressors
+    [@benchmarkp;@satterthwaite_2013].
+confounds:
+    preproc_confounds:
+        dataset: preprocessed
+        query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+        columns:
+        - csf
+        - white_matter
+    aroma_confounds:
+        dataset: aroma
+        query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: aroma
+            extension: .tsv
+            suffix: timeseries
+        columns:
+        # Regular expressions begin with ``^`` and end with ``$``.
+        - ^aroma_orth_motion_.*$

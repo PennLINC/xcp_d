@@ -164,7 +164,6 @@ def main():
             config.execution.fmri_dir,
             config.execution.output_dir,
             atlases=config.execution.atlases,
-            custom_confounds_folder=config.execution.custom_confounds,
             dataset_links=config.execution.dataset_links,
         )
 

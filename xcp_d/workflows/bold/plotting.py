@@ -76,9 +76,8 @@ def init_qc_report_wf(
     %(template_to_anat_xfm)s
         Only used with non-CIFTI data.
     %(dummy_scans)s
-    %(fmriprep_confounds_file)s
+    motion_file
     %(temporal_mask)s
-    %(filtered_motion)s
 
     Outputs
     -------
@@ -94,8 +93,7 @@ def init_qc_report_wf(
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "dummy_scans",
-                "fmriprep_confounds_file",
-                "filtered_motion",
+                "motion_file",
                 "temporal_mask",
                 "run_index",  # will only be set for concatenated data
                 # nifti-only inputs
@@ -293,7 +291,7 @@ def init_qc_report_wf(
                 ("name_source", "name_source"),
                 ("preprocessed_bold", "bold_file"),
                 ("censored_denoised_bold", "cleaned_file"),
-                ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+                ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
                 ("dummy_scans", "dummy_scans"),
             ]),
@@ -335,7 +333,7 @@ def init_qc_report_wf(
             (inputnode, make_qc_plots_nipreps, [
                 ("preprocessed_bold", "bold_file"),
                 ("censored_denoised_bold", "cleaned_file"),
-                ("fmriprep_confounds_file", "fmriprep_confounds_file"),
+                ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
             ]),
         ])  # fmt:skip
@@ -398,7 +396,7 @@ def init_qc_report_wf(
             name="make_abcc_qc",
             mem_gb=2,
         )
-        workflow.connect([(inputnode, make_abcc_qc, [("filtered_motion", "filtered_motion")])])
+        workflow.connect([(inputnode, make_abcc_qc, [("motion_file", "motion_file")])])
 
         ds_abcc_qc = pe.Node(
             DerivativesDataSink(
@@ -417,7 +415,7 @@ def init_qc_report_wf(
 
         # Generate preprocessing and postprocessing carpet plots.
         make_qc_plots_es = pe.Node(
-            QCPlotsES(TR=TR, standardize=config.workflow.params == "none"),
+            QCPlotsES(TR=TR, standardize=config.execution.confounds_config is None),
             name="make_qc_plots_es",
             mem_gb=2,
         )
@@ -425,7 +423,7 @@ def init_qc_report_wf(
             (inputnode, make_qc_plots_es, [
                 ("preprocessed_bold", "preprocessed_bold"),
                 ("denoised_interpolated_bold", "denoised_interpolated_bold"),
-                ("filtered_motion", "filtered_motion"),
+                ("motion_file", "motion_file"),
                 ("temporal_mask", "temporal_mask"),
                 ("run_index", "run_index"),
             ]),

@@ -142,3 +142,52 @@ class YesNoAction(Action):
         lookup = {"y": True, "n": False, None: True, "auto": "auto"}
         assert values in lookup.keys(), f"Invalid value '{values}' for {self.dest}"
         setattr(namespace, self.dest, lookup[values])
+
+
+class ToDict(Action):
+    """A custom argparse "store" action to handle a list of key=value pairs."""
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+        """Call the argument."""
+        d = {}
+        for spec in values:
+            try:
+                name, loc = spec.split("=")
+                loc = Path(loc)
+            except ValueError:
+                loc = Path(spec)
+                name = loc.name
+
+            if name in d:
+                raise ValueError(f"Received duplicate derivative name: {name}")
+            elif name == "preprocessed":
+                raise ValueError("The 'preprocessed' derivative is reserved for internal use.")
+
+            d[name] = loc
+        setattr(namespace, self.dest, d)
+
+
+class ConfoundsAction(Action):
+    """A custom argparse "store" action to handle a path or ."""
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+        """Call the argument."""
+        builtins = [
+            "auto",
+            "27P",
+            "36P",
+            "24P",
+            "acompcor",
+            "aroma",
+            "acompcor_gsr",
+            "aroma_gsr",
+            "none",
+            "gsr_only",
+        ]
+        if values in builtins:
+            setattr(namespace, self.dest, values)
+        else:
+            if not Path(values).exists():
+                raise parser.error(f"Nuisance configuration does not exist: <{values}>.")
+
+            setattr(namespace, self.dest, Path(values))

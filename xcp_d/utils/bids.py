@@ -12,6 +12,7 @@ from pathlib import Path
 
 import nibabel as nb
 import yaml
+from bids.layout import BIDSLayout
 from nipype import logging
 from packaging.version import Version
 
@@ -559,7 +560,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     bids_file = layout.get_file(bold_file)
     run_data, metadata = {}, {}
 
-    run_data["confounds"] = layout.get_nearest(
+    run_data["motion_file"] = layout.get_nearest(
         bids_file.path,
         strict=True,
         ignore_strict_entities=["space", "res", "den", "desc", "suffix", "extension"],
@@ -567,10 +568,11 @@ def collect_run_data(layout, bold_file, file_format, target_space):
         suffix="timeseries",
         extension=".tsv",
     )
-    if not run_data["confounds"]:
+    if not run_data["motion_file"]:
         raise FileNotFoundError(f"No confounds file detected for {bids_file.path}")
 
-    run_data["confounds_json"] = layout.get_nearest(run_data["confounds"], extension=".json")
+    run_data["motion_json"] = layout.get_nearest(run_data["motion_file"], extension=".json")
+
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
@@ -655,11 +657,93 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     return run_data
 
 
+def collect_confounds(
+    bold_file: str,
+    preproc_dataset: BIDSLayout,
+    derivatives_datasets: dict[str, Path | BIDSLayout] | None,
+    confound_spec: dict | None,
+):
+    """Gather confounds files from derivatives datasets and compose a cache."""
+    import re
+
+    from bids.layout.index import BIDSLayoutIndexer
+
+    bold_file = preproc_dataset.get_file(bold_file)
+
+    # Recommended after PyBIDS 12.1
+    ignore_patterns = [
+        "code",
+        "stimuli",
+        "models",
+        re.compile(r"\/\.\w+|^\.\w+"),  # hidden files
+        re.compile(
+            r"sub-[a-zA-Z0-9]+(/ses-[a-zA-Z0-9]+)?/(anat|beh|dwi|eeg|ieeg|meg|perf|pet|physio)"
+        ),
+    ]
+    _indexer = BIDSLayoutIndexer(
+        validate=False,
+        ignore=ignore_patterns,
+        index_metadata=False,  # we don't need metadata to find confound files
+    )
+    xcp_d_config = str(load_data("xcp_d_bids_config2.json"))
+
+    # Step 0: Determine derivatives we care about for confounds.
+    req_datasets = []
+    for confound_def in confound_spec["confounds"].values():
+        req_datasets.append(confound_def["dataset"])
+
+    req_datasets = sorted(list(set(req_datasets)))
+
+    # Step 1: Build a dictionary of dataset: layout pairs.
+    layout_dict = {}
+    layout_dict["preprocessed"] = preproc_dataset
+    if derivatives_datasets is not None:
+        for k, v in derivatives_datasets.items():
+            # Don't index datasets we don't need for confounds.
+            if k not in req_datasets:
+                print(f"Not required: {k}")
+                continue
+
+            if isinstance(v, (Path, str)):
+                layout_dict[k] = BIDSLayout(
+                    v,
+                    config=["bids", "derivatives", xcp_d_config],
+                    indexer=_indexer,
+                )
+            else:
+                layout_dict[k] = v
+
+    # Step 2: Loop over the confounds spec and search for each file in the corresponding dataset.
+    confounds = dict()
+    for confound_name, confound_def in confound_spec["confounds"].items():
+        if confound_def["dataset"] not in layout_dict.keys():
+            raise ValueError(
+                f"Missing dataset required by confound spec: *{confound_def['dataset']}*. "
+                "Did you provide it with the `--derivatives` flag?"
+            )
+
+        layout = layout_dict[confound_def["dataset"]]
+        bold_file_entities = bold_file.get_entities()
+        query = {**bold_file_entities, **confound_def["query"]}
+        confound_file = layout.get(**query)
+        if not confound_file:
+            raise FileNotFoundError(
+                f"Could not find confound file for {confound_name} with query {query}"
+            )
+
+        confound_file = confound_file[0]
+        confound_metadata = confound_file.get_metadata()
+        confounds[confound_name] = {}
+        confounds[confound_name]["file"] = confound_file.path
+        confounds[confound_name]["metadata"] = confound_metadata
+
+    return confounds
+
+
 def write_derivative_description(
     fmri_dir,
     output_dir,
     atlases=None,
-    custom_confounds_folder=None,
     dataset_links={},
 ):
     """Write dataset_description.json file for derivatives.
@@ -686,6 +770,7 @@ def write_derivative_description(
     if not os.path.isfile(orig_dset_description):
         raise FileNotFoundError(f"Dataset description DNE: {orig_dset_description}")
 
+    # Base the new dataset description on the preprocessing pipeline's dataset description
     with open(orig_dset_description, "r") as fo:
         desc = json.load(fo)
 
@@ -701,6 +786,7 @@ def write_derivative_description(
         )
 
     # Update dataset description
+    # TODO: Add derivatives' dataset_description.json info as well. Especially the GeneratedBy.
     desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
     generated_by = desc.get("GeneratedBy", [])
     generated_by.insert(
@@ -722,18 +808,8 @@ def write_derivative_description(
     if atlases:
         dataset_links["atlases"] = os.path.join(output_dir, "atlases")
 
-    if custom_confounds_folder:
-        dataset_links["custom_confounds"] = str(custom_confounds_folder)
-
-    # Add DatasetLinks
-    if "DatasetLinks" not in desc.keys():
-        desc["DatasetLinks"] = {}
-
-    for k, v in dataset_links.items():
-        if k in desc["DatasetLinks"].keys() and desc["DatasetLinks"][k] != str(v):
-            LOGGER.warning(f"'{k}' is already a dataset link. Overwriting.")
-
-        desc["DatasetLinks"][k] = str(v)
+    # Don't inherit DatasetLinks from preprocessing derivatives
+    desc["DatasetLinks"] = {k: str(v) for k, v in dataset_links.items()}
 
     xcpd_dset_description = Path(output_dir / "dataset_description.json")
     if xcpd_dset_description.is_file():
@@ -741,6 +817,12 @@ def write_derivative_description(
         old_version = old_desc["GeneratedBy"][0]["Version"]
         if Version(__version__).public != Version(old_version).public:
             LOGGER.warning(f"Previous output generated by version {old_version} found.")
+
+        for k, v in desc["DatasetLinks"].items():
+            if k in old_desc["DatasetLinks"].keys() and old_desc["DatasetLinks"][k] != str(v):
+                LOGGER.warning(
+                    f"DatasetLink '{k}' does not match ({v} != {old_desc['DatasetLinks'][k]})."
+                )
     else:
         xcpd_dset_description.write_text(json.dumps(desc, indent=4))
 
@@ -775,9 +857,9 @@ def write_atlas_dataset_description(atlas_dir):
     atlas_dset_description = os.path.join(atlas_dir, "dataset_description.json")
     if os.path.isfile(atlas_dset_description):
         with open(atlas_dset_description, "r") as fo:
-            old_dset_desc = json.load(fo)
+            old_desc = json.load(fo)
 
-        old_version = old_dset_desc["GeneratedBy"][0]["Version"]
+        old_version = old_desc["GeneratedBy"][0]["Version"]
         if Version(__version__).public != Version(old_version).public:
             LOGGER.warning(f"Previous output generated by version {old_version} found.")
 
@@ -1029,6 +1111,81 @@ def group_across_runs(in_files):
     return out_files
 
 
+def _find_nearest_path(path_dict, input_path):
+    """Find the nearest relative path from an input path to a dictionary of paths.
+
+    If ``input_path`` is not relative to any of the paths in ``path_dict``,
+    the absolute path string is returned.
+
+    If ``input_path`` is already a BIDS-URI, then it will be returned unmodified.
+
+    Parameters
+    ----------
+    path_dict : dict of (str, Path)
+        A dictionary of paths.
+    input_path : Path
+        The input path to match.
+
+    Returns
+    -------
+    matching_path : str
+        The nearest relative path from the input path to a path in the dictionary.
+        This is either the concatenation of the associated key from ``path_dict``
+        and the relative path from the associated value from ``path_dict`` to ``input_path``,
+        or the absolute path to ``input_path`` if no matching path is found from ``path_dict``.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> path_dict = {
+    ...     'bids::': Path('/data/derivatives/fmriprep'),
+    ...     'bids:raw:': Path('/data'),
+    ...     'bids:deriv-0:': Path('/data/derivatives/source-1'),
+    ... }
+    >>> input_path = Path('/data/derivatives/source-1/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # match to 'bids:deriv-0:'
+    'bids:deriv-0:sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = Path('/out/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # no match- absolute path
+    '/out/sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = Path('/data/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # match to 'bids:raw:'
+    'bids:raw:sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = 'bids::sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> _find_nearest_path(path_dict, input_path)  # already a BIDS-URI
+    'bids::sub-01/func/sub-01_task-rest_bold.nii.gz'
+    """
+    # Don't modify BIDS-URIs
+    if isinstance(input_path, str) and input_path.startswith("bids:"):
+        return input_path
+
+    input_path = Path(input_path)
+    matching_path = None
+    for key, path in path_dict.items():
+        if input_path.is_relative_to(path):
+            relative_path = input_path.relative_to(path)
+            if (matching_path is None) or (len(relative_path.parts) < len(matching_path.parts)):
+                matching_key = key
+                matching_path = relative_path
+
+    if matching_path is None:
+        matching_path = str(input_path.absolute())
+    else:
+        matching_path = f"{matching_key}{matching_path}"
+
+    return matching_path
+
+
+def make_bids_uri(in_files, dataset_links, out_dir):
+    """Create a BIDS-URI for each input file."""
+    # Convert the dataset links to BIDS URI prefixes
+    updated_keys = {f"bids:{k}:": Path(v) for k, v in dataset_links.items()}
+    updated_keys["bids::"] = Path(out_dir)
+    # Convert the paths to BIDS URIs
+    bids_uris = [_find_nearest_path(updated_keys, f) for f in in_files]
+    return bids_uris
+
+
 def _make_uri(in_file, dataset_name, dataset_path):
     """Convert a filename to a BIDS URI.
 
@@ -1087,18 +1244,6 @@ def _make_preproc_uri(out_file, fmri_dir):
         return [_make_uri(of, "preprocessed", fmri_dir) for of in out_file]
     else:
         return [_make_uri(out_file, "preprocessed", fmri_dir)]
-
-
-def _make_custom_uri(out_file):
-    """Convert custom confounds' path to BIDS URI."""
-    import os
-
-    from xcp_d.utils.bids import _make_uri
-
-    if isinstance(out_file, list):
-        return [_make_uri(of, "custom_confounds", os.path.dirname(of)) for of in out_file]
-    else:
-        return [_make_uri(out_file, "custom_confounds", os.path.dirname(out_file))]
 
 
 def check_pipeline_version(pipeline_name, cvers, data_desc):

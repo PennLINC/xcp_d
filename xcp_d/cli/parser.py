@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""The xcp_d preprocessing worklow.
+"""The XCP-D preprocessing worklow.
 
-xcp_d preprocessing workflow
+XCP-D preprocessing workflow
 ============================
 """
 import os
 import sys
 
 from xcp_d import config
+from xcp_d.data import load as load_data
 
 
 def _build_parser():
@@ -61,7 +62,7 @@ def _build_parser():
         "analysis_level",
         action="store",
         choices=["participant"],
-        help="The analysis level for xcp_d. Must be specified as 'participant'.",
+        help="The analysis level for XCP-D. Must be specified as 'participant'.",
     )
 
     # Required "mode" argument
@@ -123,6 +124,19 @@ def _build_parser():
             "https://xcp_d.readthedocs.io/en/"
             f"{currentv.base_version if is_release else 'latest'}/usage.html#"
             "filtering-inputs-with-bids-filter-files"
+        ),
+    )
+    g_bids.add_argument(
+        "-d",
+        "--derivatives",
+        action=parser_utils.ToDict,
+        metavar="PACKAGE=PATH",
+        type=str,
+        nargs="+",
+        help=(
+            "Search PATH(s) for pre-computed derivatives. "
+            "These may be provided as named folders "
+            "(e.g., `--derivatives smriprep=/path/to/smriprep`)."
         ),
     )
     g_bids.add_argument(
@@ -233,7 +247,7 @@ def _build_parser():
         metavar="{{auto,INT}}",
         help=(
             "Number of volumes to remove from the beginning of each run. "
-            "If set to 'auto', xcp_d will extract non-steady-state volume indices from the "
+            "If set to 'auto', XCP-D will extract non-steady-state volume indices from the "
             "preprocessing derivatives' confounds file."
         ),
     )
@@ -257,41 +271,16 @@ def _build_parser():
         "-p",
         "--nuisance-regressors",
         "--nuisance_regressors",
-        dest="params",
+        dest="confounds_config",
         required=False,
-        choices=[
-            "27P",
-            "36P",
-            "24P",
-            "acompcor",
-            "aroma",
-            "acompcor_gsr",
-            "aroma_gsr",
-            "custom",
-            "none",
-            # GSR-only for UKB
-            "gsr_only",
-        ],
+        action=parser_utils.ConfoundsAction,
         default="auto",
-        type=str,
         help=(
             "Nuisance parameters to be selected. "
-            "Descriptions of each of the options are included in xcp_d's documentation."
-        ),
-    )
-    g_param.add_argument(
-        "-c",
-        "--custom-confounds",
-        "--custom_confounds",
-        dest="custom_confounds",
-        required=False,
-        default=None,
-        type=PathExists,
-        help=(
-            "Custom confounds to be added to the nuisance regressors. "
-            "Must be a folder containing confounds files, "
-            "in which the file with the name matching the preprocessing confounds file will be "
-            "selected."
+            "This may be a string indicating one of XCP-D's built-in nuisance regression "
+            "strategies (e.g., '36P') or a path to a YAML file formatted according to XCP-D's "
+            "confound configuration file format. "
+            "Descriptions of each of the built-in options are included in XCP-D's documentation. "
         ),
     )
     g_param.add_argument(
@@ -636,7 +625,7 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         default=False,
         help=(
             "Clears working directory of contents. "
-            "Use of this flag is not recommended when running concurrent processes of xcp_d."
+            "Use of this flag is not recommended when running concurrent processes of XCP-D."
         ),
     )
     g_other.add_argument(
@@ -935,10 +924,6 @@ def _validate_parameters(opts, build_log, parser):
         else:
             os.environ["FS_LICENSE"] = str(fs_license_file)
 
-    # Resolve custom confounds folder
-    if opts.custom_confounds:
-        opts.custom_confounds = str(opts.custom_confounds.resolve())
-
     # Check parameter value types/valid values
     assert opts.abcc_qc in (True, False, "auto")
     assert opts.combine_runs in (True, False, "auto")
@@ -953,6 +938,9 @@ def _validate_parameters(opts, build_log, parser):
     if opts.mode == "abcd":
         opts.abcc_qc = True if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
+        opts.confounds_config = (
+            "36P" if (opts.confounds_config == "auto") else opts.confounds_config
+        )
         opts.dcan_correlation_lengths = (
             [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
         )
@@ -967,7 +955,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.output_type == "censored":
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = "interpolated"
-        opts.params = "36P" if opts.params == "auto" else opts.params
+        opts.confounds_config = "36P" if opts.confounds_config == "auto" else opts.confounds_config
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
         )
@@ -976,6 +964,9 @@ def _validate_parameters(opts, build_log, parser):
     elif opts.mode == "hbcd":
         opts.abcc_qc = True if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.combine_runs = True if (opts.combine_runs == "auto") else opts.combine_runs
+        opts.confounds_config = (
+            "36P" if (opts.confounds_config == "auto") else opts.confounds_config
+        )
         opts.dcan_correlation_lengths = (
             [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
         )
@@ -990,7 +981,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.output_type == "censored":
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = "interpolated"
-        opts.params = "36P" if opts.params == "auto" else opts.params
+        opts.confounds_config = "36P" if opts.confounds_config == "auto" else opts.confounds_config
         opts.process_surfaces = (
             True if (opts.process_surfaces == "auto") else opts.process_surfaces
         )
@@ -999,6 +990,9 @@ def _validate_parameters(opts, build_log, parser):
     elif opts.mode == "linc":
         opts.abcc_qc = False if (opts.abcc_qc == "auto") else opts.abcc_qc
         opts.combine_runs = False if opts.combine_runs == "auto" else opts.combine_runs
+        opts.confounds_config = (
+            "36P" if (opts.confounds_config == "auto") else opts.confounds_config
+        )
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
@@ -1010,7 +1004,7 @@ def _validate_parameters(opts, build_log, parser):
                 f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
             )
         opts.output_type = "censored"
-        opts.params = "36P" if opts.params == "auto" else opts.params
+        opts.confounds_config = "36P" if opts.confounds_config == "auto" else opts.confounds_config
         opts.process_surfaces = False if opts.process_surfaces == "auto" else opts.process_surfaces
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
@@ -1020,6 +1014,9 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.combine_runs == "auto":
             error_messages.append("'--combine-runs' (y or n) is required for 'none' mode.")
+
+        if opts.confounds_config == "auto":
+            error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
         opts.dcan_correlation_lengths = (
             [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
@@ -1049,9 +1046,6 @@ def _validate_parameters(opts, build_log, parser):
         if opts.output_type == "auto":
             error_messages.append("'--output-type' is required for 'none' mode.")
 
-        if opts.params == "auto":
-            error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
-
         if opts.process_surfaces == "auto":
             error_messages.append(
                 "'--warp-surfaces-native2std' (y or n) is required for 'none' mode."
@@ -1059,6 +1053,14 @@ def _validate_parameters(opts, build_log, parser):
 
         # Remove "all" from the list of correlation lengths
         opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != "all"]
+
+    # Load the confound configuration file
+    if opts.confounds_config == "none":
+        opts.confounds_config = None
+    elif isinstance(opts.confounds_config, str):  # A builtin confound config
+        opts.confounds_config = load_data.readable(f"nuisance/{opts.confounds_config}.yml")
+    else:  # An external confound config
+        opts.confounds_config = Path(opts.confounds_config).resolve()
 
     # Bandpass filter parameters
     if opts.high_pass <= 0 and opts.low_pass <= 0:
@@ -1161,14 +1163,6 @@ def _validate_parameters(opts, build_log, parser):
             "In order to perform surface normalization (--warp-surfaces-native2std), "
             "you must enable cifti processing (--file-format cifti)."
         )
-
-    # Warn if the user combines custom confounds with the 'none' parameter set
-    if opts.params == "none" and opts.custom_confounds:
-        build_log.warning(
-            "Custom confounds were provided, but --nuisance-regressors was set to none. "
-            "Overriding the 'none' value and setting to 'custom'."
-        )
-        opts.params = "custom"
 
     if error_messages:
         error_message_str = "Errors detected in parameter parsing:\n\t- " + "\n\t- ".join(
