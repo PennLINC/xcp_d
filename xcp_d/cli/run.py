@@ -21,7 +21,7 @@ def main():
     from xcp_d.cli.workflow import build_workflow
     from xcp_d.utils.bids import (
         write_atlas_dataset_description,
-        write_dataset_description,
+        write_derivative_description,
     )
 
     parse_args(args=sys.argv[1:])
@@ -118,7 +118,7 @@ def main():
             from xcp_d.utils.sentry import process_crashfile
 
             crashfolders = [
-                config.execution.xcp_d_dir / f"sub-{s}" / "log" / config.execution.run_uuid
+                config.execution.output_dir / f"sub-{s}" / "log" / config.execution.run_uuid
                 for s in config.execution.participant_label
             ]
             for crashfolder in crashfolders:
@@ -139,14 +139,14 @@ def main():
             sentry_sdk.capture_message(success_message, level="info")
 
         # Bother users with the boilerplate only iff the workflow went okay.
-        boiler_file = config.execution.xcp_d_dir / "logs" / "CITATION.md"
+        boiler_file = config.execution.output_dir / "logs" / "CITATION.md"
         if boiler_file.exists():
             if config.environment.exec_env in (
                 "apptainer",
                 "docker",
             ):
                 boiler_file = Path("<OUTPUT_PATH>") / boiler_file.relative_to(
-                    config.execution.xcp_d_dir
+                    config.execution.output_dir
                 )
             config.loggers.workflow.log(
                 25,
@@ -160,10 +160,15 @@ def main():
         from xcp_d.reports.core import generate_reports
 
         # Write dataset description before generating reports
-        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+        write_derivative_description(
+            config.execution.fmri_dir,
+            config.execution.output_dir,
+            atlases=config.execution.atlases,
+            dataset_links=config.execution.dataset_links,
+        )
 
         if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
+            write_atlas_dataset_description(config.execution.output_dir / "atlases")
 
         # Generate reports phase
         session_list = (
@@ -173,7 +178,7 @@ def main():
         # Generate reports phase
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
-            output_dir=config.execution.xcp_d_dir,
+            output_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
             session_list=session_list,

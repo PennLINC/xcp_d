@@ -69,12 +69,24 @@ def test_nilearn_binarymath(ds001419_data, tmp_path_factory):
     assert np.min(out_data) == 0
 
 
-def test_nilearn_resampletoimage(ds001419_data, tmp_path_factory):
+def test_nilearn_resampletoimage(datasets, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.ResampleToImage."""
-    tmpdir = tmp_path_factory.mktemp("test_nilearn_meanimage")
+    tmpdir = tmp_path_factory.mktemp("test_nilearn_resampletoimage")
 
-    source_file = ds001419_data["boldref_t1w"]
-    target_file = ds001419_data["t1w"]
+    source_file = os.path.join(
+        datasets["nibabies"],
+        "sub-01",
+        "ses-1mo",
+        "func",
+        "sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_boldref.nii.gz",
+    )
+    target_file = os.path.join(
+        datasets["nibabies"],
+        "sub-01",
+        "ses-1mo",
+        "anat",
+        "sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_desc-preproc_T1w.nii.gz",
+    )
     target_img = nb.load(target_file)
     source_img = nb.load(source_file)
     assert not np.array_equal(target_img.header.get_zooms(), source_img.header.get_zooms())
@@ -116,7 +128,7 @@ def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
 
     interface = nilearn.DenoiseNifti(
         preprocessed_bold=preprocessed_bold,
-        confounds_file=reduced_confounds_file,
+        confounds_tsv=reduced_confounds_file,
         temporal_mask=temporal_mask,
         mask=mask,
         TR=2,
@@ -154,7 +166,7 @@ def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
 
     interface = nilearn.DenoiseCifti(
         preprocessed_bold=preprocessed_bold,
-        confounds_file=reduced_confounds_file,
+        confounds_tsv=reduced_confounds_file,
         temporal_mask=temporal_mask,
         TR=2,
         bandpass_filter=True,

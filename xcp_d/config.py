@@ -26,7 +26,7 @@ A Python module to maintain unique, run-wide *XCP-D* settings.
 This module implements the memory structures to keep a consistent, singleton config.
 Settings are passed across processes via filesystem, and a copy of the settings for
 each run and subject is left under
-``<xcp_d_dir>/sub-<participant_id>/log/<run_unique_id>/xcp_d.toml``.
+``<output_dir>/sub-<participant_id>/log/<run_unique_id>/xcp_d.toml``.
 Settings are stored using :abbr:`ToML (Tom's Markup Language)`.
 The module has a :py:func:`~xcp_d.config.to_filename` function to allow writing out
 the settings to hard disk in *ToML* format, which looks like:
@@ -89,6 +89,8 @@ The :py:mod:`config` is responsible for other conveniency actions.
 """
 import os
 from multiprocessing import set_start_method
+
+from templateflow.conf import TF_LAYOUT
 
 # Disable NiPype etelemetry always
 _disable_et = bool(os.getenv("NO_ET") is not None or os.getenv("NIPYPE_NO_ET") is not None)
@@ -227,6 +229,8 @@ class _Config:
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     setattr(cls, k, [Path(val).absolute() for val in v])
+                elif isinstance(v, dict):
+                    setattr(cls, k, {key: Path(val).absolute() for key, val in v.items()})
                 else:
                     setattr(cls, k, Path(v).absolute())
             elif hasattr(cls, k):
@@ -252,6 +256,8 @@ class _Config:
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     v = [str(val) for val in v]
+                elif isinstance(v, dict):
+                    v = {key: str(val) for key, val in v.items()}
                 else:
                     v = str(v)
             if isinstance(v, SpatialReferences):
@@ -373,6 +379,8 @@ class execution(_Config):
 
     fmri_dir = None
     """An existing path to the preprocessing derivatives dataset, which must be BIDS-compliant."""
+    derivatives = {}
+    """Path(s) to search for pre-computed derivatives"""
     aggr_ses_reports = None
     """Maximum number of sessions aggregated in one subject's visual report."""
     bids_database_dir = None
@@ -383,10 +391,10 @@ class execution(_Config):
     """A dictionary of BIDS selection filters."""
     boilerplate_only = None
     """Only generate a boilerplate."""
+    confounds_config = None
+    """Nuisance regressors to include in the postprocessing."""
     debug = []
     """Debug mode(s)."""
-    xcp_d_dir = None
-    """Root of XCP-D BIDS Derivatives dataset."""
     fs_license_file = _fs_license
     """An existing file containing a FreeSurfer license."""
     layout = None
@@ -405,8 +413,6 @@ class execution(_Config):
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
     """Folder where derivatives will be stored."""
-    custom_confounds = None
-    """A path to a folder containing custom confounds to include in the postprocessing."""
     atlases = []
     """Selection of atlases to apply to the data."""
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
@@ -428,8 +434,8 @@ class execution(_Config):
 
     _paths = (
         "fmri_dir",
+        "derivatives",
         "bids_database_dir",
-        "xcp_d_dir",
         "fs_license_file",
         "layout",
         "log_dir",
@@ -437,6 +443,7 @@ class execution(_Config):
         "templateflow_home",
         "work_dir",
         "dataset_links",
+        "confounds_config",
     )
 
     @classmethod
@@ -488,6 +495,7 @@ class execution(_Config):
             cls.bids_database_dir = _db_path
 
         cls.layout = cls._layout
+
         if cls.bids_filters:
             from bids.layout import Query
 
@@ -507,13 +515,20 @@ class execution(_Config):
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
 
-        dataset_links = {"preprocessed": cls.fmri_dir}
-        if cls.custom_confounds:
-            dataset_links["custom-confounds"] = cls.custom_confounds
+        if cls.task_id:
+            cls.bids_filters = cls.bids_filters or {}
+            cls.bids_filters["bold"] = cls.bids_filters.get("bold", {})
+            cls.bids_filters["bold"]["task"] = cls.task_id
 
+        dataset_links = {
+            "preprocessed": cls.fmri_dir,
+            "templateflow": Path(TF_LAYOUT.root),
+        }
         if cls.atlases:
-            dataset_links["atlas"] = cls.xcp_d_dir / "atlases"
+            dataset_links["atlas"] = cls.output_dir / "atlases"
 
+        for deriv_name, deriv_path in cls.derivatives.items():
+            dataset_links[deriv_name] = deriv_path
         cls.dataset_links = dataset_links
 
         if "all" in cls.debug:
@@ -544,8 +559,6 @@ class workflow(_Config):
     """Postprocessing pipeline type."""
     despike = None
     """Despike the BOLD data before postprocessing."""
-    params = None
-    """Nuisance regressors to include in the postprocessing."""
     smoothing = None
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     output_interpolated = None

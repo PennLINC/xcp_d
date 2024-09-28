@@ -17,7 +17,6 @@ def init_postproc_derivatives_wf(
     name_source,
     source_metadata,
     exact_scans,
-    custom_confounds_file,
     name="postproc_derivatives_wf",
 ):
     """Write out the xcp_d derivatives in BIDS format.
@@ -36,7 +35,6 @@ def init_postproc_derivatives_wf(
                     name_source="/path/to/file.nii.gz",
                     source_metadata={},
                     exact_scans=[],
-                    custom_confounds_file=None,
                     name="postproc_derivatives_wf",
                 )
 
@@ -46,8 +44,6 @@ def init_postproc_derivatives_wf(
         bold or cifti files
     source_metadata : :obj:`dict`
     %(exact_scans)s
-    custom_confounds_file
-        Only used for Sources metadata.
     %(name)s
         Default is "connectivity_wf".
 
@@ -71,9 +67,9 @@ def init_postproc_derivatives_wf(
         smoothed alff
     reho
     parcellated_reho
-    confounds_file
+    confounds_tsv
     confounds_metadata
-    %(filtered_motion)s
+    motion_file
     motion_metadata
     %(temporal_mask)s
     temporal_mask_metadata
@@ -87,21 +83,19 @@ def init_postproc_derivatives_wf(
     high_pass = config.workflow.high_pass
     bpf_order = config.workflow.bpf_order
     fd_thresh = config.workflow.fd_thresh
-    motion_filter_type = config.workflow.motion_filter_type
     smoothing = config.workflow.smoothing
-    params = config.workflow.params
     atlases = config.execution.atlases
     file_format = config.workflow.file_format
-    output_dir = config.execution.xcp_d_dir
+    output_dir = config.execution.output_dir
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
                 # preprocessing files to use as sources
-                "fmriprep_confounds_file",
+                "preproc_confounds_file",
                 # postprocessed outputs
                 "atlas_files",  # for Sources
-                "confounds_file",
+                "confounds_tsv",
                 "confounds_metadata",
                 "coverage",
                 "timeseries",
@@ -115,7 +109,7 @@ def init_postproc_derivatives_wf(
                 "smoothed_alff",
                 "reho",
                 "parcellated_reho",
-                "filtered_motion",
+                "motion_file",
                 "motion_metadata",
                 "temporal_mask",
                 "temporal_mask_metadata",
@@ -135,7 +129,7 @@ def init_postproc_derivatives_wf(
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "filtered_motion",
+                "motion_file",
                 "temporal_mask",
                 "denoised_bold",
                 "censored_denoised_bold",
@@ -168,7 +162,6 @@ def init_postproc_derivatives_wf(
 
     # Create dictionary of basic information
     cleaned_data_dictionary = {
-        "NuisanceParameters": params,
         **source_metadata,
     }
     software_filters = None
@@ -194,30 +187,34 @@ def init_postproc_derivatives_wf(
     # Determine cohort (if there is one) in the original data
     cohort = get_entity(name_source, "cohort")
 
-    ds_filtered_motion = pe.Node(
+    ds_motion = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
             dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
-            desc="filtered" if motion_filter_type else None,
             suffix="motion",
             extension=".tsv",
         ),
-        name="ds_filtered_motion",
+        name="ds_motion",
         run_without_submitting=True,
         mem_gb=1,
     )
     workflow.connect([
-        (inputnode, ds_filtered_motion, [
+        (inputnode, ds_motion, [
             ("motion_metadata", "meta_dict"),
-            ("filtered_motion", "in_file"),
+            ("motion_file", "in_file"),
         ]),
-        (confound_sources, ds_filtered_motion, [("out", "Sources")]),
-        (ds_filtered_motion, outputnode, [("out_file", "filtered_motion")]),
+        (confound_sources, ds_motion, [("out", "Sources")]),
+        (ds_motion, outputnode, [("out_file", "motion_file")]),
     ])  # fmt:skip
 
     merge_dense_src = pe.Node(
-        niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if params != "none" else 0))),
+        niu.Merge(
+            numinputs=(
+                1
+                + (1 if fd_thresh > 0 else 0)
+                + (1 if config.execution.confounds_config != "none" else 0)
+            ),
+        ),
         name="merge_dense_src",
         run_without_submitting=True,
         mem_gb=1,
@@ -225,19 +222,18 @@ def init_postproc_derivatives_wf(
     workflow.connect([(bold_sources, merge_dense_src, [("out", "in1")])])
 
     if fd_thresh > 0:
-        filtered_motion_src = pe.Node(
+        motion_src = pe.Node(
             BIDSURI(
                 numinputs=1,
                 dataset_links=config.execution.dataset_links,
                 out_dir=str(output_dir),
             ),
-            name="filtered_motion_src",
+            name="motion_src",
         )
-        workflow.connect([(ds_filtered_motion, filtered_motion_src, [("out_file", "in1")])])
+        workflow.connect([(ds_motion, motion_src, [("out_file", "in1")])])
 
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
                 suffix="outliers",
                 extension=".tsv",
@@ -255,7 +251,7 @@ def init_postproc_derivatives_wf(
                 ("temporal_mask_metadata", "meta_dict"),
                 ("temporal_mask", "in_file"),
             ]),
-            (filtered_motion_src, ds_temporal_mask, [("out", "Sources")]),
+            (motion_src, ds_temporal_mask, [("out", "Sources")]),
             (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
         ])  # fmt:skip
 
@@ -272,32 +268,21 @@ def init_postproc_derivatives_wf(
             (temporal_mask_src, merge_dense_src, [("out", "in2")]),
         ])  # fmt:skip
 
-    if params != "none":
+    if config.execution.confounds_config is not None:
+        # XXX: I need to combine collected confounds files as Sources here.
+        # Not just the preproc_confounds_file.
         confounds_src = pe.Node(
-            niu.Merge(
-                numinputs=(1 + (1 if fd_thresh > 0 else 0) + (1 if custom_confounds_file else 0))
-            ),
+            niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0))),
             name="confounds_src",
             run_without_submitting=True,
             mem_gb=1,
         )
-        workflow.connect([(inputnode, confounds_src, [("fmriprep_confounds_file", "in1")])])
+        workflow.connect([(inputnode, confounds_src, [("preproc_confounds_file", "in1")])])
         if fd_thresh > 0:
-            workflow.connect([
-                (ds_temporal_mask, confounds_src, [
-                    (("out_file", _make_xcpd_uri, output_dir), "in2"),
-                ]),
-            ])  # fmt:skip
-
-            if custom_confounds_file:
-                confounds_src.inputs.in3 = _make_custom_uri(custom_confounds_file)
-
-        elif custom_confounds_file:
-            confounds_src.inputs.in2 = _make_custom_uri(custom_confounds_file)
+            workflow.connect([(ds_temporal_mask, confounds_src, [("out_file", "in2")])])
 
         ds_confounds = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["space", "cohort", "den", "res"],
                 datatype="func",
@@ -309,7 +294,7 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([
             (inputnode, ds_confounds, [
-                ("confounds_file", "in_file"),
+                ("confounds_tsv", "in_file"),
                 ("confounds_metadata", "meta_dict"),
             ]),
             (confounds_src, ds_confounds, [("out", "Sources")]),
@@ -321,7 +306,6 @@ def init_postproc_derivatives_wf(
     # Write out derivatives via DerivativesDataSink
     ds_denoised_bold = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
             dismiss_entities=["den"],
             cohort=cohort,
@@ -345,7 +329,6 @@ def init_postproc_derivatives_wf(
     if config.workflow.linc_qc:
         ds_qc_file = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
@@ -364,7 +347,6 @@ def init_postproc_derivatives_wf(
         # Write out derivatives via DerivativesDataSink
         ds_smoothed_bold = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["den"],
                 cohort=cohort,
@@ -429,7 +411,6 @@ def init_postproc_derivatives_wf(
         # TODO: Add brain mask to Sources (for NIfTIs).
         ds_coverage = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
@@ -468,7 +449,6 @@ def init_postproc_derivatives_wf(
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
@@ -513,7 +493,6 @@ def init_postproc_derivatives_wf(
 
             ds_correlations = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["desc", "den", "res"],
                     cohort=cohort,
@@ -541,7 +520,6 @@ def init_postproc_derivatives_wf(
         if file_format == "cifti":
             ds_coverage_ciftis = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     check_hdr=False,
                     dismiss_entities=["desc"],
@@ -581,7 +559,6 @@ def init_postproc_derivatives_wf(
 
             ds_timeseries_ciftis = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
@@ -626,7 +603,6 @@ def init_postproc_derivatives_wf(
 
                 ds_correlation_ciftis = pe.MapNode(
                     DerivativesDataSink(
-                        base_directory=output_dir,
                         source_file=name_source,
                         check_hdr=False,
                         dismiss_entities=["desc", "den"],
@@ -667,7 +643,6 @@ def init_postproc_derivatives_wf(
 
             ds_correlations_exact = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["desc", "den", "res"],
                     cohort=cohort,
@@ -689,7 +664,6 @@ def init_postproc_derivatives_wf(
     # Resting state metric outputs
     ds_reho = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             source_file=name_source,
             check_hdr=False,
             dismiss_entities=["desc", "den"],
@@ -730,7 +704,6 @@ def init_postproc_derivatives_wf(
 
         ds_parcellated_reho = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 dismiss_entities=["desc", "den", "res"],
                 cohort=cohort,
@@ -755,7 +728,6 @@ def init_postproc_derivatives_wf(
     if bandpass_filter:
         ds_alff = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=["desc", "den"],
@@ -779,7 +751,6 @@ def init_postproc_derivatives_wf(
         if smoothing:
             ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["den"],
                     cohort=cohort,
@@ -825,7 +796,6 @@ def init_postproc_derivatives_wf(
 
             ds_parcellated_alff = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     source_file=name_source,
                     dismiss_entities=["desc", "den", "res"],
                     cohort=cohort,

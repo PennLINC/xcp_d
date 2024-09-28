@@ -139,6 +139,102 @@ Command-Line Arguments
                This file is only created if the input type is "fmriprep" or "nibabies".
 
 
+**************
+Minimal Inputs
+**************
+
+The minimal inputs required to run XCP-D are:
+
+-  A native-space preprocessed T1w or T2w image.
+-  A preprocessed BOLD image in MNI152NLin6Asym, MNI152NLin2009cAsym,
+   MNIInfant (nibabies derivatives), or fsLR (CIFTI processing) space.
+-  The functional brain mask and boldref image in the same space as the preprocessed BOLD data.
+-  The confounds associated with the BOLD image, along with the associated JSON file.
+-  The anatomical brain mask in the same space as the preprocessed BOLD data.
+-  The transform from the native anatomical space to the standard space the BOLD image is in,
+   and its inverse.
+
+Surface files, such as the pial and white matter GIFTI files,
+may be required depending on the settings you use.
+
+Below are an example lists of inputs.
+
+.. warning::
+
+   Please note that the filenames may differ based on the pipeline,
+   or even version of the pipeline, used for preprocessing.
+
+   The specific files required by XCP-D may also vary slightly depending on the settings you use.
+
+For NIfTI processing:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
+         sub-x_desc-preproc_T1w.json
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
+         sub-x_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-x_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+      func/
+         sub-x_task-rest_desc-confounds_timeseries.tsv
+         sub-x_task-rest_desc-confounds_timeseries.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.json
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.json
+
+For CIFTI processing:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
+         sub-x_desc-preproc_T1w.json
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
+         sub-x_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-x_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+      func/
+         sub-x_task-rest_desc-confounds_timeseries.tsv
+         sub-x_task-rest_desc-confounds_timeseries.json
+         sub-x_task-rest_space-fsLR_den-91k_bold.dtseries.nii
+         sub-x_task-rest_space-fsLR_den-91k_bold.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz  # Needed for QC figures
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
+
+Surface files:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         # Mesh files in fsnative space, to be warped to fsLR space
+         sub-x_hemi-L_pial.surf.gii
+         sub-x_hemi-R_pial.surf.gii
+         sub-x_hemi-L_white.surf.gii
+         sub-x_hemi-R_white.surf.gii
+
+         # Sphere files for registration
+         sub-x_hemi-L_space-fsaverage_desc-reg_sphere.surf.gii
+         sub-x_hemi-R_space-fsaverage_desc-reg_sphere.surf.gii
+
+         # Morphometry files in fsLR space, to be parcellated
+         sub-x_hemi-L_space-fsLR_den-91k_curv.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_sulc.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_thickness.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_myelinw.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_desc-smoothed_myelinw.dscalar.nii
+
 .. _filter_files:
 
 ***************************************
@@ -170,8 +266,8 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 If a T1w file is not available, this file will be in T2w space.
 
 ``"anat_brainmask"`` selects an anatomically-derived brain mask in the same space as the BOLD data.
-This file is used (1) to estimate head radius for FD calculation and
-(2) to calculate coregistration quality metrics.
+This file is used (1) to estimate head radius for FD calculation (after warping to native space)
+and (2) to calculate coregistration quality metrics.
 
 ``"anat_to_template_xfm"`` selects a transform from T1w (or T2w, if no T1w image is available)
 space to standard space.
@@ -274,38 +370,39 @@ Therefore, once a user specifies the container options and the image to be run,
 the command line options are the same as the *bare-metal* installation.
 
 
-.. _usage_custom_confounds:
-
 ****************
 Custom Confounds
 ****************
 
-XCP-D can include custom confounds in its denoising.
-Here, you can supply your confounds, and optionally add these to a confound strategy already
-supported in XCP-D.
+If you would like to denoise your data with confounds that are not included in the built-in
+confound strategies, you can create your own.
+Please see :ref:`confound_config` for more info on the configuration file format.
 
-To add custom confounds to your workflow, use the ``--custom-confounds`` parameter,
-and provide a folder containing the custom confounds files for all of the subjects, sessions, and
-tasks you plan to post-process.
-
-The individual confounds files should be tab-delimited, with one column for each regressor,
-and one row for each volume in the data being denoised.
+If you have a set of custom confounds that you would like to use, you need to organize them into a
+BIDS dataset.
+The dataset should only require the actual confound files, preferably with associated sidecar
+JSONs, and a ``dataset_description.json`` file.
+Using the same filenames as the fMRIPrep confound files is an easy way to organize this dataset.
 
 
 Including Signal Regressors
 ===========================
 
+.. warning::
+   Signal regressors are not currently supported in combination with voxel-wise regressors.
+
+.. warning::
+   Please be careful when including signal regressors.
+   Most of the time this is probably a bad idea.
+   For example, if you run tedana, only noise components from tedana should be orthogonalized
+   with respect to signal components.
+   You wouldn't want to orthogonalize other noise signals (e.g., motion parameters) with respect
+   to the signal components from tedana.
+
 Let's say you have some nuisance regressors that are not necessarily orthogonal to some associated
 regressors that are ostensibly signal.
-For example, if you ran `tedana <https://tedana.readthedocs.io/en/stable/>`_ on multi-echo data,
-you would have a series of "rejected" (noise) and "accepted" (signal) ICA components.
-Because tedana uses a spatial ICA, these components' time series are not necessarily independent,
-and there can be shared variance between them.
-If you want to properly denoise your data using the noise components,
-you need to account for the variance they share with the signal components.
-
-XCP-D allows users to include the signal regressors in their custom confounds file,
-so that the noise regressors can be orthogonalized with respect to the signal regressors.
+For example, if you want to denoise your data while still retaining task signal,
+you could include the predicted task signals in your confounds.
 
 For more information about different types of denoising,
 see `tedana's documentation <https://tedana.readthedocs.io/en/latest/denoising.html>`_,
@@ -319,23 +416,18 @@ them without modification,
 you should include those regressors in your custom confounds file,
 with column names starting with ``signal__`` (lower-case "signal", followed by two underscores).
 
-.. important::
-
-   XCP-D will automatically orthogonalize noise regressors with respect to signal regressors
-   with any nuisance-regressor option that uses AROMA regressors (e.g., ``aroma`` or ``aroma_gsr``).
-
 
 Task Regression
 ===============
 
-If you want to regress task-related signals out of your data, you can use the custom confounds
-option to do it.
+If you want to regress task-related signals out of your data, you can use a custom confound
+configuration.
 
 Here we document how to include task effects as confounds.
 
 .. tip::
    The basic approach to task regression is to convolve your task regressors with an HRF,
-   then save those regressors to a custom confounds file.
+   then save those regressors to a confounds file.
 
 .. warning::
    This method is still under development.
@@ -375,31 +467,61 @@ plot_design_matrix.html#create-design-matrices>`_.
       index=False,
    )
 
-Then, when you run XCP-D, you can use the flag
-``--custom_confounds /my/project/directory/custom_confounds``.
+Then, create a confounds config file to include derivatives from ``custom_confounds``.
+Something like this should work:
+
+```yaml
+name: my_custom_confounds
+description: |
+   Nuisance regressors were task regressors convolved with an HRF and motion parameters.
+confounds:
+   motion:
+      dataset: preprocessed
+      query:
+         space: null
+         cohort: null
+         res: null
+         den: null
+         desc: confounds
+         extension: .tsv
+         suffix: timeseries
+      columns:
+      - trans_x
+      - trans_y
+      - trans_z
+      - rot_x
+      - rot_y
+      - rot_z
+   task:
+      dataset: custom
+      query:
+         space: null
+         cohort: null
+         res: null
+         den: null
+         desc: confounds
+         extension: .tsv
+         suffix: timeseries
+      columns:
+      - condition1
+      - condition2
+```
 
 
 Command Line XCP-D with Custom Confounds
 ========================================
 
-Last, supply the file to xcp_d with the ``--custom_confounds`` option.
-``--custom_confounds`` should point to the directory where this file exists, rather than to the
-file itself;
-XCP-D will identify the correct file based on the filename,
-which should match the name of the preprocessed BOLD data's associated confounds file.
-You can simultaneously perform additional confound regression by including,
-for example, ``--nuisance-regressors 36P`` in the call.
+Last, run XCP-D with your custom configuration file and the path to the custom derivatives dataset.
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /my/project/directory:/mnt xcpabcd_latest.simg \
+   apptainer run --cleanenv -B /my/project/directory:/mnt xcpd_latest.sif \
       /mnt/input/fmriprep \
       /mnt/output/directory \
       participant \
       --participant_label X \
-      --task-id Z \
-      --nuisance-regressors 36P \
-      --custom_confounds /mnt/custom_confounds
+      --derivatives custom=/mnt/custom_confounds \
+      --nuisance-regressors /mnt/custom_config.yaml
 
 
 ********************

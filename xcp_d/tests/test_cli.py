@@ -18,11 +18,14 @@ from xcp_d.tests.utils import (
     check_affines,
     check_generated_files,
     download_test_data,
-    update_resources,
     get_test_data_path,
     list_files,
+    update_resources,
 )
-from xcp_d.utils.bids import write_atlas_dataset_description, write_dataset_description
+from xcp_d.utils.bids import (
+    write_atlas_dataset_description,
+    write_derivative_description,
+)
 
 LOGGER = logging.getLogger("nipype.utils")
 
@@ -34,6 +37,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     test_name = "test_ds001419_nifti"
 
     dataset_dir = download_test_data("ds001419", data_dir)
+    derivs_dir = download_test_data("ds001419-aroma", data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
@@ -45,6 +49,8 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         out_dir,
         "participant",
         "--mode=none",
+        "--derivatives",
+        f"aroma={derivs_dir}",
         f"-w={work_dir}",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=aroma_gsr",
@@ -84,7 +90,6 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
 
     test_data_dir = get_test_data_path()
     filter_file = os.path.join(test_data_dir, "ds001419_cifti_filter.json")
-    fs_license_file = os.environ["FS_LICENSE"]
 
     parameters = [
         dataset_dir,
@@ -92,6 +97,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "participant",
         "--mode=abcd",
         f"-w={work_dir}",
+        "--task-id=imagery",
         f"--bids-filter-file={filter_file}",
         "--nuisance-regressors=acompcor_gsr",
         "--warp_surfaces_native2std=n",
@@ -111,7 +117,6 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "4S256Parcels",
         "4S356Parcels",
         "4S456Parcels",
-        f"--fs-license-file={fs_license_file}",
         "--linc-qc",
     ]
     _run_and_generate(
@@ -285,22 +290,9 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     test_name = "test_fmriprep_without_freesurfer"
 
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
-    temp_dir = os.path.join(output_dir, test_name)
-    out_dir = os.path.join(temp_dir, "xcp_d")
+    tmpdir = os.path.join(output_dir, test_name)
+    out_dir = os.path.join(tmpdir, "xcp_d")
     work_dir = os.path.join(working_dir, test_name)
-    custom_confounds_dir = os.path.join(temp_dir, "custom_confounds")
-    os.makedirs(custom_confounds_dir, exist_ok=True)
-
-    # Create custom confounds folder
-    for run_number in [1, 2]:
-        out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
-        out_file = os.path.join(custom_confounds_dir, out_file)
-        confounds_df = pd.DataFrame(
-            columns=["a", "b"],
-            data=np.random.random((16, 2)),
-        )
-        confounds_df.to_csv(out_file, sep="\t", index=False)
-        LOGGER.warning(f"Created custom confounds file at {out_file}.")
 
     parameters = [
         dataset_dir,
@@ -318,7 +310,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--disable-bandpass-filter",
         "--min-time=20",
         "--dummy-scans=1",
-        f"--custom_confounds={custom_confounds_dir}",
         "--abcc-qc",
     ]
 
@@ -330,13 +321,6 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
 
     # Run combine-qc too
     combineqc.main([out_dir, "summary"])
-
-    dm_file = os.path.join(
-        out_dir,
-        "sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv",
-    )
-    dm_df = pd.read_table(dm_file)
-    assert all(c in dm_df.columns for c in confounds_df.columns)
 
 
 @pytest.mark.integration
@@ -354,22 +338,9 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     test_name = "test_fmriprep_without_freesurfer"
 
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
-    temp_dir = os.path.join(output_dir, f"{test_name}_with_main")
-    out_dir = os.path.join(temp_dir, "xcp_d")
+    tmpdir = os.path.join(output_dir, f"{test_name}_with_main")
+    out_dir = os.path.join(tmpdir, "xcp_d")
     work_dir = os.path.join(working_dir, f"{test_name}_with_main")
-    custom_confounds_dir = os.path.join(temp_dir, "custom_confounds")
-    os.makedirs(custom_confounds_dir, exist_ok=True)
-
-    # Create custom confounds folder
-    for run_number in [1, 2]:
-        out_file = f"sub-01_task-mixedgamblestask_run-{run_number}_desc-confounds_timeseries.tsv"
-        out_file = os.path.join(custom_confounds_dir, out_file)
-        confounds_df = pd.DataFrame(
-            columns=["a", "b"],
-            data=np.random.random((16, 2)),
-        )
-        confounds_df.to_csv(out_file, sep="\t", index=False)
-        LOGGER.warning(f"Created custom confounds file at {out_file}.")
 
     parameters = [
         dataset_dir,
@@ -387,7 +358,6 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
         "--disable-bandpass-filter",
         "--min-time=20",
         "--dummy-scans=1",
-        f"--custom_confounds={custom_confounds_dir}",
         "--abcc-qc",
     ]
 
@@ -400,13 +370,6 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
 
     # Run combine-qc too
     combineqc.main([out_dir, "summary"])
-
-    dm_file = os.path.join(
-        out_dir,
-        "sub-01/func/sub-01_task-mixedgamblestask_run-1_desc-preproc_design.tsv",
-    )
-    dm_df = pd.read_table(dm_file)
-    assert all(c in dm_df.columns for c in confounds_df.columns)
 
 
 @pytest.mark.integration
@@ -475,9 +438,13 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         retval = build_workflow(config_file, retval={})
         xcpd_wf = retval["workflow"]
         xcpd_wf.run(**config.nipype.get_plugin())
-        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+        write_derivative_description(
+            config.execution.fmri_dir,
+            config.execution.output_dir,
+            dataset_links=config.execution.dataset_links,
+        )
         if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
+            write_atlas_dataset_description(config.execution.output_dir / "atlases")
 
         build_boilerplate(str(config_file), xcpd_wf)
         session_list = (
@@ -487,12 +454,12 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         )
         generate_reports(
             subject_list=config.execution.participant_label,
-            output_dir=config.execution.xcp_d_dir,
+            output_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
             session_list=session_list,
         )
 
     output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
-    check_generated_files(config.execution.xcp_d_dir, output_list_file)
-    check_affines(config.execution.fmri_dir, config.execution.xcp_d_dir, input_type=input_type)
+    check_generated_files(config.execution.output_dir, output_list_file)
+    check_affines(config.execution.fmri_dir, config.execution.output_dir, input_type=input_type)

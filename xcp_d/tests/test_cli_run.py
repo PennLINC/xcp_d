@@ -32,7 +32,7 @@ def base_opts():
         "mode": "linc",
         "file_format": "auto",
         "input_type": "auto",
-        "params": "auto",
+        "confounds_config": "auto",
         "high_pass": 0.01,
         "low_pass": 0.1,
         "bandpass_filter": True,
@@ -43,28 +43,27 @@ def base_opts():
         "band_stop_max": None,
         "motion_filter_order": None,
         "process_surfaces": "auto",
-        "fs_license_file": Path(os.environ["FS_LICENSE"]),
         "atlases": ["Glasser"],
-        "custom_confounds": None,
         "dcan_correlation_lengths": None,
         "despike": "auto",
         "abcc_qc": "auto",
         "linc_qc": "auto",
         "combine_runs": "auto",
         "output_type": "auto",
+        "fs_license_file": None,
     }
     opts = FakeOptions(**opts_dict)
     return opts
 
 
 def test_validate_parameters_01(base_opts, base_parser):
-    """Test parser._validate_parameters."""
+    """Test parser._validate_parameters with the pre-set options."""
     opts = deepcopy(base_opts)
     _ = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
 def test_validate_parameters_02(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
+    """Test parser._validate_parameters with censoring disabled."""
     opts = deepcopy(base_opts)
 
     # Disable censoring
@@ -76,8 +75,8 @@ def test_validate_parameters_02(base_opts, base_parser, caplog):
     assert "Framewise displacement-based scrubbing is disabled." in caplog.text
 
 
-def test_validate_parameters_03(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters."""
+def test_validate_parameters_03(base_opts, base_parser):
+    """Test parser._validate_parameters with the dcan input type."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
@@ -90,7 +89,7 @@ def test_validate_parameters_03(base_opts, base_parser, caplog):
 
 
 def test_validate_parameters_04(base_opts, base_parser, capsys):
-    """Test parser._validate_parameters."""
+    """Test parser._validate_parameters with nifti outputs and surface processing."""
     opts = deepcopy(base_opts)
 
     # Set min > max for notch filter
@@ -127,22 +126,6 @@ def test_validate_parameters_06(base_opts, base_parser, capsys):
     stderr = capsys.readouterr().err
     assert "--warp-surfaces-native2std is not supported" in stderr
     assert "In order to perform surface normalization" in stderr
-
-
-def test_validate_parameters_07(base_opts, base_parser, caplog, tmp_path_factory):
-    """Test parser._validate_parameters custom confounds + none."""
-    tmpdir = tmp_path_factory.mktemp("test_validate_parameters_07")
-    confounds_path = Path(os.path.join(tmpdir, "confounds.tsv"))
-    confounds_path.touch()  # create the file
-
-    opts = deepcopy(base_opts)
-    opts.params = "none"
-    opts.custom_confounds = confounds_path
-
-    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert opts.params == "custom"
-    assert "Overriding the 'none' value and setting to 'custom'" in caplog.text
 
 
 def test_validate_parameters_motion_filtering(base_opts, base_parser, caplog, capsys):
@@ -242,8 +225,11 @@ def test_validate_parameters_bandpass_filter(base_opts, base_parser, caplog, cap
     assert "must be lower than" in capsys.readouterr().err
 
 
-def test_validate_parameters_fs_license(base_opts, base_parser, caplog, capsys, tmp_path_factory):
-    """Ensure parser._validate_parameters returns 2 when fs_license_file doesn't exist."""
+def _test_validate_parameters_fs_license(base_opts, base_parser, caplog, capsys, tmp_path_factory):
+    """Ensure parser._validate_parameters returns 2 when fs_license_file doesn't exist.
+
+    Not run now that the license isn't required.
+    """
     tmpdir = tmp_path_factory.mktemp("test_validate_parameters_fs_license")
 
     opts = deepcopy(base_opts)
@@ -392,6 +378,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
 
     opts.abcc_qc = False
     opts.combine_runs = False
+    opts.confounds_config = "none"
     opts.despike = False
     opts.fd_thresh = 0
     opts.file_format = "nifti"

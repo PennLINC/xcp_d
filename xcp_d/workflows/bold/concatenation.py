@@ -52,7 +52,7 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
         These are used as the bases for concatenated output filenames.
     preprocessed_bold : :obj:`list` of :obj:`str`
         The preprocessed BOLD files, after dummy volume removal.
-    %(filtered_motion)s
+    motion_file
         One list entry for each run.
     %(temporal_mask)s
         One list entry for each run.
@@ -74,8 +74,7 @@ def init_concatenate_data_wf(TR, head_radius, name="concatenate_data_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
-    motion_filter_type = config.workflow.motion_filter_type
+    output_dir = config.execution.output_dir
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
     fd_thresh = config.workflow.fd_thresh
@@ -90,8 +89,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             fields=[
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "filtered_motion",
+                "motion_file",
                 "temporal_mask",
                 "denoised_bold",
                 "denoised_interpolated_bold",
@@ -123,8 +121,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (inputnode, filter_runs, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("filtered_motion", "filtered_motion"),
+            ("motion_file", "motion_file"),
             ("temporal_mask", "temporal_mask"),
             ("denoised_bold", "denoised_bold"),
             ("denoised_interpolated_bold", "denoised_interpolated_bold"),
@@ -145,8 +142,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([
         (filter_runs, concatenate_inputs, [
             ("preprocessed_bold", "preprocessed_bold"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("filtered_motion", "filtered_motion"),
+            ("motion_file", "motion_file"),
             ("temporal_mask", "temporal_mask"),
             ("denoised_bold", "denoised_bold"),
             ("denoised_interpolated_bold", "denoised_interpolated_bold"),
@@ -181,37 +177,31 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ("preprocessed_bold", "inputnode.preprocessed_bold"),
             ("denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
             ("censored_denoised_bold", "inputnode.censored_denoised_bold"),
-            ("fmriprep_confounds_file", "inputnode.fmriprep_confounds_file"),
-            ("filtered_motion", "inputnode.filtered_motion"),
+            ("motion_file", "inputnode.motion_file"),
             ("temporal_mask", "inputnode.temporal_mask"),
             ("run_index", "inputnode.run_index"),
         ]),
     ])  # fmt:skip
 
-    ds_filtered_motion = pe.Node(
+    ds_motion_file = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
-            desc="filtered" if motion_filter_type else None,
             suffix="motion",
             extension=".tsv",
         ),
-        name="ds_filtered_motion",
+        name="ds_motion_file",
         run_without_submitting=True,
         mem_gb=1,
     )
     workflow.connect([
-        (clean_name_source, ds_filtered_motion, [("name_source", "source_file")]),
-        (concatenate_inputs, ds_filtered_motion, [("filtered_motion", "in_file")]),
-        (filter_runs, ds_filtered_motion, [
-            (("filtered_motion", _make_xcpd_uri, output_dir), "Sources"),
-        ]),
+        (clean_name_source, ds_motion_file, [("name_source", "source_file")]),
+        (concatenate_inputs, ds_motion_file, [("motion_file", "in_file")]),
+        (filter_runs, ds_motion_file, [(("motion_file", _make_xcpd_uri, output_dir), "Sources")]),
     ])  # fmt:skip
 
     if fd_thresh > 0:
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["segmentation", "den", "res", "space", "cohort", "desc"],
                 suffix="outliers",
                 extension=".tsv",
@@ -232,7 +222,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     if file_format == "cifti":
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["den"],
                 desc="denoised",
                 den="91k",
@@ -246,7 +235,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     dismiss_entities=["den"],
                     desc="denoisedSmoothed",
                     den="91k",
@@ -260,7 +248,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     else:
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
-                base_directory=output_dir,
                 desc="denoised",
                 extension=".nii.gz",
                 compression=True,
@@ -273,7 +260,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     desc="denoisedSmoothed",
                     extension=".nii.gz",
                     compression=True,
@@ -323,7 +309,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["desc", "den", "res"],
                 statistic="mean",
                 suffix="timeseries",
@@ -377,7 +362,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         ds_correlations = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 dismiss_entities=["desc"],
                 statistic="pearsoncorrelation",
                 suffix="relmat",
@@ -416,7 +400,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
             ds_timeseries_cifti_files = pe.MapNode(
                 DerivativesDataSink(
-                    base_directory=output_dir,
                     check_hdr=False,
                     dismiss_entities=["desc", "den"],
                     den="91k",

@@ -40,20 +40,37 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: ds001419-fmriprep-08
+          key: ds001419-10
       - run: *runinstall
       - run:
-          name: Download ds001419-fmriprep test data
+          name: Download ds001419 fMRIPrep test data
           command: |
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data ds001419
       - save_cache:
-          key: ds001419-fmriprep-08
+          key: ds001419-10
           paths:
-            - /src/xcp_d/.circleci/data/ds001419-fmriprep
+            - /src/xcp_d/.circleci/data/ds001419
     # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
     # Why do we need a big executor for this job?
     resource_class: large
+
+  download_data_ds001419_aroma:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: ds001419-aroma-02
+      - run: *runinstall
+      - run:
+          name: Download ds001419 fMRIPost-AROMA test data
+          command: |
+            cd /src/xcp_d/.circleci
+            python get_data.py $PWD/data ds001419-aroma
+      - save_cache:
+          key: ds001419-aroma-02
+          paths:
+            - /src/xcp_d/.circleci/data/ds001419-aroma
 
   download_data_pnc:
     <<: *dockersetup
@@ -227,7 +244,9 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-08
+          key: ds001419-10
+      - restore_cache:
+          key: ds001419-aroma-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti with freesurfer
@@ -269,7 +288,7 @@ jobs:
               circleci step halt
             fi
       - restore_cache:
-          key: ds001419-fmriprep-08
+          key: ds001419-10
       - run: *runinstall
       - run:
           name: Run full xcp_d on cifti with freesurfer
@@ -481,7 +500,7 @@ jobs:
       - restore_cache:
           key: pnc-02
       - restore_cache:
-          key: ds001419-fmriprep-08
+          key: ds001419-10
       - restore_cache:
           key: fmriprepwithoutfreesurfer-03
       - restore_cache:
@@ -543,7 +562,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 19.03.13
+          version: docker24
           docker_layer_caching: true
       - run:
           name: Build Docker image
@@ -588,6 +607,13 @@ workflows:
               only: /.*/
 
       - download_data_ds001419:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+
+      - download_data_ds001419_aroma:
           requires:
             - build
           filters:
@@ -658,6 +684,7 @@ workflows:
       - ds001419_nifti:
           requires:
             - download_data_ds001419
+            - download_data_ds001419_aroma
           filters:
             branches:
               ignore:

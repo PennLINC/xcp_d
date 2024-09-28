@@ -5,7 +5,6 @@
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.interfaces.ants import CompositeTransformUtil  # MB
-from nipype.interfaces.freesurfer import MRIsConvert
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
@@ -117,7 +116,6 @@ def init_postprocess_surfaces_wf(
 
     abcc_qc = config.workflow.abcc_qc
     process_surfaces = config.workflow.process_surfaces
-    output_dir = config.execution.xcp_d_dir
     omp_nthreads = config.nipype.omp_nthreads
 
     inputnode = pe.Node(
@@ -249,7 +247,6 @@ def init_postprocess_surfaces_wf(
         workflow.__desc__ += " fsnative-space surfaces were then warped to fsLR space."
         # Mesh files are in fsnative and must be warped to fsLR.
         warp_surfaces_to_template_wf = init_warp_surfaces_to_template_wf(
-            output_dir=output_dir,
             software=software,
             omp_nthreads=omp_nthreads,
             name="warp_surfaces_to_template_wf",
@@ -296,7 +293,6 @@ def init_postprocess_surfaces_wf(
 
 @fill_doc
 def init_warp_surfaces_to_template_wf(
-    output_dir,
     software,
     omp_nthreads,
     name="warp_surfaces_to_template_wf",
@@ -311,7 +307,6 @@ def init_warp_surfaces_to_template_wf(
             from xcp_d.workflows.anatomical.surface import init_warp_surfaces_to_template_wf
 
             wf = init_warp_surfaces_to_template_wf(
-                output_dir=".",
                 software="FreeSurfer",
                 omp_nthreads=1,
                 name="warp_surfaces_to_template_wf",
@@ -319,7 +314,6 @@ def init_warp_surfaces_to_template_wf(
 
     Parameters
     ----------
-    %(output_dir)s
     software : {"MCRIBS", "FreeSurfer"}
         The software used to generate the surfaces.
     %(omp_nthreads)s
@@ -456,7 +450,6 @@ def init_warp_surfaces_to_template_wf(
 
         ds_standard_space_surfaces = pe.MapNode(
             DerivativesDataSink(
-                base_directory=output_dir,
                 space="fsLR",
                 den="32k",
                 extension=".surf.gii",  # the extension is taken from the in_file by default
@@ -508,8 +501,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
     """
     workflow = Workflow(name=name)
 
-    output_dir = config.execution.xcp_d_dir
-
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -542,7 +533,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     ds_midthickness = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             check_hdr=False,
             space="fsLR",
             den="32k",
@@ -575,7 +565,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     ds_inflated = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             check_hdr=False,
             space="fsLR",
             den="32k",
@@ -594,7 +583,6 @@ def init_generate_hcp_surfaces_wf(name="generate_hcp_surfaces_wf"):
 
     ds_vinflated = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
             check_hdr=False,
             space="fsLR",
             den="32k",
@@ -966,16 +954,6 @@ def init_warp_one_hemisphere_wf(
         n_procs=1,
     )
 
-    # XXX: Given that fMRIPrep and Nibabies write out the subject spheres as surf.gii,
-    # I think this is unnecessary.
-    sphere_to_surf_gii = pe.Node(
-        MRIsConvert(out_datatype="gii"),
-        name="sphere_to_surf_gii",
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-    )
-    workflow.connect([(inputnode, sphere_to_surf_gii, [("subject_sphere", "in_file")])])
-
     # NOTE: What does this step do?
     # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
     # fsLR/dhcpAsym-in-fsaverage
@@ -987,11 +965,11 @@ def init_warp_one_hemisphere_wf(
         n_procs=omp_nthreads,
     )
     workflow.connect([
+        (inputnode, surface_sphere_project_unproject, [("subject_sphere", "in_file")]),
         (collect_registration_files, surface_sphere_project_unproject, [
             ("source_sphere", "sphere_project_to"),
             ("sphere_to_sphere", "sphere_unproject_from"),
         ]),
-        (sphere_to_surf_gii, surface_sphere_project_unproject, [("converted", "in_file")]),
     ])  # fmt:skip
 
     # Resample the pial and white matter surfaces from fsnative to fsLR-32k or dhcpAsym-32k

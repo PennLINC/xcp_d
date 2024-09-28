@@ -76,7 +76,7 @@ def test_get_n_frames(ds001419_data):
     """Test get_n_frames."""
     anat_file = ds001419_data["brain_mask_file"]
     frame_numbers = execsummary.get_n_frames(anat_file)
-    assert len(frame_numbers) == 194
+    assert len(frame_numbers) == 183
 
 
 def test_get_png_image_names():

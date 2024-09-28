@@ -483,7 +483,7 @@ def plot_fmri_es(
     preprocessed_bold,
     denoised_interpolated_bold,
     TR,
-    filtered_motion,
+    motion_file,
     temporal_mask,
     preprocessed_figure,
     denoised_figure,
@@ -501,7 +501,7 @@ def plot_fmri_es(
         Preprocessed BOLD file, dummy scan removal.
     %(denoised_interpolated_bold)s
     %(TR)s
-    %(filtered_motion)s
+    %(motion_file)s
     %(temporal_mask)s
         Only non-outlier (low-motion) volumes in the temporal mask will be used to scale
         the carpet plot.
@@ -548,7 +548,12 @@ def plot_fmri_es(
         }
     )
 
-    fd_regressor = pd.read_table(filtered_motion)["framewise_displacement"].values
+    motion_df = pd.read_table(motion_file)
+    if "framewise_displacement_filtered" in motion_df.columns:
+        fd_regressor = motion_df["framewise_displacement_filtered"].values
+    else:
+        fd_regressor = motion_df["framewise_displacement"].values
+
     if temporal_mask:
         tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values.astype(bool)
     else:

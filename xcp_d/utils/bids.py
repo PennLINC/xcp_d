@@ -12,6 +12,7 @@ from pathlib import Path
 
 import nibabel as nb
 import yaml
+from bids.layout import BIDSLayout
 from bids.utils import listify
 from nipype import logging
 from nipype.interfaces.base import isdefined
@@ -562,7 +563,7 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     bids_file = layout.get_file(bold_file)
     run_data, metadata = {}, {}
 
-    run_data["confounds"] = layout.get_nearest(
+    run_data["motion_file"] = layout.get_nearest(
         bids_file.path,
         strict=True,
         ignore_strict_entities=["space", "res", "den", "desc", "suffix", "extension"],
@@ -570,10 +571,11 @@ def collect_run_data(layout, bold_file, file_format, target_space):
         suffix="timeseries",
         extension=".tsv",
     )
-    if not run_data["confounds"]:
+    if not run_data["motion_file"]:
         raise FileNotFoundError(f"No confounds file detected for {bids_file.path}")
 
-    run_data["confounds_json"] = layout.get_nearest(run_data["confounds"], extension=".json")
+    run_data["motion_json"] = layout.get_nearest(run_data["motion_file"], extension=".json")
+
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
@@ -658,7 +660,95 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, output_dir, dataset_links=None):
+def collect_confounds(
+    bold_file: str,
+    preproc_dataset: BIDSLayout,
+    derivatives_datasets: dict[str, Path | BIDSLayout] | None,
+    confound_spec: dict | None,
+):
+    """Gather confounds files from derivatives datasets and compose a cache."""
+    import re
+
+    from bids.layout.index import BIDSLayoutIndexer
+
+    bold_file = preproc_dataset.get_file(bold_file)
+
+    # Recommended after PyBIDS 12.1
+    ignore_patterns = [
+        "code",
+        "stimuli",
+        "models",
+        re.compile(r"\/\.\w+|^\.\w+"),  # hidden files
+        re.compile(
+            r"sub-[a-zA-Z0-9]+(/ses-[a-zA-Z0-9]+)?/(anat|beh|dwi|eeg|ieeg|meg|perf|pet|physio)"
+        ),
+    ]
+    _indexer = BIDSLayoutIndexer(
+        validate=False,
+        ignore=ignore_patterns,
+        index_metadata=False,  # we don't need metadata to find confound files
+    )
+    xcp_d_config = str(load_data("xcp_d_bids_config2.json"))
+
+    # Step 0: Determine derivatives we care about for confounds.
+    req_datasets = []
+    for confound_def in confound_spec["confounds"].values():
+        req_datasets.append(confound_def["dataset"])
+
+    req_datasets = sorted(list(set(req_datasets)))
+
+    # Step 1: Build a dictionary of dataset: layout pairs.
+    layout_dict = {}
+    layout_dict["preprocessed"] = preproc_dataset
+    if derivatives_datasets is not None:
+        for k, v in derivatives_datasets.items():
+            # Don't index datasets we don't need for confounds.
+            if k not in req_datasets:
+                print(f"Not required: {k}")
+                continue
+
+            if isinstance(v, (Path, str)):
+                layout_dict[k] = BIDSLayout(
+                    v,
+                    config=["bids", "derivatives", xcp_d_config],
+                    indexer=_indexer,
+                )
+            else:
+                layout_dict[k] = v
+
+    # Step 2: Loop over the confounds spec and search for each file in the corresponding dataset.
+    confounds = dict()
+    for confound_name, confound_def in confound_spec["confounds"].items():
+        if confound_def["dataset"] not in layout_dict.keys():
+            raise ValueError(
+                f"Missing dataset required by confound spec: *{confound_def['dataset']}*. "
+                "Did you provide it with the `--derivatives` flag?"
+            )
+
+        layout = layout_dict[confound_def["dataset"]]
+        bold_file_entities = bold_file.get_entities()
+        query = {**bold_file_entities, **confound_def["query"]}
+        confound_file = layout.get(**query)
+        if not confound_file:
+            raise FileNotFoundError(
+                f"Could not find confound file for {confound_name} with query {query}"
+            )
+
+        confound_file = confound_file[0]
+        confound_metadata = confound_file.get_metadata()
+        confounds[confound_name] = {}
+        confounds[confound_name]["file"] = confound_file.path
+        confounds[confound_name]["metadata"] = confound_metadata
+
+    return confounds
+
+
+def write_derivative_description(
+    fmri_dir,
+    output_dir,
+    atlases=None,
+    dataset_links={},
+):
     """Write dataset_description.json file for derivatives.
 
     Parameters
@@ -667,6 +757,8 @@ def write_dataset_description(fmri_dir, output_dir, dataset_links=None):
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
         Path to the output xcp-d dataset.
+    atlases : :obj:`list` of :obj:`str`, optional
+        Names of requested XCP-D atlases.
     dataset_links : :obj:`dict`, optional
         Dictionary of dataset links to include in the dataset description.
     """
@@ -679,23 +771,25 @@ def write_dataset_description(fmri_dir, output_dir, dataset_links=None):
     if not os.path.isfile(orig_dset_description):
         raise FileNotFoundError(f"Dataset description DNE: {orig_dset_description}")
 
+    # Base the new dataset description on the preprocessing pipeline's dataset description
     with open(orig_dset_description, "r") as fo:
-        dset_desc = json.load(fo)
+        desc = json.load(fo)
 
     # Check if the dataset type is derivative
-    if "DatasetType" not in dset_desc.keys():
+    if "DatasetType" not in desc.keys():
         LOGGER.warning(f"DatasetType key not in {orig_dset_description}. Assuming 'derivative'.")
-        dset_desc["DatasetType"] = "derivative"
+        desc["DatasetType"] = "derivative"
 
-    if dset_desc.get("DatasetType", "derivative") != "derivative":
+    if desc.get("DatasetType", "derivative") != "derivative":
         raise ValueError(
             f"DatasetType key in {orig_dset_description} is not 'derivative'. "
             "XCP-D only works on derivative datasets."
         )
 
     # Update dataset description
-    dset_desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
-    generated_by = dset_desc.get("GeneratedBy", [])
+    # TODO: Add derivatives' dataset_description.json info as well. Especially the GeneratedBy.
+    desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
+    generated_by = desc.get("GeneratedBy", [])
     generated_by.insert(
         0,
         {
@@ -704,25 +798,34 @@ def write_dataset_description(fmri_dir, output_dir, dataset_links=None):
             "CodeURL": DOWNLOAD_URL,
         },
     )
-    dset_desc["GeneratedBy"] = generated_by
-    dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
+    desc["GeneratedBy"] = generated_by
+    desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
 
-    # Add DatasetLinks
-    if dataset_links:
-        dset_desc["DatasetLinks"] = {k: str(v) for k, v in dataset_links.items()}
+    dataset_links = dataset_links.copy()
 
-    xcpd_dset_description = os.path.join(output_dir, "dataset_description.json")
-    if os.path.isfile(xcpd_dset_description):
-        with open(xcpd_dset_description, "r") as fo:
-            old_dset_desc = json.load(fo)
+    # Replace local templateflow path with URL
+    dataset_links["templateflow"] = "https://github.com/templateflow/templateflow"
 
-        old_version = old_dset_desc["GeneratedBy"][0]["Version"]
+    if atlases:
+        dataset_links["atlases"] = os.path.join(output_dir, "atlases")
+
+    # Don't inherit DatasetLinks from preprocessing derivatives
+    desc["DatasetLinks"] = {k: str(v) for k, v in dataset_links.items()}
+
+    xcpd_dset_description = Path(output_dir / "dataset_description.json")
+    if xcpd_dset_description.is_file():
+        old_desc = json.loads(xcpd_dset_description.read_text())
+        old_version = old_desc["GeneratedBy"][0]["Version"]
         if Version(__version__).public != Version(old_version).public:
             LOGGER.warning(f"Previous output generated by version {old_version} found.")
 
+        for k, v in desc["DatasetLinks"].items():
+            if k in old_desc["DatasetLinks"].keys() and old_desc["DatasetLinks"][k] != str(v):
+                LOGGER.warning(
+                    f"DatasetLink '{k}' does not match ({v} != {old_desc['DatasetLinks'][k]})."
+                )
     else:
-        with open(xcpd_dset_description, "w") as fo:
-            json.dump(dset_desc, fo, indent=4, sort_keys=True)
+        xcpd_dset_description.write_text(json.dumps(desc, indent=4))
 
 
 def write_atlas_dataset_description(atlas_dir):
@@ -738,7 +841,7 @@ def write_atlas_dataset_description(atlas_dir):
 
     from xcp_d.__about__ import DOWNLOAD_URL, __version__
 
-    dset_desc = {
+    desc = {
         "Name": "XCP-D Atlases",
         "DatasetType": "atlas",
         "GeneratedBy": [
@@ -755,15 +858,15 @@ def write_atlas_dataset_description(atlas_dir):
     atlas_dset_description = os.path.join(atlas_dir, "dataset_description.json")
     if os.path.isfile(atlas_dset_description):
         with open(atlas_dset_description, "r") as fo:
-            old_dset_desc = json.load(fo)
+            old_desc = json.load(fo)
 
-        old_version = old_dset_desc["GeneratedBy"][0]["Version"]
+        old_version = old_desc["GeneratedBy"][0]["Version"]
         if Version(__version__).public != Version(old_version).public:
             LOGGER.warning(f"Previous output generated by version {old_version} found.")
 
     else:
         with open(atlas_dset_description, "w") as fo:
-            json.dump(dset_desc, fo, indent=4, sort_keys=True)
+            json.dump(desc, fo, indent=4, sort_keys=True)
 
 
 def get_preproc_pipeline_info(input_type, fmri_dir):
