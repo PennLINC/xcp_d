@@ -1,5 +1,9 @@
 """Functions for working with atlases."""
 
+from nipype import logging
+
+LOGGER = logging.getLogger("nipype.utils")
+
 
 def select_atlases(atlases, subset):
     """Get a list of atlases to be used for parcellation and functional connectivity analyses.
@@ -78,6 +82,7 @@ def get_atlas_nifti(atlas):
     atlas_metadata_file : :obj:`str`
         Path to the atlas metadata file.
     """
+    import json
     from os.path import isfile, join
 
     from xcp_d.data import load as load_data
@@ -112,7 +117,15 @@ def get_atlas_nifti(atlas):
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
 
-    return {"image": atlas_file, "labels": atlas_labels_file, "metadata": atlas_metadata_file}
+    with open(atlas_metadata_file, "r") as fo:
+        atlas_metadata = json.load(fo)
+
+    return {
+        "image": atlas_file,
+        "labels": atlas_labels_file,
+        "metadata": atlas_metadata,
+        "dataset": "XCP-D",
+    }
 
 
 def get_atlas_cifti(atlas):
@@ -139,6 +152,7 @@ def get_atlas_cifti(atlas):
     atlas_metadata_file : :obj:`str`
         The metadata JSON file associated with the atlas.
     """
+    import json
     from os.path import isfile
 
     from xcp_d.data import load as load_data
@@ -181,11 +195,22 @@ def get_atlas_cifti(atlas):
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
 
-    return {"image": atlas_file, "labels": atlas_labels_file, "metadata": atlas_metadata_file}
+    with open(atlas_metadata_file, "r") as fo:
+        atlas_metadata = json.load(fo)
+
+    return {
+        "image": atlas_file,
+        "labels": atlas_labels_file,
+        "metadata": atlas_metadata,
+        "dataset": "XCP-D",
+    }
 
 
 def collect_atlases(datasets, file_format, bids_filters={}):
     """Collect atlases from a list of BIDS-Atlas datasets.
+
+    Selection of labels files and metadata does not leverage the inheritance principle.
+    That probably won't be possible until PyBIDS supports the BIDS-Atlas extension natively.
 
     Parameters
     ----------
@@ -195,14 +220,31 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     -------
     atlases : dict
     """
-    from pathlib import Path
+    import json
+
+    from bids.layout import BIDSLayout
 
     from xcp_d.data import load as load_data
 
     atlas_cfg = load_data("atlas_bids_config.json")
+    bids_filters = bids_filters or {}
 
-    atlas_datasets = [p for p in datasets if isinstance(p, Path)]
+    builtin_atlases = select_atlases(atlases=None, subset="all")
+    atlas_datasets = sorted(list(set(datasets) - set(builtin_atlases)))
     builtin_atlases = sorted(list(set(datasets) - set(atlas_datasets)))
+
+    atlas_filter = bids_filters.get("atlas", {})
+    atlas_filter["extension"] = [".nii.gz", ".nii"] if file_format == "nifti" else ".dlabel.nii"
+    # Hardcoded spaces for now
+    if file_format == "cifti":
+        atlas_filter["space"] = atlas_filter.get("space") or "fsLR"
+        atlas_filter["den"] = atlas_filter.get("den") or "32k"
+    else:
+        atlas_filter["space"] = atlas_filter.get("space") or [
+            "MNI152NLin6Asym",
+            "MNI152NLin2009cAsym",
+            "MNIInfant",
+        ]
 
     collection_func = get_atlas_nifti if file_format == "nifti" else get_atlas_cifti
 
@@ -210,21 +252,44 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     for builtin_atlas in builtin_atlases:
         atlases[builtin_atlas] = collection_func(builtin_atlas)
 
-    for dataset in datasets:
-        if isinstance(dataset, str):
-            from bids.layout import BIDSLayout
-
-            layout = BIDSLayout(dataset, config=[atlas_cfg])
+    for dataset in atlas_datasets:
+        if not isinstance(dataset, BIDSLayout):
+            layout = BIDSLayout(dataset, config=[atlas_cfg], validate=False)
         else:
             layout = dataset
 
         description = layout.get_dataset_description()
         assert description.get("DatasetType") == "atlas"
 
-        for atlas in layout.get_atlases(**bids_filters):
-            atlas_image = layout.get(atlas=atlas, **bids_filters, return_type="file")[0]
+        atlases_in_dataset = layout.get_atlases(**atlas_filter)
+        if not atlases_in_dataset:
+            LOGGER.warning(f"No atlases found in dataset {layout.root} with query {atlas_filter}")
+            continue
+
+        for atlas in atlases_in_dataset:
+            atlas_images = layout.get(
+                atlas=atlas,
+                **atlas_filter,
+                return_type="file",
+            )
+            if not atlas_images:
+                LOGGER.warning(f"No atlas images found for {atlas} with query {atlas_filter}")
+                continue
+            elif len(atlas_images) > 1:
+                bulleted_list = "\n".join([f"  - {img}" for img in atlas_images])
+                LOGGER.warning(
+                    f"Multiple atlas images found for {atlas} with query {atlas_filter}:\n"
+                    f"{bulleted_list}\nUsing {atlas_images[0]}."
+                )
+
+            atlas_image = atlas_images[0]
             atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
-            atlas_metadata = layout.get_nearest(atlas_image, extension=".json", strict=False)
+            atlas_metadata_file = layout.get_nearest(atlas_image, extension=".json", strict=True)
+            atlas_metadata = None
+            if atlas_metadata_file:
+                with open(atlas_metadata_file, "r") as fo:
+                    atlas_metadata = json.load(fo)
+
             atlases[atlas] = {
                 "dataset": description.get("Name", layout.root),
                 "image": atlas_image,

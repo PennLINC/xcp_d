@@ -1,13 +1,15 @@
 """Workflows for parcellating anatomical data."""
 
-from nipype import Function, logging
+from pathlib import Path
+
+from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.utils.atlas import get_atlas_cifti, select_atlases
+from xcp_d.utils.atlas import select_atlases
 from xcp_d.utils.doc import fill_doc
 from xcp_d.workflows.parcellation import init_parcellate_cifti_wf
 
@@ -50,6 +52,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
     myelin_smoothed
     """
     from xcp_d.interfaces.workbench import CiftiCreateDenseFromTemplate
+    from xcp_d.utils.atlas import collect_atlases
 
     workflow = Workflow(name=name)
 
@@ -73,12 +76,43 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
                 "cortical_thickness_corr",
                 "myelin",
                 "myelin_smoothed",
+                # atlases
+                "atlas_names",
+                "atlas_datasets",
+                "atlas_files",
+                "atlas_labels_files",
+                "atlas_metadata_files",
             ],
         ),
         name="inputnode",
     )
 
-    selected_atlases = select_atlases(atlases=atlases, subset="cortical")
+    bidsatlas_datasets = [p for p in atlases if isinstance(p, Path)]
+    builtin_atlases = sorted(list(set(atlases) - set(bidsatlas_datasets)))
+    builtin_atlases = select_atlases(atlases=builtin_atlases, subset="cortical")
+    selected_atlases = builtin_atlases + bidsatlas_datasets
+    selected_atlases = collect_atlases(
+        datasets=selected_atlases,
+        file_format=config.workflow.file_format,
+        bids_filters=config.execution.bids_filters,
+    )
+
+    # Reorganize the atlas file information
+    atlas_names, atlas_files, atlas_labels_files, atlas_metadata_files = [], [], [], []
+    atlas_datasets = []
+    for atlas, atlas_dict in selected_atlases.items():
+        config.loggers.workflow.info(f"Loading atlas: {atlas}")
+        atlas_names.append(atlas)
+        atlas_datasets.append(atlas_dict["dataset"])
+        atlas_files.append(atlas_dict["image"])
+        atlas_labels_files.append(atlas_dict["labels"])
+        atlas_metadata_files.append(atlas_dict["metadata"])
+
+    inputnode.inputs.atlas_names = atlas_names
+    inputnode.inputs.atlas_datasets = atlas_datasets
+    inputnode.inputs.atlas_files = atlas_files
+    inputnode.inputs.atlas_labels_files = atlas_labels_files
+    inputnode.inputs.atlas_metadata_files = atlas_metadata_files
 
     if not selected_atlases:
         LOGGER.warning(
@@ -88,18 +122,6 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
         workflow.add_nodes([inputnode])
 
         return workflow
-
-    # Get CIFTI atlases via load_data
-    atlas_file_grabber = pe.MapNode(
-        Function(
-            input_names=["atlas"],
-            output_names=["atlas_file", "atlas_labels_file", "atlas_metadata_file"],
-            function=get_atlas_cifti,
-        ),
-        name="atlas_file_grabber",
-        iterfield=["atlas"],
-    )
-    atlas_file_grabber.inputs.atlas = selected_atlases
 
     for file_to_parcellate in files_to_parcellate:
         resample_atlas_to_surface = pe.MapNode(
@@ -112,8 +134,10 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
-            (inputnode, resample_atlas_to_surface, [(file_to_parcellate, "template_cifti")]),
-            (atlas_file_grabber, resample_atlas_to_surface, [("atlas_file", "label")]),
+            (inputnode, resample_atlas_to_surface, [
+                ("atlas_files", "label"),
+                (file_to_parcellate, "template_cifti"),
+            ]),
         ])  # fmt:skip
 
         parcellate_surface_wf = init_parcellate_cifti_wf(
@@ -122,9 +146,9 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             name=f"parcellate_{file_to_parcellate}_wf",
         )
         workflow.connect([
-            (inputnode, parcellate_surface_wf, [(file_to_parcellate, "inputnode.in_file")]),
-            (atlas_file_grabber, parcellate_surface_wf, [
-                ("atlas_labels_file", "inputnode.atlas_labels_files"),
+            (inputnode, parcellate_surface_wf, [
+                (file_to_parcellate, "inputnode.in_file"),
+                ("atlas_labels_files", "inputnode.atlas_labels_files"),
             ]),
             (resample_atlas_to_surface, parcellate_surface_wf, [
                 ("out_file", "inputnode.atlas_files"),
@@ -145,10 +169,11 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
             mem_gb=1,
             iterfield=["segmentation", "in_file"],
         )
-        ds_parcellated_surface.inputs.segmentation = selected_atlases
-
         workflow.connect([
-            (inputnode, ds_parcellated_surface, [(file_to_parcellate, "source_file")]),
+            (inputnode, ds_parcellated_surface, [
+                (file_to_parcellate, "source_file"),
+                ("atlas_names", "segmentation"),
+            ]),
             (parcellate_surface_wf, ds_parcellated_surface, [
                 ("outputnode.parcellated_tsv", "in_file"),
             ]),

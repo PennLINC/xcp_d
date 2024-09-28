@@ -1,12 +1,12 @@
 atlases
 atlases/atlas-4S156Parcels
-atlases/atlas-4S156Parcels/atlas-4S156Parcels_dseg.json
 atlases/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv
 atlases/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii
+atlases/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.json
 atlases/atlas-MIDB
-atlases/atlas-MIDB/atlas-MIDB_dseg.json
 atlases/atlas-MIDB/atlas-MIDB_dseg.tsv
 atlases/atlas-MIDB/atlas-MIDB_space-fsLR_den-91k_dseg.dlabel.nii
+atlases/atlas-MIDB/atlas-MIDB_space-fsLR_den-91k_dseg.json
 atlases/dataset_description.json
 dataset_description.json
 logs

@@ -421,7 +421,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
 
     if test_main:
         # This runs, but for some reason doesn't count toward coverage.
-        argv = ["xcp-d"] + parameters
+        argv = ["xcp_d"] + parameters
         with patch.object(sys, "argv", argv):
             with pytest.raises(SystemExit) as e:
                 run.main()

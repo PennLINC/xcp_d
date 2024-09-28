@@ -111,13 +111,17 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
     # Load atlases
     atlas_names = ["Gordon", "Glasser"]
-    atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
-    atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
+    atlas_files = [get_atlas_nifti(atlas_name)["image"] for atlas_name in atlas_names]
+    atlas_labels_files = [get_atlas_nifti(atlas_name)["labels"] for atlas_name in atlas_names]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
     warped_atlases = []
     # Get transform(s) from MNI152NLin6Asym to BOLD file's space
-    transforms_from_MNI152NLin6Asym = get_std2bold_xfms(bold_file)
+    transforms_from_MNI152NLin6Asym = get_std2bold_xfms(
+        bold_file,
+        source_file=None,
+        source_space="MNI152NLin6Asym",
+    )
     for atlas_file in atlas_files:
         # Using the generated transforms, apply them to get everything in the correct MNI form
         warp_atlases_to_bold_space = ApplyTransforms(
@@ -262,8 +266,8 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
     # Load atlases
     atlas_names = ["4S1056Parcels", "4S156Parcels", "4S456Parcels", "Gordon", "Glasser"]
-    atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
-    atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
+    atlas_files = [get_atlas_cifti(atlas_name)["image"] for atlas_name in atlas_names]
+    atlas_labels_files = [get_atlas_cifti(atlas_name)["labels"] for atlas_name in atlas_names]
 
     # Create the node and a tmpdir to write its results out to
     with mock_config():

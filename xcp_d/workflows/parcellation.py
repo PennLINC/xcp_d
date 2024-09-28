@@ -10,7 +10,6 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.nilearn import IndexImage
-from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
 
@@ -53,12 +52,23 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     workflow = Workflow(name=name)
     output_dir = config.execution.output_dir
-    file_format = config.workflow.file_format
 
     atlases = collect_atlases(
         datasets=config.execution.atlases,
+        file_format=config.workflow.file_format,
         bids_filters=config.execution.bids_filters,
     )
+
+    # Reorganize the atlas file information
+    atlas_names, atlas_files, atlas_labels_files, atlas_metadata = [], [], [], []
+    atlas_datasets = []
+    for atlas, atlas_dict in atlases.items():
+        config.loggers.workflow.info(f"Loading atlas: {atlas}")
+        atlas_names.append(atlas)
+        atlas_datasets.append(atlas_dict["dataset"])
+        atlas_files.append(atlas_dict["image"])
+        atlas_labels_files.append(atlas_dict["labels"])
+        atlas_metadata.append(atlas_dict["metadata"])
 
     # Write a description
     workflow.__desc__ = """
@@ -71,10 +81,21 @@ Atlases were warped to MNI space.
             fields=[
                 "name_source",
                 "bold_file",
+                "atlas_names",
+                "atlas_datasets",
+                "atlas_files",
+                "atlas_labels_files",
+                "atlas_metadata",
             ],
         ),
         name="inputnode",
     )
+    inputnode.inputs.atlas_names = atlas_names
+    inputnode.inputs.atlas_datasets = atlas_datasets
+    inputnode.inputs.atlas_files = atlas_files
+    inputnode.inputs.atlas_labels_files = atlas_labels_files
+    inputnode.inputs.atlas_metadata = atlas_metadata
+
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -85,46 +106,29 @@ Atlases were warped to MNI space.
         name="outputnode",
     )
 
-    # Reorganize the atlas file information
-    atlas_names, atlas_files, atlas_labels_files, atlas_metadata_files = [], [], [], []
-    atlas_datasets = []
-    for atlas in atlases:
-        atlas_names.append(atlas["name"])
-        atlas_files.append(atlas["file"])
-        atlas_labels_files.append(atlas["labels"])
-        atlas_metadata_files.append(atlas["metadata"])
-        atlas_datasets.append(atlas["dataset"])
-
     atlas_buffer = pe.Node(
         niu.IdentityInterface(
-            fields=[
-                "atlas_name",
-                "atlas_dataset",
-                "atlas_file",
-                "atlas_labels_file",
-                "atlas_metadata_file",
-            ],
+            fields=["atlas_file"],
         ),
         name="atlas_buffer",
     )
-    atlas_buffer.inputs.atlas_name = atlas_names
-    atlas_buffer.inputs.atlas_dataset = atlas_datasets
-    atlas_buffer.inputs.atlas_file = atlas_files
-    atlas_buffer.inputs.atlas_labels_file = atlas_labels_files
-    atlas_buffer.inputs.atlas_metadata_file = atlas_metadata_files
 
-    if file_format == "nifti":
-        get_transforms_to_bold_space = pe.Node(
+    if config.workflow.file_format == "nifti":
+        get_xfms_to_bold_space = pe.MapNode(
             Function(
-                input_names=["bold_file"],
-                output_names=["transformfile"],
+                input_names=["bold_file", "source_file", "source_space"],
+                output_names=["transforms"],
                 function=get_std2bold_xfms,
             ),
-            name="get_transforms_to_bold_space",
+            name="get_xfms_to_bold_space",
+            iterfield=["source_file"],
         )
 
         workflow.connect([
-            (inputnode, get_transforms_to_bold_space, [("name_source", "bold_file")]),
+            (inputnode, get_xfms_to_bold_space, [
+                ("name_source", "bold_file"),
+                ("atlas_files", "source_file"),
+            ]),
         ])  # fmt:skip
 
         # ApplyTransforms needs a 3D image for the reference image.
@@ -132,7 +136,6 @@ Atlases were warped to MNI space.
             IndexImage(index=0),
             name="grab_first_volume",
         )
-
         workflow.connect([(inputnode, grab_first_volume, [("bold_file", "in_file")])])
 
         # Using the generated transforms, apply them to get everything in the correct MNI form
@@ -144,33 +147,33 @@ Atlases were warped to MNI space.
                 num_threads=config.nipype.omp_nthreads,
             ),
             name="warp_atlases_to_bold_space",
-            iterfield=["input_image"],
+            iterfield=["input_image", "transforms"],
             mem_gb=2,
             n_procs=config.nipype.omp_nthreads,
         )
 
         workflow.connect([
+            (inputnode, warp_atlases_to_bold_space, [("atlas_files", "input_image")]),
             (grab_first_volume, warp_atlases_to_bold_space, [("out_file", "reference_image")]),
-            (atlas_file_grabber, warp_atlases_to_bold_space, [("atlas_file", "input_image")]),
-            (get_transforms_to_bold_space, warp_atlases_to_bold_space, [
-                ("transformfile", "transforms"),
-            ]),
+            (get_xfms_to_bold_space, warp_atlases_to_bold_space, [("transforms", "transforms")]),
             (warp_atlases_to_bold_space, atlas_buffer, [("output_image", "atlas_file")]),
         ])  # fmt:skip
 
     else:
-        workflow.connect([(atlas_file_grabber, atlas_buffer, [("atlas_file", "atlas_file")])])
+        workflow.connect([(inputnode, atlas_buffer, [("atlas_files", "atlas_file")])])
 
     copy_atlas = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
         name="copy_atlas",
-        iterfield=["in_file", "atlas"],
+        iterfield=["in_file", "atlas", "meta_dict"],
         run_without_submitting=True,
     )
-    copy_atlas.inputs.atlas = atlases
-
     workflow.connect([
-        (inputnode, copy_atlas, [("name_source", "name_source")]),
+        (inputnode, copy_atlas, [
+            ("name_source", "name_source"),
+            ("atlas_names", "atlas"),
+            ("atlas_metadata", "meta_dict"),
+        ]),
         (atlas_buffer, copy_atlas, [("atlas_file", "in_file")]),
         (copy_atlas, outputnode, [("out_file", "atlas_files")]),
     ])  # fmt:skip
@@ -181,25 +184,13 @@ Atlases were warped to MNI space.
         iterfield=["in_file", "atlas"],
         run_without_submitting=True,
     )
-    copy_atlas_labels_file.inputs.atlas = atlases
-
     workflow.connect([
-        (inputnode, copy_atlas_labels_file, [("name_source", "name_source")]),
-        (atlas_file_grabber, copy_atlas_labels_file, [("atlas_labels_file", "in_file")]),
+        (inputnode, copy_atlas_labels_file, [
+            ("name_source", "name_source"),
+            ("atlas_names", "atlas"),
+            ("atlas_labels_files", "in_file"),
+        ]),
         (copy_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
-    ])  # fmt:skip
-
-    copy_atlas_metadata = pe.MapNode(
-        CopyAtlas(output_dir=output_dir),
-        name="copy_atlas_metadata",
-        iterfield=["in_file", "atlas"],
-        run_without_submitting=True,
-    )
-    copy_atlas_metadata.inputs.atlas = atlases
-
-    workflow.connect([
-        (inputnode, copy_atlas_metadata, [("name_source", "name_source")]),
-        (atlas_file_grabber, copy_atlas_metadata, [("atlas_metadata_file", "in_file")]),
     ])  # fmt:skip
 
     return workflow
