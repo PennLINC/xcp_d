@@ -10,7 +10,6 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.nilearn import IndexImage
-from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
 
@@ -53,12 +52,13 @@ def init_load_atlases_wf(name="load_atlases_wf"):
 
     workflow = Workflow(name=name)
     output_dir = config.execution.output_dir
-    file_format = config.workflow.file_format
 
     atlases = collect_atlases(
         datasets=config.execution.atlases,
+        file_format=config.workflow.file_format,
         bids_filters=config.execution.bids_filters,
     )
+    raise Exception(atlases)
 
     # Write a description
     workflow.__desc__ = """
@@ -113,7 +113,7 @@ Atlases were warped to MNI space.
     atlas_buffer.inputs.atlas_labels_file = atlas_labels_files
     atlas_buffer.inputs.atlas_metadata_file = atlas_metadata_files
 
-    if file_format == "nifti":
+    if config.workflow.file_format == "nifti":
         get_transforms_to_bold_space = pe.Node(
             Function(
                 input_names=["bold_file"],
