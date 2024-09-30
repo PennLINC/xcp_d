@@ -87,12 +87,13 @@ Atlases were warped to MNI space.
     # Reorganize the atlas file information
     atlas_names, atlas_files, atlas_labels_files, atlas_metadata_files = [], [], [], []
     atlas_datasets = []
-    for atlas in atlases:
-        atlas_names.append(atlas["name"])
-        atlas_files.append(atlas["file"])
-        atlas_labels_files.append(atlas["labels"])
-        atlas_metadata_files.append(atlas["metadata"])
-        atlas_datasets.append(atlas["dataset"])
+    for atlas, atlas_dict in atlases.items():
+        config.loggers.workflow.info(f"Loading atlas: {atlas}")
+        atlas_names.append(atlas)
+        atlas_files.append(atlas_dict["file"])
+        atlas_labels_files.append(atlas_dict["labels"])
+        atlas_metadata_files.append(atlas_dict["metadata"])
+        atlas_datasets.append(atlas_dict["dataset"])
 
     atlas_buffer = pe.Node(
         niu.IdentityInterface(
