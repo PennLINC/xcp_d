@@ -100,7 +100,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
     # Reorganize the atlas file information
     atlas_names, atlas_files, atlas_labels_files, atlas_metadata_files = [], [], [], []
     atlas_datasets = []
-    for atlas, atlas_dict in atlases.items():
+    for atlas, atlas_dict in selected_atlases.items():
         config.loggers.workflow.info(f"Loading atlas: {atlas}")
         atlas_names.append(atlas)
         atlas_datasets.append(atlas_dict["dataset"])

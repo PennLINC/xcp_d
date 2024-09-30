@@ -210,6 +210,7 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     from xcp_d.data import load as load_data
 
     atlas_cfg = load_data("atlas_bids_config.json")
+    bids_filters = bids_filters or {}
 
     atlas_datasets = [p for p in datasets if isinstance(p, Path)]
     builtin_atlases = sorted(list(set(datasets) - set(atlas_datasets)))
