@@ -210,7 +210,7 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     for builtin_atlas in builtin_atlases:
         atlases[builtin_atlas] = collection_func(builtin_atlas)
 
-    for dataset in datasets:
+    for dataset in atlas_datasets:
         if isinstance(dataset, str):
             from bids.layout import BIDSLayout
 
