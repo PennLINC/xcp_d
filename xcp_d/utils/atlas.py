@@ -112,7 +112,12 @@ def get_atlas_nifti(atlas):
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
 
-    return {"image": atlas_file, "labels": atlas_labels_file, "metadata": atlas_metadata_file}
+    return {
+        "image": atlas_file,
+        "labels": atlas_labels_file,
+        "metadata": atlas_metadata_file,
+        "dataset": "XCP-D",
+    }
 
 
 def get_atlas_cifti(atlas):
@@ -181,7 +186,12 @@ def get_atlas_cifti(atlas):
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
 
-    return {"image": atlas_file, "labels": atlas_labels_file, "metadata": atlas_metadata_file}
+    return {
+        "image": atlas_file,
+        "labels": atlas_labels_file,
+        "metadata": atlas_metadata_file,
+        "dataset": "XCP-D",
+    }
 
 
 def collect_atlases(datasets, file_format, bids_filters={}):

@@ -131,9 +131,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
 
 
 def get_std2bold_xfms(bold_file, source_file, source_space=None):
-    """Obtain transforms to warp atlases from MNI152NLin6Asym to the same template as the BOLD.
-
-    Atlases are all in MNI152NLin6Asym space.
+    """Obtain transforms to warp atlases from a source space to the same template as the BOLD.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.

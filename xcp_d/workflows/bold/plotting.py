@@ -213,16 +213,17 @@ def init_qc_report_wf(
         ])  # fmt:skip
 
         # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
-        # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
-        # Given that XCP-D doesn't process native-space data, this transform will never be used.
+        # Get the set of transforms from MNI152NLin2009cAsym (the dseg) to the BOLD space.
         get_mni_to_bold_xfms = pe.Node(
             Function(
-                input_names=["bold_file"],
-                output_names=["transform_list"],
+                input_names=["bold_file", "source_file", "source_space"],
+                output_names=["transforms"],
                 function=get_std2bold_xfms,
             ),
             name="get_std2native_transform",
         )
+        get_mni_to_bold_xfms.inputs.source_file = None
+        get_mni_to_bold_xfms.inputs.source_space = "MNI152NLin2009cAsym"
         workflow.connect([(inputnode, get_mni_to_bold_xfms, [("name_source", "bold_file")])])
 
         # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
@@ -235,29 +236,6 @@ def init_qc_report_wf(
                 extension=[".nii", ".nii.gz"],
             )
         )
-
-        # Get MNI152NLin2009cAsym --> MNI152NLin6Asym xform.
-        MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
-            get_template(
-                template="MNI152NLin6Asym",
-                mode="image",
-                suffix="xfm",
-                extension=".h5",
-                **{"from": "MNI152NLin2009cAsym"},
-            ),
-        )
-
-        # Add the MNI152NLin2009cAsym --> MNI152NLin6Asym xform to the end of the
-        # BOLD --> MNI152NLin6Asym xform list, because xforms are applied in reverse order.
-        add_xfm_to_nlin6asym = pe.Node(
-            niu.Merge(2),
-            name="add_xfm_to_nlin6asym",
-        )
-        add_xfm_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
-
-        workflow.connect([
-            (get_mni_to_bold_xfms, add_xfm_to_nlin6asym, [("transform_list", "in1")]),
-        ])  # fmt:skip
 
         # Transform MNI152NLin2009cAsym dseg file to the same space as the BOLD data.
         warp_dseg_to_bold = pe.Node(
@@ -273,7 +251,7 @@ def init_qc_report_wf(
         )
         workflow.connect([
             (inputnode, warp_dseg_to_bold, [("boldref", "reference_image")]),
-            (add_xfm_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
+            (get_mni_to_bold_xfms, warp_dseg_to_bold, [("transforms", "transforms")]),
         ])  # fmt:skip
 
     if config.workflow.linc_qc:
