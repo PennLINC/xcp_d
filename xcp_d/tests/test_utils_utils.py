@@ -458,7 +458,15 @@ def test_get_std2bold_xfms(ds001419_data):
     """
     bold_file_nlin6asym = ds001419_data["nifti_file"]
 
-    # MNI152NLin6Asym --> MNI152NLin6Asym with source file
+    # MNI152NLin6Asym --> MNI152NLin6Asym with source file containing tpl entity
+    xforms_to_mni = utils.get_std2bold_xfms(
+        bold_file_nlin6asym,
+        source_file="tpl-MNI152NLin6Asym_T1w.nii.gz",
+        source_space=None,
+    )
+    assert len(xforms_to_mni) == 1
+
+    # MNI152NLin6Asym --> MNI152NLin6Asym with source file containing space entity
     xforms_to_mni = utils.get_std2bold_xfms(
         bold_file_nlin6asym,
         source_file="space-MNI152NLin6Asym_T1w.nii.gz",
@@ -491,6 +499,10 @@ def test_get_std2bold_xfms(ds001419_data):
         assert len(xforms_to_mni) == n_xforms
 
     # Outside of the supported spaces, we expect an error
+    # No space or tpl entity in source file
+    with pytest.raises(ValueError, match="Source space could not be inferred from"):
+        utils.get_std2bold_xfms(bold_file_nlin6asym, source_file="T1w.nii.gz", source_space=None)
+
     # MNI152NLin6Asym --> tofail
     bold_file_tofail = bold_file_nlin6asym.replace("space-MNI152NLin6Asym_", "space-tofail_")
     with pytest.raises(ValueError, match="BOLD space 'tofail' not supported"):
