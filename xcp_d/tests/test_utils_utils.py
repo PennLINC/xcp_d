@@ -500,7 +500,7 @@ def test_get_std2bold_xfms(ds001419_data):
 
     # Outside of the supported spaces, we expect an error
     # No space or tpl entity in source file
-    with pytest.raises(ValueError, match="Source space could not be inferred from"):
+    with pytest.raises(ValueError, match="Unknown space"):
         utils.get_std2bold_xfms(bold_file_nlin6asym, source_file="T1w.nii.gz", source_space=None)
 
     # MNI152NLin6Asym --> tofail

@@ -214,6 +214,18 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     atlas_datasets = [p for p in datasets if isinstance(p, Path)]
     builtin_atlases = sorted(list(set(datasets) - set(atlas_datasets)))
 
+    atlas_filter = bids_filters.get("atlas", {})
+    atlas_filter["extension"] = [".nii.gz", ".nii"] if file_format == "nifti" else ".dlabel.nii"
+    # Hardcoded spaces for now
+    if file_format == "cifti":
+        atlas_filter["space"] = atlas_filter.get("space") or "fsLR"
+    else:
+        atlas_filter["space"] = atlas_filter.get("space") or [
+            "MNI152NLin6Asym",
+            "MNI152NLin2009cAsym",
+            "MNIInfant",
+        ]
+
     collection_func = get_atlas_nifti if file_format == "nifti" else get_atlas_cifti
 
     atlases = {}
@@ -231,8 +243,12 @@ def collect_atlases(datasets, file_format, bids_filters={}):
         description = layout.get_dataset_description()
         assert description.get("DatasetType") == "atlas"
 
-        for atlas in layout.get_atlases(**bids_filters):
-            atlas_image = layout.get(atlas=atlas, **bids_filters, return_type="file")[0]
+        for atlas in layout.get_atlases(**atlas_filter):
+            atlas_image = layout.get(
+                atlas=atlas,
+                **atlas_filter,
+                return_type="file",
+            )[0]
             atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
             atlas_metadata = layout.get_nearest(atlas_image, extension=".json", strict=False)
             atlases[atlas] = {

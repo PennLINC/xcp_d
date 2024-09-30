@@ -176,11 +176,9 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
         # First try tpl because that won't raise an error
         source_space = get_entity(source_file, "tpl")
         if source_space is None:
-            # If tpl isn't available, try space
+            # If tpl isn't available, try space.
+            # get_entity will raise an error if space isn't there.
             source_space = get_entity(source_file, "space")
-
-        if not source_space:
-            raise ValueError(f"Source space could not be inferred from {source_file}.")
 
     if source_space not in ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant"):
         raise ValueError(f"Source space '{source_space}' not supported.")
