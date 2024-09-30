@@ -156,11 +156,11 @@ Atlases were warped to MNI space.
             (inputnode, warp_atlases_to_bold_space, [("atlas_files", "input_image")]),
             (grab_first_volume, warp_atlases_to_bold_space, [("out_file", "reference_image")]),
             (get_xfms_to_bold_space, warp_atlases_to_bold_space, [("transforms", "transforms")]),
-            (warp_atlases_to_bold_space, atlas_buffer, [("output_image", "atlas_files")]),
+            (warp_atlases_to_bold_space, atlas_buffer, [("output_image", "atlas_file")]),
         ])  # fmt:skip
 
     else:
-        workflow.connect([(inputnode, atlas_buffer, [("atlas_files", "atlas_files")])])
+        workflow.connect([(inputnode, atlas_buffer, [("atlas_files", "atlas_file")])])
 
     copy_atlas = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
