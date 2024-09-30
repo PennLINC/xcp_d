@@ -58,7 +58,6 @@ def init_load_atlases_wf(name="load_atlases_wf"):
         file_format=config.workflow.file_format,
         bids_filters=config.execution.bids_filters,
     )
-    raise Exception(atlases)
 
     # Write a description
     workflow.__desc__ = """
