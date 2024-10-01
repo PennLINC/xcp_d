@@ -70,7 +70,7 @@ def test_copy_atlas(tmp_path_factory):
     assert os.path.basename(result.outputs.out_file) == "atlas-Y_dseg.tsv"
 
     # Ensure that out_file isn't overwritten if it already exists
-    fake_in_file = os.path.join(tmpdir, "fake.json")
+    fake_in_file = os.path.join(tmpdir, "fake.tsv")
     with open(fake_in_file, "w") as fo:
         fo.write("fake")
 
@@ -79,7 +79,7 @@ def test_copy_atlas(tmp_path_factory):
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
-    assert os.path.basename(result.outputs.out_file) == "atlas-Y_dseg.json"
+    assert os.path.basename(result.outputs.out_file) == "atlas-Y_dseg.tsv"
     # The file should not be overwritten, so the contents shouldn't be "fake"
     with open(result.outputs.out_file, "r") as fo:
         assert fo.read() != "fake"
