@@ -239,10 +239,14 @@ class _Config:
                     setattr(cls, k, Path(v).absolute())
 
             elif k == "atlases":
-                if v in builtin_atlases:
-                    setattr(cls, k, v)
-                else:
-                    setattr(cls, k, Path(v).absolute())
+                new_v = []
+                for v1 in v:
+                    if v1 in builtin_atlases:
+                        new_v.append(v1)
+                    else:
+                        new_v.append(Path(v1).absolute())
+
+                setattr(cls, k, new_v)
 
             elif hasattr(cls, k):
                 setattr(cls, k, v)
@@ -274,8 +278,7 @@ class _Config:
                 else:
                     v = str(v)
             elif k == "atlases":
-                if v not in builtin_atlases:
-                    v = str(v)
+                v = [str(val) for val in v]
 
             if isinstance(v, SpatialReferences):
                 v = " ".join(str(s) for s in v.references) or None
