@@ -10,7 +10,6 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.utils.atlas import select_atlases
-from xcp_d.utils.boilerplate import describe_atlases
 from xcp_d.utils.doc import fill_doc
 from xcp_d.workflows.parcellation import init_parcellate_cifti_wf
 
@@ -72,11 +71,9 @@ def init_functional_connectivity_nifti_wf(mem_gb, name="connectivity_wf"):
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
-    atlas_str = describe_atlases(config.execution.atlases)
-
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from the residual BOLD signal
-with *Nilearn's* *NiftiLabelsMasker* for the following atlases: {atlas_str}.
+with *Nilearn's* *NiftiLabelsMasker* for the atlases.
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries.
 In cases of partial coverage, uncovered voxels (values of all zeros or NaNs) were either
@@ -281,11 +278,9 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name="connectivit
     bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
-    atlas_str = describe_atlases(config.execution.atlases)
-
     workflow.__desc__ = f"""
 Processed functional timeseries were extracted from residual BOLD using
-Connectome Workbench [@marcus2011informatics] for the following atlases: {atlas_str}.
+Connectome Workbench [@marcus2011informatics] for the atlases.
 Corresponding pair-wise functional connectivity between all regions was computed for each atlas,
 which was operationalized as the Pearson's correlation of each parcel's unsmoothed timeseries with
 the Connectome Workbench.
