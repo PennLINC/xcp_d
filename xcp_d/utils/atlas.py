@@ -82,6 +82,7 @@ def get_atlas_nifti(atlas):
     atlas_metadata_file : :obj:`str`
         Path to the atlas metadata file.
     """
+    import json
     from os.path import isfile, join
 
     from xcp_d.data import load as load_data
@@ -116,10 +117,13 @@ def get_atlas_nifti(atlas):
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
 
+    with open(atlas_metadata_file, "r") as fo:
+        atlas_metadata = json.load(fo)
+
     return {
         "image": atlas_file,
         "labels": atlas_labels_file,
-        "metadata": atlas_metadata_file,
+        "metadata": atlas_metadata,
         "dataset": "XCP-D",
     }
 
@@ -201,6 +205,9 @@ def get_atlas_cifti(atlas):
 def collect_atlases(datasets, file_format, bids_filters={}):
     """Collect atlases from a list of BIDS-Atlas datasets.
 
+    Selection of labels files and metadata does not leverage the inheritance principle.
+    That probably won't be possible until PyBIDS supports the BIDS-Atlas extension natively.
+
     Parameters
     ----------
     datasets : list of str or BIDSLayout
@@ -209,6 +216,8 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     -------
     atlases : dict
     """
+    import json
+
     from bids.layout import BIDSLayout
 
     from xcp_d.data import load as load_data
@@ -271,7 +280,12 @@ def collect_atlases(datasets, file_format, bids_filters={}):
 
             atlas_image = atlas_images[0]
             atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
-            atlas_metadata = layout.get_nearest(atlas_image, extension=".json", strict=True)
+            atlas_metadata_file = layout.get_nearest(atlas_image, extension=".json", strict=True)
+            atlas_metadata = None
+            if atlas_metadata_file:
+                with open(atlas_metadata_file, "r") as fo:
+                    atlas_metadata = json.load(fo)
+
             atlases[atlas] = {
                 "dataset": description.get("Name", layout.root),
                 "image": atlas_image,

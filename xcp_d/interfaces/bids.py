@@ -178,6 +178,12 @@ class _CopyAtlasInputSpec(BaseInterfaceInputSpec):
         desc="The atlas file to copy.",
         mandatory=True,
     )
+    meta_dict = traits.Either(
+        traits.Dict(),
+        None,
+        desc="The atlas metadata dictionary.",
+        mandatory=False,
+    )
     output_dir = Directory(
         exists=True,
         desc="The output directory.",
@@ -234,14 +240,13 @@ class CopyAtlas(SimpleInterface):
     def _run_interface(self, runtime):
         output_dir = self.inputs.output_dir
         in_file = self.inputs.in_file
+        meta_dict = self.inputs.meta_dict
         name_source = self.inputs.name_source
         atlas = self.inputs.atlas
 
         atlas_out_dir = os.path.join(output_dir, f"atlases/atlas-{atlas}")
 
-        if in_file.endswith(".json"):
-            out_basename = f"atlas-{atlas}_dseg.json"
-        elif in_file.endswith(".tsv"):
+        if in_file.endswith(".tsv"):
             out_basename = f"atlas-{atlas}_dseg.tsv"
         else:
             extension = ".nii.gz" if name_source.endswith(".nii.gz") else ".dlabel.nii"
@@ -254,12 +259,12 @@ class CopyAtlas(SimpleInterface):
             res_str = f"_res-{res}" if res else ""
             den_str = f"_den-{den}" if den else ""
             if extension == ".dlabel.nii":
-                out_basename = f"atlas-{atlas}_space-{space}{den_str}{cohort_str}_dseg{extension}"
+                out_basename = f"atlas-{atlas}_space-{space}{den_str}{cohort_str}_dseg"
             elif extension == ".nii.gz":
-                out_basename = f"atlas-{atlas}_space-{space}{res_str}{cohort_str}_dseg{extension}"
+                out_basename = f"atlas-{atlas}_space-{space}{res_str}{cohort_str}_dseg"
 
         os.makedirs(atlas_out_dir, exist_ok=True)
-        out_file = os.path.join(atlas_out_dir, out_basename)
+        out_file = os.path.join(atlas_out_dir, f"{out_basename}{extension}")
 
         if out_file.endswith(".nii.gz") and os.path.isfile(out_file):
             # Check that native-resolution atlas doesn't have a different resolution from the last
@@ -276,6 +281,12 @@ class CopyAtlas(SimpleInterface):
         # processes.
         if not os.path.isfile(out_file):
             shutil.copyfile(in_file, out_file)
+
+        # Only write out a sidecar if metadata are provided
+        if meta_dict:
+            meta_file = os.path.join(atlas_out_dir, f"{out_basename}.json")
+            with open(meta_file, "w") as f:
+                f.write(meta_dict, sort_keys=True, indent=4)
 
         self._results["out_file"] = out_file
 
