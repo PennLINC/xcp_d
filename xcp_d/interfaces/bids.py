@@ -2,7 +2,7 @@
 
 import os
 import shutil
-from json import loads
+from json import dump, loads
 
 import nibabel as nb
 import numpy as np
@@ -286,8 +286,8 @@ class CopyAtlas(SimpleInterface):
         # Only write out a sidecar if metadata are provided
         if meta_dict:
             meta_file = os.path.join(atlas_out_dir, f"{out_basename}.json")
-            with open(meta_file, "w") as f:
-                f.write(meta_dict, sort_keys=True, indent=4)
+            with open(meta_file, "w") as fo:
+                dump(meta_dict, fo, sort_keys=True, indent=4)
 
         self._results["out_file"] = out_file
 
