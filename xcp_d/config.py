@@ -117,6 +117,9 @@ finally:
 
     from xcp_d import __version__
     from xcp_d.data import load as load_data
+    from xcp_d.utils.atlas import select_atlases
+
+    builtin_atlases = select_atlases(atlases=None, subset="all")
 
 if not hasattr(sys, "_is_pytest_session"):
     sys._is_pytest_session = False  # Trick to avoid sklearn's FutureWarnings
@@ -226,6 +229,7 @@ class _Config:
         for k, v in settings.items():
             if k in ignore or v is None:
                 continue
+
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     setattr(cls, k, [Path(val).absolute() for val in v])
@@ -233,6 +237,13 @@ class _Config:
                     setattr(cls, k, {key: Path(val).absolute() for key, val in v.items()})
                 else:
                     setattr(cls, k, Path(v).absolute())
+
+            elif k == "atlases":
+                if v in builtin_atlases:
+                    setattr(cls, k, v)
+                else:
+                    setattr(cls, k, Path(v).absolute())
+
             elif hasattr(cls, k):
                 setattr(cls, k, v)
 
@@ -251,8 +262,10 @@ class _Config:
         for k, v in cls.__dict__.items():
             if k.startswith("_") or v is None:
                 continue
+
             if callable(getattr(cls, k)):
                 continue
+
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     v = [str(val) for val in v]
@@ -260,10 +273,16 @@ class _Config:
                     v = {key: str(val) for key, val in v.items()}
                 else:
                     v = str(v)
+            elif k == "atlases":
+                if v not in builtin_atlases:
+                    v = str(v)
+
             if isinstance(v, SpatialReferences):
                 v = " ".join(str(s) for s in v.references) or None
+
             if isinstance(v, Reference):
                 v = str(v) or None
+
             out[k] = v
         return out
 
