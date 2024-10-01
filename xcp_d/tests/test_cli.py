@@ -290,6 +290,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     test_name = "test_fmriprep_without_freesurfer"
 
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
+    atlas_dir = download_test_data("schaefer100", data_dir)
     tmpdir = os.path.join(output_dir, test_name)
     out_dir = os.path.join(tmpdir, "xcp_d")
     work_dir = os.path.join(working_dir, test_name)
@@ -301,6 +302,9 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--mode=linc",
         f"-w={work_dir}",
         "--file-format=nifti",
+        "--atlases",
+        "4S156Parcels",
+        atlas_dir,
         "--nthreads=2",
         "--omp-nthreads=2",
         "--head_radius=40",

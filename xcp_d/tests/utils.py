@@ -66,6 +66,9 @@ def download_test_data(dset, data_dir=None):
         ),
         "pnc": "https://upenn.box.com/shared/static/ui2847ys49d82pgn5ewai1mowcmsv2br.tar.gz",
         "ukbiobank": "https://upenn.box.com/shared/static/p5h1eg4p5cd2ef9ehhljlyh1uku0xe97.tar.gz",
+        "schaefer100": (
+            "https://upenn.box.com/shared/static/b9pn9qebr41kteant4ym2q5u4kcbgiy6.tar.gz"
+        ),
     }
     if dset == "*":
         for k in URLS:
