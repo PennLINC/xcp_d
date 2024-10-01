@@ -247,7 +247,8 @@ class CopyAtlas(SimpleInterface):
         atlas_out_dir = os.path.join(output_dir, f"atlases/atlas-{atlas}")
 
         if in_file.endswith(".tsv"):
-            out_basename = f"atlas-{atlas}_dseg.tsv"
+            out_basename = f"atlas-{atlas}_dseg"
+            extension = ".tsv"
         else:
             extension = ".nii.gz" if name_source.endswith(".nii.gz") else ".dlabel.nii"
             space = get_entity(name_source, "space")

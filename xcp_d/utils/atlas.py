@@ -152,6 +152,7 @@ def get_atlas_cifti(atlas):
     atlas_metadata_file : :obj:`str`
         The metadata JSON file associated with the atlas.
     """
+    import json
     from os.path import isfile
 
     from xcp_d.data import load as load_data
@@ -194,10 +195,13 @@ def get_atlas_cifti(atlas):
             f"File(s) DNE:\n\t{atlas_file}\n\t{atlas_labels_file}\n\t{atlas_metadata_file}"
         )
 
+    with open(atlas_metadata_file, "r") as fo:
+        atlas_metadata = json.load(fo)
+
     return {
         "image": atlas_file,
         "labels": atlas_labels_file,
-        "metadata": atlas_metadata_file,
+        "metadata": atlas_metadata,
         "dataset": "XCP-D",
     }
 
