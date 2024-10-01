@@ -117,7 +117,11 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Perform the resampling and parcellation done by init_load_atlases_wf
     warped_atlases = []
     # Get transform(s) from MNI152NLin6Asym to BOLD file's space
-    transforms_from_MNI152NLin6Asym = get_std2bold_xfms(bold_file)
+    transforms_from_MNI152NLin6Asym = get_std2bold_xfms(
+        bold_file,
+        source_file=None,
+        source_space="MNI152NLin6Asym",
+    )
     for atlas_file in atlas_files:
         # Using the generated transforms, apply them to get everything in the correct MNI form
         warp_atlases_to_bold_space = ApplyTransforms(

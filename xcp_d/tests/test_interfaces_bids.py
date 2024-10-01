@@ -17,10 +17,15 @@ def test_copy_atlas(tmp_path_factory):
     atlas_info = atlas.get_atlas_nifti("Gordon")
     name_source = "sub-01_task-A_run-01_space-MNI152NLin2009cAsym_res-2_desc-z_bold.nii.gz"
     copyatlas = bids.CopyAtlas(
-        name_source=name_source, in_file=atlas_info["image"], output_dir=tmpdir, atlas="Y"
+        name_source=name_source,
+        in_file=atlas_info["image"],
+        output_dir=tmpdir,
+        atlas="Y",
+        meta_dict=atlas_info["metadata"],
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
+    assert os.path.isfile(result.outputs.out_file.replace(".nii.gz", ".json"))
     assert (
         os.path.basename(result.outputs.out_file)
         == "atlas-Y_space-MNI152NLin2009cAsym_res-2_dseg.nii.gz"
@@ -42,10 +47,15 @@ def test_copy_atlas(tmp_path_factory):
     atlas_info = atlas.get_atlas_cifti("Gordon")
     name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
     copyatlas = bids.CopyAtlas(
-        name_source=name_source, in_file=atlas_info["image"], output_dir=tmpdir, atlas="Y"
+        name_source=name_source,
+        in_file=atlas_info["image"],
+        output_dir=tmpdir,
+        atlas="Y",
+        meta_dict=atlas_info["metadata"],
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
+    assert os.path.isfile(result.outputs.out_file.replace(".dlabel.nii", ".json"))
     assert (
         os.path.basename(result.outputs.out_file) == "atlas-Y_space-fsLR_den-91k_dseg.dlabel.nii"
     )
@@ -58,15 +68,6 @@ def test_copy_atlas(tmp_path_factory):
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
     assert os.path.basename(result.outputs.out_file) == "atlas-Y_dseg.tsv"
-
-    # JSON
-    name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
-    copyatlas = bids.CopyAtlas(
-        name_source=name_source, in_file=atlas_info["metadata"], output_dir=tmpdir, atlas="Y"
-    )
-    result = copyatlas.run(cwd=tmpdir)
-    assert os.path.isfile(result.outputs.out_file)
-    assert os.path.basename(result.outputs.out_file) == "atlas-Y_dseg.json"
 
     # Ensure that out_file isn't overwritten if it already exists
     fake_in_file = os.path.join(tmpdir, "fake.json")
