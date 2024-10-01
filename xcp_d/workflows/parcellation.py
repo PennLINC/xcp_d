@@ -99,12 +99,14 @@ Atlases were warped to MNI space.
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
+                "atlas_names",
                 "atlas_files",
                 "atlas_labels_files",
             ],
         ),
         name="outputnode",
     )
+    workflow.connect([(inputnode, outputnode, [("atlas_names", "atlas_names")])])
 
     atlas_buffer = pe.Node(
         niu.IdentityInterface(

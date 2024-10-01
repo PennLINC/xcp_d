@@ -143,7 +143,6 @@ def init_postprocess_nifti_wf(
     bandpass_filter = config.workflow.bandpass_filter
     dummy_scans = config.workflow.dummy_scans
     despike = config.workflow.despike
-    atlases = config.execution.atlases
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
@@ -179,7 +178,6 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.motion_json = run_data["motion_json"]
     inputnode.inputs.confounds_files = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
-    inputnode.inputs.atlases = atlases
 
     # Load confounds according to the config
 
@@ -376,7 +374,7 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    if atlases:
+    if config.execution.atlases:
         connectivity_wf = init_functional_connectivity_nifti_wf(mem_gb=mem_gbx)
 
         workflow.connect([

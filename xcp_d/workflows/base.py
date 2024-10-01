@@ -494,6 +494,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             if config.execution.atlases:
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [
+                        ("outputnode.atlas_names", "inputnode.atlases"),
                         ("outputnode.atlas_files", "inputnode.atlas_files"),
                         ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
                     ]),
