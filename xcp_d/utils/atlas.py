@@ -254,6 +254,7 @@ def collect_atlases(datasets, file_format, bids_filters={}):
 
     for dataset in atlas_datasets:
         if not isinstance(dataset, BIDSLayout):
+            raise Exception(dataset)
             layout = BIDSLayout(dataset, config=[atlas_cfg], validate=False)
         else:
             layout = dataset
