@@ -22,13 +22,13 @@ def test_get_atlas_nifti():
         subset="all",
     )
     for selected_atlas in selected_atlases:
-        atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_nifti(selected_atlas)
-        assert isinstance(atlas_file, str)
-        assert isinstance(atlas_labels_file, str)
-        assert isinstance(metadata_file, str)
-        assert os.path.isfile(atlas_file)
-        assert os.path.isfile(atlas_labels_file)
-        assert os.path.isfile(metadata_file)
+        atlas_info = atlas.get_atlas_nifti(selected_atlas)
+        assert isinstance(atlas_info["image"], str)
+        assert isinstance(atlas_info["labels"], str)
+        assert isinstance(atlas_info["metadata"], str)
+        assert os.path.isfile(atlas_info["image"])
+        assert os.path.isfile(atlas_info["labels"])
+        assert os.path.isfile(atlas_info["metadata"])
 
     with pytest.raises(FileNotFoundError, match="DNE"):
         atlas.get_atlas_nifti("tofail")
@@ -41,13 +41,13 @@ def test_get_atlas_cifti():
         subset="all",
     )
     for selected_atlas in selected_atlases:
-        atlas_file, atlas_labels_file, metadata_file = atlas.get_atlas_cifti(selected_atlas)
-        assert isinstance(atlas_file, str)
-        assert isinstance(atlas_labels_file, str)
-        assert isinstance(metadata_file, str)
-        assert os.path.isfile(atlas_file)
-        assert os.path.isfile(atlas_labels_file)
-        assert os.path.isfile(metadata_file)
+        atlas_info = atlas.get_atlas_cifti(selected_atlas)
+        assert isinstance(atlas_info["image"], str)
+        assert isinstance(atlas_info["labels"], str)
+        assert isinstance(atlas_info["metadata"], str)
+        assert os.path.isfile(atlas_info["image"])
+        assert os.path.isfile(atlas_info["labels"])
+        assert os.path.isfile(atlas_info["metadata"])
 
     with pytest.raises(FileNotFoundError, match="DNE"):
         atlas.get_atlas_cifti("tofail")

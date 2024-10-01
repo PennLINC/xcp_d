@@ -111,8 +111,8 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
     # Load atlases
     atlas_names = ["Gordon", "Glasser"]
-    atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
-    atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
+    atlas_files = [get_atlas_nifti(atlas_name)["image"] for atlas_name in atlas_names]
+    atlas_labels_files = [get_atlas_nifti(atlas_name)["labels"] for atlas_name in atlas_names]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
     warped_atlases = []
@@ -262,8 +262,8 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
     # Load atlases
     atlas_names = ["4S1056Parcels", "4S156Parcels", "4S456Parcels", "Gordon", "Glasser"]
-    atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
-    atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
+    atlas_files = [get_atlas_cifti(atlas_name)["image"] for atlas_name in atlas_names]
+    atlas_labels_files = [get_atlas_cifti(atlas_name)["labels"] for atlas_name in atlas_names]
 
     # Create the node and a tmpdir to write its results out to
     with mock_config():

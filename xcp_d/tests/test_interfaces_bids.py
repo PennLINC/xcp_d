@@ -14,10 +14,10 @@ def test_copy_atlas(tmp_path_factory):
     os.makedirs(os.path.join(tmpdir, "xcp_d"), exist_ok=True)
 
     # NIfTI
-    atlas_file, _, _ = atlas.get_atlas_nifti("Gordon")
+    atlas_info = atlas.get_atlas_nifti("Gordon")
     name_source = "sub-01_task-A_run-01_space-MNI152NLin2009cAsym_res-2_desc-z_bold.nii.gz"
     copyatlas = bids.CopyAtlas(
-        name_source=name_source, in_file=atlas_file, output_dir=tmpdir, atlas="Y"
+        name_source=name_source, in_file=atlas_info["image"], output_dir=tmpdir, atlas="Y"
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
@@ -28,21 +28,21 @@ def test_copy_atlas(tmp_path_factory):
 
     # Check that the NIfTI file raises an error if the resolution varies
     # Gordon atlas is 1mm, HCP is 2mm
-    atlas_file_diff_affine, _, _ = atlas.get_atlas_nifti("HCP")
+    atlas_info_diff_affine = atlas.get_atlas_nifti("HCP")
     with pytest.raises(ValueError, match="is different from the input file affine"):
         copyatlas = bids.CopyAtlas(
             name_source=name_source,
-            in_file=atlas_file_diff_affine,
+            in_file=atlas_info_diff_affine["image"],
             output_dir=tmpdir,
             atlas="Y",
         )
         copyatlas.run(cwd=tmpdir)
 
     # CIFTI
-    atlas_file, atlas_labels_file, atlas_metadata_file = atlas.get_atlas_cifti("Gordon")
+    atlas_info = atlas.get_atlas_cifti("Gordon")
     name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
     copyatlas = bids.CopyAtlas(
-        name_source=name_source, in_file=atlas_file, output_dir=tmpdir, atlas="Y"
+        name_source=name_source, in_file=atlas_info["image"], output_dir=tmpdir, atlas="Y"
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
@@ -53,7 +53,7 @@ def test_copy_atlas(tmp_path_factory):
     # TSV
     name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
     copyatlas = bids.CopyAtlas(
-        name_source=name_source, in_file=atlas_labels_file, output_dir=tmpdir, atlas="Y"
+        name_source=name_source, in_file=atlas_info["labels"], output_dir=tmpdir, atlas="Y"
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
@@ -62,7 +62,7 @@ def test_copy_atlas(tmp_path_factory):
     # JSON
     name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
     copyatlas = bids.CopyAtlas(
-        name_source=name_source, in_file=atlas_metadata_file, output_dir=tmpdir, atlas="Y"
+        name_source=name_source, in_file=atlas_info["metadata"], output_dir=tmpdir, atlas="Y"
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)

@@ -1,5 +1,9 @@
 """Functions for working with atlases."""
 
+from nipype import logging
+
+LOGGER = logging.getLogger("nipype.utils")
+
 
 def select_atlases(atlases, subset):
     """Get a list of atlases to be used for parcellation and functional connectivity analyses.
@@ -205,14 +209,15 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     -------
     atlases : dict
     """
-    from pathlib import Path
+    from bids.layout import BIDSLayout
 
     from xcp_d.data import load as load_data
 
     atlas_cfg = load_data("atlas_bids_config.json")
     bids_filters = bids_filters or {}
 
-    atlas_datasets = [p for p in datasets if isinstance(p, Path)]
+    builtin_atlases = select_atlases(atlases=None, subset="all")
+    atlas_datasets = sorted(list(set(datasets) - set(builtin_atlases)))
     builtin_atlases = sorted(list(set(datasets) - set(atlas_datasets)))
 
     atlas_filter = bids_filters.get("atlas", {})
@@ -220,6 +225,7 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     # Hardcoded spaces for now
     if file_format == "cifti":
         atlas_filter["space"] = atlas_filter.get("space") or "fsLR"
+        atlas_filter["den"] = atlas_filter.get("den") or "32k"
     else:
         atlas_filter["space"] = atlas_filter.get("space") or [
             "MNI152NLin6Asym",
@@ -234,24 +240,38 @@ def collect_atlases(datasets, file_format, bids_filters={}):
         atlases[builtin_atlas] = collection_func(builtin_atlas)
 
     for dataset in atlas_datasets:
-        if isinstance(dataset, str):
-            from bids.layout import BIDSLayout
-
-            layout = BIDSLayout(dataset, config=[atlas_cfg])
+        if not isinstance(dataset, BIDSLayout):
+            layout = BIDSLayout(dataset, config=[atlas_cfg], validate=False)
         else:
             layout = dataset
 
         description = layout.get_dataset_description()
         assert description.get("DatasetType") == "atlas"
 
-        for atlas in layout.get_atlases(**atlas_filter):
-            atlas_image = layout.get(
+        atlases_in_dataset = layout.get_atlases(**atlas_filter)
+        if not atlases_in_dataset:
+            LOGGER.warning(f"No atlases found in dataset {layout.root} with query {atlas_filter}")
+            continue
+
+        for atlas in atlases_in_dataset:
+            atlas_images = layout.get(
                 atlas=atlas,
                 **atlas_filter,
                 return_type="file",
-            )[0]
+            )
+            if not atlas_images:
+                LOGGER.warning(f"No atlas images found for {atlas} with query {atlas_filter}")
+                continue
+            elif len(atlas_images) > 1:
+                bulleted_list = "\n".join([f"  - {img}" for img in atlas_images])
+                LOGGER.warning(
+                    f"Multiple atlas images found for {atlas} with query {atlas_filter}:\n"
+                    f"{bulleted_list}\nUsing {atlas_images[0]}."
+                )
+
+            atlas_image = atlas_images[0]
             atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
-            atlas_metadata = layout.get_nearest(atlas_image, extension=".json", strict=False)
+            atlas_metadata = layout.get_nearest(atlas_image, extension=".json", strict=True)
             atlases[atlas] = {
                 "dataset": description.get("Name", layout.root),
                 "image": atlas_image,
