@@ -226,7 +226,6 @@ class _Config:
         for k, v in settings.items():
             if k in ignore or v is None:
                 continue
-
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     setattr(cls, k, [Path(val).absolute() for val in v])
@@ -234,7 +233,6 @@ class _Config:
                     setattr(cls, k, {key: Path(val).absolute() for key, val in v.items()})
                 else:
                     setattr(cls, k, Path(v).absolute())
-
             elif hasattr(cls, k):
                 setattr(cls, k, v)
 
@@ -253,10 +251,8 @@ class _Config:
         for k, v in cls.__dict__.items():
             if k.startswith("_") or v is None:
                 continue
-
             if callable(getattr(cls, k)):
                 continue
-
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     v = [str(val) for val in v]
@@ -264,13 +260,10 @@ class _Config:
                     v = {key: str(val) for key, val in v.items()}
                 else:
                     v = str(v)
-
             if isinstance(v, SpatialReferences):
                 v = " ".join(str(s) for s in v.references) or None
-
             if isinstance(v, Reference):
                 v = str(v) or None
-
             out[k] = v
         return out
 
