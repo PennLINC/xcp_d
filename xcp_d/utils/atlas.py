@@ -222,6 +222,7 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     """
     import json
 
+    import pandas as pd
     from bids.layout import BIDSLayout
 
     from xcp_d.data import load as load_data
@@ -285,6 +286,7 @@ def collect_atlases(datasets, file_format, bids_filters={}):
             atlas_image = atlas_images[0]
             atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
             atlas_metadata_file = layout.get_nearest(atlas_image, extension=".json", strict=True)
+
             atlas_metadata = None
             if atlas_metadata_file:
                 with open(atlas_metadata_file, "r") as fo:
@@ -296,5 +298,17 @@ def collect_atlases(datasets, file_format, bids_filters={}):
                 "labels": atlas_labels,
                 "metadata": atlas_metadata,
             }
+
+    for atlas, atlas_info in atlases.items():
+        if not atlas_info["labels"]:
+            raise FileNotFoundError(f"No TSV file found for {atlas_info['image']}")
+
+        # Check the contents of the labels file
+        df = pd.read_table(atlas_info["labels"])
+        if "label" not in df.columns:
+            raise ValueError(f"'label' column not found in {atlas_info['labels']}")
+
+        if "index" not in df.columns:
+            raise ValueError(f"'index' column not found in {atlas_info['labels']}")
 
     return atlases

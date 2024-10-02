@@ -77,7 +77,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: schaefer100-01
+          key: schaefer100-02
       - run: *runinstall
       - run:
           name: Download BIDS-Atlas dataset
@@ -85,7 +85,7 @@ jobs:
             cd /src/xcp_d/.circleci
             python get_data.py $PWD/data schaefer100
       - save_cache:
-          key: schaefer100-01
+          key: schaefer100-02
           paths:
             - /src/xcp_d/.circleci/data/schaefer100
 
@@ -178,6 +178,8 @@ jobs:
             fi
       - restore_cache:
           key: fmriprepwithoutfreesurfer-03
+      - restore_cache:
+        key: schaefer100-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti without freesurfer
@@ -522,6 +524,8 @@ jobs:
           key: fmriprepwithoutfreesurfer-03
       - restore_cache:
           key: nibabies-04
+      - restore_cache:
+        key: schaefer100-02
       - run: *runinstall
       - run:
           name: Run pytest on the tests directory
