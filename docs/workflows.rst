@@ -268,10 +268,6 @@ Surface normalization
 If the ``--warp-surfaces-native2std`` flag is used,
 then fsnative surface files from the preprocessing derivatives will be warped to fsLR-32k space.
 
-.. important::
-
-   This step will only succeed if FreeSurfer derivatives are also available.
-
 
 Identification of high-motion outlier volumes
 =============================================
