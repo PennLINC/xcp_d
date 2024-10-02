@@ -757,7 +757,7 @@ def write_derivative_description(
     fmri_dir : :obj:`str`
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
-        Path to the output xcp-d dataset.
+        Path to the output XCP-D dataset.
     atlases : :obj:`list` of :obj:`str`, optional
         Names of requested XCP-D atlases.
     custom_confounds_folder : :obj:`str`, optional
