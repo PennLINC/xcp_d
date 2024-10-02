@@ -5,7 +5,7 @@ orbs:
 .dockersetup:
   &dockersetup
   docker:
-    - image: pennlinc/xcp_d_build:0.0.14
+    - image: pennlinc/xcp_d_build:0.0.15
   working_directory: /src/xcp_d
 
 runinstall:
