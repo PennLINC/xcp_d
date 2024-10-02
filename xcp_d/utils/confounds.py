@@ -405,19 +405,22 @@ def motion_regression_filter(
         bandwidth = np.abs(np.diff(stopband_hz))
 
         # Create filter coefficients.
-        b, a = iirnotch(freq_to_remove, freq_to_remove / bandwidth, fs=sampling_frequency)
-        n_filter_applications = int(np.floor(motion_filter_order / 2))
+        b, a = butter(
+            motion_filter_order / 2,
+            stopband_hz,
+            btype="bandstop",
+            output="ba",
+            fs=sampling_frequency,
+        )
 
         filtered_data = data.copy()
-        for _ in range(n_filter_applications):
-            filtered_data = filtfilt(
-                b,
-                a,
-                filtered_data,
-                axis=0,
-                padtype="constant",
-                padlen=data.shape[0] - 1,
-            )
+        filtered_data = filtfilt(
+            b,
+            a,
+            data,
+            axis=0,
+            padtype="constant",
+            padlen=data.shape[0] - 1,
 
     return filtered_data
 
