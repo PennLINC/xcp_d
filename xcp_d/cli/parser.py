@@ -946,12 +946,6 @@ def _validate_parameters(opts, build_log, parser):
         if any(atlas.startswith("4S") for atlas in opts.atlases):
             if "xcpd4s" not in opts.datasets:
                 opts.datasets["xcpd4s"] = Path("/AtlasPack")
-                # Make AtlasPack a BIDS dataset (for now).
-                with open(opts.datasets["xcpd4s"] / "dataset_description.json", "w") as fo:
-                    json.dump(
-                        {"Name": "XCPD4S", "BIDSVersion": "1.9.0", "DatasetType": "atlas"},
-                        fo,
-                    )
 
     # Check parameters based on the mode
     if opts.mode == "abcd":
