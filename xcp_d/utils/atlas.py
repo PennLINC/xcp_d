@@ -105,7 +105,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
     # Hardcoded spaces for now
     if file_format == "cifti":
         atlas_filter["space"] = atlas_filter.get("space") or "fsLR"
-        atlas_filter["den"] = atlas_filter.get("den") or "32k"
+        atlas_filter["den"] = atlas_filter.get("den") or ["32k", "91k"]
     else:
         atlas_filter["space"] = atlas_filter.get("space") or [
             "MNI152NLin6Asym",
