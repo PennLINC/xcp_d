@@ -5,7 +5,7 @@ import os
 import pytest
 
 from xcp_d.interfaces import bids
-from xcp_d.utils import atlas
+from xcp_d.data import load as load_data
 
 
 def test_copy_atlas(tmp_path_factory):
@@ -14,7 +14,14 @@ def test_copy_atlas(tmp_path_factory):
     os.makedirs(os.path.join(tmpdir, "xcp_d"), exist_ok=True)
 
     # NIfTI
-    atlas_info = atlas.get_atlas_nifti("Gordon")
+    atlas_info = {
+        "image": load_data(
+            "atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz"
+        ),
+        "labels": load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv"),
+        "metadata": {},
+        "dataset": "xcpdatlases",
+    }
     name_source = "sub-01_task-A_run-01_space-MNI152NLin2009cAsym_res-2_desc-z_bold.nii.gz"
     copyatlas = bids.CopyAtlas(
         name_source=name_source,
@@ -33,7 +40,12 @@ def test_copy_atlas(tmp_path_factory):
 
     # Check that the NIfTI file raises an error if the resolution varies
     # Gordon atlas is 1mm, HCP is 2mm
-    atlas_info_diff_affine = atlas.get_atlas_nifti("HCP")
+    atlas_info_diff_affine = {
+        "image": load_data("atlases/atlas-HCP/atlas-HCP_space-MNI152NLin6Asym_res-02_dseg.nii.gz"),
+        "labels": load_data("atlases/atlas-HCP/atlas-HCP_dseg.tsv"),
+        "metadata": {},
+        "dataset": "xcpdatlases",
+    }
     with pytest.raises(ValueError, match="is different from the input file affine"):
         copyatlas = bids.CopyAtlas(
             name_source=name_source,
@@ -44,7 +56,12 @@ def test_copy_atlas(tmp_path_factory):
         copyatlas.run(cwd=tmpdir)
 
     # CIFTI
-    atlas_info = atlas.get_atlas_cifti("Gordon")
+    atlas_info = {
+        "image": load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_dseg.dlabel.nii"),
+        "labels": load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv"),
+        "metadata": {},
+        "dataset": "xcpdatlases",
+    }
     name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
     copyatlas = bids.CopyAtlas(
         name_source=name_source,
