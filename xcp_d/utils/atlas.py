@@ -305,6 +305,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
                 "metadata": atlas_metadata,
             }
 
+    for atlas in atlases:
         if atlas not in atlas_cache:
             LOGGER.warning(f"No atlas images found for {atlas} with query {atlas_filter}")
 

@@ -172,7 +172,7 @@ The following atlases were used in the workflow: {atlas_str}.
         workflow.connect([(inputnode, atlas_buffer, [("atlas_files", "atlas_file")])])
 
     copy_atlas = pe.MapNode(
-        CopyAtlas(output_dir=output_dir, dataset_links=config.execution.dataset_links),
+        CopyAtlas(output_dir=output_dir),
         name="copy_atlas",
         iterfield=["in_file", "atlas", "meta_dict"],
         run_without_submitting=True,
