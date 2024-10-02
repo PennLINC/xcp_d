@@ -500,7 +500,7 @@ The default is 240 (4 minutes).
     all_atlases = select_atlases(atlases=None, subset="all")
     g_atlases.add_argument(
         "--atlases",
-        action=parser_utils.BuiltinAtlasOrDataset,
+        action="store",
         nargs="+",
         metavar="ATLAS",
         default=all_atlases,

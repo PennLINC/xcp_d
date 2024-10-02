@@ -262,11 +262,11 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
         ]
 
     atlas_cache = {}
-    for dataset in datasets:
-        if not isinstance(dataset, BIDSLayout):
-            layout = BIDSLayout(dataset, config=[atlas_cfg], validate=False)
+    for dataset_name, dataset_path in datasets:
+        if not isinstance(dataset_path, BIDSLayout):
+            layout = BIDSLayout(dataset_path, config=[atlas_cfg], validate=False)
         else:
-            layout = dataset
+            layout = dataset_path
 
         if layout.get_dataset_description().get("DatasetType") != "atlas":
             continue
@@ -299,7 +299,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
                     atlas_metadata = json.load(fo)
 
             atlas_cache[atlas] = {
-                "dataset": layout.get_dataset_description().get("Name", layout.root),
+                "dataset": dataset_name,
                 "image": atlas_image,
                 "labels": atlas_labels,
                 "metadata": atlas_metadata,
