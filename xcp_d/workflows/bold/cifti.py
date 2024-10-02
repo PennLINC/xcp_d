@@ -322,6 +322,7 @@ the following post-processing was performed.
         (inputnode, postproc_derivatives_wf, [
             ("motion_file", "inputnode.preproc_confounds_file"),
             ("atlas_files", "inputnode.atlas_files"),
+            ("atlases", "inputnode.atlas_names"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
             ("outputnode.denoised_bold", "inputnode.denoised_bold"),

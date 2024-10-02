@@ -342,6 +342,7 @@ the following post-processing was performed.
         (inputnode, postproc_derivatives_wf, [
             ("motion_file", "inputnode.preproc_confounds_file"),
             ("atlas_files", "inputnode.atlas_files"),
+            ("atlases", "inputnode.atlas_names"),
         ]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
             ("outputnode.confounds_tsv", "inputnode.confounds_tsv"),
