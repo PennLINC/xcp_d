@@ -424,7 +424,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 confounds_dict = collect_confounds(
                     bold_file=bold_file,
                     preproc_dataset=config.execution.layout,
-                    derivatives_datasets=config.execution.derivatives,
+                    derivatives_datasets=config.execution.datasets,
                     confound_spec=yaml.safe_load(config.execution.confounds_config.read_text()),
                 )
                 run_data["confounds"] = confounds_dict

@@ -214,7 +214,7 @@ def init_qc_report_wf(
 
         # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
         # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
-        # Given that xcp-d doesn't process native-space data, this transform will never be used.
+        # Given that XCP-D doesn't process native-space data, this transform will never be used.
         get_mni_to_bold_xfms = pe.Node(
             Function(
                 input_names=["bold_file"],
