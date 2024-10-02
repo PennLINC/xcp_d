@@ -533,7 +533,6 @@ class execution(_Config):
         }
         for dset_name, dset_path in cls.datasets.items():
             dataset_links[dset_name] = dset_path
-
         cls.dataset_links = dataset_links
 
         if "all" in cls.debug:
