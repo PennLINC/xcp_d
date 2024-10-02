@@ -179,7 +179,7 @@ jobs:
       - restore_cache:
           key: fmriprepwithoutfreesurfer-03
       - restore_cache:
-        key: schaefer100-02
+          key: schaefer100-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti without freesurfer
@@ -525,7 +525,7 @@ jobs:
       - restore_cache:
           key: nibabies-04
       - restore_cache:
-        key: schaefer100-02
+          key: schaefer100-02
       - run: *runinstall
       - run:
           name: Run pytest on the tests directory
