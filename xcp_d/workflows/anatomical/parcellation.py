@@ -1,7 +1,5 @@
 """Workflows for parcellating anatomical data."""
 
-from pathlib import Path
-
 from nipype import logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -56,8 +54,6 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
 
     workflow = Workflow(name=name)
 
-    atlases = config.execution.atlases
-
     SURF_DESCS = {
         "sulcal_depth": "sulc",
         "sulcal_curv": "curv",
@@ -87,12 +83,13 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
         name="inputnode",
     )
 
-    bidsatlas_datasets = [p for p in atlases if isinstance(p, Path)]
-    builtin_atlases = sorted(list(set(atlases) - set(bidsatlas_datasets)))
-    builtin_atlases = select_atlases(atlases=builtin_atlases, subset="cortical")
-    selected_atlases = builtin_atlases + bidsatlas_datasets
-    selected_atlases = collect_atlases(
-        datasets=selected_atlases,
+    builtin_atlases = select_atlases(atlases=config.execution.atlases, subset="all")
+    external_atlases = sorted(list(set(config.execution.atlases) - set(builtin_atlases)))
+    builtin_cortical_atlases = select_atlases(atlases=builtin_atlases, subset="cortical")
+    selected_atlases = builtin_cortical_atlases + external_atlases
+    atlases = collect_atlases(
+        datasets=config.execution.datasets,
+        atlases=selected_atlases,
         file_format=config.workflow.file_format,
         bids_filters=config.execution.bids_filters,
     )
@@ -100,7 +97,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
     # Reorganize the atlas file information
     atlas_names, atlas_files, atlas_labels_files, atlas_metadata_files = [], [], [], []
     atlas_datasets = []
-    for atlas, atlas_dict in selected_atlases.items():
+    for atlas, atlas_dict in atlases.items():
         config.loggers.workflow.info(f"Loading atlas: {atlas}")
         atlas_names.append(atlas)
         atlas_datasets.append(atlas_dict["dataset"])
@@ -114,7 +111,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name="parcellate_surfaces_w
     inputnode.inputs.atlas_labels_files = atlas_labels_files
     inputnode.inputs.atlas_metadata_files = atlas_metadata_files
 
-    if not selected_atlases:
+    if not atlases:
         LOGGER.warning(
             "No cortical atlases have been selected, so surface metrics will not be parcellated."
         )

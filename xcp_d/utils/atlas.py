@@ -206,7 +206,7 @@ def get_atlas_cifti(atlas):
     }
 
 
-def collect_atlases(datasets, file_format, bids_filters={}):
+def collect_atlases(datasets, atlases, file_format, bids_filters={}):
     """Collect atlases from a list of BIDS-Atlas datasets.
 
     Selection of labels files and metadata does not leverage the inheritance principle.
@@ -215,10 +215,28 @@ def collect_atlases(datasets, file_format, bids_filters={}):
     Parameters
     ----------
     datasets : list of str or BIDSLayout
+        List of BIDS datasets to search for atlases.
+    atlases : list of str
+        List of atlases to collect from across the datasets.
+    file_format : {"nifti", "cifti"}
+        The file format of the atlases.
+    bids_filters : dict
+        Additional filters to apply to the BIDS query.
 
     Returns
     -------
-    atlases : dict
+    atlas_cache : dict
+        Dictionary of atlases with metadata.
+        Keys are the atlas names, values are dictionaries with keys:
+
+        - "dataset" : str
+            Name of the dataset containing the atlas.
+        - "image" : str
+            Path to the atlas image.
+        - "labels" : str
+            Path to the atlas labels file.
+        - "metadata" : dict
+            Metadata associated with the atlas.
     """
     import json
 
@@ -229,10 +247,6 @@ def collect_atlases(datasets, file_format, bids_filters={}):
 
     atlas_cfg = load_data("atlas_bids_config.json")
     bids_filters = bids_filters or {}
-
-    builtin_atlases = select_atlases(atlases=None, subset="all")
-    atlas_datasets = sorted(list(set(datasets) - set(builtin_atlases)))
-    builtin_atlases = sorted(list(set(datasets) - set(atlas_datasets)))
 
     atlas_filter = bids_filters.get("atlas", {})
     atlas_filter["extension"] = [".nii.gz", ".nii"] if file_format == "nifti" else ".dlabel.nii"
@@ -247,34 +261,23 @@ def collect_atlases(datasets, file_format, bids_filters={}):
             "MNIInfant",
         ]
 
-    collection_func = get_atlas_nifti if file_format == "nifti" else get_atlas_cifti
-
-    atlases = {}
-    for builtin_atlas in builtin_atlases:
-        atlases[builtin_atlas] = collection_func(builtin_atlas)
-
-    for dataset in atlas_datasets:
+    atlas_cache = {}
+    for dataset in datasets:
         if not isinstance(dataset, BIDSLayout):
             layout = BIDSLayout(dataset, config=[atlas_cfg], validate=False)
         else:
             layout = dataset
 
-        description = layout.get_dataset_description()
-        assert description.get("DatasetType") == "atlas"
-
-        atlases_in_dataset = layout.get_atlases(**atlas_filter)
-        if not atlases_in_dataset:
-            LOGGER.warning(f"No atlases found in dataset {layout.root} with query {atlas_filter}")
+        if layout.get_dataset_description().get("DatasetType") != "atlas":
             continue
 
-        for atlas in atlases_in_dataset:
+        for atlas in atlases:
             atlas_images = layout.get(
                 atlas=atlas,
                 **atlas_filter,
                 return_type="file",
             )
             if not atlas_images:
-                LOGGER.warning(f"No atlas images found for {atlas} with query {atlas_filter}")
                 continue
             elif len(atlas_images) > 1:
                 bulleted_list = "\n".join([f"  - {img}" for img in atlas_images])
@@ -282,6 +285,9 @@ def collect_atlases(datasets, file_format, bids_filters={}):
                     f"Multiple atlas images found for {atlas} with query {atlas_filter}:\n"
                     f"{bulleted_list}\nUsing {atlas_images[0]}."
                 )
+
+            if atlas in atlas_cache:
+                raise ValueError(f"Multiple datasets contain the same atlas '{atlas}'")
 
             atlas_image = atlas_images[0]
             atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
@@ -292,14 +298,17 @@ def collect_atlases(datasets, file_format, bids_filters={}):
                 with open(atlas_metadata_file, "r") as fo:
                     atlas_metadata = json.load(fo)
 
-            atlases[atlas] = {
-                "dataset": description.get("Name", layout.root),
+            atlas_cache[atlas] = {
+                "dataset": layout.get_dataset_description().get("Name", layout.root),
                 "image": atlas_image,
                 "labels": atlas_labels,
                 "metadata": atlas_metadata,
             }
 
-    for atlas, atlas_info in atlases.items():
+        if atlas not in atlas_cache:
+            LOGGER.warning(f"No atlas images found for {atlas} with query {atlas_filter}")
+
+    for atlas, atlas_info in atlas_cache.items():
         if not atlas_info["labels"]:
             raise FileNotFoundError(f"No TSV file found for {atlas_info['image']}")
 
@@ -311,4 +320,4 @@ def collect_atlases(datasets, file_format, bids_filters={}):
         if "index" not in df.columns:
             raise ValueError(f"'index' column not found in {atlas_info['labels']}")
 
-    return atlases
+    return atlas_cache

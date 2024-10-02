@@ -545,8 +545,8 @@ please refer to :footcite:t:`benchmarkp`.
    fMRIPrep removed AROMA support in 23.1.0.
    In order to use the ``aroma`` or ``aroma_gsr`` strategies,
    please run ``fMRIPost-AROMA`` on your fMRIPrep outputs before running XCP-D.
-   You will need to supply the AROMA derivatives dataset to XCP-D via the ``--derivatives``
-   parameter (i.e., ``--derivatives aroma=/path/to/fmripost-aroma/dset``).
+   You will need to supply the AROMA derivatives dataset to XCP-D via the ``--datasets``
+   parameter (i.e., ``--datasets aroma=/path/to/fmripost-aroma/dset``).
 
 
 .. warning::
@@ -570,7 +570,7 @@ while the ``confounds`` section specifies which confounds will actually be used.
 
 The ``confounds`` section is a dictionary/object, with a unique key for each set of confounds.
 Each set of confounds must contain a ``dataset`` key, which specifies the dataset to use.
-The dataset must be linked to what the user provides in the ``--derivatives`` parameter,
+The dataset must be linked to what the user provides in the ``--datasets`` parameter,
 though the "preprocessed" key is a protected value for the dataset given to XCP-D as the
 ``fmri_dir`` positional argument.
 For example, in the example below, three columns are collected from the fMRIPrep confounds file:

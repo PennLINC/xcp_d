@@ -401,8 +401,8 @@ class execution(_Config):
 
     fmri_dir = None
     """An existing path to the preprocessing derivatives dataset, which must be BIDS-compliant."""
-    derivatives = {}
-    """Path(s) to search for pre-computed derivatives"""
+    datasets = {}
+    """Path(s) to search for other datasets (either derivatives or atlases)."""
     aggr_ses_reports = None
     """Maximum number of sessions aggregated in one subject's visual report."""
     bids_database_dir = None
@@ -456,7 +456,7 @@ class execution(_Config):
 
     _paths = (
         "fmri_dir",
-        "derivatives",
+        "datasets",
         "bids_database_dir",
         "fs_license_file",
         "layout",
@@ -546,8 +546,9 @@ class execution(_Config):
             "preprocessed": cls.fmri_dir,
             "templateflow": Path(TF_LAYOUT.root),
         }
-        for deriv_name, deriv_path in cls.derivatives.items():
-            dataset_links[deriv_name] = deriv_path
+        for dset_name, dset_path in cls.datasets.items():
+            dataset_links[dset_name] = dset_path
+
         cls.dataset_links = dataset_links
 
         if "all" in cls.debug:

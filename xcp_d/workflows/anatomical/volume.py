@@ -148,7 +148,9 @@ def init_postprocess_anat_wf(
 
     else:
         out = ["T1w"] if t1w_available else [] + ["T2w"] if t2w_available else []
-        workflow.__desc__ = f"""\
+        workflow.__desc__ = f"""
+#### Anatomical data
+
 Native-space {list_to_str(out)} images were transformed to {target_space} space at 1 mm3
 resolution.
 """

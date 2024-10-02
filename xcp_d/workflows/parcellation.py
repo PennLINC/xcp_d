@@ -49,12 +49,14 @@ def init_load_atlases_wf(name="load_atlases_wf"):
     """
     from xcp_d.interfaces.bids import CopyAtlas
     from xcp_d.utils.atlas import collect_atlases
+    from xcp_d.utils.boilerplate import describe_atlases
 
     workflow = Workflow(name=name)
     output_dir = config.execution.output_dir
 
     atlases = collect_atlases(
-        datasets=config.execution.atlases,
+        datasets=config.execution.datasets,
+        atlases=config.execution.atlases,
         file_format=config.workflow.file_format,
         bids_filters=config.execution.bids_filters,
     )
@@ -71,10 +73,12 @@ def init_load_atlases_wf(name="load_atlases_wf"):
         atlas_metadata.append(atlas_dict["metadata"])
 
     # Write a description
-    workflow.__desc__ = """
+    atlas_str = describe_atlases(atlas_names)
+    workflow.__desc__ = f"""
 #### Segmentations
-Atlases were warped to MNI space.
-    """
+
+The following atlases were used in the workflow: {atlas_str}.
+"""
 
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -116,6 +120,9 @@ Atlases were warped to MNI space.
     )
 
     if config.workflow.file_format == "nifti":
+        workflow.__desc__ += (
+            " Each atlas was warped to the same space and resolution as the BOLD file."
+        )
         get_xfms_to_bold_space = pe.MapNode(
             Function(
                 input_names=["bold_file", "source_file", "source_space"],
@@ -128,7 +135,7 @@ Atlases were warped to MNI space.
 
         workflow.connect([
             (inputnode, get_xfms_to_bold_space, [
-                ("name_source", "bold_file"),
+                ("bold_file", "bold_file"),
                 ("atlas_files", "source_file"),
             ]),
         ])  # fmt:skip
@@ -165,7 +172,7 @@ Atlases were warped to MNI space.
         workflow.connect([(inputnode, atlas_buffer, [("atlas_files", "atlas_file")])])
 
     copy_atlas = pe.MapNode(
-        CopyAtlas(output_dir=output_dir),
+        CopyAtlas(output_dir=output_dir, dataset_links=config.execution.dataset_links),
         name="copy_atlas",
         iterfield=["in_file", "atlas", "meta_dict"],
         run_without_submitting=True,

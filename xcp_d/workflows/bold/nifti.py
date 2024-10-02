@@ -181,7 +181,8 @@ def init_postprocess_nifti_wf(
 
     # Load confounds according to the config
 
-    workflow.__desc__ = f"""\
+    workflow.__desc__ = f"""
+#### Functional data
 
 For each of the {num2words(n_runs)} BOLD runs found per subject (across all tasks and sessions),
 the following post-processing was performed.
