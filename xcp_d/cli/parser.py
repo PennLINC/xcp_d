@@ -5,7 +5,6 @@
 XCP-D preprocessing workflow
 ============================
 """
-import json
 import os
 import sys
 
