@@ -423,6 +423,8 @@ class ConnectPlot(SimpleInterface):
             "4S956Parcels",
             "4S1056Parcels",
         ]
+        external_atlases = [a for a in self.inputs.atlases if a not in priority_list]
+        priority_list += external_atlases
         selected_atlases = []
         c = 0
         for atlas in priority_list:
