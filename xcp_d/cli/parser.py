@@ -937,6 +937,7 @@ def _validate_parameters(opts, build_log, parser):
     assert opts.process_surfaces in (True, False, "auto")
 
     # Add internal atlas datasets to the list of datasets
+    opts.datasets = opts.datasets or {}
     if opts.atlases:
         if "xcpdatlases" not in opts.datasets:
             opts.datasets["xcpdatlases"] = load_data("atlases")
