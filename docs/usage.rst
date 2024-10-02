@@ -520,7 +520,7 @@ Last, run XCP-D with your custom configuration file and the path to the custom d
       /mnt/output/directory \
       participant \
       --participant_label X \
-      --derivatives custom=/mnt/custom_confounds \
+      --datasets custom=/mnt/custom_confounds \
       --nuisance-regressors /mnt/custom_config.yaml
 
 

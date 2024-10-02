@@ -705,11 +705,15 @@ def collect_confounds(
                 continue
 
             if isinstance(v, (Path, str)):
-                layout_dict[k] = BIDSLayout(
+                layout = BIDSLayout(
                     v,
                     config=["bids", "derivatives", xcp_d_config],
                     indexer=_indexer,
                 )
+                if layout.get_dataset_description().get("DatasetType") != "derivatives":
+                    print(f"Dataset {k} is not a derivatives dataset. Skipping.")
+
+                layout_dict[k] = layout
             else:
                 layout_dict[k] = v
 
@@ -719,7 +723,7 @@ def collect_confounds(
         if confound_def["dataset"] not in layout_dict.keys():
             raise ValueError(
                 f"Missing dataset required by confound spec: *{confound_def['dataset']}*. "
-                "Did you provide it with the `--derivatives` flag?"
+                "Did you provide it with the `--datasets` flag?"
             )
 
         layout = layout_dict[confound_def["dataset"]]

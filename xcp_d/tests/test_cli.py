@@ -49,7 +49,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         out_dir,
         "participant",
         "--mode=none",
-        "--derivatives",
+        "--datasets",
         f"aroma={derivs_dir}",
         f"-w={work_dir}",
         f"--bids-filter-file={filter_file}",
