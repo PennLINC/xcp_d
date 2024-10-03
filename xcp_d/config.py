@@ -591,7 +591,7 @@ class workflow(_Config):
     dcan_correlation_lengths = None
     """Produce correlation matrices limited to each requested amount of time."""
     process_surfaces = None
-    """Warp FreeSurfer's surfaces to the MNI space."""
+    """Warp fsnative-space surfaces to the MNI space."""
     abcc_qc = None
     """Run DCAN QC."""
     linc_qc = None
