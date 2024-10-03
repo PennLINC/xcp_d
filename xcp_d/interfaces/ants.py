@@ -101,7 +101,6 @@ class CompositeTransformUtil(ANTSCommand):
 
     Examples
     --------
-
     >>> from nipype.interfaces.ants import CompositeTransformUtil
     >>> tran = CompositeTransformUtil()
     >>> tran.inputs.process = 'disassemble'
