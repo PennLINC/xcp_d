@@ -56,7 +56,7 @@ class ConvertTransformFile(CommandLine):
     output_spec = _ConvertTransformFileOutputSpec
 
 
-class CompositeTransformUtilInputSpec(ANTSCommandInputSpec):
+class _CompositeTransformUtilInputSpec(ANTSCommandInputSpec):
     process = traits.Enum(
         "assemble",
         "disassemble",
@@ -87,14 +87,15 @@ class CompositeTransformUtilInputSpec(ANTSCommandInputSpec):
     )
 
 
-class CompositeTransformUtilOutputSpec(TraitedSpec):
+class _CompositeTransformUtilOutputSpec(TraitedSpec):
     affine_transform = File(desc="Affine transform component")
     displacement_field = File(desc="Displacement field component")
     out_file = File(desc="Compound transformation file")
 
 
 class CompositeTransformUtil(ANTSCommand):
-    """
+    """Run the ANTS CompositeTransformUtil command.
+
     ANTs utility which can combine or break apart transform files into their individual
     constituent components.
 
@@ -122,14 +123,10 @@ class CompositeTransformUtil(ANTSCommand):
     """
 
     _cmd = "CompositeTransformUtil"
-    input_spec = CompositeTransformUtilInputSpec
-    output_spec = CompositeTransformUtilOutputSpec
+    input_spec = _CompositeTransformUtilInputSpec
+    output_spec = _CompositeTransformUtilOutputSpec
 
     def _num_threads_update(self):
-        """
-        CompositeTransformUtil ignores environment variables,
-        so override environment update from ANTSCommand class
-        """
         pass
 
     def _format_arg(self, name, spec, value):
@@ -143,10 +140,10 @@ class CompositeTransformUtil(ANTSCommand):
         outputs = self.output_spec().get()
         if self.inputs.process == "disassemble":
             outputs["affine_transform"] = os.path.abspath(
-                "{}_00_AffineTransform.mat".format(self.inputs.output_prefix)
+                f"{self.inputs.output_prefix}_00_AffineTransform.mat"
             )
             outputs["displacement_field"] = os.path.abspath(
-                "{}_01_DisplacementFieldTransform.nii.gz".format(self.inputs.output_prefix)
+                f"{self.inputs.output_prefix}_01_DisplacementFieldTransform.nii.gz"
             )
         if self.inputs.process == "assemble":
             outputs["out_file"] = os.path.abspath(self.inputs.out_file)
