@@ -4,12 +4,11 @@
 
 from nipype import logging
 from nipype.interfaces import utility as niu
-from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
+from xcp_d.interfaces.ants import CompositeTransformUtil, ConvertTransformFile
 from xcp_d.interfaces.bids import CollectRegistrationFiles, DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
@@ -661,6 +660,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name="ants_xfm_to_fsl_wf"):
     # Use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms.
     disassemble_h5 = pe.Node(
         CompositeTransformUtil(
+            inverse=False,
             process="disassemble",
             output_prefix="T1w_to_MNI152NLin6Asym",
         ),
@@ -671,10 +671,11 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name="ants_xfm_to_fsl_wf"):
 
     # Nipype's CompositeTransformUtil assumes a certain file naming and
     # concatenation order of xfms which does not work for the inverse .h5,
-    # so we use our modified class, "CompositeInvTransformUtil"
+    # so we use our modified class with an additional inverse flag.
     disassemble_h5_inv = pe.Node(
-        CompositeInvTransformUtil(
+        CompositeTransformUtil(
             process="disassemble",
+            inverse=True,
             output_prefix="MNI152NLin6Asym_to_T1w",
         ),
         name="disassemble_h5_inv",
