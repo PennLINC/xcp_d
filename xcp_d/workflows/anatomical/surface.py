@@ -4,12 +4,15 @@
 
 from nipype import logging
 from nipype.interfaces import utility as niu
-from nipype.interfaces.ants import CompositeTransformUtil  # MB
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.ants import CompositeInvTransformUtil, ConvertTransformFile
+from xcp_d.interfaces.ants import (
+    CompositeInvTransformUtil,
+    CompositeTransformUtil,
+    ConvertTransformFile,
+)
 from xcp_d.interfaces.bids import CollectRegistrationFiles, DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
