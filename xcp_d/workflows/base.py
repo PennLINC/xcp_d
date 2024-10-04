@@ -211,6 +211,7 @@ def init_single_subject_wf(subject_id: str):
 
     workflow.__desc__ = f"""
 ### Post-processing of {config.workflow.input_type} outputs
+
 The eXtensible Connectivity Pipeline- DCAN (XCP-D)
 [@mehta2024xcp;@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of *{info_dict["name"]}* version {info_dict["version"]}
