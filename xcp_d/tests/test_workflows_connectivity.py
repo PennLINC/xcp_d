@@ -37,6 +37,10 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.execution.output_dir = tmpdir
         config.workflow.file_format = "nifti"
         config.execution.atlases = ["4S156Parcels", "Glasser"]
+        config.execution.datasets = [
+            str(load_data("atlases")),
+            "/AtlasPack",
+        ]
         config.nipype.omp_nthreads = 1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
@@ -62,6 +66,10 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.execution.output_dir = tmpdir
         config.workflow.file_format = "cifti"
         config.execution.atlases = ["4S156Parcels", "Glasser"]
+        config.execution.datasets = [
+            str(load_data("atlases")),
+            "/AtlasPack",
+        ]
         config.nipype.omp_nthreads = 1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
@@ -122,8 +130,8 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         ),
     ]
     atlas_labels_files = [
-        load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv"),
-        load_data("atlases/atlas-Glasser/atlas-Glasser_dseg.tsv"),
+        str(load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv")),
+        str(load_data("atlases/atlas-Glasser/atlas-Glasser_dseg.tsv")),
     ]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
@@ -279,9 +287,9 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ["4S1056Parcels", "4S156Parcels", "4S456Parcels", "Gordon", "Glasser"]
     atlas_files = [
-        "/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-32k_dseg.dlabel.nii",
-        "/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-32k_dseg.dlabel.nii",
-        "/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-32k_dseg.dlabel.nii",
+        "/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
+        "/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
+        "/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
         str(load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii")),
         str(load_data("atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii")),
     ]
