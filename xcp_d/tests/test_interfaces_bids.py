@@ -57,7 +57,7 @@ def test_copy_atlas(tmp_path_factory):
 
     # CIFTI
     atlas_info = {
-        "image": load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_dseg.dlabel.nii"),
+        "image": load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii"),
         "labels": load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv"),
         "metadata": {"thing": "stuff"},
         "dataset": "xcpdatlases",
