@@ -469,42 +469,41 @@ plot_design_matrix.html#create-design-matrices>`_.
 Then, create a confounds config file to include derivatives from ``custom_confounds``.
 Something like this should work:
 
-```yaml
-name: my_custom_confounds
-description: |
-   Nuisance regressors were task regressors convolved with an HRF and motion parameters.
-confounds:
-   motion:
-      dataset: preprocessed
-      query:
-         space: null
-         cohort: null
-         res: null
-         den: null
-         desc: confounds
-         extension: .tsv
-         suffix: timeseries
-      columns:
-      - trans_x
-      - trans_y
-      - trans_z
-      - rot_x
-      - rot_y
-      - rot_z
-   task:
-      dataset: custom
-      query:
-         space: null
-         cohort: null
-         res: null
-         den: null
-         desc: confounds
-         extension: .tsv
-         suffix: timeseries
-      columns:
-      - condition1
-      - condition2
-```
+.. code-block:: yaml
+   name: my_custom_confounds
+   description: |
+      Nuisance regressors were task regressors convolved with an HRF and motion parameters.
+   confounds:
+      motion:
+         dataset: preprocessed
+         query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+         columns:
+         - trans_x
+         - trans_y
+         - trans_z
+         - rot_x
+         - rot_y
+         - rot_z
+      task:
+         dataset: custom
+         query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+         columns:
+         - condition1
+         - condition2
 
 
 Command Line XCP-D with Custom Confounds
