@@ -19,7 +19,7 @@ def test_copy_atlas(tmp_path_factory):
             "atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz"
         ),
         "labels": load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv"),
-        "metadata": {},
+        "metadata": {"thing": "stuff"},
         "dataset": "xcpdatlases",
     }
     name_source = "sub-01_task-A_run-01_space-MNI152NLin2009cAsym_res-2_desc-z_bold.nii.gz"
@@ -43,7 +43,7 @@ def test_copy_atlas(tmp_path_factory):
     atlas_info_diff_affine = {
         "image": load_data("atlases/atlas-HCP/atlas-HCP_space-MNI152NLin6Asym_res-02_dseg.nii.gz"),
         "labels": load_data("atlases/atlas-HCP/atlas-HCP_dseg.tsv"),
-        "metadata": {},
+        "metadata": {"thing": "stuff"},
         "dataset": "xcpdatlases",
     }
     with pytest.raises(ValueError, match="is different from the input file affine"):
@@ -59,7 +59,7 @@ def test_copy_atlas(tmp_path_factory):
     atlas_info = {
         "image": load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_dseg.dlabel.nii"),
         "labels": load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv"),
-        "metadata": {},
+        "metadata": {"thing": "stuff"},
         "dataset": "xcpdatlases",
     }
     name_source = "sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"

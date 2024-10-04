@@ -37,10 +37,10 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.execution.output_dir = tmpdir
         config.workflow.file_format = "nifti"
         config.execution.atlases = ["4S156Parcels", "Glasser"]
-        config.execution.datasets = [
-            str(load_data("atlases")),
-            "/AtlasPack",
-        ]
+        config.execution.datasets = {
+            "xcpdatlases": str(load_data("atlases")),
+            "xcpd4s": "/AtlasPack",
+        }
         config.nipype.omp_nthreads = 1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
@@ -66,10 +66,10 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.execution.output_dir = tmpdir
         config.workflow.file_format = "cifti"
         config.execution.atlases = ["4S156Parcels", "Glasser"]
-        config.execution.datasets = [
-            str(load_data("atlases")),
-            "/AtlasPack",
-        ]
+        config.execution.datasets = {
+            "xcpdatlases": str(load_data("atlases")),
+            "xcpd4s": "/AtlasPack",
+        }
         config.nipype.omp_nthreads = 1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
