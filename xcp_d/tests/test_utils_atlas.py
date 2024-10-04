@@ -90,7 +90,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     with open(tmpdir / "atlas-TEST" / "atlas-TEST_dseg.tsv", "w") as fo:
         fo.write("index\n1\n")
 
-    with pytest.raises(ValueError, match="No 'label' column found in"):
+    with pytest.raises(ValueError, match="'label' column not found"):
         atlas.collect_atlases(
             datasets={"test": tmpdir},
             atlases=["TEST"],
@@ -102,7 +102,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     with open(tmpdir / "atlas-TEST" / "atlas-TEST_dseg.tsv", "w") as fo:
         fo.write("label\ntest\n")
 
-    with pytest.raises(ValueError, match="No 'index' column found in"):
+    with pytest.raises(ValueError, match="'index' column not found"):
         atlas.collect_atlases(
             datasets={"test": tmpdir},
             atlases=["TEST"],
