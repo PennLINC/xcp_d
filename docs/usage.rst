@@ -470,6 +470,7 @@ Then, create a confounds config file to include derivatives from ``custom_confou
 Something like this should work:
 
 .. code-block:: yaml
+
    name: my_custom_confounds
    description: |
       Nuisance regressors were task regressors convolved with an HRF and motion parameters.
