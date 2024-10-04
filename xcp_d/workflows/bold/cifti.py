@@ -132,7 +132,6 @@ def init_postprocess_cifti_wf(
     bandpass_filter = config.workflow.bandpass_filter
     dummy_scans = config.workflow.dummy_scans
     despike = config.workflow.despike
-    atlases = config.execution.atlases
 
     TR = run_data["bold_metadata"]["RepetitionTime"]
 
@@ -166,11 +165,11 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.motion_json = run_data["motion_json"]
     inputnode.inputs.confounds_files = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
-    inputnode.inputs.atlases = atlases
 
     workflow = Workflow(name=name)
 
-    workflow.__desc__ = f"""\
+    workflow.__desc__ = f"""
+#### Functional data
 
 For each of the {num2words(n_runs)} BOLD runs found per subject (across all tasks and sessions),
 the following post-processing was performed.
@@ -324,6 +323,7 @@ the following post-processing was performed.
         (inputnode, postproc_derivatives_wf, [
             ("motion_file", "inputnode.preproc_confounds_file"),
             ("atlas_files", "inputnode.atlas_files"),
+            ("atlases", "inputnode.atlas_names"),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
             ("outputnode.denoised_bold", "inputnode.denoised_bold"),
@@ -357,7 +357,7 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    if atlases:
+    if config.execution.atlases:
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,
             exact_scans=exact_scans,

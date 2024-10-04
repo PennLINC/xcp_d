@@ -380,7 +380,7 @@ class execution(_Config):
     fmri_dir = None
     """An existing path to the preprocessing derivatives dataset, which must be BIDS-compliant."""
     datasets = {}
-    """Path(s) to search for pre-computed derivatives"""
+    """Path(s) to search for other datasets (either derivatives or atlases)."""
     aggr_ses_reports = None
     """Maximum number of sessions aggregated in one subject's visual report."""
     bids_database_dir = None

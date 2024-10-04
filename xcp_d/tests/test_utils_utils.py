@@ -454,34 +454,63 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 def test_get_std2bold_xfms(ds001419_data):
     """Test get_std2bold_xfms.
 
-    get_std2bold_xfms finds transforms to go from the input file's space to MNI152NLin6Asym.
+    get_std2bold_xfms finds transforms to go from a source file's space to the BOLD file's space.
     """
     bold_file_nlin6asym = ds001419_data["nifti_file"]
 
-    # MNI152NLin6Asym --> MNI152NLin6Asym
-    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin6asym)
+    # MNI152NLin6Asym --> MNI152NLin6Asym with source file containing tpl entity
+    xforms_to_mni = utils.get_std2bold_xfms(
+        bold_file_nlin6asym,
+        source_file="tpl-MNI152NLin6Asym_T1w.nii.gz",
+        source_space=None,
+    )
     assert len(xforms_to_mni) == 1
 
-    # MNI152NLin6Asym --> MNI152NLin2009cAsym
-    bold_file_nlin2009c = bold_file_nlin6asym.replace(
-        "space-MNI152NLin6Asym_",
-        "space-MNI152NLin2009cAsym_",
+    # MNI152NLin6Asym --> MNI152NLin6Asym with source file containing space entity
+    xforms_to_mni = utils.get_std2bold_xfms(
+        bold_file_nlin6asym,
+        source_file="space-MNI152NLin6Asym_T1w.nii.gz",
+        source_space=None,
     )
-    xforms_to_mni = utils.get_std2bold_xfms(bold_file_nlin2009c)
     assert len(xforms_to_mni) == 1
 
-    # MNI152NLin6Asym --> MNIInfant
-    bold_file_infant = bold_file_nlin6asym.replace(
-        "space-MNI152NLin6Asym_",
-        "space-MNIInfant_cohort-1_",
-    )
-    xforms_to_mni = utils.get_std2bold_xfms(bold_file_infant)
-    assert len(xforms_to_mni) == 2
+    SPACES = [
+        ("MNI152NLin6Asym", "MNI152NLin6Asym", 1),
+        ("MNI152NLin6Asym", "MNI152NLin2009cAsym", 1),
+        ("MNI152NLin6Asym", "MNIInfant", 2),
+        ("MNI152NLin2009cAsym", "MNI152NLin2009cAsym", 1),
+        ("MNI152NLin2009cAsym", "MNI152NLin6Asym", 1),
+        ("MNI152NLin2009cAsym", "MNIInfant", 1),
+        ("MNIInfant", "MNIInfant", 1),
+        ("MNIInfant", "MNI152NLin2009cAsym", 1),
+        ("MNIInfant", "MNI152NLin6Asym", 2),
+    ]
+    for space_check in SPACES:
+        target_space, source_space, n_xforms = space_check
+        bold_file_target_space = bold_file_nlin6asym.replace(
+            "space-MNI152NLin6Asym_",
+            f"space-{target_space}_",
+        )
+        xforms_to_mni = utils.get_std2bold_xfms(
+            bold_file_target_space,
+            source_file=None,
+            source_space=source_space,
+        )
+        assert len(xforms_to_mni) == n_xforms
+
+    # Outside of the supported spaces, we expect an error
+    # No space or tpl entity in source file
+    with pytest.raises(ValueError, match="Unknown space"):
+        utils.get_std2bold_xfms(bold_file_nlin6asym, source_file="T1w.nii.gz", source_space=None)
 
     # MNI152NLin6Asym --> tofail
     bold_file_tofail = bold_file_nlin6asym.replace("space-MNI152NLin6Asym_", "space-tofail_")
-    with pytest.raises(ValueError, match="Space 'tofail'"):
-        utils.get_std2bold_xfms(bold_file_tofail)
+    with pytest.raises(ValueError, match="BOLD space 'tofail' not supported"):
+        utils.get_std2bold_xfms(bold_file_tofail, source_file=None, source_space="MNI152NLin6Asym")
+
+    # tofail --> MNI152NLin6Asym
+    with pytest.raises(ValueError, match="Source space 'tofail' not supported"):
+        utils.get_std2bold_xfms(bold_file_nlin6asym, source_file=None, source_space="tofail")
 
 
 def test_fwhm2sigma():

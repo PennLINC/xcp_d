@@ -47,4 +47,4 @@ def main(args=None):
 
 
 if __name__ == "__main__":
-    raise RuntimeError("this should be run after xcp_d;\nrun XCP-D first")
+    raise RuntimeError("this should be run after XCP-D;\nrun XCP-D first")

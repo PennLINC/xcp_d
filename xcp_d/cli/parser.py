@@ -134,7 +134,7 @@ def _build_parser():
         type=str,
         nargs="+",
         help=(
-            "Search PATH(s) for pre-computed derivatives. "
+            "Search PATH(s) for derivatives or atlas datasets. "
             "These may be provided as named folders "
             "(e.g., `--datasets smriprep=/path/to/smriprep`)."
         ),
@@ -503,10 +503,12 @@ The default is 240 (4 minutes).
         action="store",
         nargs="+",
         metavar="ATLAS",
-        choices=all_atlases,
         default=all_atlases,
         dest="atlases",
-        help="Selection of atlases to apply to the data. All are used by default.",
+        help=(
+            "Selection of atlases to apply to the data. "
+            "All of XCP-D's built-in atlases are used by default."
+        ),
     )
     g_atlases.add_argument(
         "--skip-parcellation",
@@ -933,6 +935,16 @@ def _validate_parameters(opts, build_log, parser):
     assert opts.mode in ("abcd", "hbcd", "linc", "none"), f"Unsupported mode '{opts.mode}'."
     assert opts.output_type in ("censored", "interpolated", "auto")
     assert opts.process_surfaces in (True, False, "auto")
+
+    # Add internal atlas datasets to the list of datasets
+    opts.datasets = opts.datasets or {}
+    if opts.atlases:
+        if "xcpdatlases" not in opts.datasets:
+            opts.datasets["xcpdatlases"] = load_data("atlases")
+
+        if any(atlas.startswith("4S") for atlas in opts.atlases):
+            if "xcpd4s" not in opts.datasets:
+                opts.datasets["xcpd4s"] = Path("/AtlasPack")
 
     # Check parameters based on the mode
     if opts.mode == "abcd":

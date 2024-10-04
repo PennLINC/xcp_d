@@ -88,7 +88,7 @@ and other postprocessing/analysis tools are better suited for many types of data
 XCP-D derivatives are not particularly useful for task-dependent functional connectivity analyses,
 such as psychophysiological interactions (PPIs) or beta series analyses.
 It is also not suitable for general task-based analyses, such as standard task GLMs,
-as we recommend included nuisance regressors in the GLM step,
+as we recommend including nuisance regressors in the GLM step,
 rather than denoising data prior to the GLM.
 
 
