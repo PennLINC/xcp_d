@@ -112,8 +112,14 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ["Gordon", "Glasser"]
     atlas_files = [
-        load_data("atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz"),
-        load_data("atlases/atlas-Glasser/atlas-Glasser_space-MNI152NLin6Asym_res-01_dseg.nii.gz"),
+        str(
+            load_data("atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz")
+        ),
+        str(
+            load_data(
+                "atlases/atlas-Glasser/atlas-Glasser_space-MNI152NLin6Asym_res-01_dseg.nii.gz"
+            )
+        ),
     ]
     atlas_labels_files = [
         load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv"),
@@ -276,15 +282,15 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         "/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-32k_dseg.dlabel.nii",
         "/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-32k_dseg.dlabel.nii",
         "/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-32k_dseg.dlabel.nii",
-        load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii"),
-        load_data("atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii"),
+        str(load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii")),
+        str(load_data("atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii")),
     ]
     atlas_labels_files = [
         "/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_dseg.tsv",
         "/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv",
         "/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_dseg.tsv",
-        load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv"),
-        load_data("atlases/atlas-Glasser/atlas-Glasser_dseg.tsv"),
+        str(load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv")),
+        str(load_data("atlases/atlas-Glasser/atlas-Glasser_dseg.tsv")),
     ]
 
     # Create the node and a tmpdir to write its results out to

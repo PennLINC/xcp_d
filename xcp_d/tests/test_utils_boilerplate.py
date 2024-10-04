@@ -191,6 +191,6 @@ def test_describe_atlases():
     assert "Tian" in atlas_desc
     assert "Glasser" in atlas_desc
 
+    # This no longer fails. It just adds the missing atlas to the description.
     atlases = ["4S156Parcels", "4S256Parcels", "Glasser", "fail"]
-    with pytest.raises(ValueError, match="Unrecognized atlas"):
-        boilerplate.describe_atlases(atlases)
+    assert "the fail atlas" in boilerplate.describe_atlases(atlases)
