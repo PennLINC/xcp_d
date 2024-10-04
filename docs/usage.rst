@@ -523,38 +523,84 @@ Last, run XCP-D with your custom configuration file and the path to the custom d
       --nuisance-regressors /mnt/custom_config.yaml
 
 
-********************
-Custom Parcellations
-********************
+****************
+External Atlases
+****************
 
-While XCP-D comes with many built in parcellations, we understand that many users will want to use
-custom parcellations.
-If you use the ``-cifti`` option, you can use the Human Connectome Project's ``wb_command`` to
-generate the time series:
+While XCP-D comes with many built-in parcellations,
+we understand that many users will want to use different ones.
+
+As long as the parcellation is organized in a BIDS-Atlas dataset and is in
+fsLR-32k space (for CIFTI processing) or
+MNIInfant, MNI152NLin6Asym, or MNI152NLin2009cAsym space (for NIfTI processing),
+you can use it with XCP-D.
+
+.. warning::
+   BIDS Extension Proposal 38 (Atlas Specification) has not been integrated in BIDS yet,
+   so the organization and naming for atlas datasets may change in the future.
+
+   We have attempted to follow the proposed structure in XCP-D,
+   but we cannot guarantee that this will not change.
+
+.. tip::
+   The main elements from the BIDS-Atlas dataset that XCP-D uses are:
+
+   1. There must be a dataset_description.json file with DatasetType set to "atlas".
+   2. The atlas metadata files must have the same entities as the atlas image files,
+      as PyBIDS does not support the inheritance principle when querying BIDS-Atlas datasets (yet).
+   3. There must be a TSV file for the atlas, with "index" and "label" columns.
+
+To do this, use the ``--datasets`` and ``--atlases`` parameters.
+The ``--datasets`` parameter should point to the directory containing the BIDS-Atlas dataset,
+and the ``--atlases`` parameter should include the names of the atlases in the dataset to use.
+
+For example, consider a scenario where you have two BIDS-Atlas datasets, one containing all of the
+Schaefer 2018 resolutions and one containing the AAL atlas.
+These datasets are in ``/data/atlases/schaefer`` and ``/data/atlases/aal``, respectively.
+The file structure for these two datasets might look like this:
+
+.. code-block::
+
+   /data/atlases/
+      schaefer/
+         dataset_description.json
+         atlas-Schaefer100/
+            atlas-Schaefer100_dseg.tsv
+            atlas-Schaefer100_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer100_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer200/
+            atlas-Schaefer200_dseg.tsv
+            atlas-Schaefer200_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer200_space-fsLR_den-32k_dseg.json
+         ...
+         atlas-Schaefer1000/
+            atlas-Schaefer1000_dseg.tsv
+            atlas-Schaefer1000_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer1000_space-fsLR_den-32k_dseg.json
+      aal/
+         dataset_description.json
+         atlas-AAL/
+            atlas-AAL_dseg.tsv
+            atlas-AAL_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-AAL_space-fsLR_den-32k_dseg.json
+
+You may want to only apply the Schaefer100 atlas from the ``schaefer`` dataset and the AAL atlas
+from the ``aal`` dataset, along with one of XCP-D's built-in atlases (``4S156Parcels``).
+Here's what the XCP-D call might look like:
 
 .. code-block:: bash
 
-   wb_command \
-      -cifti-parcellate \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii \
-      your_parcels.dlabel \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_timeseries.ptseries.nii
+   apptainer run --cleanenv -B /data:/data xcpd_latest.sif \
+      /data/dataset/derivatives/fmriprep \
+      /data/dataset/derivatives/xcp_d \
+      participant \
+      --mode linc \
+      --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
+      --atlases Schaefer100 AAL 4S156Parcels
 
-After this, if one wishes to have a connectivity matrix:
-
-.. code-block:: bash
-
-   wb_command \
-      -cifti-correlation \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_timeseries.ptseries.nii \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_boldmap.pconn.nii
-
-More information can be found at the HCP
-`documentation <https://www.humanconnectome.org/software/workbench-command>`_.
-
-If you use the default NIFTI processing pipeline, you can use Nilearn's
-`NiftiLabelsMasker <https://nilearn.github.io/stable/auto_examples/06_manipulating_images/\
-plot_nifti_labels_simple.html#extracting-signals-from-brain-regions-using-the-niftilabelsmasker>`_
+XCP-D will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
+``schaefer``, ``aal``, and XCP-D's built-in atlas datasets.
+If the atlases are found, then they will be used for parcellation.
 
 
 *********************
