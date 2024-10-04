@@ -164,3 +164,74 @@ def test_bids_filter(tmp_path_factory):
     parser = ArgumentParser()
     result = parser_utils._bids_filter(None, parser)
     assert result is None
+
+
+def test_yes_no_action():
+    """Test parser_utils.YesNoAction."""
+    parser = ArgumentParser()
+    parser.add_argument("--option", action=parser_utils.YesNoAction)
+
+    # A value of y should be True
+    args = parser.parse_args(["--option", "y"])
+    assert args.option is True
+
+    # A value of n should be False
+    args = parser.parse_args(["--option", "n"])
+    assert args.option is False
+
+    # The parameter without a value should default to True
+    args = parser.parse_args(["--option"])
+    assert args.option is True
+
+    # Auto is an option
+    args = parser.parse_args(["--option", "auto"])
+    assert args.option == "auto"
+
+    # Invalid value raises an error
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--option", "invalid"])
+
+
+def test_to_dict():
+    """Test parser_utils.ToDict."""
+    parser = ArgumentParser()
+    parser.add_argument("--option", action=parser_utils.ToDict, nargs="+")
+
+    # Two key-value pairs
+    args = parser.parse_args(["--option", "key1=value1", "key2=value2"])
+    assert args.option == {"key1": Path("value1"), "key2": Path("value2")}
+
+    # Providing the same key twice
+    with pytest.raises(SystemExit, match="Received duplicate derivative name: key1"):
+        parser.parse_args(["--option", "key1=value1", "key1=value2"])
+
+    # Trying to use one of the reserved keys
+    with pytest.raises(
+        SystemExit,
+        match="The 'preprocessed' derivative is reserved for internal use.",
+    ):
+        parser.parse_args(["--option", "preprocessed=value1"])
+
+    # Dataset with no name
+    args = parser.parse_args(["--option", "value1"])
+    assert args.option == {"value1": Path("value1")}
+
+
+def test_confounds_action(tmp_path):
+    """Test parser_utils.ConfoundsAction."""
+    parser = ArgumentParser()
+    parser.add_argument("--confounds", action=parser_utils.ConfoundsAction)
+
+    # A value of auto should be "auto"
+    args = parser.parse_args(["--confounds", "auto"])
+    assert args.confounds == "auto"
+
+    # A valid custom confounds option
+    valid_path = tmp_path / "valid_confounds.yml"
+    valid_path.touch()  # Create the file
+    args = parser.parse_args(["--confounds", str(valid_path)])
+    assert args.confounds == valid_path
+
+    # Path to a non-existent file should raise an error
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--confounds", "/invalid/path/to/confounds.yml"])

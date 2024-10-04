@@ -602,6 +602,11 @@ XCP-D will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Par
 ``schaefer``, ``aal``, and XCP-D's built-in atlas datasets.
 If the atlases are found, then they will be used for parcellation.
 
+.. important::
+
+   Atlas names must be unique across BIDS-Atlas datasets.
+   If two atlases have the same name, XCP-D will raise an error.
+
 
 *********************
 Advanced Applications

@@ -126,26 +126,6 @@ def _bids_filter(value, parser):
             raise parser.error(f"Path does not exist: <{value}>.")
 
 
-class BuiltinAtlasOrDataset(argparse.Action):
-    """A custom argparse "store" action to handle built-in atlases or datasets."""
-
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
-        """Call the argument."""
-        from xcp_d.utils.atlas import select_atlases
-
-        all_atlases = select_atlases(atlases=None, subset="all")
-
-        validated_values = []
-        for value in values:
-            if value in all_atlases:
-                validated_values.append(value)
-            elif Path(value).is_dir():
-                validated_values.append(Path(value).absolute())
-            else:
-                raise parser.error(f"Invalid value for atlas: <{value}>.")
-        setattr(namespace, self.dest, validated_values)
-
-
 def _min_one(value, parser):
     """Ensure an argument is not lower than 1."""
     value = int(value)
@@ -160,7 +140,9 @@ class YesNoAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         lookup = {"y": True, "n": False, None: True, "auto": "auto"}
-        assert values in lookup.keys(), f"Invalid value '{values}' for {self.dest}"
+        if values not in lookup:
+            raise parser.error(f"Invalid value '{values}' for {self.dest}")
+
         setattr(namespace, self.dest, lookup[values])
 
 
@@ -179,9 +161,9 @@ class ToDict(Action):
                 name = loc.name
 
             if name in d:
-                raise ValueError(f"Received duplicate derivative name: {name}")
+                raise parser.error(f"Received duplicate derivative name: {name}")
             elif name == "preprocessed":
-                raise ValueError("The 'preprocessed' derivative is reserved for internal use.")
+                raise parser.error("The 'preprocessed' derivative is reserved for internal use.")
 
             d[name] = loc
         setattr(namespace, self.dest, d)

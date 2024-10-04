@@ -66,8 +66,8 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
 
     Parameters
     ----------
-    datasets : list of str or BIDSLayout
-        List of BIDS datasets to search for atlases.
+    datasets : dict of str:str or str:BIDSLayout pairs
+        Dictionary of BIDS datasets to search for atlases.
     atlases : list of str
         List of atlases to collect from across the datasets.
     file_format : {"nifti", "cifti"}
@@ -144,6 +144,9 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
             atlas_image = atlas_images[0]
             atlas_labels = layout.get_nearest(atlas_image, extension=".tsv", strict=False)
             atlas_metadata_file = layout.get_nearest(atlas_image, extension=".json", strict=True)
+
+            if not atlas_labels:
+                raise FileNotFoundError(f"No TSV file found for {atlas_image}")
 
             atlas_metadata = None
             if atlas_metadata_file:

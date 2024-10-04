@@ -67,6 +67,7 @@ def datasets(data_dir):
         data_dir,
         "fmriprepwithoutfreesurfer",
     )
+    dsets["schaefer100"] = os.path.join(data_dir, "schaefer")
     return dsets
 
 
