@@ -9,11 +9,11 @@ import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d import config
+from xcp_d.data import load as load_data
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.connectivity import _sanitize_nifti_atlas
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
-from xcp_d.utils.atlas import get_atlas_cifti, get_atlas_nifti
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.utils import _create_mem_gb, get_std2bold_xfms
 from xcp_d.utils.write_save import read_ndata, write_ndata
@@ -37,6 +37,10 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.execution.output_dir = tmpdir
         config.workflow.file_format = "nifti"
         config.execution.atlases = ["4S156Parcels", "Glasser"]
+        config.execution.datasets = {
+            "xcpdatlases": str(load_data("atlases")),
+            "xcpd4s": "/AtlasPack",
+        }
         config.nipype.omp_nthreads = 1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
@@ -62,6 +66,10 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.execution.output_dir = tmpdir
         config.workflow.file_format = "cifti"
         config.execution.atlases = ["4S156Parcels", "Glasser"]
+        config.execution.datasets = {
+            "xcpdatlases": str(load_data("atlases")),
+            "xcpd4s": "/AtlasPack",
+        }
         config.nipype.omp_nthreads = 1
 
         load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
@@ -111,13 +119,29 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
     # Load atlases
     atlas_names = ["Gordon", "Glasser"]
-    atlas_files = [get_atlas_nifti(atlas_name)[0] for atlas_name in atlas_names]
-    atlas_labels_files = [get_atlas_nifti(atlas_name)[1] for atlas_name in atlas_names]
+    atlas_files = [
+        str(
+            load_data("atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz")
+        ),
+        str(
+            load_data(
+                "atlases/atlas-Glasser/atlas-Glasser_space-MNI152NLin6Asym_res-01_dseg.nii.gz"
+            )
+        ),
+    ]
+    atlas_labels_files = [
+        str(load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv")),
+        str(load_data("atlases/atlas-Glasser/atlas-Glasser_dseg.tsv")),
+    ]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
     warped_atlases = []
     # Get transform(s) from MNI152NLin6Asym to BOLD file's space
-    transforms_from_MNI152NLin6Asym = get_std2bold_xfms(bold_file)
+    transforms_from_MNI152NLin6Asym = get_std2bold_xfms(
+        bold_file,
+        source_file=None,
+        source_space="MNI152NLin6Asym",
+    )
     for atlas_file in atlas_files:
         # Using the generated transforms, apply them to get everything in the correct MNI form
         warp_atlases_to_bold_space = ApplyTransforms(
@@ -262,8 +286,20 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
     # Load atlases
     atlas_names = ["4S1056Parcels", "4S156Parcels", "4S456Parcels", "Gordon", "Glasser"]
-    atlas_files = [get_atlas_cifti(atlas_name)[0] for atlas_name in atlas_names]
-    atlas_labels_files = [get_atlas_cifti(atlas_name)[1] for atlas_name in atlas_names]
+    atlas_files = [
+        "/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
+        "/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
+        "/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
+        str(load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii")),
+        str(load_data("atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii")),
+    ]
+    atlas_labels_files = [
+        "/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_dseg.tsv",
+        "/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv",
+        "/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_dseg.tsv",
+        str(load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv")),
+        str(load_data("atlases/atlas-Glasser/atlas-Glasser_dseg.tsv")),
+    ]
 
     # Create the node and a tmpdir to write its results out to
     with mock_config():

@@ -5,7 +5,7 @@ orbs:
 .dockersetup:
   &dockersetup
   docker:
-    - image: pennlinc/xcp_d_build:0.0.12
+    - image: pennlinc/xcp_d_build:0.0.19
   working_directory: /src/xcp_d
 
 runinstall:
@@ -71,6 +71,23 @@ jobs:
           key: ds001419-aroma-02
           paths:
             - /src/xcp_d/.circleci/data/ds001419-aroma
+
+  download_data_schaefer100:
+    <<: *dockersetup
+    steps:
+      - checkout
+      - restore_cache:
+          key: schaefer100-02
+      - run: *runinstall
+      - run:
+          name: Download BIDS-Atlas dataset
+          command: |
+            cd /src/xcp_d/.circleci
+            python get_data.py $PWD/data schaefer100
+      - save_cache:
+          key: schaefer100-02
+          paths:
+            - /src/xcp_d/.circleci/data/schaefer100
 
   download_data_pnc:
     <<: *dockersetup
@@ -161,6 +178,8 @@ jobs:
             fi
       - restore_cache:
           key: fmriprepwithoutfreesurfer-03
+      - restore_cache:
+          key: schaefer100-02
       - run: *runinstall
       - run:
           name: Run full xcp_d on nifti without freesurfer
@@ -505,6 +524,8 @@ jobs:
           key: fmriprepwithoutfreesurfer-03
       - restore_cache:
           key: nibabies-04
+      - restore_cache:
+          key: schaefer100-02
       - run: *runinstall
       - run:
           name: Run pytest on the tests directory
@@ -648,6 +669,13 @@ workflows:
             tags:
               only: /.*/
 
+      - download_data_schaefer100:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+
       - pnc_cifti:
           requires:
             - download_data_pnc
@@ -718,6 +746,7 @@ workflows:
       - nifti_without_freesurfer:
           requires:
             - download_data_fmriprepwithoutfreesurfer
+            - download_data_schaefer100
           filters:
             branches:
               ignore:
@@ -743,6 +772,7 @@ workflows:
             - download_data_fmriprepwithoutfreesurfer
             - download_data_ds001419
             - download_data_nibabies
+            - download_data_schaefer100
           filters:
             branches:
               ignore:

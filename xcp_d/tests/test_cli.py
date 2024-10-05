@@ -49,7 +49,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         out_dir,
         "participant",
         "--mode=none",
-        "--derivatives",
+        "--datasets",
         f"aroma={derivs_dir}",
         f"-w={work_dir}",
         f"--bids-filter-file={filter_file}",
@@ -290,6 +290,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     test_name = "test_fmriprep_without_freesurfer"
 
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
+    atlas_dir = download_test_data("schaefer100", data_dir)
     tmpdir = os.path.join(output_dir, test_name)
     out_dir = os.path.join(tmpdir, "xcp_d")
     work_dir = os.path.join(working_dir, test_name)
@@ -301,6 +302,11 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         "--mode=linc",
         f"-w={work_dir}",
         "--file-format=nifti",
+        "--datasets",
+        f"schaefer={atlas_dir}",
+        "--atlases",
+        "4S156Parcels",
+        "Schaefer100",
         "--nthreads=2",
         "--omp-nthreads=2",
         "--head_radius=40",
@@ -338,6 +344,7 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     test_name = "test_fmriprep_without_freesurfer"
 
     dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
+    atlas_dir = download_test_data("schaefer100", data_dir)
     tmpdir = os.path.join(output_dir, f"{test_name}_with_main")
     out_dir = os.path.join(tmpdir, "xcp_d")
     work_dir = os.path.join(working_dir, f"{test_name}_with_main")
@@ -349,6 +356,11 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
         "--mode=linc",
         f"-w={work_dir}",
         "--file-format=nifti",
+        "--datasets",
+        f"schaefer={atlas_dir}",
+        "--atlases",
+        "4S156Parcels",
+        "Schaefer100",
         "--nthreads=2",
         "--omp-nthreads=2",
         "--head_radius=40",
@@ -421,7 +433,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
 
     if test_main:
         # This runs, but for some reason doesn't count toward coverage.
-        argv = ["xcp-d"] + parameters
+        argv = ["xcp_d"] + parameters
         with patch.object(sys, "argv", argv):
             with pytest.raises(SystemExit) as e:
                 run.main()

@@ -140,7 +140,9 @@ class YesNoAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         lookup = {"y": True, "n": False, None: True, "auto": "auto"}
-        assert values in lookup.keys(), f"Invalid value '{values}' for {self.dest}"
+        if values not in lookup:
+            raise parser.error(f"Invalid value '{values}' for {self.dest}")
+
         setattr(namespace, self.dest, lookup[values])
 
 
@@ -159,9 +161,9 @@ class ToDict(Action):
                 name = loc.name
 
             if name in d:
-                raise ValueError(f"Received duplicate derivative name: {name}")
+                raise parser.error(f"Received duplicate derivative name: {name}")
             elif name == "preprocessed":
-                raise ValueError("The 'preprocessed' derivative is reserved for internal use.")
+                raise parser.error("The 'preprocessed' derivative is reserved for internal use.")
 
             d[name] = loc
         setattr(namespace, self.dest, d)

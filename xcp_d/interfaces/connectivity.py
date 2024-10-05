@@ -423,6 +423,8 @@ class ConnectPlot(SimpleInterface):
             "4S956Parcels",
             "4S1056Parcels",
         ]
+        external_atlases = [a for a in self.inputs.atlases if a not in priority_list]
+        priority_list += external_atlases
         selected_atlases = []
         c = 0
         for atlas in priority_list:
@@ -569,14 +571,16 @@ class CiftiToTSV(SimpleInterface):
         if "cifti_label" in node_labels_df.columns:
             parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
         elif "label_7network" in node_labels_df.columns:
-            node_labels_df["label_7network"] = node_labels_df["label_7network"].fillna(
+            node_labels_df["cifti_label"] = node_labels_df["label_7network"].fillna(
                 node_labels_df["label"]
             )
-            parcel_label_mapper = dict(
-                zip(node_labels_df["label_7network"], node_labels_df["label"])
-            )
+            parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
         else:
-            raise Exception(atlas_labels)
+            LOGGER.warning(
+                "No 'cifti_label' column found in atlas labels file. "
+                "Assuming labels in TSV exactly match node names in CIFTI atlas."
+            )
+            parcel_label_mapper = dict(zip(node_labels_df["label"], node_labels_df["label"]))
 
         if in_file.endswith(".pconn.nii"):
             ax0 = img.header.get_axis(0)
@@ -592,7 +596,7 @@ class CiftiToTSV(SimpleInterface):
             df = pd.DataFrame(columns=ax1.name, data=img.get_fdata())
             check_axes = [1]
 
-        # Check that all labels in the atlas labels DF are present in the TSV file, and vice versa.
+        # Check that all node labels in the CIFTI are present in the TSV, and vice versa.
         if 0 in check_axes:
             # Replace values in index, which should match the keys in the parcel_label_mapper
             # dictionary, with the corresponding values in the dictionary.

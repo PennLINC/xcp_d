@@ -321,7 +321,6 @@ A Docker container can be created using the following command:
       -v /dset/derivatives/fmriprep:/fmriprep:ro \
       -v /tmp/wkdir:/work:rw \
       -v /dset/derivatives/xcp_d:/out:rw \
-      -v /dset/derivatives/freesurfer:/freesurfer:ro \  # Necessary for fMRIPrep versions <22.0.2
       pennlinc/xcp_d:latest \
       /fmriprep /out participant \
       --file-format cifti --despike --head_radius 40 -w /work --smoothing 6
@@ -439,13 +438,17 @@ plot_design_matrix.html#create-design-matrices>`_.
 
 .. code-block:: python
 
+   import json
+   import os
+
    import numpy as np
+   import pandas as pd
    from nilearn.glm.first_level import make_first_level_design_matrix
 
    N_VOLUMES = 200
    TR = 0.8
    frame_times = np.arange(N_VOLUMES) * TR
-   events_df = pd.read_table("sub-X_ses-Y_task-Z_run-01_events.tsv")
+   events_df = pd.read_table("sub-X_task-Z_events.tsv")
 
    task_confounds = make_first_level_design_matrix(
       frame_times,
@@ -458,11 +461,24 @@ plot_design_matrix.html#create-design-matrices>`_.
    # The design matrix will include a constant column, which we should drop
    task_confounds = task_confounds.drop(columns="constant")
 
+   # Prepare the derivative dataset
+   os.makedirs("/my/project/directory/custom_confounds/sub-X/func", exist_ok=True)
+   # Include a dataset_description.json file
+   with open("/my/project/directory/custom_confounds/dataset_description.json", "w") as fo:
+      json.dump(
+         {
+            "Name": "Custom Confounds",
+            "BIDSVersion": "1.6.0",
+            "DatasetType": "derivative"
+         },
+         fo,
+      )
+
    # Assuming that the fMRIPrep confounds file is named
-   # "sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+   # "sub-X_task-Z_desc-confounds_timeseries.tsv",
    # we will name the custom confounds file the same thing, in a separate folder.
    task_confounds.to_csv(
-      "/my/project/directory/custom_confounds/sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+      "/my/project/directory/custom_confounds/sub-X/func/sub-X_task-Z_desc-confounds_timeseries.tsv",
       sep="\t",
       index=False,
    )
@@ -470,42 +486,42 @@ plot_design_matrix.html#create-design-matrices>`_.
 Then, create a confounds config file to include derivatives from ``custom_confounds``.
 Something like this should work:
 
-```yaml
-name: my_custom_confounds
-description: |
-   Nuisance regressors were task regressors convolved with an HRF and motion parameters.
-confounds:
-   motion:
-      dataset: preprocessed
-      query:
-         space: null
-         cohort: null
-         res: null
-         den: null
-         desc: confounds
-         extension: .tsv
-         suffix: timeseries
-      columns:
-      - trans_x
-      - trans_y
-      - trans_z
-      - rot_x
-      - rot_y
-      - rot_z
-   task:
-      dataset: custom
-      query:
-         space: null
-         cohort: null
-         res: null
-         den: null
-         desc: confounds
-         extension: .tsv
-         suffix: timeseries
-      columns:
-      - condition1
-      - condition2
-```
+.. code-block:: yaml
+
+   name: my_custom_confounds
+   description: |
+      Nuisance regressors were task regressors convolved with an HRF and motion parameters.
+   confounds:
+      motion:
+         dataset: preprocessed
+         query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+         columns:
+         - trans_x
+         - trans_y
+         - trans_z
+         - rot_x
+         - rot_y
+         - rot_z
+      task:
+         dataset: custom
+         query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+         columns:  # Assume the task regressors are called "condition1" and "condition2"
+         - condition1
+         - condition2
 
 
 Command Line XCP-D with Custom Confounds
@@ -520,42 +536,93 @@ Last, run XCP-D with your custom configuration file and the path to the custom d
       /mnt/output/directory \
       participant \
       --participant_label X \
-      --derivatives custom=/mnt/custom_confounds \
+      --datasets custom=/mnt/custom_confounds \
       --nuisance-regressors /mnt/custom_config.yaml
 
 
-********************
-Custom Parcellations
-********************
+****************
+External Atlases
+****************
 
-While XCP-D comes with many built in parcellations, we understand that many users will want to use
-custom parcellations.
-If you use the ``-cifti`` option, you can use the Human Connectome Project's ``wb_command`` to
-generate the time series:
+While XCP-D comes with many built-in parcellations,
+we understand that many users will want to use different ones.
+
+As long as the parcellation is organized in a BIDS-Atlas dataset and is in
+fsLR-32k space (for CIFTI processing) or
+MNIInfant, MNI152NLin6Asym, or MNI152NLin2009cAsym space (for NIfTI processing),
+you can use it with XCP-D.
+
+.. warning::
+   BIDS Extension Proposal 38 (Atlas Specification) has not been integrated in BIDS yet,
+   so the organization and naming for atlas datasets may change in the future.
+
+   We have attempted to follow the proposed structure in XCP-D,
+   but we cannot guarantee that this will not change.
+
+.. tip::
+   The main elements from the BIDS-Atlas dataset that XCP-D uses are:
+
+   1. There must be a dataset_description.json file with DatasetType set to "atlas".
+   2. The atlas metadata files must have the same entities as the atlas image files,
+      as PyBIDS does not support the inheritance principle when querying BIDS-Atlas datasets (yet).
+   3. There must be a TSV file for the atlas, with "index" and "label" columns.
+
+To do this, use the ``--datasets`` and ``--atlases`` parameters.
+The ``--datasets`` parameter should point to the directory containing the BIDS-Atlas dataset,
+and the ``--atlases`` parameter should include the names of the atlases in the dataset to use.
+
+For example, consider a scenario where you have two BIDS-Atlas datasets, one containing all of the
+Schaefer 2018 resolutions and one containing the AAL atlas.
+These datasets are in ``/data/atlases/schaefer`` and ``/data/atlases/aal``, respectively.
+The file structure for these two datasets might look like this:
+
+.. code-block::
+
+   /data/atlases/
+      schaefer/
+         dataset_description.json
+         atlas-Schaefer100/
+            atlas-Schaefer100_dseg.tsv
+            atlas-Schaefer100_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer100_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer200/
+            atlas-Schaefer200_dseg.tsv
+            atlas-Schaefer200_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer200_space-fsLR_den-32k_dseg.json
+         ...
+         atlas-Schaefer1000/
+            atlas-Schaefer1000_dseg.tsv
+            atlas-Schaefer1000_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer1000_space-fsLR_den-32k_dseg.json
+      aal/
+         dataset_description.json
+         atlas-AAL/
+            atlas-AAL_dseg.tsv
+            atlas-AAL_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-AAL_space-fsLR_den-32k_dseg.json
+
+You may want to only apply the Schaefer100 atlas from the ``schaefer`` dataset and the AAL atlas
+from the ``aal`` dataset, along with one of XCP-D's built-in atlases (``4S156Parcels``).
+Here's what the XCP-D call might look like:
 
 .. code-block:: bash
 
-   wb_command \
-      -cifti-parcellate \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii \
-      your_parcels.dlabel \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_timeseries.ptseries.nii
+   apptainer run --cleanenv -B /data:/data xcpd_latest.sif \
+      /data/dataset/derivatives/fmriprep \
+      /data/dataset/derivatives/xcp_d \
+      participant \
+      --mode linc \
+      --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
+      --atlases Schaefer100 AAL 4S156Parcels
 
-After this, if one wishes to have a connectivity matrix:
+XCP-D will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
+``schaefer``, ``aal``, and XCP-D's built-in atlas datasets.
+If the atlases are found, then they will be used for parcellation.
 
-.. code-block:: bash
+.. important::
 
-   wb_command \
-      -cifti-correlation \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_timeseries.ptseries.nii \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_boldmap.pconn.nii
-
-More information can be found at the HCP
-`documentation <https://www.humanconnectome.org/software/workbench-command>`_.
-
-If you use the default NIFTI processing pipeline, you can use Nilearn's
-`NiftiLabelsMasker <https://nilearn.github.io/stable/auto_examples/06_manipulating_images/\
-plot_nifti_labels_simple.html#extracting-signals-from-brain-regions-using-the-niftilabelsmasker>`_
+   Atlas names must be unique across BIDS-Atlas datasets.
+   If two atlases have the same name, XCP-D will raise an error.
 
 
 *********************

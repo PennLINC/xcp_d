@@ -29,6 +29,7 @@ def base_opts():
         "output_dir": Path("out"),
         "work_dir": Path("work"),
         "analysis_level": "participant",
+        "datasets": {},
         "mode": "linc",
         "file_format": "auto",
         "input_type": "auto",

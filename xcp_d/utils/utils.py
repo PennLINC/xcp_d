@@ -130,8 +130,8 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
 
-def get_std2bold_xfms(bold_file):
-    """Obtain transforms to warp atlases from MNI152NLin6Asym to the same template as the BOLD.
+def get_std2bold_xfms(bold_file, source_file, source_space=None):
+    """Obtain transforms to warp atlases from a source space to the same template as the BOLD.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
@@ -142,10 +142,14 @@ def get_std2bold_xfms(bold_file):
     ----------
     bold_file : :obj:`str`
         The preprocessed BOLD file.
+    source_file : :obj:`str`
+        The source file to warp to the BOLD space.
+    source_space : :obj:`str`, optional
+        The space of the source file. If None, the space of the source file is inferred and used.
 
     Returns
     -------
-    transform_list : list of str
+    transforms : list of str
         A list of paths to transform files.
 
     Notes
@@ -159,8 +163,6 @@ def get_std2bold_xfms(bold_file):
     Does not include inversion flag output because there is no need (yet).
     Can easily be added in the future.
     """
-    import os
-
     from templateflow.api import get as get_template
 
     from xcp_d.data import load as load_data
@@ -169,7 +171,22 @@ def get_std2bold_xfms(bold_file):
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, "space")
 
-    # Load useful inter-template transforms from templateflow
+    if source_space is None:
+        # If a source space is not provided, extract the space of the source file
+        # First try tpl because that won't raise an error
+        source_space = get_entity(source_file, "tpl")
+        if source_space is None:
+            # If tpl isn't available, try space.
+            # get_entity will raise an error if space isn't there.
+            source_space = get_entity(source_file, "space")
+
+    if source_space not in ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant"):
+        raise ValueError(f"Source space '{source_space}' not supported.")
+
+    if bold_space not in ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant"):
+        raise ValueError(f"BOLD space '{bold_space}' not supported.")
+
+    # Load useful inter-template transforms from templateflow and package data
     MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
         get_template(
             template="MNI152NLin2009cAsym",
@@ -179,33 +196,54 @@ def get_std2bold_xfms(bold_file):
             **{"from": "MNI152NLin6Asym"},
         ),
     )
+    MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
+        get_template(
+            template="MNI152NLin6Asym",
+            mode="image",
+            suffix="xfm",
+            extension=".h5",
+            **{"from": "MNI152NLin2009cAsym"},
+        ),
+    )
+    MNIInfant_to_MNI152NLin2009cAsym = str(
+        load_data(
+            "transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        )
+    )
+    MNI152NLin2009cAsym_to_MNIInfant = str(
+        load_data(
+            "transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
+        )
+    )
 
-    # Find the appropriate transform(s)
-    if bold_space == "MNI152NLin6Asym":
-        # NLin6 --> NLin6 (identity)
-        transform_list = ["identity"]
+    if bold_space == source_space:
+        transforms = ["identity"]
+
+    elif bold_space == "MNI152NLin6Asym":
+        if source_space == "MNI152NLin2009cAsym":
+            transforms = [MNI152NLin2009cAsym_to_MNI152NLin6Asym]
+        elif source_space == "MNIInfant":
+            transforms = [
+                MNI152NLin2009cAsym_to_MNI152NLin6Asym,
+                MNIInfant_to_MNI152NLin2009cAsym,
+            ]
 
     elif bold_space == "MNI152NLin2009cAsym":
-        # NLin6 --> NLin2009c
-        transform_list = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
+        if source_space == "MNI152NLin6Asym":
+            transforms = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
+        elif source_space == "MNIInfant":
+            transforms = [MNIInfant_to_MNI152NLin2009cAsym]
 
     elif bold_space == "MNIInfant":
-        # NLin6 --> NLin2009c --> MNIInfant
-        MNI152NLin2009cAsym_to_MNI152Infant = str(
-            load_data(
-                "transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
-            )
-        )
-        transform_list = [
-            MNI152NLin2009cAsym_to_MNI152Infant,
-            MNI152NLin6Asym_to_MNI152NLin2009cAsym,
-        ]
+        if source_space == "MNI152NLin6Asym":
+            transforms = [
+                MNI152NLin2009cAsym_to_MNIInfant,
+                MNI152NLin6Asym_to_MNI152NLin2009cAsym,
+            ]
+        elif source_space == "MNI152NLin2009cAsym":
+            transforms = [MNI152NLin2009cAsym_to_MNIInfant]
 
-    else:
-        file_base = os.path.basename(bold_file)
-        raise ValueError(f"Space '{bold_space}' in {file_base} not supported.")
-
-    return transform_list
+    return transforms
 
 
 def fwhm2sigma(fwhm):

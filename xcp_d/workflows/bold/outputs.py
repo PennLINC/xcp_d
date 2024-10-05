@@ -84,7 +84,6 @@ def init_postproc_derivatives_wf(
     bpf_order = config.workflow.bpf_order
     fd_thresh = config.workflow.fd_thresh
     smoothing = config.workflow.smoothing
-    atlases = config.execution.atlases
     file_format = config.workflow.file_format
     output_dir = config.execution.output_dir
 
@@ -119,6 +118,8 @@ def init_postproc_derivatives_wf(
                 "timeseries_ciftis",
                 "correlation_ciftis",
                 "correlation_ciftis_exact",
+                # info for filenames
+                "atlas_names",
             ],
         ),
         name="inputnode",
@@ -371,7 +372,7 @@ def init_postproc_derivatives_wf(
         ])  # fmt:skip
 
     # Connectivity workflow outputs
-    if atlases:
+    if config.execution.atlases:
         make_atlas_dict = pe.MapNode(
             niu.Function(
                 function=_make_dictionary,
@@ -423,9 +424,11 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
             iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_coverage.inputs.segmentation = atlases
         workflow.connect([
-            (inputnode, ds_coverage, [("coverage", "in_file")]),
+            (inputnode, ds_coverage, [
+                ("atlas_names", "segmentation"),
+                ("coverage", "in_file"),
+            ]),
             (make_atlas_dict, ds_coverage, [("metadata", "meta_dict")]),
         ])  # fmt:skip
 
@@ -463,9 +466,11 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
             iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_timeseries.inputs.segmentation = atlases
         workflow.connect([
-            (inputnode, ds_timeseries, [("timeseries", "in_file")]),
+            (inputnode, ds_timeseries, [
+                ("atlas_names", "segmentation"),
+                ("timeseries", "in_file"),
+            ]),
             (add_coverage_to_src, ds_timeseries, [("metadata", "meta_dict")]),
             (ds_timeseries, outputnode, [("out_file", "timeseries")]),
         ])  # fmt:skip
@@ -511,9 +516,11 @@ def init_postproc_derivatives_wf(
                 mem_gb=1,
                 iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_correlations.inputs.segmentation = atlases
             workflow.connect([
-                (inputnode, ds_correlations, [("correlations", "in_file")]),
+                (inputnode, ds_correlations, [
+                    ("atlas_names", "segmentation"),
+                    ("correlations", "in_file"),
+                ]),
                 (make_corrs_meta_dict, ds_correlations, [("metadata", "meta_dict")]),
             ])  # fmt:skip
 
@@ -533,9 +540,11 @@ def init_postproc_derivatives_wf(
                 mem_gb=1,
                 iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_coverage_ciftis.inputs.segmentation = atlases
             workflow.connect([
-                (inputnode, ds_coverage_ciftis, [("coverage_ciftis", "in_file")]),
+                (inputnode, ds_coverage_ciftis, [
+                    ("atlas_names", "segmentation"),
+                    ("coverage_ciftis", "in_file"),
+                ]),
                 (add_denoised_to_src, ds_coverage_ciftis, [("metadata", "meta_dict")]),
             ])  # fmt:skip
 
@@ -573,9 +582,11 @@ def init_postproc_derivatives_wf(
                 mem_gb=1,
                 iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_timeseries_ciftis.inputs.segmentation = atlases
             workflow.connect([
-                (inputnode, ds_timeseries_ciftis, [("timeseries_ciftis", "in_file")]),
+                (inputnode, ds_timeseries_ciftis, [
+                    ("atlas_names", "segmentation"),
+                    ("timeseries_ciftis", "in_file"),
+                ]),
                 (add_ccoverage_to_src, ds_timeseries_ciftis, [("metadata", "meta_dict")]),
                 (ds_timeseries_ciftis, outputnode, [("out_file", "timeseries_ciftis")]),
             ])  # fmt:skip
@@ -623,9 +634,9 @@ def init_postproc_derivatives_wf(
                     mem_gb=1,
                     iterfield=["segmentation", "in_file", "meta_dict"],
                 )
-                ds_correlation_ciftis.inputs.segmentation = atlases
                 workflow.connect([
                     (inputnode, ds_correlation_ciftis, [
+                        ("atlas_names", "segmentation"),
                         ("correlation_ciftis", "in_file"),
                     ]),
                     (make_ccorrs_meta_dict, ds_correlation_ciftis, [("metadata", "meta_dict")]),
@@ -656,8 +667,8 @@ def init_postproc_derivatives_wf(
                 mem_gb=1,
                 iterfield=["segmentation", "in_file"],
             )
-            ds_correlations_exact.inputs.segmentation = atlases
             workflow.connect([
+                (inputnode, ds_correlations_exact, [("atlas_names", "segmentation")]),
                 (select_exact_scan_files, ds_correlations_exact, [("out", "in_file")]),
             ])  # fmt:skip
 
@@ -685,7 +696,7 @@ def init_postproc_derivatives_wf(
         (ds_denoised_bold, ds_reho, [(("out_file", _make_xcpd_uri, output_dir), "Sources")]),
     ])  # fmt:skip
 
-    if atlases:
+    if config.execution.atlases:
         add_reho_to_src = pe.MapNode(
             niu.Function(
                 function=_make_dictionary,
@@ -719,9 +730,11 @@ def init_postproc_derivatives_wf(
             mem_gb=1,
             iterfield=["segmentation", "in_file", "meta_dict"],
         )
-        ds_parcellated_reho.inputs.segmentation = atlases
         workflow.connect([
-            (inputnode, ds_parcellated_reho, [("parcellated_reho", "in_file")]),
+            (inputnode, ds_parcellated_reho, [
+                ("atlas_names", "segmentation"),
+                ("parcellated_reho", "in_file"),
+            ]),
             (add_reho_to_src, ds_parcellated_reho, [("metadata", "meta_dict")]),
         ])  # fmt:skip
 
@@ -775,7 +788,7 @@ def init_postproc_derivatives_wf(
                 ]),
             ])  # fmt:skip
 
-        if atlases:
+        if config.execution.atlases:
             add_alff_to_src = pe.MapNode(
                 niu.Function(
                     function=_make_dictionary,
@@ -808,9 +821,11 @@ def init_postproc_derivatives_wf(
                 mem_gb=1,
                 iterfield=["segmentation", "in_file", "meta_dict"],
             )
-            ds_parcellated_alff.inputs.segmentation = atlases
             workflow.connect([
-                (inputnode, ds_parcellated_alff, [("parcellated_alff", "in_file")]),
+                (inputnode, ds_parcellated_alff, [
+                    ("atlas_names", "segmentation"),
+                    ("parcellated_alff", "in_file"),
+                ]),
                 (add_alff_to_src, ds_parcellated_alff, [("metadata", "meta_dict")]),
             ])  # fmt:skip
 

@@ -708,11 +708,15 @@ def collect_confounds(
                 continue
 
             if isinstance(v, (Path, str)):
-                layout_dict[k] = BIDSLayout(
+                layout = BIDSLayout(
                     v,
                     config=["bids", "derivatives", xcp_d_config],
                     indexer=_indexer,
                 )
+                if layout.get_dataset_description().get("DatasetType") != "derivatives":
+                    print(f"Dataset {k} is not a derivatives dataset. Skipping.")
+
+                layout_dict[k] = layout
             else:
                 layout_dict[k] = v
 
@@ -722,7 +726,7 @@ def collect_confounds(
         if confound_def["dataset"] not in layout_dict.keys():
             raise ValueError(
                 f"Missing dataset required by confound spec: *{confound_def['dataset']}*. "
-                "Did you provide it with the `--derivatives` flag?"
+                "Did you provide it with the `--datasets` flag?"
             )
 
         layout = layout_dict[confound_def["dataset"]]
@@ -756,7 +760,7 @@ def write_derivative_description(
     fmri_dir : :obj:`str`
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
-        Path to the output xcp-d dataset.
+        Path to the output XCP-D dataset.
     atlases : :obj:`list` of :obj:`str`, optional
         Names of requested XCP-D atlases.
     dataset_links : :obj:`dict`, optional
@@ -943,75 +947,6 @@ def _get_tr(img):
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
-
-
-def get_segmentation_software(fmri_dir):
-    """Find FreeSurfer or MCRIBS derivatives associated with preprocessing pipeline.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    fmri_dir : :obj:`str`
-        Path to preprocessed derivatives.
-
-    Returns
-    -------
-    software
-
-    Raises
-    ------
-    ValueError
-        If more than one potential FreeSurfer derivative folder is found.
-    NotADirectoryError
-        If no FreeSurfer derivatives are found.
-    """
-    import os
-
-    from nipype import logging
-
-    LOGGER = logging.getLogger("nipype.utils")
-
-    patterns = {
-        "Nibabies >= 24.0.0a1": (
-            os.path.join(fmri_dir, "sourcedata/mcribs"),
-            "MCRIBS",
-        ),
-        "fMRIPrep >= 20.2.1": (
-            os.path.join(fmri_dir, "sourcedata/freesurfer"),
-            "FreeSurfer",
-        ),
-        "Nibabies >= 21.0.0": (
-            os.path.join(fmri_dir, "sourcedata/infant-freesurfer"),
-            "FreeSurfer",
-        ),
-        "fMRIPrep < 20.2.1": (
-            os.path.join(os.path.dirname(fmri_dir), "freesurfer"),
-            "FreeSurfer",
-        ),
-        "Nibabies < 21.0.0": (
-            os.path.join(os.path.dirname(fmri_dir), "infant-freesurfer"),
-            "FreeSurfer",
-        ),
-    }
-
-    for desc, key in patterns.items():
-        pattern, software = key
-        if os.path.isdir(pattern):
-            LOGGER.info(
-                f"{software} derivatives associated with {desc} preprocessing derivatives found "
-                f"at {pattern}"
-            )
-            return software
-
-        # Otherwise, continue to the next pattern
-
-    seg_patterns = [pattern[0] for pattern in patterns.values()]
-    patterns_str = "\n\t".join(seg_patterns)
-    raise NotADirectoryError(
-        "No FreeSurfer/MCRIBS derivatives found in any of the following locations:"
-        f"\n\t{patterns_str}"
-    )
 
 
 def get_entity(filename, entity):

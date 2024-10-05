@@ -211,7 +211,9 @@ def init_single_subject_wf(subject_id: str):
 
     workflow.__desc__ = f"""
 ### Post-processing of {config.workflow.input_type} outputs
-The eXtensible Connectivity Pipeline- DCAN (XCP-D) [@mitigating_2018;@satterthwaite_2013]
+
+The eXtensible Connectivity Pipeline- DCAN (XCP-D)
+[@mehta2024xcp;@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of *{info_dict["name"]}* version {info_dict["version"]}
 {info_dict["references"]}.
 XCP-D was built with *Nipype* version {nipype_ver} [@nipype1, RRID:SCR_002502].
@@ -424,7 +426,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 confounds_dict = collect_confounds(
                     bold_file=bold_file,
                     preproc_dataset=config.execution.layout,
-                    derivatives_datasets=config.execution.derivatives,
+                    derivatives_datasets=config.execution.datasets,
                     confound_spec=yaml.safe_load(config.execution.confounds_config.read_text()),
                 )
                 run_data["confounds"] = confounds_dict
@@ -494,6 +496,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             if config.execution.atlases:
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [
+                        ("outputnode.atlas_names", "inputnode.atlases"),
                         ("outputnode.atlas_files", "inputnode.atlas_files"),
                         ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
                     ]),
