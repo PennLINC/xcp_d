@@ -179,9 +179,8 @@ def init_postprocess_nifti_wf(
     inputnode.inputs.confounds_files = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
 
-    # Load confounds according to the config
-
     workflow.__desc__ = f"""
+
 #### Functional data
 
 For each of the {num2words(n_runs)} BOLD runs found per subject (across all tasks and sessions),

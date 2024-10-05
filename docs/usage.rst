@@ -438,13 +438,17 @@ plot_design_matrix.html#create-design-matrices>`_.
 
 .. code-block:: python
 
+   import json
+   import os
+
    import numpy as np
+   import pandas as pd
    from nilearn.glm.first_level import make_first_level_design_matrix
 
    N_VOLUMES = 200
    TR = 0.8
    frame_times = np.arange(N_VOLUMES) * TR
-   events_df = pd.read_table("sub-X_ses-Y_task-Z_run-01_events.tsv")
+   events_df = pd.read_table("sub-X_task-Z_events.tsv")
 
    task_confounds = make_first_level_design_matrix(
       frame_times,
@@ -457,11 +461,24 @@ plot_design_matrix.html#create-design-matrices>`_.
    # The design matrix will include a constant column, which we should drop
    task_confounds = task_confounds.drop(columns="constant")
 
+   # Prepare the derivative dataset
+   os.makedirs("/my/project/directory/custom_confounds/sub-X/func", exist_ok=True)
+   # Include a dataset_description.json file
+   with open("/my/project/directory/custom_confounds/dataset_description.json", "w") as fo:
+      json.dump(
+         {
+            "Name": "Custom Confounds",
+            "BIDSVersion": "1.6.0",
+            "DatasetType": "derivative"
+         },
+         fo,
+      )
+
    # Assuming that the fMRIPrep confounds file is named
-   # "sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+   # "sub-X_task-Z_desc-confounds_timeseries.tsv",
    # we will name the custom confounds file the same thing, in a separate folder.
    task_confounds.to_csv(
-      "/my/project/directory/custom_confounds/sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+      "/my/project/directory/custom_confounds/sub-X/func/sub-X_task-Z_desc-confounds_timeseries.tsv",
       sep="\t",
       index=False,
    )
@@ -502,7 +519,7 @@ Something like this should work:
             desc: confounds
             extension: .tsv
             suffix: timeseries
-         columns:
+         columns:  # Assume the task regressors are called "condition1" and "condition2"
          - condition1
          - condition2
 
