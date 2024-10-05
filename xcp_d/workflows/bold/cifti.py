@@ -166,8 +166,6 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.confounds_files = run_data["confounds"]
     inputnode.inputs.dummy_scans = dummy_scans
 
-    workflow = Workflow(name=name)
-
     workflow.__desc__ = f"""
 
 #### Functional data
