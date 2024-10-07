@@ -694,7 +694,7 @@ class GenerateConfounds(SimpleInterface):
         import nibabel as nb
         import pandas as pd
 
-        from xcp_d.utils.bids import make_bids_uri
+        from xcp_d.utils.bids import _get_bidsuris
         from xcp_d.utils.confounds import filter_motion, volterra
 
         in_img = nb.load(self.inputs.in_file)
@@ -752,7 +752,7 @@ class GenerateConfounds(SimpleInterface):
                             confounds_metadata[found_column] = confounds_metadata.get(
                                 found_column, {}
                             )
-                            confounds_metadata[found_column]["Sources"] = make_bids_uri(
+                            confounds_metadata[found_column]["Sources"] = _get_bidsuris(
                                 in_files=[confound_file],
                                 dataset_links=self.inputs.dataset_links,
                                 out_dir=self.inputs.out_dir,
@@ -772,7 +772,7 @@ class GenerateConfounds(SimpleInterface):
                         new_confound_df.fillna({column: 0}, inplace=True)
 
                         confounds_metadata[column] = confounds_metadata.get(column, {})
-                        confounds_metadata[column]["Sources"] = make_bids_uri(
+                        confounds_metadata[column]["Sources"] = _get_bidsuris(
                             in_files=[confound_file],
                             dataset_links=self.inputs.dataset_links,
                             out_dir=self.inputs.out_dir,
@@ -804,7 +804,7 @@ class GenerateConfounds(SimpleInterface):
                 # Collect image metadata
                 new_confound_df.loc[:, confound_name] = np.nan  # fill with NaNs as a placeholder
                 confounds_metadata[confound_name] = confound_metadata
-                confounds_metadata[confound_name]["Sources"] = make_bids_uri(
+                confounds_metadata[confound_name]["Sources"] = _get_bidsuris(
                     in_files=[confound_file],
                     dataset_links=self.inputs.dataset_links,
                     out_dir=self.inputs.out_dir,
@@ -815,7 +815,7 @@ class GenerateConfounds(SimpleInterface):
                 )
 
         # This actually gets overwritten in init_postproc_derivatives_wf.
-        confounds_metadata["Sources"] = make_bids_uri(
+        confounds_metadata["Sources"] = _get_bidsuris(
             in_files=confound_files,
             dataset_links=self.inputs.dataset_links,
             out_dir=self.inputs.out_dir,
