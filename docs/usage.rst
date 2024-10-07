@@ -279,6 +279,10 @@ Again, the standard space is determined based on other files.
 There are additional keys that control how mesh and morphometry files are selected.
 Please refer to ``io_spec.yaml`` for more information on them.
 
+``atlas`` selects atlases for parcellation.
+This is primarily useful for specifying spaces or resolutions.
+This field is not reflected in the ``io_spec.yaml`` file.
+
 
 Example bids-filter-file
 ========================
