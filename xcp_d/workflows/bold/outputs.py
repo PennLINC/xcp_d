@@ -831,7 +831,7 @@ def init_postproc_derivatives_wf(
             )
             workflow.connect([
                 (make_atlas_dict, add_alff_to_src, [("metadata", "metadata")]),
-                (ds_alff, add_alff_to_src, [("out", "in1")]),
+                (ds_alff, add_alff_to_src, [("out_file", "in1")]),
             ])  # fmt:skip
 
             ds_parcellated_alff = pe.MapNode(
