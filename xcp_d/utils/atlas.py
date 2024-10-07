@@ -74,6 +74,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
         The file format of the atlases.
     bids_filters : dict
         Additional filters to apply to the BIDS query.
+        Only the "atlas" key is used.
 
     Returns
     -------
@@ -101,6 +102,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
     bids_filters = bids_filters or {}
 
     atlas_filter = bids_filters.get("atlas", {})
+    atlas_filter["suffix"] = atlas_filter.get("suffix") or "dseg"  # XCP-D only supports dsegs
     atlas_filter["extension"] = [".nii.gz", ".nii"] if file_format == "nifti" else ".dlabel.nii"
     # Hardcoded spaces for now
     if file_format == "cifti":
