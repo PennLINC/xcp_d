@@ -553,38 +553,6 @@ def test_listify():
         assert output == expected_output
 
 
-def test_make_dictionary():
-    """Test _make_dictionary."""
-    metadata = {"Sources": ["a"]}
-    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
-    # Ensure the original dictionary isn't modified.
-    assert metadata["Sources"] == ["a"]
-    assert out_metadata["Sources"] == ["a", "b"]
-
-    metadata = {"Test": "a"}
-    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
-    assert out_metadata["Sources"] == ["b"]
-
-    metadata = {"Test": ["a"]}
-    out_metadata = utils._make_dictionary(metadata, Sources="b")
-    assert out_metadata["Sources"] == "b"
-
-    metadata = {"Sources": "a"}
-    out_metadata = utils._make_dictionary(metadata, Sources=["b"])
-    # Ensure the original dictionary isn't modified.
-    assert metadata["Sources"] == "a"
-    assert out_metadata["Sources"] == ["a", "b"]
-
-    metadata = {"Sources": ["a"]}
-    out_metadata = utils._make_dictionary(metadata, Sources="b")
-    # Ensure the original dictionary isn't modified.
-    assert metadata["Sources"] == ["a"]
-    assert out_metadata["Sources"] == ["a", "b"]
-
-    out_metadata = utils._make_dictionary(metadata=None, Sources=["b"])
-    assert out_metadata["Sources"] == ["b"]
-
-
 def test_transpose_lol():
     """Test _transpose_lol."""
     inputs = [

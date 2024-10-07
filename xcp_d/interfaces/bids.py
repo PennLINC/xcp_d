@@ -15,6 +15,7 @@ from nipype.interfaces.base import (
     File,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
 from nipype.interfaces.io import add_traits
@@ -195,6 +196,11 @@ class _CopyAtlasInputSpec(BaseInterfaceInputSpec):
         desc="The atlas name.",
         mandatory=True,
     )
+    Sources = traits.List(
+        traits.Str,
+        desc="List of sources for the atlas.",
+        mandatory=False,
+    )
 
 
 class _CopyAtlasOutputSpec(TraitedSpec):
@@ -245,6 +251,7 @@ class CopyAtlas(SimpleInterface):
         meta_dict = self.inputs.meta_dict
         name_source = self.inputs.name_source
         atlas = self.inputs.atlas
+        Sources = self.inputs.Sources
 
         atlas_out_dir = os.path.join(output_dir, f"atlases/atlas-{atlas}")
 
@@ -286,8 +293,12 @@ class CopyAtlas(SimpleInterface):
             shutil.copyfile(in_file, out_file)
 
         # Only write out a sidecar if metadata are provided
-        if meta_dict:
+        if meta_dict or Sources:
             meta_file = os.path.join(atlas_out_dir, f"{out_basename}.json")
+            meta_dict = meta_dict or {}
+            if Sources:
+                meta_dict["Sources"] = meta_dict.get("Sources", []) + Sources
+
             with open(meta_file, "w") as fo:
                 dump(meta_dict, fo, sort_keys=True, indent=4)
 
@@ -299,12 +310,21 @@ class CopyAtlas(SimpleInterface):
 class _BIDSURIInputSpec(DynamicTraitedSpec):
     dataset_links = traits.Dict(mandatory=True, desc="Dataset links")
     out_dir = traits.Str(mandatory=True, desc="Output directory")
+    metadata = traits.Dict(desc="Metadata dictionary")
+    field = traits.Str(
+        default="Sources",
+        usedefault=True,
+        desc="Field to use for BIDS URIs in metadata dict",
+    )
 
 
 class _BIDSURIOutputSpec(TraitedSpec):
     out = traits.List(
         traits.Str,
         desc="BIDS URI(s) for file",
+    )
+    metadata = traits.Dict(
+        desc="Dictionary with 'Sources' field.",
     )
 
 
@@ -330,5 +350,12 @@ class BIDSURI(SimpleInterface):
         inputs = [getattr(self.inputs, f"in{i + 1}") for i in range(self._numinputs)]
         uris = _get_bidsuris(inputs, self.inputs.dataset_links, self.inputs.out_dir)
         self._results["out"] = uris
+
+        metadata = {}
+        if isdefined(self.inputs.metadata):
+            metadata = self.inputs.metadata
+            metadata[self.inputs.field] = metadata.get(self.inputs.field, []) + uris
+
+        self._results["metadata"] = metadata
 
         return runtime

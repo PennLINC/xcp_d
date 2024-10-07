@@ -77,7 +77,6 @@ def init_postproc_derivatives_wf(
     """
     workflow = Workflow(name=name)
 
-    fmri_dir = config.execution.fmri_dir
     bandpass_filter = config.workflow.bandpass_filter
     low_pass = config.workflow.low_pass
     high_pass = config.workflow.high_pass
@@ -209,7 +208,7 @@ def init_postproc_derivatives_wf(
     ])  # fmt:skip
 
     merge_dense_src = pe.Node(
-        niu.Merge(
+        BIDSURI(
             numinputs=(
                 1
                 + (1 if fd_thresh > 0 else 0)
@@ -254,19 +253,7 @@ def init_postproc_derivatives_wf(
             ]),
             (motion_src, ds_temporal_mask, [("out", "Sources")]),
             (ds_temporal_mask, outputnode, [("out_file", "temporal_mask")]),
-        ])  # fmt:skip
-
-        temporal_mask_src = pe.Node(
-            BIDSURI(
-                numinputs=1,
-                dataset_links=config.execution.dataset_links,
-                out_dir=str(output_dir),
-            ),
-            name="temporal_mask_src",
-        )
-        workflow.connect([
-            (ds_temporal_mask, temporal_mask_src, [("out_file", "in1")]),
-            (temporal_mask_src, merge_dense_src, [("out", "in2")]),
+            (ds_temporal_mask, merge_dense_src, [("out_file", "in2")]),
         ])  # fmt:skip
 
     if config.execution.confounds_config is not None:
@@ -299,9 +286,7 @@ def init_postproc_derivatives_wf(
                 ("confounds_metadata", "meta_dict"),
             ]),
             (confounds_src, ds_confounds, [("out", "Sources")]),
-            (ds_confounds, merge_dense_src, [
-                (("out_file", _make_xcpd_uri, output_dir), f"in{3 if fd_thresh > 0 else 2}"),
-            ]),
+            (ds_confounds, merge_dense_src, [("out_file", f"in{3 if fd_thresh > 0 else 2}")]),
         ])  # fmt:skip
 
     # Write out derivatives via DerivativesDataSink
@@ -345,6 +330,18 @@ def init_postproc_derivatives_wf(
         workflow.connect([(inputnode, ds_qc_file, [("qc_file", "in_file")])])
 
     if smoothing:
+        smoothed_bold_src = pe.Node(
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
+            ),
+            name="smoothed_bold_src",
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        workflow.connect([(ds_denoised_bold, smoothed_bold_src, [("out_file", "in1")])])
+
         # Write out derivatives via DerivativesDataSink
         ds_smoothed_bold = pe.Node(
             DerivativesDataSink(
@@ -365,37 +362,31 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([
             (inputnode, ds_smoothed_bold, [("smoothed_denoised_bold", "in_file")]),
-            (ds_denoised_bold, ds_smoothed_bold, [
-                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
+            (smoothed_bold_src, ds_smoothed_bold, [("out", "Sources")]),
             (ds_smoothed_bold, outputnode, [("out_file", "smoothed_denoised_bold")]),
         ])  # fmt:skip
 
     # Connectivity workflow outputs
     if config.execution.atlases:
         make_atlas_dict = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
-                input_names=["Sources"],
-                output_names=["metadata"],
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
             ),
             run_without_submitting=True,
             mem_gb=1,
             name="make_atlas_dict",
-            iterfield=["Sources"],
+            iterfield=["in1"],
         )
-        workflow.connect([
-            (inputnode, make_atlas_dict, [
-                (("atlas_files", _make_atlas_uri, output_dir), "Sources"),
-            ]),
-        ])  # fmt:skip
+        workflow.connect([(inputnode, make_atlas_dict, [("atlas_files", "in1")])])
 
         # Convert Sources to a dictionary, to play well with parcellation MapNodes.
         add_denoised_to_src = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
-                input_names=["metadata", "Sources"],
-                output_names=["metadata"],
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
             ),
             run_without_submitting=True,
             mem_gb=1,
@@ -404,9 +395,7 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([
             (make_atlas_dict, add_denoised_to_src, [("metadata", "metadata")]),
-            (ds_denoised_bold, add_denoised_to_src, [
-                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
+            (ds_denoised_bold, add_denoised_to_src, [("out_file", "in1")]),
         ])  # fmt:skip
 
         # TODO: Add brain mask to Sources (for NIfTIs).
@@ -433,21 +422,19 @@ def init_postproc_derivatives_wf(
         ])  # fmt:skip
 
         add_coverage_to_src = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
-                input_names=["metadata", "Sources"],
-                output_names=["metadata"],
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
             ),
             run_without_submitting=True,
             mem_gb=1,
             name="add_coverage_to_src",
-            iterfield=["metadata", "Sources"],
+            iterfield=["metadata", "in1"],
         )
         workflow.connect([
             (add_denoised_to_src, add_coverage_to_src, [("metadata", "metadata")]),
-            (ds_coverage, add_coverage_to_src, [
-                (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-            ]),
+            (ds_coverage, add_coverage_to_src, [("out_file", "in1")]),
         ])  # fmt:skip
 
         ds_timeseries = pe.MapNode(
@@ -476,24 +463,34 @@ def init_postproc_derivatives_wf(
         ])  # fmt:skip
 
         if config.workflow.output_correlations:
-            make_corrs_meta_dict = pe.MapNode(
-                niu.Function(
-                    function=_make_dictionary,
-                    input_names=["Sources", "NodeFiles"],
-                    output_names=["metadata"],
+            make_corrs_meta_dict1 = pe.MapNode(
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
                 ),
                 run_without_submitting=True,
                 mem_gb=1,
-                name="make_corrs_meta_dict",
-                iterfield=["Sources", "NodeFiles"],
+                name="make_corrs_meta_dict1",
+                iterfield=["in1"],
+            )
+            workflow.connect([(ds_timeseries, make_corrs_meta_dict1, [("out_file", "in1")])])
+
+            make_corrs_meta_dict2 = pe.MapNode(
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
+                    field="NodeFiles",
+                ),
+                run_without_submitting=True,
+                mem_gb=1,
+                name="make_corrs_meta_dict2",
+                iterfield=["in1"],
             )
             workflow.connect([
-                (inputnode, make_corrs_meta_dict, [
-                    (("atlas_files", _make_atlas_uri, output_dir), "NodeFiles"),
-                ]),
-                (ds_timeseries, make_corrs_meta_dict, [
-                    (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-                ]),
+                (inputnode, make_corrs_meta_dict1, [("atlas_files", "in1")]),
+                (make_corrs_meta_dict1, make_corrs_meta_dict2, [("metadata", "metadata")]),
             ])  # fmt:skip
 
             ds_correlations = pe.MapNode(
@@ -521,7 +518,7 @@ def init_postproc_derivatives_wf(
                     ("atlas_names", "segmentation"),
                     ("correlations", "in_file"),
                 ]),
-                (make_corrs_meta_dict, ds_correlations, [("metadata", "meta_dict")]),
+                (make_corrs_meta_dict2, ds_correlations, [("metadata", "meta_dict")]),
             ])  # fmt:skip
 
         if file_format == "cifti":
@@ -549,21 +546,19 @@ def init_postproc_derivatives_wf(
             ])  # fmt:skip
 
             add_ccoverage_to_src = pe.MapNode(
-                niu.Function(
-                    function=_make_dictionary,
-                    input_names=["metadata", "Sources"],
-                    output_names=["metadata"],
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
                 ),
                 run_without_submitting=True,
                 mem_gb=1,
                 name="add_ccoverage_to_src",
-                iterfield=["metadata", "Sources"],
+                iterfield=["metadata", "in1"],
             )
             workflow.connect([
                 (add_denoised_to_src, add_ccoverage_to_src, [("metadata", "metadata")]),
-                (ds_coverage_ciftis, add_ccoverage_to_src, [
-                    (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-                ]),
+                (ds_coverage_ciftis, add_ccoverage_to_src, [("out_file", "in1")]),
             ])  # fmt:skip
 
             ds_timeseries_ciftis = pe.MapNode(
@@ -592,24 +587,36 @@ def init_postproc_derivatives_wf(
             ])  # fmt:skip
 
             if config.workflow.output_correlations:
-                make_ccorrs_meta_dict = pe.MapNode(
-                    niu.Function(
-                        function=_make_dictionary,
-                        input_names=["Sources", "NodeFiles"],
-                        output_names=["metadata"],
+                make_ccorrs_meta_dict1 = pe.MapNode(
+                    BIDSURI(
+                        numinputs=1,
+                        dataset_links=config.execution.dataset_links,
+                        out_dir=str(output_dir),
                     ),
                     run_without_submitting=True,
                     mem_gb=1,
-                    name="make_ccorrs_meta_dict",
-                    iterfield=["Sources", "NodeFiles"],
+                    name="make_ccorrs_meta_dict1",
+                    iterfield=["in1"],
                 )
                 workflow.connect([
-                    (inputnode, make_ccorrs_meta_dict, [
-                        (("atlas_files", _make_atlas_uri, output_dir), "NodeFiles"),
-                    ]),
-                    (ds_timeseries_ciftis, make_ccorrs_meta_dict, [
-                        (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-                    ]),
+                    (ds_timeseries_ciftis, make_ccorrs_meta_dict1, [("out_file", "in1")]),
+                ])  # fmt:skip
+
+                make_ccorrs_meta_dict2 = pe.MapNode(
+                    BIDSURI(
+                        numinputs=1,
+                        dataset_links=config.execution.dataset_links,
+                        out_dir=str(output_dir),
+                        field="NodeFiles",
+                    ),
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    name="make_ccorrs_meta_dict2",
+                    iterfield=["in1"],
+                )
+                workflow.connect([
+                    (inputnode, make_ccorrs_meta_dict2, [("atlas_files", "in1")]),
+                    (make_ccorrs_meta_dict1, make_ccorrs_meta_dict2, [("metadata", "metadata")]),
                 ])  # fmt:skip
 
                 ds_correlation_ciftis = pe.MapNode(
@@ -639,7 +646,7 @@ def init_postproc_derivatives_wf(
                         ("atlas_names", "segmentation"),
                         ("correlation_ciftis", "in_file"),
                     ]),
-                    (make_ccorrs_meta_dict, ds_correlation_ciftis, [("metadata", "meta_dict")]),
+                    (make_ccorrs_meta_dict2, ds_correlation_ciftis, [("metadata", "meta_dict")]),
                 ])  # fmt:skip
 
         for i_exact_scan, exact_scan in enumerate(exact_scans):
@@ -673,6 +680,18 @@ def init_postproc_derivatives_wf(
             ])  # fmt:skip
 
     # Resting state metric outputs
+    denoised_src = pe.Node(
+        BIDSURI(
+            numinputs=1,
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(output_dir),
+        ),
+        name="denoised_src",
+        run_without_submitting=True,
+        mem_gb=1,
+    )
+    workflow.connect([(ds_denoised_bold, denoised_src, [("out_file", "in1")])])
+
     ds_reho = pe.Node(
         DerivativesDataSink(
             source_file=name_source,
@@ -693,15 +712,15 @@ def init_postproc_derivatives_wf(
     )
     workflow.connect([
         (inputnode, ds_reho, [("reho", "in_file")]),
-        (ds_denoised_bold, ds_reho, [(("out_file", _make_xcpd_uri, output_dir), "Sources")]),
+        (denoised_src, ds_reho, [("out", "Sources")]),
     ])  # fmt:skip
 
     if config.execution.atlases:
         add_reho_to_src = pe.MapNode(
-            niu.Function(
-                function=_make_dictionary,
-                input_names=["metadata", "Sources"],
-                output_names=["metadata"],
+            BIDSURI(
+                numinputs=1,
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
             ),
             run_without_submitting=True,
             mem_gb=1,
@@ -710,7 +729,7 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([
             (make_atlas_dict, add_reho_to_src, [("metadata", "metadata")]),
-            (ds_reho, add_reho_to_src, [(("out_file", _make_xcpd_uri, output_dir), "Sources")]),
+            (ds_reho, add_reho_to_src, [("out", "in1")]),
         ])  # fmt:skip
 
         ds_parcellated_reho = pe.MapNode(
@@ -758,10 +777,20 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([
             (inputnode, ds_alff, [("alff", "in_file")]),
-            (ds_denoised_bold, ds_alff, [(("out_file", _make_xcpd_uri, output_dir), "Sources")]),
+            (denoised_src, ds_alff, [("out", "Sources")]),
         ])  # fmt:skip
 
         if smoothing:
+            alff_src = pe.Node(
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
+                ),
+                name="alff_src",
+                run_without_submitting=True,
+                mem_gb=1,
+            )
             ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
                     source_file=name_source,
@@ -783,17 +812,15 @@ def init_postproc_derivatives_wf(
             )
             workflow.connect([
                 (inputnode, ds_smoothed_alff, [("smoothed_alff", "in_file")]),
-                (ds_alff, ds_smoothed_alff, [
-                    (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-                ]),
+                (alff_src, ds_smoothed_alff, [("out", "Sources")]),
             ])  # fmt:skip
 
         if config.execution.atlases:
             add_alff_to_src = pe.MapNode(
-                niu.Function(
-                    function=_make_dictionary,
-                    input_names=["metadata", "Sources"],
-                    output_names=["metadata"],
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
                 ),
                 run_without_submitting=True,
                 mem_gb=1,
@@ -802,9 +829,7 @@ def init_postproc_derivatives_wf(
             )
             workflow.connect([
                 (make_atlas_dict, add_alff_to_src, [("metadata", "metadata")]),
-                (ds_alff, add_alff_to_src, [
-                    (("out_file", _make_xcpd_uri, output_dir), "Sources"),
-                ]),
+                (ds_alff, add_alff_to_src, [("out", "in1")]),
             ])  # fmt:skip
 
             ds_parcellated_alff = pe.MapNode(
