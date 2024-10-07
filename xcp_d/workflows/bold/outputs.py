@@ -729,7 +729,7 @@ def init_postproc_derivatives_wf(
         )
         workflow.connect([
             (make_atlas_dict, add_reho_to_src, [("metadata", "metadata")]),
-            (ds_reho, add_reho_to_src, [("out", "in1")]),
+            (ds_reho, add_reho_to_src, [("out_file", "in1")]),
         ])  # fmt:skip
 
         ds_parcellated_reho = pe.MapNode(
@@ -791,6 +791,8 @@ def init_postproc_derivatives_wf(
                 run_without_submitting=True,
                 mem_gb=1,
             )
+            workflow.connect([(ds_alff, alff_src, [("out_file", "in1")])])
+
             ds_smoothed_alff = pe.Node(
                 DerivativesDataSink(
                     source_file=name_source,
