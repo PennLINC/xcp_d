@@ -1,0 +1,142 @@
+package: xcp_d
+sections:
+- name: Processing Summary
+  ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
+  reportlets:
+  - bids: {datatype: figures, desc: preprocessing, suffix: bold}
+    caption:  FD and DVARS are two measures of in-scanner motion.
+              This plot shows standardized FD, DVARS, and then a carpet plot for the
+              time series of each voxel/vertex's time series of activity.
+    subtitle: Carpet Plot Before Postprocessing
+  - bids: {datatype: figures, desc: censoring, suffix: motion}
+    caption:  Framewise displacement (FD) is used to flag high-motion volumes,
+              which are then censored as part of the denoising procedure.
+              If motion filtering is requested, then the six translation and rotation motion
+              parameters are filtered to remove respiratory effects before FD is calculated
+              and outlier volumes are identified.
+    subtitle: Framewise Displacement and Censored Volumes
+  - bids: {datatype: figures, suffix: design}
+    caption:  The "design matrix" represents the confounds that are used to denoise the BOLD data.
+    subtitle: Design Matrix for Confound Regression
+    style:
+      height: 100px
+      width: auto
+  - bids: {datatype: figures, desc: postprocessing, suffix: bold}
+    caption:  FD and DVARS are two measures of in-scanner motion.
+              This plot shows standardized FD, DVARS, and then a carpet plot for the
+              time series of each voxel/vertex's time series of activity.
+    subtitle: Carpet Plot After Postprocessing
+  - bids:
+      datatype: figures
+      desc: coverage
+      suffix: bold
+    caption: |
+      Parcellation coverage.
+    subtitle: Coverage
+  - bids:
+      datatype: figures
+      desc: coverageParcellatedStandard
+      suffix: bold
+    caption: |
+      Parcellation coverage, overlaid on the fsLR template surface.
+    subtitle: Coverage
+  - bids:
+      datatype: figures
+      desc: coverageParcellatedSubject
+      suffix: bold
+    caption: |
+      Parcellation coverage, overlaid on the subject's surface warped to the fsLR template.
+    subtitle: Coverage
+  - bids: {datatype: figures, desc: connectivityplot, suffix: bold}
+    caption:  This plot shows heatmaps from ROI-to-ROI correlations from one to four atlases.
+    subtitle: Correlation Heatmaps from A Subset of Atlases
+  - bids:
+      datatype: figures
+      desc: alffVolumetricPlot
+      suffix: bold
+    caption:  ALFF, or amplitude of low frequency fluctuations.
+              Overlaid on T1W image with same entities as the original image.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffSurfaceStandard
+      suffix: bold
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations, overlaid on the fsLR template surface.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffSurfaceSubject
+      suffix: bold
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations, overlaid on the subject's surface
+      warped to the fsLR template.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffParcellated
+      suffix: bold
+    caption:  Parcellated ALFF.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffParcellatedStandard
+      suffix: bold
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations, overlaid on the fsLR template surface.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: alffParcellatedSubject
+      suffix: bold
+    caption: |
+      ALFF, or amplitude of low frequency fluctuations, overlaid on the subject's surface
+      warped to the fsLR template.
+    subtitle: ALFF
+  - bids:
+      datatype: figures
+      desc: rehoVolumetricPlot
+      suffix: bold
+    caption:  ReHo, or regional homogeneity.
+              Overlaid on T1W image with same entities as the original image.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoSurfaceStandard
+      suffix: bold
+    caption: |
+      ReHo, or regional homogeneity.
+      Overlaid on the fsLR midthickness surface.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoSurfaceSubject
+      suffix: bold
+    caption: |
+      ReHo, or regional homogeneity.
+      Overlaid on the participant's midthickness surface mapped onto fsLR space.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoParcellated
+      suffix: bold
+    caption:  Parcellated ReHo.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoParcellatedStandard
+      suffix: bold
+    caption: |
+      ReHo, or regional homogeneity, overlaid on the fsLR template surface.
+    subtitle: ReHo
+  - bids:
+      datatype: figures
+      desc: rehoParcellatedSubject
+      suffix: bold
+    caption: |
+      ReHo, or regional homogeneity, overlaid on the subject's surface
+      warped to the fsLR template.
+    subtitle: ReHo
+- name: About
+  reportlets:
+  - bids: {datatype: figures, desc: about, suffix: bold}

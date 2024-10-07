@@ -1,5 +1,249 @@
 # What's New
 
+
+## 0.9.1
+
+This release improves performance with multi-core processing.
+
+### Other Changes
+
+* Remove n_procs for nodes that do not use multiple cores by @tsalo in https://github.com/PennLINC/xcp_d/pull/1256
+* Remove unused data files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1259
+* Parallelize ALFF by @tsalo in https://github.com/PennLINC/xcp_d/pull/1258
+* Replace internal data module with acres by @tsalo in https://github.com/PennLINC/xcp_d/pull/1260
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.9.0...0.9.1
+
+
+## 0.9.0
+
+This backwards-incompatible release makes two important breaking changes.
+First, we changd the default file format for 'linc' mode from NIfTI to CIFTI.
+Second, XCP-D no longer ingresses and warps the anatomical tissue segmentation file (`*_dseg.nii.gz`),
+since no one was using it and it's easy enough to collect separately.
+
+Additionally, this release fixes a bug with the collection of sphere files needed to warp fsnative surfaces to fsLR space,
+which should only affect derivatives from fMRIPrep and Nibabies versions >= 24.0.0
+(i.e., versions that include `space-fsnative` in the spheres' filenames).
+
+### 🛠 Breaking Changes
+
+* Change linc mode default file format to CIFTI by @tsalo in https://github.com/PennLINC/xcp_d/pull/1248
+* Stop ingressing anatomical-space tissue segmentation file by @tsalo in https://github.com/PennLINC/xcp_d/pull/1190
+
+### 🎉 Exciting New Features
+
+* Internally support voxel-wise confounds by @tsalo in https://github.com/PennLINC/xcp_d/pull/1244
+
+### 🐛 Bug Fixes
+
+* Fix subject sphere query by @tsalo in https://github.com/PennLINC/xcp_d/pull/1249
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.3...0.9.0
+
+
+## 0.8.3
+
+This patch release fixes a bug introduced in 0.8.1.
+
+### 🐛 Bug Fixes
+
+* Fix collection in case of derivatives with T1w and T2w but T1w is primary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1240
+
+### Other Changes
+
+* Document how to request a new mode by @tsalo in https://github.com/PennLINC/xcp_d/pull/1238
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.2...0.8.3
+
+
+## 0.8.2
+
+This release adds the "none" option for the mode parameter.
+
+### 🎉 Exciting New Features
+
+* Implement "none" mode by @tsalo in https://github.com/PennLINC/xcp_d/pull/1232
+
+### 🐛 Bug Fixes
+
+* Account for floating point issues in ALFF time array creation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1236
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.1...0.8.2
+
+
+## 0.8.1
+
+Patch release for HBCD to support Nibabies runs with both T1w and T2w data.
+
+### 🐛 Bug Fixes
+
+* Explicitly check for `-p none` and `--custom-confounds` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1222
+
+### Other Changes
+
+* Restructure XCP-D to better match fMRIPrep by @tsalo in https://github.com/PennLINC/xcp_d/pull/1225
+* Document the apptainer version requirements by @tsalo in https://github.com/PennLINC/xcp_d/pull/1233
+* Make collect_data work for T1w+T2w nibabies derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/1234
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.0...0.8.1
+
+
+## 0.8.0
+
+This is a backwards-incompatible release that will be used to postprocess the beta version of the first release of the HBCD dataset.
+There are two major breaking changes.
+First, there is a new required `--mode` parameter that automatically defines sets of parameters to match recommendations from different studies/labs.
+Each parameter that the `--mode` parameter controls can be overridden, so users should be able to reproduce their original settings from previous versions of XCP-D.
+Second, XCP-D now loads certain sphere files from the BIDS derivatives, rather than non-BIDS Freesurfer or MCRIBS folders.
+This means that the anatomical workflow (`--warp-surfaces-native2std`) will only work for fMRIPrep versions >= 23.1.0 and Nibabies versions >= 23.1.0.
+The rest of XCP-D should still work for versions of fMRIPrep and Nibabies that were supported previously, but we cannot guarantee this.
+
+### 🛠 Breaking Changes
+
+* Add required `--mode` parameter to define sets of parameters by @tsalo in https://github.com/PennLINC/xcp_d/pull/1109
+* Load spheres for anatomical workflow from TemplateFlow and BIDS derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/1207
+
+### 🎉 Exciting New Features
+
+* Add discretized MID-B and Myers-Labonte atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/1192
+* Plot CIFTI maps on subject-specific surfaces when available by @tsalo in https://github.com/PennLINC/xcp_d/pull/1208
+* Allow bids-filter-file terms for mesh and morphometry files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1210
+
+### 🐛 Bug Fixes
+
+* Generate session-wise executive summaries by @tsalo in https://github.com/PennLINC/xcp_d/pull/1202
+* Look for space entity in T2w-only anatomical inputs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1203
+* Use standard-space anatomical brain mask by @tsalo in https://github.com/PennLINC/xcp_d/pull/1204
+* Drop volumetric Myers-Labonte atlas by @tsalo in https://github.com/PennLINC/xcp_d/pull/1212
+* Enable linc-qc for abcd and hbcd modes by default by @tsalo in https://github.com/PennLINC/xcp_d/pull/1220
+
+### Other Changes
+
+* Document anatomical workflow in more detail by @tsalo in https://github.com/PennLINC/xcp_d/pull/1191
+* Fix up documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1209
+* Reorganize QC interfaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1215
+* Allow `space-fsaverage` for sphere files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1217
+* Continue to improve documentation of anatomical workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/1216
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.5...0.8.0
+
+
+## 0.7.5
+
+This is a patch release that fixes how the correlation matrix plot is generated when users select only one atlas for parcellation.
+The bug was likely introduced in 0.7.4 and only affects runs with a single atlas.
+
+### 🐛 Bug Fixes
+
+* Fix ConnectPlot by @tsalo in https://github.com/PennLINC/xcp_d/pull/1188
+
+### Other Changes
+
+* Refactor CIFTI parcellation and connectivity workflows to use wb_command by @tsalo in https://github.com/PennLINC/xcp_d/pull/1174
+* Replace internal smoothing spheres with ones from TemplateFlow by @tsalo in https://github.com/PennLINC/xcp_d/pull/1160
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.4...0.7.5
+
+
+## 0.7.4
+
+This is a patch release that fixes two important bugs.
+The two bugs are:
+(1) band-pass filter values were not respected in versions 0.7.1 - 0.7.3 (they were hardcoded to 0.01 - 0.1) and
+(2) when processing CIFTI files, parcellated ReHo values in TSVs were not correct, due to a problem with how we were reconstructing CIFTI ReHo files.
+The dense CIFTI files should still be useable though.
+
+### 🎉 Exciting New Features
+
+* Make ConnectPlot robust to chosen atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/1161
+
+### 🐛 Bug Fixes
+
+* Fix band-pass filter settings in Config by @tsalo in https://github.com/PennLINC/xcp_d/pull/1172
+* Allow ALFF to work with low-pass or high-pass filters by @tsalo in https://github.com/PennLINC/xcp_d/pull/1176
+* Use CiftiCreateDenseFromTemplate for CIFTI ReHo by @tsalo in https://github.com/PennLINC/xcp_d/pull/1175
+
+### Other Changes
+
+* Use nireports for HTML report generation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1169
+
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.3...0.7.4
+
+## 0.7.3
+
+Small patch release for manuscript's executive summary.
+
+**There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
+
+### 🐛 Bug Fixes
+
+* Drop concatenated rest-as-run section from executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1156
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.2...0.7.3
+
+
+## 0.7.2
+
+This is a patch release fixing small bugs in 0.7.1.
+
+**There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
+
+### 🎉 Exciting New Features
+
+* Make `GeneratedBy` in preprocessing derivatives' `dataset_description.json` optional by @tsalo in https://github.com/PennLINC/xcp_d/pull/1151
+
+### 🐛 Bug Fixes
+
+* Fix exit code bug in `cli.run.main()` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1152
+
+### Other Changes
+
+* Replace pkgrf with load_data by @tsalo in https://github.com/PennLINC/xcp_d/pull/1147
+* Update to new build image (v0.0.12) by @tsalo in https://github.com/PennLINC/xcp_d/pull/1153
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.1...0.7.2
+
+
+## 0.7.1
+
+This release prepares for the XCP-D manuscript.
+
+**There is a known bug with the band-pass filter settings in this release. Upper and lower band-pass values were hardcoded to 0.01 - 0.1.**
+
+### 🛠 Breaking Changes
+
+* Change default `--min-time` from 100 to 240 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1115
+
+### 🎉 Exciting New Features
+
+* Add `--bids-database-dir` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1116
+* Ignore subcortical figures and plot FOV center of reference brains in executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1145
+
+### 🐛 Bug Fixes
+
+* Modify metadata and boilerplate to reflect updated motion filter parameters by @tsalo in https://github.com/PennLINC/xcp_d/pull/1114
+* Add "subject" to native-space surface query by @tsalo in https://github.com/PennLINC/xcp_d/pull/1118
+* Stop using `config.nipype.memory_gb` as memory limit in workflow nodes by @tsalo in https://github.com/PennLINC/xcp_d/pull/1122
+* Pin dependencies to fix RTD build by @tsalo in https://github.com/PennLINC/xcp_d/pull/1136
+* Fix adjacency matrix for CIFTI ReHo by @tsalo in https://github.com/PennLINC/xcp_d/pull/1120
+* Use run-specific cwd for UK Biobank ingression interface by @tsalo in https://github.com/PennLINC/xcp_d/pull/1137
+* Add third config to BIDSLayout that defines cohort entity by @tsalo in https://github.com/PennLINC/xcp_d/pull/1143
+* Use standardized DVARS from Nipype by @tsalo in https://github.com/PennLINC/xcp_d/pull/1135
+
+### Other Changes
+
+* Adopt Nipreps-style Config object by @tsalo in https://github.com/PennLINC/xcp_d/pull/1040
+* Use pytest-env to capture warnings on CI runs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1107
+* Convert coverage values to float32 to address pandas warning by @tsalo in https://github.com/PennLINC/xcp_d/pull/1112
+* Only describe the atlases selected by the user by @tsalo in https://github.com/PennLINC/xcp_d/pull/1126
+* Fix API documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1144
+* Improve denoising tests by @tsalo in https://github.com/PennLINC/xcp_d/pull/1146
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.0...0.7.1
+
+
 ## 0.7.0
 
 This is a large, backwards-incompatible release.
@@ -187,7 +431,6 @@ The 0.5.1 fixes some bugs for the XCP-D manuscript.
 ## 0.5.0
 
 The 0.5.0 release prepares for the XCP-D manuscript, so I plan to not introduce any backwards-incompatible changes between this release and 1.0.0 (the official paper release).
-<!-- Release notes generated using configuration in .github/release.yml at main -->
 
 ### 🛠 Breaking Changes
 

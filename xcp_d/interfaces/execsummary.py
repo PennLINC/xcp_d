@@ -18,8 +18,8 @@ from nipype.interfaces.base import (
     TraitedSpec,
 )
 from PIL import Image
-from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.data import load as load_data
 from xcp_d.utils.filemanip import fname_presuffix
 
 
@@ -29,7 +29,7 @@ class ExecutiveSummary(object):
     Parameters
     ----------
     xcpd_path : :obj:`str`
-        Path to the xcp-d derivatives.
+        Path to the XCP-D derivatives.
     subject_id : :obj:`str`
         Subject ID.
     session_id : None or :obj:`str`, optional
@@ -204,6 +204,24 @@ class ExecutiveSummary(object):
         # Now sort the entity sets by each entity
         task_entity_sets = pd.DataFrame(task_entity_sets)
         task_entity_sets = task_entity_sets.sort_values(by=task_entity_sets.columns.tolist())
+
+        # Remove concatenated resting-state scans
+        # (there must also be at least one resting-state scan with run or direction)
+        mask_not_nan = (task_entity_sets["task"] == "rest") & task_entity_sets[
+            ["direction", "run"]
+        ].notna().any(axis=1)
+
+        # Create a mask for rows where 'run' is 'rest' and 'direction' and 'run' are NaN
+        mask_nan = (task_entity_sets["task"] == "rest") & task_entity_sets[
+            ["direction", "run"]
+        ].isna().all(axis=1)
+
+        # If there are rows where 'run' is 'rest', and 'direction' and 'run' are not NaN,
+        # remove rows where 'run' is 'rest', and 'direction' and 'run' are NaN
+        if mask_not_nan.any():
+            task_entity_sets = task_entity_sets.drop(task_entity_sets[mask_nan].index)
+
+        # Replace NaNs with Query.NONE
         task_entity_sets = task_entity_sets.fillna(Query.NONE)
 
         # Extract entities with variability
@@ -310,7 +328,7 @@ class ExecutiveSummary(object):
                     "LaTeX",
                     f"""<pre>{text}</pre>
 <h3>Bibliography</h3>
-<pre>{Path(pkgrf("xcp_d", "data/boilerplate.bib")).read_text()}</pre>
+<pre>{load_data("boilerplate.bib").read_text()}</pre>
 """,
                 )
             )
@@ -319,7 +337,7 @@ class ExecutiveSummary(object):
         def include_file(name):
             return Markup(loader.get_source(environment, name)[0])
 
-        template_folder = pkgrf("xcp_d", "/data/executive_summary_templates/")
+        template_folder = str(load_data("executive_summary_templates/"))
         loader = FileSystemLoader(template_folder)
         environment = Environment(loader=loader)
         environment.filters["basename"] = os.path.basename

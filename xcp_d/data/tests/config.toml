@@ -1,0 +1,66 @@
+[environment]
+cpu_count = 1
+exec_env = "posix"
+free_mem = 2.2
+overcommit_policy = "heuristic"
+overcommit_limit = "50%"
+nipype_version = "1.5.0"
+templateflow_version = "0.4.2"
+version = "0.6.0"
+
+[execution]
+bids_description_hash = "123456"
+bids_filters = {}
+boilerplate_only = false
+debug = []
+fmri_dir = "ds000005/"
+fs_license_file = "/opt/freesurfer/license.txt"
+log_dir = "/opt/xcp_d"
+log_level = 40
+low_mem = false
+md_only_boilerplate = false
+notrack = false
+output_dir = "ds000005/derivatives/xcp_d"
+reports_only = false
+run_uuid = "20240205-123456"
+templateflow_home = "~/.cache/templateflow"
+work_dir = "work/"
+write_graph = false
+
+[workflow]
+cifti = false
+dummy_scans = 0
+input_type = "fmriprep"
+despike = false
+smoothing = 6
+combine_runs = false
+motion_filter_type = false
+band_stop_min = false
+band_stop_max = false
+motion_filter_order = 4
+head_radius = 50
+fd_thresh = 0.3
+min_time = 100
+bandpass_filter = true
+high_pass = 0.01
+low_pass = 0.1
+bpf_order = 2
+atlases = []
+min_coverage = 0.5
+dcan_correlation_lengths = []
+process_surfaces = false
+abcc_qc = false
+
+[nipype]
+crashfile_format = "txt"
+get_linked_libs = false
+memory_gb = 48
+nprocs = 2
+omp_nthreads = 2
+plugin = "MultiProc"
+resource_monitor = false
+stop_on_first_crash = false
+
+[nipype.plugin_args]
+maxtasksperchild = 1
+raise_insufficient = false

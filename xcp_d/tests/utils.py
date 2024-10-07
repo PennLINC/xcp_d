@@ -17,6 +17,37 @@ from nipype import logging
 LOGGER = logging.getLogger("nipype.utils")
 
 
+def _check_arg_specified(argname, arglist):
+    for arg in arglist:
+        if arg.startswith(argname):
+            return True
+    return False
+
+
+def get_cpu_count(max_cpus=4):
+    """Figure out how many cpus are available in the test environment."""
+    env_cpus = os.getenv("CIRCLE_CPUS")
+    if env_cpus:
+        return int(env_cpus)
+    return max_cpus
+
+
+def update_resources(parameters):
+    """We should use all the available CPUs for testing.
+
+    Sometimes a test will set a specific amount of cpus. In that
+    case, the number should be kept. Otherwise, try to read the
+    env variable (specified in each job in config.yml). If
+    this variable doesn't work, just set it to 4.
+    """
+    nthreads = get_cpu_count()
+    if not _check_arg_specified("--nthreads", parameters):
+        parameters.append(f"--nthreads={nthreads}")
+    if not _check_arg_specified("--omp-nthreads", parameters):
+        parameters.append(f"--omp-nthreads={nthreads}")
+    return parameters
+
+
 def get_nodes(wf_results):
     """Load nodes from a Nipype workflow's results."""
     return {node.fullname: node for node in wf_results.nodes}
@@ -30,8 +61,14 @@ def download_test_data(dset, data_dir=None):
         ),
         "nibabies": "https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz",
         "ds001419": "https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz",
+        "ds001419-aroma": (
+            "https://upenn.box.com/shared/static/dexcmnlj7yujudr3muu05kch66sko4mt.tar.gz"
+        ),
         "pnc": "https://upenn.box.com/shared/static/ui2847ys49d82pgn5ewai1mowcmsv2br.tar.gz",
         "ukbiobank": "https://upenn.box.com/shared/static/p5h1eg4p5cd2ef9ehhljlyh1uku0xe97.tar.gz",
+        "schaefer100": (
+            "https://upenn.box.com/shared/static/b9pn9qebr41kteant4ym2q5u4kcbgiy6.tar.gz"
+        ),
     }
     if dset == "*":
         for k in URLS:
@@ -45,17 +82,17 @@ def download_test_data(dset, data_dir=None):
     if not data_dir:
         data_dir = os.path.join(os.path.dirname(get_test_data_path()), "test_data")
 
-    dset_name = dset
-    if dset == "ds001419":
-        dset_name = "ds001419-fmriprep"
-
-    out_dir = os.path.join(data_dir, dset_name)
+    out_dir = os.path.join(data_dir, dset)
 
     if os.path.isdir(out_dir):
         LOGGER.info(
             f"Dataset {dset} already exists. "
             "If you need to re-download the data, please delete the folder."
         )
+        if dset.startswith("ds001419"):
+            # These test datasets have an extra folder level
+            out_dir = os.path.join(out_dir, dset)
+
         return out_dir
     else:
         LOGGER.info(f"Downloading {dset} to {out_dir}")
@@ -64,6 +101,10 @@ def download_test_data(dset, data_dir=None):
     with requests.get(URLS[dset], stream=True) as req:
         with tarfile.open(fileobj=GzipFile(fileobj=BytesIO(req.content))) as t:
             t.extractall(out_dir)
+
+    if dset.startswith("ds001419"):
+        # These test datasets have an extra folder level
+        out_dir = os.path.join(out_dir, dset)
 
     return out_dir
 

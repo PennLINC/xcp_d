@@ -1,3 +1,7 @@
+.. _PennLINC: https://www.pennlinc.io/
+.. _DCAN: https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/
+.. _ABCD: https://abcdstudy.org/
+.. _HBCD: https://hbcdstudy.org/
 .. _Nipype: http://nipype.readthedocs.io/en/latest/
 .. _BIDS: http://bids.neuroimaging.io
 .. _`BIDS Derivatives`: https://docs.google.com/document/d/17ebopupQxuRwp7U7TFvS6BH03ALJOgGHufxK8ToAvyI
@@ -10,7 +14,7 @@
 .. _`Docker`: https://docs.docker.com
 .. _`Docker installation`: https://docs.docker.com/install/
 .. _`Docker Hub`: https://hub.docker.com/r/pennlinc/xcp_d/tags
-.. _Singularity: https://sylabs.io/guides/3.5/user-guide/introduction.html
+.. _Apptainer: https://apptainer.org/
 .. _QSIPrep: https://qsiprep.readthedocs.io
 .. _ASLPrep: https://aslprep.readthedocs.io
 .. _fMRIPrep: https://fmriprep.org

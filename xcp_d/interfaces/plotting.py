@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting interfaces."""
-import json
 import os
 
 import matplotlib.pyplot as plt
@@ -9,7 +8,10 @@ import nibabel as nb
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from nilearn.plotting import plot_anat
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+from nilearn.plotting import plot_anat, plot_stat_map, plot_surf_stat_map
 from nipype import logging
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
@@ -24,20 +26,18 @@ from nipype.interfaces.base import (
     traits,
 )
 from nipype.interfaces.fsl.base import FSLCommand, FSLCommandInputSpec
+from templateflow.api import get as get_template
 
-from xcp_d.utils.confounds import load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import compute_fd
-from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es
-from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
+from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
+from xcp_d.utils.qcmetrics import compute_dvars
 from xcp_d.utils.write_save import read_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
 
 
 class _CensoringPlotInputSpec(BaseInterfaceInputSpec):
-    fmriprep_confounds_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
-    filtered_motion = File(exists=True, mandatory=True, desc="Filtered motion file.")
+    motion_file = File(exists=True, mandatory=True, desc="fMRIPrep confounds file.")
     temporal_mask = File(
         exists=True,
         mandatory=True,
@@ -67,16 +67,8 @@ class CensoringPlot(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        preproc_motion_df = load_motion(
-            confounds_df.copy(),
-            TR=self.inputs.TR,
-            motion_filter_type=None,
-        )
-        preproc_fd_timeseries = compute_fd(
-            confound=preproc_motion_df,
-            head_radius=self.inputs.head_radius,
-        )
+        motion_df = pd.read_table(self.inputs.motion_file)
+        preproc_fd_timeseries = motion_df["framewise_displacement"].values
 
         # Load temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
@@ -117,13 +109,11 @@ class CensoringPlot(SimpleInterface):
 
         # Compute filtered framewise displacement to plot censoring
         if self.inputs.motion_filter_type:
-            filtered_fd_timeseries = pd.read_table(self.inputs.filtered_motion)[
-                "framewise_displacement"
-            ]
+            filtered_fd_timeseries = motion_df["framewise_displacement_filtered"].values
 
             ax.plot(
                 time_array,
-                filtered_fd_timeseries.values,
+                filtered_fd_timeseries,
                 label="Filtered Framewise Displacement",
                 color=palette[2],
             )
@@ -201,24 +191,17 @@ class CensoringPlot(SimpleInterface):
 
 
 class _QCPlotsInputSpec(BaseInterfaceInputSpec):
-    name_source = File(
-        exists=False,
-        mandatory=True,
-        desc=(
-            "Preprocessed BOLD file. Used to find files. "
-            "In the case of the concatenation workflow, "
-            "this may be a nonexistent file "
-            "(i.e., the preprocessed BOLD file, with the run entity removed)."
-        ),
-    )
     bold_file = File(
         exists=True,
         mandatory=True,
         desc="Preprocessed BOLD file, after dummy scan removal. Used in carpet plot.",
     )
-    dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
-    temporal_mask = File(exists=True, mandatory=True, desc="Temporal mask")
-    fmriprep_confounds_file = File(
+    temporal_mask = traits.Either(
+        File(exists=True),
+        Undefined,
+        desc="Temporal mask",
+    )
+    motion_file = File(
         exists=True,
         mandatory=True,
         desc="fMRIPrep confounds file, after dummy scans removal",
@@ -239,15 +222,9 @@ class _QCPlotsInputSpec(BaseInterfaceInputSpec):
 
     # Inputs used only for nifti data
     seg_file = File(exists=True, mandatory=False, desc="Seg file for nifti")
-    anat_brainmask = File(exists=True, mandatory=False, desc="Mask in T1W")
-    template_mask = File(exists=True, mandatory=False, desc="Template mask")
-    bold2T1w_mask = File(exists=True, mandatory=False, desc="Bold mask in MNI")
-    bold2temp_mask = File(exists=True, mandatory=False, desc="Bold mask in T1W")
 
 
 class _QCPlotsOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, desc="QC TSV file.")
-    qc_metadata = File(exists=True, desc="Sidecar JSON for QC TSV file.")
     raw_qcplot = File(exists=True, desc="qc plot before regression")
     clean_qcplot = File(exists=True, desc="qc plot after regression")
 
@@ -264,12 +241,10 @@ class QCPlots(SimpleInterface):
     .. doctest::
     qcplots = QCPlots()
     qcplots.inputs.cleaned_file = datafile
-    qcplots.inputs.name_source = rawbold
     qcplots.inputs.bold_file = rawbold
     qcplots.inputs.TR = TR
     qcplots.inputs.temporal_mask = temporalmask
     qcplots.inputs.mask_file = mask
-    qcplots.inputs.dummy_scans = dummy_scans
     qcplots.run()
     .. testcleanup::
     >>> tmpdir.cleanup()
@@ -280,29 +255,20 @@ class QCPlots(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
-        confounds_df = pd.read_table(self.inputs.fmriprep_confounds_file)
-        preproc_motion_df = load_motion(
-            confounds_df.copy(),
-            TR=self.inputs.TR,
-            motion_filter_type=None,
-        )
-        preproc_fd_timeseries = compute_fd(
-            confound=preproc_motion_df,
-            head_radius=self.inputs.head_radius,
-        )
-
-        # Get rmsd
-        rmsd = confounds_df["rmsd"].to_numpy()
+        motion_df = pd.read_table(self.inputs.motion_file)
+        if "framewise_displacement_filtered" in motion_df.columns:
+            preproc_fd_timeseries = motion_df["framewise_displacement_filtered"].values
+        else:
+            preproc_fd_timeseries = motion_df["framewise_displacement"].values
 
         # Determine number of dummy volumes and load temporal mask
-        dummy_scans = self.inputs.dummy_scans
-        censoring_df = pd.read_table(self.inputs.temporal_mask)
-        tmask_arr = censoring_df["framewise_displacement"].values
-        num_censored_volumes = int(tmask_arr.sum())
-        num_retained_volumes = int((tmask_arr == 0).sum())
+        if isdefined(self.inputs.temporal_mask):
+            censoring_df = pd.read_table(self.inputs.temporal_mask)
+            tmask_arr = censoring_df["framewise_displacement"].values
+        else:
+            tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
 
         # Apply temporal mask to interpolated/full data
-        rmsd_censored = rmsd[tmask_arr == 0]
         postproc_fd_timeseries = preproc_fd_timeseries[tmask_arr == 0]
 
         # get QC plot names
@@ -375,173 +341,6 @@ class QCPlots(SimpleInterface):
         )
         plt.close(postproc_fig)
 
-        # Get the different components in the bold file name
-        # eg: ['sub-colornest001', 'ses-1'], etc.
-        _, bold_file_name = os.path.split(self.inputs.name_source)
-        bold_file_name_components = bold_file_name.split("_")
-
-        # Fill out dictionary with entities from filename
-        qc_values_dict = {}
-        for entity in bold_file_name_components[:-1]:
-            qc_values_dict[entity.split("-")[0]] = entity.split("-")[1]
-
-        # Calculate QC measures
-        mean_fd = np.mean(preproc_fd_timeseries)
-        mean_fd_post_censoring = np.mean(postproc_fd_timeseries)
-        mean_relative_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
-        mean_dvars_before_processing = np.mean(dvars_before_processing)
-        mean_dvars_after_processing = np.mean(dvars_after_processing)
-        fd_dvars_correlation_initial = np.corrcoef(preproc_fd_timeseries, dvars_before_processing)[
-            0, 1
-        ]
-        fd_dvars_correlation_final = np.corrcoef(postproc_fd_timeseries, dvars_after_processing)[
-            0, 1
-        ]
-        rmsd_max_value = np.nanmax(rmsd_censored)
-
-        # A summary of all the values
-        qc_values_dict.update(
-            {
-                "mean_fd": [mean_fd],
-                "mean_fd_post_censoring": [mean_fd_post_censoring],
-                "mean_relative_rms": [mean_relative_rms],
-                "max_relative_rms": [rmsd_max_value],
-                "mean_dvars_initial": [mean_dvars_before_processing],
-                "mean_dvars_final": [mean_dvars_after_processing],
-                "num_dummy_volumes": [dummy_scans],
-                "num_censored_volumes": [num_censored_volumes],
-                "num_retained_volumes": [num_retained_volumes],
-                "fd_dvars_correlation_initial": [fd_dvars_correlation_initial],
-                "fd_dvars_correlation_final": [fd_dvars_correlation_final],
-            }
-        )
-
-        qc_metadata = {
-            "mean_fd": {
-                "LongName": "Mean Framewise Displacement",
-                "Description": (
-                    "Average framewise displacement without any motion parameter filtering. "
-                    "This value includes high-motion outliers, but not dummy volumes. "
-                    "FD is calculated according to the Power definition."
-                ),
-                "Units": "mm / volume",
-                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
-            },
-            "mean_fd_post_censoring": {
-                "LongName": "Mean Framewise Displacement After Censoring",
-                "Description": (
-                    "Average framewise displacement without any motion parameter filtering. "
-                    "This value does not include high-motion outliers or dummy volumes. "
-                    "FD is calculated according to the Power definition."
-                ),
-                "Units": "mm / volume",
-                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
-            },
-            "mean_relative_rms": {
-                "LongName": "Mean Relative Root Mean Squared",
-                "Description": (
-                    "Average relative root mean squared calculated from motion parameters, "
-                    "after removal of dummy volumes and high-motion outliers. "
-                    "Relative in this case means 'relative to the previous scan'."
-                ),
-                "Units": "arbitrary",
-            },
-            "max_relative_rms": {
-                "LongName": "Maximum Relative Root Mean Squared",
-                "Description": (
-                    "Maximum relative root mean squared calculated from motion parameters, "
-                    "after removal of dummy volumes and high-motion outliers. "
-                    "Relative in this case means 'relative to the previous scan'."
-                ),
-                "Units": "arbitrary",
-            },
-            "mean_dvars_initial": {
-                "LongName": "Mean DVARS Before Postprocessing",
-                "Description": (
-                    "Average DVARS (temporal derivative of root mean squared variance over "
-                    "voxels) calculated from the preprocessed BOLD file, after dummy scan removal."
-                ),
-                "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
-            },
-            "mean_dvars_final": {
-                "LongName": "Mean DVARS After Postprocessing",
-                "Description": (
-                    "Average DVARS (temporal derivative of root mean squared variance over "
-                    "voxels) calculated from the denoised BOLD file."
-                ),
-                "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
-            },
-            "num_dummy_volumes": {
-                "LongName": "Number of Dummy Volumes",
-                "Description": (
-                    "The number of non-steady state volumes removed from the time series by XCP-D."
-                ),
-            },
-            "num_censored_volumes": {
-                "LongName": "Number of Censored Volumes",
-                "Description": (
-                    "The number of high-motion outlier volumes censored by XCP-D. "
-                    "This does not include dummy volumes."
-                ),
-            },
-            "num_retained_volumes": {
-                "LongName": "Number of Retained Volumes",
-                "Description": (
-                    "The number of volumes retained in the denoised dataset. "
-                    "This does not include dummy volumes or high-motion outliers."
-                ),
-            },
-            "fd_dvars_correlation_initial": {
-                "LongName": "FD-DVARS Correlation Before Postprocessing",
-                "Description": (
-                    "The Pearson correlation coefficient between framewise displacement and DVARS "
-                    "(temporal derivative of root mean squared variance over voxels), "
-                    "after removal of dummy volumes, but before removal of high-motion outliers."
-                ),
-            },
-            "fd_dvars_correlation_final": {
-                "LongName": "FD-DVARS Correlation After Postprocessing",
-                "Description": (
-                    "The Pearson correlation coefficient between framewise displacement and DVARS "
-                    "(temporal derivative of root mean squared variance over voxels), "
-                    "after postprocessing. "
-                    "The FD time series is unfiltered, but censored. "
-                    "The DVARS time series is calculated from the denoised BOLD data."
-                ),
-            },
-        }
-
-        if self.inputs.bold2T1w_mask:  # If a bold mask in T1w is provided
-            # Compute quality of registration
-            registration_qc, registration_metadata = compute_registration_qc(
-                bold2t1w_mask=self.inputs.bold2T1w_mask,
-                anat_brainmask=self.inputs.anat_brainmask,
-                bold2template_mask=self.inputs.bold2temp_mask,
-                template_mask=self.inputs.template_mask,
-            )
-            qc_values_dict.update(registration_qc)  # Add values to dictionary
-            qc_metadata.update(registration_metadata)
-
-        # Convert dictionary to df and write out the qc file
-        df = pd.DataFrame(qc_values_dict)
-        self._results["qc_file"] = fname_presuffix(
-            self.inputs.cleaned_file,
-            suffix="qc_bold.tsv",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        df.to_csv(self._results["qc_file"], index=False, header=True, sep="\t")
-
-        # Write out the metadata file
-        self._results["qc_metadata"] = fname_presuffix(
-            self.inputs.cleaned_file,
-            suffix="qc_bold.json",
-            newpath=runtime.cwd,
-            use_ext=False,
-        )
-        with open(self._results["qc_metadata"], "w") as fo:
-            json.dump(qc_metadata, fo, indent=4, sort_keys=True)
-
         return runtime
 
 
@@ -559,14 +358,14 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="Data after filtering, interpolation, etc. This is not plotted.",
     )
-    filtered_motion = File(
+    motion_file = File(
         exists=True,
         mandatory=True,
         desc="TSV file with filtered motion parameters.",
     )
-    temporal_mask = File(
-        exists=True,
-        mandatory=True,
+    temporal_mask = traits.Either(
+        File(exists=True),
+        Undefined,
         desc="TSV file with temporal mask.",
     )
     TR = traits.Float(default_value=1, desc="Repetition time")
@@ -643,7 +442,7 @@ class QCPlotsES(SimpleInterface):
             preprocessed_bold=self.inputs.preprocessed_bold,
             denoised_interpolated_bold=self.inputs.denoised_interpolated_bold,
             TR=self.inputs.TR,
-            filtered_motion=self.inputs.filtered_motion,
+            motion_file=self.inputs.motion_file,
             temporal_mask=self.inputs.temporal_mask,
             preprocessed_figure=preprocessed_figure,
             denoised_figure=denoised_figure,
@@ -852,3 +651,493 @@ class PNGAppend(FSLCommand):
         outputs = self._outputs().get()
         outputs["out_file"] = os.path.abspath(self.inputs.out_file)
         return outputs
+
+
+class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
+    in_files = traits.List(
+        File(exists=True),
+        mandatory=True,
+        desc="CIFTI files to plot.",
+    )
+    cortical_atlases = traits.List(
+        traits.Str,
+        mandatory=True,
+        desc="Atlases to select from 'labels'.",
+    )
+    labels = traits.List(
+        traits.Str,
+        mandatory=True,
+        desc="Labels for the CIFTI files.",
+    )
+    out_file = File(
+        exists=False,
+        mandatory=False,
+        desc="Output file.",
+        default="plot.svg",
+        usedefault=True,
+    )
+    vmin = traits.Float(
+        mandatory=False,
+        default_value=0,
+        usedefault=True,
+        desc="Minimum value for the colormap.",
+    )
+    vmax = traits.Float(
+        mandatory=False,
+        default_value=0,
+        usedefault=True,
+        desc="Maximum value for the colormap.",
+    )
+    base_desc = traits.Str(
+        mandatory=False,
+        default_value="",
+        usedefault=True,
+        desc="Base description for the output file.",
+    )
+    lh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Left hemisphere underlay.",
+    )
+    rh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Right hemisphere underlay.",
+    )
+
+
+class _PlotCiftiParcellationOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+    desc = traits.Str(desc="Description of the output file.")
+
+
+class PlotCiftiParcellation(SimpleInterface):
+    """Plot a parcellated (.pscalar.nii) CIFTI file."""
+
+    input_spec = _PlotCiftiParcellationInputSpec
+    output_spec = _PlotCiftiParcellationOutputSpec
+
+    def _run_interface(self, runtime):
+        assert len(self.inputs.in_files) == len(self.inputs.labels)
+        assert len(self.inputs.cortical_atlases) > 0
+
+        if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
+            self._results["desc"] = f"{self.inputs.base_desc}ParcellatedStandard"
+            rh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="R",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
+            )
+            lh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="L",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
+            )
+        else:
+            self._results["desc"] = f"{self.inputs.base_desc}ParcellatedSubject"
+            rh = self.inputs.rh_underlay
+            lh = self.inputs.lh_underlay
+
+        # Create Figure and GridSpec.
+        # One subplot for each file. Each file will then have four subplots, arranged in a square.
+        cortical_files = [
+            self.inputs.in_files[i]
+            for i, atlas in enumerate(self.inputs.labels)
+            if atlas in self.inputs.cortical_atlases
+        ]
+        cortical_atlases = [
+            atlas for atlas in self.inputs.labels if atlas in self.inputs.cortical_atlases
+        ]
+        n_files = len(cortical_files)
+        fig = plt.figure(constrained_layout=False)
+
+        if n_files == 1:
+            fig.set_size_inches(6.5, 6)
+            # Add an additional column for the colorbar
+            gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 0.05])
+            gs_list = [gs[0, 0]]
+            subplots = [fig.add_subplot(gs) for gs in gs_list]
+            cbar_gs_list = [gs[0, 1]]
+        else:
+            nrows = np.ceil(n_files / 2).astype(int)
+            fig.set_size_inches(12.5, 6 * nrows)
+            # Add an additional column for the colorbar
+            gs = GridSpec(nrows, 3, figure=fig, width_ratios=[1, 1, 0.05])
+            gs_list = [gs[i, j] for i in range(nrows) for j in range(2)]
+            subplots = [fig.add_subplot(gs) for gs in gs_list]
+            cbar_gs_list = [gs[i, 2] for i in range(nrows)]
+
+        for subplot in subplots:
+            subplot.set_axis_off()
+
+        vmin, vmax = self.inputs.vmin, self.inputs.vmax
+        threshold = 0.01
+        if vmin == vmax:
+            threshold = None
+
+            # Define vmin and vmax based on all of the files
+            vmin, vmax = np.inf, -np.inf
+            for cortical_file in cortical_files:
+                img_data = nb.load(cortical_file).get_fdata()
+                vmin = np.min([np.nanmin(img_data), vmin])
+                vmax = np.max([np.nanmax(img_data), vmax])
+            vmin = 0
+
+        for i_file in range(n_files):
+            subplot = subplots[i_file]
+            subplot.set_title(cortical_atlases[i_file])
+            subplot_gridspec = gs_list[i_file]
+
+            # Create 4 Axes (2 rows, 2 columns) from the subplot
+            gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot_gridspec)
+            inner_subplots = [
+                fig.add_subplot(gs_inner[i, j], projection="3d")
+                for i in range(2)
+                for j in range(2)
+            ]
+
+            img = nb.load(cortical_files[i_file])
+            img_data = img.get_fdata()
+            img_axes = [img.header.get_axis(i) for i in range(img.ndim)]
+            lh_surf_data = surf_data_from_cifti(
+                img_data,
+                img_axes[1],
+                "CIFTI_STRUCTURE_CORTEX_LEFT",
+            )
+            rh_surf_data = surf_data_from_cifti(
+                img_data,
+                img_axes[1],
+                "CIFTI_STRUCTURE_CORTEX_RIGHT",
+            )
+
+            plot_surf_stat_map(
+                lh,
+                lh_surf_data,
+                threshold=threshold,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="left",
+                view="lateral",
+                engine="matplotlib",
+                cmap="cool",
+                colorbar=False,
+                axes=inner_subplots[0],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                rh,
+                rh_surf_data,
+                threshold=threshold,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="right",
+                view="lateral",
+                engine="matplotlib",
+                cmap="cool",
+                colorbar=False,
+                axes=inner_subplots[1],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                lh,
+                lh_surf_data,
+                threshold=threshold,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="left",
+                view="medial",
+                engine="matplotlib",
+                cmap="cool",
+                colorbar=False,
+                axes=inner_subplots[2],
+                figure=fig,
+            )
+            plot_surf_stat_map(
+                rh,
+                rh_surf_data,
+                threshold=threshold,
+                vmin=vmin,
+                vmax=vmax,
+                hemi="right",
+                view="medial",
+                engine="matplotlib",
+                cmap="cool",
+                colorbar=False,
+                axes=inner_subplots[3],
+                figure=fig,
+            )
+
+            for ax in inner_subplots:
+                ax.set_rasterized(True)
+
+        # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
+        sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
+
+        for colorbar_gridspec in cbar_gs_list:
+            colorbar_ax = fig.add_subplot(colorbar_gridspec)
+            # Add a colorbar to colorbar_ax using the ScalarMappable
+            fig.colorbar(sm, cax=colorbar_ax)
+
+        self._results["out_file"] = fname_presuffix(
+            cortical_files[0],
+            suffix="_file.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        fig.savefig(
+            self._results["out_file"],
+            bbox_inches="tight",
+            pad_inches=None,
+            format="svg",
+        )
+        plt.close(fig)
+
+        return runtime
+
+
+class _PlotDenseCiftiInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to plot.",
+    )
+    base_desc = traits.Str(
+        mandatory=False,
+        default_value="",
+        usedefault=True,
+        desc="Base description for the output file.",
+    )
+    lh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Left hemisphere underlay.",
+    )
+    rh_underlay = File(
+        exists=True,
+        mandatory=False,
+        desc="Right hemisphere underlay.",
+    )
+
+
+class _PlotDenseCiftiOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+    desc = traits.Str(desc="Description of the output file.")
+
+
+class PlotDenseCifti(SimpleInterface):
+    """Plot a dense (.dscalar.nii) CIFTI file."""
+
+    input_spec = _PlotDenseCiftiInputSpec
+    output_spec = _PlotDenseCiftiOutputSpec
+
+    def _run_interface(self, runtime):
+        if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
+            self._results["desc"] = f"{self.inputs.base_desc}SurfaceStandard"
+            rh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="R",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
+            )
+            lh = str(
+                get_template(
+                    template="fsLR",
+                    hemi="L",
+                    density="32k",
+                    suffix="midthickness",
+                    extension=".surf.gii",
+                )
+            )
+        else:
+            self._results["desc"] = f"{self.inputs.base_desc}SurfaceSubject"
+            rh = self.inputs.rh_underlay
+            lh = self.inputs.lh_underlay
+
+        cifti = nb.load(self.inputs.in_file)
+        cifti_data = cifti.get_fdata()
+        cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
+
+        # Create Figure and GridSpec.
+        fig = plt.figure(constrained_layout=False)
+        fig.set_size_inches(6.5, 6)
+        # Add an additional column for the colorbar
+        gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 0.05])
+        subplot_gridspec = gs[0, 0]
+        subplot = fig.add_subplot(subplot_gridspec)
+        colorbar_gridspec = gs[0, 1]
+
+        subplot.set_axis_off()
+
+        # Create 4 Axes (2 rows, 2 columns) from the subplot
+        gs_inner = GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot_gridspec)
+        inner_subplots = [
+            fig.add_subplot(gs_inner[i, j], projection="3d") for i in range(2) for j in range(2)
+        ]
+
+        lh_surf_data = surf_data_from_cifti(
+            cifti_data,
+            cifti_axes[1],
+            "CIFTI_STRUCTURE_CORTEX_LEFT",
+        )
+        rh_surf_data = surf_data_from_cifti(
+            cifti_data,
+            cifti_axes[1],
+            "CIFTI_STRUCTURE_CORTEX_RIGHT",
+        )
+
+        vmax = np.nanmax([np.nanmax(lh_surf_data), np.nanmax(rh_surf_data)])
+        vmin = np.nanmin([np.nanmin(lh_surf_data), np.nanmin(rh_surf_data)])
+
+        plot_surf_stat_map(
+            lh,
+            lh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="left",
+            view="lateral",
+            engine="matplotlib",
+            cmap="cool",
+            colorbar=False,
+            axes=inner_subplots[0],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            rh,
+            rh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="right",
+            view="lateral",
+            engine="matplotlib",
+            cmap="cool",
+            colorbar=False,
+            axes=inner_subplots[1],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            lh,
+            lh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="left",
+            view="medial",
+            engine="matplotlib",
+            cmap="cool",
+            colorbar=False,
+            axes=inner_subplots[2],
+            figure=fig,
+        )
+        plot_surf_stat_map(
+            rh,
+            rh_surf_data,
+            vmin=vmin,
+            vmax=vmax,
+            hemi="right",
+            view="medial",
+            engine="matplotlib",
+            cmap="cool",
+            colorbar=False,
+            axes=inner_subplots[3],
+            figure=fig,
+        )
+
+        inner_subplots[0].set_title("Left Hemisphere", fontsize=10)
+        inner_subplots[1].set_title("Right Hemisphere", fontsize=10)
+
+        for ax in inner_subplots:
+            ax.set_rasterized(True)
+
+        # Create a ScalarMappable with the "cool" colormap and the specified vmin and vmax
+        sm = ScalarMappable(cmap="cool", norm=Normalize(vmin=vmin, vmax=vmax))
+
+        colorbar_ax = fig.add_subplot(colorbar_gridspec)
+        # Add a colorbar to colorbar_ax using the ScalarMappable
+        fig.colorbar(sm, cax=colorbar_ax)
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_file.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        fig.tight_layout()
+        fig.savefig(
+            self._results["out_file"],
+            bbox_inches="tight",
+            pad_inches=None,
+            format="svg",
+        )
+        plt.close(fig)
+
+        return runtime
+
+
+class _PlotNiftiInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to plot.",
+    )
+    name_source = File(
+        exists=False,
+        mandatory=True,
+        desc="File to use as the name source.",
+    )
+
+
+class _PlotNiftiOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Output file.")
+
+
+class PlotNifti(SimpleInterface):
+    """Plot a NIfTI file."""
+
+    input_spec = _PlotNiftiInputSpec
+    output_spec = _PlotNiftiOutputSpec
+
+    def _run_interface(self, runtime):
+        from bids.layout import parse_file_entities
+
+        ENTITIES_TO_USE = ["cohort", "den", "res"]
+
+        # templateflow uses the full entity names in its BIDSLayout config,
+        # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
+        ENTITY_NAMES_MAPPER = {"den": "density", "res": "resolution"}
+        space = parse_file_entities(self.inputs.name_source)["space"]
+        file_entities = parse_file_entities(self.inputs.name_source)
+        entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
+        entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in entities_to_use.items()}
+
+        template_file = get_template(template=space, **entities_to_use, suffix="T1w", desc=None)
+        if isinstance(template_file, list):
+            template_file = template_file[0]
+
+        template = str(template_file)
+
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix="_plot.svg",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        plot_stat_map(
+            self.inputs.in_file,
+            bg_img=template,
+            display_mode="mosaic",
+            cut_coords=8,
+            colorbar=True,
+            output_file=self._results["out_file"],
+        )
+        return runtime

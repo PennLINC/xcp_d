@@ -1,9 +1,11 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The primary workflows for xcp_d."""
+
 import os
 import sys
 from copy import deepcopy
+from pathlib import Path
 
 import bids
 import matplotlib
@@ -12,6 +14,7 @@ import nilearn
 import numpy as np
 import scipy
 import templateflow
+import yaml
 from nipype import __version__ as nipype_ver
 from nipype import logging
 from nipype.interfaces import utility as niu
@@ -20,10 +23,12 @@ from packaging.version import Version
 
 from xcp_d import config
 from xcp_d.__about__ import __version__
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     _get_tr,
+    collect_confounds,
     collect_data,
     collect_mesh_data,
     collect_morphometry_data,
@@ -33,19 +38,15 @@ from xcp_d.utils.bids import (
     group_across_runs,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.modified_data import flag_bad_run
+from xcp_d.utils.modified_data import calculate_exact_scans, flag_bad_run
 from xcp_d.utils.utils import estimate_brain_radius
-from xcp_d.workflows.anatomical import (
-    init_postprocess_anat_wf,
-    init_postprocess_surfaces_wf,
-)
-from xcp_d.workflows.bold import init_postprocess_nifti_wf
-from xcp_d.workflows.cifti import init_postprocess_cifti_wf
-from xcp_d.workflows.concatenation import init_concatenate_data_wf
-from xcp_d.workflows.connectivity import (
-    init_load_atlases_wf,
-    init_parcellate_surfaces_wf,
-)
+from xcp_d.workflows.anatomical.parcellation import init_parcellate_surfaces_wf
+from xcp_d.workflows.anatomical.surface import init_postprocess_surfaces_wf
+from xcp_d.workflows.anatomical.volume import init_postprocess_anat_wf
+from xcp_d.workflows.bold.cifti import init_postprocess_cifti_wf
+from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
+from xcp_d.workflows.bold.nifti import init_postprocess_nifti_wf
+from xcp_d.workflows.parcellation import init_load_atlases_wf
 
 LOGGER = logging.getLogger("nipype.workflow")
 
@@ -80,7 +81,7 @@ def init_xcpd_wf():
         single_subject_wf = init_single_subject_wf(subject_id)
 
         single_subject_wf.config["execution"]["crashdump_dir"] = str(
-            config.execution.xcp_d_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
+            config.execution.output_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
         )
         for node in single_subject_wf._get_all_nodes():
             node.config = deepcopy(single_subject_wf.config)
@@ -89,7 +90,7 @@ def init_xcpd_wf():
 
         # Dump a copy of the config file into the log directory
         log_dir = (
-            config.execution.xcp_d_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
+            config.execution.output_dir / f"sub-{subject_id}" / "log" / config.execution.run_uuid
         )
         log_dir.mkdir(exist_ok=True, parents=True)
         config.to_filename(log_dir / "xcp_d.toml")
@@ -128,34 +129,37 @@ def init_single_subject_wf(subject_id: str):
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
         input_type=config.workflow.input_type,
-        cifti=config.workflow.cifti,
+        file_format=config.workflow.file_format,
     )
     t1w_available = subj_data["t1w"] is not None
     t2w_available = subj_data["t2w"] is not None
+    anat_mod = "t1w" if t1w_available else "t2w"
 
-    mesh_available, standard_space_mesh, mesh_files = collect_mesh_data(
+    mesh_available, standard_space_mesh, software, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
         participant_label=subject_id,
+        bids_filters=config.execution.bids_filters,
     )
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
+        bids_filters=config.execution.bids_filters,
     )
 
     # determine the appropriate post-processing workflow
-    init_postprocess_bold_wf = (
-        init_postprocess_cifti_wf if config.workflow.cifti else init_postprocess_nifti_wf
-    )
+    workflows = {
+        "nifti": init_postprocess_nifti_wf,
+        "cifti": init_postprocess_cifti_wf,
+    }
+    init_postprocess_bold_wf = workflows[config.workflow.file_format]
     preproc_files = subj_data["bold"]
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "subj_data",  # not currently used, but will be in future
                 "t1w",
                 "t2w",  # optional
-                "anat_brainmask",  # not used by cifti workflow
-                "anat_dseg",
+                "anat_brainmask",  # used to estimate head radius and for QC metrics
                 "template_to_anat_xfm",  # not used by cifti workflow
                 "anat_to_template_xfm",
                 # mesh files
@@ -163,6 +167,8 @@ def init_single_subject_wf(subject_id: str):
                 "rh_pial_surf",
                 "lh_wm_surf",
                 "rh_wm_surf",
+                "lh_subject_sphere",
+                "rh_subject_sphere",
                 # morphometry files
                 "sulcal_depth",
                 "sulcal_curv",
@@ -174,11 +180,9 @@ def init_single_subject_wf(subject_id: str):
         ),
         name="inputnode",
     )
-    inputnode.inputs.subj_data = subj_data
     inputnode.inputs.t1w = subj_data["t1w"]
     inputnode.inputs.t2w = subj_data["t2w"]
     inputnode.inputs.anat_brainmask = subj_data["anat_brainmask"]
-    inputnode.inputs.anat_dseg = subj_data["anat_dseg"]
     inputnode.inputs.template_to_anat_xfm = subj_data["template_to_anat_xfm"]
     inputnode.inputs.anat_to_template_xfm = subj_data["anat_to_template_xfm"]
 
@@ -187,6 +191,8 @@ def init_single_subject_wf(subject_id: str):
     inputnode.inputs.rh_pial_surf = mesh_files["rh_pial_surf"]
     inputnode.inputs.lh_wm_surf = mesh_files["lh_wm_surf"]
     inputnode.inputs.rh_wm_surf = mesh_files["rh_wm_surf"]
+    inputnode.inputs.lh_subject_sphere = mesh_files["lh_subject_sphere"]
+    inputnode.inputs.rh_subject_sphere = mesh_files["rh_subject_sphere"]
 
     # optional surface shape files (used by surface-warping workflow)
     inputnode.inputs.sulcal_depth = morphometry_files["sulcal_depth"]
@@ -205,17 +211,23 @@ def init_single_subject_wf(subject_id: str):
 
     workflow.__desc__ = f"""
 ### Post-processing of {config.workflow.input_type} outputs
-The eXtensible Connectivity Pipeline- DCAN (XCP-D) [@mitigating_2018;@satterthwaite_2013]
+
+The eXtensible Connectivity Pipeline- DCAN (XCP-D)
+[@mehta2024xcp;@mitigating_2018;@satterthwaite_2013]
 was used to post-process the outputs of *{info_dict["name"]}* version {info_dict["version"]}
 {info_dict["references"]}.
 XCP-D was built with *Nipype* version {nipype_ver} [@nipype1, RRID:SCR_002502].
 """
 
+    cw_str = (
+        "*Connectome Workbench* [@marcus2011informatics], "
+        if config.workflow.file_format == "cifti"
+        else ""
+    )
     workflow.__postdesc__ = f"""
 
 Many internal operations of *XCP-D* use
-*AFNI* [@cox1996afni;@cox1997software],
-{"*Connectome Workbench* [@marcus2011informatics], " if config.workflow.cifti else ""}
+*AFNI* [@cox1996afni;@cox1997software],{cw_str}
 *ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
 *matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
@@ -250,9 +262,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     ds_report_summary = pe.Node(
         DerivativesDataSink(
-            base_directory=config.execution.xcp_d_dir,
             source_file=preproc_files[0],
-            datatype="figures",
             desc="summary",
         ),
         name="ds_report_summary",
@@ -260,10 +270,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     ds_report_about = pe.Node(
         DerivativesDataSink(
-            base_directory=config.execution.xcp_d_dir,
             source_file=preproc_files[0],
             desc="about",
-            datatype="figures",
         ),
         name="ds_report_about",
         run_without_submitting=True,
@@ -282,7 +290,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (inputnode, postprocess_anat_wf, [
             ("t1w", "inputnode.t1w"),
             ("t2w", "inputnode.t2w"),
-            ("anat_dseg", "inputnode.anat_dseg"),
             ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
         ]),
     ])  # fmt:skip
@@ -293,16 +300,16 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         load_atlases_wf.inputs.inputnode.name_source = preproc_files[0]
         load_atlases_wf.inputs.inputnode.bold_file = preproc_files[0]
 
-    if config.workflow.process_surfaces or (config.workflow.dcan_qc and mesh_available):
+    if config.workflow.process_surfaces or (config.workflow.abcc_qc and mesh_available):
         # Run surface post-processing workflow if we want to warp meshes to standard space *or*
         # generate brainsprite.
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
-            subject_id=subject_id,
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
             morphometry_files=morph_file_types,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
+            software=software,
         )
 
         workflow.connect([
@@ -311,6 +318,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ("rh_pial_surf", "inputnode.rh_pial_surf"),
                 ("lh_wm_surf", "inputnode.lh_wm_surf"),
                 ("rh_wm_surf", "inputnode.rh_wm_surf"),
+                ("lh_subject_sphere", "inputnode.lh_subject_sphere"),
+                ("rh_subject_sphere", "inputnode.rh_subject_sphere"),
                 ("anat_to_template_xfm", "inputnode.anat_to_template_xfm"),
                 ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
             ]),
@@ -353,26 +362,43 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ])  # fmt:skip
 
     # Estimate head radius, if necessary
+    # Need to warp the standard-space brain mask to the anatomical space to estimate head radius
+    warp_brainmask = ApplyTransforms(
+        input_image=subj_data["anat_brainmask"],
+        transforms=[subj_data["template_to_anat_xfm"]],
+        reference_image=subj_data[anat_mod],
+        num_threads=2,
+        interpolation="GenericLabel",
+        input_image_type=3,
+        dimension=3,
+    )
+    os.makedirs(config.execution.work_dir / workflow.fullname, exist_ok=True)
+    warp_brainmask_results = warp_brainmask.run(
+        cwd=(config.execution.work_dir / workflow.fullname),
+    )
+    anat_brainmask_in_anat_space = warp_brainmask_results.outputs.output_image
+
     head_radius = estimate_brain_radius(
-        mask_file=subj_data["anat_brainmask"],
+        mask_file=anat_brainmask_in_anat_space,
         head_radius=config.workflow.head_radius,
     )
 
     n_runs = len(preproc_files)
-    preproc_files = group_across_runs(preproc_files)  # group files across runs and directions
+    # group files across runs and directions, to facilitate concatenation
+    preproc_files = group_across_runs(preproc_files)
     run_counter = 0
     for ent_set, task_files in enumerate(preproc_files):
         # Assuming TR is constant across runs for a given combination of entities.
         TR = _get_tr(nb.load(task_files[0]))
 
         n_task_runs = len(task_files)
-        if config.workflow.combineruns and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_task_runs > 1):
             merge_elements = [
                 "name_source",
                 "preprocessed_bold",
-                "fmriprep_confounds_file",
-                "filtered_motion",
+                "motion_file",
                 "temporal_mask",
+                "denoised_bold",
                 "denoised_interpolated_bold",
                 "censored_denoised_bold",
                 "smoothed_denoised_bold",
@@ -393,12 +419,22 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             run_data = collect_run_data(
                 layout=config.execution.layout,
                 bold_file=bold_file,
-                cifti=config.workflow.cifti,
+                file_format=config.workflow.file_format,
                 target_space=target_space,
             )
+            if isinstance(config.execution.confounds_config, Path):
+                confounds_dict = collect_confounds(
+                    bold_file=bold_file,
+                    preproc_dataset=config.execution.layout,
+                    derivatives_datasets=config.execution.datasets,
+                    confound_spec=yaml.safe_load(config.execution.confounds_config.read_text()),
+                )
+                run_data["confounds"] = confounds_dict
+            else:
+                run_data["confounds"] = None
 
             post_scrubbing_duration = flag_bad_run(
-                fmriprep_confounds_file=run_data["confounds"],
+                motion_file=run_data["motion_file"],
                 dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
                 motion_filter_type=config.workflow.motion_filter_type,
@@ -408,7 +444,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
             )
-            # Reduce exact_times to only include values greater than the post-scrubbing duration.
+
             if (config.workflow.min_time >= 0) and (
                 post_scrubbing_duration < config.workflow.min_time
             ):
@@ -420,26 +456,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 )
                 continue
 
+            # Reduce exact_times to only include values greater than the post-scrubbing duration.
             exact_scans = []
-            if config.workflow.exact_time:
-                retained_exact_times = [
-                    t for t in config.workflow.exact_time if t <= post_scrubbing_duration
-                ]
-                dropped_exact_times = [
-                    t for t in config.workflow.exact_time if t > post_scrubbing_duration
-                ]
-                if dropped_exact_times:
-                    LOGGER.warning(
-                        f"{post_scrubbing_duration} seconds in {os.path.basename(bold_file)} "
-                        "survive high-motion outlier scrubbing. "
-                        "Only retaining exact-time values greater than this "
-                        f"({retained_exact_times})."
-                    )
-
-                exact_scans = [
-                    int(t // run_data["bold_metadata"]["RepetitionTime"])
-                    for t in retained_exact_times
-                ]
+            if config.workflow.dcan_correlation_lengths:
+                exact_scans = calculate_exact_scans(
+                    exact_times=config.workflow.dcan_correlation_lengths,
+                    scan_length=post_scrubbing_duration,
+                    t_r=run_data["bold_metadata"]["RepetitionTime"],
+                    bold_file=bold_file,
+                )
 
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
@@ -449,9 +474,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 exact_scans=exact_scans,
-                name=(
-                    f"{'cifti' if config.workflow.cifti else 'nifti'}_postprocess_{run_counter}_wf"
-                ),
+                name=f"postprocess_{run_counter}_wf",
             )
             run_counter += 1
 
@@ -462,25 +485,24 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
+            if config.workflow.process_surfaces or (config.workflow.abcc_qc and mesh_available):
+                workflow.connect([
+                    (postprocess_surfaces_wf, postprocess_bold_wf, [
+                        ("outputnode.lh_midthickness", "inputnode.lh_midthickness"),
+                        ("outputnode.rh_midthickness", "inputnode.rh_midthickness"),
+                    ]),
+                ])  # fmt:skip
+
             if config.execution.atlases:
                 workflow.connect([
                     (load_atlases_wf, postprocess_bold_wf, [
+                        ("outputnode.atlas_names", "inputnode.atlases"),
                         ("outputnode.atlas_files", "inputnode.atlas_files"),
                         ("outputnode.atlas_labels_files", "inputnode.atlas_labels_files"),
                     ]),
                 ])  # fmt:skip
 
-                if config.workflow.cifti:
-                    workflow.connect([
-                        (load_atlases_wf, postprocess_bold_wf, [
-                            (
-                                "outputnode.parcellated_atlas_files",
-                                "inputnode.parcellated_atlas_files",
-                            ),
-                        ]),
-                    ])  # fmt:skip
-
-            if not config.workflow.cifti:
+            if config.workflow.file_format == "nifti":
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
                         ("anat_brainmask", "inputnode.anat_brainmask"),
@@ -488,13 +510,18 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-            if config.workflow.combineruns and (n_task_runs > 1):
+                # The post-processing workflow needs a native anatomical-space image as a reference
+                workflow.connect([
+                    (inputnode, postprocess_bold_wf, [(anat_mod, "inputnode.anat_native")]),
+                ])  # fmt:skip
+
+            if config.workflow.combine_runs and (n_task_runs > 1):
                 for io_name, node in merge_dict.items():
                     workflow.connect([
                         (postprocess_bold_wf, node, [(f"outputnode.{io_name}", f"in{j_run + 1}")]),
                     ])  # fmt:skip
 
-        if config.workflow.combineruns and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_task_runs > 1):
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,
@@ -505,6 +532,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, concatenate_data_wf, [
                     ("anat_brainmask", "inputnode.anat_brainmask"),
                     ("template_to_anat_xfm", "inputnode.template_to_anat_xfm"),
+                    (anat_mod, "inputnode.anat_native"),
                 ]),
             ])  # fmt:skip
 
@@ -522,8 +550,18 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         (about, ds_report_about, [("out_report", "in_file")]),
     ])  # fmt:skip
 
+    return clean_datasinks(workflow)
+
+
+def clean_datasinks(workflow):
+    """Clean DerivativesDataSinks in a workflow."""
     for node in workflow.list_node_names():
-        if node.split(".")[-1].startswith("ds_"):
+        node_name = node.split(".")[-1]
+        if node_name.startswith("ds_"):
             workflow.get_node(node).interface.out_path_base = ""
+            workflow.get_node(node).interface.inputs.base_directory = config.execution.output_dir
+
+        if node_name.startswith("ds_report_"):
+            workflow.get_node(node).interface.inputs.datatype = "figures"
 
     return workflow

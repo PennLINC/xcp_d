@@ -5,15 +5,18 @@
 Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
+
 import os
 import warnings
 from pathlib import Path
 
 import nibabel as nb
 import yaml
+from bids.layout import BIDSLayout
 from nipype import logging
 from packaging.version import Version
 
+from xcp_d.data import load as load_data
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import ensure_list
 
@@ -148,87 +151,38 @@ def collect_data(
     input_type,
     participant_label,
     bids_filters,
-    cifti,
+    file_format,
 ):
     """Collect data from a BIDS dataset.
 
     Parameters
     ----------
+    %(layout)s
     %(input_type)s
     participant_label
     bids_filters
-    %(cifti)s
-    %(layout)s
+    file_format
 
     Returns
     -------
     %(layout)s
     subj_data : dict
     """
-    queries = {
-        # all preprocessed BOLD files in the right space/resolution/density
-        "bold": {"datatype": "func", "suffix": "bold", "desc": ["preproc", None]},
-        # native T1w-space, preprocessed T1w file
-        "t1w": {
-            "datatype": "anat",
-            "space": None,
-            "desc": "preproc",
-            "suffix": "T1w",
-            "extension": ".nii.gz",
-        },
-        # native T2w-space, preprocessed T1w file
-        "t2w": {
-            "datatype": "anat",
-            "space": [None, "T1w"],
-            "desc": "preproc",
-            "suffix": "T2w",
-            "extension": ".nii.gz",
-        },
-        # native T1w-space dseg file
-        "anat_dseg": {
-            "datatype": "anat",
-            "space": None,
-            "desc": None,
-            "suffix": "dseg",
-            "extension": ".nii.gz",
-        },
-        # transform from standard space to T1w or T2w space
-        # "from" entity will be set later
-        "template_to_anat_xfm": {
-            "datatype": "anat",
-            "to": ["T1w", "T2w"],
-            "suffix": "xfm",
-        },
-        # native T1w-space brain mask
-        "anat_brainmask": {
-            "datatype": "anat",
-            "space": None,
-            "desc": "brain",
-            "suffix": "mask",
-            "extension": ".nii.gz",
-        },
-        # transform from T1w or T2w space to standard space
-        # "to" entity will be set later
-        "anat_to_template_xfm": {
-            "datatype": "anat",
-            "from": ["T1w", "T2w"],
-            "suffix": "xfm",
-        },
-    }
+    _spec = yaml.safe_load(load_data.readable("io_spec.yaml").read_text())
+    queries = _spec["queries"]["base"]
     if input_type in ("hcp", "dcan", "ukb"):
         # HCP/DCAN data have anats only in standard space
         queries["t1w"]["space"] = "MNI152NLin6Asym"
         queries["t2w"]["space"] = "MNI152NLin6Asym"
-        queries["anat_dseg"]["desc"] = "aparcaseg"
-        queries["anat_dseg"]["space"] = "MNI152NLin6Asym"
         queries["anat_brainmask"]["space"] = "MNI152NLin6Asym"
 
-    queries["bold"]["extension"] = ".dtseries.nii" if cifti else ".nii.gz"
+    queries["bold"]["extension"] = ".dtseries.nii" if (file_format == "cifti") else ".nii.gz"
 
     # Apply filters. These may override anything.
     bids_filters = bids_filters or {}
-    for acq, entities in bids_filters.items():
-        queries[acq].update(entities)
+    for acq in queries.keys():
+        if acq in bids_filters:
+            queries[acq].update(bids_filters[acq])
 
     # Select the best available space.
     if "space" in queries["bold"]:
@@ -239,7 +193,7 @@ def collect_data(
         allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
             input_type,
             DEFAULT_ALLOWED_SPACES,
-        )["cifti" if cifti else "nifti"]
+        )[file_format]
 
     for space in allowed_spaces:
         queries["bold"]["space"] = space
@@ -258,7 +212,7 @@ def collect_data(
             f"Found files:\n\n{filenames}"
         )
 
-    if cifti:
+    if file_format == "cifti":
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
         allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
@@ -289,10 +243,12 @@ def collect_data(
 
         queries["anat_to_template_xfm"]["to"] = volspace
         queries["template_to_anat_xfm"]["from"] = volspace
+        queries["anat_brainmask"]["space"] = volspace
     else:
         # use the BOLD file's space if the BOLD file is a nifti.
         queries["anat_to_template_xfm"]["to"] = queries["bold"]["space"]
         queries["template_to_anat_xfm"]["from"] = queries["bold"]["space"]
+        queries["anat_brainmask"]["space"] = queries["bold"]["space"]
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
     # This probably works well for resolution (1 typically means 1x1x1,
@@ -311,6 +267,47 @@ def collect_data(
     t2w_files = layout.get(return_type="file", subject=participant_label, **queries["t2w"])
     if not t1w_files and not t2w_files:
         raise FileNotFoundError("No T1w or T2w files found.")
+    elif t1w_files and t2w_files:
+        LOGGER.warning("Both T1w and T2w found. Checking for T1w-space T2w.")
+        temp_query = queries["t2w"].copy()
+        temp_query["space"] = "T1w"
+        temp_t2w_files = layout.get(return_type="file", subject=participant_label, **temp_query)
+        if not temp_t2w_files:
+            LOGGER.warning("No T1w-space T2w found. Checking for T2w-space T1w.")
+            temp_query = queries["t1w"].copy()
+            temp_query["space"] = "T2w"
+            temp_t1w_files = layout.get(
+                return_type="file",
+                subject=participant_label,
+                **temp_query,
+            )
+            queries["t1w"]["space"] = "T2w"
+            if not temp_t1w_files:
+                LOGGER.warning("No T2w-space T1w found. Attempting T2w-only processing.")
+                temp_query = queries["anat_to_template_xfm"].copy()
+                temp_query["from"] = "T2w"
+                temp_xfm_files = layout.get(
+                    return_type="file",
+                    subject=participant_label,
+                    **temp_query,
+                )
+                if not temp_xfm_files:
+                    LOGGER.warning(
+                        "T2w-to-template transform not found. Attempting T1w-only processing."
+                    )
+                    queries["t1w"]["space"] = ["T1w", None]
+                    queries["template_to_anat_xfm"]["to"] = "T1w"
+                    queries["anat_to_template_xfm"]["from"] = "T1w"
+                else:
+                    LOGGER.info("Performing T2w-only processing.")
+                    queries["template_to_anat_xfm"]["to"] = "T2w"
+                    queries["anat_to_template_xfm"]["from"] = "T2w"
+            else:
+                LOGGER.warning("T2w-space T1w found. Processing anatomical images in T2w space.")
+        else:
+            LOGGER.warning("T1w-space T2w found. Processing anatomical images in T1w space.")
+            queries["t2w"]["space"] = "T1w"
+            queries["t1w"]["space"] = ["T1w", None]
     elif t2w_files and not t1w_files:
         LOGGER.warning("T2w found, but no T1w. Enabling T2w-only processing.")
         queries["template_to_anat_xfm"]["to"] = "T2w"
@@ -344,13 +341,16 @@ def collect_data(
             else:
                 subj_data[field] = None
 
-    LOGGER.log(25, f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}")
+    LOGGER.log(
+        25,
+        f"Collected data:\n{yaml.dump(subj_data, default_flow_style=False, indent=4)}",
+    )
 
     return subj_data
 
 
 @fill_doc
-def collect_mesh_data(layout, participant_label):
+def collect_mesh_data(layout, participant_label, bids_filters):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
@@ -369,6 +369,8 @@ def collect_mesh_data(layout, participant_label):
         True if surface mesh files (pial and smoothwm) were found. False if they were not.
     standard_space_mesh : :obj:`bool`
         True if standard-space (fsLR) surface mesh files were found. False if they were not.
+    software : {"MCRIBS", "FreeSurfer"}
+        The software used to generate the surfaces.
     mesh_files : :obj:`dict`
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
@@ -376,57 +378,56 @@ def collect_mesh_data(layout, participant_label):
     # Surfaces to use for brainsprite and anatomical workflow
     # The base surfaces can be used to generate the derived surfaces.
     # The base surfaces may be in native or standard space.
-    base_queries = {
-        "pial_surf": "pial",
-        "wm_surf": ["smoothwm", "white"],
-    }
-    query_extras = {
-        "space": "fsLR",
-        "den": "32k",
-    }
+    _spec = yaml.safe_load(load_data.readable("io_spec.yaml").read_text())
+    queries = _spec["queries"]["mesh"]
 
+    # Apply filters. These may override anything.
+    bids_filters = bids_filters or {}
+    for acq in queries.keys():
+        if acq in bids_filters:
+            queries[acq].update(bids_filters[acq])
+
+    # First, try to grab the first base surface file in standard (fsLR) space.
+    # If it's not available, switch to native fsnative-space data.
     standard_space_mesh = True
-    for name, suffixes in base_queries.items():
-        # First, try to grab the first base surface file in standard space.
-        # If it's not available, switch to native T1w-space data.
-        for hemisphere in ["L", "R"]:
-            temp_files = layout.get(
-                return_type="file",
-                subject=participant_label,
-                datatype="anat",
-                hemi=hemisphere,
-                desc=None,
-                suffix=suffixes,
-                extension=".surf.gii",
-                **query_extras,
-            )
-            if len(temp_files) == 0:
-                LOGGER.info("No standard-space surfaces found.")
-                standard_space_mesh = False
-            elif len(temp_files) > 1:
-                LOGGER.warning(f"{name}: More than one standard-space surface found.")
+    for name, query in queries.items():
+        # Don't look for fsLR-space versions of the subject spheres.
+        if "subject_sphere" in name:
+            continue
+
+        temp_files = layout.get(
+            return_type="file",
+            subject=participant_label,
+            space="fsLR",
+            den="32k",
+            **query,
+        )
+
+        if len(temp_files) == 0:
+            standard_space_mesh = False
+        elif len(temp_files) > 1:
+            LOGGER.warning(f"{name}: More than one standard-space surface found.")
+
+    if not standard_space_mesh:
+        LOGGER.info("No standard-space surfaces found.")
 
     # Now that we know if there are standard-space surfaces available, we can grab the files.
+    query_extras = {}
     if not standard_space_mesh:
         query_extras = {
             "space": None,
         }
 
     initial_mesh_files = {}
-    queries = {}
-    for name, suffixes in base_queries.items():
-        for hemisphere in ["L", "R"]:
-            key = f"{hemisphere.lower()}h_{name}"
-            queries[key] = {
-                "subject": participant_label,
-                "datatype": "anat",
-                "hemi": hemisphere,
-                "desc": None,
-                "suffix": suffixes,
-                "extension": ".surf.gii",
-                **query_extras,
-            }
-            initial_mesh_files[key] = layout.get(return_type="file", **queries[key])
+    for name, query in queries.items():
+        queries[name] = {
+            "subject": participant_label,
+            **query,
+        }
+        if "subject_sphere" not in name:
+            queries[name].update(query_extras)
+
+        initial_mesh_files[name] = layout.get(return_type="file", **queries[name])
 
     mesh_files = {}
     mesh_available = True
@@ -435,8 +436,10 @@ def collect_mesh_data(layout, participant_label):
             mesh_files[dtype] = surface_files_[0]
 
         elif len(surface_files_) == 0:
-            mesh_available = False
             mesh_files[dtype] = None
+            # We don't need subject spheres if we have standard-space meshes already
+            if not ("subject_sphere" in dtype and standard_space_mesh):
+                mesh_available = False
 
         else:
             mesh_available = False
@@ -447,16 +450,32 @@ def collect_mesh_data(layout, participant_label):
                 f"Query: {queries[dtype]}"
             )
 
+    # Check for *_space-dhcpAsym_desc-reg_sphere.surf.gii
+    # If we find it, we assume segmentation was done with MCRIBS. Otherwise, assume FreeSurfer.
+    dhcp_file = layout.get(
+        return_type="file",
+        datatype="anat",
+        subject=participant_label,
+        hemi="L",
+        space="dhcpAsym",
+        desc="reg",
+        suffix="sphere",
+        extension=".surf.gii",
+    )
+    software = "MCRIBS" if bool(len(dhcp_file)) else "FreeSurfer"
+
     LOGGER.log(
         25,
         f"Collected mesh files:\n{yaml.dump(mesh_files, default_flow_style=False, indent=4)}",
     )
+    if mesh_available:
+        LOGGER.log(25, f"Assuming segmentation was performed with {software}.")
 
-    return mesh_available, standard_space_mesh, mesh_files
+    return mesh_available, standard_space_mesh, software, mesh_files
 
 
 @fill_doc
-def collect_morphometry_data(layout, participant_label):
+def collect_morphometry_data(layout, participant_label, bids_filters):
     """Collect morphometry surface files from preprocessed derivatives.
 
     This function will look for fsLR-space, 91k-resolution morphometry CIFTI files.
@@ -477,42 +496,20 @@ def collect_morphometry_data(layout, participant_label):
         Dictionary of surface file identifiers and their paths.
         If the surface files weren't found, then the paths will be Nones.
     """
-    queries = {
-        "sulcal_depth": {
-            "desc": None,
-            "suffix": "sulc",
-        },
-        "sulcal_curv": {
-            "desc": None,
-            "suffix": "curv",
-        },
-        "cortical_thickness": {
-            "desc": None,
-            "suffix": "thickness",
-        },
-        "cortical_thickness_corr": {
-            "desc": "corrected",
-            "suffix": "thickness",
-        },
-        "myelin": {
-            "desc": None,
-            "suffix": "myelinw",
-        },
-        "myelin_smoothed": {
-            "desc": "smoothed",
-            "suffix": "myelinw",
-        },
-    }
+    _spec = yaml.safe_load(load_data.readable("io_spec.yaml").read_text())
+    queries = _spec["queries"]["morphometry"]
+
+    # Apply filters. These may override anything.
+    bids_filters = bids_filters or {}
+    for acq in queries.keys():
+        if acq in bids_filters:
+            queries[acq].update(bids_filters[acq])
 
     morphometry_files = {}
     for name, query in queries.items():
         files = layout.get(
             return_type="file",
             subject=participant_label,
-            datatype="anat",
-            space="fsLR",
-            den="91k",
-            extension=".dscalar.nii",
             **query,
         )
         if len(files) == 1:
@@ -542,7 +539,7 @@ def collect_morphometry_data(layout, participant_label):
 
 
 @fill_doc
-def collect_run_data(layout, bold_file, cifti, target_space):
+def collect_run_data(layout, bold_file, file_format, target_space):
     """Collect data associated with a given BOLD file.
 
     Parameters
@@ -550,7 +547,7 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     %(layout)s
     bold_file : :obj:`str`
         Path to the BOLD file.
-    %(cifti)s
+    file_format
         Whether to collect files associated with a CIFTI image (True) or a NIFTI (False).
     target_space
         Used to find NIfTIs in the appropriate space if ``cifti`` is ``True``.
@@ -563,7 +560,7 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     bids_file = layout.get_file(bold_file)
     run_data, metadata = {}, {}
 
-    run_data["confounds"] = layout.get_nearest(
+    run_data["motion_file"] = layout.get_nearest(
         bids_file.path,
         strict=True,
         ignore_strict_entities=["space", "res", "den", "desc", "suffix", "extension"],
@@ -571,16 +568,17 @@ def collect_run_data(layout, bold_file, cifti, target_space):
         suffix="timeseries",
         extension=".tsv",
     )
-    if not run_data["confounds"]:
+    if not run_data["motion_file"]:
         raise FileNotFoundError(f"No confounds file detected for {bids_file.path}")
 
-    run_data["confounds_json"] = layout.get_nearest(run_data["confounds"], extension=".json")
+    run_data["motion_json"] = layout.get_nearest(run_data["motion_file"], extension=".json")
+
     metadata["bold_metadata"] = layout.get_metadata(bold_file)
     # Ensure that we know the TR
     if "RepetitionTime" not in metadata["bold_metadata"].keys():
         metadata["bold_metadata"]["RepetitionTime"] = _get_tr(bold_file)
 
-    if not cifti:
+    if file_format == "nifti":
         run_data["boldref"] = layout.get_nearest(
             bids_file.path,
             strict=True,
@@ -659,7 +657,99 @@ def collect_run_data(layout, bold_file, cifti, target_space):
     return run_data
 
 
-def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confounds_folder=None):
+def collect_confounds(
+    bold_file: str,
+    preproc_dataset: BIDSLayout,
+    derivatives_datasets: dict[str, Path | BIDSLayout] | None,
+    confound_spec: dict | None,
+):
+    """Gather confounds files from derivatives datasets and compose a cache."""
+    import re
+
+    from bids.layout.index import BIDSLayoutIndexer
+
+    bold_file = preproc_dataset.get_file(bold_file)
+
+    # Recommended after PyBIDS 12.1
+    ignore_patterns = [
+        "code",
+        "stimuli",
+        "models",
+        re.compile(r"\/\.\w+|^\.\w+"),  # hidden files
+        re.compile(
+            r"sub-[a-zA-Z0-9]+(/ses-[a-zA-Z0-9]+)?/(anat|beh|dwi|eeg|ieeg|meg|perf|pet|physio)"
+        ),
+    ]
+    _indexer = BIDSLayoutIndexer(
+        validate=False,
+        ignore=ignore_patterns,
+        index_metadata=False,  # we don't need metadata to find confound files
+    )
+    xcp_d_config = str(load_data("xcp_d_bids_config2.json"))
+
+    # Step 0: Determine derivatives we care about for confounds.
+    req_datasets = []
+    for confound_def in confound_spec["confounds"].values():
+        req_datasets.append(confound_def["dataset"])
+
+    req_datasets = sorted(list(set(req_datasets)))
+
+    # Step 1: Build a dictionary of dataset: layout pairs.
+    layout_dict = {}
+    layout_dict["preprocessed"] = preproc_dataset
+    if derivatives_datasets is not None:
+        for k, v in derivatives_datasets.items():
+            # Don't index datasets we don't need for confounds.
+            if k not in req_datasets:
+                print(f"Not required: {k}")
+                continue
+
+            if isinstance(v, (Path, str)):
+                layout = BIDSLayout(
+                    v,
+                    config=["bids", "derivatives", xcp_d_config],
+                    indexer=_indexer,
+                )
+                if layout.get_dataset_description().get("DatasetType") != "derivatives":
+                    print(f"Dataset {k} is not a derivatives dataset. Skipping.")
+
+                layout_dict[k] = layout
+            else:
+                layout_dict[k] = v
+
+    # Step 2: Loop over the confounds spec and search for each file in the corresponding dataset.
+    confounds = dict()
+    for confound_name, confound_def in confound_spec["confounds"].items():
+        if confound_def["dataset"] not in layout_dict.keys():
+            raise ValueError(
+                f"Missing dataset required by confound spec: *{confound_def['dataset']}*. "
+                "Did you provide it with the `--datasets` flag?"
+            )
+
+        layout = layout_dict[confound_def["dataset"]]
+        bold_file_entities = bold_file.get_entities()
+        query = {**bold_file_entities, **confound_def["query"]}
+        confound_file = layout.get(**query)
+        if not confound_file:
+            raise FileNotFoundError(
+                f"Could not find confound file for {confound_name} with query {query}"
+            )
+
+        confound_file = confound_file[0]
+        confound_metadata = confound_file.get_metadata()
+        confounds[confound_name] = {}
+        confounds[confound_name]["file"] = confound_file.path
+        confounds[confound_name]["metadata"] = confound_metadata
+
+    return confounds
+
+
+def write_derivative_description(
+    fmri_dir,
+    output_dir,
+    atlases=None,
+    dataset_links={},
+):
     """Write dataset_description.json file for derivatives.
 
     Parameters
@@ -667,11 +757,13 @@ def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confoun
     fmri_dir : :obj:`str`
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
-        Path to the output xcp-d dataset.
+        Path to the output XCP-D dataset.
     atlases : :obj:`list` of :obj:`str`, optional
         Names of requested XCP-D atlases.
     custom_confounds_folder : :obj:`str`, optional
         Path to the folder containing custom confounds files.
+    dataset_links : :obj:`dict`, optional
+        Dictionary of dataset links to include in the dataset description.
     """
     import json
     import os
@@ -682,23 +774,25 @@ def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confoun
     if not os.path.isfile(orig_dset_description):
         raise FileNotFoundError(f"Dataset description DNE: {orig_dset_description}")
 
+    # Base the new dataset description on the preprocessing pipeline's dataset description
     with open(orig_dset_description, "r") as fo:
-        dset_desc = json.load(fo)
+        desc = json.load(fo)
 
     # Check if the dataset type is derivative
-    if "DatasetType" not in dset_desc.keys():
+    if "DatasetType" not in desc.keys():
         LOGGER.warning(f"DatasetType key not in {orig_dset_description}. Assuming 'derivative'.")
-        dset_desc["DatasetType"] = "derivative"
+        desc["DatasetType"] = "derivative"
 
-    if dset_desc.get("DatasetType", "derivative") != "derivative":
+    if desc.get("DatasetType", "derivative") != "derivative":
         raise ValueError(
             f"DatasetType key in {orig_dset_description} is not 'derivative'. "
             "XCP-D only works on derivative datasets."
         )
 
     # Update dataset description
-    dset_desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
-    generated_by = dset_desc.get("GeneratedBy", [])
+    # TODO: Add derivatives' dataset_description.json info as well. Especially the GeneratedBy.
+    desc["Name"] = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
+    generated_by = desc.get("GeneratedBy", [])
     generated_by.insert(
         0,
         {
@@ -707,42 +801,34 @@ def write_dataset_description(fmri_dir, output_dir, atlases=None, custom_confoun
             "CodeURL": DOWNLOAD_URL,
         },
     )
-    dset_desc["GeneratedBy"] = generated_by
-    dset_desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
+    desc["GeneratedBy"] = generated_by
+    desc["HowToAcknowledge"] = "Include the generated boilerplate in the methods section."
 
-    # Add DatasetLinks
-    if "DatasetLinks" not in dset_desc.keys():
-        dset_desc["DatasetLinks"] = {}
+    dataset_links = dataset_links.copy()
 
-    if "preprocessed" in dset_desc["DatasetLinks"].keys():
-        LOGGER.warning("'preprocessed' is already a dataset link. Overwriting.")
-
-    dset_desc["DatasetLinks"]["preprocessed"] = str(fmri_dir)
+    # Replace local templateflow path with URL
+    dataset_links["templateflow"] = "https://github.com/templateflow/templateflow"
 
     if atlases:
-        if "atlases" in dset_desc["DatasetLinks"].keys():
-            LOGGER.warning("'atlases' is already a dataset link. Overwriting.")
+        dataset_links["atlases"] = os.path.join(output_dir, "atlases")
 
-        dset_desc["DatasetLinks"]["atlases"] = os.path.join(output_dir, "atlases")
+    # Don't inherit DatasetLinks from preprocessing derivatives
+    desc["DatasetLinks"] = {k: str(v) for k, v in dataset_links.items()}
 
-    if custom_confounds_folder:
-        if "custom_confounds" in dset_desc["DatasetLinks"].keys():
-            LOGGER.warning("'custom_confounds' is already a dataset link. Overwriting.")
-
-        dset_desc["DatasetLinks"]["custom_confounds"] = str(custom_confounds_folder)
-
-    xcpd_dset_description = os.path.join(output_dir, "dataset_description.json")
-    if os.path.isfile(xcpd_dset_description):
-        with open(xcpd_dset_description, "r") as fo:
-            old_dset_desc = json.load(fo)
-
-        old_version = old_dset_desc["GeneratedBy"][0]["Version"]
+    xcpd_dset_description = Path(output_dir / "dataset_description.json")
+    if xcpd_dset_description.is_file():
+        old_desc = json.loads(xcpd_dset_description.read_text())
+        old_version = old_desc["GeneratedBy"][0]["Version"]
         if Version(__version__).public != Version(old_version).public:
             LOGGER.warning(f"Previous output generated by version {old_version} found.")
 
+        for k, v in desc["DatasetLinks"].items():
+            if k in old_desc["DatasetLinks"].keys() and old_desc["DatasetLinks"][k] != str(v):
+                LOGGER.warning(
+                    f"DatasetLink '{k}' does not match ({v} != {old_desc['DatasetLinks'][k]})."
+                )
     else:
-        with open(xcpd_dset_description, "w") as fo:
-            json.dump(dset_desc, fo, indent=4, sort_keys=True)
+        xcpd_dset_description.write_text(json.dumps(desc, indent=4))
 
 
 def write_atlas_dataset_description(atlas_dir):
@@ -758,7 +844,7 @@ def write_atlas_dataset_description(atlas_dir):
 
     from xcp_d.__about__ import DOWNLOAD_URL, __version__
 
-    dset_desc = {
+    desc = {
         "Name": "XCP-D Atlases",
         "DatasetType": "atlas",
         "GeneratedBy": [
@@ -775,49 +861,68 @@ def write_atlas_dataset_description(atlas_dir):
     atlas_dset_description = os.path.join(atlas_dir, "dataset_description.json")
     if os.path.isfile(atlas_dset_description):
         with open(atlas_dset_description, "r") as fo:
-            old_dset_desc = json.load(fo)
+            old_desc = json.load(fo)
 
-        old_version = old_dset_desc["GeneratedBy"][0]["Version"]
+        old_version = old_desc["GeneratedBy"][0]["Version"]
         if Version(__version__).public != Version(old_version).public:
             LOGGER.warning(f"Previous output generated by version {old_version} found.")
 
     else:
         with open(atlas_dset_description, "w") as fo:
-            json.dump(dset_desc, fo, indent=4, sort_keys=True)
+            json.dump(desc, fo, indent=4, sort_keys=True)
 
 
 def get_preproc_pipeline_info(input_type, fmri_dir):
-    """Get preprocessing pipeline information from the dataset_description.json file."""
+    """Get preprocessing pipeline information from the dataset_description.json file.
+
+    Parameters
+    ----------
+    input_type : :obj:`str`
+        Type of input dataset.
+    fmri_dir : :obj:`str`
+        Path to the BIDS derivative dataset being ingested.
+
+    Returns
+    -------
+    info_dict : :obj:`dict`
+        Dictionary containing the name, version, and references of the preprocessing pipeline.
+    """
     import json
     import os
 
-    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
-    if not os.path.isfile(dataset_description):
-        raise FileNotFoundError(f"Dataset description DNE: {dataset_description}")
-
-    with open(dataset_description) as f:
-        dataset_dict = json.load(f)
+    references = {
+        "fmriprep": "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]",
+        "dcan": "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]",
+        "hcp": "[@glasser2013minimal]",
+        "nibabies": "[@goncalves_mathias_2022_7072346]",
+        "ukb": "[@miller2016multimodal]",
+    }
+    if input_type not in references.keys():
+        raise ValueError(f"Unsupported input_type '{input_type}'")
 
     info_dict = {
-        "name": dataset_dict["GeneratedBy"][0]["Name"],
-        "version": (
-            dataset_dict["GeneratedBy"][0]["Version"]
-            if "Version" in dataset_dict["GeneratedBy"][0].keys()
-            else "unknown"
-        ),
+        "name": input_type,
+        "version": "unknown",
+        "references": references[input_type],
     }
-    if input_type == "fmriprep":
-        info_dict["references"] = "[@esteban2019fmriprep;@esteban2020analysis, RRID:SCR_016216]"
-    elif input_type == "dcan":
-        info_dict["references"] = "[@Feczko_Earl_perrone_Fair_2021;@feczko2021adolescent]"
-    elif input_type == "hcp":
-        info_dict["references"] = "[@glasser2013minimal]"
-    elif input_type == "nibabies":
-        info_dict["references"] = "[@goncalves_mathias_2022_7072346]"
-    elif input_type == "ukb":
-        info_dict["references"] = "[@miller2016multimodal]"
+
+    # Now try to modify the dictionary based on the dataset description
+    dataset_description = os.path.join(fmri_dir, "dataset_description.json")
+    if os.path.isfile(dataset_description):
+        with open(dataset_description) as f:
+            dataset_dict = json.load(f)
+
+        if "GeneratedBy" in dataset_dict.keys():
+            info_dict["name"] = dataset_dict["GeneratedBy"][0]["Name"]
+            info_dict["version"] = (
+                dataset_dict["GeneratedBy"][0]["Version"]
+                if "Version" in dataset_dict["GeneratedBy"][0].keys()
+                else "unknown"
+            )
+        else:
+            LOGGER.warning(f"GeneratedBy key DNE: {dataset_description}. Using partial info.")
     else:
-        raise ValueError(f"Unsupported input_type '{input_type}'")
+        LOGGER.warning(f"Dataset description DNE: {dataset_description}. Using partial info.")
 
     return info_dict
 
@@ -841,77 +946,6 @@ def _get_tr(img):
         return img.header.matrix.get_index_map(0).series_step  # Get TR
     except AttributeError:  # Error out if not in cifti
         return img.header.get_zooms()[-1]
-
-
-def get_freesurfer_dir(fmri_dir):
-    """Find FreeSurfer or MCRIBS derivatives associated with preprocessing pipeline.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    fmri_dir : :obj:`str`
-        Path to preprocessed derivatives.
-
-    Returns
-    -------
-    seg_path : :obj:`str`
-        Path to FreeSurfer or MCRIBS derivatives.
-    seg
-
-    Raises
-    ------
-    ValueError
-        If more than one potential FreeSurfer derivative folder is found.
-    NotADirectoryError
-        If no FreeSurfer derivatives are found.
-    """
-    import os
-
-    from nipype import logging
-
-    LOGGER = logging.getLogger("nipype.utils")
-
-    patterns = {
-        "Nibabies >= 24.0.0a1": (
-            os.path.join(fmri_dir, "sourcedata/mcribs"),
-            "MCRIBS",
-        ),
-        "fMRIPrep >= 20.2.1": (
-            os.path.join(fmri_dir, "sourcedata/freesurfer"),
-            "FreeSurfer",
-        ),
-        "Nibabies >= 21.0.0": (
-            os.path.join(fmri_dir, "sourcedata/infant-freesurfer"),
-            "FreeSurfer",
-        ),
-        "fMRIPrep < 20.2.1": (
-            os.path.join(os.path.dirname(fmri_dir), "freesurfer"),
-            "FreeSurfer",
-        ),
-        "Nibabies < 21.0.0": (
-            os.path.join(os.path.dirname(fmri_dir), "infant-freesurfer"),
-            "FreeSurfer",
-        ),
-    }
-
-    for desc, key in patterns.items():
-        pattern, software = key
-        if os.path.isdir(pattern):
-            LOGGER.info(
-                f"{software} derivatives associated with {desc} preprocessing derivatives found "
-                f"at {pattern}"
-            )
-            return pattern, software
-
-        # Otherwise, continue to the next pattern
-
-    seg_patterns = [pattern[0] for pattern in patterns.values()]
-    patterns_str = "\n\t".join(seg_patterns)
-    raise NotADirectoryError(
-        "No FreeSurfer/MCRIBS derivatives found in any of the following locations:"
-        f"\n\t{patterns_str}"
-    )
 
 
 def get_entity(filename, entity):
@@ -1012,6 +1046,81 @@ def group_across_runs(in_files):
     return out_files
 
 
+def _find_nearest_path(path_dict, input_path):
+    """Find the nearest relative path from an input path to a dictionary of paths.
+
+    If ``input_path`` is not relative to any of the paths in ``path_dict``,
+    the absolute path string is returned.
+
+    If ``input_path`` is already a BIDS-URI, then it will be returned unmodified.
+
+    Parameters
+    ----------
+    path_dict : dict of (str, Path)
+        A dictionary of paths.
+    input_path : Path
+        The input path to match.
+
+    Returns
+    -------
+    matching_path : str
+        The nearest relative path from the input path to a path in the dictionary.
+        This is either the concatenation of the associated key from ``path_dict``
+        and the relative path from the associated value from ``path_dict`` to ``input_path``,
+        or the absolute path to ``input_path`` if no matching path is found from ``path_dict``.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> path_dict = {
+    ...     'bids::': Path('/data/derivatives/fmriprep'),
+    ...     'bids:raw:': Path('/data'),
+    ...     'bids:deriv-0:': Path('/data/derivatives/source-1'),
+    ... }
+    >>> input_path = Path('/data/derivatives/source-1/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # match to 'bids:deriv-0:'
+    'bids:deriv-0:sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = Path('/out/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # no match- absolute path
+    '/out/sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = Path('/data/sub-01/func/sub-01_task-rest_bold.nii.gz')
+    >>> _find_nearest_path(path_dict, input_path)  # match to 'bids:raw:'
+    'bids:raw:sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> input_path = 'bids::sub-01/func/sub-01_task-rest_bold.nii.gz'
+    >>> _find_nearest_path(path_dict, input_path)  # already a BIDS-URI
+    'bids::sub-01/func/sub-01_task-rest_bold.nii.gz'
+    """
+    # Don't modify BIDS-URIs
+    if isinstance(input_path, str) and input_path.startswith("bids:"):
+        return input_path
+
+    input_path = Path(input_path)
+    matching_path = None
+    for key, path in path_dict.items():
+        if input_path.is_relative_to(path):
+            relative_path = input_path.relative_to(path)
+            if (matching_path is None) or (len(relative_path.parts) < len(matching_path.parts)):
+                matching_key = key
+                matching_path = relative_path
+
+    if matching_path is None:
+        matching_path = str(input_path.absolute())
+    else:
+        matching_path = f"{matching_key}{matching_path}"
+
+    return matching_path
+
+
+def make_bids_uri(in_files, dataset_links, out_dir):
+    """Create a BIDS-URI for each input file."""
+    # Convert the dataset links to BIDS URI prefixes
+    updated_keys = {f"bids:{k}:": Path(v) for k, v in dataset_links.items()}
+    updated_keys["bids::"] = Path(out_dir)
+    # Convert the paths to BIDS URIs
+    bids_uris = [_find_nearest_path(updated_keys, f) for f in in_files]
+    return bids_uris
+
+
 def _make_uri(in_file, dataset_name, dataset_path):
     """Convert a filename to a BIDS URI.
 
@@ -1070,18 +1179,6 @@ def _make_preproc_uri(out_file, fmri_dir):
         return [_make_uri(of, "preprocessed", fmri_dir) for of in out_file]
     else:
         return [_make_uri(out_file, "preprocessed", fmri_dir)]
-
-
-def _make_custom_uri(out_file):
-    """Convert custom confounds' path to BIDS URI."""
-    import os
-
-    from xcp_d.utils.bids import _make_uri
-
-    if isinstance(out_file, list):
-        return [_make_uri(of, "custom_confounds", os.path.dirname(of)) for of in out_file]
-    else:
-        return [_make_uri(out_file, "custom_confounds", os.path.dirname(out_file))]
 
 
 def check_pipeline_version(pipeline_name, cvers, data_desc):

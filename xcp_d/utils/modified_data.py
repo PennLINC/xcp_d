@@ -16,7 +16,7 @@ LOGGER = logging.getLogger("nipype.utils")
 
 
 @fill_doc
-def compute_fd(confound, head_radius=50):
+def compute_fd(confound, head_radius=50, filtered=False):
     """Compute framewise displacement.
 
     NOTE: TS- Which kind of FD? Power?
@@ -34,7 +34,11 @@ def compute_fd(confound, head_radius=50):
         The framewise displacement time series.
     """
     confound = confound.replace(np.nan, 0)
-    mpars = confound[["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]].to_numpy()
+    motion_columns = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
+    if filtered:
+        motion_columns = [f"{col}_filtered" for col in motion_columns]
+
+    mpars = confound[motion_columns].to_numpy()
     diff = mpars[:-1, :6] - mpars[1:, :6]
     diff[:, 3:6] *= head_radius
     fd_res = np.abs(diff).sum(axis=1)
@@ -137,7 +141,7 @@ def downcast_to_32(in_file):
 
 @fill_doc
 def flag_bad_run(
-    fmriprep_confounds_file,
+    motion_file,
     dummy_scans,
     TR,
     motion_filter_type,
@@ -151,7 +155,8 @@ def flag_bad_run(
 
     Parameters
     ----------
-    %(fmriprep_confounds_file)s
+    motion_file
+        Tabular confounds file containing motion parameters.
     %(dummy_scans)s
     %(TR)s
     %(motion_filter_type)s
@@ -173,11 +178,11 @@ def flag_bad_run(
 
     dummy_scans = _infer_dummy_scans(
         dummy_scans=dummy_scans,
-        confounds_file=fmriprep_confounds_file,
+        confounds_file=motion_file,
     )
 
     # Read in fmriprep confounds tsv to calculate FD
-    fmriprep_confounds_df = pd.read_table(fmriprep_confounds_file)
+    fmriprep_confounds_df = pd.read_table(motion_file)
 
     # Remove dummy volumes
     fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
@@ -197,5 +202,57 @@ def flag_bad_run(
         band_stop_min=band_stop_min_adjusted,
         band_stop_max=band_stop_max_adjusted,
     )
-    fd_arr = compute_fd(confound=motion_df, head_radius=head_radius)
+    fd_arr = compute_fd(
+        confound=motion_df,
+        head_radius=head_radius,
+        filtered=bool(motion_filter_type),
+    )
     return np.sum(fd_arr <= fd_thresh) * TR
+
+
+def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
+    """Calculate the exact scans corresponding to exact times.
+
+    Parameters
+    ----------
+    exact_times : :obj:`list`
+        List of exact times in seconds.
+    scan_length : :obj:`int`
+        Length of the scan in seconds.
+    t_r : :obj:`float`
+        Repetition time of the scan in seconds.
+    bold_file : :obj:`str`
+        Path to the BOLD file.
+
+    Returns
+    -------
+    exact_scans : :obj:`list`
+        List of exact scans corresponding to the exact times.
+    """
+    float_times = []
+    non_float_times = []
+
+    for time in exact_times:
+        try:
+            float_times.append(float(time))
+        except ValueError:
+            non_float_times.append(time)
+
+    retained_exact_times = [t for t in float_times if t <= scan_length]
+    dropped_exact_times = [t for t in float_times if t > scan_length]
+    if dropped_exact_times:
+        LOGGER.warning(
+            f"{scan_length} seconds in {os.path.basename(bold_file)} "
+            "survive high-motion outlier scrubbing. "
+            "Only retaining exact-time values greater than this "
+            f"({retained_exact_times})."
+        )
+
+    if non_float_times:
+        LOGGER.warning(
+            f"Non-float values {non_float_times} in {os.path.basename(bold_file)} "
+            "will be ignored."
+        )
+
+    exact_scans = [int(t // t_r) for t in retained_exact_times]
+    return exact_scans

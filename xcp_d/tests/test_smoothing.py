@@ -5,11 +5,11 @@ import re
 import tempfile
 
 import numpy as np
-from nipype.interfaces.workbench import CiftiSmooth
 from nipype.pipeline import engine as pe
-from pkg_resources import resource_filename as pkgrf
+from templateflow.api import get as get_template
 
 from xcp_d.interfaces.nilearn import Smooth
+from xcp_d.interfaces.workbench import CiftiSmooth
 from xcp_d.utils.utils import fwhm2sigma
 
 
@@ -81,13 +81,25 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)
     tmpdir = tmp_path_factory.mktemp("test_smoothing_cifti")
     in_file = ds001419_data["cifti_file"]
     # pull out atlases for each hemisphere
-    right_surf = pkgrf(
-        "xcp_d",
-        "data/ciftiatlas/Q1-Q6_RelatedParcellation210.R.midthickness_32k_fs_LR.surf.gii",
+    right_surf = str(
+        get_template(
+            template="fsLR",
+            space=None,
+            hemi="R",
+            density="32k",
+            desc=None,
+            suffix="sphere",
+        )
     )
-    left_surf = pkgrf(
-        "xcp_d",
-        "data/ciftiatlas/Q1-Q6_RelatedParcellation210.L.midthickness_32k_fs_LR.surf.gii",
+    left_surf = str(
+        get_template(
+            template="fsLR",
+            space=None,
+            hemi="L",
+            density="32k",
+            desc=None,
+            suffix="sphere",
+        )
     )
 
     # Estimate the smoothness of the unsmoothed file
@@ -111,8 +123,10 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=fwhm2sigma(6)
             direction="COLUMN",  # which direction to smooth along@
             right_surf=right_surf,
             left_surf=left_surf,
+            num_threads=1,
         ),
         name="cifti_smoothing",
+        n_procs=1,
     )
     smooth_data.inputs.in_file = in_file
     smooth_data.base_dir = tmpdir

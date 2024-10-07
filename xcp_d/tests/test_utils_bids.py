@@ -55,15 +55,15 @@ def test_collect_data_ds001419(datasets):
         input_type="fmriprep",
         participant_label="01",
         bids_filters=None,
-        cifti=False,
+        file_format="nifti",
     )
 
-    assert len(subj_data["bold"]) == 5
-    assert "space-MNI152NLin2009cAsym" in subj_data["bold"][0]
+    assert len(subj_data["bold"]) == 4
+    assert "space-MNI152NLin6Asym" in subj_data["bold"][0]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_desc-preproc_T1w.nii.gz"
     assert "space-" not in subj_data["t1w"]
-    assert "to-MNI152NLin2009cAsym" in subj_data["anat_to_template_xfm"]
-    assert "from-MNI152NLin2009cAsym" in subj_data["template_to_anat_xfm"]
+    assert "to-MNI152NLin6Asym" in subj_data["anat_to_template_xfm"]
+    assert "from-MNI152NLin6Asym" in subj_data["template_to_anat_xfm"]
 
     # CIFTI workflow
     subj_data = xbids.collect_data(
@@ -71,21 +71,21 @@ def test_collect_data_ds001419(datasets):
         input_type="fmriprep",
         participant_label="01",
         bids_filters={"bold": {"task": "rest"}},
-        cifti=True,
+        file_format="cifti",
     )
 
     assert len(subj_data["bold"]) == 1
     assert "space-fsLR" in subj_data["bold"][0]
     assert "space-" not in subj_data["t1w"]
     assert os.path.basename(subj_data["t1w"]) == "sub-01_desc-preproc_T1w.nii.gz"
-    assert "to-MNI152NLin2009cAsym" in subj_data["anat_to_template_xfm"]
-    assert "from-MNI152NLin2009cAsym" in subj_data["template_to_anat_xfm"]
+    assert "to-MNI152NLin6Asym" in subj_data["anat_to_template_xfm"]
+    assert "from-MNI152NLin6Asym" in subj_data["template_to_anat_xfm"]
 
 
 def test_collect_data_nibabies(datasets):
     """Test the collect_data function."""
     bids_dir = datasets["nibabies"]
-    xcp_d_config = load_data("xcp_d_bids_config2.json")
+    xcp_d_config = str(load_data("xcp_d_bids_config2.json"))
     layout = BIDSLayout(
         bids_dir,
         validate=False,
@@ -100,7 +100,7 @@ def test_collect_data_nibabies(datasets):
         input_type="fmriprep",
         participant_label="01",
         bids_filters=None,
-        cifti=False,
+        file_format="nifti",
     )
 
     assert len(subj_data["bold"]) == 1
@@ -118,7 +118,7 @@ def test_collect_data_nibabies(datasets):
             input_type="fmriprep",
             participant_label="01",
             bids_filters=None,
-            cifti=True,
+            file_format="cifti",
         )
 
 
@@ -126,79 +126,155 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
     # Dataset without mesh files
     layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False)
-    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is False
     assert standard_space_mesh is False
 
     # Dataset with native-space mesh files (one file matching each query)
-    layout = BIDSLayout(datasets["ds001419"], validate=False)
-    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    layout = BIDSLayout(datasets["pnc"], validate=False)
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is True
     assert standard_space_mesh is False
 
     # Dataset with standard-space mesh files (one file matching each query)
     std_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
     shutil.copyfile(
-        os.path.join(datasets["ds001419"], "dataset_description.json"),
+        os.path.join(datasets["pnc"], "dataset_description.json"),
         std_mesh_dir / "dataset_description.json",
     )
-    os.makedirs(std_mesh_dir / "sub-01/anat", exist_ok=True)
+    os.makedirs(std_mesh_dir / "sub-1648798153/ses-PNC1/anat", exist_ok=True)
     files = [
-        "sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_white.surf.gii",
     ]
     for f in files:
-        (std_mesh_dir / "sub-01/anat").joinpath(f).touch()
+        (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
-    mesh_available, standard_space_mesh, _ = xbids.collect_mesh_data(layout, "01")
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout, "1648798153", bids_filters={}
+    )
     assert mesh_available is True
     assert standard_space_mesh is True
 
     # Dataset with multiple files matching each query (raises an error)
     bad_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
     shutil.copyfile(
-        os.path.join(datasets["ds001419"], "dataset_description.json"),
+        os.path.join(datasets["pnc"], "dataset_description.json"),
         bad_mesh_dir / "dataset_description.json",
     )
-    os.makedirs(bad_mesh_dir / "sub-01/anat", exist_ok=True)
+    os.makedirs(bad_mesh_dir / "sub-1648798153/ses-PNC1/anat", exist_ok=True)
     files = [
-        "sub-01_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-01_space-fsLR_den-32k_hemi-R_white.surf.gii",
-        "sub-01_acq-test_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-01_acq-test_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-01_acq-test_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-01_acq-test_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-L_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-L_white.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-R_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-R_white.surf.gii",
     ]
     for f in files:
-        (std_mesh_dir / "sub-01/anat").joinpath(f).touch()
+        (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     with pytest.raises(ValueError, match="More than one surface found"):
-        xbids.collect_mesh_data(layout, "01")
+        xbids.collect_mesh_data(layout, "1648798153", bids_filters={})
+
+    # If we include BIDS filters, we should be able to ignore the existing files
+    layout = BIDSLayout(datasets["pnc"], validate=False)
+    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+        layout,
+        "1648798153",
+        bids_filters={
+            "lh_pial_surf": {"acquisition": "test"},
+            "rh_pial_surf": {"acquisition": "test"},
+            "lh_wm_surf": {"acquisition": "test"},
+            "rh_wm_surf": {"acquisition": "test"},
+            "lh_subject_sphere": {"acquisition": "test"},
+            "rh_subject_sphere": {"acquisition": "test"},
+        },
+    )
+    assert mesh_available is False
+    assert standard_space_mesh is False
 
 
-def test_write_dataset_description(datasets, tmp_path_factory, caplog):
-    """Test write_dataset_description."""
-    tmpdir = tmp_path_factory.mktemp("test_write_dataset_description")
+def test_collect_morphometry_data(datasets, tmp_path_factory):
+    """Test collect_morphometry_data."""
+    # Dataset without morphometry files
+    layout = BIDSLayout(datasets["fmriprep_without_freesurfer"], validate=False)
+    morph_file_types, _ = xbids.collect_morphometry_data(layout, "1648798153", bids_filters={})
+    assert morph_file_types == []
+
+    # Dataset with morphometry files (one file matching each query)
+    layout = BIDSLayout(datasets["pnc"], validate=False)
+    morph_file_types, _ = xbids.collect_morphometry_data(layout, "1648798153", bids_filters={})
+    assert morph_file_types == ["cortical_thickness", "sulcal_curv", "sulcal_depth"]
+
+    # Dataset with multiple files matching each query (raises an error)
+    bad_morph_dir = tmp_path_factory.mktemp("bad_morph")
+    shutil.copyfile(
+        os.path.join(datasets["pnc"], "dataset_description.json"),
+        bad_morph_dir / "dataset_description.json",
+    )
+    os.makedirs(bad_morph_dir / "sub-1648798153/ses-PNC1/anat", exist_ok=True)
+    files = [
+        "sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-91k_thickness.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced2_space-fsLR_den-91k_thickness.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-91k_sulc.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced2_space-fsLR_den-91k_sulc.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-91k_curv.dscalar.nii",
+        "sub-1648798153_ses-PNC1_acq-refaced2_space-fsLR_den-91k_curv.dscalar.nii",
+    ]
+    for f in files:
+        (bad_morph_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
+
+    layout = BIDSLayout(bad_morph_dir, validate=False)
+    with pytest.raises(ValueError, match="More than one .* found"):
+        xbids.collect_morphometry_data(layout, "1648798153", bids_filters={})
+
+    # If we include BIDS filters, we should be able to ignore the existing files
+    layout = BIDSLayout(datasets["pnc"], validate=False)
+    morph_file_types, _ = xbids.collect_morphometry_data(
+        layout,
+        "1648798153",
+        bids_filters={
+            "cortical_thickness": {"acquisition": "test"},
+            "sulcal_curv": {"acquisition": "test"},
+            "sulcal_depth": {"acquisition": "test"},
+        },
+    )
+    assert morph_file_types == []
+
+
+def test_write_derivative_description(datasets, tmp_path_factory, caplog):
+    """Test write_derivative_description."""
+    tmpdir = tmp_path_factory.mktemp("test_write_derivative_description")
     dset_description = os.path.join(tmpdir, "dataset_description.json")
 
     # The function expects a description file in the fmri_dir.
     with pytest.raises(FileNotFoundError, match="Dataset description DNE"):
-        xbids.write_dataset_description(tmpdir, tmpdir, atlases=None, custom_confounds_folder=None)
+        xbids.write_derivative_description(
+            tmpdir,
+            tmpdir,
+            atlases=None,
+            dataset_links={},
+        )
     assert not os.path.isfile(dset_description)
 
     # It will work when we give it a real fmri_dir.
     fmri_dir = datasets["ds001419"]
-    xbids.write_dataset_description(
+    xbids.write_derivative_description(
         fmri_dir,
         tmpdir,
         atlases=["Gordon"],
-        custom_confounds_folder="/fake/path4",
+        dataset_links={"preprocessed": "/fake/path1", "confounds": "/fake/path4"},
     )
     assert os.path.isfile(dset_description)
 
@@ -206,16 +282,16 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
     with open(dset_description, "r") as fo:
         desc = json.load(fo)
 
-    assert "'preprocessed' is already a dataset link" not in caplog.text
-    assert "'custom_confounds' is already a dataset link" not in caplog.text
-    xbids.write_dataset_description(
+    assert "DatasetLink 'preprocessed' does not match" not in caplog.text
+    assert "DatasetLink 'confounds' does not match" not in caplog.text
+    xbids.write_derivative_description(
         tmpdir,
         tmpdir,
         atlases=["Gordon"],
-        custom_confounds_folder="/fake/path4",
+        dataset_links={"preprocessed": "/fake/path2", "confounds": "/fake/path5"},
     )
-    assert "'preprocessed' is already a dataset link" in caplog.text
-    assert "'custom_confounds' is already a dataset link" in caplog.text
+    assert "DatasetLink 'preprocessed' does not match" in caplog.text
+    assert "DatasetLink 'confounds' does not match" in caplog.text
 
     # Now change the version and re-run the function.
     desc["GeneratedBy"][0]["Version"] = "0.0.1"
@@ -223,7 +299,12 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         json.dump(desc, fo, indent=4)
 
     assert "Previous output generated by version" not in caplog.text
-    xbids.write_dataset_description(fmri_dir, tmpdir, atlases=None, custom_confounds_folder=None)
+    xbids.write_derivative_description(
+        fmri_dir,
+        tmpdir,
+        atlases=None,
+        dataset_links={},
+    )
     assert "Previous output generated by version" in caplog.text
 
     # Should raise a warning if DatasetType is not in the description
@@ -232,7 +313,12 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         json.dump(desc, fo, indent=4)
 
     assert "DatasetType key not in" not in caplog.text
-    xbids.write_dataset_description(tmpdir, tmpdir, atlases=None, custom_confounds_folder=None)
+    xbids.write_derivative_description(
+        tmpdir,
+        tmpdir,
+        atlases=None,
+        dataset_links={},
+    )
     assert "DatasetType key not in" in caplog.text
 
     # Should raise an error if DatasetType is present, but isn't "derivative"
@@ -241,11 +327,11 @@ def test_write_dataset_description(datasets, tmp_path_factory, caplog):
         json.dump(desc, fo, indent=4)
 
     with pytest.raises(ValueError, match="XCP-D only works on derivative datasets."):
-        xbids.write_dataset_description(
+        xbids.write_derivative_description(
             tmpdir,
             tmpdir,
             atlases=None,
-            custom_confounds_folder=None,
+            dataset_links={},
         )
 
 
@@ -269,7 +355,7 @@ def test_write_atlas_dataset_description(tmp_path_factory, caplog):
     assert "Previous output generated by version" in caplog.text
 
 
-def test_get_preproc_pipeline_info(datasets):
+def test_get_preproc_pipeline_info(datasets, tmp_path_factory, caplog):
     """Test get_preproc_pipeline_info."""
     input_types = ["fmriprep", "nibabies", "hcp", "dcan", "ukb"]
     for input_type in input_types:
@@ -279,8 +365,22 @@ def test_get_preproc_pipeline_info(datasets):
     with pytest.raises(ValueError, match="Unsupported input_type"):
         xbids.get_preproc_pipeline_info("fail", datasets["ds001419"])
 
-    with pytest.raises(FileNotFoundError, match="Dataset description DNE"):
-        xbids.get_preproc_pipeline_info("fmriprep", ".")
+    assert "Dataset description DNE" not in caplog.text
+    info_dict = xbids.get_preproc_pipeline_info("fmriprep", ".")
+    assert "Dataset description DNE" in caplog.text
+    assert info_dict["name"] == "fmriprep"
+    assert info_dict["version"] == "unknown"
+
+    tmpdir = tmp_path_factory.mktemp("test_get_preproc_pipeline_info")
+    dset_description = os.path.join(tmpdir, "dataset_description.json")
+    with open(dset_description, "w") as fo:
+        json.dump({}, fo)
+
+    assert "GeneratedBy key DNE" not in caplog.text
+    info_dict = xbids.get_preproc_pipeline_info("dcan", tmpdir)
+    assert "GeneratedBy key DNE" in caplog.text
+    assert info_dict["name"] == "dcan"
+    assert info_dict["version"] == "unknown"
 
 
 def test_get_tr(ds001419_data):
@@ -290,28 +390,6 @@ def test_get_tr(ds001419_data):
 
     t_r = xbids._get_tr(ds001419_data["cifti_file"])
     assert t_r == 3.0
-
-
-def test_get_freesurfer_dir(datasets):
-    """Test get_freesurfer_dir."""
-    with pytest.raises(NotADirectoryError, match="No FreeSurfer/MCRIBS derivatives found"):
-        xbids.get_freesurfer_dir(".")
-
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
-    assert os.path.isdir(fs_dir)
-    assert software == "FreeSurfer"
-
-    # Create fake FreeSurfer folder so there are two possible folders and it grabs the closest
-    tmp_fs_dir = os.path.join(datasets["nibabies"], "sourcedata/mcribs")
-    os.makedirs(tmp_fs_dir, exist_ok=True)
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["nibabies"])
-    assert os.path.isdir(fs_dir)
-    assert software == "MCRIBS"
-    os.rmdir(tmp_fs_dir)
-
-    fs_dir, software = xbids.get_freesurfer_dir(datasets["pnc"])
-    assert os.path.isdir(fs_dir)
-    assert software == "FreeSurfer"
 
 
 def test_get_entity(datasets):
@@ -464,13 +542,3 @@ def test_make_preproc_uri():
 
     xbids._make_preproc_uri([out_file], fmri_dir="/path/to/dset")
     assert uri == ["bids:preprocessed:sub-01/func/sub-01_task-rest_bold.nii.gz"]
-
-
-def test_make_custom_uri():
-    """Test _make_custom_uri."""
-    out_file = "/path/to/dset/sub-01_task-rest_bold.nii.gz"
-    uri = xbids._make_custom_uri(out_file)
-    assert uri == ["bids:custom_confounds:sub-01_task-rest_bold.nii.gz"]
-
-    xbids._make_custom_uri([out_file])
-    assert uri == ["bids:custom_confounds:sub-01_task-rest_bold.nii.gz"]

@@ -1,0 +1,42 @@
+name: acompcor_gsr
+description: |
+    Nuisance regressors were selected according to the 'acompcor_gsr' strategy.
+    The top 5 aCompCor principal components from the white matter and
+    cerebrospinal fluid compartments were selected as nuisance regressors
+    [@behzadi2007component],
+    along with the six motion parameters and their temporal derivatives,
+    mean white matter signal, mean cerebrospinal fluid signal, and mean global signal
+    [@benchmarkp;@satterthwaite_2013].
+    As the aCompCor regressors were generated on high-pass filtered data,
+    the associated cosine basis regressors were included.
+    This has the effect of high-pass filtering the data as well.
+confounds:
+    preproc_confounds:
+        dataset: preprocessed
+        query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+        columns:
+        - trans_x
+        - trans_x_derivative1
+        - trans_y
+        - trans_y_derivative1
+        - trans_z
+        - trans_z_derivative1
+        - rot_x
+        - rot_x_derivative1
+        - rot_y
+        - rot_y_derivative1
+        - rot_z
+        - rot_z_derivative1
+        - global_signal
+        - csf
+        - white_matter
+        - ^w_comp_cor_0[1-5]$
+        - ^c_comp_cor_0[1-5]$
+        - ^cosine\d+$

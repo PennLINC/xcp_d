@@ -3,8 +3,9 @@
 """The XCP-D postprocessing worklow.
 
 XCP-D postprocessing workflow
-============================
+=============================
 """
+
 from xcp_d import config
 
 
@@ -20,10 +21,10 @@ def main():
     from xcp_d.cli.workflow import build_workflow
     from xcp_d.utils.bids import (
         write_atlas_dataset_description,
-        write_dataset_description,
+        write_derivative_description,
     )
 
-    parse_args()
+    parse_args(args=sys.argv[1:])
 
     if "pdb" in config.execution.debug:
         from xcp_d.utils.debug import setup_exceptionhook
@@ -117,7 +118,7 @@ def main():
             from xcp_d.utils.sentry import process_crashfile
 
             crashfolders = [
-                config.execution.xcp_d_dir / f"sub-{s}" / "log" / config.execution.run_uuid
+                config.execution.output_dir / f"sub-{s}" / "log" / config.execution.run_uuid
                 for s in config.execution.participant_label
             ]
             for crashfolder in crashfolders:
@@ -138,14 +139,14 @@ def main():
             sentry_sdk.capture_message(success_message, level="info")
 
         # Bother users with the boilerplate only iff the workflow went okay.
-        boiler_file = config.execution.xcp_d_dir / "logs" / "CITATION.md"
+        boiler_file = config.execution.output_dir / "logs" / "CITATION.md"
         if boiler_file.exists():
             if config.environment.exec_env in (
-                "singularity",
+                "apptainer",
                 "docker",
             ):
                 boiler_file = Path("<OUTPUT_PATH>") / boiler_file.relative_to(
-                    config.execution.xcp_d_dir
+                    config.execution.output_dir
                 )
             config.loggers.workflow.log(
                 25,
@@ -153,42 +154,46 @@ def main():
                 f"boilerplate text found in {boiler_file}.",
             )
 
-        if config.workflow.run_reconall:
-            from niworkflows.utils.misc import _copy_any
-            from templateflow import api
-
-            dseg_tsv = str(api.get("fsaverage", suffix="dseg", extension=[".tsv"]))
-            _copy_any(dseg_tsv, str(config.execution.xcp_d_dir / "desc-aseg_dseg.tsv"))
-            _copy_any(dseg_tsv, str(config.execution.xcp_d_dir / "desc-aparcaseg_dseg.tsv"))
-
         errno = 0
 
     finally:
-        from xcp_d import data
-        from xcp_d.interfaces.report_core import generate_reports
+        from xcp_d.reports.core import generate_reports
 
         # Write dataset description before generating reports
-        write_dataset_description(config.execution.fmri_dir, config.execution.xcp_d_dir)
+        write_derivative_description(
+            config.execution.fmri_dir,
+            config.execution.output_dir,
+            atlases=config.execution.atlases,
+            dataset_links=config.execution.dataset_links,
+        )
 
         if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.xcp_d_dir / "atlases")
+            write_atlas_dataset_description(config.execution.output_dir / "atlases")
+
+        # Generate reports phase
+        session_list = (
+            config.execution.get().get("bids_filters", {}).get("bold", {}).get("session")
+        )
 
         # Generate reports phase
         failed_reports = generate_reports(
             subject_list=config.execution.participant_label,
-            output_dir=config.execution.xcp_d_dir,
+            output_dir=config.execution.output_dir,
+            abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
-            config=data.load("reports-spec.yml"),
-            packagename="xcp_d",
+            session_list=session_list,
         )
 
-        if sentry_sdk is not None and failed_reports:
-            sentry_sdk.capture_message(
-                f"Report generation failed for {failed_reports} subjects",
-                level="error",
+        if failed_reports:
+            msg = (
+                "Report generation was not successful for the following participants "
+                f': {", ".join(failed_reports)}.'
             )
+            config.loggers.cli.error(msg)
+            if sentry_sdk is not None:
+                sentry_sdk.capture_message(msg, level="error")
 
-        sys.exit(int((errno + failed_reports) > 0))
+        sys.exit(int((errno + len(failed_reports)) > 0))
 
 
 if __name__ == "__main__":

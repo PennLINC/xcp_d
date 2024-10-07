@@ -54,9 +54,9 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     Only used for QCReport in init_postprocess_nifti_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
@@ -94,9 +94,10 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
 
     elif bold_space == "MNIInfant":
         # MNIInfant --> MNI152NLin2009cAsym
-        MNIInfant_to_MNI152NLin2009cAsym = pkgrf(
-            "xcp_d",
-            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        MNIInfant_to_MNI152NLin2009cAsym = str(
+            load_data(
+                "transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
+            )
         )
         xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
         xforms_to_MNI_invert = [False]
@@ -129,8 +130,8 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
 
-def get_std2bold_xfms(bold_file):
-    """Obtain transforms to warp atlases from MNI152NLin6Asym to the same template as the BOLD.
+def get_std2bold_xfms(bold_file, source_file, source_space=None):
+    """Obtain transforms to warp atlases from a source space to the same template as the BOLD.
 
     Since ANTSApplyTransforms takes in the transform files as a stack,
     these are applied in the reverse order of which they are specified.
@@ -141,10 +142,14 @@ def get_std2bold_xfms(bold_file):
     ----------
     bold_file : :obj:`str`
         The preprocessed BOLD file.
+    source_file : :obj:`str`
+        The source file to warp to the BOLD space.
+    source_space : :obj:`str`, optional
+        The space of the source file. If None, the space of the source file is inferred and used.
 
     Returns
     -------
-    transform_list : list of str
+    transforms : list of str
         A list of paths to transform files.
 
     Notes
@@ -158,17 +163,30 @@ def get_std2bold_xfms(bold_file):
     Does not include inversion flag output because there is no need (yet).
     Can easily be added in the future.
     """
-    import os
-
-    from pkg_resources import resource_filename as pkgrf
     from templateflow.api import get as get_template
 
+    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, "space")
 
-    # Load useful inter-template transforms from templateflow
+    if source_space is None:
+        # If a source space is not provided, extract the space of the source file
+        # First try tpl because that won't raise an error
+        source_space = get_entity(source_file, "tpl")
+        if source_space is None:
+            # If tpl isn't available, try space.
+            # get_entity will raise an error if space isn't there.
+            source_space = get_entity(source_file, "space")
+
+    if source_space not in ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant"):
+        raise ValueError(f"Source space '{source_space}' not supported.")
+
+    if bold_space not in ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant"):
+        raise ValueError(f"BOLD space '{bold_space}' not supported.")
+
+    # Load useful inter-template transforms from templateflow and package data
     MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
         get_template(
             template="MNI152NLin2009cAsym",
@@ -178,32 +196,54 @@ def get_std2bold_xfms(bold_file):
             **{"from": "MNI152NLin6Asym"},
         ),
     )
+    MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
+        get_template(
+            template="MNI152NLin6Asym",
+            mode="image",
+            suffix="xfm",
+            extension=".h5",
+            **{"from": "MNI152NLin2009cAsym"},
+        ),
+    )
+    MNIInfant_to_MNI152NLin2009cAsym = str(
+        load_data(
+            "transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        )
+    )
+    MNI152NLin2009cAsym_to_MNIInfant = str(
+        load_data(
+            "transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
+        )
+    )
 
-    # Find the appropriate transform(s)
-    if bold_space == "MNI152NLin6Asym":
-        # NLin6 --> NLin6 (identity)
-        transform_list = ["identity"]
+    if bold_space == source_space:
+        transforms = ["identity"]
+
+    elif bold_space == "MNI152NLin6Asym":
+        if source_space == "MNI152NLin2009cAsym":
+            transforms = [MNI152NLin2009cAsym_to_MNI152NLin6Asym]
+        elif source_space == "MNIInfant":
+            transforms = [
+                MNI152NLin2009cAsym_to_MNI152NLin6Asym,
+                MNIInfant_to_MNI152NLin2009cAsym,
+            ]
 
     elif bold_space == "MNI152NLin2009cAsym":
-        # NLin6 --> NLin2009c
-        transform_list = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
+        if source_space == "MNI152NLin6Asym":
+            transforms = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
+        elif source_space == "MNIInfant":
+            transforms = [MNIInfant_to_MNI152NLin2009cAsym]
 
     elif bold_space == "MNIInfant":
-        # NLin6 --> NLin2009c --> MNIInfant
-        MNI152NLin2009cAsym_to_MNI152Infant = pkgrf(
-            "xcp_d",
-            "data/transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
-        )
-        transform_list = [
-            MNI152NLin2009cAsym_to_MNI152Infant,
-            MNI152NLin6Asym_to_MNI152NLin2009cAsym,
-        ]
+        if source_space == "MNI152NLin6Asym":
+            transforms = [
+                MNI152NLin2009cAsym_to_MNIInfant,
+                MNI152NLin6Asym_to_MNI152NLin2009cAsym,
+            ]
+        elif source_space == "MNI152NLin2009cAsym":
+            transforms = [MNI152NLin2009cAsym_to_MNIInfant]
 
-    else:
-        file_base = os.path.basename(bold_file)
-        raise ValueError(f"Space '{bold_space}' in {file_base} not supported.")
-
-    return transform_list
+    return transforms
 
 
 def fwhm2sigma(fwhm):
@@ -220,74 +260,6 @@ def fwhm2sigma(fwhm):
         Sigma.
     """
     return fwhm / np.sqrt(8 * np.log(2))
-
-
-def butter_bandpass(
-    data,
-    sampling_rate,
-    low_pass,
-    high_pass,
-    padtype="constant",
-    padlen=None,
-    order=2,
-):
-    """Apply a Butterworth bandpass filter to data.
-
-    Parameters
-    ----------
-    data : (T, S) numpy.ndarray
-        Time by voxels/vertices array of data.
-    sampling_rate : float
-        Sampling frequency. 1/TR(s).
-    low_pass : float
-        frequency, in Hertz
-    high_pass : float
-        frequency, in Hertz
-    padlen
-    padtype
-    order : int
-        The order of the filter.
-
-    Returns
-    -------
-    filtered_data : (T, S) numpy.ndarray
-        The filtered data.
-    """
-    from scipy.signal import butter, filtfilt
-
-    if low_pass > 0 and high_pass > 0:
-        btype = "bandpass"
-        filt_input = [high_pass, low_pass]
-    elif high_pass > 0:
-        btype = "highpass"
-        filt_input = high_pass
-    elif low_pass > 0:
-        btype = "lowpass"
-        filt_input = low_pass
-    else:
-        raise ValueError("Filter parameters are not valid.")
-
-    b, a = butter(
-        order,
-        filt_input,
-        btype=btype,
-        output="ba",
-        fs=sampling_rate,  # eliminates need to normalize cutoff frequencies
-    )
-
-    filtered_data = np.zeros_like(data)  # create something to populate filtered values with
-
-    # apply the filter, loop through columns of regressors
-    for i_voxel in range(filtered_data.shape[1]):
-        filtered_data[:, i_voxel] = filtfilt(
-            b,
-            a,
-            data[:, i_voxel],
-            padtype=padtype,
-            padlen=padlen,
-        )
-
-    return filtered_data
 
 
 @fill_doc
@@ -333,6 +305,7 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
 def denoise_with_nilearn(
     preprocessed_bold,
     confounds,
+    voxelwise_confounds,
     sample_mask,
     low_pass,
     high_pass,
@@ -357,10 +330,14 @@ def denoise_with_nilearn(
     preprocessed_bold : :obj:`numpy.ndarray` of shape (T, S)
         Preprocessed BOLD data, after dummy volume removal,
         but without any additional censoring.
-    confounds : :obj:`pandas.DataFrame` of shape (T, C) or None
+    confounds : :obj:`pandas.DataFrame` of shape (T, C1) or None
         DataFrame containing selected confounds, after dummy volume removal,
         but without any additional censoring.
         May be None, if no denoising should be performed.
+    voxelwise_confounds : :obj:`list` with of :obj:`numpy.ndarray` of shape (T, S) or None
+        Voxelwise confounds after dummy volume removal, but without any additional censoring.
+        Will typically be None, as voxelwise regressors are rare.
+        A list of C2 arrays, where C2 is the number of voxelwise regressors.
     sample_mask : :obj:`numpy.ndarray` of shape (T,)
         Low-motion volumes are True and high-motion volumes are False.
     low_pass, high_pass : :obj:`float`
@@ -404,6 +381,7 @@ def denoise_with_nilearn(
     preprocessed_bold = preprocessed_bold.copy()
 
     n_volumes = preprocessed_bold.shape[0]
+    n_voxels = preprocessed_bold.shape[1]
 
     # Coerce 0 filter values to None
     low_pass = low_pass if low_pass != 0 else None
@@ -412,58 +390,103 @@ def denoise_with_nilearn(
     outlier_idx = list(np.where(~sample_mask)[0])
 
     # Determine which steps to apply
-    detrend_and_denoise = confounds is not None
+    have_confounds = confounds is not None
+    have_voxelwise_confounds = voxelwise_confounds is not None
+    detrend_and_denoise = have_confounds or have_voxelwise_confounds
     censor_and_interpolate = bool(outlier_idx)
 
     if detrend_and_denoise:
-        confounds_arr = confounds.to_numpy().copy()
+        if have_confounds:
+            confounds_arr = confounds.to_numpy().copy()
+
+        if have_voxelwise_confounds:
+            voxelwise_confounds = [arr.copy() for arr in voxelwise_confounds]
 
     if censor_and_interpolate:
         # Replace high-motion volumes in the BOLD data and confounds with interpolated values.
         preprocessed_bold = _interpolate(arr=preprocessed_bold, sample_mask=sample_mask, TR=TR)
         if detrend_and_denoise:
-            confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
+            if have_confounds:
+                confounds_arr = _interpolate(arr=confounds_arr, sample_mask=sample_mask, TR=TR)
+
+            if have_voxelwise_confounds:
+                voxelwise_confounds = [
+                    _interpolate(arr=arr, sample_mask=sample_mask, TR=TR)
+                    for arr in voxelwise_confounds
+                ]
 
     if detrend_and_denoise:
         # Detrend the interpolated data and confounds.
         # This also mean-centers the data and confounds.
         preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=False)
-        confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
+        if have_confounds:
+            confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
+
+        if have_voxelwise_confounds:
+            voxelwise_confounds = [
+                standardize_signal(arr, detrend=True, standardize=False)
+                for arr in voxelwise_confounds
+            ]
 
     if low_pass or high_pass:
         # Now apply the bandpass filter to the interpolated data and confounds
-        preprocessed_bold = butterworth(
-            signals=preprocessed_bold,
-            sampling_rate=1.0 / TR,
-            low_pass=low_pass,
-            high_pass=high_pass,
-            order=filter_order,
-            padtype="constant",
-            padlen=n_volumes - 1,  # maximum possible padding
-        )
+        butterworth_kwargs = {
+            "sampling_rate": 1.0 / TR,
+            "low_pass": low_pass,
+            "high_pass": high_pass,
+            "order": filter_order,
+            "padtype": "constant",
+            "padlen": n_volumes - 1,  # maximum possible padding
+        }
+        preprocessed_bold = butterworth(signals=preprocessed_bold, **butterworth_kwargs)
         if detrend_and_denoise:
-            confounds_arr = butterworth(
-                signals=confounds_arr,
-                sampling_rate=1.0 / TR,
-                low_pass=low_pass,
-                high_pass=high_pass,
-                order=filter_order,
-                padtype="constant",
-                padlen=n_volumes - 1,  # maximum possible padding
-            )
+            if have_confounds:
+                confounds_arr = butterworth(signals=confounds_arr, **butterworth_kwargs)
+
+            if have_voxelwise_confounds:
+                voxelwise_confounds = [
+                    butterworth(signals=arr, **butterworth_kwargs) for arr in voxelwise_confounds
+                ]
 
     if detrend_and_denoise:
         # Censor the data and confounds
         censored_bold = preprocessed_bold[sample_mask, :]
-        censored_confounds = confounds_arr[sample_mask, :]
 
-        # Estimate betas using only the censored data
-        betas = np.linalg.lstsq(censored_confounds, censored_bold, rcond=None)[0]
+        if have_confounds and not voxelwise_confounds:
+            # Estimate betas using only the censored data
+            censored_confounds = confounds_arr[sample_mask, :]
+            betas = np.linalg.lstsq(censored_confounds, censored_bold, rcond=None)[0]
 
-        # Denoise the interpolated data.
-        # The low-motion volumes of the denoised, interpolated data will be the same as the
-        # denoised, censored data.
-        preprocessed_bold = preprocessed_bold - np.dot(confounds_arr, betas)
+            # Denoise the interpolated data.
+            # The low-motion volumes of the denoised, interpolated data will be the same as the
+            # denoised, censored data.
+            preprocessed_bold = preprocessed_bold - np.dot(confounds_arr, betas)
+        else:
+            # Loop over voxels
+            for i_voxel in range(n_voxels):
+                design_matrix = []
+                if have_confounds:
+                    design_matrix.append(confounds_arr.copy())
+
+                for voxelwise_arr in voxelwise_confounds:
+                    temp_voxelwise = voxelwise_arr[:, i_voxel]
+                    design_matrix.append(temp_voxelwise[:, None])
+
+                # Estimate betas using only the censored data
+                design_matrix = np.hstack(design_matrix)
+                censored_design_matrix = design_matrix[sample_mask, :]
+                betas = np.linalg.lstsq(
+                    censored_design_matrix,
+                    censored_bold[:, i_voxel],
+                    rcond=None,
+                )[0]
+
+                # Denoise the interpolated data.
+                # The low-motion volumes of the denoised, interpolated data will be the same as the
+                # denoised, censored data.
+                preprocessed_bold[:, i_voxel] = preprocessed_bold[:, i_voxel] - np.dot(
+                    design_matrix, betas
+                )
 
     return preprocessed_bold
 

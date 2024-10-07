@@ -1,8 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
-"""Handling functional connectvity."""
+"""Handling functional connectivity."""
 import gc
-import warnings
 
 import matplotlib.pyplot as plt
 import nibabel as nb
@@ -21,7 +20,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.write_save import get_cifti_intents
+from xcp_d.utils.write_save import write_ndata
 
 LOGGER = logging.getLogger("nipype.interface")
 
@@ -232,12 +231,16 @@ class _TSVConnectOutputSpec(TraitedSpec):
 def correlate_timeseries(timeseries, temporal_mask):
     """Correlate timeseries stored in a TSV file."""
     timeseries_df = pd.read_table(timeseries)
-    correlations_df = timeseries_df.corr()
-
-    # Create correlation matrices limited to exact scan numbers
     correlations_exact = {}
     if isdefined(temporal_mask):
         censoring_df = pd.read_table(temporal_mask)
+
+        # Determine if the time series is censored
+        if censoring_df.shape[0] == timeseries_df.shape[0]:
+            # The time series is not censored
+            timeseries_df = timeseries_df.loc[censoring_df["framewise_displacement"] == 0]
+
+        # Now create correlation matrices limited to exact scan numbers
         censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]
         censored_censoring_df.reset_index(drop=True, inplace=True)
         exact_columns = [c for c in censoring_df.columns if c.startswith("exact_")]
@@ -245,6 +248,9 @@ def correlate_timeseries(timeseries, temporal_mask):
             exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
             exact_correlations_df = exact_timeseries_df.corr()
             correlations_exact[exact_column] = exact_correlations_df
+
+    # Create correlation matrix from low-motion volumes only
+    correlations_df = timeseries_df.corr()
 
     return correlations_df, correlations_exact
 
@@ -302,389 +308,6 @@ class TSVConnect(SimpleInterface):
         return runtime
 
 
-class _CiftiParcellateInputSpec(BaseInterfaceInputSpec):
-    min_coverage = traits.Float(
-        default=0.5,
-        usedefault=True,
-        desc=(
-            "Coverage threshold to apply to parcels. "
-            "Any parcels with lower coverage than the threshold will be replaced with NaNs. "
-            "Must be a value between zero and one. "
-            "Default is 0.5."
-        ),
-    )
-    data_file = File(
-        exists=True,
-        mandatory=True,
-        desc="Dense CIFTI time series file to parcellate.",
-    )
-    atlas = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Atlas CIFTI file to use to parcellate data_file. "
-            "This file must already be resampled to the same structure as data_file."
-        ),
-    )
-    parcellated_atlas = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Atlas CIFTI that has been parcellated with itself to make a .pscalar.nii file. "
-            "This is just used for its ParcelsAxis."
-        ),
-    )
-    atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
-
-
-class _CiftiParcellateOutputSpec(TraitedSpec):
-    coverage_ciftis = File(exists=True, desc="Coverage CIFTI file.")
-    timeseries_ciftis = File(exists=True, desc="Parcellated data ptseries.nii file.")
-    coverage = File(exists=True, desc="Coverage tsv file.")
-    timeseries = File(exists=True, desc="Parcellated data tsv file.")
-
-
-class CiftiParcellate(SimpleInterface):
-    """Extract timeseries and compute connectivity matrices.
-
-    Write out time series using Nilearn's NiftiLabelMasker
-    Then write out functional correlation matrix of
-    timeseries using numpy.
-    """
-
-    input_spec = _CiftiParcellateInputSpec
-    output_spec = _CiftiParcellateOutputSpec
-
-    def _run_interface(self, runtime):
-        min_coverage = self.inputs.min_coverage
-        data_file = self.inputs.data_file
-        atlas = self.inputs.atlas
-        pscalar_file = self.inputs.parcellated_atlas
-        atlas_labels = self.inputs.atlas_labels
-
-        cifti_intents = get_cifti_intents()
-
-        assert data_file.endswith((".dtseries.nii", ".dscalar.nii")), data_file
-        assert atlas.endswith(".dlabel.nii"), atlas
-        assert pscalar_file.endswith(".pscalar.nii"), pscalar_file
-
-        data_img = nb.load(data_file)
-        atlas_img = nb.load(atlas)
-        pscalar_img = nb.load(pscalar_file)
-        node_labels_df = pd.read_table(atlas_labels, index_col="index")
-        node_labels_df.sort_index(inplace=True)  # ensure index is in order
-
-        data_arr = data_img.get_fdata()
-        atlas_arr = np.squeeze(atlas_img.get_fdata())  # first dim is singleton
-
-        # First, replace all bad vertices' time series with NaNs.
-        # This way, any partially-covered parcels will have NaNs in the bad portions,
-        # so those vertices will be ignored by wb_command -cifti-parcellate.
-        bad_vertices_idx = np.where(
-            np.all(np.logical_or(data_arr == 0, np.isnan(data_arr)), axis=0)
-        )[0]
-        data_arr[:, bad_vertices_idx] = np.nan
-
-        # Now we can work to parcellate the data
-        label_axis = atlas_img.header.get_axis(0)
-        parcels_axis = pscalar_img.header.get_axis(1)
-        atlas_label_mapper = label_axis.label[0]
-        atlas_label_mapper = {k: v[0] for k, v in atlas_label_mapper.items()}
-
-        if 0 in atlas_label_mapper:
-            atlas_label_mapper.pop(0)
-
-        # Explicitly remove label corresponding to background (index=0), if present.
-        if 0 in node_labels_df.index:
-            LOGGER.warning(
-                "Index value of 0 found in atlas labels file. "
-                "Will assume this describes the background and ignore it."
-            )
-            node_labels_df = node_labels_df.drop(index=[0])
-
-        if "cifti_label" in node_labels_df.columns:
-            expected_cifti_node_labels = node_labels_df["cifti_label"].tolist()
-            parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
-        elif "label_7network" in node_labels_df.columns:
-            node_labels_df["label_7network"] = node_labels_df["label_7network"].fillna(
-                node_labels_df["label"]
-            )
-            expected_cifti_node_labels = node_labels_df["label_7network"].tolist()
-            parcel_label_mapper = dict(
-                zip(node_labels_df["label_7network"], node_labels_df["label"])
-            )
-        else:
-            raise Exception(atlas_labels)
-
-        # Load node labels from CIFTI file.
-        # First axis should be time, second should be parcels
-        detected_node_labels = parcels_axis.name
-
-        # If there are nodes in the CIFTI that aren't in the node labels file, raise an error.
-        # And vice versa as well.
-        found_but_not_expected = sorted(
-            list(set(detected_node_labels) - set(expected_cifti_node_labels))
-        )
-        expected_but_not_found = sorted(
-            list(set(expected_cifti_node_labels) - set(detected_node_labels))
-        )
-        error_msg = ""
-        if found_but_not_expected:
-            error_msg += (
-                "Mismatch found between atlas nodes and node labels file: "
-                f"{', '.join(found_but_not_expected)}\n"
-            )
-
-        if expected_but_not_found:
-            error_msg += (
-                "Mismatch found between node labels file and atlas nodes: "
-                f"{', '.join(expected_but_not_found)}\n"
-            )
-
-        if error_msg:
-            raise ValueError(error_msg)
-
-        # Sort labels by corresponding values in atlas.
-        # This step is probably unnecessary
-        # (the axis labels are probably already sorted by the atlas values),
-        # but I wanted to be extra safe.
-        # Code from https://stackoverflow.com/a/6618543/2589328.
-        sorted_parcel_labels = [
-            x for _, x in sorted(atlas_label_mapper.items(), key=lambda pair: pair[0])
-        ]
-
-        timeseries_arr = np.zeros((data_arr.shape[0], len(atlas_label_mapper)), dtype=np.float32)
-        timeseries_df = pd.DataFrame(columns=sorted_parcel_labels, data=timeseries_arr)
-
-        coverage_arr = np.zeros((len(atlas_label_mapper), 1), dtype=np.float32)
-        coverage_df = pd.DataFrame(
-            index=sorted_parcel_labels,
-            columns=["coverage"],
-            data=coverage_arr,
-        )
-
-        parcels_in_atlas = []  # list of labels for parcels
-        for parcel_val, parcel_label in atlas_label_mapper.items():
-            parcel_idx = np.where(atlas_arr == parcel_val)[0]
-
-            if parcel_idx.size:  # parcel is found in atlas
-                # Determine which, if any, vertices in the parcel are missing.
-                bad_vertices_in_parcel_idx = np.intersect1d(parcel_idx, bad_vertices_idx)
-
-                # Determine the percentage of vertices with good data
-                parcel_coverage = 1 - (bad_vertices_in_parcel_idx.size / parcel_idx.size)
-                coverage_df.loc[parcel_label, "coverage"] = np.float32(parcel_coverage)
-
-                if parcel_coverage < min_coverage:
-                    # If the parcel has >=50% bad data, replace all of the values with zeros.
-                    data_arr[:, parcel_idx] = np.nan
-
-                parcels_in_atlas.append(parcel_label)
-                parcel_data = data_arr[:, parcel_idx]
-                with warnings.catch_warnings():
-                    # Ignore warning if calculating mean from only NaNs.
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
-
-                    label_timeseries = np.nanmean(parcel_data, axis=1)
-
-            else:  # parcel not found in atlas
-                # Label was probably erased by downsampling or something.
-                label_timeseries = np.full(
-                    data_arr.shape[0],
-                    fill_value=np.nan,
-                    dtype=data_arr.dtype,
-                )
-                coverage_df.loc[parcel_label, "coverage"] = 0
-
-            timeseries_df[parcel_label] = label_timeseries
-
-        del data_arr
-        gc.collect()
-
-        # Use parcel names from tsv file instead of internal CIFTI parcel names for tsvs.
-        timeseries_df = timeseries_df.rename(columns=parcel_label_mapper)
-
-        # Save out the timeseries tsv
-        self._results["timeseries"] = fname_presuffix(
-            "timeseries.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        timeseries_df.to_csv(self._results["timeseries"], sep="\t", na_rep="n/a", index=False)
-
-        self._results["coverage"] = fname_presuffix(
-            "coverage.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        coverage_df.to_csv(self._results["coverage"], sep="\t", na_rep="n/a", index_label="Node")
-
-        # Prepare to create output CIFTIs
-        time_axis = data_img.header.get_axis(0)
-        new_header = nb.cifti2.Cifti2Header.from_axes((time_axis, parcels_axis))
-        nifti_header = data_img.nifti_header.copy()
-        nifti_header.set_intent(cifti_intents[".ptseries.nii"])
-
-        # Save out the timeseries CIFTI
-        timeseries_img = nb.Cifti2Image(
-            timeseries_df.to_numpy(),  # (n_vols x n_parcels) array
-            new_header,
-            nifti_header=nifti_header,
-        )
-        self._results["timeseries_ciftis"] = fname_presuffix(
-            "timeseries.ptseries.nii",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        timeseries_img.to_filename(self._results["timeseries_ciftis"])
-
-        # Save out the coverage CIFTI
-        coverage_img = nb.Cifti2Image(
-            coverage_df.to_numpy().T,  # (1 x n_parcels) array
-            pscalar_img.header,
-            nifti_header=pscalar_img.nifti_header,
-        )
-        self._results["coverage_ciftis"] = fname_presuffix(
-            "coverage.pscalar.nii",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        coverage_img.to_filename(self._results["coverage_ciftis"])
-
-        return runtime
-
-
-class _CiftiConnectInputSpec(BaseInterfaceInputSpec):
-    timeseries = File(exists=True, desc="Parcellated time series file.")
-    temporal_mask = File(
-        exists=True,
-        mandatory=False,
-        desc="Temporal mask, after dummy scan removal. Only necessary if correlate is True.",
-    )
-    data_file = File(
-        exists=True,
-        mandatory=True,
-        desc="Dense CIFTI time series. Used to extract a NIfTI header for the output CIFTIs.",
-    )
-    parcellated_atlas = File(
-        exists=True,
-        mandatory=True,
-        desc=(
-            "Atlas CIFTI that has been parcellated with itself to make a .pscalar.nii file. "
-            "This is just used for its ParcelsAxis."
-        ),
-    )
-
-
-class _CiftiConnectOutputSpec(TraitedSpec):
-    correlation_ciftis = File(exists=True, desc="Correlation matrix pconn.nii file.")
-    correlation_ciftis_exact = traits.Either(
-        None,
-        traits.List(File(exists=True)),
-        desc="Correlation matrix files limited to an exact number of volumes.",
-    )
-    correlations = File(exists=True, desc="Correlation matrix tsv file.")
-    correlations_exact = traits.Either(
-        None,
-        traits.List(File(exists=True)),
-        desc="Correlation matrix files limited to an exact number of volumes.",
-    )
-
-
-class CiftiConnect(SimpleInterface):
-    """Extract timeseries and compute connectivity matrices.
-
-    Write out time series using Nilearn's NiftiLabelMasker
-    Then write out functional correlation matrix of
-    timeseries using numpy.
-    """
-
-    input_spec = _CiftiConnectInputSpec
-    output_spec = _CiftiConnectOutputSpec
-
-    def _run_interface(self, runtime):
-        data_file = self.inputs.data_file
-        pscalar_file = self.inputs.parcellated_atlas
-
-        assert data_file.endswith((".dtseries.nii", ".dscalar.nii")), data_file
-        assert pscalar_file.endswith(".pscalar.nii"), pscalar_file
-
-        correlations_df, correlations_exact = correlate_timeseries(
-            self.inputs.timeseries,
-            temporal_mask=self.inputs.temporal_mask,
-        )
-
-        # Save out the correlation matrix tsv
-        self._results["correlations"] = fname_presuffix(
-            "correlations.tsv",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        correlations_df.to_csv(
-            self._results["correlations"],
-            sep="\t",
-            na_rep="n/a",
-            index_label="Node",
-        )
-
-        # Save out the correlation matrix CIFTI
-        cifti_intents = get_cifti_intents()
-        nifti_header = nb.load(data_file).nifti_header.copy()
-        parcels_axis = nb.load(pscalar_file).header.get_axis(1)
-        cifti_header = nb.cifti2.Cifti2Header.from_axes((parcels_axis, parcels_axis))
-
-        nifti_header.set_intent(cifti_intents[".pconn.nii"])
-        conn_img = nb.Cifti2Image(
-            correlations_df.to_numpy(),
-            cifti_header,
-            nifti_header=nifti_header,
-        )
-        self._results["correlation_ciftis"] = fname_presuffix(
-            "correlations.pconn.nii",
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        conn_img.to_filename(self._results["correlation_ciftis"])
-        del conn_img, correlations_df
-        gc.collect()
-
-        if not correlations_exact:
-            self._results["correlations_exact"] = None
-            self._results["correlation_ciftis_exact"] = None
-            return runtime
-
-        self._results["correlations_exact"] = []
-        self._results["correlation_ciftis_exact"] = []
-        for exact_column, exact_correlations_df in correlations_exact.items():
-            exact_correlations_file = fname_presuffix(
-                f"correlations_{exact_column}.tsv",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            exact_correlations_df.to_csv(
-                exact_correlations_file,
-                sep="\t",
-                na_rep="n/a",
-                index_label="Node",
-            )
-            self._results["correlations_exact"].append(exact_correlations_file)
-
-            exact_conn_img = nb.Cifti2Image(
-                exact_correlations_df.to_numpy(),
-                cifti_header,
-                nifti_header=nifti_header,
-            )
-            exact_correlations_cifti_file = fname_presuffix(
-                f"correlations_{exact_column}.pconn.nii",
-                newpath=runtime.cwd,
-                use_ext=True,
-            )
-            exact_conn_img.to_filename(exact_correlations_cifti_file)
-            self._results["correlation_ciftis_exact"].append(exact_correlations_cifti_file)
-
-        return runtime
-
-
 class _ConnectPlotInputSpec(BaseInterfaceInputSpec):
     atlases = InputMultiObject(
         traits.Str,
@@ -738,7 +361,6 @@ class ConnectPlot(SimpleInterface):
         # Sort parcels by community
         corr_mat = corr_mat[community_order, :]
         corr_mat = corr_mat[:, community_order]
-        np.fill_diagonal(corr_mat, 0)
 
         # Get the community name associated with each network
         labels = np.array(network_labels)[community_order]
@@ -764,6 +386,8 @@ class ConnectPlot(SimpleInterface):
         # Find the locations for the labels in the middles of the communities
         label_idx = np.mean(np.vstack((break_idx[1:], break_idx[:-1])), axis=0)
 
+        np.fill_diagonal(corr_mat, 0)
+
         # Plot the correlation matrix
         ax.imshow(corr_mat, vmin=-1, vmax=1, cmap="seismic")
 
@@ -777,45 +401,62 @@ class ConnectPlot(SimpleInterface):
         ax.axes.set_xticks(label_idx)
         ax.axes.set_yticklabels(unique_labels)
         ax.axes.set_xticklabels(unique_labels, rotation=90)
+
         return ax
 
     def _run_interface(self, runtime):
-        ATLAS_LOOKUP = {
-            "4S156Parcels": {
-                "title": "4S 156 Parcels",
-                "axes": [0, 0],
-            },
-            "4S456Parcels": {
-                "title": "4S 456 Parcels",
-                "axes": [0, 1],
-            },
-            "Gordon": {
-                "title": "Gordon 333",
-                "axes": [1, 0],
-            },
-            "Glasser": {
-                "title": "Glasser 360",
-                "axes": [1, 1],
-            },
-        }
+        priority_list = [
+            "MIDB",
+            "MyersLabonte",
+            "4S156Parcels",
+            "4S456Parcels",
+            "Gordon",
+            "Glasser",
+            "Tian",
+            "HCP",
+            "4S256Parcels",
+            "4S356Parcels",
+            "4S556Parcels",
+            "4S656Parcels",
+            "4S756Parcels",
+            "4S856Parcels",
+            "4S956Parcels",
+            "4S1056Parcels",
+        ]
+        external_atlases = [a for a in self.inputs.atlases if a not in priority_list]
+        priority_list += external_atlases
+        selected_atlases = []
+        c = 0
+        for atlas in priority_list:
+            if atlas in self.inputs.atlases:
+                selected_atlases.append(atlas)
+                c += 1
+
+            if c == 4:
+                break
 
         COMMUNITY_LOOKUP = {
-            "4S156Parcels": "network_label",
-            "4S456Parcels": "network_label",
             "Glasser": "community_yeo",
-            "Gordon": "community",
         }
 
-        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
-        for atlas, subdict in ATLAS_LOOKUP.items():
-            if atlas not in self.inputs.atlases:
-                continue
+        if len(selected_atlases) == 4:
+            nrows, ncols, figsize, ax_idx = 2, 2, (20, 20), [(0, 0), (0, 1), (1, 0), (1, 1)]
+        else:
+            nrows, ncols, figsize = 1, len(selected_atlases), (10 * len(selected_atlases), 10)
+            ax_idx = list(range(ncols))
 
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
+        if isinstance(axes, plt.Axes):
+            axes = np.array([axes])
+
+        for i_ax, atlas in enumerate(selected_atlases):
             atlas_idx = self.inputs.atlases.index(atlas)
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
             dseg_file = self.inputs.atlas_tsvs[atlas_idx]
 
-            column_name = COMMUNITY_LOOKUP[atlas]
+            sel_ax_idx = ax_idx[i_ax]
+
+            column_name = COMMUNITY_LOOKUP.get(atlas, "network_label")
             dseg_df = pd.read_table(dseg_file)
             corrs_df = pd.read_table(atlas_file, index_col="Node")
 
@@ -827,17 +468,19 @@ class ConnectPlot(SimpleInterface):
                 }
                 network_labels = dseg_df[column_name].fillna(dseg_df["atlas_name"]).tolist()
                 network_labels = [atlas_mapper.get(network, network) for network in network_labels]
-            else:
+            elif column_name in dseg_df.columns:
                 network_labels = dseg_df[column_name].fillna("None").tolist()
+            else:
+                network_labels = ["None"] * dseg_df.shape[0]
 
-            ax = axes[subdict["axes"][0], subdict["axes"][1]]
+            ax = axes[sel_ax_idx]
             ax = self.plot_matrix(
                 corr_mat=corrs_df.to_numpy(),
                 network_labels=network_labels,
                 ax=ax,
             )
             ax.set_title(
-                subdict["title"],
+                atlas,
                 fontdict={"weight": "normal", "size": 20},
             )
 
@@ -886,3 +529,242 @@ def _sanitize_nifti_atlas(atlas, df):
     new_atlas_img = nb.Nifti1Image(new_atlas_data, atlas_img.affine, atlas_img.header)
 
     return new_atlas_img, df
+
+
+class _CiftiToTSVInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Parcellated CIFTI file to extract into a TSV.",
+    )
+    atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
+
+
+class _CiftiToTSVOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Parcellated data TSV file.")
+
+
+class CiftiToTSV(SimpleInterface):
+    """Extract data from a parcellated CIFTI file into a TSV file."""
+
+    input_spec = _CiftiToTSVInputSpec
+    output_spec = _CiftiToTSVOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+        atlas_labels = self.inputs.atlas_labels
+
+        assert in_file.endswith((".ptseries.nii", ".pscalar.nii", ".pconn.nii")), in_file
+
+        img = nb.load(in_file)
+        node_labels_df = pd.read_table(atlas_labels, index_col="index")
+        node_labels_df.sort_index(inplace=True)  # ensure index is in order
+
+        # Explicitly remove label corresponding to background (index=0), if present.
+        if 0 in node_labels_df.index:
+            LOGGER.warning(
+                "Index value of 0 found in atlas labels file. "
+                "Will assume this describes the background and ignore it."
+            )
+            node_labels_df = node_labels_df.drop(index=[0])
+
+        if "cifti_label" in node_labels_df.columns:
+            parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
+        elif "label_7network" in node_labels_df.columns:
+            node_labels_df["cifti_label"] = node_labels_df["label_7network"].fillna(
+                node_labels_df["label"]
+            )
+            parcel_label_mapper = dict(zip(node_labels_df["cifti_label"], node_labels_df["label"]))
+        else:
+            LOGGER.warning(
+                "No 'cifti_label' column found in atlas labels file. "
+                "Assuming labels in TSV exactly match node names in CIFTI atlas."
+            )
+            parcel_label_mapper = dict(zip(node_labels_df["label"], node_labels_df["label"]))
+
+        if in_file.endswith(".pconn.nii"):
+            ax0 = img.header.get_axis(0)
+            ax1 = img.header.get_axis(1)
+            ax0_labels = ax0.name
+            ax1_labels = ax1.name
+            df = pd.DataFrame(columns=ax1_labels, index=ax0_labels, data=img.get_fdata())
+            check_axes = [0, 1]
+        else:
+            # Second axis is the parcels
+            ax1 = img.header.get_axis(1)
+            assert isinstance(ax1, nb.cifti2.ParcelsAxis), type(ax1)
+            df = pd.DataFrame(columns=ax1.name, data=img.get_fdata())
+            check_axes = [1]
+
+        # Check that all node labels in the CIFTI are present in the TSV, and vice versa.
+        if 0 in check_axes:
+            # Replace values in index, which should match the keys in the parcel_label_mapper
+            # dictionary, with the corresponding values in the dictionary.
+            # If any index values are not in the dictionary, raise an error with a list of the
+            # missing index values.
+            # If any dictionary keys are not in the index, raise an error with a list of the
+            # missing dictionary keys.
+            missing_index_values = []
+            missing_dict_values = []
+            for index_value in df.index:
+                if index_value not in parcel_label_mapper:
+                    missing_index_values.append(index_value)
+
+                for dict_value in parcel_label_mapper.keys():
+                    if dict_value not in df.index:
+                        missing_dict_values.append(dict_value)
+
+                if missing_index_values:
+                    raise ValueError(
+                        f"Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}"
+                    )
+
+                if missing_dict_values:
+                    raise ValueError(f"Missing atlas labels in CIFTI file: {missing_dict_values}")
+
+            # Replace the index values with the corresponding dictionary values.
+            df.index = [parcel_label_mapper[i] for i in df.index]
+
+        if 1 in check_axes:
+            # Repeat with columns
+            missing_columns = []
+            missing_dict_values = []
+            for column_value in df.columns:
+                if column_value not in parcel_label_mapper:
+                    missing_columns.append(column_value)
+
+                for dict_value in parcel_label_mapper.keys():
+                    if dict_value not in df.columns:
+                        missing_dict_values.append(dict_value)
+
+                if missing_columns:
+                    raise ValueError(
+                        f"Missing CIFTI labels in atlas labels DataFrame: {missing_columns}"
+                    )
+
+                if missing_dict_values:
+                    raise ValueError(f"Missing atlas labels in CIFTI file: {missing_dict_values}")
+
+            # Replace the column names with the corresponding dictionary values.
+            df.columns = [parcel_label_mapper[i] for i in df.columns]
+
+        # Save out the TSV
+        self._results["out_file"] = fname_presuffix(
+            "extracted.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+
+        if in_file.endswith(".pconn.nii"):
+            df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index_label="Node")
+        else:
+            df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index=False)
+
+        return runtime
+
+
+class _CiftiMaskInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to mask.",
+    )
+    mask = File(
+        exists=True,
+        mandatory=True,
+        desc="Mask pscalar or dscalar to apply to in_file.",
+    )
+
+
+class _CiftiMaskOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Masked CIFTI file.")
+
+
+class CiftiMask(SimpleInterface):
+    """Mask a CIFTI file by replacing masked values with NaNs.
+
+    I (TS) created this interface because I couldn't find a way to do this with
+    wb_command -cifti-math.
+    """
+
+    input_spec = _CiftiMaskInputSpec
+    output_spec = _CiftiMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+        mask = self.inputs.mask
+
+        supported_extensions = (".ptseries.nii", ".pscalar.nii", ".dtseries.nii", ".dscalar.nii")
+        if not in_file.endswith(supported_extensions):
+            raise ValueError(f"Unsupported CIFTI extension for 'in_file': {in_file}")
+
+        if not mask.endswith((".pscalar.nii", ".dscalar.nii")):
+            raise ValueError(f"Unsupported CIFTI extension for 'mask': {mask}")
+
+        in_img = nb.load(in_file)
+        mask_img = nb.load(mask)
+        if in_img.shape[1] != mask_img.shape[1]:
+            raise ValueError(
+                "CIFTI files have different number of parcels/vertices. "
+                f"{in_file} ({in_img.shape}) vs {mask} ({mask_img.shape})"
+            )
+
+        in_data = in_img.get_fdata()
+        mask_data = mask_img.get_fdata()[0, :]
+        mask_data = mask_data.astype(bool)
+        in_data[:, ~mask_data] = np.nan
+
+        # Save out the TSV
+        self._results["out_file"] = fname_presuffix(
+            self.inputs.in_file,
+            prefix="masked_",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        write_ndata(in_data.T, template=in_file, filename=self._results["out_file"])
+
+        return runtime
+
+
+class _CiftiVertexMaskInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc="CIFTI file to mask.",
+    )
+
+
+class _CiftiVertexMaskOutputSpec(TraitedSpec):
+    mask_file = File(exists=True, desc="CIFTI mask.")
+
+
+class CiftiVertexMask(SimpleInterface):
+    """Create a vertex-wise mask."""
+
+    input_spec = _CiftiVertexMaskInputSpec
+    output_spec = _CiftiVertexMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        data_file = self.inputs.in_file
+
+        data_img = nb.load(data_file)
+        data_arr = data_img.get_fdata()
+
+        # Flag vertices where the time series is all zeros or NaNs
+        bad_vertices_idx = np.where(
+            np.all(np.logical_or(data_arr == 0, np.isnan(data_arr)), axis=0)
+        )[0]
+        data_arr[:, bad_vertices_idx] = np.nan
+        # Set any vertex with a NaN to 0 and all others to 1 in the mask file
+        vertex_weights_arr = np.all(~np.isnan(data_arr), axis=0).astype(int)
+
+        # Save out the TSV
+        self._results["mask_file"] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=".dscalar.nii",
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(vertex_weights_arr, template=data_file, filename=self._results["mask_file"])
+
+        return runtime

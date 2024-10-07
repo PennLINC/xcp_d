@@ -26,7 +26,7 @@ A Python module to maintain unique, run-wide *XCP-D* settings.
 This module implements the memory structures to keep a consistent, singleton config.
 Settings are passed across processes via filesystem, and a copy of the settings for
 each run and subject is left under
-``<xcp_d_dir>/sub-<participant_id>/log/<run_unique_id>/xcp_d.toml``.
+``<output_dir>/sub-<participant_id>/log/<run_unique_id>/xcp_d.toml``.
 Settings are stored using :abbr:`ToML (Tom's Markup Language)`.
 The module has a :py:func:`~xcp_d.config.to_filename` function to allow writing out
 the settings to hard disk in *ToML* format, which looks like:
@@ -89,6 +89,8 @@ The :py:mod:`config` is responsible for other conveniency actions.
 """
 import os
 from multiprocessing import set_start_method
+
+from templateflow.conf import TF_LAYOUT
 
 # Disable NiPype etelemetry always
 _disable_et = bool(os.getenv("NO_ET") is not None or os.getenv("NIPYPE_NO_ET") is not None)
@@ -159,7 +161,7 @@ _exec_env = os.name
 _docker_ver = None
 # special variable set in the container
 if os.getenv("IS_DOCKER_8395080871"):
-    _exec_env = "singularity"
+    _exec_env = "apptainer"
     _cgroup = Path("/proc/1/cgroup")
     if _cgroup.exists() and "docker" in _cgroup.read_text():
         _docker_ver = os.getenv("DOCKER_VERSION_8395080871")
@@ -227,6 +229,8 @@ class _Config:
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     setattr(cls, k, [Path(val).absolute() for val in v])
+                elif isinstance(v, dict):
+                    setattr(cls, k, {key: Path(val).absolute() for key, val in v.items()})
                 else:
                     setattr(cls, k, Path(v).absolute())
             elif hasattr(cls, k):
@@ -252,6 +256,8 @@ class _Config:
             if k in cls._paths:
                 if isinstance(v, (list, tuple)):
                     v = [str(val) for val in v]
+                elif isinstance(v, dict):
+                    v = {key: str(val) for key, val in v.items()}
                 else:
                     v = str(v)
             if isinstance(v, SpatialReferences):
@@ -373,18 +379,22 @@ class execution(_Config):
 
     fmri_dir = None
     """An existing path to the preprocessing derivatives dataset, which must be BIDS-compliant."""
+    datasets = {}
+    """Path(s) to search for other datasets (either derivatives or atlases)."""
+    aggr_ses_reports = None
+    """Maximum number of sessions aggregated in one subject's visual report."""
     bids_database_dir = None
     """Path to the directory containing SQLite database indices for the input BIDS dataset."""
     bids_description_hash = None
     """Checksum (SHA256) of the ``dataset_description.json`` of the BIDS dataset."""
     bids_filters = None
     """A dictionary of BIDS selection filters."""
-    boilerplate_only = False
+    boilerplate_only = None
     """Only generate a boilerplate."""
+    confounds_config = None
+    """Nuisance regressors to include in the postprocessing."""
     debug = []
     """Debug mode(s)."""
-    xcp_d_dir = None
-    """Root of XCP-D BIDS Derivatives dataset."""
     fs_license_file = _fs_license
     """An existing file containing a FreeSurfer license."""
     layout = None
@@ -395,16 +405,14 @@ class execution(_Config):
     """Output verbosity."""
     low_mem = None
     """Utilize uncompressed NIfTIs and other tricks to minimize memory allocation."""
-    md_only_boilerplate = False
+    md_only_boilerplate = None
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
-    notrack = False
+    notrack = None
     """Do not collect telemetry information for *XCP-D*."""
-    reports_only = False
+    reports_only = None
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
     """Folder where derivatives will be stored."""
-    custom_confounds = None
-    """A path to a folder containing custom confounds to include in the postprocessing."""
     atlases = []
     """Selection of atlases to apply to the data."""
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
@@ -417,21 +425,25 @@ class execution(_Config):
     """The root folder of the TemplateFlow client."""
     work_dir = Path("work").absolute()
     """Path to a working directory where intermediate results will be available."""
-    write_graph = False
+    write_graph = None
     """Write out the computational graph corresponding to the planned preprocessing."""
+    dataset_links = {}
+    """A dictionary of dataset links to be used to track Sources in sidecars."""
 
     _layout = None
 
     _paths = (
         "fmri_dir",
+        "datasets",
         "bids_database_dir",
-        "xcp_d_dir",
         "fs_license_file",
         "layout",
         "log_dir",
         "output_dir",
         "templateflow_home",
         "work_dir",
+        "dataset_links",
+        "confounds_config",
     )
 
     @classmethod
@@ -472,7 +484,7 @@ class execution(_Config):
                 validate=False,
                 ignore=ignore_patterns,
             )
-            xcp_d_config = load_data("xcp_d_bids_config2.json")
+            xcp_d_config = str(load_data("xcp_d_bids_config2.json"))
             cls._layout = BIDSLayout(
                 str(cls.fmri_dir),
                 database_path=_db_path,
@@ -483,6 +495,7 @@ class execution(_Config):
             cls.bids_database_dir = _db_path
 
         cls.layout = cls._layout
+
         if cls.bids_filters:
             from bids.layout import Query
 
@@ -502,6 +515,19 @@ class execution(_Config):
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
 
+        if cls.task_id:
+            cls.bids_filters = cls.bids_filters or {}
+            cls.bids_filters["bold"] = cls.bids_filters.get("bold", {})
+            cls.bids_filters["bold"]["task"] = cls.task_id
+
+        dataset_links = {
+            "preprocessed": cls.fmri_dir,
+            "templateflow": Path(TF_LAYOUT.root),
+        }
+        for dset_name, dset_path in cls.datasets.items():
+            dataset_links[dset_name] = dset_path
+        cls.dataset_links = dataset_links
+
         if "all" in cls.debug:
             cls.debug = list(DEBUG_MODES)
 
@@ -520,19 +546,23 @@ del _oc_policy
 class workflow(_Config):
     """Configure the particular execution graph of this workflow."""
 
-    cifti = False
-    """Postprocess CIFTI inputs instead of NIfTIs."""
-    dummy_scans = 0
+    mode = None
+    """Study- or pipeline-specific mode used to set other parameters."""
+    file_format = None
+    """The file format to process. May be "auto", "cifti", or "nifti"."""
+    dummy_scans = None
     """Number of label-control volume pairs to delete before CBF computation."""
-    input_type = "fmriprep"
+    input_type = None
     """Postprocessing pipeline type."""
-    despike = False
+    despike = None
     """Despike the BOLD data before postprocessing."""
-    params = "36P"
-    """Nuisance regressors to include in the postprocessing."""
-    smoothing = 6
+    smoothing = None
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
-    combineruns = False
+    output_interpolated = None
+    """Output interpolated data, not censored data."""
+    output_correlations = None
+    """Output correlations from censored data. This doesn't affect exact_scans."""
+    combine_runs = None
     """Combine runs of the same task."""
     motion_filter_type = None
     """Type of filter to apply to the motion regressors."""
@@ -540,30 +570,32 @@ class workflow(_Config):
     """Low cutoff frequency for the band-stop filter."""
     band_stop_max = None
     """High cutoff frequency for the band-stop filter."""
-    motion_filter_order = 4
+    motion_filter_order = None
     """Order of the filter to apply to the motion regressors."""
-    head_radius = 50
+    head_radius = None
     """Radius of the head in mm."""
-    fd_thresh = 0.3
+    fd_thresh = None
     """Framewise displacement threshold for censoring."""
-    min_time = 240
+    min_time = None
     """Post-scrubbing threshold to apply to individual runs in the dataset."""
-    bandpass_filter = True
+    bandpass_filter = None
     """Apply a band-pass filter to the data."""
-    high_pass = 0.01
+    high_pass = None
     """Lower bound of the band-pass filter."""
-    low_pass = 0.1
+    low_pass = None
     """Upper bound of the band-pass filter."""
-    bpf_order = 2
+    bpf_order = None
     """Order of the band-pass filter."""
-    min_coverage = 0.5
+    min_coverage = None
     """Coverage threshold to apply to parcels in each atlas."""
-    exact_time = []
+    dcan_correlation_lengths = None
     """Produce correlation matrices limited to each requested amount of time."""
-    process_surfaces = False
-    """Warp FreeSurfer's surfaces to the MNI space."""
-    dcan_qc = True
+    process_surfaces = None
+    """Warp fsnative-space surfaces to the MNI space."""
+    abcc_qc = None
     """Run DCAN QC."""
+    linc_qc = None
+    """Run LINC QC."""
 
     @classmethod
     def init(cls):

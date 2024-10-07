@@ -18,16 +18,15 @@ authors:
   - given-names: Kahini
     family-names: Mehta
     email: kahini.mehta@pennmedicine.upenn.edu
-    affiliation: University of Pennsylvania
+    affiliation: Columbia University
     orcid: 'https://orcid.org/0000-0001-9466-100X'
   - given-names: Azeez
     family-names: Adebimpe
-    affiliation: University of Pennsylvania
     orcid: 'https://orcid.org/0000-0001-9049-0135'
   - given-names: Maxwell
     family-names: Bertolero
     orcid: 'https://orcid.org/0000-0002-2691-3698'
-    affiliation: University of Pennsylvania
+    affiliation: Turing Medical
   - given-names: Kristin
     family-names: Murtha
     affiliation: University of Pennsylvania
@@ -39,20 +38,18 @@ authors:
   - given-names: Steven
     family-names: Meisler
     orcid: 'https://orcid.org/0000-0002-8888-1572'
-    affiliation: >-
-      Harvard-MIT Division of Health Sciences and
-      Technology
+    affiliation: University of Pennsylvania
   - given-names: Thomas
     family-names: Madison
     affiliation: University of Minnesota
     orcid: 'https://orcid.org/0000-0003-3030-6580'
   - given-names: Valerie
     family-names: Sydnor
-    affiliation: University of Pennsylvania
+    affiliation: University of Pittsburgh Medical Center
     orcid: 'https://orcid.org/0000-0002-8640-668X'
   - given-names: Sydney
     family-names: Covitz
-    affiliation: University of Pennsylvania
+    affiliation: Stanford University
     orcid: 'https://orcid.org/0000-0002-7430-4125'
   - given-names: Damien
     family-names: Fair
@@ -86,5 +83,5 @@ keywords:
   - BIDS-App
   - Neuroimaging
 license: BSD-3-Clause
-version: 0.7.0
-date-released: '2024-03-22'
+version: 0.9.1
+date-released: '2024-09-13'

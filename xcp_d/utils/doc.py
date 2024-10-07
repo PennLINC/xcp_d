@@ -101,9 +101,9 @@ TR : :obj:`float`
 """
 
 docdict[
-    "fmriprep_confounds_file"
+    "preproc_confounds_file"
 ] = """
-fmriprep_confounds_file : :obj:`str`
+preproc_confounds_file : :obj:`str`
     Confounds TSV file from preprocessing derivatives.
 """
 
@@ -128,9 +128,9 @@ input_type : {"fmriprep", "dcan", "hcp", "nibabies", "ukb"}
 """
 
 docdict[
-    "dcan_qc"
+    "abcc_qc"
 ] = """
-dcan_qc : :obj:`bool`
+abcc_qc : :obj:`bool`
     This flag determines if DCAN-related QC steps will be taken.
     Enabling this flag will trigger the following steps:
 
@@ -156,13 +156,6 @@ custom_confounds_folder : :obj:`str` or None
     Must be a folder containing confounds files,
     in which case the file with the name matching the preprocessing confounds file will be
     selected.
-"""
-
-docdict[
-    "custom_confounds_file"
-] = """
-custom_confounds_file : :obj:`str` or None
-    Path to custom nuisance regressors.
 """
 
 docdict[
@@ -311,9 +304,9 @@ band_stop_max : :obj:`float` or None
 """
 
 docdict[
-    "exact_time"
+    "dcan_correlation_lengths"
 ] = """
-exact_time : :obj:`list` of :obj:`float`, optional
+dcan_correlation_lengths : :obj:`list` of :obj:`float`, optional
     If used, this parameter will produce correlation matrices limited to each requested
     amount of time.
     If there is more than the required amount of low-motion data,
@@ -390,7 +383,7 @@ docdict[
 ] = """
 random_seed : :obj:`int` or None
     Random seed for the workflow.
-    This is currently only used with the ``--exact-time`` parameter,
+    This is currently only used with the ``--create-matrices`` parameter,
     when randomly selecting volumes to censor for correlation matrices.
 """
 
@@ -430,9 +423,9 @@ despike : :obj:`bool`
 """
 
 docdict[
-    "filtered_motion"
+    "motion_file"
 ] = """
-filtered_motion : :obj:`str`
+motion_file : :obj:`str`
     Framewise displacement timeseries, potentially after bandstop or low-pass filtering.
     This is a TSV file with one column: 'framewise_displacement'.
 """
@@ -632,10 +625,11 @@ def download_example_data(out_dir=None, overwrite=False):
     import tarfile
 
     import requests
-    from pkg_resources import resource_filename as pkgrf
+
+    from xcp_d.data import load as load_data
 
     if not out_dir:
-        out_dir = pkgrf("xcp_d", "data")
+        out_dir = str(load_data("."))
 
     out_dir = os.path.abspath(out_dir)
 

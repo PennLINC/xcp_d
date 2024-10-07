@@ -12,7 +12,6 @@ def describe_motion_parameters(
     motion_filter_order,
     band_stop_min,
     band_stop_max,
-    head_radius,
     TR,
 ):
     """Build a text description of the motion parameter filtering and FD calculation process.
@@ -23,7 +22,6 @@ def describe_motion_parameters(
     %(motion_filter_order)s
     %(band_stop_min)s
     %(band_stop_max)s
-    %(head_radius)s
     %(TR)s
 
     Returns
@@ -81,22 +79,17 @@ def describe_motion_parameters(
 
         desc += "The Volterra expansion of these filtered motion parameters was then calculated. "
 
-    desc += (
-        "Framewise displacement was calculated from the "
-        f"{'filtered ' if motion_filter_type else ''}motion parameters using the formula from "
-        f"@power_fd_dvars, with a head radius of {head_radius} mm. "
-    )
-
     return desc
 
 
 @fill_doc
-def describe_censoring(motion_filter_type, fd_thresh, exact_scans):
+def describe_censoring(*, motion_filter_type, head_radius, fd_thresh, exact_scans):
     """Build a text description of the FD censoring process.
 
     Parameters
     ----------
     %(motion_filter_type)s
+    %(head_radius)s
     %(fd_thresh)s
     %(exact_scans)s
 
@@ -108,6 +101,9 @@ def describe_censoring(motion_filter_type, fd_thresh, exact_scans):
     desc = ""
     if fd_thresh > 0:
         desc += (
+            "Framewise displacement was calculated from the "
+            f"{'filtered ' if motion_filter_type else ''}motion parameters using the formula from "
+            f"@power_fd_dvars, with a head radius of {head_radius} mm. "
             f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
             f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of "
             "later censoring [@power_fd_dvars]."
@@ -128,13 +124,21 @@ def describe_censoring(motion_filter_type, fd_thresh, exact_scans):
 
 
 @fill_doc
-def describe_regression(params, custom_confounds_file, motion_filter_type):
+def describe_regression(
+    *,
+    confounds_config,
+    motion_filter_type,
+    motion_filter_order,
+    band_stop_min,
+    band_stop_max,
+    TR,
+    fd_thresh,
+):
     """Build a text description of the regression that will be performed.
 
     Parameters
     ----------
-    %(params)s
-    %(custom_confounds_file)s
+    confounds_config
     %(motion_filter_type)s
 
     Returns
@@ -142,113 +146,25 @@ def describe_regression(params, custom_confounds_file, motion_filter_type):
     desc : :obj:`str`
         A text description of the regression.
     """
-    import pandas as pd
+    if confounds_config is None:
+        return "No nuisance regression was performed."
 
-    use_custom_confounds, orth = False, False
-    if custom_confounds_file is not None:
-        use_custom_confounds = True
-        custom_confounds = pd.read_table(custom_confounds_file)
-        orth = any([c.startswith("signal__") for c in custom_confounds.columns])
+    desc = confounds_config["description"]
 
-    fstr = "filtered " if motion_filter_type else ""
-
-    BASE_DESCRIPTIONS = {
-        "custom": "A custom set of regressors was used, with no other regressors from XCP-D.",
-        "none": "No nuisance regression was performed.",
-        "24P": (
-            "In total, 24 nuisance regressors were selected from the preprocessing confounds, "
-            "according to the '24P' strategy. "
-            "These nuisance regressors included "
-            f"six {fstr}motion parameters with their temporal derivatives, "
-            "and their quadratic expansion of those six motion parameters and their "
-            "temporal derivatives [@benchmarkp;@satterthwaite_2013]."
-        ),
-        "27P": (
-            "In total, 27 nuisance regressors were selected from the preprocessing confounds, "
-            "according to the '27P' strategy. "
-            "These nuisance regressors included "
-            f"six {fstr}motion parameters with their temporal derivatives, "
-            "quadratic expansion of those six motion parameters and their derivatives, "
-            "mean global signal, mean white matter signal, and mean cerebrospinal fluid signal "
-            "[@benchmarkp;@satterthwaite_2013]."
-        ),
-        "36P": (
-            "In total, 36 nuisance regressors were selected from the preprocessing confounds, "
-            "according to the '36P' strategy. "
-            "These nuisance regressors included "
-            f"six {fstr}motion parameters, mean global signal, mean white matter signal, "
-            "mean cerebrospinal fluid signal with their temporal derivatives, "
-            "and quadratic expansion of six motion parameters, tissue signals and "
-            "their temporal derivatives [@benchmarkp;@satterthwaite_2013]."
-        ),
-        "acompcor": (
-            "Nuisance regressors were selected according to the 'acompcor' strategy. "
-            "The top 5 aCompCor principal components from the white matter and "
-            "cerebrospinal fluid compartments were selected as nuisance regressors "
-            "[@behzadi2007component], "
-            f"along with the six {fstr}motion parameters and their temporal derivatives "
-            "[@benchmarkp;@satterthwaite_2013]. "
-            "As the aCompCor regressors were generated on high-pass filtered data, "
-            "the associated cosine basis regressors were included. "
-            "This has the effect of high-pass filtering the data as well."
-        ),
-        "acompcor_gsr": (
-            "Nuisance regressors were selected according to the 'acompcor_gsr' strategy. "
-            "The top 5 aCompCor principal components from the white matter and "
-            "cerebrospinal fluid compartments were selected as nuisance regressors "
-            "[@behzadi2007component], "
-            f"along with the six {fstr}motion parameters and their temporal derivatives, "
-            "mean white matter signal, mean cerebrospinal fluid signal, and mean global signal "
-            "[@benchmarkp;@satterthwaite_2013]. "
-            "As the aCompCor regressors were generated on high-pass filtered data, "
-            "the associated cosine basis regressors were included. "
-            "This has the effect of high-pass filtering the data as well."
-        ),
-        "aroma": (
-            "Nuisance regressors were selected according to the 'aroma' strategy. "
-            "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
-            "and mean cerebrospinal fluid signal were selected as nuisance regressors "
-            "[@benchmarkp;@satterthwaite_2013]."
-        ),
-        "aroma_gsr": (
-            "Nuisance regressors were selected according to the 'aroma_gsr' strategy. "
-            "AROMA motion-labeled components [@pruim2015ica], mean white matter signal, "
-            "mean cerebrospinal fluid signal, and mean global signal were selected as "
-            "nuisance regressors [@benchmarkp;@satterthwaite_2013]."
-        ),
-        "gsr_only": (
-            "Nuisance regressors were selected according to the 'gsr_only' strategy. "
-            "Mean global signal was selected as the only nuisance regressor."
-        ),
-    }
-
-    if params not in BASE_DESCRIPTIONS.keys():
-        raise ValueError(f"Unrecognized parameter string '{params}'")
-
-    desc = BASE_DESCRIPTIONS[params]
-    if use_custom_confounds and params != "custom":
-        desc += " Additionally, custom confounds were also included as nuisance regressors."
-
-    if "aroma" not in params and orth:
+    if (fd_thresh > 0) and motion_filter_type:
+        # Censoring was done, so just refer back to the earlier description of the filter
         desc += (
-            " Custom confounds prefixed with 'signal__' were used to account for variance "
-            "explained by known signals. "
-            "Prior to denoising the BOLD data, the nuisance confounds were orthogonalized "
-            "with respect to the signal regressors."
+            " Any motion parameters in the confounds file were filtered using the same "
+            "parameters as described above and the Volterra expansion was calculated."
         )
-    elif "aroma" in params and not orth:
-        desc += (
-            " AROMA non-motion components (i.e., ones assumed to reflect signal) were used to "
-            "account for variance by known signals. "
-            "Prior to denoising the BOLD data, the nuisance confounds were orthogonalized "
-            "with respect to the non-motion components."
-        )
-
-    if "aroma" in params or orth:
-        desc += (
-            " In this way, the confound regressors were orthogonalized to produce regressors "
-            "without variance explained by known signals, so that signal would not be removed "
-            "from the BOLD data in the later regression."
+    elif motion_filter_type:
+        # Censoring was not done, so describe the filter here
+        desc += " " + describe_motion_parameters(
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            TR=TR,
         )
 
     return desc
@@ -261,14 +177,21 @@ def describe_atlases(atlases):
         "Gordon": "the Gordon atlas [@Gordon_2014]",
         "Tian": "the Tian subcortical atlas [@tian2020topographic]",
         "HCP": "the HCP CIFTI subcortical atlas [@glasser2013minimal]",
+        "MIDB": (
+            "the MIDB precision brain atlas derived from ABCD data and thresholded at 75% "
+            "probability [@hermosillo2022precision]"
+        ),
+        "MyersLabonte": (
+            "the Myers-Labonte infant atlas thresholded at 50% probability [@myers2023functional]"
+        ),
     }
 
     atlas_strings = []
     described_atlases = []
-    atlases_4s = [atlas for atlas in atlases if atlas.startswith("4S")]
+    atlases_4s = [atlas for atlas in atlases if str(atlas).startswith("4S")]
     described_atlases += atlases_4s
     if atlases_4s:
-        parcels = [int(atlas[2:-7]) for atlas in atlases_4s]
+        parcels = [int(str(atlas[2:-7])) for atlas in atlases_4s]
         s = (
             "the Schaefer Supplemented with Subcortical Structures (4S) atlas "
             "[@Schaefer_2017;@pauli2018high;@king2019functional;@najdenovska2018vivo;"
@@ -283,7 +206,7 @@ def describe_atlases(atlases):
             described_atlases.append(k)
 
     undescribed_atlases = [atlas for atlas in atlases if atlas not in described_atlases]
-    if undescribed_atlases:
-        raise ValueError(f"Unrecognized atlas(es) in the list: {', '.join(undescribed_atlases)}.")
+    for atlas in undescribed_atlases:
+        atlas_strings.append(f"the {atlas} atlas")
 
     return list_to_str(atlas_strings)

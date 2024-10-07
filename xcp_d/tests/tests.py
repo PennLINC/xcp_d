@@ -42,7 +42,13 @@ def mock_config():
     if not _old_fs:
         os.environ["FREESURFER_HOME"] = mkdtemp()
 
-    filename = Path(load_data("../tests/data/config.toml")).resolve()
+    filename = load_data("tests/config.toml").resolve()
+    if not filename.exists():
+        base_path = os.path.dirname(filename)
+        raise FileNotFoundError(
+            f"File not found: {filename}\nFiles in {base_path}:\n{os.listdir(base_path)}"
+        )
+
     settings = loads(filename.read_text())
     for sectionname, configs in settings.items():
         if sectionname != "environment":
@@ -55,7 +61,7 @@ def mock_config():
 
     config.execution.work_dir = Path(mkdtemp())
     config.execution.fmri_dir = Path(doc.download_example_data(out_dir=mkdtemp()))
-    config.execution.xcp_d_dir = Path(mkdtemp())
+    config.execution.output_dir = Path(mkdtemp())
     config.execution.bids_database_dir = None
     config.execution._layout = None
     config.execution.init()
@@ -63,7 +69,7 @@ def mock_config():
     yield
 
     shutil.rmtree(config.execution.work_dir)
-    shutil.rmtree(config.execution.xcp_d_dir)
+    shutil.rmtree(config.execution.output_dir)
 
     if not _old_fs:
         del os.environ["FREESURFER_HOME"]

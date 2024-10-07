@@ -7,8 +7,8 @@ import os
 import pandas as pd
 from nipype import logging
 from nipype.interfaces.fsl.preprocess import ApplyWarp
-from pkg_resources import resource_filename as pkgrf
 
+from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
     collect_ukbiobank_confounds,
     copy_files_in_dict,
@@ -179,7 +179,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     # Warp BOLD, T1w, and brainmask to MNI152NLin6Asym
     # We use FSL's MNI152NLin6Asym 2 mm3 template instead of TemplateFlow's version,
     # because FSL uses LAS+ orientation, while TemplateFlow uses RAS+.
-    template_file = pkgrf("xcp_d", "data/MNI152_T1_2mm.nii.gz")
+    template_file = str(load_data("MNI152_T1_2mm.nii.gz"))
 
     copy_dictionary = {}
 
@@ -238,13 +238,6 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
             f"{subses_ents}_space-{VOLSPACE}_desc-brain_mask.nii.gz",
         )
     )
-    # Use the brain mask as the "aparcaseg" dseg too.
-    copy_dictionary[warp_brainmask_to_std_results.outputs.out_file].append(
-        os.path.join(
-            anat_dir_bids,
-            f"{subses_ents}_space-{VOLSPACE}_desc-aparcaseg_dseg.nii.gz",
-        )
-    )
 
     # Warp the reference file to MNI space.
     warp_boldref_to_std = ApplyWarp(
@@ -267,7 +260,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     ]
 
     # The identity xform is used in place of any actual ones.
-    identity_xfm = pkgrf("xcp_d", "/data/transform/itkIdentityTransform.txt")
+    identity_xfm = str(load_data("transform/itkIdentityTransform.txt"))
     copy_dictionary[identity_xfm] = []
 
     t1w_to_template_fmriprep = os.path.join(

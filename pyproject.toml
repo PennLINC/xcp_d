@@ -17,30 +17,32 @@ license = {file = "LICENSE"}
 requires-python = ">=3.10"
 dependencies = [
     'importlib_resources; python_version < "3.11"',
+    "acres",
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
-    "bids-validator <= 1.14.4",
-    "h5py <= 3.11.0",  # for DCAN motion file
+    "bids-validator <= 1.14.7.post0",
+    "h5py <= 3.12.1",  # for DCAN motion file
     "indexed_gzip ~= 1.8.7",  # for loading imgs in nibabel
     "jinja2 ~= 3.1.2",  # for executive summary
-    "joblib <= 1.4.0",
-    "matplotlib ~= 3.8.2",
+    "joblib <= 1.4.2",
+    "matplotlib ~= 3.9.0",
     "networkx <= 3.3",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
-    "nilearn == 0.10.3",  # 0.10.2 raises error with compcor from fMRIPrep 23
+    "nilearn == 0.10.4",  # 0.10.2 raises error with compcor from fMRIPrep 23
     "nipype ~= 1.8.5",
-    "niworkflows == 1.10.1",
+    "nireports ~= 24.0.2",
+    "niworkflows == 1.11.0",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
-    "numpy ~= 1.19",
+    "numpy ~= 2.0",
     "packaging",  # for version string parsing
     "pandas",
     "psutil >= 5.4",  # for sentry
-    "pybids ~= 0.16.4",
+    "pybids ~= 0.17.0",
     "pyyaml",
-    "scikit-learn <= 1.4.2",
-    "scipy >= 1.8.0,<= 1.13.0",  # nipype needs networkx, which needs scipy > 1.8.0
+    "scikit-learn <= 1.5.2",
+    "scipy >= 1.14.0,<= 1.14.1",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 1.45.0",  # for usage reports
+    "sentry-sdk ~= 2.15.0",  # for usage reports
     "templateflow ~= 24.2.0",
     "toml",
     "tqdm",
@@ -61,7 +63,7 @@ doc = [
     "pydotplus",
     "recommonmark",
     "sphinx >= 4.2.0",
-    "sphinx-argparse",
+    "sphinx-argparse != 0.5.0",
     "sphinx-markdown-tables",
     "sphinx_rtd_theme",
     "sphinxcontrib-apidoc",
@@ -81,6 +83,7 @@ tests = [
     "pep8-naming",
     "pytest",
     "pytest-cov",
+    "pytest-xdist",
     "pytest-env",
 ]
 maint = [
@@ -170,14 +173,16 @@ per-file-ignores = [
 ]
 
 [tool.pytest.ini_options]
-addopts = '-m "not ds001419_nifti and not ds001419_cifti and not ukbiobank and not pnc_cifti and not pnc_cifti_t2wonly and not fmriprep_without_freesurfer and not nibabies"'
+addopts = '-m "not integration"'
 markers = [
+    "integration: mark test as an integration test",
     "ds001419_nifti: mark NIfTI integration test for fMRIPrep derivatives from ds001419",
     "ds001419_cifti: mark CIFTI integration test for fMRIPrep derivatives from ds001419",
     "ukbiobank: mark integration test for UK Biobank derivatives with NIfTI settings",
     "pnc_cifti: mark integration test for fMRIPrep derivatives with CIFTI settings",
     "pnc_cifti_t2wonly: mark integration test for fMRIPrep derivatives with CIFTI settings and a simulated T2w file",
     "fmriprep_without_freesurfer: mark integration test for fMRIPrep derivatives without FreeSurfer",
+    "fmriprep_without_freesurfer_with_main: mark integration test for fMRIPrep derivatives without FreeSurfer using main function",
     "nibabies: mark integration test for nibabies derivatives",
 ]
 env = [

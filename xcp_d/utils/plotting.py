@@ -3,7 +3,6 @@
 """Plotting tools."""
 import os
 
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
@@ -484,7 +483,7 @@ def plot_fmri_es(
     preprocessed_bold,
     denoised_interpolated_bold,
     TR,
-    filtered_motion,
+    motion_file,
     temporal_mask,
     preprocessed_figure,
     denoised_figure,
@@ -502,7 +501,7 @@ def plot_fmri_es(
         Preprocessed BOLD file, dummy scan removal.
     %(denoised_interpolated_bold)s
     %(TR)s
-    %(filtered_motion)s
+    %(motion_file)s
     %(temporal_mask)s
         Only non-outlier (low-motion) volumes in the temporal mask will be used to scale
         the carpet plot.
@@ -549,8 +548,16 @@ def plot_fmri_es(
         }
     )
 
-    fd_regressor = pd.read_table(filtered_motion)["framewise_displacement"].values
-    tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values.astype(bool)
+    motion_df = pd.read_table(motion_file)
+    if "framewise_displacement_filtered" in motion_df.columns:
+        fd_regressor = motion_df["framewise_displacement_filtered"].values
+    else:
+        fd_regressor = motion_df["framewise_displacement"].values
+
+    if temporal_mask:
+        tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values.astype(bool)
+    else:
+        tmask_arr = np.zeros(fd_regressor.shape, dtype=bool)
 
     # The mean and standard deviation of the preprocessed data,
     # after mean-centering and detrending.
@@ -908,7 +915,7 @@ def plot_carpet(
         # Preserve continuity
         order = seg_data.argsort(kind="stable")
         # Get color maps
-        cmap = ListedColormap([cm.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
+        cmap = ListedColormap([plt.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
         assert len(cmap.colors) == len(
             struct_map
         ), "Mismatch between expected # of structures and colors"
@@ -916,7 +923,7 @@ def plot_carpet(
         # Order following segmentation labels
         order = np.argsort(seg_data)[::-1]
         # Set colormap
-        cmap = ListedColormap(cm.get_cmap("tab10").colors[:4][::-1])
+        cmap = ListedColormap(plt.get_cmap("tab10").colors[:4][::-1])
 
     # Detrend and z-score data
     if standardize:
@@ -1047,199 +1054,41 @@ def plot_carpet(
     return (ax0, ax1, ax2), grid_specification
 
 
-def plot_alff_reho_volumetric(output_path, filename, name_source):
-    """Plot ReHo and ALFF mosaics for niftis.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    output_path : :obj:`str`
-        path to save plot
-    filename : :obj:`str`
-        surface file
-    name_source : :obj:`str`
-        original input bold file
-
-    Returns
-    ----------
-    output_path : :obj:`str`
-        path to plot
-
-    """
-    import os
-
-    from bids.layout import parse_file_entities
-    from nilearn import plotting as plott
-    from templateflow.api import get as get_template
-
-    ENTITIES_TO_USE = ["cohort", "den", "res"]
-
-    # templateflow uses the full entity names in its BIDSLayout config,
-    # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
-    ENTITY_NAMES_MAPPER = {"den": "density", "res": "resolution"}
-    space = parse_file_entities(name_source)["space"]
-    file_entities = parse_file_entities(name_source)
-    entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
-    entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in entities_to_use.items()}
-
-    template_file = get_template(template=space, **entities_to_use, suffix="T1w", desc=None)
-    if isinstance(template_file, list):
-        template_file = template_file[0]
-
-    template = str(template_file)
-    output_path = os.path.abspath(output_path)
-    plott.plot_stat_map(
-        filename,
-        bg_img=template,
-        display_mode="mosaic",
-        cut_coords=8,
-        colorbar=True,
-        output_file=output_path,
-    )
-    return output_path
-
-
 def surf_data_from_cifti(data, axis, surf_name):
     """From https://neurostars.org/t/separate-cifti-by-structure-in-python/17301/2.
 
     https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/\
     we-nibabel-markiewicz/NiBabel.ipynb
     """
-    assert isinstance(axis, nb.cifti2.BrainModelAxis)
-    for name, data_indices, model in axis.iter_structures():
-        # Iterates over volumetric and surface structures
-        if name == surf_name:  # Just looking for a surface
-            data = data.T[data_indices]
-            # Assume brainmodels axis is last, move it to front
-            vtx_indices = model.vertex
-            # Generally 1-N, except medial wall vertices
-            surf_data = np.zeros((vtx_indices.max() + 1,) + data.shape[1:], dtype=data.dtype)
-            surf_data[vtx_indices] = data
-            return surf_data
+    assert isinstance(axis, (nb.cifti2.BrainModelAxis, nb.cifti2.ParcelsAxis))
+    if isinstance(axis, nb.cifti2.BrainModelAxis):
+        for name, data_indices, model in axis.iter_structures():
+            # Iterates over volumetric and surface structures
+            if name == surf_name:  # Just looking for a surface
+                data = data.T[data_indices]
+                # Assume brainmodels axis is last, move it to front
+                vtx_indices = model.vertex
+                # Generally 1-N, except medial wall vertices
+                surf_data = np.zeros((vtx_indices.max() + 1,) + data.shape[1:], dtype=data.dtype)
+                surf_data[vtx_indices] = data
+                return surf_data
+    else:
+        if surf_name not in axis.nvertices:
+            raise ValueError(
+                f"No structure named {surf_name}.\n\n"
+                f"Available structures are {list(axis.name.keys())}"
+            )
+        nvertices = axis.nvertices[surf_name]
+        surf_data = np.zeros(nvertices)
+        for i_label in range(len(axis.name)):
+            element_dict = axis.get_element(i_label)[2]
+            if surf_name in element_dict:
+                element_idx = element_dict[surf_name]
+                surf_data[element_idx] = data[0, i_label]
+
+        return surf_data
 
     raise ValueError(f"No structure named {surf_name}")
-
-
-def plot_alff_reho_surface(output_path, filename, name_source):
-    """Plot ReHo and ALFF for ciftis on surface.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    output_path : :obj:`str`
-        path to save plot
-    filename : :obj:`str`
-        surface file
-    name_source : :obj:`str`
-        original input bold file
-
-    Returns
-    ----------
-    output_path : :obj:`str`
-        path to plot
-
-    """
-    import os
-
-    import matplotlib.pyplot as plt
-    import nibabel as nb
-    import numpy as np
-    from bids.layout import parse_file_entities
-    from nilearn import plotting as plott
-    from templateflow.api import get as get_template
-
-    from xcp_d.utils.plotting import surf_data_from_cifti
-
-    density = parse_file_entities(name_source).get("den", "32k")
-    if density == "91k":
-        density = "32k"
-    rh = str(
-        get_template(
-            template="fsLR", hemi="R", density="32k", suffix="midthickness", extension=".surf.gii"
-        )
-    )
-    lh = str(
-        get_template(
-            template="fsLR", hemi="L", density="32k", suffix="midthickness", extension=".surf.gii"
-        )
-    )
-
-    cifti = nb.load(filename)
-    cifti_data = cifti.get_fdata()
-    cifti_axes = [cifti.header.get_axis(i) for i in range(cifti.ndim)]
-
-    fig, axes = plt.subplots(figsize=(4, 4), ncols=2, nrows=2, subplot_kw={"projection": "3d"})
-    output_path = os.path.abspath(output_path)
-    lh_surf_data = surf_data_from_cifti(
-        cifti_data,
-        cifti_axes[1],
-        "CIFTI_STRUCTURE_CORTEX_LEFT",
-    )
-    rh_surf_data = surf_data_from_cifti(
-        cifti_data,
-        cifti_axes[1],
-        "CIFTI_STRUCTURE_CORTEX_RIGHT",
-    )
-
-    v_max = np.max([np.max(lh_surf_data), np.max(rh_surf_data)])
-    v_min = np.min([np.min(lh_surf_data), np.min(rh_surf_data)])
-
-    plott.plot_surf_stat_map(
-        lh,
-        lh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
-        hemi="left",
-        view="lateral",
-        engine="matplotlib",
-        colorbar=False,
-        axes=axes[0, 0],
-        figure=fig,
-    )
-    plott.plot_surf_stat_map(
-        lh,
-        lh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
-        hemi="left",
-        view="medial",
-        engine="matplotlib",
-        colorbar=False,
-        axes=axes[1, 0],
-        figure=fig,
-    )
-    plott.plot_surf_stat_map(
-        rh,
-        rh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
-        hemi="right",
-        view="lateral",
-        engine="matplotlib",
-        colorbar=False,
-        axes=axes[0, 1],
-        figure=fig,
-    )
-    plott.plot_surf_stat_map(
-        rh,
-        rh_surf_data,
-        v_min=v_min,
-        v_max=v_max,
-        hemi="right",
-        view="medial",
-        engine="matplotlib",
-        colorbar=False,
-        axes=axes[1, 1],
-        figure=fig,
-    )
-    axes[0, 0].set_title("Left Hemisphere", fontsize=10)
-    axes[0, 1].set_title("Right Hemisphere", fontsize=10)
-    fig.tight_layout()
-    fig.savefig(output_path)
-    plt.close(fig)
-    return output_path
 
 
 def plot_design_matrix(design_matrix, temporal_mask=None):

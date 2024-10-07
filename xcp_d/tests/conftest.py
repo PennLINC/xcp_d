@@ -1,6 +1,5 @@
 """Fixtures for the CircleCI tests."""
 
-import base64
 import os
 
 import pytest
@@ -60,13 +59,15 @@ def output_dir(request):
 def datasets(data_dir):
     """Locate downloaded datasets."""
     dsets = {}
-    dsets["ds001419"] = os.path.join(data_dir, "ds001419-fmriprep")
+    dsets["ds001419"] = os.path.join(data_dir, "ds001419", "ds001419")
+    dsets["ds001419-aroma"] = os.path.join(data_dir, "ds001419-aroma", "ds001419-aroma")
     dsets["pnc"] = os.path.join(data_dir, "pnc")
     dsets["nibabies"] = os.path.join(data_dir, "nibabies/derivatives/nibabies")
     dsets["fmriprep_without_freesurfer"] = os.path.join(
         data_dir,
         "fmriprepwithoutfreesurfer",
     )
+    dsets["schaefer100"] = os.path.join(data_dir, "schaefer100")
     return dsets
 
 
@@ -82,7 +83,7 @@ def ds001419_data(datasets):
     files = {}
     files["nifti_file"] = os.path.join(
         func_dir,
-        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz",
+        "sub-01_task-rest_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz",
     )
     files["cifti_file"] = os.path.join(
         func_dir,
@@ -94,7 +95,7 @@ def ds001419_data(datasets):
     )
     files["brain_mask_file"] = os.path.join(
         func_dir,
-        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz",
+        "sub-01_task-rest_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz",
     )
     files["confounds_file"] = os.path.join(
         func_dir,
@@ -106,23 +107,22 @@ def ds001419_data(datasets):
     )
     files["anat_to_template_xfm"] = os.path.join(
         anat_dir,
-        "sub-01_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        "sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
     )
     files["template_to_anat_xfm"] = os.path.join(
         anat_dir,
-        "sub-01_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
+        "sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
     )
     files["boldref"] = os.path.join(
         func_dir,
-        "sub-01_task-rest_space-MNI152NLin2009cAsym_res-2_boldref.nii.gz",
+        "sub-01_task-rest_space-MNI152NLin6Asym_res-2_boldref.nii.gz",
     )
     files["boldref_t1w"] = os.path.join(func_dir, "sub-01_task-rest_space-T1w_boldref.nii.gz")
     files["t1w"] = os.path.join(anat_dir, "sub-01_desc-preproc_T1w.nii.gz")
     files["t1w_mni"] = os.path.join(
         anat_dir,
-        "sub-01_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.nii.gz",
+        "sub-01_space-MNI152NLin6Asym_res-2_desc-preproc_T1w.nii.gz",
     )
-    files["anat_dseg"] = os.path.join(anat_dir, "sub-01_desc-aseg_dseg.nii.gz")
 
     return files
 
@@ -148,38 +148,43 @@ def pnc_data(datasets):
     )
     files["brain_mask_file"] = os.path.join(
         func_dir,
-        "sub-1648798153_task-rest_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz",
+        "sub-1648798153_ses-PNC1_task-rest_space-MNI152NLin6Asym_res-2_desc-brain_mask.nii.gz",
     )
     files["confounds_file"] = os.path.join(
         func_dir,
-        "sub-1648798153_task-rest_desc-confounds_timeseries.tsv",
+        "sub-1648798153_ses-PNC1_task-rest_desc-confounds_timeseries.tsv",
     )
     files["confounds_json"] = os.path.join(
         func_dir,
-        "sub-1648798153_task-rest_desc-confounds_timeseries.json",
+        "sub-1648798153_ses-PNC1_task-rest_desc-confounds_timeseries.json",
     )
     files["anat_to_template_xfm"] = os.path.join(
         anat_dir,
-        "sub-1648798153_from-T1w_to-MNI152NLin2009cAsym_mode-image_xfm.h5",
+        "sub-1648798153_ses-PNC1_acq-refaced_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5",
     )
     files["template_to_anat_xfm"] = os.path.join(
         anat_dir,
-        "sub-1648798153_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm.h5",
+        "sub-1648798153_ses-PNC1_acq-refaced_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5",
     )
     files["boldref"] = os.path.join(
         func_dir,
-        "sub-1648798153_task-rest_space-MNI152NLin2009cAsym_res-2_boldref.nii.gz",
+        "sub-1648798153_ses-PNC1_task-rest_space-MNI152NLin6Asym_res-2_boldref.nii.gz",
     )
-    files["boldref_t1w"] = os.path.join(
-        func_dir,
-        "sub-1648798153_task-rest_space-T1w_boldref.nii.gz",
+    files["anat_mask"] = os.path.join(
+        anat_dir,
+        "sub-1648798153_ses-PNC1_acq-refaced_desc-brain_mask.nii.gz",
     )
-    files["t1w"] = os.path.join(anat_dir, "sub-1648798153_desc-preproc_T1w.nii.gz")
+    files["t1w"] = os.path.join(
+        anat_dir,
+        "sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.nii.gz",
+    )
     files["t1w_mni"] = os.path.join(
         anat_dir,
-        "sub-1648798153_space-MNI152NLin2009cAsym_res-2_desc-preproc_T1w.nii.gz",
+        (
+            "sub-1648798153_ses-PNC1_acq-refaced_space-MNI152NLin6Asym_"
+            "res-2_desc-preproc_T1w.nii.gz"
+        ),
     )
-    files["anat_dseg"] = os.path.join(anat_dir, "sub-1648798153_desc-aseg_dseg.nii.gz")
 
     return files
 
@@ -211,16 +216,16 @@ def fmriprep_without_freesurfer_data(datasets):
     return files
 
 
-@pytest.fixture(scope="session", autouse=True)
-def fslicense(working_dir):
-    """Set the FreeSurfer license as an environment variable."""
-    FS_LICENSE = os.path.join(working_dir, "license.txt")
-    os.environ["FS_LICENSE"] = FS_LICENSE
-    LICENSE_CODE = (
-        "bWF0dGhldy5jaWVzbGFrQHBzeWNoLnVjc2IuZWR1CjIwNzA2CipDZmVWZEg1VVQ4clkKRlNCWVouVWtlVElDdwo="
-    )
-    with open(FS_LICENSE, "w") as f:
-        f.write(base64.b64decode(LICENSE_CODE).decode())
+# @pytest.fixture(scope="session", autouse=True)
+# def fslicense(working_dir):
+#     """Set the FreeSurfer license as an environment variable."""
+#     FS_LICENSE = os.path.join(working_dir, "license.txt")
+#     os.environ["FS_LICENSE"] = FS_LICENSE
+#     LICENSE_CODE = (
+#         "bWF0dGhldy5jaWVzbGFrQHBzeWNoLnVjc2IuZWR1CjIwNzA2CipDZmVWZEg1VVQ4clkKRlNCWVouVWtlVElDdwo="
+#     )
+#     with open(FS_LICENSE, "w") as f:
+#         f.write(base64.b64decode(LICENSE_CODE).decode())
 
 
 @pytest.fixture(scope="session")

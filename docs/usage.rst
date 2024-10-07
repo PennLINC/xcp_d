@@ -34,7 +34,7 @@ command-line structure, for example:
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <output_dir> --cifti --despike  --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d <fmriprep_dir> <output_dir> --file-format cifti --despike --head_radius 40 -w /wkdir --smoothing 6
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
@@ -51,6 +51,7 @@ Command-Line Arguments
 .. argparse::
    :ref: xcp_d.cli.parser._build_parser
    :prog: xcp_d
+   :func: _build_parser
 
    --band-stop-min : @after
       For the "notch" filter option, we recommend the following values.
@@ -138,6 +139,102 @@ Command-Line Arguments
                This file is only created if the input type is "fmriprep" or "nibabies".
 
 
+**************
+Minimal Inputs
+**************
+
+The minimal inputs required to run XCP-D are:
+
+-  A native-space preprocessed T1w or T2w image.
+-  A preprocessed BOLD image in MNI152NLin6Asym, MNI152NLin2009cAsym,
+   MNIInfant (nibabies derivatives), or fsLR (CIFTI processing) space.
+-  The functional brain mask and boldref image in the same space as the preprocessed BOLD data.
+-  The confounds associated with the BOLD image, along with the associated JSON file.
+-  The anatomical brain mask in the same space as the preprocessed BOLD data.
+-  The transform from the native anatomical space to the standard space the BOLD image is in,
+   and its inverse.
+
+Surface files, such as the pial and white matter GIFTI files,
+may be required depending on the settings you use.
+
+Below are an example lists of inputs.
+
+.. warning::
+
+   Please note that the filenames may differ based on the pipeline,
+   or even version of the pipeline, used for preprocessing.
+
+   The specific files required by XCP-D may also vary slightly depending on the settings you use.
+
+For NIfTI processing:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
+         sub-x_desc-preproc_T1w.json
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
+         sub-x_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-x_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+      func/
+         sub-x_task-rest_desc-confounds_timeseries.tsv
+         sub-x_task-rest_desc-confounds_timeseries.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.json
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-brain_mask.json
+
+For CIFTI processing:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         sub-x_desc-preproc_T1w.nii.gz  # Can be T1w or T2w. Note that this is native anatomical space.
+         sub-x_desc-preproc_T1w.json
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.nii.gz
+         sub-x_space-MNI152NLin6Asym_desc-brain_mask.json
+         sub-x_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.h5
+         sub-x_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.h5
+      func/
+         sub-x_task-rest_desc-confounds_timeseries.tsv
+         sub-x_task-rest_desc-confounds_timeseries.json
+         sub-x_task-rest_space-fsLR_den-91k_bold.dtseries.nii
+         sub-x_task-rest_space-fsLR_den-91k_bold.json
+         sub-x_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz  # Needed for QC figures
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.nii.gz
+         sub-x_task-rest_space-MNI152NLin6Asym_boldref.json
+
+Surface files:
+
+.. code-block::
+
+   dataset_description.json
+   sub-x/
+      anat/
+         # Mesh files in fsnative space, to be warped to fsLR space
+         sub-x_hemi-L_pial.surf.gii
+         sub-x_hemi-R_pial.surf.gii
+         sub-x_hemi-L_white.surf.gii
+         sub-x_hemi-R_white.surf.gii
+
+         # Sphere files for registration
+         sub-x_hemi-L_space-fsaverage_desc-reg_sphere.surf.gii
+         sub-x_hemi-R_space-fsaverage_desc-reg_sphere.surf.gii
+
+         # Morphometry files in fsLR space, to be parcellated
+         sub-x_hemi-L_space-fsLR_den-91k_curv.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_sulc.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_thickness.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_myelinw.dscalar.nii
+         sub-x_hemi-L_space-fsLR_den-91k_desc-smoothed_myelinw.dscalar.nii
+
 .. _filter_files:
 
 ***************************************
@@ -151,6 +248,7 @@ This argument must point to a JSON file, containing filters that will be fed int
 The keys in this JSON file are unique to XCP-D.
 They are our internal terms for different inputs that will be selected from the preprocessed
 dataset.
+The full list of keys can be found in the file ``xcp_d/data/io_spec.yaml``.
 
 ``"bold"`` determines which preprocessed BOLD files will be chosen.
 You can set a number of entities here, including "session", "task", "space", "resolution", and
@@ -165,11 +263,11 @@ We recommend NOT setting the datatype, suffix, or file extension in the filter f
 ``"t1w"`` selects a native T1w-space, preprocessed T1w file.
 
 ``"t2w"`` selects a native T1w-space, preprocessed T2w file.
+If a T1w file is not available, this file will be in T2w space.
 
-``"anat_dseg"`` selects a native T1w-space segmentation file.
-This file is primarily used for figures.
-
-``"anat_brainmask"`` selects a native T1w-space brain mask.
+``"anat_brainmask"`` selects an anatomically-derived brain mask in the same space as the BOLD data.
+This file is used (1) to estimate head radius for FD calculation (after warping to native space)
+and (2) to calculate coregistration quality metrics.
 
 ``"anat_to_template_xfm"`` selects a transform from T1w (or T2w, if no T1w image is available)
 space to standard space.
@@ -177,6 +275,13 @@ The standard space that will be used depends on the ``"bold"`` files that are se
 
 ``"template_to_anat_xfm"`` selects a transform from standard space to T1w/T2w space.
 Again, the standard space is determined based on other files.
+
+There are additional keys that control how mesh and morphometry files are selected.
+Please refer to ``io_spec.yaml`` for more information on them.
+
+``atlas`` selects atlases for parcellation.
+This is primarily useful for specifying spaces or resolutions.
+This field is not reflected in the ``io_spec.yaml`` file.
 
 
 Example bids-filter-file
@@ -195,11 +300,14 @@ In this example file, we only run XCP-D on resting-state preprocessed BOLD runs 
    }
 
 
+****************************
+Running XCP-D via containers
+****************************
+
 .. _run_docker:
 
-***********************************
-Running XCP-D via Docker containers
-***********************************
+Docker
+======
 
 If you are running XCP-D locally, we recommend Docker.
 See :ref:`installation_container_technologies` for installation instructions.
@@ -217,57 +325,46 @@ A Docker container can be created using the following command:
       -v /dset/derivatives/fmriprep:/fmriprep:ro \
       -v /tmp/wkdir:/work:rw \
       -v /dset/derivatives/xcp_d:/out:rw \
-      -v /dset/derivatives/freesurfer:/freesurfer:ro \  # Necessary for fMRIPrep versions <22.0.2
       pennlinc/xcp_d:latest \
       /fmriprep /out participant \
-      --cifti --despike --head_radius 40 -w /work --smoothing 6
+      --file-format cifti --despike --head_radius 40 -w /work --smoothing 6
 
+.. _run_apptainer:
 
-.. _run_singularity:
-
-****************************************
-Running XCP-D via Singularity containers
-****************************************
+Apptainer
+=========
 
 If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using
-Singularity.
+Apptainer.
 See :ref:`installation_container_technologies` for installation instructions.
-
-.. warning::
-
-   XCP-D (and perhaps other Docker-based Singularity images) may not work with
-   Singularity <=2.4.
-   We strongly recommend using Singularity 3+.
-   For more information, see `this xcp_d issue <https://github.com/PennLINC/xcp_d/issues/793>`_ and
-   `this Singularity issue <https://github.com/apptainer/singularity/issues/884>`_.
 
 If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run
 *xcp_d*.
 
 .. code-block:: bash
 
-    singularity run --cleanenv xcp_d.simg \
-        path/to/data/fmri_dir  \
-        path/to/output/dir \
+    apptainer run --cleanenv xcp_d.sif \
+        /dset/derivatives/fmriprep  \
+        /dset/derivatives/xcp_d \
         --participant-label label
 
 
 Relevant aspects of the ``$HOME`` directory within the container
 ================================================================
 
-By default, Singularity will bind the user's ``$HOME`` directory on the host
+By default, Apptainer will bind the user's ``$HOME`` directory on the host
 into the ``/home/$USER`` directory (or equivalent) in the container.
 Most of the time, it will also redefine the ``$HOME`` environment variable and
 update it to point to the corresponding mount point in ``/home/$USER``.
 However, these defaults can be overwritten in your system.
 It is recommended that you check your settings with your system's administrator.
-If your Singularity installation allows it, you can work around the ``$HOME``
+If your Apptainer installation allows it, you can work around the ``$HOME``
 specification, combining the bind mounts argument (``-B``) with the home overwrite
 argument (``--home``) as follows:
 
 .. code-block:: bash
 
-    singularity run -B $HOME:/home/xcp \
+    apptainer run -B $HOME:/home/xcp \
         --home /home/xcp \
         --cleanenv xcp_d.simg \
         <xcp_d arguments>
@@ -276,38 +373,39 @@ Therefore, once a user specifies the container options and the image to be run,
 the command line options are the same as the *bare-metal* installation.
 
 
-.. _usage_custom_confounds:
-
 ****************
 Custom Confounds
 ****************
 
-XCP-D can include custom confounds in its denoising.
-Here, you can supply your confounds, and optionally add these to a confound strategy already
-supported in XCP-D.
+If you would like to denoise your data with confounds that are not included in the built-in
+confound strategies, you can create your own.
+Please see :ref:`confound_config` for more info on the configuration file format.
 
-To add custom confounds to your workflow, use the ``--custom-confounds`` parameter,
-and provide a folder containing the custom confounds files for all of the subjects, sessions, and
-tasks you plan to post-process.
-
-The individual confounds files should be tab-delimited, with one column for each regressor,
-and one row for each volume in the data being denoised.
+If you have a set of custom confounds that you would like to use, you need to organize them into a
+BIDS dataset.
+The dataset should only require the actual confound files, preferably with associated sidecar
+JSONs, and a ``dataset_description.json`` file.
+Using the same filenames as the fMRIPrep confound files is an easy way to organize this dataset.
 
 
 Including Signal Regressors
 ===========================
 
+.. warning::
+   Signal regressors are not currently supported in combination with voxel-wise regressors.
+
+.. warning::
+   Please be careful when including signal regressors.
+   Most of the time this is probably a bad idea.
+   For example, if you run tedana, only noise components from tedana should be orthogonalized
+   with respect to signal components.
+   You wouldn't want to orthogonalize other noise signals (e.g., motion parameters) with respect
+   to the signal components from tedana.
+
 Let's say you have some nuisance regressors that are not necessarily orthogonal to some associated
 regressors that are ostensibly signal.
-For example, if you ran `tedana <https://tedana.readthedocs.io/en/stable/>`_ on multi-echo data,
-you would have a series of "rejected" (noise) and "accepted" (signal) ICA components.
-Because tedana uses a spatial ICA, these components' time series are not necessarily independent,
-and there can be shared variance between them.
-If you want to properly denoise your data using the noise components,
-you need to account for the variance they share with the signal components.
-
-XCP-D allows users to include the signal regressors in their custom confounds file,
-so that the noise regressors can be orthogonalized with respect to the signal regressors.
+For example, if you want to denoise your data while still retaining task signal,
+you could include the predicted task signals in your confounds.
 
 For more information about different types of denoising,
 see `tedana's documentation <https://tedana.readthedocs.io/en/latest/denoising.html>`_,
@@ -321,23 +419,18 @@ them without modification,
 you should include those regressors in your custom confounds file,
 with column names starting with ``signal__`` (lower-case "signal", followed by two underscores).
 
-.. important::
-
-   XCP-D will automatically orthogonalize noise regressors with respect to signal regressors
-   with any nuisance-regressor option that uses AROMA regressors (e.g., ``aroma`` or ``aroma_gsr``).
-
 
 Task Regression
 ===============
 
-If you want to regress task-related signals out of your data, you can use the custom confounds
-option to do it.
+If you want to regress task-related signals out of your data, you can use a custom confound
+configuration.
 
 Here we document how to include task effects as confounds.
 
 .. tip::
    The basic approach to task regression is to convolve your task regressors with an HRF,
-   then save those regressors to a custom confounds file.
+   then save those regressors to a confounds file.
 
 .. warning::
    This method is still under development.
@@ -349,13 +442,17 @@ plot_design_matrix.html#create-design-matrices>`_.
 
 .. code-block:: python
 
+   import json
+   import os
+
    import numpy as np
+   import pandas as pd
    from nilearn.glm.first_level import make_first_level_design_matrix
 
    N_VOLUMES = 200
    TR = 0.8
    frame_times = np.arange(N_VOLUMES) * TR
-   events_df = pd.read_table("sub-X_ses-Y_task-Z_run-01_events.tsv")
+   events_df = pd.read_table("sub-X_task-Z_events.tsv")
 
    task_confounds = make_first_level_design_matrix(
       frame_times,
@@ -368,74 +465,168 @@ plot_design_matrix.html#create-design-matrices>`_.
    # The design matrix will include a constant column, which we should drop
    task_confounds = task_confounds.drop(columns="constant")
 
+   # Prepare the derivative dataset
+   os.makedirs("/my/project/directory/custom_confounds/sub-X/func", exist_ok=True)
+   # Include a dataset_description.json file
+   with open("/my/project/directory/custom_confounds/dataset_description.json", "w") as fo:
+      json.dump(
+         {
+            "Name": "Custom Confounds",
+            "BIDSVersion": "1.6.0",
+            "DatasetType": "derivative"
+         },
+         fo,
+      )
+
    # Assuming that the fMRIPrep confounds file is named
-   # "sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+   # "sub-X_task-Z_desc-confounds_timeseries.tsv",
    # we will name the custom confounds file the same thing, in a separate folder.
    task_confounds.to_csv(
-      "/my/project/directory/custom_confounds/sub-X_ses-Y_task-Z_run-01_desc-confounds_timeseries.tsv",
+      "/my/project/directory/custom_confounds/sub-X/func/sub-X_task-Z_desc-confounds_timeseries.tsv",
       sep="\t",
       index=False,
    )
 
-Then, when you run XCP-D, you can use the flag
-``--custom_confounds /my/project/directory/custom_confounds``.
+Then, create a confounds config file to include derivatives from ``custom_confounds``.
+Something like this should work:
+
+.. code-block:: yaml
+
+   name: my_custom_confounds
+   description: |
+      Nuisance regressors were task regressors convolved with an HRF and motion parameters.
+   confounds:
+      motion:
+         dataset: preprocessed
+         query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+         columns:
+         - trans_x
+         - trans_y
+         - trans_z
+         - rot_x
+         - rot_y
+         - rot_z
+      task:
+         dataset: custom
+         query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+         columns:  # Assume the task regressors are called "condition1" and "condition2"
+         - condition1
+         - condition2
 
 
 Command Line XCP-D with Custom Confounds
 ========================================
 
-Last, supply the file to xcp_d with the ``--custom_confounds`` option.
-``--custom_confounds`` should point to the directory where this file exists, rather than to the
-file itself;
-XCP-D will identify the correct file based on the filename,
-which should match the name of the preprocessed BOLD data's associated confounds file.
-You can simultaneously perform additional confound regression by including,
-for example, ``--nuisance-regressors 36P`` in the call.
+Last, run XCP-D with your custom configuration file and the path to the custom derivatives dataset.
 
 .. code-block:: bash
 
-   singularity run --cleanenv -B /my/project/directory:/mnt xcpabcd_latest.simg \
+   apptainer run --cleanenv -B /my/project/directory:/mnt xcpd_latest.sif \
       /mnt/input/fmriprep \
       /mnt/output/directory \
       participant \
       --participant_label X \
-      --task-id Z \
-      --nuisance-regressors 36P \
-      --custom_confounds /mnt/custom_confounds
+      --datasets custom=/mnt/custom_confounds \
+      --nuisance-regressors /mnt/custom_config.yaml
 
 
-********************
-Custom Parcellations
-********************
+****************
+External Atlases
+****************
 
-While XCP-D comes with many built in parcellations, we understand that many users will want to use
-custom parcellations.
-If you use the ``-cifti`` option, you can use the Human Connectome Project's ``wb_command`` to
-generate the time series:
+While XCP-D comes with many built-in parcellations,
+we understand that many users will want to use different ones.
+
+As long as the parcellation is organized in a BIDS-Atlas dataset and is in
+fsLR-32k space (for CIFTI processing) or
+MNIInfant, MNI152NLin6Asym, or MNI152NLin2009cAsym space (for NIfTI processing),
+you can use it with XCP-D.
+
+.. warning::
+   BIDS Extension Proposal 38 (Atlas Specification) has not been integrated in BIDS yet,
+   so the organization and naming for atlas datasets may change in the future.
+
+   We have attempted to follow the proposed structure in XCP-D,
+   but we cannot guarantee that this will not change.
+
+.. tip::
+   The main elements from the BIDS-Atlas dataset that XCP-D uses are:
+
+   1. There must be a dataset_description.json file with DatasetType set to "atlas".
+   2. The atlas metadata files must have the same entities as the atlas image files,
+      as PyBIDS does not support the inheritance principle when querying BIDS-Atlas datasets (yet).
+   3. There must be a TSV file for the atlas, with "index" and "label" columns.
+
+To do this, use the ``--datasets`` and ``--atlases`` parameters.
+The ``--datasets`` parameter should point to the directory containing the BIDS-Atlas dataset,
+and the ``--atlases`` parameter should include the names of the atlases in the dataset to use.
+
+For example, consider a scenario where you have two BIDS-Atlas datasets, one containing all of the
+Schaefer 2018 resolutions and one containing the AAL atlas.
+These datasets are in ``/data/atlases/schaefer`` and ``/data/atlases/aal``, respectively.
+The file structure for these two datasets might look like this:
+
+.. code-block::
+
+   /data/atlases/
+      schaefer/
+         dataset_description.json
+         atlas-Schaefer100/
+            atlas-Schaefer100_dseg.tsv
+            atlas-Schaefer100_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer100_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer200/
+            atlas-Schaefer200_dseg.tsv
+            atlas-Schaefer200_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer200_space-fsLR_den-32k_dseg.json
+         ...
+         atlas-Schaefer1000/
+            atlas-Schaefer1000_dseg.tsv
+            atlas-Schaefer1000_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-Schaefer1000_space-fsLR_den-32k_dseg.json
+      aal/
+         dataset_description.json
+         atlas-AAL/
+            atlas-AAL_dseg.tsv
+            atlas-AAL_space-fsLR_den-32k_dseg.dlabel.nii
+            atlas-AAL_space-fsLR_den-32k_dseg.json
+
+You may want to only apply the Schaefer100 atlas from the ``schaefer`` dataset and the AAL atlas
+from the ``aal`` dataset, along with one of XCP-D's built-in atlases (``4S156Parcels``).
+Here's what the XCP-D call might look like:
 
 .. code-block:: bash
 
-   wb_command \
-      -cifti-parcellate \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_bold.dtseries.nii \
-      your_parcels.dlabel \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_timeseries.ptseries.nii
+   apptainer run --cleanenv -B /data:/data xcpd_latest.sif \
+      /data/dataset/derivatives/fmriprep \
+      /data/dataset/derivatives/xcp_d \
+      participant \
+      --mode linc \
+      --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
+      --atlases Schaefer100 AAL 4S156Parcels
 
-After this, if one wishes to have a connectivity matrix:
+XCP-D will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
+``schaefer``, ``aal``, and XCP-D's built-in atlas datasets.
+If the atlases are found, then they will be used for parcellation.
 
-.. code-block:: bash
+.. important::
 
-   wb_command \
-      -cifti-correlation \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_timeseries.ptseries.nii \
-      {SUB}_ses-{SESSION}_task-{TASK}_run-{RUN}_space-fsLR_den-91k_desc-residual_boldmap.pconn.nii
-
-More information can be found at the HCP
-`documentation <https://www.humanconnectome.org/software/workbench-command>`_.
-
-If you use the default NIFTI processing pipeline, you can use Nilearn's
-`NiftiLabelsMasker <https://nilearn.github.io/stable/auto_examples/06_manipulating_images/\
-plot_nifti_labels_simple.html#extracting-signals-from-brain-regions-using-the-niftilabelsmasker>`_
+   Atlas names must be unique across BIDS-Atlas datasets.
+   If two atlases have the same name, XCP-D will raise an error.
 
 
 *********************

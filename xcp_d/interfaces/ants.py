@@ -56,8 +56,8 @@ class ConvertTransformFile(CommandLine):
     output_spec = _ConvertTransformFileOutputSpec
 
 
-class _CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
-    """Input specification for CompositeInvTransformUtil."""
+class _CompositeTransformUtilInputSpec(ANTSCommandInputSpec):
+    """Input specification for CompositeTransformUtil."""
 
     process = traits.Enum(
         "assemble",
@@ -66,6 +66,11 @@ class _CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
         position=1,
         usedefault=True,
         desc="What to do with the transform inputs (assemble or disassemble)",
+    )
+    inverse = traits.Bool(
+        False,
+        usedefault=True,
+        desc="Whether to invert the order of the transform components. Not used by the command.",
     )
     out_file = File(
         exists=False,
@@ -89,15 +94,15 @@ class _CompositeInvTransformUtilInputSpec(ANTSCommandInputSpec):
     )
 
 
-class _CompositeInvTransformUtilOutputSpec(TraitedSpec):
-    """Output specification for CompositeInvTransformUtil."""
+class _CompositeTransformUtilOutputSpec(TraitedSpec):
+    """Output specification for CompositeTransformUtil."""
 
     affine_transform = File(desc="Affine transform component")
     displacement_field = File(desc="Displacement field component")
     out_file = File(desc="Compound transformation file")
 
 
-class CompositeInvTransformUtil(ANTSCommand):
+class CompositeTransformUtil(ANTSCommand):
     """Wrapper for the ANTS CompositeTransformUtil command.
 
     ANTs utility which can combine or break apart transform files into their individual
@@ -105,16 +110,16 @@ class CompositeInvTransformUtil(ANTSCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.ants import CompositeInvTransformUtil
-    >>> tran = CompositeInvTransformUtil()
+    >>> from nipype.interfaces.ants import CompositeTransformUtil
+    >>> tran = CompositeTransformUtil()
     >>> tran.inputs.process = 'disassemble'
     >>> tran.inputs.in_file = 'output_Composite.h5'
     >>> tran.cmdline
     'CompositeTransformUtil --disassemble output_Composite.h5 transform'
     >>> tran.run()  # doctest: +SKIP
     example for assembling transformation files
-    >>> from nipype.interfaces.ants import CompositeInvTransformUtil
-    >>> tran = CompositeInvTransformUtil()
+    >>> from nipype.interfaces.ants import CompositeTransformUtil
+    >>> tran = CompositeTransformUtil(inverse=False)
     >>> tran.inputs.process = 'assemble'
     >>> tran.inputs.out_file = 'my.h5'
     >>> tran.inputs.in_file = ['AffineTransform.mat', 'DisplacementFieldTransform.nii.gz']
@@ -125,13 +130,13 @@ class CompositeInvTransformUtil(ANTSCommand):
     """
 
     _cmd = "CompositeTransformUtil"
-    input_spec = _CompositeInvTransformUtilInputSpec
-    output_spec = _CompositeInvTransformUtilOutputSpec
+    input_spec = _CompositeTransformUtilInputSpec
+    output_spec = _CompositeTransformUtilOutputSpec
 
     def _num_threads_update(self):
         """Do not update the number of threads environment variable.
 
-        CompositeInvTransformUtil ignores environment variables,
+        CompositeTransformUtil ignores environment variables,
         so override environment update from ANTSCommand class.
         """
         pass
@@ -141,19 +146,31 @@ class CompositeInvTransformUtil(ANTSCommand):
             return ""
         if name == "out_file" and self.inputs.process == "disassemble":
             return ""
-        return super(CompositeInvTransformUtil, self)._format_arg(name, spec, value)
+        return super(CompositeTransformUtil, self)._format_arg(name, spec, value)
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
-        if self.inputs.process == "disassemble":
-            outputs["affine_transform"] = os.path.abspath(
-                f"01_{self.inputs.output_prefix}_AffineTransform.mat"
-            )
-            outputs["displacement_field"] = os.path.abspath(
-                f"00_{self.inputs.output_prefix}_DisplacementFieldTransform.nii.gz"
-            )
-        if self.inputs.process == "assemble":
-            outputs["out_file"] = os.path.abspath(self.inputs.out_file)
+        if self.inputs.inverse:
+            if self.inputs.process == "disassemble":
+                outputs["affine_transform"] = os.path.abspath(
+                    f"{self.inputs.output_prefix}_01_AffineTransform.mat"
+                )
+                outputs["displacement_field"] = os.path.abspath(
+                    f"{self.inputs.output_prefix}_00_DisplacementFieldTransform.nii.gz"
+                )
+            elif self.inputs.process == "assemble":
+                outputs["out_file"] = os.path.abspath(self.inputs.out_file)
+        else:
+            if self.inputs.process == "disassemble":
+                outputs["affine_transform"] = os.path.abspath(
+                    f"{self.inputs.output_prefix}_00_AffineTransform.mat"
+                )
+                outputs["displacement_field"] = os.path.abspath(
+                    f"{self.inputs.output_prefix}_01_DisplacementFieldTransform.nii.gz"
+                )
+            elif self.inputs.process == "assemble":
+                outputs["out_file"] = os.path.abspath(self.inputs.out_file)
+
         return outputs
 
 

@@ -6,7 +6,5 @@
     "[python]": {
         "editor.rulers": [99]
     },
-    "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true,
     "python.analysis.typeCheckingMode": "off",
 }

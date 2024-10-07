@@ -1,497 +1,185 @@
-"""Plotting workflows."""
+"""Workflows for generating plots from imaging data."""
 
-from nipype import Function
+from nipype.interfaces import fsl
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from templateflow.api import get as get_template
 
 from xcp_d import config
-from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.plotting import QCPlots, QCPlotsES
-from xcp_d.interfaces.report import FunctionalSummary
+from xcp_d.interfaces.execsummary import FormatForBrainSwipes
+from xcp_d.interfaces.nilearn import BinaryMath
+from xcp_d.interfaces.plotting import PNGAppend
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.qcmetrics import make_dcan_qc_file
-from xcp_d.utils.utils import get_bold2std_and_t1w_xfms, get_std2bold_xfms
+
+
+def init_plot_overlay_wf(desc, name="plot_overlay_wf"):
+    """Use the default slices from slicesdir to make a plot."""
+    from xcp_d.interfaces.plotting import SlicesDir
+
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "underlay_file",
+                "overlay_file",
+                "name_source",
+            ],
+        ),
+        name="inputnode",
+    )
+
+    plot_overlay_figure = pe.Node(
+        SlicesDir(out_extension=".png"),
+        name="plot_overlay_figure",
+        mem_gb=1,
+    )
+
+    workflow.connect([
+        (inputnode, plot_overlay_figure, [
+            ("underlay_file", "in_files"),
+            ("overlay_file", "outline_image"),
+        ]),
+    ])  # fmt:skip
+
+    ds_report_overlay = pe.Node(
+        DerivativesDataSink(
+            dismiss_entities=["den"],
+            desc=desc,
+            extension=".png",
+        ),
+        name="ds_report_overlay",
+        run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+    )
+
+    workflow.connect([
+        (inputnode, ds_report_overlay, [("name_source", "source_file")]),
+        (plot_overlay_figure, ds_report_overlay, [("out_files", "in_file")]),
+    ])  # fmt:skip
+
+    reformat_for_brain_swipes = pe.Node(FormatForBrainSwipes(), name="reformat_for_brain_swipes")
+    workflow.connect([
+        (plot_overlay_figure, reformat_for_brain_swipes, [("slicewise_files", "in_files")]),
+    ])  # fmt:skip
+
+    ds_report_reformatted_figure = pe.Node(
+        DerivativesDataSink(
+            dismiss_entities=["den"],
+            desc=f"{desc}BrainSwipes",
+            extension=".png",
+        ),
+        name="ds_report_reformatted_figure",
+        run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+    )
+
+    workflow.connect([
+        (inputnode, ds_report_reformatted_figure, [("name_source", "source_file")]),
+        (reformat_for_brain_swipes, ds_report_reformatted_figure, [("out_file", "in_file")]),
+    ])  # fmt:skip
+
+    return workflow
 
 
 @fill_doc
-def init_qc_report_wf(
-    TR,
-    head_radius,
-    name="qc_report_wf",
+def init_plot_custom_slices_wf(
+    desc,
+    name="plot_custom_slices_wf",
 ):
-    """Generate quality control figures and a QC file.
+    """Plot a custom selection of slices with Slicer.
+
+    This workflow is used to produce subcortical registration plots specifically for
+    infant data.
 
     Workflow Graph
         .. workflow::
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
-            from xcp_d import config
-            from xcp_d.workflows.plotting import init_qc_report_wf
+            from xcp_d.workflows.execsummary import init_plot_custom_slices_wf
 
-            with mock_config():
-                wf = init_qc_report_wf(
-                    TR=0.5,
-                    head_radius=50,
-                    name="qc_report_wf",
-                )
+            wf = init_plot_custom_slices_wf(
+                desc="AtlasOnSubcorticals",
+                name="plot_custom_slices_wf",
+            )
 
     Parameters
     ----------
-    %(TR)s
-    %(head_radius)s
+    %(output_dir)s
+    desc : :obj:`str`
+        String to be used as ``desc`` entity in output filename.
     %(name)s
-        Default is "qc_report_wf".
+        Default is "plot_custom_slices_wf".
 
     Inputs
     ------
-    %(name_source)s
-    preprocessed_bold
-        The preprocessed BOLD file, after dummy scan removal.
-        Used for carpet plots.
-    %(denoised_interpolated_bold)s
-        Used for DCAN carpet plots.
-        Only used if dcan_qc is True.
-    %(censored_denoised_bold)s
-        Used for LINC carpet plots.
-    %(boldref)s
-        Only used with non-CIFTI data.
-    bold_mask
-        Only used with non-CIFTI data.
-    anat_brainmask
-        Only used with non-CIFTI data.
-    %(template_to_anat_xfm)s
-        Only used with non-CIFTI data.
-    %(dummy_scans)s
-    %(fmriprep_confounds_file)s
-    %(temporal_mask)s
-    %(filtered_motion)s
-
-    Outputs
-    -------
-    qc_file
+    underlay_file
+    overlay_file
+    name_source
     """
-    workflow = Workflow(name=name)
+    # NOTE: These slices are almost certainly specific to a given MNI template and resolution.
+    SINGLE_SLICES = ["x", "x", "x", "y", "y", "y", "z", "z", "z"]
+    SLICE_NUMBERS = [36, 45, 52, 43, 54, 65, 23, 33, 39]
 
-    output_dir = config.execution.xcp_d_dir
-    params = config.workflow.params
-    cifti = config.workflow.cifti
-    dcan_qc = config.workflow.dcan_qc
-    omp_nthreads = config.nipype.omp_nthreads
+    workflow = Workflow(name=name)
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
+                "underlay_file",
+                "overlay_file",
                 "name_source",
-                "preprocessed_bold",
-                "denoised_interpolated_bold",
-                "censored_denoised_bold",
-                "dummy_scans",
-                "fmriprep_confounds_file",
-                "filtered_motion",
-                "temporal_mask",
-                "run_index",  # will only be set for concatenated data
-                # nifti-only inputs
-                "bold_mask",
-                "anat_brainmask",
-                "boldref",
-                "template_to_anat_xfm",
             ],
         ),
         name="inputnode",
     )
 
-    outputnode = pe.Node(
-        niu.IdentityInterface(
-            fields=[
-                "qc_file",
-            ],
-        ),
-        name="outputnode",
+    # slices/slicer does not do well trying to make the red outline when it
+    # cannot find the edges, so cannot use the ROI files with some low intensities.
+    binarize_edges = pe.Node(
+        BinaryMath(expression="img.astype(bool).astype(int)"),
+        name="binarize_edges",
+        mem_gb=1,
     )
 
-    nlin2009casym_brain_mask = str(
-        get_template(
-            "MNI152NLin2009cAsym",
-            resolution=2,
-            desc="brain",
-            suffix="mask",
-            extension=[".nii", ".nii.gz"],
-        )
+    workflow.connect([(inputnode, binarize_edges, [("overlay_file", "in_file")])])
+
+    make_image = pe.MapNode(
+        fsl.Slicer(show_orientation=True, label_slices=True),
+        name="make_image",
+        iterfield=["single_slice", "slice_number"],
+        mem_gb=1,
     )
-
-    if not cifti:
-        # We need the BOLD mask in T1w and standard spaces for QC metric calculation.
-        # This is only possible for nifti inputs.
-        get_native2space_transforms = pe.Node(
-            Function(
-                input_names=["bold_file", "template_to_anat_xfm"],
-                output_names=[
-                    "bold_to_std_xfms",
-                    "bold_to_std_xfms_invert",
-                    "bold_to_t1w_xfms",
-                    "bold_to_t1w_xfms_invert",
-                ],
-                function=get_bold2std_and_t1w_xfms,
-            ),
-            name="get_native2space_transforms",
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, get_native2space_transforms, [
-                ("name_source", "bold_file"),
-                ("template_to_anat_xfm", "template_to_anat_xfm"),
-            ]),
-        ])
-        # fmt:on
-
-        warp_boldmask_to_t1w = pe.Node(
-            ApplyTransforms(
-                dimension=3,
-                interpolation="NearestNeighbor",
-            ),
-            name="warp_boldmask_to_t1w",
-            n_procs=omp_nthreads,
-            mem_gb=1,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, warp_boldmask_to_t1w, [
-                ("bold_mask", "input_image"),
-                ("anat_brainmask", "reference_image"),
-            ]),
-            (get_native2space_transforms, warp_boldmask_to_t1w, [
-                ("bold_to_t1w_xfms", "transforms"),
-                ("bold_to_t1w_xfms_invert", "invert_transform_flags"),
-            ]),
-        ])
-        # fmt:on
-
-        warp_boldmask_to_mni = pe.Node(
-            ApplyTransforms(
-                dimension=3,
-                reference_image=nlin2009casym_brain_mask,
-                interpolation="NearestNeighbor",
-            ),
-            name="warp_boldmask_to_mni",
-            n_procs=omp_nthreads,
-            mem_gb=1,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, warp_boldmask_to_mni, [("bold_mask", "input_image")]),
-            (get_native2space_transforms, warp_boldmask_to_mni, [
-                ("bold_to_std_xfms", "transforms"),
-                ("bold_to_std_xfms_invert", "invert_transform_flags"),
-            ]),
-        ])
-        # fmt:on
-
-        # NIFTI files require a tissue-type segmentation in the same space as the BOLD data.
-        # Get the set of transforms from MNI152NLin6Asym (the dseg) to the BOLD space.
-        # Given that xcp-d doesn't process native-space data, this transform will never be used.
-        get_mni_to_bold_xfms = pe.Node(
-            Function(
-                input_names=["bold_file"],
-                output_names=["transform_list"],
-                function=get_std2bold_xfms,
-            ),
-            name="get_std2native_transform",
-        )
-
-        workflow.connect([(inputnode, get_mni_to_bold_xfms, [("name_source", "bold_file")])])
-
-        # Use MNI152NLin2009cAsym tissue-type segmentation file for carpet plots.
-        dseg_file = str(
-            get_template(
-                "MNI152NLin2009cAsym",
-                resolution=1,
-                desc="carpet",
-                suffix="dseg",
-                extension=[".nii", ".nii.gz"],
-            )
-        )
-
-        # Get MNI152NLin2009cAsym --> MNI152NLin6Asym xform.
-        MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
-            get_template(
-                template="MNI152NLin6Asym",
-                mode="image",
-                suffix="xfm",
-                extension=".h5",
-                **{"from": "MNI152NLin2009cAsym"},
-            ),
-        )
-
-        # Add the MNI152NLin2009cAsym --> MNI152NLin6Asym xform to the end of the
-        # BOLD --> MNI152NLin6Asym xform list, because xforms are applied in reverse order.
-        add_xfm_to_nlin6asym = pe.Node(
-            niu.Merge(2),
-            name="add_xfm_to_nlin6asym",
-        )
-        add_xfm_to_nlin6asym.inputs.in2 = MNI152NLin2009cAsym_to_MNI152NLin6Asym
-
-        # fmt:off
-        workflow.connect([
-            (get_mni_to_bold_xfms, add_xfm_to_nlin6asym, [("transform_list", "in1")]),
-        ])
-        # fmt:on
-
-        # Transform MNI152NLin2009cAsym dseg file to the same space as the BOLD data.
-        warp_dseg_to_bold = pe.Node(
-            ApplyTransforms(
-                dimension=3,
-                input_image=dseg_file,
-                interpolation="GenericLabel",
-            ),
-            name="warp_dseg_to_bold",
-            n_procs=omp_nthreads,
-            mem_gb=3,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, warp_dseg_to_bold, [("boldref", "reference_image")]),
-            (add_xfm_to_nlin6asym, warp_dseg_to_bold, [("out", "transforms")]),
-        ])
-        # fmt:on
-
-    qc_report = pe.Node(
-        QCPlots(
-            TR=TR,
-            head_radius=head_radius,
-            template_mask=nlin2009casym_brain_mask,
-        ),
-        name="qc_report",
-        mem_gb=2,
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
+    make_image.inputs.single_slice = SINGLE_SLICES
+    make_image.inputs.slice_number = SLICE_NUMBERS
     workflow.connect([
-        (inputnode, qc_report, [
-            ("name_source", "name_source"),
-            ("preprocessed_bold", "bold_file"),
-            ("censored_denoised_bold", "cleaned_file"),
-            ("fmriprep_confounds_file", "fmriprep_confounds_file"),
-            ("temporal_mask", "temporal_mask"),
-            ("dummy_scans", "dummy_scans"),
-        ]),
-        (qc_report, outputnode, [("qc_file", "qc_file")]),
-    ])
-    # fmt:on
+        (inputnode, make_image, [("underlay_file", "in_file")]),
+        (binarize_edges, make_image, [("out_file", "image_edges")]),
+    ])  # fmt:skip
 
-    ds_qc_metadata = pe.Node(
+    combine_images = pe.Node(
+        PNGAppend(out_file="out.png"),
+        name="combine_images",
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+    )
+
+    workflow.connect([(make_image, combine_images, [("out_file", "in_files")])])
+
+    ds_report_overlay = pe.Node(
         DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=list(DerivativesDataSink._allowed_entities),
-            allowed_entities=["desc"],
-            desc="linc",
-            suffix="qc",
-            extension=".json",
-        ),
-        name="ds_qc_metadata",
-        run_without_submitting=True,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_qc_metadata, [("name_source", "source_file")]),
-        (qc_report, ds_qc_metadata, [("qc_metadata", "in_file")]),
-    ])
-    # fmt:on
-
-    if dcan_qc:
-        make_dcan_qc_file_node = pe.Node(
-            Function(
-                input_names=["filtered_motion", "TR"],
-                output_names=["dcan_df_file"],
-                function=make_dcan_qc_file,
-            ),
-            name="make_dcan_qc_file_node",
-        )
-        make_dcan_qc_file_node.inputs.TR = TR
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, make_dcan_qc_file_node, [("filtered_motion", "filtered_motion")]),
-        ])
-        # fmt:on
-
-        ds_dcan_qc = pe.Node(
-            DerivativesDataSink(
-                base_directory=output_dir,
-                datatype="func",
-                desc="dcan",
-                suffix="qc",
-                extension="hdf5",
-            ),
-            name="ds_dcan_qc",
-            run_without_submitting=True,
-        )
-
-        # fmt:off
-        workflow.connect([
-            (inputnode, ds_dcan_qc, [("name_source", "source_file")]),
-            (make_dcan_qc_file_node, ds_dcan_qc, [("dcan_df_file", "in_file")]),
-        ])
-        # fmt:on
-
-    # Generate preprocessing and postprocessing carpet plots.
-    plot_execsummary_carpets_dcan = pe.Node(
-        QCPlotsES(TR=TR, standardize=params == "none"),
-        name="plot_execsummary_carpets_dcan",
-        mem_gb=2,
-        n_procs=omp_nthreads,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, plot_execsummary_carpets_dcan, [
-            ("preprocessed_bold", "preprocessed_bold"),
-            ("denoised_interpolated_bold", "denoised_interpolated_bold"),
-            ("filtered_motion", "filtered_motion"),
-            ("temporal_mask", "temporal_mask"),
-            ("run_index", "run_index"),
-        ]),
-    ])
-    # fmt:on
-
-    if not cifti:
-        # fmt:off
-        workflow.connect([
-            (inputnode, plot_execsummary_carpets_dcan, [("bold_mask", "mask")]),
-            (warp_dseg_to_bold, plot_execsummary_carpets_dcan, [
-                ("output_image", "seg_data"),
-            ]),
-        ])
-        # fmt:on
-
-    ds_preproc_execsummary_carpet_dcan = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
             dismiss_entities=["den"],
-            datatype="figures",
-            desc="preprocESQC",
+            desc=desc,
+            extension=".png",
         ),
-        name="ds_preproc_execsummary_carpet_dcan",
+        name="ds_report_overlay",
         run_without_submitting=True,
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
-
-    # fmt:off
     workflow.connect([
-        (inputnode, ds_preproc_execsummary_carpet_dcan, [("name_source", "source_file")]),
-        (plot_execsummary_carpets_dcan, ds_preproc_execsummary_carpet_dcan, [
-            ("before_process", "in_file"),
-        ]),
-    ])
-    # fmt:on
-
-    ds_postproc_execsummary_carpet_dcan = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            dismiss_entities=["den"],
-            datatype="figures",
-            desc="postprocESQC",
-        ),
-        name="ds_postproc_execsummary_carpet_dcan",
-        run_without_submitting=True,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_postproc_execsummary_carpet_dcan, [("name_source", "source_file")]),
-        (plot_execsummary_carpets_dcan, ds_postproc_execsummary_carpet_dcan, [
-            ("after_process", "in_file"),
-        ]),
-    ])
-    # fmt:on
-
-    if not cifti:
-        # fmt:off
-        workflow.connect([
-            (inputnode, qc_report, [
-                ("anat_brainmask", "anat_brainmask"),
-                ("bold_mask", "mask_file"),
-            ]),
-            (warp_dseg_to_bold, qc_report, [("output_image", "seg_file")]),
-            (warp_boldmask_to_t1w, qc_report, [("output_image", "bold2T1w_mask")]),
-            (warp_boldmask_to_mni, qc_report, [("output_image", "bold2temp_mask")]),
-        ])
-        # fmt:on
-    else:
-        qc_report.inputs.mask_file = None
-
-    functional_qc = pe.Node(
-        FunctionalSummary(TR=TR),
-        name="qcsummary",
-        run_without_submitting=False,
-        mem_gb=2,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, functional_qc, [("name_source", "bold_file")]),
-        (qc_report, functional_qc, [("qc_file", "qc_file")]),
-    ])
-    # fmt:on
-
-    ds_report_qualitycontrol = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="qualitycontrol",
-            datatype="figures",
-        ),
-        name="ds_report_qualitycontrol",
-        run_without_submitting=False,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_report_qualitycontrol, [("name_source", "source_file")]),
-        (functional_qc, ds_report_qualitycontrol, [("out_report", "in_file")]),
-    ])
-    # fmt:on
-
-    ds_report_preprocessing = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="preprocessing",
-            datatype="figures",
-        ),
-        name="ds_report_preprocessing",
-        run_without_submitting=False,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_report_preprocessing, [("name_source", "source_file")]),
-        (qc_report, ds_report_preprocessing, [("raw_qcplot", "in_file")]),
-    ])
-    # fmt:on
-
-    ds_report_postprocessing = pe.Node(
-        DerivativesDataSink(
-            base_directory=output_dir,
-            desc="postprocessing",
-            datatype="figures",
-        ),
-        name="ds_report_postprocessing",
-        run_without_submitting=False,
-    )
-
-    # fmt:off
-    workflow.connect([
-        (inputnode, ds_report_postprocessing, [("name_source", "source_file")]),
-        (qc_report, ds_report_postprocessing, [("clean_qcplot", "in_file")]),
-    ])
-    # fmt:on
+        (inputnode, ds_report_overlay, [("name_source", "source_file")]),
+        (combine_images, ds_report_overlay, [("out_file", "in_file")]),
+    ])  # fmt:skip
 
     return workflow

@@ -101,7 +101,19 @@ def mesh_adjacency(hemi):
     return adjacency_matrix
 
 
-def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
+def compute_alff_chunk(args):
+    """Compute ALFF on a chunk of data."""
+    thread_data, low_pass, high_pass, TR, sample_mask = args
+    return compute_alff(
+        data_matrix=thread_data,
+        low_pass=low_pass,
+        high_pass=high_pass,
+        TR=TR,
+        sample_mask=sample_mask,
+    )
+
+
+def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
     """Compute amplitude of low-frequency fluctuation (ALFF).
 
     Parameters
@@ -138,10 +150,6 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
     fs = 1 / TR  # sampling frequency
     n_voxels, n_volumes = data_matrix.shape
 
-    if sample_mask is not None:
-        sample_mask = sample_mask.astype(bool)
-        assert sample_mask.size == n_volumes, f"{sample_mask.size} != {n_volumes}"
-
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
@@ -162,7 +170,7 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
             voxel_data_censored -= np.mean(voxel_data_censored)
             voxel_data_censored /= np.std(voxel_data_censored)
 
-            time_arr = np.arange(0, n_volumes * TR, TR)
+            time_arr = np.arange(n_volumes) * TR
             assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
             time_arr = time_arr[sample_mask]
             frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
@@ -186,6 +194,14 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         # square root of power spectrum
         power_spectrum_sqrt = np.sqrt(power_spectrum)
         # get the position of the arguments closest to high_pass and low_pass, respectively
+        if high_pass == 0:
+            # If high_pass is 0, then we set it to the minimum frequency
+            high_pass = frequencies_hz[0]
+
+        if low_pass == 0:
+            # If low_pass is 0, then we set it to the maximum frequency
+            low_pass = frequencies_hz[-1]
+
         ff_alff = [
             np.argmin(np.abs(frequencies_hz - high_pass)),
             np.argmin(np.abs(frequencies_hz - low_pass)),
@@ -198,8 +214,4 @@ def compute_alff(data_matrix, low_pass, high_pass, TR, sample_mask=None):
         alff[i_voxel] *= sd_scale
 
     assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
-
-    # Add second dimension to array
-    alff = alff[:, None]
-
     return alff
