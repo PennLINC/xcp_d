@@ -580,54 +580,54 @@ Finally, there is the ``query`` field in each confound set.
 This defines the BIDS entities that will be used to find the confounds file associated with the
 preprocessed BOLD file that is being post-processed by XCP-D.
 
-```yaml
-name: aroma_gsr
-description: |
-   Nuisance regressors were selected according to the 'aroma_gsr' strategy.
-   AROMA motion-labeled components [@pruim2015ica], mean white matter signal,
-   mean cerebrospinal fluid signal, and mean global signal were selected as
-   nuisance regressors [@benchmarkp;@satterthwaite_2013].
-confounds:
-   preproc_confounds:
-      dataset: preprocessed
-      query:
-         space: null
-         cohort: null
-         res: null
-         den: null
-         desc: confounds
-         extension: .tsv
-         suffix: timeseries
-      columns:
-      - global_signal
-      - csf
-      - white_matter
-   aroma_confounds:
-      dataset: aroma
-      query:
-         space: null
-         cohort: null
-         res: null
-         den: null
-         desc: aroma
-         extension: .tsv
-         suffix: timeseries
-      columns:
-      - ^aroma_orth_motion_.*$
-```
+.. code-block:: yaml
+
+   name: aroma_gsr
+   description: |
+      Nuisance regressors were selected according to the 'aroma_gsr' strategy.
+      AROMA motion-labeled components [@pruim2015ica], mean white matter signal,
+      mean cerebrospinal fluid signal, and mean global signal were selected as
+      nuisance regressors [@benchmarkp;@satterthwaite_2013].
+   confounds:
+      preproc_confounds:
+         dataset: preprocessed
+         query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: confounds
+            extension: .tsv
+            suffix: timeseries
+         columns:
+         - global_signal
+         - csf
+         - white_matter
+      aroma_confounds:
+         dataset: aroma
+         query:
+            space: null
+            cohort: null
+            res: null
+            den: null
+            desc: aroma
+            extension: .tsv
+            suffix: timeseries
+         columns:
+         - ^aroma_orth_motion_.*$
 
 In addition to TSV-based confound files, XCP-D also supports the use of voxel-wise confound files.
 Take this partial example:
 
-```yaml
-confounds:
-    rapidtide_slfo:
-        dataset: rapidtide
-        query:
-            desc: LFO
-            extension: .nii.gz
-            suffix: timeseries
-```
+.. code-block:: yaml
+
+   confounds:
+      rapidtide_slfo:
+         dataset: rapidtide
+         query:
+               desc: LFO
+               extension: .nii.gz
+               suffix: timeseries
 
 Note in this case that the confounds definition includes a query section, but not a columns section.
 This is because this query will return a 4D NIfTI file, rather than a TSV file.
