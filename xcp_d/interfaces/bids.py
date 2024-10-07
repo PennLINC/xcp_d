@@ -296,6 +296,7 @@ class CopyAtlas(SimpleInterface):
         if meta_dict or Sources:
             meta_file = os.path.join(atlas_out_dir, f"{out_basename}.json")
             meta_dict = meta_dict or {}
+            meta_dict = meta_dict.copy()
             if Sources:
                 meta_dict["Sources"] = meta_dict.get("Sources", []) + Sources
 
