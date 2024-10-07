@@ -214,6 +214,8 @@ def init_postproc_derivatives_wf(
                 + (1 if fd_thresh > 0 else 0)
                 + (1 if config.execution.confounds_config != "none" else 0)
             ),
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(output_dir),
         ),
         name="merge_dense_src",
         run_without_submitting=True,
