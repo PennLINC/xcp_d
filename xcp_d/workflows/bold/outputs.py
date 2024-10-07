@@ -158,7 +158,7 @@ def init_postproc_derivatives_wf(
         ),
         name="confounds",
     )
-    workflow.connect([(inputnode, confound_sources, [("fmriprep_confounds_file", "in1")])])
+    workflow.connect([(inputnode, confound_sources, [("preproc_confounds_file", "in1")])])
 
     # Create dictionary of basic information
     cleaned_data_dictionary = {
