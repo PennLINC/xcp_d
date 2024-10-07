@@ -588,6 +588,8 @@ def get_transform(*, censored_time, arr, uncensored_time, oversampling_factor, T
     ----------
     .. footbibliography::
     """
+    import warnings
+
     import numpy as np
 
     assert arr.ndim == 1
@@ -655,7 +657,12 @@ def get_transform(*, censored_time, arr, uncensored_time, oversampling_factor, T
     # Normalize the reconstructed spectrum, needed when oversampling_factor > 1
     Std_H = np.std(reconstructed_arr, axis=0)
     Std_h = np.std(arr, axis=0)
-    norm_fac = Std_H / Std_h
+    with warnings.filterwarnings("error") as w:
+        try:
+            norm_fac = Std_H / Std_h
+        except RuntimeWarning:
+            raise ValueError(arr)
+
     reconstructed_arr = reconstructed_arr / norm_fac[None, :]
 
     return reconstructed_arr
