@@ -261,9 +261,9 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
     )
     TR = traits.Float(mandatory=True, desc="Repetition time")
     bandpass_filter = traits.Bool(mandatory=True, desc="To apply bandpass or not")
-    low_pass = traits.Float(mandatory=True, default_value=0.10, desc="Lowpass filter in Hz")
-    high_pass = traits.Float(mandatory=True, default_value=0.01, desc="Highpass filter in Hz")
-    filter_order = traits.Int(mandatory=True, default_value=2, desc="Filter order")
+    low_pass = traits.Float(mandatory=True, desc="Lowpass filter in Hz")
+    high_pass = traits.Float(mandatory=True, desc="Highpass filter in Hz")
+    filter_order = traits.Int(mandatory=True, desc="Filter order")
 
 
 class _DenoiseImageOutputSpec(TraitedSpec):

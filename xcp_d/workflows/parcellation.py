@@ -201,18 +201,6 @@ The following atlases were used in the workflow: {atlas_str}.
         (copy_atlas, outputnode, [("out_file", "atlas_files")]),
     ])  # fmt:skip
 
-    atlas_labels_srcs = pe.MapNode(
-        BIDSURI(
-            numinputs=1,
-            dataset_links=config.execution.dataset_links,
-            out_dir=str(output_dir),
-        ),
-        name="atlas_labels_srcs",
-        iterfield=["in1"],
-        run_without_submitting=True,
-    )
-    workflow.connect([(inputnode, atlas_labels_srcs, [("atlas_labels_files", "in1")])])
-
     copy_atlas_labels_file = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
         name="copy_atlas_labels_file",
@@ -225,7 +213,6 @@ The following atlases were used in the workflow: {atlas_str}.
             ("atlas_names", "atlas"),
             ("atlas_labels_files", "in_file"),
         ]),
-        (atlas_labels_srcs, copy_atlas_labels_file, [("out", "Sources")]),
         (copy_atlas_labels_file, outputnode, [("out_file", "atlas_labels_files")]),
     ])  # fmt:skip
 

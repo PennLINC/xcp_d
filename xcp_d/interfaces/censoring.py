@@ -404,11 +404,12 @@ class RandomCensor(SimpleInterface):
 class _ProcessMotionInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     fd_thresh = traits.Float(
+        0.3,
         mandatory=False,
-        default_value=0.3,
+        usedefault=True,
         desc="Framewise displacement threshold. All values above this will be dropped.",
     )
-    head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
+    head_radius = traits.Float(50, mandatory=False, usedefault=True, desc="Head radius in mm")
     motion_file = File(
         exists=True,
         mandatory=True,
@@ -509,9 +510,9 @@ class ProcessMotion(SimpleInterface):
 
         # Compile motion metadata from confounds metadata, adding in filtering info
         # First drop any columns that are not motion parameters
-        orig_motion_df = pd.read_table(self.inputs.motion_file)
-        orig_motion_cols = orig_motion_df.columns.tolist()
-        cols_to_drop = sorted(list(set(orig_motion_cols) - set(motion_df.columns.tolist())))
+        orig_cols = list(motion_metadata.keys())
+        orig_cols = [c for c in orig_cols if c[0] == c[0].lower()]
+        cols_to_drop = sorted(list(set(orig_cols) - set(motion_df.columns.tolist())))
         motion_metadata = {k: v for k, v in motion_metadata.items() if k not in cols_to_drop}
         for col in motion_df.columns.tolist():
             col_metadata = motion_metadata.get(col, {})
