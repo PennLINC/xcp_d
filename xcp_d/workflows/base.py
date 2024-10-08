@@ -485,7 +485,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ]),
             ])  # fmt:skip
 
-            if config.workflow.process_surfaces or (config.workflow.abcc_qc and mesh_available):
+            if (config.workflow.file_format == "cifti") and (
+                config.workflow.process_surfaces or (config.workflow.abcc_qc and mesh_available)
+            ):
                 workflow.connect([
                     (postprocess_surfaces_wf, postprocess_bold_wf, [
                         ("outputnode.lh_midthickness", "inputnode.lh_midthickness"),
