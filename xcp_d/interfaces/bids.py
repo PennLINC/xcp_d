@@ -352,11 +352,10 @@ class BIDSURI(SimpleInterface):
         uris = _get_bidsuris(inputs, self.inputs.dataset_links, self.inputs.out_dir)
         self._results["out"] = uris
 
-        metadata = {}
-        if isdefined(self.inputs.metadata):
-            metadata = self.inputs.metadata
-            metadata[self.inputs.field] = metadata.get(self.inputs.field, []) + uris
-
+        # Add the URIs to the metadata dictionary.
+        metadata = self.inputs.metadata or {}
+        metadata = metadata.copy()
+        metadata[self.inputs.field] = metadata.get(self.inputs.field, []) + uris
         self._results["metadata"] = metadata
 
         return runtime
