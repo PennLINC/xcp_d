@@ -494,6 +494,11 @@ class ProcessMotion(SimpleInterface):
             filtered=False,
         )
         fd_timeseries = motion_df["framewise_displacement"].to_numpy()
+        motion_metadata["framewise_displacement"] = {
+            "Description": "Framewise displacement calculated according to Power et al. (2012).",
+            "HeadRadius": self.inputs.head_radius,
+            "Units": "mm",
+        }
         if self.inputs.motion_filter_type:
             motion_df["framewise_displacement_filtered"] = compute_fd(
                 confound=motion_df,
@@ -510,12 +515,8 @@ class ProcessMotion(SimpleInterface):
         motion_metadata = {k: v for k, v in motion_metadata.items() if k not in cols_to_drop}
         for col in motion_df.columns.tolist():
             col_metadata = motion_metadata.get(col, {})
-            if col.startswith("framewise_displacement"):
-                col_metadata["Description"] = (
-                    "Framewise displacement calculated according to Power et al. (2012)."
-                )
-                col_metadata["Units"] = "mm"
-                col_metadata["HeadRadius"] = self.inputs.head_radius
+            if col.endswith("_filtered") and col[:-9] in motion_metadata:
+                col_metadata = motion_metadata[col[:-9]]
 
             if self.inputs.motion_filter_type == "lp" and col.endswith("_filtered"):
                 filters = col_metadata.get("SoftwareFilters", {})
@@ -777,13 +778,6 @@ class GenerateConfounds(SimpleInterface):
                             dataset_links=self.inputs.dataset_links,
                             out_dir=self.inputs.out_dir,
                         )
-
-                # Collect column metadata
-                for column in new_confound_df.columns:
-                    if column in confound_metadata:
-                        confounds_metadata[column] = confound_metadata[column]
-                    else:
-                        confounds_metadata[column] = {}
 
             else:  # Voxelwise confounds
                 confound_img = nb.load(confound_file)

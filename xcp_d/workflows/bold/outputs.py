@@ -262,12 +262,16 @@ def init_postproc_derivatives_wf(
         # XXX: I need to combine collected confounds files as Sources here.
         # Not just the preproc_confounds_file.
         confounds_src = pe.Node(
-            niu.Merge(numinputs=(1 + (1 if fd_thresh > 0 else 0))),
+            BIDSURI(
+                numinputs=0 + (1 if fd_thresh > 0 else 0),
+                dataset_links=config.execution.dataset_links,
+                out_dir=str(output_dir),
+            ),
             name="confounds_src",
             run_without_submitting=True,
             mem_gb=1,
         )
-        workflow.connect([(inputnode, confounds_src, [("preproc_confounds_file", "in1")])])
+        workflow.connect([(inputnode, confounds_src, [("confounds_metadata", "metadata")])])
         if fd_thresh > 0:
             workflow.connect([(ds_temporal_mask, confounds_src, [("out_file", "in2")])])
 
@@ -283,11 +287,8 @@ def init_postproc_derivatives_wf(
             run_without_submitting=False,
         )
         workflow.connect([
-            (inputnode, ds_confounds, [
-                ("confounds_tsv", "in_file"),
-                ("confounds_metadata", "meta_dict"),
-            ]),
-            (confounds_src, ds_confounds, [("out", "Sources")]),
+            (inputnode, ds_confounds, [("confounds_tsv", "in_file")]),
+            (confounds_src, ds_confounds, [("metadata", "meta_dict")]),
             (ds_confounds, merge_dense_src, [("out_file", f"in{3 if fd_thresh > 0 else 2}")]),
         ])  # fmt:skip
 
