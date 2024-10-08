@@ -15,7 +15,6 @@ from nipype.interfaces.base import (
     File,
     SimpleInterface,
     TraitedSpec,
-    isdefined,
     traits,
 )
 from nipype.interfaces.io import add_traits
