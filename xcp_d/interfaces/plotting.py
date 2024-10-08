@@ -529,7 +529,6 @@ class _SlicesDirInputSpec(FSLCommandInputSpec):
 
     out_extension = traits.Enum(
         (".gif", ".png", ".svg"),
-        default=".gif",
         usedefault=True,
         desc="Convenience parameter to let xcp_d select the extension.",
     )
@@ -670,10 +669,10 @@ class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
         desc="Labels for the CIFTI files.",
     )
     out_file = File(
+        "plot.svg",
         exists=False,
         mandatory=False,
         desc="Output file.",
-        default="plot.svg",
         usedefault=True,
     )
     vmin = traits.Float(

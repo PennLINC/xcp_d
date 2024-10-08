@@ -312,7 +312,7 @@ class _BIDSURIInputSpec(DynamicTraitedSpec):
     out_dir = traits.Str(mandatory=True, desc="Output directory")
     metadata = traits.Dict(desc="Metadata dictionary")
     field = traits.Str(
-        default="Sources",
+        "Sources",
         usedefault=True,
         desc="Field to use for BIDS URIs in metadata dict",
     )

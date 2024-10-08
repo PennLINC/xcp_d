@@ -215,7 +215,7 @@ class _CensorInputSpec(BaseInterfaceInputSpec):
         ),
     )
     column = traits.Str(
-        default="framewise_displacement",
+        "framewise_displacement",
         usedefault=True,
         mandatory=False,
         desc="Column name in the temporal mask to use for censoring.",
