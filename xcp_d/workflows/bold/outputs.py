@@ -489,7 +489,7 @@ def init_postproc_derivatives_wf(
                 run_without_submitting=True,
                 mem_gb=1,
                 name="make_corrs_meta_dict2",
-                iterfield=["in1"],
+                iterfield=["in1", "metadata"],
             )
             workflow.connect([
                 (inputnode, make_corrs_meta_dict2, [("atlas_files", "in1")]),
