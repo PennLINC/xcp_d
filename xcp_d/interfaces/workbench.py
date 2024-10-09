@@ -622,7 +622,7 @@ class _CiftiParcellateWorkbenchInputSpec(_WBCommandInputSpec):
         "MODE",
         "COUNT_NONZERO",
         position=12,
-        default="MEAN",
+        usedefault=True,
         argstr="-method %s",
         desc="Specify method of parcellation (default MEAN, or MODE if label data)",
     )
@@ -709,7 +709,7 @@ class _CiftiSurfaceResampleInputSpec(_WBCommandInputSpec):
             "The BARYCENTRIC method is generally recommended for anatomical surfaces, "
             "in order to minimize smoothing."
         ),
-        default="BARYCENTRIC",
+        usedefault=True,
     )
     out_file = File(
         name_source=["in_file"],

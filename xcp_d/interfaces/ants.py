@@ -25,7 +25,7 @@ LOGGER = logging.getLogger("nipype.interface")
 
 
 class _ConvertTransformFileInputSpec(CommandLineInputSpec):
-    dimension = traits.Enum((3, 2), default=3, usedefault=True, argstr="%d", position=0)
+    dimension = traits.Enum(3, 2, usedefault=True, argstr="%d", position=0)
     in_transform = traits.File(exists=True, argstr="%s", mandatory=True, position=1)
     out_transform = traits.File(
         argstr="%s",
