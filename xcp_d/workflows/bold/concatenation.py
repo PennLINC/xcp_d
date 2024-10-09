@@ -337,7 +337,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             iterfield=["in1"],
         )
         workflow.connect([
-            ((filter_runs, _transpose_lol), make_timeseries_dict, [("timeseries", "in1")]),
+            (filter_runs, make_timeseries_dict, [(("timeseries", _transpose_lol), "in1")]),
         ])  # fmt:skip
 
         ds_timeseries = pe.MapNode(
