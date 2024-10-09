@@ -387,7 +387,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name="make_correlations_dict",
             iterfield=["in1"],
         )
-        workflow.connect([(ds_timeseries, make_correlations_dict, [("out_file", "Sources")])])
+        workflow.connect([(ds_timeseries, make_correlations_dict, [("out_file", "in1")])])
 
         ds_correlations = pe.MapNode(
             DerivativesDataSink(
