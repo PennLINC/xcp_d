@@ -148,10 +148,10 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     )
     os.makedirs(std_mesh_dir / "sub-1648798153/ses-PNC1/anat", exist_ok=True)
     files = [
-        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-L_space-fsLR_den-32k_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-L_space-fsLR_den-32k_white.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-R_space-fsLR_den-32k_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-R_space-fsLR_den-32k_white.surf.gii",
     ]
     for f in files:
         (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
@@ -171,14 +171,14 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     )
     os.makedirs(bad_mesh_dir / "sub-1648798153/ses-PNC1/anat", exist_ok=True)
     files = [
-        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-1648798153_ses-PNC1_space-fsLR_den-32k_hemi-R_white.surf.gii",
-        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-L_pial.surf.gii",
-        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-L_white.surf.gii",
-        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-R_pial.surf.gii",
-        "sub-1648798153_ses-PNC1_acq-test_space-fsLR_den-32k_hemi-R_white.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-L_space-fsLR_den-32k_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-L_space-fsLR_den-32k_white.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-R_space-fsLR_den-32k_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-R_space-fsLR_den-32k_white.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_hemi-L_space-fsLR_den-32k_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_hemi-L_space-fsLR_den-32k_white.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_hemi-R_space-fsLR_den-32k_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_acq-test_hemi-R_space-fsLR_den-32k_white.surf.gii",
     ]
     for f in files:
         (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()

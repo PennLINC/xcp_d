@@ -133,27 +133,27 @@ brain.
    xcp_d/
       sub-<label>/[ses-<label>/]
          anat/
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_midthickness.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_inflated.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_desc-hcp_vinflated.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_pial.surf.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_smoothwm.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_midthickness.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_inflated.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_desc-hcp_vinflated.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_pial.surf.gii
+            <source_entities>_hemi-<L|R>_space-fsLR_den-32k_white.surf.gii
 
 
 Surface morphometric files
 ==========================
 
 *XCP-D* will also pass along several morphometric files from the preprocessing derivatives,
-as long as the files are already in fsLR space at 32k density.
+as long as the files are already in fsLR space at 91k density.
 
 .. code-block::
 
    xcp_d/
       sub-<label>/[ses-<label>/]
          anat/
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_sulc.shape.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_curv.shape.gii
-            <source_entities>_space-fsLR_den-32k_hemi-<L|R>_thickness.shape.gii
+            <source_entities>_space-fsLR_den-91k_sulc.dscalar.nii
+            <source_entities>_space-fsLR_den-91k_curv.dscalar.nii
+            <source_entities>_space-fsLR_den-91k_thickness.dscalar.nii
 
 
 *XCP-D* will additionally parcellate each of these files, when they are present, using each of the
@@ -164,9 +164,9 @@ atlases it uses to parcellate the functional outputs.
    xcp_d/
       sub-<label>/[ses-<label>/]
          anat/
-            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-curv_morph.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-sulc_morph.tsv
-            <source_entities>_space-fsLR_seg-<label>_den-32k_stat-mean_desc-thickness_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_stat-mean_desc-curv_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_stat-mean_desc-sulc_morph.tsv
+            <source_entities>_space-fsLR_seg-<label>_stat-mean_desc-thickness_morph.tsv
 
 
 ******************
