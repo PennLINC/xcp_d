@@ -421,7 +421,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 name="cifti_ts_src",
                 iterfield=["in1"],
             )
-            workflow.connect([(filter_runs, cifti_ts_src, [("timeseries_ciftis", "in1")])])
+            workflow.connect([
+                (filter_runs, cifti_ts_src, [(("timeseries_ciftis", _transpose_lol), "in1")]),
+            ])  # fmt:skip
 
             ds_cifti_ts = pe.MapNode(
                 DerivativesDataSink(
