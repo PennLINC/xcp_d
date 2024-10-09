@@ -37,8 +37,11 @@ def surface_files(datasets, tmp_path_factory):
         std_fref = fref.replace("native_", "fsLR_")
         std_fname = os.path.basename(fpath)
         std_fname = std_fname.replace(
-            "sub-1648798153_ses-PNC1_acq-refaced_",
-            "sub-1648798153_ses-PNC1_acq-refaced_space-fsLR_den-32k_",
+            "sub-1648798153_ses-PNC1_acq-refaced_hemi-L_",
+            "sub-1648798153_ses-PNC1_acq-refaced_hemi-L_space-fsLR_den-32k_",
+        ).replace(
+            "sub-1648798153_ses-PNC1_acq-refaced_hemi-R_",
+            "sub-1648798153_ses-PNC1_acq-refaced_hemi-R_space-fsLR_den-32k_",
         )
         std_fpath = os.path.join(tmpdir, std_fname)
         shutil.copyfile(fpath, std_fpath)
