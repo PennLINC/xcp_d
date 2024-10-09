@@ -527,3 +527,32 @@ def test_select_first():
 
     lst = "abc"
     assert utils._select_first(lst) == "a"
+
+
+def test_transpose_lol():
+    """Test _transpose_lol."""
+    inputs = [
+        [
+            ["a", "b", "c"],
+            [1, 2, 3],
+        ],
+        [
+            ["a", "b", "c", "d"],
+            [1, 2, 3],
+        ],
+    ]
+    outputs = [
+        [
+            ["a", 1],
+            ["b", 2],
+            ["c", 3],
+        ],
+        [
+            ["a", 1],
+            ["b", 2],
+            ["c", 3],
+        ],
+    ]
+    for i, input_ in enumerate(inputs):
+        expected_output = outputs[i]
+        assert utils._transpose_lol(input_) == expected_output

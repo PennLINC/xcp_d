@@ -574,6 +574,11 @@ def list_to_str(lst):
         return f"{', '.join(lst_str[:-1])}, and {lst_str[-1]}"
 
 
+def _transpose_lol(lol):
+    """Transpose list of lists."""
+    return list(map(list, zip(*lol)))
+
+
 def _create_mem_gb(bold_fname):
     import os
 

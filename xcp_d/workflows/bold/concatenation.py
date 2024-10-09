@@ -13,7 +13,7 @@ from xcp_d.interfaces.concatenation import (
 )
 from xcp_d.interfaces.connectivity import TSVConnect
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _select_first
+from xcp_d.utils.utils import _select_first, _transpose_lol
 from xcp_d.workflows.bold.plotting import init_qc_report_wf
 
 
@@ -336,7 +336,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name="make_timeseries_dict",
             iterfield=["in1"],
         )
-        workflow.connect([(filter_runs, make_timeseries_dict, [("timeseries", "in1")])])
+        workflow.connect([
+            ((filter_runs, _transpose_lol), make_timeseries_dict, [("timeseries", "in1")]),
+        ])  # fmt:skip
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
