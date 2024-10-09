@@ -368,7 +368,7 @@ class _QCPlotsESInputSpec(BaseInterfaceInputSpec):
         Undefined,
         desc="TSV file with temporal mask.",
     )
-    TR = traits.Float(default_value=1, desc="Repetition time")
+    TR = traits.Float(1, usedefault=True, desc="Repetition time")
     standardize = traits.Bool(
         mandatory=True,
         desc=(
@@ -529,7 +529,6 @@ class _SlicesDirInputSpec(FSLCommandInputSpec):
 
     out_extension = traits.Enum(
         (".gif", ".png", ".svg"),
-        default=".gif",
         usedefault=True,
         desc="Convenience parameter to let xcp_d select the extension.",
     )
@@ -670,27 +669,27 @@ class _PlotCiftiParcellationInputSpec(BaseInterfaceInputSpec):
         desc="Labels for the CIFTI files.",
     )
     out_file = File(
+        "plot.svg",
         exists=False,
         mandatory=False,
         desc="Output file.",
-        default="plot.svg",
         usedefault=True,
     )
     vmin = traits.Float(
+        0,
         mandatory=False,
-        default_value=0,
         usedefault=True,
         desc="Minimum value for the colormap.",
     )
     vmax = traits.Float(
+        0,
         mandatory=False,
-        default_value=0,
         usedefault=True,
         desc="Maximum value for the colormap.",
     )
     base_desc = traits.Str(
+        "",
         mandatory=False,
-        default_value="",
         usedefault=True,
         desc="Base description for the output file.",
     )
@@ -910,8 +909,8 @@ class _PlotDenseCiftiInputSpec(BaseInterfaceInputSpec):
         desc="CIFTI file to plot.",
     )
     base_desc = traits.Str(
+        "",
         mandatory=False,
-        default_value="",
         usedefault=True,
         desc="Base description for the output file.",
     )

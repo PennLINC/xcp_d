@@ -215,7 +215,7 @@ class _CensorInputSpec(BaseInterfaceInputSpec):
         ),
     )
     column = traits.Str(
-        default="framewise_displacement",
+        "framewise_displacement",
         usedefault=True,
         mandatory=False,
         desc="Column name in the temporal mask to use for censoring.",
@@ -404,11 +404,12 @@ class RandomCensor(SimpleInterface):
 class _ProcessMotionInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(mandatory=True, desc="Repetition time in seconds")
     fd_thresh = traits.Float(
+        0.3,
         mandatory=False,
-        default_value=0.3,
+        usedefault=True,
         desc="Framewise displacement threshold. All values above this will be dropped.",
     )
-    head_radius = traits.Float(mandatory=False, default_value=50, desc="Head radius in mm ")
+    head_radius = traits.Float(50, mandatory=False, usedefault=True, desc="Head radius in mm")
     motion_file = File(
         exists=True,
         mandatory=True,
@@ -494,6 +495,11 @@ class ProcessMotion(SimpleInterface):
             filtered=False,
         )
         fd_timeseries = motion_df["framewise_displacement"].to_numpy()
+        motion_metadata["framewise_displacement"] = {
+            "Description": "Framewise displacement calculated according to Power et al. (2012).",
+            "HeadRadius": self.inputs.head_radius,
+            "Units": "mm",
+        }
         if self.inputs.motion_filter_type:
             motion_df["framewise_displacement_filtered"] = compute_fd(
                 confound=motion_df,
@@ -504,18 +510,14 @@ class ProcessMotion(SimpleInterface):
 
         # Compile motion metadata from confounds metadata, adding in filtering info
         # First drop any columns that are not motion parameters
-        orig_motion_df = pd.read_table(self.inputs.motion_file)
-        orig_motion_cols = orig_motion_df.columns.tolist()
-        cols_to_drop = sorted(list(set(orig_motion_cols) - set(motion_df.columns.tolist())))
+        orig_cols = list(motion_metadata.keys())
+        orig_cols = [c for c in orig_cols if c[0] == c[0].lower()]
+        cols_to_drop = sorted(list(set(orig_cols) - set(motion_df.columns.tolist())))
         motion_metadata = {k: v for k, v in motion_metadata.items() if k not in cols_to_drop}
         for col in motion_df.columns.tolist():
             col_metadata = motion_metadata.get(col, {})
-            if col.startswith("framewise_displacement"):
-                col_metadata["Description"] = (
-                    "Framewise displacement calculated according to Power et al. (2012)."
-                )
-                col_metadata["Units"] = "mm"
-                col_metadata["HeadRadius"] = self.inputs.head_radius
+            if col.endswith("_filtered") and col[:-9] in motion_metadata:
+                col_metadata = motion_metadata[col[:-9]]
 
             if self.inputs.motion_filter_type == "lp" and col.endswith("_filtered"):
                 filters = col_metadata.get("SoftwareFilters", {})
@@ -694,7 +696,7 @@ class GenerateConfounds(SimpleInterface):
         import nibabel as nb
         import pandas as pd
 
-        from xcp_d.utils.bids import make_bids_uri
+        from xcp_d.utils.bids import _get_bidsuris
         from xcp_d.utils.confounds import filter_motion, volterra
 
         in_img = nb.load(self.inputs.in_file)
@@ -752,7 +754,7 @@ class GenerateConfounds(SimpleInterface):
                             confounds_metadata[found_column] = confounds_metadata.get(
                                 found_column, {}
                             )
-                            confounds_metadata[found_column]["Sources"] = make_bids_uri(
+                            confounds_metadata[found_column]["Sources"] = _get_bidsuris(
                                 in_files=[confound_file],
                                 dataset_links=self.inputs.dataset_links,
                                 out_dir=self.inputs.out_dir,
@@ -772,18 +774,11 @@ class GenerateConfounds(SimpleInterface):
                         new_confound_df.fillna({column: 0}, inplace=True)
 
                         confounds_metadata[column] = confounds_metadata.get(column, {})
-                        confounds_metadata[column]["Sources"] = make_bids_uri(
+                        confounds_metadata[column]["Sources"] = _get_bidsuris(
                             in_files=[confound_file],
                             dataset_links=self.inputs.dataset_links,
                             out_dir=self.inputs.out_dir,
                         )
-
-                # Collect column metadata
-                for column in new_confound_df.columns:
-                    if column in confound_metadata:
-                        confounds_metadata[column] = confound_metadata[column]
-                    else:
-                        confounds_metadata[column] = {}
 
             else:  # Voxelwise confounds
                 confound_img = nb.load(confound_file)
@@ -804,7 +799,7 @@ class GenerateConfounds(SimpleInterface):
                 # Collect image metadata
                 new_confound_df.loc[:, confound_name] = np.nan  # fill with NaNs as a placeholder
                 confounds_metadata[confound_name] = confound_metadata
-                confounds_metadata[confound_name]["Sources"] = make_bids_uri(
+                confounds_metadata[confound_name]["Sources"] = _get_bidsuris(
                     in_files=[confound_file],
                     dataset_links=self.inputs.dataset_links,
                     out_dir=self.inputs.out_dir,
@@ -815,7 +810,7 @@ class GenerateConfounds(SimpleInterface):
                 )
 
         # This actually gets overwritten in init_postproc_derivatives_wf.
-        confounds_metadata["Sources"] = make_bids_uri(
+        confounds_metadata["Sources"] = _get_bidsuris(
             in_files=confound_files,
             dataset_links=self.inputs.dataset_links,
             out_dir=self.inputs.out_dir,

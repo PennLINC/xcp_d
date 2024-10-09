@@ -524,6 +524,9 @@ class execution(_Config):
             "preprocessed": cls.fmri_dir,
             "templateflow": Path(TF_LAYOUT.root),
         }
+        if cls.atlases:
+            dataset_links["atlas"] = cls.output_dir / "atlases"
+
         for dset_name, dset_path in cls.datasets.items():
             dataset_links[dset_name] = dset_path
         cls.dataset_links = dataset_links

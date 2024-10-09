@@ -9,6 +9,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
+from xcp_d.interfaces.bids import BIDSURI
 from xcp_d.interfaces.nilearn import IndexImage
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import get_std2bold_xfms
@@ -171,10 +172,22 @@ The following atlases were used in the workflow: {atlas_str}.
     else:
         workflow.connect([(inputnode, atlas_buffer, [("atlas_files", "atlas_file")])])
 
+    atlas_srcs = pe.MapNode(
+        BIDSURI(
+            numinputs=1,
+            dataset_links=config.execution.dataset_links,
+            out_dir=str(output_dir),
+        ),
+        name="atlas_srcs",
+        iterfield=["in1"],
+        run_without_submitting=True,
+    )
+    workflow.connect([(inputnode, atlas_srcs, [("atlas_files", "in1")])])
+
     copy_atlas = pe.MapNode(
         CopyAtlas(output_dir=output_dir),
         name="copy_atlas",
-        iterfield=["in_file", "atlas", "meta_dict"],
+        iterfield=["in_file", "atlas", "meta_dict", "Sources"],
         run_without_submitting=True,
     )
     workflow.connect([
@@ -184,6 +197,7 @@ The following atlases were used in the workflow: {atlas_str}.
             ("atlas_metadata", "meta_dict"),
         ]),
         (atlas_buffer, copy_atlas, [("atlas_file", "in_file")]),
+        (atlas_srcs, copy_atlas, [("out", "Sources")]),
         (copy_atlas, outputnode, [("out_file", "atlas_files")]),
     ])  # fmt:skip
 

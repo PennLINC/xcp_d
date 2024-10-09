@@ -31,7 +31,7 @@ class _NiftiParcellateInputSpec(BaseInterfaceInputSpec):
     atlas = File(exists=True, mandatory=True, desc="atlas file")
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
     min_coverage = traits.Float(
-        default=0.5,
+        0.5,
         usedefault=True,
         desc=(
             "Coverage threshold to apply to parcels. "

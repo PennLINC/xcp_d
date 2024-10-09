@@ -5,6 +5,7 @@ atlases/atlas-4S156Parcels/atlas-4S156Parcels_space-MNI152NLin2009cAsym_dseg.jso
 atlases/atlas-4S156Parcels/atlas-4S156Parcels_space-MNI152NLin2009cAsym_dseg.nii.gz
 atlases/atlas-Schaefer100
 atlases/atlas-Schaefer100/atlas-Schaefer100_dseg.tsv
+atlases/atlas-Schaefer100/atlas-Schaefer100_space-MNI152NLin2009cAsym_dseg.json
 atlases/atlas-Schaefer100/atlas-Schaefer100_space-MNI152NLin2009cAsym_dseg.nii.gz
 atlases/dataset_description.json
 dataset_description.json
