@@ -154,7 +154,7 @@ def test_motion_filtering_notch():
         motion_filter_type="notch",
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
-        motion_filter_order=2,
+        motion_filter_order=4,
     )
     notch_data_test = np.squeeze(notch_data_test)
     assert np.allclose(notch_data_test, notch_data_true)
