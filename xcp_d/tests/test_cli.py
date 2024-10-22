@@ -103,6 +103,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         "--warp_surfaces_native2std=n",
         "--head_radius=40",
         "--motion-filter-type=notch",
+        "--motion-filter-order=4",
         "--band-stop-min=12",
         "--band-stop-max=18",
         "--dummy-scans=auto",
