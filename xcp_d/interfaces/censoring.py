@@ -523,7 +523,7 @@ class ProcessMotion(SimpleInterface):
                 filters = col_metadata.get("SoftwareFilters", {})
                 filters["Butterworth low-pass filter"] = {
                     "cutoff": band_stop_min_adjusted / 60,
-                    "order": self.inputs.motion_filter_order,
+                    "order": int(np.floor(self.inputs.motion_filter_order / 2)),
                     "cutoff units": "Hz",
                     "function": "scipy.signal.filtfilt",
                 }
@@ -536,7 +536,7 @@ class ProcessMotion(SimpleInterface):
                         band_stop_max_adjusted / 60,
                         band_stop_min_adjusted / 60,
                     ],
-                    "order": self.inputs.motion_filter_order,
+                    "order": int(np.floor(self.inputs.motion_filter_order / 4)),
                     "cutoff units": "Hz",
                     "function": "scipy.signal.filtfilt",
                 }
@@ -879,7 +879,7 @@ class GenerateConfounds(SimpleInterface):
                         filters = col_metadata.get("SoftwareFilters", {})
                         filters["Butterworth low-pass filter"] = {
                             "cutoff": band_stop_min_adjusted / 60,
-                            "order": self.inputs.motion_filter_order,
+                            "order": int(np.floor(self.inputs.motion_filter_order / 2)),
                             "cutoff units": "Hz",
                             "function": "scipy.signal.filtfilt",
                         }
@@ -892,7 +892,7 @@ class GenerateConfounds(SimpleInterface):
                                 band_stop_max_adjusted / 60,
                                 band_stop_min_adjusted / 60,
                             ],
-                            "order": self.inputs.motion_filter_order,
+                            "order": int(np.floor(self.inputs.motion_filter_order / 4)),
                             "cutoff units": "Hz",
                             "function": "scipy.signal.filtfilt",
                         }

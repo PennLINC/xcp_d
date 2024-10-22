@@ -239,6 +239,7 @@ def correlate_timeseries(timeseries, temporal_mask):
         if censoring_df.shape[0] == timeseries_df.shape[0]:
             # The time series is not censored
             timeseries_df = timeseries_df.loc[censoring_df["framewise_displacement"] == 0]
+            timeseries_df.reset_index(drop=True, inplace=True)
 
         # Now create correlation matrices limited to exact scan numbers
         censored_censoring_df = censoring_df.loc[censoring_df["framewise_displacement"] == 0]

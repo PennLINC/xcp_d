@@ -247,6 +247,9 @@ motion_filter_order : :obj:`int`
     Number of filter coefficients for the motion parameter filter.
     Motion filtering is only performed if ``motion_filter_type`` is not None.
     This parameter is used in conjunction with ``band_stop_max`` and ``band_stop_min``.
+    For "lp" filters, the order is divided by 2 as filtfilt applies the filter twice.
+    For "notch" filters, the order is divided by 4 as iirnotch is a second-order filter and
+    filtfilt applies the filter twice.
 """
 
 docdict[

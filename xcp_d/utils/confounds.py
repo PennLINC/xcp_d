@@ -139,6 +139,8 @@ def filter_motion(
     as in :footcite:t:`gratton2020removal`.
     The order of the Butterworth filter is determined by ``motion_filter_order``,
     although the original paper used a first-order filter.
+    Since filtfilt applies the filter twice, motion_filter_order is divided by 2 before applying
+    the filter.
     The original paper also used zero-padding with a padding size of 100.
     We use constant-padding, with the default padding size determined by
     :func:`scipy.signal.filtfilt`.
@@ -147,6 +149,8 @@ def filter_motion(
     as in :footcite:t:`fair2020correction`.
     This filter uses the mean of the stopband frequencies as the target frequency,
     and the range between the two frequencies as the bandwidth.
+    Because iirnotch is a second-order filter and filtfilt applies the filter twice,
+    motion_filter_order is divided by 4 before applying the filter.
     The filter is applied with constant-padding, using the default padding size determined by
     :func:`scipy.signal.filtfilt`.
 
@@ -162,8 +166,9 @@ def filter_motion(
     sampling_frequency = 1 / TR
 
     if motion_filter_type == "lp":  # low-pass filter
+        n_filter_applications = int(np.floor(motion_filter_order / 2))
         b, a = butter(
-            motion_filter_order / 2,
+            n_filter_applications,
             lowpass_hz,
             btype="lowpass",
             output="ba",
@@ -180,7 +185,9 @@ def filter_motion(
 
         # Create filter coefficients.
         b, a = iirnotch(freq_to_remove, freq_to_remove / bandwidth, fs=sampling_frequency)
-        n_filter_applications = int(np.floor(motion_filter_order / 2))
+        # Both iirnotch and filtfilt are second-order,
+        # so we need to divide the motion_filter_order by 4.
+        n_filter_applications = int(np.floor(motion_filter_order / 4))
 
         filtered_data = data.copy()
         for _ in range(n_filter_applications):

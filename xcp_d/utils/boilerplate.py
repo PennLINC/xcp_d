@@ -29,6 +29,7 @@ def describe_motion_parameters(
     desc : :obj:`str`
         A text description of the motion parameters.
     """
+    import numpy as np
     from num2words import num2words
 
     desc = ""
@@ -40,6 +41,7 @@ def describe_motion_parameters(
             TR=TR,
         )
         if motion_filter_type == "notch":
+            n_filter_applications = int(np.floor(motion_filter_order / 4))
             if is_modified:
                 desc = (
                     "The six translation and rotation head motion traces were "
@@ -47,7 +49,7 @@ def describe_motion_parameters(
                     f"{band_stop_max_adjusted} breaths-per-minute "
                     f"(automatically modified from {band_stop_min} and {band_stop_max} BPM due "
                     "to Nyquist frequency constraints) using a(n) "
-                    f"{num2words(motion_filter_order, ordinal=True)}-order notch filter, "
+                    f"{num2words(n_filter_applications, ordinal=True)}-order notch filter, "
                     "based on @fair2020correction. "
                 )
             else:
@@ -55,17 +57,18 @@ def describe_motion_parameters(
                     "The six translation and rotation head motion traces were "
                     f"band-stop filtered to remove signals between {band_stop_min} and "
                     f"{band_stop_max} breaths-per-minute using a(n) "
-                    f"{num2words(motion_filter_order, ordinal=True)}-order notch filter, "
+                    f"{num2words(n_filter_applications, ordinal=True)}-order notch filter, "
                     "based on @fair2020correction. "
                 )
         else:  # lp
+            n_filter_applications = int(np.floor(motion_filter_order / 2))
             if is_modified:
                 desc = (
                     "The six translation and rotation head motion traces were "
                     f"low-pass filtered below {band_stop_min_adjusted} breaths-per-minute "
                     f"(automatically modified from {band_stop_min} BPM due to Nyquist frequency "
                     "constraints) using a(n) "
-                    f"{num2words(motion_filter_order, ordinal=True)}-order Butterworth filter, "
+                    f"{num2words(n_filter_applications, ordinal=True)}-order Butterworth filter, "
                     "based on @gratton2020removal. "
                 )
             else:
@@ -73,7 +76,7 @@ def describe_motion_parameters(
                     "The six translation and rotation head motion traces were "
                     f"low-pass filtered below {band_stop_min} breaths-per-minute "
                     "using a(n) "
-                    f"{num2words(motion_filter_order, ordinal=True)}-order Butterworth filter, "
+                    f"{num2words(n_filter_applications, ordinal=True)}-order Butterworth filter, "
                     "based on @gratton2020removal. "
                 )
 
