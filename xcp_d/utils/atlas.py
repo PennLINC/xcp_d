@@ -48,14 +48,13 @@ def select_atlases(atlases, subset):
     BUILTIN_ATLASES["all"] = sorted(
         list(set(BUILTIN_ATLASES["cortical"] + BUILTIN_ATLASES["subcortical"]))
     )
-    external_atlases = [atlas for atlas in atlases if atlas not in BUILTIN_ATLASES["all"]]
     subset_atlases = BUILTIN_ATLASES[subset]
     if atlases:
+        external_atlases = [atlas for atlas in atlases if atlas not in BUILTIN_ATLASES["all"]]
         selected_atlases = [atlas for atlas in atlases if atlas in subset_atlases]
+        selected_atlases += external_atlases
     else:
         selected_atlases = subset_atlases
-
-    selected_atlases += external_atlases
 
     return selected_atlases
 
