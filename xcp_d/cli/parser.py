@@ -373,7 +373,15 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         dest="motion_filter_order",
         default=4,
         type=int,
-        help="Number of filter coeffecients for the motion parameter filter.",
+        help=(
+            "Number of filter coefficients for the motion parameter filter. "
+            "If the motion filter type is 'lp', the order is divided by 2 as filtfilt applies "
+            "the filter twice. "
+            "If the motion filter type is 'notch', the order is divided by 4 as iirnotch is a "
+            "second-order filter and filtfilt applies the filter twice. "
+            "Make sure to set this parameter to a multiple of 2 if you choose the 'lp' filter and "
+            "a multiple of 4 if you choose the 'notch' filter."
+        ),
     )
 
     g_censor = parser.add_argument_group("Censoring and scrubbing options")
