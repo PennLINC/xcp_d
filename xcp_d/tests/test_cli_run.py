@@ -388,6 +388,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     opts.despike = False
     opts.fd_thresh = 0
     opts.file_format = "nifti"
+    opts.flatten_conmats = False
     opts.input_type = "fmriprep"
     opts.linc_qc = False
     opts.motion_filter_type = "none"
