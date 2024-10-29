@@ -178,7 +178,7 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
     )
     design_matrix = File(
         exists=True,
-        mandatory=True,
+        mandatory=False,
         desc="Design matrix used in the denoising step.",
     )
     cleaned_file = File(
@@ -260,7 +260,11 @@ class LINCQC(SimpleInterface):
         motion_df = pd.read_table(self.inputs.motion_file)
         preproc_fd = motion_df["framewise_displacement"].to_numpy()
         rmsd = motion_df["rmsd"].to_numpy()
-        design_matrix = pd.read_table(self.inputs.design_matrix)
+        if isdefined(self.inputs.design_matrix):
+            design_matrix = pd.read_table(self.inputs.design_matrix)
+            num_confounds = design_matrix.shape[1]
+        else:
+            num_confounds = np.nan
 
         # Determine number of dummy volumes and load temporal mask
         num_dummy_scans = self.inputs.dummy_scans  # not included in temporal mask
@@ -272,7 +276,6 @@ class LINCQC(SimpleInterface):
 
         num_censored_volumes = int(tmask_arr.sum())
         num_retained_volumes = int((tmask_arr == 0).sum())
-        num_confounds = design_matrix.shape[1]
         num_dof_lost_by_filter = calculate_dof(
             n_volumes=motion_df.shape[0],
             t_r=self.inputs.TR,
