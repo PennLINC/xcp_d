@@ -269,7 +269,7 @@ def flatten_conmat(df):
     df.columns = ["Row", "Column", "Value"]
     df["Edge"] = df["Row"] + "-" + df["Column"]
     df = df.set_index("Edge")
-    df = df[["Edge", "Value"]].T
+    df = df[["Value"]].T
     return df
 
 
@@ -857,7 +857,7 @@ class FlattenTSV(SimpleInterface):
             df.columns = ["Row", "Column", "Value"]
             df["Edge"] = df["Row"] + "-" + df["Column"]
             df = df.set_index("Edge")
-            df = df[["Edge", "Value"]].T
+            df = df[["Value"]].T
         elif self.inputs.kind == "labels":
             df = pd.read_table(in_file)
             df = pd.DataFrame(
