@@ -150,6 +150,8 @@ def flag_bad_run(
     band_stop_max,
     head_radius,
     fd_thresh,
+    high_pass,
+    low_pass,
 ):
     """Determine if a run has too many high-motion volumes to continue processing.
 
@@ -166,6 +168,8 @@ def flag_bad_run(
     %(head_radius)s
     %(fd_thresh)s
     brain_mask
+    %(high_pass)s
+    %(low_pass)s
 
     Returns
     -------
@@ -207,7 +211,56 @@ def flag_bad_run(
         head_radius=head_radius,
         filtered=bool(motion_filter_type),
     )
-    return np.sum(fd_arr <= fd_thresh) * TR
+
+    dof_lost = calculate_dof(
+        n_volumes=fmriprep_confounds_df.shape[0],
+        t_r=TR,
+        high_pass=high_pass or 0,
+        low_pass=low_pass or np.inf,
+    )
+    return np.sum(fd_arr <= fd_thresh) * TR, dof_lost
+
+
+def calculate_dof(n_volumes, t_r, high_pass=0, low_pass=np.inf):
+    """Calculate the number of degrees of freedom lost by a temporal filter.
+
+    Parameters
+    ----------
+    n_volumes : int
+        Number of data points in the time series.
+    t_r : float
+        Repetition time of the time series, in seconds.
+    high_pass : float
+        High-pass frequency in Hertz. Default is 0 (no high-pass filter).
+    low_pass : float or numpy.inf
+        Low-pass frequency in Hertz. Default is np.inf (no low-pass filter).
+
+    Returns
+    -------
+    dof_lost : int
+        Number of degrees of freedom lost by applying the filter.
+
+    Notes
+    -----
+    Both Caballero-Gaudes & Reynolds (2017) and Reynolds et al. (preprint)
+    say that each frequency removed drops two degrees of freedom.
+    """
+    import numpy as np
+
+    duration = t_r * n_volumes
+    fs = 1 / t_r
+    nyq = 0.5 * fs
+    spacing = 1 / duration
+    n_freqs = int(np.ceil(nyq / spacing))
+    frequencies_hz = np.linspace(0, nyq, n_freqs)
+
+    # Figure out what the change in DOF is from the bandpass filter
+    dropped_freqs_idx = np.where((frequencies_hz < high_pass) | (frequencies_hz > low_pass))[0]
+    n_dropped_freqs = dropped_freqs_idx.size
+
+    # Calculate the lost degrees of freedom
+    dof_lost = n_dropped_freqs * 2
+    return dof_lost
 
 
 def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
