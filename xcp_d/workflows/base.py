@@ -433,7 +433,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             else:
                 run_data["confounds"] = None
 
-            post_scrubbing_duration, dof_lost = flag_bad_run(
+            post_scrubbing_duration = flag_bad_run(
                 motion_file=run_data["motion_file"],
                 dummy_scans=config.workflow.dummy_scans,
                 TR=run_data["bold_metadata"]["RepetitionTime"],
@@ -443,13 +443,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 band_stop_max=config.workflow.band_stop_max,
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
-                high_pass=config.workflow.high_pass,
-                low_pass=config.workflow.low_pass,
-            )
-            LOGGER.info(
-                f"Run {j_run + 1} of {n_task_runs} for subject {subject_id} "
-                f"has {post_scrubbing_duration} seconds of data after scrubbing. "
-                f"{dof_lost} degrees of freedom were lost by temporal filtering."
             )
 
             if (config.workflow.min_time >= 0) and (

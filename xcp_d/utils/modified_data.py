@@ -150,8 +150,6 @@ def flag_bad_run(
     band_stop_max,
     head_radius,
     fd_thresh,
-    high_pass,
-    low_pass,
 ):
     """Determine if a run has too many high-motion volumes to continue processing.
 
@@ -168,8 +166,6 @@ def flag_bad_run(
     %(head_radius)s
     %(fd_thresh)s
     brain_mask
-    %(high_pass)s
-    %(low_pass)s
 
     Returns
     -------
@@ -211,13 +207,7 @@ def flag_bad_run(
         )
         retained_sec = np.sum(fd_arr <= fd_thresh) * TR
 
-    dof_lost = calculate_dof(
-        n_volumes=fmriprep_confounds_df.shape[0],
-        t_r=TR,
-        high_pass=high_pass or 0,
-        low_pass=low_pass or np.inf,
-    )
-    return retained_sec, dof_lost
+    return retained_sec
 
 
 def calculate_dof(n_volumes, t_r, high_pass=0, low_pass=np.inf):
