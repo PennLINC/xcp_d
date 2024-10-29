@@ -399,6 +399,24 @@ class LINCQC(SimpleInterface):
                     "The number of non-steady state volumes removed from the time series by XCP-D."
                 ),
             },
+            "num_confounds": {
+                "LongName": "Number of Confounds",
+                "Description": (
+                    "The number of confounds used in the denoising step. "
+                    "Combine this with num_dof_used_by_filter (+2) to estimate the degrees of "
+                    "freedom for bivariate correlations between censored, denoised time series "
+                    "(ignoring the effect of autocorrelation)."
+                ),
+            },
+            "num_dof_used_by_filter": {
+                "LongName": "Number of Degrees of Freedom Lost by Temporal Filter",
+                "Description": (
+                    "The degrees of freedom used up by the temporal filter. "
+                    "Combine this with num_confounds (+2) to estimate the degrees of freedom "
+                    "for bivariate correlations between censored, denoised time series "
+                    "(ignoring the effect of autocorrelation)."
+                ),
+            },
             "num_censored_volumes": {
                 "LongName": "Number of Censored Volumes",
                 "Description": (
