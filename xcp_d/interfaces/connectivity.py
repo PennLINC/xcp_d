@@ -217,10 +217,16 @@ class _TSVConnectInputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         desc="Temporal mask, after dummy scan removal.",
     )
+    flatten = traits.Bool(
+        False,
+        usedefault=True,
+        desc="Flatten the correlation matrix to a TSV file.",
+    )
 
 
 class _TSVConnectOutputSpec(TraitedSpec):
     correlations = File(exists=True, desc="Correlation matrix file.")
+    correlations_square = File(exists=True, desc="Square correlation matrix file.")
     correlations_exact = traits.Either(
         None,
         traits.List(File(exists=True)),
@@ -256,6 +262,16 @@ def correlate_timeseries(timeseries, temporal_mask):
     return correlations_df, correlations_exact
 
 
+def flatten_conmat(df):
+    df = df.where(np.triu(np.ones(df.shape[0])).astype(bool))
+    df = df.stack().reset_index()
+    df.columns = ["Row", "Column", "Value"]
+    df["Edge"] = df["Row"] + "-" + df["Column"]
+    df = df.set_index("Edge")
+    df = df[["Edge", "Value"]].T
+    return df
+
+
 class TSVConnect(SimpleInterface):
     """Extract timeseries and compute connectivity matrices.
 
@@ -273,6 +289,23 @@ class TSVConnect(SimpleInterface):
             temporal_mask=self.inputs.temporal_mask,
         )
 
+        self._results["correlations_square"] = fname_presuffix(
+            "correlations_square.tsv",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        correlations_df.to_csv(
+            self._results["correlations"],
+            sep="\t",
+            na_rep="n/a",
+            index_label="Node",
+        )
+        if self.inputs.flatten:
+            correlations_df = flatten_conmat(correlations_df)
+            kwargs = {"index": False}
+        else:
+            kwargs = {"index_label": "Node"}
+
         self._results["correlations"] = fname_presuffix(
             "correlations.tsv",
             newpath=runtime.cwd,
@@ -282,7 +315,7 @@ class TSVConnect(SimpleInterface):
             self._results["correlations"],
             sep="\t",
             na_rep="n/a",
-            index_label="Node",
+            **kwargs,
         )
         del correlations_df
         gc.collect()
@@ -298,11 +331,14 @@ class TSVConnect(SimpleInterface):
                 newpath=runtime.cwd,
                 use_ext=True,
             )
+            if self.inputs.flatten:
+                exact_correlations_df = flatten_conmat(exact_correlations_df)
+
             exact_correlations_df.to_csv(
                 exact_correlations_file,
                 sep="\t",
                 na_rep="n/a",
-                index_label="Node",
+                **kwargs,
             )
             self._results["correlations_exact"].append(exact_correlations_file)
 
@@ -539,10 +575,16 @@ class _CiftiToTSVInputSpec(BaseInterfaceInputSpec):
         desc="Parcellated CIFTI file to extract into a TSV.",
     )
     atlas_labels = File(exists=True, mandatory=True, desc="atlas labels file")
+    flatten = traits.Bool(
+        False,
+        usedefault=True,
+        desc="Flatten the correlation matrix to a TSV file.",
+    )
 
 
 class _CiftiToTSVOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="Parcellated data TSV file.")
+    correlations_square = File(desc="Square correlation matrix TSV file.")
 
 
 class CiftiToTSV(SimpleInterface):
@@ -657,7 +699,25 @@ class CiftiToTSV(SimpleInterface):
         )
 
         if in_file.endswith(".pconn.nii"):
-            df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index_label="Node")
+            self._results["correlations_square"] = fname_presuffix(
+                "correlations_square.tsv",
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            df.to_csv(
+                self._results["correlations_square"],
+                sep="\t",
+                na_rep="n/a",
+                index_label="Node",
+            )
+
+            if self.inputs.flatten:
+                df = flatten_conmat(df)
+                kwargs = {"index": False}
+            else:
+                kwargs = {"index_label": "Node"}
+
+            df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", **kwargs)
         else:
             df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index=False)
 
