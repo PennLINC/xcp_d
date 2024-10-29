@@ -262,9 +262,9 @@ class LINCQC(SimpleInterface):
         rmsd = motion_df["rmsd"].to_numpy()
         if isdefined(self.inputs.design_matrix):
             design_matrix = pd.read_table(self.inputs.design_matrix)
-            num_confounds = design_matrix.shape[1]
+            num_dof_used_by_denoising = design_matrix.shape[1] + 2  # intercept + linear detrend
         else:
-            num_confounds = np.nan
+            num_dof_used_by_denoising = np.nan
 
         # Determine number of dummy volumes and load temporal mask
         num_dummy_scans = self.inputs.dummy_scans  # not included in temporal mask
@@ -334,7 +334,7 @@ class LINCQC(SimpleInterface):
                 "num_dummy_volumes": [num_dummy_scans],
                 "num_censored_volumes": [num_censored_volumes],
                 "num_retained_volumes": [num_retained_volumes],
-                "num_confounds": [num_confounds],
+                "num_dof_used_by_denoising": [num_dof_used_by_denoising],
                 "num_dof_used_by_filter": [num_dof_lost_by_filter],
                 "fd_dvars_correlation_initial": [fd_dvars_correlation_initial],
                 "fd_dvars_correlation_final": [fd_dvars_correlation_final],
@@ -402,13 +402,15 @@ class LINCQC(SimpleInterface):
                     "The number of non-steady state volumes removed from the time series by XCP-D."
                 ),
             },
-            "num_confounds": {
-                "LongName": "Number of Confounds",
+            "num_dof_used_by_denoising": {
+                "LongName": "Number of Degrees of Freedom Lost by Denoising",
                 "Description": (
-                    "The number of confounds used in the denoising step. "
+                    "The number of confounds used in the denoising step, plus intercept and "
+                    "linear trend. "
                     "To estimate the degrees of freedom for bivariate correlations between "
-                    "censored, denoised time series (ignoring the effect of autocorrelation), "
-                    "do num_retained_volumes - (num_confounds + num_dof_used_by_filter + 2)."
+                    "censored, denoised time series (ignoring the effect of autocorrelation), do "
+                    "num_retained_volumes - (num_dof_used_by_denoising + num_dof_used_by_filter "
+                    "+ 2)."
                 ),
             },
             "num_dof_used_by_filter": {
@@ -416,8 +418,9 @@ class LINCQC(SimpleInterface):
                 "Description": (
                     "The degrees of freedom used up by the temporal filter. "
                     "To estimate the degrees of freedom for bivariate correlations between "
-                    "censored, denoised time series (ignoring the effect of autocorrelation), "
-                    "do num_retained_volumes - (num_confounds + num_dof_used_by_filter + 2)."
+                    "censored, denoised time series (ignoring the effect of autocorrelation), do "
+                    "num_retained_volumes - (num_dof_used_by_denoising + num_dof_used_by_filter "
+                    "+ 2)."
                 ),
             },
             "num_censored_volumes": {
@@ -433,8 +436,9 @@ class LINCQC(SimpleInterface):
                     "The number of volumes retained in the denoised dataset. "
                     "This does not include dummy volumes or high-motion outliers. "
                     "To estimate the degrees of freedom for bivariate correlations between "
-                    "censored, denoised time series (ignoring the effect of autocorrelation), "
-                    "do num_retained_volumes - (num_confounds + num_dof_used_by_filter + 2)."
+                    "censored, denoised time series (ignoring the effect of autocorrelation), do "
+                    "num_retained_volumes - (num_dof_used_by_denoising + num_dof_used_by_filter "
+                    "+ 2)."
                 ),
             },
             "fd_dvars_correlation_initial": {

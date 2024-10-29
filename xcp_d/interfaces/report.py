@@ -37,6 +37,8 @@ QC_TEMPLATE = """\t\t<h3 class="elem-title">Summary</h3>
 \t\t\t<li>Correlation between DVARS and FD Before and After Processing :
 {fd_dvars_correlation}</li>
 \t\t\t<li>Number of Volumes Censored : {num_vols_censored}</li>
+\t\t\t<li>Lost Degrees of Freedom from Denoising : {num_dof_used_by_denoising}</li>
+\t\t\t<li>Lost Degrees of Freedom from Filtering : {num_dof_used_by_filter}</li>
 \t\t</ul>
 """
 
@@ -168,6 +170,8 @@ class FunctionalSummary(SummaryInterface):
             dvars_before_after=dvars,
             fd_dvars_correlation=fd_dvars_correlation,
             num_vols_censored=num_vols_censored,
+            num_dof_used_by_denoising=qcfile["num_dof_used_by_denoising"][0],
+            num_dof_used_by_filter=qcfile["num_dof_used_by_filter"][0],
         )
 
 
