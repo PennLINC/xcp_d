@@ -263,6 +263,7 @@ def correlate_timeseries(timeseries, temporal_mask):
 
 
 def flatten_conmat(df):
+    """Flatten a correlation matrix."""
     df = df.where(np.triu(np.ones(df.shape[0])).astype(bool))
     df = df.stack().reset_index()
     df.columns = ["Row", "Column", "Value"]

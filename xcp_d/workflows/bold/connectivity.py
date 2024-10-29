@@ -473,6 +473,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             niu.Merge(len(exact_scans)),
             name="collect_exact_tsvs",
         )
+        workflow.connect([(collect_exact_tsvs, outputnode, [("out", "correlations_exact")])])
 
         for i_exact_scan, exact_scan in enumerate(exact_scans):
             reduce_exact_bold = pe.MapNode(
