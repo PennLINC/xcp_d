@@ -20,7 +20,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import downcast_to_32
+from xcp_d.utils.modified_data import calculate_dof, downcast_to_32
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
 from xcp_d.utils.write_save import read_ndata
 
@@ -176,6 +176,11 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc="fMRIPrep confounds file, after dummy scans removal",
     )
+    design_matrix = File(
+        exists=True,
+        mandatory=True,
+        desc="Design matrix used in the denoising step.",
+    )
     cleaned_file = File(
         exists=True,
         mandatory=True,
@@ -183,16 +188,13 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
     )
     TR = traits.Float(mandatory=True, desc="Repetition time, in seconds.")
     head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation, in mm.")
-    bold_mask_inputspace = traits.Either(
-        None,
-        File(exists=True),
+    high_pass = traits.Float(
         mandatory=True,
-        desc=(
-            "Mask file from NIfTI. May be None, for CIFTI processing. "
-            "The mask is in the same space as the BOLD data, which may not be the same as the "
-            "bold_mask_stdspace file. "
-            "Used to load the masked BOLD data. Not used for QC metrics."
-        ),
+        desc="High-pass filter cutoff, in Hz.",
+    )
+    low_pass = traits.Float(
+        mandatory=True,
+        desc="Low-pass filter cutoff, in Hz.",
     )
 
     # Inputs used only for nifti data
@@ -218,6 +220,17 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=False,
         desc="BOLD mask in anatomical space. Used to calculate coregistration QC metrics.",
+    )
+    bold_mask_inputspace = traits.Either(
+        None,
+        File(exists=True),
+        mandatory=True,
+        desc=(
+            "Mask file from NIfTI. May be None, for CIFTI processing. "
+            "The mask is in the same space as the BOLD data, which may not be the same as the "
+            "bold_mask_stdspace file. "
+            "Used to load the masked BOLD data. Not used for QC metrics."
+        ),
     )
     bold_mask_stdspace = File(
         exists=True,
@@ -247,9 +260,10 @@ class LINCQC(SimpleInterface):
         motion_df = pd.read_table(self.inputs.motion_file)
         preproc_fd = motion_df["framewise_displacement"].to_numpy()
         rmsd = motion_df["rmsd"].to_numpy()
+        design_matrix = pd.read_table(self.inputs.design_matrix)
 
         # Determine number of dummy volumes and load temporal mask
-        dummy_scans = self.inputs.dummy_scans
+        num_dummy_scans = self.inputs.dummy_scans  # not included in temporal mask
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
             tmask_arr = censoring_df["framewise_displacement"].values
@@ -258,6 +272,13 @@ class LINCQC(SimpleInterface):
 
         num_censored_volumes = int(tmask_arr.sum())
         num_retained_volumes = int((tmask_arr == 0).sum())
+        num_confounds = design_matrix.shape[1]
+        num_dof_lost_by_filter = calculate_dof(
+            n_volumes=motion_df.shape[0],
+            t_r=self.inputs.TR,
+            high_pass=self.inputs.high_pass or 0,
+            low_pass=self.inputs.low_pass or np.inf,
+        )
 
         # Apply temporal mask to interpolated/full data
         rmsd_censored = rmsd[tmask_arr == 0]
@@ -307,9 +328,11 @@ class LINCQC(SimpleInterface):
                 "max_relative_rms": [rmsd_max_value],
                 "mean_dvars_initial": [mean_dvars_before_processing],
                 "mean_dvars_final": [mean_dvars_after_processing],
-                "num_dummy_volumes": [dummy_scans],
+                "num_dummy_volumes": [num_dummy_scans],
                 "num_censored_volumes": [num_censored_volumes],
                 "num_retained_volumes": [num_retained_volumes],
+                "num_confounds": [num_confounds],
+                "num_dof_used_by_filter": [num_dof_lost_by_filter],
                 "fd_dvars_correlation_initial": [fd_dvars_correlation_initial],
                 "fd_dvars_correlation_final": [fd_dvars_correlation_final],
             }
