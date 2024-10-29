@@ -176,10 +176,6 @@ def flag_bad_run(
     post_scrubbing_duration : :obj:`float`
         Amount of time remaining in the run after dummy scan removal, in seconds.
     """
-    if fd_thresh <= 0:
-        # No scrubbing will be performed, so there's no point is calculating amount of "good time".
-        return np.inf
-
     dummy_scans = _infer_dummy_scans(
         dummy_scans=dummy_scans,
         confounds_file=motion_file,
@@ -191,26 +187,29 @@ def flag_bad_run(
     # Remove dummy volumes
     fmriprep_confounds_df = fmriprep_confounds_df.drop(np.arange(dummy_scans))
 
-    # Calculate filtered FD
-    band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
-        motion_filter_type=motion_filter_type,
-        band_stop_min=band_stop_min,
-        band_stop_max=band_stop_max,
-        TR=TR,
-    )
-    motion_df = load_motion(
-        fmriprep_confounds_df,
-        TR=TR,
-        motion_filter_type=motion_filter_type,
-        motion_filter_order=motion_filter_order,
-        band_stop_min=band_stop_min_adjusted,
-        band_stop_max=band_stop_max_adjusted,
-    )
-    fd_arr = compute_fd(
-        confound=motion_df,
-        head_radius=head_radius,
-        filtered=bool(motion_filter_type),
-    )
+    retained_sec = np.inf
+    if fd_thresh > 0:
+        # Calculate filtered FD
+        band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
+            motion_filter_type=motion_filter_type,
+            band_stop_min=band_stop_min,
+            band_stop_max=band_stop_max,
+            TR=TR,
+        )
+        motion_df = load_motion(
+            fmriprep_confounds_df,
+            TR=TR,
+            motion_filter_type=motion_filter_type,
+            motion_filter_order=motion_filter_order,
+            band_stop_min=band_stop_min_adjusted,
+            band_stop_max=band_stop_max_adjusted,
+        )
+        fd_arr = compute_fd(
+            confound=motion_df,
+            head_radius=head_radius,
+            filtered=bool(motion_filter_type),
+        )
+        retained_sec = np.sum(fd_arr <= fd_thresh) * TR
 
     dof_lost = calculate_dof(
         n_volumes=fmriprep_confounds_df.shape[0],
@@ -218,7 +217,7 @@ def flag_bad_run(
         high_pass=high_pass or 0,
         low_pass=low_pass or np.inf,
     )
-    return np.sum(fd_arr <= fd_thresh) * TR, dof_lost
+    return retained_sec, dof_lost
 
 
 def calculate_dof(n_volumes, t_r, high_pass=0, low_pass=np.inf):
