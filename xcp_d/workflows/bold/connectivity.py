@@ -544,7 +544,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                     iterfield=["in_file"],
                 )
                 workflow.connect([
-                    (exact_dconn_to_tsv, flatten_conmats_exact, [("out", "in_file")]),
+                    (exact_dconn_to_tsv, flatten_conmats_exact, [("out_file", "in_file")]),
                     (flatten_conmats_exact, collect_exact_tsvs, [
                         ("out_file", f"in{i_exact_scan + 1}"),
                     ]),
