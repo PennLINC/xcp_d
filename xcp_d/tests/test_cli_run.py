@@ -374,7 +374,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     assert "'--despike' (y or n) is required for 'none' mode." in stderr
     assert "'--fd-thresh' is required for 'none' mode." in stderr
     assert "'--file-format' is required for 'none' mode." in stderr
-    assert "'--flatten-conmat' (y or n) is required for 'none' mode." in stderr
+    assert "'--flatten-conmats' (y or n) is required for 'none' mode." in stderr
     assert "'--input-type' is required for 'none' mode." in stderr
     assert "'--linc-qc' (y or n) is required for 'none' mode." in stderr
     assert "'--motion-filter-type' is required for 'none' mode." in stderr
