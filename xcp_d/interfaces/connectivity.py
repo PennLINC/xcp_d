@@ -296,7 +296,7 @@ class TSVConnect(SimpleInterface):
             use_ext=True,
         )
         correlations_df.to_csv(
-            self._results["correlations"],
+            self._results["correlations_square"],
             sep="\t",
             na_rep="n/a",
             index_label="Node",
