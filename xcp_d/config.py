@@ -593,6 +593,8 @@ class workflow(_Config):
     """Coverage threshold to apply to parcels in each atlas."""
     dcan_correlation_lengths = None
     """Produce correlation matrices limited to each requested amount of time."""
+    flatten_conmats = None
+    """Flatten the correlation matrices."""
     process_surfaces = None
     """Warp fsnative-space surfaces to the MNI space."""
     abcc_qc = None

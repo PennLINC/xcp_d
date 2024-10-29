@@ -541,6 +541,21 @@ The default is 240 (4 minutes).
             "Default is 0.5."
         ),
     )
+    g_parcellation.add_argument(
+        "--flatten-conmats",
+        "--flatten_conmats",
+        dest="flatten_conmats",
+        nargs="?",
+        const=None,
+        default="auto",
+        choices=["y", "n"],
+        action=parser_utils.YesNoAction,
+        help=(
+            "Flatten connectivity matrices to 1D arrays. "
+            "This will reduce the dimensionality of the connectivity matrices, "
+            "which can be useful for some analyses."
+        ),
+    )
 
     g_dcan = parser.add_argument_group("abcd/hbcd mode options")
     g_dcan.add_argument(
@@ -939,6 +954,7 @@ def _validate_parameters(opts, build_log, parser):
     assert opts.combine_runs in (True, False, "auto")
     assert opts.despike in (True, False, "auto")
     assert opts.file_format in ("nifti", "cifti", "auto")
+    assert opts.flatten_conmats in (True, False, "auto")
     assert opts.linc_qc in (True, False, "auto")
     assert opts.mode in ("abcd", "hbcd", "linc", "none"), f"Unsupported mode '{opts.mode}'."
     assert opts.output_type in ("censored", "interpolated", "auto")
@@ -967,6 +983,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
+        opts.flatten_conmats = True if (opts.flatten_conmats == "auto") else opts.flatten_conmats
         opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == "auto") else opts.linc_qc
         if opts.motion_filter_type is None:
@@ -993,6 +1010,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
+        opts.flatten_conmats = True if (opts.flatten_conmats == "auto") else opts.flatten_conmats
         opts.input_type = "nibabies" if opts.input_type == "auto" else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == "auto") else opts.linc_qc
         if opts.motion_filter_type is None:
@@ -1016,6 +1034,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.despike = True if (opts.despike == "auto") else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == "auto") else opts.fd_thresh
         opts.file_format = "cifti" if (opts.file_format == "auto") else opts.file_format
+        opts.flatten_conmats = False if (opts.flatten_conmats == "auto") else opts.flatten_conmats
         opts.input_type = "fmriprep" if opts.input_type == "auto" else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == "auto") else opts.linc_qc
         opts.output_correlations = True
@@ -1051,6 +1070,9 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.file_format == "auto":
             error_messages.append("'--file-format' is required for 'none' mode.")
+
+        if opts.flatten_conmats == "auto":
+            error_messages.append("'--flatten-conmats' (y or n) is required for 'none' mode.")
 
         if opts.input_type == "auto":
             error_messages.append("'--input-type' is required for 'none' mode.")

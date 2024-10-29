@@ -9,6 +9,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
 from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.connectivity import FlattenTSV
 from xcp_d.utils.atlas import select_atlases
 from xcp_d.utils.doc import fill_doc
 from xcp_d.workflows.parcellation import init_parcellate_cifti_wf
@@ -140,10 +141,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         workflow.connect([
             (inputnode, functional_connectivity, [("temporal_mask", "temporal_mask")]),
             (parcellate_data, functional_connectivity, [("timeseries", "timeseries")]),
-            (functional_connectivity, outputnode, [
-                ("correlations", "correlations"),
-                ("correlations_exact", "correlations_exact"),
-            ]),
         ])  # fmt:skip
 
         connectivity_plot = pe.Node(
@@ -170,6 +167,27 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (inputnode, ds_report_connectivity_plot, [("name_source", "source_file")]),
             (connectivity_plot, ds_report_connectivity_plot, [("connectplot", "in_file")]),
         ])  # fmt:skip
+
+        if config.workflow.flatten_conmats:
+            flatten_conmats = pe.MapNode(
+                FlattenTSV(kind="conmat"),
+                name="flatten_conmats",
+                iterfield=["in_file", "in_file_exact"],
+            )
+            workflow.connect([
+                (functional_connectivity, flatten_conmats, [
+                    ("correlations", "in_file"),
+                    ("correlations_exact", "in_file_exact"),
+                ]),
+                (flatten_conmats, outputnode, [("out_file", "correlations")]),
+            ])  # fmt:skip
+        else:
+            workflow.connect([
+                (functional_connectivity, outputnode, [
+                    ("correlations", "correlations"),
+                    ("correlations_exact", "correlations_exact"),
+                ]),
+            ])  # fmt:skip
 
     parcellate_reho = pe.MapNode(
         NiftiParcellate(min_coverage=min_coverage),
@@ -427,7 +445,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         workflow.connect([
             (inputnode, dconn_to_tsv, [("atlas_labels_files", "atlas_labels")]),
             (correlate_bold, dconn_to_tsv, [("out_file", "in_file")]),
-            (dconn_to_tsv, outputnode, [("out_file", "correlations")]),
         ])  # fmt:skip
 
         # Plot up to four connectivity matrices
@@ -457,6 +474,19 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (connectivity_plot, ds_report_connectivity, [("connectplot", "in_file")]),
         ])  # fmt:skip
 
+        if config.workflow.flatten_conmats:
+            flatten_conmats = pe.MapNode(
+                FlattenTSV(kind="conmat"),
+                name="flatten_conmats",
+                iterfield=["in_file"],
+            )
+            workflow.connect([
+                (dconn_to_tsv, flatten_conmats, [("out_file", "in_file")]),
+                (flatten_conmats, outputnode, [("out_file", "correlations")]),
+            ])  # fmt:skip
+        else:
+            workflow.connect([(dconn_to_tsv, outputnode, [("out_file", "correlations")])])
+
     # Perform exact-time correlations
     if exact_scans:
         collect_exact_ciftis = pe.Node(
@@ -471,7 +501,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             niu.Merge(len(exact_scans)),
             name="collect_exact_tsvs",
         )
-        workflow.connect([(collect_exact_tsvs, outputnode, [("out", "correlations_exact")])])
 
         for i_exact_scan, exact_scan in enumerate(exact_scans):
             reduce_exact_bold = pe.MapNode(
@@ -506,8 +535,26 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             workflow.connect([
                 (inputnode, exact_dconn_to_tsv, [("atlas_labels_files", "atlas_labels")]),
                 (correlate_exact_bold, exact_dconn_to_tsv, [("out_file", "in_file")]),
-                (exact_dconn_to_tsv, collect_exact_tsvs, [("out_file", f"in{i_exact_scan + 1}")]),
             ])  # fmt:skip
+
+            if config.workflow.flatten_conmats:
+                flatten_conmats_exact = pe.MapNode(
+                    FlattenTSV(kind="conmat"),
+                    name=f"flatten_conmats_{exact_scan}volumes",
+                    iterfield=["in_file"],
+                )
+                workflow.connect([
+                    (exact_dconn_to_tsv, flatten_conmats_exact, [("out", "in_file")]),
+                    (flatten_conmats_exact, collect_exact_tsvs, [
+                        ("out_file", f"in{i_exact_scan + 1}"),
+                    ]),
+                ])  # fmt:skip
+            else:
+                workflow.connect([
+                    (exact_dconn_to_tsv, collect_exact_tsvs, [
+                        ("out_file", f"in{i_exact_scan + 1}"),
+                    ]),
+                ])  # fmt:skip
 
     parcellate_reho_wf = init_parcellate_cifti_wf(
         mem_gb=mem_gb,

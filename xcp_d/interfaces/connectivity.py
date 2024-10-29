@@ -769,3 +769,54 @@ class CiftiVertexMask(SimpleInterface):
         write_ndata(vertex_weights_arr, template=data_file, filename=self._results["mask_file"])
 
         return runtime
+
+
+class _FlattenTSVInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, desc="Correlation matrix or labels TSV file.")
+    kind = traits.Enum("conmat", "labels", mandatory=True, desc="Input format.")
+
+
+class _FlattenTSVOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Flattened time series TSV file.")
+
+
+class FlattenTSV(SimpleInterface):
+    """Flatten a correlation matrix TSV file."""
+
+    input_spec = _FlattenTSVInputSpec
+    output_spec = _FlattenTSVOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+
+        if self.inputs.kind == "conmat":
+            df = pd.read_table(in_file, index_col="Node")
+            df = df.where(np.triu(np.ones(df.shape[0])).astype(bool))
+            df = df.stack().reset_index()
+            df.columns = ["Row", "Column", "Value"]
+            df["Edge"] = df["Row"] + "-" + df["Column"]
+            df = df.set_index("Edge")
+            df = df[["Edge", "Value"]].T
+        elif self.inputs.kind == "labels":
+            df = pd.read_table(in_file)
+            df = pd.DataFrame(
+                columns=df["label"].tolist(),
+                index=df["label"].tolist(),
+                data=np.ones((df.shape[0], df.shape[0])),
+            )
+            df = df.where(np.triu(np.ones(df.shape[0])).astype(bool))
+            df = df.stack().reset_index()
+            df.columns = ["Source", "Target", "Value"]
+            df["Edge"] = df["Source"] + "-" + df["Target"]
+            df = df[["Edge", "Source", "Target"]]
+
+        # Save out the TSV
+        self._results["out_file"] = fname_presuffix(
+            in_file,
+            prefix="flattened_",
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        df.to_csv(self._results["out_file"], sep="\t", na_rep="n/a", index=False)
+
+        return runtime
