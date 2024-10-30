@@ -36,6 +36,7 @@ QC_TEMPLATE = """\t\t<h3 class="elem-title">Summary</h3>
 \t\t\t<li>DVARS Before and After Processing : {dvars_before_after}</li>
 \t\t\t<li>Correlation between DVARS and FD Before and After Processing :
 {fd_dvars_correlation}</li>
+\t\t\t<li>Number of Volumes Retained : {num_vols_retained}</li>
 \t\t\t<li>Number of Volumes Censored : {num_vols_censored}</li>
 \t\t\t<li>Lost Degrees of Freedom from Denoising : {num_dof_used_by_denoising}</li>
 \t\t\t<li>Lost Degrees of Freedom from Filtering : {num_dof_used_by_filter}</li>
