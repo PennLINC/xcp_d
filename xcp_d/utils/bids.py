@@ -415,10 +415,11 @@ def collect_mesh_data(layout, participant_label, bids_filters):
         LOGGER.info("No standard-space surfaces found.")
 
     # Now that we know if there are standard-space surfaces available, we can grab the files.
-    query_extras = {}
-    if not standard_space_mesh:
+    query_extras = {"space": None}
+    if standard_space_mesh:
         query_extras = {
-            "space": None,
+            "space": "fsLR",
+            "den": "32k",
         }
 
     initial_mesh_files = {}
