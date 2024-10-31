@@ -161,11 +161,16 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
         (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
-    mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
+    mesh_available, standard_space_mesh, _, mesh_files = xbids.collect_mesh_data(
         layout, "1648798153", bids_filters={}
     )
     assert mesh_available is True
     assert standard_space_mesh is True
+    order = ["lh_pial_surf", "lh_wm_surf", "rh_pial_surf", "rh_wm_surf"]
+    for i, k in enumerate(order):
+        assert mesh_files[k] == str(
+            (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(files[i])
+        )
 
     # Dataset with multiple files matching each query (raises an error)
     bad_mesh_dir = tmp_path_factory.mktemp("standard_mesh")
