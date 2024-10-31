@@ -152,6 +152,10 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
         "sub-1648798153_ses-PNC1_hemi-L_space-fsLR_den-32k_white.surf.gii",
         "sub-1648798153_ses-PNC1_hemi-R_space-fsLR_den-32k_pial.surf.gii",
         "sub-1648798153_ses-PNC1_hemi-R_space-fsLR_den-32k_white.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-L_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-L_white.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-R_pial.surf.gii",
+        "sub-1648798153_ses-PNC1_hemi-R_white.surf.gii",
     ]
     for f in files:
         (std_mesh_dir / "sub-1648798153/ses-PNC1/anat").joinpath(f).touch()
