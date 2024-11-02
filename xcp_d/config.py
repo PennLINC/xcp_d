@@ -184,7 +184,7 @@ try:
     from psutil import virtual_memory
 
     _free_mem_at_start = round(virtual_memory().available / 1024**3, 1)
-except Exception:
+except ImportError:
     _free_mem_at_start = None
 
 _oc_limit = 'n/a'
@@ -202,7 +202,7 @@ try:
                 _oc_limit = _proc_oc_kbytes.read_text().strip()
             if _oc_limit in ('0', 'n/a') and Path('/proc/sys/vm/overcommit_ratio').exists():
                 _oc_limit = f"{Path('/proc/sys/vm/overcommit_ratio').read_text().strip()}%"
-except Exception:
+except Exception:  # noqa: S110, BLE001
     pass
 
 
