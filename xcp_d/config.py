@@ -228,7 +228,7 @@ class _Config:
             if k in ignore or v is None:
                 continue
             if k in cls._paths:
-                if isinstance(v, (list, tuple)):
+                if isinstance(v, list | tuple):
                     setattr(cls, k, [Path(val).absolute() for val in v])
                 elif isinstance(v, dict):
                     setattr(cls, k, {key: Path(val).absolute() for key, val in v.items()})
@@ -255,7 +255,7 @@ class _Config:
             if callable(getattr(cls, k)):
                 continue
             if k in cls._paths:
-                if isinstance(v, (list, tuple)):
+                if isinstance(v, list | tuple):
                     v = [str(val) for val in v]
                 elif isinstance(v, dict):
                     v = {key: str(val) for key, val in v.items()}

@@ -138,11 +138,11 @@ def fname_presuffix(fname, prefix='', suffix='', newpath=None, use_ext=True):
 
 def ensure_list(filename):
     """Return a list given either a string or a list."""
-    if isinstance(filename, (str, bytes)):
+    if isinstance(filename, str | bytes):
         return [filename]
-    elif isinstance(filename, (list, tuple, type(None), np.ndarray)):
+    elif isinstance(filename, list | tuple | type(None) | np.ndarray):
         return filename
     elif is_container(filename):
-        return [x for x in filename]
+        return list(filename)
     else:
         return None

@@ -71,7 +71,7 @@ def load_motion(
         raise ValueError(f"Motion filter type '{motion_filter_type}' not supported.")
 
     # Select the motion columns from the overall confounds DataFrame
-    if isinstance(confounds_df, (str, Path)):
+    if isinstance(confounds_df, str | Path):
         confounds_df = pd.read_table(confounds_df)
 
     motion_confounds_df = confounds_df[

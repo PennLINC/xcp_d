@@ -34,7 +34,7 @@ def read_ndata(datafile, maskfile=None):
     """
     # read cifti series
     cifti_extensions = ['.dtseries.nii', '.dlabel.nii', '.ptseries.nii', '.dscalar.nii']
-    if any([datafile.endswith(ext) for ext in cifti_extensions]):
+    if any(datafile.endswith(ext) for ext in cifti_extensions):
         data = nb.load(datafile).get_fdata()
 
     # or nifti data, mask is required

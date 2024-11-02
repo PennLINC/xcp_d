@@ -8,7 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import bids
-import matplotlib
+import matplotlib as mpl
 import nibabel as nb
 import nilearn
 import numpy as np
@@ -230,7 +230,7 @@ Many internal operations of *XCP-D* use
 *AFNI* [@cox1996afni;@cox1997software],{cw_str}
 *ANTS* [@avants2009advanced],
 *TemplateFlow* version {templateflow.__version__} [@ciric2022templateflow],
-*matplotlib* version {matplotlib.__version__} [@hunter2007matplotlib],
+*matplotlib* version {mpl.__version__} [@hunter2007matplotlib],
 *Nibabel* version {nb.__version__} [@brett_matthew_2022_6658382],
 *Nilearn* version {nilearn.__version__} [@abraham2014machine],
 *numpy* version {np.__version__} [@harris2020array],

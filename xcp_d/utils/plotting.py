@@ -776,7 +776,7 @@ class FMRIPlot:
         )
 
         grid_id = 0
-        for _, name, _ in self.spikes:
+        for _, _, _ in self.spikes:
             # RF: What is this?
             # spikesplot(tsz,
             #            title=name,
@@ -1063,7 +1063,7 @@ def surf_data_from_cifti(data, axis, surf_name):
     https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/\
     we-nibabel-markiewicz/NiBabel.ipynb
     """
-    assert isinstance(axis, (nb.cifti2.BrainModelAxis, nb.cifti2.ParcelsAxis))
+    assert isinstance(axis, nb.cifti2.BrainModelAxis | nb.cifti2.ParcelsAxis)
     if isinstance(axis, nb.cifti2.BrainModelAxis):
         for name, data_indices, model in axis.iter_structures():
             # Iterates over volumetric and surface structures
