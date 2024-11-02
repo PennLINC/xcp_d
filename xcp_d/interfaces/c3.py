@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Convert3D is a command-line tool for converting 3D images between common file formats."""
+
 import logging
 import os
 from glob import glob
@@ -17,7 +17,7 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.filemanip import split_filename
 
-iflogger = logging.getLogger("interface")
+iflogger = logging.getLogger('interface')
 
 
 class _C3dInputSpec(CommandLineInputSpec):
@@ -26,98 +26,98 @@ class _C3dInputSpec(CommandLineInputSpec):
     in_file = InputMultiPath(
         File(exists=True),
         position=1,
-        argstr="%s",
+        argstr='%s',
         mandatory=True,
-        desc="Input file (wildcard and multiple are supported).",
+        desc='Input file (wildcard and multiple are supported).',
     )
     out_file = File(
         exists=False,
-        argstr="-o %s",
+        argstr='-o %s',
         position=-1,
-        xor=["out_files"],
-        desc="Output file of last image on the stack.",
+        xor=['out_files'],
+        desc='Output file of last image on the stack.',
     )
     out_files = InputMultiPath(
         File(exists=False),
-        argstr="-oo %s",
-        xor=["out_file"],
+        argstr='-oo %s',
+        xor=['out_file'],
         position=-1,
         desc=(
-            "Write all images on the convert3d stack as multiple files."
-            " Supports both list of output files or a pattern for the output"
-            " filenames (using %d substituion)."
+            'Write all images on the convert3d stack as multiple files.'
+            ' Supports both list of output files or a pattern for the output'
+            ' filenames (using %d substituion).'
         ),
     )
     pix_type = traits.Enum(
-        "float",
-        "char",
-        "uchar",
-        "short",
-        "ushort",
-        "int",
-        "uint",
-        "double",
-        argstr="-type %s",
+        'float',
+        'char',
+        'uchar',
+        'short',
+        'ushort',
+        'int',
+        'uint',
+        'double',
+        argstr='-type %s',
         desc=(
-            "Specifies the pixel type for the output image. By default,"
-            " images are written in floating point (float) format"
+            'Specifies the pixel type for the output image. By default,'
+            ' images are written in floating point (float) format'
         ),
     )
     scale = traits.Either(
         traits.Int(),
         traits.Float(),
-        argstr="-scale %s",
+        argstr='-scale %s',
         desc=(
-            "Multiplies the intensity of each voxel in the last image on the"
-            " stack by the given factor."
+            'Multiplies the intensity of each voxel in the last image on the'
+            ' stack by the given factor.'
         ),
     )
     shift = traits.Either(
         traits.Int(),
         traits.Float(),
-        argstr="-shift %s",
-        desc="Adds the given constant to every voxel.",
+        argstr='-shift %s',
+        desc='Adds the given constant to every voxel.',
     )
     interp = traits.Enum(
-        "Linear",
-        "NearestNeighbor",
-        "Cubic",
-        "Sinc",
-        "Gaussian",
-        argstr="-interpolation %s",
+        'Linear',
+        'NearestNeighbor',
+        'Cubic',
+        'Sinc',
+        'Gaussian',
+        argstr='-interpolation %s',
         desc=(
-            "Specifies the interpolation used with -resample and other"
-            " commands. Default is Linear."
+            'Specifies the interpolation used with -resample and other'
+            ' commands. Default is Linear.'
         ),
     )
     resample = traits.Str(
-        argstr="-resample %s",
+        argstr='-resample %s',
         desc=(
-            "Resamples the image, keeping the bounding box the same, but"
-            " changing the number of voxels in the image. The dimensions can be"
-            " specified as a percentage, for example to double the number of voxels"
-            " in each direction. The -interpolation flag affects how sampling is"
-            " performed."
+            'Resamples the image, keeping the bounding box the same, but'
+            ' changing the number of voxels in the image. The dimensions can be'
+            ' specified as a percentage, for example to double the number of voxels'
+            ' in each direction. The -interpolation flag affects how sampling is'
+            ' performed.'
         ),
     )
     smooth = traits.Str(
-        argstr="-smooth %s",
+        argstr='-smooth %s',
         desc=(
-            "Applies Gaussian smoothing to the image. The parameter vector"
-            " specifies the standard deviation of the Gaussian kernel."
+            'Applies Gaussian smoothing to the image. The parameter vector'
+            ' specifies the standard deviation of the Gaussian kernel.'
         ),
     )
     multicomp_split = traits.Bool(
         False,
         usedefault=True,
-        argstr="-mcs",
+        argstr='-mcs',
         position=0,
-        desc="Enable reading of multi-component images.",
+        desc='Enable reading of multi-component images.',
     )
     is_4d = traits.Bool(
         False,
         usedefault=True,
-        desc=("Changes command to support 4D file operations (default is false)."),
+        desc=('Changes command to support 4D file operations (default is false).'),
     )
 
 
@@ -156,16 +156,16 @@ class C3d(CommandLine):
     input_spec = _C3dInputSpec
     output_spec = _C3dOutputSpec
 
-    _cmd = "c3d"
+    _cmd = 'c3d'
 
     def __init__(self, **inputs):
         super(C3d, self).__init__(**inputs)
-        self.inputs.on_trait_change(self._is_4d, "is_4d")
+        self.inputs.on_trait_change(self._is_4d, 'is_4d')
         if self.inputs.is_4d:
             self._is_4d()
 
     def _is_4d(self):
-        self._cmd = "c4d" if self.inputs.is_4d else "c3d"
+        self._cmd = 'c4d' if self.inputs.is_4d else 'c3d'
 
     def _run_interface(self, runtime):
         cmd = self._cmd
@@ -179,21 +179,21 @@ class C3d(CommandLine):
 
     def _gen_outfile(self):
         # if many infiles, raise exception
-        if (len(self.inputs.in_file) > 1) or ("*" in self.inputs.in_file[0]):
+        if (len(self.inputs.in_file) > 1) or ('*' in self.inputs.in_file[0]):
             raise AttributeError(
-                "Multiple in_files found - specify either `out_file` or `out_files`."
+                'Multiple in_files found - specify either `out_file` or `out_files`.'
             )
         _, fn, ext = split_filename(self.inputs.in_file[0])
-        self.inputs.out_file = fn + "_generated" + ext
+        self.inputs.out_file = fn + '_generated' + ext
         # if generated file will overwrite, raise error
         if os.path.exists(os.path.abspath(self.inputs.out_file)):
-            raise IOError("File already found - to overwrite, use `out_file`.")
-        iflogger.info("Generating `out_file`.")
+            raise OSError('File already found - to overwrite, use `out_file`.')
+        iflogger.info('Generating `out_file`.')
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
         if isdefined(self.inputs.out_file):
-            outputs["out_files"] = os.path.abspath(self.inputs.out_file)
+            outputs['out_files'] = os.path.abspath(self.inputs.out_file)
         if isdefined(self.inputs.out_files):
             if len(self.inputs.out_files) == 1:
                 _out_files = glob(os.path.abspath(self.inputs.out_files[0]))
@@ -203,6 +203,6 @@ class C3d(CommandLine):
                     for f in self.inputs.out_files
                     if os.path.exists(os.path.abspath(f))
                 ]
-            outputs["out_files"] = _out_files
+            outputs['out_files'] = _out_files
 
         return outputs

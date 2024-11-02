@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for calculating resting-state derivatives (ReHo and ALFF)."""
+
 import nibabel as nb
 import numpy as np
 from nipype import logging
@@ -8,7 +9,7 @@ from scipy import signal
 from scipy.stats import rankdata
 from templateflow.api import get as get_template
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 def compute_2d_reho(datat, adjacency_matrix):
@@ -79,12 +80,12 @@ def mesh_adjacency(hemi):
     -----
     Modified by Taylor Salo to loop over all vertices in faces.
     """
-    surf = str(get_template("fsLR", space=None, hemi=hemi, suffix="sphere", density="32k"))
+    surf = str(get_template('fsLR', space=None, hemi=hemi, suffix='sphere', density='32k'))
     surf = nb.load(surf)  # load via nibabel
 
     # Aggregate GIFTI data arrays into an ndarray or tuple of ndarray select the arrays in a
     # specific order
-    vertices_faces = surf.agg_data(("pointset", "triangle"))
+    vertices_faces = surf.agg_data(('pointset', 'triangle'))
     vertices = vertices_faces[0]
     faces = vertices_faces[1]
     n_vertices = vertices.shape[0]
@@ -171,7 +172,7 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
             voxel_data_censored /= np.std(voxel_data_censored)
 
             time_arr = np.arange(n_volumes) * TR
-            assert sample_mask.size == time_arr.size, f"{sample_mask.size} != {time_arr.size}"
+            assert sample_mask.size == time_arr.size, f'{sample_mask.size} != {time_arr.size}'
             time_arr = time_arr[sample_mask]
             frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
             angular_frequencies = 2 * np.pi * frequencies_hz
@@ -188,7 +189,7 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
             frequencies_hz, power_spectrum = signal.periodogram(
                 voxel_data,
                 fs,
-                scaling="spectrum",
+                scaling='spectrum',
             )
 
         # square root of power spectrum
@@ -213,5 +214,5 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         # Rescale ALFF based on original BOLD scale
         alff[i_voxel] *= sd_scale
 
-    assert alff.size == n_voxels, f"{alff.shape} != {n_voxels}"
+    assert alff.size == n_voxels, f'{alff.shape} != {n_voxels}'
     return alff

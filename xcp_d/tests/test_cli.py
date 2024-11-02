@@ -27,54 +27,54 @@ from xcp_d.utils.bids import (
     write_derivative_description,
 )
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 @pytest.mark.integration
 @pytest.mark.ds001419_nifti
 def test_ds001419_nifti(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
-    test_name = "test_ds001419_nifti"
+    test_name = 'test_ds001419_nifti'
 
-    dataset_dir = download_test_data("ds001419", data_dir)
-    derivs_dir = download_test_data("ds001419-aroma", data_dir)
+    dataset_dir = download_test_data('ds001419', data_dir)
+    derivs_dir = download_test_data('ds001419-aroma', data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "ds001419_nifti_filter.json")
+    filter_file = os.path.join(test_data_dir, 'ds001419_nifti_filter.json')
 
     parameters = [
         dataset_dir,
         out_dir,
-        "participant",
-        "--mode=none",
-        "--datasets",
-        f"aroma={derivs_dir}",
-        f"-w={work_dir}",
-        f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=aroma_gsr",
-        "--dummy-scans=4",
-        "--fd-thresh=0.2",
-        "--head_radius=40",
-        "--motion-filter-type=lp",
-        "--band-stop-min=6",
-        "--skip-parcellation",
-        "--min-time=100",
-        "--combine-runs",
-        "--output-type=censored",
-        "--combine-runs=y",
-        "--linc-qc=y",
-        "--abcc-qc=n",
-        "--despike=n",
-        "--file-format=nifti",
-        "--input-type=fmriprep",
-        "--warp-surfaces-native2std=n",
+        'participant',
+        '--mode=none',
+        '--datasets',
+        f'aroma={derivs_dir}',
+        f'-w={work_dir}',
+        f'--bids-filter-file={filter_file}',
+        '--nuisance-regressors=aroma_gsr',
+        '--dummy-scans=4',
+        '--fd-thresh=0.2',
+        '--head_radius=40',
+        '--motion-filter-type=lp',
+        '--band-stop-min=6',
+        '--skip-parcellation',
+        '--min-time=100',
+        '--combine-runs',
+        '--output-type=censored',
+        '--combine-runs=y',
+        '--linc-qc=y',
+        '--abcc-qc=n',
+        '--despike=n',
+        '--file-format=nifti',
+        '--input-type=fmriprep',
+        '--warp-surfaces-native2std=n',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
-        input_type="nifti",
+        input_type='nifti',
     )
 
 
@@ -82,48 +82,48 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
 @pytest.mark.ds001419_cifti
 def test_ds001419_cifti(data_dir, output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
-    test_name = "test_ds001419_cifti"
+    test_name = 'test_ds001419_cifti'
 
-    dataset_dir = download_test_data("ds001419", data_dir)
+    dataset_dir = download_test_data('ds001419', data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "ds001419_cifti_filter.json")
+    filter_file = os.path.join(test_data_dir, 'ds001419_cifti_filter.json')
 
     parameters = [
         dataset_dir,
         out_dir,
-        "participant",
-        "--mode=abcd",
-        f"-w={work_dir}",
-        "--task-id=imagery",
-        f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=acompcor_gsr",
-        "--warp_surfaces_native2std=n",
-        "--head_radius=40",
-        "--motion-filter-type=notch",
-        "--motion-filter-order=4",
-        "--band-stop-min=12",
-        "--band-stop-max=18",
-        "--dummy-scans=auto",
-        "--upper-bpf=0.0",
-        "--min-time=100",
-        "--create-matrices",
-        "all",
-        "80",
-        "200",
-        "--atlases",
-        "4S156Parcels",
-        "4S256Parcels",
-        "4S356Parcels",
-        "4S456Parcels",
-        "--linc-qc",
+        'participant',
+        '--mode=abcd',
+        f'-w={work_dir}',
+        '--task-id=imagery',
+        f'--bids-filter-file={filter_file}',
+        '--nuisance-regressors=acompcor_gsr',
+        '--warp_surfaces_native2std=n',
+        '--head_radius=40',
+        '--motion-filter-type=notch',
+        '--motion-filter-order=4',
+        '--band-stop-min=12',
+        '--band-stop-max=18',
+        '--dummy-scans=auto',
+        '--upper-bpf=0.0',
+        '--min-time=100',
+        '--create-matrices',
+        'all',
+        '80',
+        '200',
+        '--atlases',
+        '4S156Parcels',
+        '4S256Parcels',
+        '4S356Parcels',
+        '4S456Parcels',
+        '--linc-qc',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
-        input_type="cifti",
+        input_type='cifti',
     )
 
 
@@ -131,36 +131,36 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
 @pytest.mark.ukbiobank
 def test_ukbiobank(data_dir, output_dir, working_dir):
     """Run xcp_d on UK Biobank derivatives."""
-    test_name = "test_ukbiobank"
+    test_name = 'test_ukbiobank'
 
-    dataset_dir = download_test_data("ukbiobank", data_dir)
+    dataset_dir = download_test_data('ukbiobank', data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     parameters = [
         dataset_dir,
         out_dir,
-        "participant",
-        "--mode=linc",
-        "--file-format=nifti",
-        "--warp-surfaces-native2std=n",
-        "--combine-runs=n",
-        f"-w={work_dir}",
-        "--input-type=ukb",
-        "--nuisance-regressors=gsr_only",
-        "--dummy-scans=4",
-        "--fd-thresh=0.2",
-        "--head_radius=40",
-        "--motion-filter-type=lp",
-        "--band-stop-min=6",
-        "--min-coverage=0.1",
-        "--random-seed=8675309",
-        "--min-time=100",
+        'participant',
+        '--mode=linc',
+        '--file-format=nifti',
+        '--warp-surfaces-native2std=n',
+        '--combine-runs=n',
+        f'-w={work_dir}',
+        '--input-type=ukb',
+        '--nuisance-regressors=gsr_only',
+        '--dummy-scans=4',
+        '--fd-thresh=0.2',
+        '--head_radius=40',
+        '--motion-filter-type=lp',
+        '--band-stop-min=6',
+        '--min-coverage=0.1',
+        '--random-seed=8675309',
+        '--min-time=100',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
-        input_type="ukb",
+        input_type='ukb',
     )
 
 
@@ -168,56 +168,56 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
 @pytest.mark.pnc_cifti
 def test_pnc_cifti(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with cifti options."""
-    test_name = "test_pnc_cifti"
+    test_name = 'test_pnc_cifti'
 
-    dataset_dir = download_test_data("pnc", data_dir)
+    dataset_dir = download_test_data('pnc', data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "pnc_cifti_filter.json")
+    filter_file = os.path.join(test_data_dir, 'pnc_cifti_filter.json')
 
     # Make the last few volumes outliers to check https://github.com/PennLINC/xcp_d/issues/949
     motion_file = os.path.join(
         dataset_dir,
-        "sub-1648798153/ses-PNC1/func/"
-        "sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-confounds_timeseries.tsv",
+        'sub-1648798153/ses-PNC1/func/'
+        'sub-1648798153_ses-PNC1_task-rest_acq-singleband_desc-confounds_timeseries.tsv',
     )
     motion_df = pd.read_table(motion_file)
-    motion_df.loc[56:, "trans_x"] = np.arange(1, 5) * 20
-    motion_df.to_csv(motion_file, sep="\t", index=False)
-    LOGGER.warning(f"Overwrote confounds file at {motion_file}.")
+    motion_df.loc[56:, 'trans_x'] = np.arange(1, 5) * 20
+    motion_df.to_csv(motion_file, sep='\t', index=False)
+    LOGGER.warning(f'Overwrote confounds file at {motion_file}.')
 
     parameters = [
         dataset_dir,
         out_dir,
-        "participant",
-        "--mode=abcd",
-        f"-w={work_dir}",
-        f"--bids-filter-file={filter_file}",
-        "--min-time=60",
-        "--nuisance-regressors=acompcor_gsr",
-        "--head-radius=40",
-        "--motion-filter-type=notch",
-        "--band-stop-min=12",
-        "--band-stop-max=18",
-        "--dummy-scans=auto",
-        "--upper-bpf=0.0",
-        "--atlases",
-        "Tian",
-        "HCP",
-        "MyersLabonte",
-        "--aggregate-session-reports=1",
-        "--create-matrices",
-        "300",
-        "480",
-        "all",
-        "--linc-qc=n",
+        'participant',
+        '--mode=abcd',
+        f'-w={work_dir}',
+        f'--bids-filter-file={filter_file}',
+        '--min-time=60',
+        '--nuisance-regressors=acompcor_gsr',
+        '--head-radius=40',
+        '--motion-filter-type=notch',
+        '--band-stop-min=12',
+        '--band-stop-max=18',
+        '--dummy-scans=auto',
+        '--upper-bpf=0.0',
+        '--atlases',
+        'Tian',
+        'HCP',
+        'MyersLabonte',
+        '--aggregate-session-reports=1',
+        '--create-matrices',
+        '300',
+        '480',
+        'all',
+        '--linc-qc=n',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
-        input_type="cifti",
+        input_type='cifti',
     )
 
 
@@ -225,53 +225,53 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
 @pytest.mark.pnc_cifti_t2wonly
 def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     """Run xcp_d on pnc fMRIPrep derivatives, with cifti options and a simulated T2w image."""
-    test_name = "test_pnc_cifti_t2wonly"
+    test_name = 'test_pnc_cifti_t2wonly'
 
-    dataset_dir = download_test_data("pnc", data_dir)
+    dataset_dir = download_test_data('pnc', data_dir)
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     # Rename all T1w-related files in anat folder to T2w.
     # T1w-related files in func folder should not impact XCP-D.
-    anat_dir = os.path.join(dataset_dir, "sub-1648798153/ses-PNC1/anat")
-    files_to_copy = sorted(glob(os.path.join(anat_dir, "*T1w*")))
+    anat_dir = os.path.join(dataset_dir, 'sub-1648798153/ses-PNC1/anat')
+    files_to_copy = sorted(glob(os.path.join(anat_dir, '*T1w*')))
     for file_to_copy in files_to_copy:
-        t2w_file = file_to_copy.replace("T1w", "T2w")
+        t2w_file = file_to_copy.replace('T1w', 'T2w')
         if not os.path.isfile(t2w_file):
             os.rename(os.path.join(anat_dir, file_to_copy), t2w_file)
 
     tree = list_files(dataset_dir)
-    LOGGER.info(f"Tree after adding T2w:\n{tree}")
+    LOGGER.info(f'Tree after adding T2w:\n{tree}')
 
     test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, "pnc_cifti_t2wonly_filter.json")
+    filter_file = os.path.join(test_data_dir, 'pnc_cifti_t2wonly_filter.json')
 
     parameters = [
         dataset_dir,
         out_dir,
-        "participant",
-        "--mode=abcd",
-        f"-w={work_dir}",
-        f"--bids-filter-file={filter_file}",
-        "--nuisance-regressors=none",
-        "--head_radius=40",
-        "--motion-filter-type=notch",
-        "--band-stop-min=12",
-        "--band-stop-max=18",
-        "--dummy-scans=auto",
-        "--atlases",
-        "4S156Parcels",
-        "MIDB",
-        "--min-time=100",
-        "--despike=n",
-        "--disable-bandpass-filter",
-        "--create-matrices=all",
-        "--linc-qc=n",
+        'participant',
+        '--mode=abcd',
+        f'-w={work_dir}',
+        f'--bids-filter-file={filter_file}',
+        '--nuisance-regressors=none',
+        '--head_radius=40',
+        '--motion-filter-type=notch',
+        '--band-stop-min=12',
+        '--band-stop-max=18',
+        '--dummy-scans=auto',
+        '--atlases',
+        '4S156Parcels',
+        'MIDB',
+        '--min-time=100',
+        '--despike=n',
+        '--disable-bandpass-filter',
+        '--create-matrices=all',
+        '--linc-qc=n',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
-        input_type="cifti",
+        input_type='cifti',
         test_main=False,
     )
 
@@ -288,46 +288,46 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     This test uses a bash call to run XCP-D.
     This won't count toward coverage, but will help test the command-line interface.
     """
-    test_name = "test_fmriprep_without_freesurfer"
+    test_name = 'test_fmriprep_without_freesurfer'
 
-    dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
-    atlas_dir = download_test_data("schaefer100", data_dir)
+    dataset_dir = download_test_data('fmriprepwithoutfreesurfer', data_dir)
+    atlas_dir = download_test_data('schaefer100', data_dir)
     tmpdir = os.path.join(output_dir, test_name)
-    out_dir = os.path.join(tmpdir, "xcp_d")
+    out_dir = os.path.join(tmpdir, 'xcp_d')
     work_dir = os.path.join(working_dir, test_name)
 
     parameters = [
         dataset_dir,
         out_dir,
-        "participant",
-        "--mode=linc",
-        f"-w={work_dir}",
-        "--file-format=nifti",
-        "--datasets",
-        f"schaefer={atlas_dir}",
-        "--atlases",
-        "4S156Parcels",
-        "Schaefer100",
-        "--nthreads=2",
-        "--omp-nthreads=2",
-        "--head_radius=40",
-        "-f=100",
-        "--nuisance-regressors=27P",
-        "--despike=n",
-        "--disable-bandpass-filter",
-        "--min-time=20",
-        "--dummy-scans=1",
-        "--abcc-qc",
+        'participant',
+        '--mode=linc',
+        f'-w={work_dir}',
+        '--file-format=nifti',
+        '--datasets',
+        f'schaefer={atlas_dir}',
+        '--atlases',
+        '4S156Parcels',
+        'Schaefer100',
+        '--nthreads=2',
+        '--omp-nthreads=2',
+        '--head_radius=40',
+        '-f=100',
+        '--nuisance-regressors=27P',
+        '--despike=n',
+        '--disable-bandpass-filter',
+        '--min-time=20',
+        '--dummy-scans=1',
+        '--abcc-qc',
     ]
 
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
-        input_type="nifti",
+        input_type='nifti',
     )
 
     # Run combine-qc too
-    combineqc.main([out_dir, "summary"])
+    combineqc.main([out_dir, 'summary'])
 
 
 @pytest.mark.integration
@@ -342,100 +342,100 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     This test uses a bash call to run XCP-D.
     This won't count toward coverage, but will help test the command-line interface.
     """
-    test_name = "test_fmriprep_without_freesurfer"
+    test_name = 'test_fmriprep_without_freesurfer'
 
-    dataset_dir = download_test_data("fmriprepwithoutfreesurfer", data_dir)
-    atlas_dir = download_test_data("schaefer100", data_dir)
-    tmpdir = os.path.join(output_dir, f"{test_name}_with_main")
-    out_dir = os.path.join(tmpdir, "xcp_d")
-    work_dir = os.path.join(working_dir, f"{test_name}_with_main")
+    dataset_dir = download_test_data('fmriprepwithoutfreesurfer', data_dir)
+    atlas_dir = download_test_data('schaefer100', data_dir)
+    tmpdir = os.path.join(output_dir, f'{test_name}_with_main')
+    out_dir = os.path.join(tmpdir, 'xcp_d')
+    work_dir = os.path.join(working_dir, f'{test_name}_with_main')
 
     parameters = [
         dataset_dir,
         out_dir,
-        "participant",
-        "--mode=linc",
-        f"-w={work_dir}",
-        "--file-format=nifti",
-        "--datasets",
-        f"schaefer={atlas_dir}",
-        "--atlases",
-        "4S156Parcels",
-        "Schaefer100",
-        "--nthreads=2",
-        "--omp-nthreads=2",
-        "--head_radius=40",
-        "-f=100",
-        "--nuisance-regressors=27P",
-        "--despike=n",
-        "--disable-bandpass-filter",
-        "--min-time=20",
-        "--dummy-scans=1",
-        "--abcc-qc",
+        'participant',
+        '--mode=linc',
+        f'-w={work_dir}',
+        '--file-format=nifti',
+        '--datasets',
+        f'schaefer={atlas_dir}',
+        '--atlases',
+        '4S156Parcels',
+        'Schaefer100',
+        '--nthreads=2',
+        '--omp-nthreads=2',
+        '--head_radius=40',
+        '-f=100',
+        '--nuisance-regressors=27P',
+        '--despike=n',
+        '--disable-bandpass-filter',
+        '--min-time=20',
+        '--dummy-scans=1',
+        '--abcc-qc',
     ]
 
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
-        input_type="nifti",
+        input_type='nifti',
         test_main=True,
     )
 
     # Run combine-qc too
-    combineqc.main([out_dir, "summary"])
+    combineqc.main([out_dir, 'summary'])
 
 
 @pytest.mark.integration
 @pytest.mark.nibabies
 def test_nibabies(data_dir, output_dir, working_dir):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
-    test_name = "test_nibabies"
-    input_type = "nibabies"
+    test_name = 'test_nibabies'
+    input_type = 'nibabies'
 
-    dataset_dir = download_test_data("nibabies", data_dir)
-    dataset_dir = os.path.join(dataset_dir, "derivatives", "nibabies")
+    dataset_dir = download_test_data('nibabies', data_dir)
+    dataset_dir = os.path.join(dataset_dir, 'derivatives', 'nibabies')
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
     parameters = [
         dataset_dir,
         out_dir,
-        "participant",
-        "--mode=hbcd",
-        "--file-format=nifti",
-        "--warp-surfaces-native2std=n",
-        f"-w={work_dir}",
-        f"--input-type={input_type}",
-        "--nuisance-regressors=27P",
-        "--head_radius=auto",
-        "--smoothing=0",
-        "--fd-thresh=0",
-        "--create-matrices=all",
-        "--motion-filter-type=none",
-        "--linc-qc=n",
+        'participant',
+        '--mode=hbcd',
+        '--file-format=nifti',
+        '--warp-surfaces-native2std=n',
+        f'-w={work_dir}',
+        f'--input-type={input_type}',
+        '--nuisance-regressors=27P',
+        '--head_radius=auto',
+        '--smoothing=0',
+        '--fd-thresh=0',
+        '--create-matrices=all',
+        '--motion-filter-type=none',
+        '--linc-qc=n',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
-        input_type="nibabies",
+        input_type='nibabies',
     )
 
 
 def _run_and_generate(test_name, parameters, input_type, test_main=False):
     from xcp_d import config
 
-    parameters.append("--clean-workdir")
-    parameters.append("--stop-on-first-crash")
-    parameters.append("--notrack")
-    parameters.append("-vv")
+    parameters.append('--clean-workdir')
+    parameters.append('--stop-on-first-crash')
+    parameters.append('--notrack')
+    parameters.append('-vv')
 
     # Add concurrency options if they're not already specified
     parameters = update_resources(parameters)
 
     if test_main:
         # This runs, but for some reason doesn't count toward coverage.
-        argv = ["xcp_d"] + parameters
-        with patch.object(sys, "argv", argv):
+        argv = ['xcp_d'] + parameters
+        with patch.object(sys, 'argv', argv):
             with pytest.raises(SystemExit) as e:
                 run.main()
 
@@ -444,12 +444,12 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         # XXX: I want to drop this option and use the main function,
         # but the main function doesn't track coverage correctly.
         parse_args(parameters)
-        config_file = config.execution.work_dir / f"config-{config.execution.run_uuid}.toml"
-        config.loggers.cli.warning(f"Saving config file to {config_file}")
+        config_file = config.execution.work_dir / f'config-{config.execution.run_uuid}.toml'
+        config.loggers.cli.warning(f'Saving config file to {config_file}')
         config.to_filename(config_file)
 
         retval = build_workflow(config_file, retval={})
-        xcpd_wf = retval["workflow"]
+        xcpd_wf = retval['workflow']
         xcpd_wf.run(**config.nipype.get_plugin())
         write_derivative_description(
             config.execution.fmri_dir,
@@ -457,11 +457,11 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
             dataset_links=config.execution.dataset_links,
         )
         if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.output_dir / "atlases")
+            write_atlas_dataset_description(config.execution.output_dir / 'atlases')
 
         build_boilerplate(str(config_file), xcpd_wf)
         session_list = (
-            config.execution.bids_filters.get("bold", {}).get("session")
+            config.execution.bids_filters.get('bold', {}).get('session')
             if config.execution.bids_filters
             else None
         )
@@ -473,6 +473,6 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
             session_list=session_list,
         )
 
-    output_list_file = os.path.join(get_test_data_path(), f"{test_name}_outputs.txt")
+    output_list_file = os.path.join(get_test_data_path(), f'{test_name}_outputs.txt')
     check_generated_files(config.execution.output_dir, output_list_file)
     check_affines(config.execution.fmri_dir, config.execution.output_dir, input_type=input_type)

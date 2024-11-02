@@ -6,16 +6,16 @@ import warnings
 from argparse import Action
 from pathlib import Path
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings('ignore')
 
-logging.addLevelName(25, "IMPORTANT")  # Add a new level between INFO and WARNING
-logging.addLevelName(15, "VERBOSE")  # Add a new level between INFO and DEBUG
-logger = logging.getLogger("cli")
+logging.addLevelName(25, 'IMPORTANT')  # Add a new level between INFO and WARNING
+logging.addLevelName(15, 'VERBOSE')  # Add a new level between INFO and DEBUG
+logger = logging.getLogger('cli')
 
 
 def _int_or_auto(string, is_parser=True):
     """Check if argument is an integer >= 0 or the string "auto"."""
-    if string == "auto":
+    if string == 'auto':
         return string
 
     error = argparse.ArgumentTypeError if is_parser else ValueError
@@ -26,13 +26,13 @@ def _int_or_auto(string, is_parser=True):
         raise error(msg)
 
     if intarg < 0:
-        raise error("Int argument must be nonnegative.")
+        raise error('Int argument must be nonnegative.')
     return intarg
 
 
 def _float_or_auto(string, is_parser=True):
     """Check if argument is a float >= 0 or the string "auto"."""
-    if string == "auto":
+    if string == 'auto':
         return string
 
     error = argparse.ArgumentTypeError if is_parser else ValueError
@@ -43,13 +43,13 @@ def _float_or_auto(string, is_parser=True):
         raise error(msg)
 
     if floatarg < 0:
-        raise error("Float argument must be nonnegative.")
+        raise error('Float argument must be nonnegative.')
     return floatarg
 
 
 def _float_or_auto_or_none(string, is_parser=True):
     """Check if argument is a float >= 0 or the strings "all" or "none"."""
-    if string in ("all", "none"):
+    if string in ('all', 'none'):
         return string
 
     error = argparse.ArgumentTypeError if is_parser else ValueError
@@ -60,7 +60,7 @@ def _float_or_auto_or_none(string, is_parser=True):
         raise error(msg)
 
     if floatarg < 0:
-        raise error("Float argument must be nonnegative.")
+        raise error('Float argument must be nonnegative.')
     return floatarg
 
 
@@ -69,10 +69,10 @@ def _restricted_float(x):
     try:
         x = float(x)
     except ValueError:
-        raise argparse.ArgumentTypeError(f"{x} not a floating-point literal")
+        raise argparse.ArgumentTypeError(f'{x} not a floating-point literal')
 
     if x < 0.0 or x > 1.0:
-        raise argparse.ArgumentTypeError(f"{x} not in range [0.0, 1.0]")
+        raise argparse.ArgumentTypeError(f'{x} not in range [0.0, 1.0]')
 
     return x
 
@@ -80,7 +80,7 @@ def _restricted_float(x):
 def _path_exists(path, parser):
     """Ensure a given path exists."""
     if path is None or not Path(path).exists():
-        raise parser.error(f"Path does not exist: <{path}>.")
+        raise parser.error(f'Path does not exist: <{path}>.')
     return Path(path).absolute()
 
 
@@ -88,7 +88,7 @@ def _is_file(path, parser):
     """Ensure a given path exists and it is a file."""
     path = _path_exists(path, parser)
     if not path.is_file():
-        raise parser.error(f"Path should point to a file (or symlink of file): <{path}>.")
+        raise parser.error(f'Path should point to a file (or symlink of file): <{path}>.')
     return path
 
 
@@ -97,7 +97,7 @@ def _process_value(value):
 
     if value is None:
         return bids.layout.Query.NONE
-    elif value == "*":
+    elif value == '*':
         return bids.layout.Query.ANY
     else:
         return value
@@ -121,9 +121,9 @@ def _bids_filter(value, parser):
             try:
                 return loads(Path(value).read_text(), object_hook=_filter_pybids_none_any)
             except JSONDecodeError:
-                raise parser.error(f"JSON syntax error in: <{value}>.")
+                raise parser.error(f'JSON syntax error in: <{value}>.')
         else:
-            raise parser.error(f"Path does not exist: <{value}>.")
+            raise parser.error(f'Path does not exist: <{value}>.')
 
 
 def _min_one(value, parser):
@@ -139,7 +139,7 @@ class YesNoAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
-        lookup = {"y": True, "n": False, None: True, "auto": "auto"}
+        lookup = {'y': True, 'n': False, None: True, 'auto': 'auto'}
         if values not in lookup:
             raise parser.error(f"Invalid value '{values}' for {self.dest}")
 
@@ -154,15 +154,15 @@ class ToDict(Action):
         d = {}
         for spec in values:
             try:
-                name, loc = spec.split("=")
+                name, loc = spec.split('=')
                 loc = Path(loc)
             except ValueError:
                 loc = Path(spec)
                 name = loc.name
 
             if name in d:
-                raise parser.error(f"Received duplicate derivative name: {name}")
-            elif name == "preprocessed":
+                raise parser.error(f'Received duplicate derivative name: {name}')
+            elif name == 'preprocessed':
                 raise parser.error("The 'preprocessed' derivative is reserved for internal use.")
 
             d[name] = loc
@@ -175,21 +175,21 @@ class ConfoundsAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
         """Call the argument."""
         builtins = [
-            "auto",
-            "27P",
-            "36P",
-            "24P",
-            "acompcor",
-            "aroma",
-            "acompcor_gsr",
-            "aroma_gsr",
-            "none",
-            "gsr_only",
+            'auto',
+            '27P',
+            '36P',
+            '24P',
+            'acompcor',
+            'aroma',
+            'acompcor_gsr',
+            'aroma_gsr',
+            'none',
+            'gsr_only',
         ]
         if values in builtins:
             setattr(namespace, self.dest, values)
         else:
             if not Path(values).exists():
-                raise parser.error(f"Nuisance configuration does not exist: <{values}>.")
+                raise parser.error(f'Nuisance configuration does not exist: <{values}>.')
 
             setattr(namespace, self.dest, Path(values))

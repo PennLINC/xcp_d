@@ -6,7 +6,7 @@ from nipype import logging
 
 from xcp_d.utils.doc import fill_doc
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 def check_deps(workflow):
@@ -16,7 +16,7 @@ def check_deps(workflow):
     return sorted(
         (node.interface.__class__.__name__, node.interface._cmd)
         for node in workflow._get_all_nodes()
-        if (hasattr(node.interface, "_cmd") and which(node.interface._cmd.split()[0]) is None)
+        if (hasattr(node.interface, '_cmd') and which(node.interface._cmd.split()[0]) is None)
     )
 
 
@@ -60,59 +60,59 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
-    bold_space = get_entity(bold_file, "space")
+    bold_space = get_entity(bold_file, 'space')
 
-    if bold_space in ("native", "T1w"):
-        base_std_space = get_entity(template_to_anat_xfm, "from")
+    if bold_space in ('native', 'T1w'):
+        base_std_space = get_entity(template_to_anat_xfm, 'from')
         raise ValueError(f"BOLD space '{bold_space}' not supported.")
-    elif f"from-{bold_space}" not in template_to_anat_xfm:
+    elif f'from-{bold_space}' not in template_to_anat_xfm:
         raise ValueError(
-            f"Transform does not match BOLD space: {bold_space} != {template_to_anat_xfm}"
+            f'Transform does not match BOLD space: {bold_space} != {template_to_anat_xfm}'
         )
 
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [template_to_anat_xfm]  # used for all spaces except T1w and native
     xforms_to_T1w_invert = [False]
-    if bold_space == "MNI152NLin2009cAsym":
+    if bold_space == 'MNI152NLin2009cAsym':
         # Data already in MNI152NLin2009cAsym space.
-        xforms_to_MNI = ["identity"]
+        xforms_to_MNI = ['identity']
         xforms_to_MNI_invert = [False]
 
-    elif bold_space == "MNI152NLin6Asym":
+    elif bold_space == 'MNI152NLin6Asym':
         # MNI152NLin6Asym --> MNI152NLin2009cAsym
         MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
             get_template(
-                template="MNI152NLin2009cAsym",
-                mode="image",
-                suffix="xfm",
-                extension=".h5",
-                **{"from": "MNI152NLin6Asym"},
+                template='MNI152NLin2009cAsym',
+                mode='image',
+                suffix='xfm',
+                extension='.h5',
+                **{'from': 'MNI152NLin6Asym'},
             ),
         )
         xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
         xforms_to_MNI_invert = [False]
 
-    elif bold_space == "MNIInfant":
+    elif bold_space == 'MNIInfant':
         # MNIInfant --> MNI152NLin2009cAsym
         MNIInfant_to_MNI152NLin2009cAsym = str(
             load_data(
-                "transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
+                'transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5',
             )
         )
         xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
         xforms_to_MNI_invert = [False]
 
-    elif bold_space == "T1w":
+    elif bold_space == 'T1w':
         # T1w --> ?? (extract from template_to_anat_xfm) --> MNI152NLin2009cAsym
         # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
-        if base_std_space != "MNI152NLin2009cAsym":
+        if base_std_space != 'MNI152NLin2009cAsym':
             std_to_mni_xfm = str(
                 get_template(
-                    template="MNI152NLin2009cAsym",
-                    mode="image",
-                    suffix="xfm",
-                    extension=".h5",
-                    **{"from": base_std_space},
+                    template='MNI152NLin2009cAsym',
+                    mode='image',
+                    suffix='xfm',
+                    extension='.h5',
+                    **{'from': base_std_space},
                 ),
             )
             xforms_to_MNI = [std_to_mni_xfm, template_to_anat_xfm]
@@ -121,7 +121,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
             xforms_to_MNI = [template_to_anat_xfm]
             xforms_to_MNI_invert = [True]
 
-        xforms_to_T1w = ["identity"]
+        xforms_to_T1w = ['identity']
         xforms_to_T1w_invert = [False]
 
     else:
@@ -169,78 +169,78 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
-    bold_space = get_entity(bold_file, "space")
+    bold_space = get_entity(bold_file, 'space')
 
     if source_space is None:
         # If a source space is not provided, extract the space of the source file
         # First try tpl because that won't raise an error
-        source_space = get_entity(source_file, "tpl")
+        source_space = get_entity(source_file, 'tpl')
         if source_space is None:
             # If tpl isn't available, try space.
             # get_entity will raise an error if space isn't there.
-            source_space = get_entity(source_file, "space")
+            source_space = get_entity(source_file, 'space')
 
-    if source_space not in ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant"):
+    if source_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
         raise ValueError(f"Source space '{source_space}' not supported.")
 
-    if bold_space not in ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant"):
+    if bold_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
         raise ValueError(f"BOLD space '{bold_space}' not supported.")
 
     # Load useful inter-template transforms from templateflow and package data
     MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
         get_template(
-            template="MNI152NLin2009cAsym",
-            mode="image",
-            suffix="xfm",
-            extension=".h5",
-            **{"from": "MNI152NLin6Asym"},
+            template='MNI152NLin2009cAsym',
+            mode='image',
+            suffix='xfm',
+            extension='.h5',
+            **{'from': 'MNI152NLin6Asym'},
         ),
     )
     MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
         get_template(
-            template="MNI152NLin6Asym",
-            mode="image",
-            suffix="xfm",
-            extension=".h5",
-            **{"from": "MNI152NLin2009cAsym"},
+            template='MNI152NLin6Asym',
+            mode='image',
+            suffix='xfm',
+            extension='.h5',
+            **{'from': 'MNI152NLin2009cAsym'},
         ),
     )
     MNIInfant_to_MNI152NLin2009cAsym = str(
         load_data(
-            "transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5",
+            'transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5',
         )
     )
     MNI152NLin2009cAsym_to_MNIInfant = str(
         load_data(
-            "transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5",
+            'transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5',
         )
     )
 
     if bold_space == source_space:
-        transforms = ["identity"]
+        transforms = ['identity']
 
-    elif bold_space == "MNI152NLin6Asym":
-        if source_space == "MNI152NLin2009cAsym":
+    elif bold_space == 'MNI152NLin6Asym':
+        if source_space == 'MNI152NLin2009cAsym':
             transforms = [MNI152NLin2009cAsym_to_MNI152NLin6Asym]
-        elif source_space == "MNIInfant":
+        elif source_space == 'MNIInfant':
             transforms = [
                 MNI152NLin2009cAsym_to_MNI152NLin6Asym,
                 MNIInfant_to_MNI152NLin2009cAsym,
             ]
 
-    elif bold_space == "MNI152NLin2009cAsym":
-        if source_space == "MNI152NLin6Asym":
+    elif bold_space == 'MNI152NLin2009cAsym':
+        if source_space == 'MNI152NLin6Asym':
             transforms = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        elif source_space == "MNIInfant":
+        elif source_space == 'MNIInfant':
             transforms = [MNIInfant_to_MNI152NLin2009cAsym]
 
-    elif bold_space == "MNIInfant":
-        if source_space == "MNI152NLin6Asym":
+    elif bold_space == 'MNIInfant':
+        if source_space == 'MNI152NLin6Asym':
             transforms = [
                 MNI152NLin2009cAsym_to_MNIInfant,
                 MNI152NLin6Asym_to_MNI152NLin2009cAsym,
             ]
-        elif source_space == "MNI152NLin2009cAsym":
+        elif source_space == 'MNI152NLin2009cAsym':
             transforms = [MNI152NLin2009cAsym_to_MNIInfant]
 
     return transforms
@@ -263,7 +263,7 @@ def fwhm2sigma(fwhm):
 
 
 @fill_doc
-def estimate_brain_radius(mask_file, head_radius="auto"):
+def estimate_brain_radius(mask_file, head_radius='auto'):
     """Estimate brain radius from binary brain mask file.
 
     Parameters
@@ -284,7 +284,7 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
     This was Paul Taylor's idea, shared in this NeuroStars post:
     https://neurostars.org/t/estimating-head-brain-radius-automatically/24290/2.
     """
-    if head_radius == "auto":
+    if head_radius == 'auto':
         mask_img = nb.load(mask_file)
         mask_data = mask_img.get_fdata()
         n_voxels = np.sum(mask_data)
@@ -293,7 +293,7 @@ def estimate_brain_radius(mask_file, head_radius="auto"):
 
         brain_radius = ((3 * volume) / (4 * np.pi)) ** (1 / 3)
 
-        LOGGER.info(f"Brain radius estimated at {brain_radius} mm.")
+        LOGGER.info(f'Brain radius estimated at {brain_radius} mm.')
 
     else:
         brain_radius = head_radius
@@ -431,12 +431,12 @@ def denoise_with_nilearn(
     if low_pass or high_pass:
         # Now apply the bandpass filter to the interpolated data and confounds
         butterworth_kwargs = {
-            "sampling_rate": 1.0 / TR,
-            "low_pass": low_pass,
-            "high_pass": high_pass,
-            "order": filter_order,
-            "padtype": "constant",
-            "padlen": n_volumes - 1,  # maximum possible padding
+            'sampling_rate': 1.0 / TR,
+            'low_pass': low_pass,
+            'high_pass': high_pass,
+            'order': filter_order,
+            'padtype': 'constant',
+            'padlen': n_volumes - 1,  # maximum possible padding
         }
         preprocessed_bold = butterworth(signals=preprocessed_bold, **butterworth_kwargs)
         if detrend_and_denoise:
@@ -530,16 +530,20 @@ def _interpolate(*, arr, sample_mask, TR):
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
     # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
-    gaps = [[start, end] for start, end in zip(outlier_idx, outlier_idx[1:]) if start + 1 < end]
+    gaps = [
+        [start, end]
+        for start, end in zip(outlier_idx, outlier_idx[1:], strict=False)
+        if start + 1 < end
+    ]
     edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
-    consecutive_outliers_idx = list(zip(edges, edges))
+    consecutive_outliers_idx = list(zip(edges, edges, strict=False))
     first_outliers = consecutive_outliers_idx[0]
     last_outliers = consecutive_outliers_idx[-1]
 
     # Replace outliers at beginning of run
     if first_outliers[0] == 0:
         LOGGER.warning(
-            f"Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) "
+            f'Outlier volumes at beginning of run ({first_outliers[0]}-{first_outliers[1]}) '
             "will be replaced with first non-outlier volume's values."
         )
         interpolated_arr[: first_outliers[1] + 1, :] = interpolated_arr[first_outliers[1] + 1, :]
@@ -547,7 +551,7 @@ def _interpolate(*, arr, sample_mask, TR):
     # Replace outliers at end of run
     if last_outliers[1] == n_volumes - 1:
         LOGGER.warning(
-            f"Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) "
+            f'Outlier volumes at end of run ({last_outliers[0]}-{last_outliers[1]}) '
             "will be replaced with last non-outlier volume's values."
         )
         interpolated_arr[last_outliers[0] :, :] = interpolated_arr[last_outliers[0] - 1, :]
@@ -563,20 +567,20 @@ def _select_first(lst):
 def list_to_str(lst):
     """Convert a list to a pretty string."""
     if not lst:
-        raise ValueError("Zero-length list provided.")
+        raise ValueError('Zero-length list provided.')
 
     lst_str = [str(item) for item in lst]
     if len(lst_str) == 1:
         return lst_str[0]
     elif len(lst_str) == 2:
-        return " and ".join(lst_str)
+        return ' and '.join(lst_str)
     else:
         return f"{', '.join(lst_str[:-1])}, and {lst_str[-1]}"
 
 
 def _transpose_lol(lol):
     """Transpose list of lists."""
-    return list(map(list, zip(*lol)))
+    return list(map(list, zip(*lol, strict=False)))
 
 
 def _create_mem_gb(bold_fname):
@@ -585,16 +589,16 @@ def _create_mem_gb(bold_fname):
     bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
     bold_tlen = nb.load(bold_fname).shape[-1]
     mem_gbz = {
-        "derivative": bold_size_gb,
-        "resampled": bold_size_gb * 4,
-        "timeseries": bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        'derivative': bold_size_gb,
+        'resampled': bold_size_gb * 4,
+        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
     }
 
-    if mem_gbz["timeseries"] < 4.0:
-        mem_gbz["timeseries"] = 6.0
-        mem_gbz["resampled"] = 2
-    elif mem_gbz["timeseries"] > 8.0:
-        mem_gbz["timeseries"] = 8.0
-        mem_gbz["resampled"] = 3
+    if mem_gbz['timeseries'] < 4.0:
+        mem_gbz['timeseries'] = 6.0
+        mem_gbz['resampled'] = 2
+    elif mem_gbz['timeseries'] > 8.0:
+        mem_gbz['timeseries'] = 8.0
+        mem_gbz['resampled'] = 3
 
     return mem_gbz

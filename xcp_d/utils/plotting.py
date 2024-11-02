@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
+
 import os
 
 import matplotlib.pyplot as plt
@@ -58,7 +59,7 @@ def plot_confounds(
     units=None,
     TR=None,
     hide_x=True,
-    color="b",
+    color='b',
     cutoff=None,
     ylims=None,
 ):
@@ -108,50 +109,50 @@ def plot_confounds(
     # Set x_axis
     if not hide_x:
         if no_repetition_time:
-            time_series_axis.set_xlabel("time (frame #)")
+            time_series_axis.set_xlabel('time (frame #)')
         else:
-            time_series_axis.set_xlabel("time (s)")
+            time_series_axis.set_xlabel('time (s)')
             labels = TR * np.array(xticks)
-            time_series_axis.set_xticklabels([f"{t:.02f}" for t in labels.tolist()])
+            time_series_axis.set_xticklabels([f'{t:.02f}' for t in labels.tolist()])
     else:
         time_series_axis.set_xticklabels([])
 
     if name is not None:
         if units is not None:
-            name += f" [{units}]"
+            name += f' [{units}]'
         #   Formatting
         time_series_axis.annotate(
             name,
             xy=(0.0, 0.7),
             xytext=(0, 0),
-            xycoords="axes fraction",
-            textcoords="offset points",
-            va="center",
-            ha="left",
+            xycoords='axes fraction',
+            textcoords='offset points',
+            va='center',
+            ha='left',
             color=color,
             size=16,
             bbox={
-                "boxstyle": "round",
-                "fc": "w",
-                "ec": "none",
-                "color": "none",
-                "lw": 0,
-                "alpha": 0.8,
+                'boxstyle': 'round',
+                'fc': 'w',
+                'ec': 'none',
+                'color': 'none',
+                'lw': 0,
+                'alpha': 0.8,
             },
         )
-    for side in ["top", "right"]:
-        time_series_axis.spines[side].set_color("none")
+    for side in ['top', 'right']:
+        time_series_axis.spines[side].set_color('none')
         time_series_axis.spines[side].set_visible(False)
 
     if not hide_x:
-        time_series_axis.spines["bottom"].set_position(("outward", 20))
-        time_series_axis.xaxis.set_ticks_position("bottom")
+        time_series_axis.spines['bottom'].set_position(('outward', 20))
+        time_series_axis.xaxis.set_ticks_position('bottom')
     else:
-        time_series_axis.spines["bottom"].set_color("none")
-        time_series_axis.spines["bottom"].set_visible(False)
+        time_series_axis.spines['bottom'].set_color('none')
+        time_series_axis.spines['bottom'].set_visible(False)
 
-    time_series_axis.spines["left"].set_color("none")
-    time_series_axis.spines["left"].set_visible(False)
+    time_series_axis.spines['left'].set_color('none')
+    time_series_axis.spines['left'].set_visible(False)
     time_series_axis.set_yticks([])
     time_series_axis.set_yticklabels([])
 
@@ -183,39 +184,39 @@ def plot_confounds(
         p95 = 0
 
     stats_label = (
-        r"max: {max:.3f}{units} $\bullet$ mean: {mean:.3f}{units} "
-        r"$\bullet$ $\sigma$: {sigma:.3f}"
-    ).format(max=maxv, mean=mean, units=units or "", sigma=stdv)
+        r'max: {max:.3f}{units} $\bullet$ mean: {mean:.3f}{units} '
+        r'$\bullet$ $\sigma$: {sigma:.3f}'
+    ).format(max=maxv, mean=mean, units=units or '', sigma=stdv)
     time_series_axis.annotate(
         stats_label,
         xy=(0.98, 0.7),
-        xycoords="axes fraction",
+        xycoords='axes fraction',
         xytext=(0, 0),
-        textcoords="offset points",
-        va="center",
-        ha="right",
+        textcoords='offset points',
+        va='center',
+        ha='right',
         color=color,
         size=14,
         bbox={
-            "boxstyle": "round",
-            "fc": "w",
-            "ec": "none",
-            "color": "none",
-            "lw": 0,
-            "alpha": 0.8,
+            'boxstyle': 'round',
+            'fc': 'w',
+            'ec': 'none',
+            'color': 'none',
+            'lw': 0,
+            'alpha': 0.8,
         },
     )
 
     # Annotate percentile 95
-    time_series_axis.plot((0, ntsteps - 1), [p95] * 2, linewidth=0.1, color="lightgray")
+    time_series_axis.plot((0, ntsteps - 1), [p95] * 2, linewidth=0.1, color='lightgray')
     time_series_axis.annotate(
-        f"{p95:.2f}",
+        f'{p95:.2f}',
         xy=(0, p95),
         xytext=(-1, 0),
-        textcoords="offset points",
-        va="center",
-        ha="right",
-        color="lightgray",
+        textcoords='offset points',
+        va='center',
+        ha='right',
+        color='lightgray',
         size=3,
     )
 
@@ -223,16 +224,16 @@ def plot_confounds(
         cutoff = []
 
     for threshold in enumerate(cutoff):
-        time_series_axis.plot((0, ntsteps - 1), [threshold] * 2, linewidth=0.2, color="dimgray")
+        time_series_axis.plot((0, ntsteps - 1), [threshold] * 2, linewidth=0.2, color='dimgray')
 
         time_series_axis.annotate(
-            f"{threshold:.2f}",
+            f'{threshold:.2f}',
             xy=(0, threshold),
             xytext=(-1, 0),
-            textcoords="offset points",
-            va="center",
-            ha="right",
-            color="dimgray",
+            textcoords='offset points',
+            va='center',
+            ha='right',
+            color='dimgray',
             size=3,
         )
 
@@ -243,7 +244,7 @@ def plot_confounds(
     if gs_dist is not None:
         ax_dist = plt.subplot(gs_dist)
         sns.distplot(time_series, vertical=True, ax=ax_dist)
-        ax_dist.set_xlabel("Timesteps")
+        ax_dist.set_xlabel('Timesteps')
         ax_dist.set_ylim(time_series_axis.get_ylim())
         ax_dist.set_yticklabels([])
 
@@ -265,15 +266,15 @@ def plot_dvars_es(time_series, ax, run_index=None):
     ax.set_xticklabels([])
 
     # Set y-axis labels
-    ax.set_ylabel("DVARS")
+    ax.set_ylabel('DVARS')
 
     columns = time_series.columns
     maximum_values = []
     minimum_values = []
 
     colors = {
-        "Pre regression": "#68AC57",
-        "Post all": "#EF8532",
+        'Pre regression': '#68AC57',
+        'Post all': '#EF8532',
     }
     for c in columns:
         color = colors[c]
@@ -283,7 +284,7 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
     if run_index is not None:
         for run_location in run_index:
-            ax.axvline(run_location, color="black", linestyle="--")
+            ax.axvline(run_location, color='black', linestyle='--')
 
     # Set limits and format
     minimum_x_value = [abs(x) for x in minimum_values]
@@ -298,7 +299,7 @@ def plot_dvars_es(time_series, ax, run_index=None):
     ):
         item.set_fontsize(30)
 
-    for axis in ["top", "bottom", "left", "right"]:
+    for axis in ['top', 'bottom', 'left', 'right']:
         ax.spines[axis].set_linewidth(4)
     sns.despine()
 
@@ -318,31 +319,31 @@ def plot_global_signal_es(time_series, ax, run_index=None):
     ax.set_xticklabels([])
 
     # Set y-axis labels
-    ax.set_ylabel("WB")
+    ax.set_ylabel('WB')
 
     # Plot the whole brain mean and std.
     # Mean scale on the left, std scale on the right.
     mean_line = ax.plot(
-        time_series["Mean"],
-        label="Mean",
+        time_series['Mean'],
+        label='Mean',
         linewidth=2,
         alpha=1,
-        color="#D1352B",
+        color='#D1352B',
     )
     ax_right = ax.twinx()
-    ax_right.set_ylabel("Standard Deviation")
+    ax_right.set_ylabel('Standard Deviation')
     std_line = ax_right.plot(
-        time_series["Std"],
-        label="Std",
+        time_series['Std'],
+        label='Std',
         linewidth=2,
         alpha=1,
-        color="#497DB3",
+        color='#497DB3',
     )
 
-    std_mean = np.mean(time_series["Std"])
+    std_mean = np.mean(time_series['Std'])
     ax_right.set_ylim(
-        (1.5 * np.min(time_series["Std"] - std_mean)) + std_mean,
-        (1.5 * np.max(time_series["Std"] - std_mean)) + std_mean,
+        (1.5 * np.min(time_series['Std'] - std_mean)) + std_mean,
+        (1.5 * np.max(time_series['Std'] - std_mean)) + std_mean,
     )
     ax_right.yaxis.label.set_fontsize(30)
     for item in ax_right.get_yticklabels():
@@ -354,14 +355,14 @@ def plot_global_signal_es(time_series, ax, run_index=None):
 
     if run_index is not None:
         for run_location in run_index:
-            ax.axvline(run_location, color="black", linestyle="--")
+            ax.axvline(run_location, color='black', linestyle='--')
 
     ax.set_xlim((0, ntsteps - 1))
 
-    mean_mean = np.mean(time_series["Mean"])
+    mean_mean = np.mean(time_series['Mean'])
     ax.set_ylim(
-        (1.5 * np.min(time_series["Mean"] - mean_mean)) + mean_mean,
-        (1.5 * np.max(time_series["Mean"] - mean_mean)) + mean_mean,
+        (1.5 * np.min(time_series['Mean'] - mean_mean)) + mean_mean,
+        (1.5 * np.max(time_series['Mean'] - mean_mean)) + mean_mean,
     )
 
     for item in (
@@ -369,7 +370,7 @@ def plot_global_signal_es(time_series, ax, run_index=None):
     ):
         item.set_fontsize(30)
 
-    for axis in ["top", "bottom", "left", "right"]:
+    for axis in ['top', 'bottom', 'left', 'right']:
         ax.spines[axis].set_linewidth(4)
     sns.despine()
 
@@ -384,7 +385,7 @@ def plot_framewise_displacement_es(
 ):
     """Create framewise displacement plot for the executive summary."""
     ntsteps = time_series.shape[0]
-    ax.grid(axis="y")
+    ax.grid(axis='y')
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
@@ -392,14 +393,14 @@ def plot_framewise_displacement_es(
     ax.set_xticks(xticks)
 
     # Set the x-axis labels based on time, not index
-    ax.set_xlabel("Time (s)")
+    ax.set_xlabel('Time (s)')
     labels = TR * np.array(xticks)
     labels = labels.astype(int)
     ax.set_xticklabels(labels)
 
     # Set y-axis labels
-    ax.set_ylabel("FD (mm)")
-    ax.plot(time_series, label="FD", linewidth=3, color="black")
+    ax.set_ylabel('FD (mm)')
+    ax.plot(time_series, label='FD', linewidth=3, color='black')
 
     # Threshold fd at 0.1, 0.2 and 0.5 and plot
     # Plot zero line
@@ -411,25 +412,25 @@ def plot_framewise_displacement_es(
     fd_dots[fd_dots < 0] = np.nan
 
     THRESHOLDS = [0.05, 0.1, 0.2, 0.5]
-    COLORS = ["#969696", "#377C21", "#EF8532", "#EB392A"]
+    COLORS = ['#969696', '#377C21', '#EF8532', '#EB392A']
     for i_thresh, threshold in enumerate(THRESHOLDS):
         color = COLORS[i_thresh]
 
         ax.axhline(
             y=threshold,
             color=color,
-            linestyle="-",
+            linestyle='-',
             linewidth=3,
             alpha=1,
         )
 
         fd_dots[fd_dots < threshold] = np.nan
-        ax.plot(fd_dots, ".", color=color, markersize=10)
+        ax.plot(fd_dots, '.', color=color, markersize=10)
 
         fd_line = time_series.copy()
         fd_line[fd_line >= threshold] = top_line
         fd_line[fd_line < threshold] = np.nan
-        ax.plot(fd_line, ".", color=color, markersize=10)
+        ax.plot(fd_line, '.', color=color, markersize=10)
 
         # Plot the good volumes, i.e: thresholded at 0.1, 0.2, 0.5
         good_vols = len(time_series[time_series < threshold])
@@ -438,8 +439,8 @@ def plot_framewise_displacement_es(
             threshold / ymax,
             good_vols,
             c=color,
-            verticalalignment="center",
-            horizontalalignment="left",
+            verticalalignment='center',
+            horizontalalignment='left',
             transform=ax.transAxes,
             fontsize=20,
         )
@@ -449,9 +450,9 @@ def plot_framewise_displacement_es(
         1.01,
         top_line / ymax,
         time_series.size,
-        c="black",
-        verticalalignment="center",
-        horizontalalignment="left",
+        c='black',
+        verticalalignment='center',
+        horizontalalignment='left',
         transform=ax.transAxes,
         fontsize=20,
     )
@@ -459,7 +460,7 @@ def plot_framewise_displacement_es(
     if run_index is not None:
         # FD plots use time series index, not time, as x-axis
         for run_location in run_index:
-            ax.axvline(run_location, color="black", linestyle="--")
+            ax.axvline(run_location, color='black', linestyle='--')
 
     ax.set_xlim((0, ntsteps - 1))
     ax.set_ylim(0, ymax)
@@ -470,7 +471,7 @@ def plot_framewise_displacement_es(
     ):
         item.set_fontsize(30)
 
-    for axis in ["top", "bottom", "left", "right"]:
+    for axis in ['top', 'bottom', 'left', 'right']:
         ax.spines[axis].set_linewidth(4)
     sns.despine()
 
@@ -535,27 +536,27 @@ def plot_fmri_es(
 
     if preprocessed_arr.shape != denoised_interpolated_arr.shape:
         raise ValueError(
-            "Shapes do not match:\n"
-            f"\t{preprocessed_bold}: {preprocessed_arr.shape}\n"
-            f"\t{denoised_interpolated_bold}: {denoised_interpolated_arr.shape}\n\n"
+            'Shapes do not match:\n'
+            f'\t{preprocessed_bold}: {preprocessed_arr.shape}\n'
+            f'\t{denoised_interpolated_bold}: {denoised_interpolated_arr.shape}\n\n'
         )
 
     # Create dataframes for the bold_data DVARS, FD
     dvars_regressors = pd.DataFrame(
         {
-            "Pre regression": preprocessed_dvars,
-            "Post all": denoised_interpolated_dvars,
+            'Pre regression': preprocessed_dvars,
+            'Post all': denoised_interpolated_dvars,
         }
     )
 
     motion_df = pd.read_table(motion_file)
-    if "framewise_displacement_filtered" in motion_df.columns:
-        fd_regressor = motion_df["framewise_displacement_filtered"].values
+    if 'framewise_displacement_filtered' in motion_df.columns:
+        fd_regressor = motion_df['framewise_displacement_filtered'].values
     else:
-        fd_regressor = motion_df["framewise_displacement"].values
+        fd_regressor = motion_df['framewise_displacement'].values
 
     if temporal_mask:
-        tmask_arr = pd.read_table(temporal_mask)["framewise_displacement"].values.astype(bool)
+        tmask_arr = pd.read_table(temporal_mask)['framewise_displacement'].values.astype(bool)
     else:
         tmask_arr = np.zeros(fd_regressor.shape, dtype=bool)
 
@@ -563,16 +564,16 @@ def plot_fmri_es(
     # after mean-centering and detrending.
     preprocessed_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(preprocessed_arr, axis=0),
-            "Std": np.nanstd(preprocessed_arr, axis=0),
+            'Mean': np.nanmean(preprocessed_arr, axis=0),
+            'Std': np.nanstd(preprocessed_arr, axis=0),
         }
     )
 
     # The mean and standard deviation of the denoised data, with bad volumes included.
     denoised_interpolated_timeseries = pd.DataFrame(
         {
-            "Mean": np.nanmean(denoised_interpolated_arr, axis=0),
-            "Std": np.nanstd(denoised_interpolated_arr, axis=0),
+            'Mean': np.nanmean(denoised_interpolated_arr, axis=0),
+            'Std': np.nanstd(denoised_interpolated_arr, axis=0),
         }
     )
 
@@ -595,10 +596,10 @@ def plot_fmri_es(
 
         # Make a temporary file for niftis and ciftis
         rm_temp_file = True
-        if preprocessed_bold.endswith(".nii.gz"):
-            temp_preprocessed_file = os.path.join(temporary_file_dir, "filex_raw.nii.gz")
+        if preprocessed_bold.endswith('.nii.gz'):
+            temp_preprocessed_file = os.path.join(temporary_file_dir, 'filex_raw.nii.gz')
         else:
-            temp_preprocessed_file = os.path.join(temporary_file_dir, "filex_raw.dtseries.nii")
+            temp_preprocessed_file = os.path.join(temporary_file_dir, 'filex_raw.dtseries.nii')
 
         # Write out the scaled data
         temp_preprocessed_file = write_ndata(
@@ -678,7 +679,7 @@ def plot_fmri_es(
         plot_framewise_displacement_es(fd_regressor, ax3, TR=TR, run_index=run_index)
 
         # Save out the before processing file
-        fig.savefig(figure_name, bbox_inches="tight", pad_inches=None, dpi=300)
+        fig.savefig(figure_name, bbox_inches='tight', pad_inches=None, dpi=300)
         plt.close(fig)
 
     # Remove temporary files
@@ -707,7 +708,7 @@ class FMRIPlot:
     spikes_files
     """
 
-    __slots__ = ("func_file", "mask_data", "TR", "seg_data", "confounds", "spikes")
+    __slots__ = ('func_file', 'mask_data', 'TR', 'seg_data', 'confounds', 'spikes')
 
     def __init__(
         self,
@@ -732,7 +733,7 @@ class FMRIPlot:
         if not isinstance(func_img, nb.Cifti2Image):  # If Nifti
             self.mask_data = nb.fileslice.strided_scalar(func_img.shape[:3], np.uint8(1))
             if mask_file:
-                self.mask_data = np.asanyarray(nb.load(mask_file).dataobj).astype("uint8")
+                self.mask_data = np.asanyarray(nb.load(mask_file).dataobj).astype('uint8')
             if seg_file:
                 self.seg_data = np.asanyarray(nb.load(seg_file).dataobj)
 
@@ -742,14 +743,14 @@ class FMRIPlot:
             vlines = {}
         self.confounds = {}
         if data is None and confound_file:
-            data = pd.read_csv(confound_file, sep=r"[\t\s]+", usecols=usecols, index_col=False)
+            data = pd.read_csv(confound_file, sep=r'[\t\s]+', usecols=usecols, index_col=False)
         # Confounds information
         if data is not None:
             for name in data.columns.ravel():
                 self.confounds[name] = {
-                    "values": data[[name]].values.ravel().tolist(),
-                    "units": units.get(name),
-                    "cutoff": vlines.get(name),
+                    'values': data[[name]].values.ravel().tolist(),
+                    'units': units.get(name),
+                    'cutoff': vlines.get(name),
                 }
         #  Spike information
         self.spikes = []
@@ -760,7 +761,7 @@ class FMRIPlot:
     def plot(self, labelsize, figure=None):
         """Perform main plotting step."""
         # Layout settings
-        sns.set_context("paper", font_scale=1)
+        sns.set_context('paper', font_scale=1)
 
         if figure is None:
             figure = plt.gcf()
@@ -788,10 +789,10 @@ class FMRIPlot:
         if self.confounds:
             from seaborn import color_palette
 
-            palette = color_palette("husl", n_confounds)
+            palette = color_palette('husl', n_confounds)
 
         for i, (name, kwargs) in enumerate(self.confounds.items()):
-            time_series = kwargs.pop("values")
+            time_series = kwargs.pop('values')
             plot_confounds(
                 time_series, grid[grid_id], TR=self.TR, color=palette[i], name=name, **kwargs
             )
@@ -866,33 +867,33 @@ def plot_carpet(
 
     if isinstance(img, nb.Cifti2Image):  # CIFTI
         assert (
-            img.nifti_header.get_intent()[0] == "ConnDenseSeries"
-        ), f"Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}"
+            img.nifti_header.get_intent()[0] == 'ConnDenseSeries'
+        ), f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}'
 
         # Get required information
         data = img.get_fdata().T
         matrix = img.header.matrix
         struct_map = {
-            "LEFT_CORTEX": 1,
-            "RIGHT_CORTEX": 2,
-            "SUBCORTICAL": 3,
-            "CEREBELLUM": 4,
+            'LEFT_CORTEX': 1,
+            'RIGHT_CORTEX': 2,
+            'SUBCORTICAL': 3,
+            'CEREBELLUM': 4,
         }
-        seg_data = np.zeros((data.shape[0],), dtype="uint32")
+        seg_data = np.zeros((data.shape[0],), dtype='uint32')
         # Get brain model information
         for brain_model in matrix.get_index_map(1).brain_models:
-            if "CORTEX" in brain_model.brain_structure:
-                lidx = (1, 2)["RIGHT" in brain_model.brain_structure]
-            elif "CEREBELLUM" in brain_model.brain_structure:
+            if 'CORTEX' in brain_model.brain_structure:
+                lidx = (1, 2)['RIGHT' in brain_model.brain_structure]
+            elif 'CEREBELLUM' in brain_model.brain_structure:
                 lidx = 4
             else:
                 lidx = 3
             index_final = brain_model.index_offset + brain_model.index_count
             seg_data[brain_model.index_offset : index_final] = lidx
-        assert len(seg_data[seg_data < 1]) == 0, "Unassigned labels"
+        assert len(seg_data[seg_data < 1]) == 0, 'Unassigned labels'
 
     else:  # Volumetric NIfTI
-        img_nii = check_niimg_4d(img, dtype="auto")  # Check the image is in nifti format
+        img_nii = check_niimg_4d(img, dtype='auto')  # Check the image is in nifti format
         func_data = safe_get_data(img_nii, ensure_finite=True)
         ntsteps = func_data.shape[-1]
         data = func_data[atlaslabels > 0].reshape(-1, ntsteps)
@@ -900,7 +901,7 @@ def plot_carpet(
 
         # Map segmentation
         if lut is None:
-            lut = np.zeros((256,), dtype="int")
+            lut = np.zeros((256,), dtype='int')
             lut[1:11] = 1
             lut[255] = 2
             lut[30:99] = 3
@@ -913,22 +914,22 @@ def plot_carpet(
 
     if isinstance(img, nb.Cifti2Image):
         # Preserve continuity
-        order = seg_data.argsort(kind="stable")
+        order = seg_data.argsort(kind='stable')
         # Get color maps
-        cmap = ListedColormap([plt.get_cmap("Paired").colors[i] for i in (1, 0, 7, 3)])
+        cmap = ListedColormap([plt.get_cmap('Paired').colors[i] for i in (1, 0, 7, 3)])
         assert len(cmap.colors) == len(
             struct_map
-        ), "Mismatch between expected # of structures and colors"
+        ), 'Mismatch between expected # of structures and colors'
     else:
         # Order following segmentation labels
         order = np.argsort(seg_data)[::-1]
         # Set colormap
-        cmap = ListedColormap(plt.get_cmap("tab10").colors[:4][::-1])
+        cmap = ListedColormap(plt.get_cmap('tab10').colors[:4][::-1])
 
     # Detrend and z-score data
     if standardize:
         # This does not account for the temporal mask.
-        data = clean(data.T, t_r=TR, detrend=True, filter=False, standardize="zscore_sample").T
+        data = clean(data.T, t_r=TR, detrend=True, filter=False, standardize='zscore_sample').T
         vlimits = (-2, 2)
     elif temporal_mask is not None:
         # If standardize is False and a temporal mask is provided,
@@ -972,12 +973,12 @@ def plot_carpet(
 
     # Segmentation colorbar
     ax0.set_xticks([])
-    ax0.imshow(seg_data[order, np.newaxis], interpolation="none", aspect="auto", cmap=cmap)
+    ax0.imshow(seg_data[order, np.newaxis], interpolation='none', aspect='auto', cmap=cmap)
 
-    if func.endswith("nii.gz"):  # Nifti
-        labels = ["Cortical GM", "Subcortical GM", "Cerebellum", "CSF and WM"]
+    if func.endswith('nii.gz'):  # Nifti
+        labels = ['Cortical GM', 'Subcortical GM', 'Cerebellum', 'CSF and WM']
     else:  # Cifti
-        labels = ["Left Cortex", "Right Cortex", "Subcortical", "Cerebellum"]
+        labels = ['Left Cortex', 'Right Cortex', 'Subcortical', 'Cerebellum']
 
     # Formatting the plot
     tick_locs = []
@@ -985,20 +986,20 @@ def plot_carpet(
         tick_locs.append(np.argwhere(seg_data[order] == y).mean())
 
     ax0.set_yticks(tick_locs)
-    ax0.set_yticklabels(labels, fontdict={"fontsize": labelsize}, rotation=0, va="center")
+    ax0.set_yticklabels(labels, fontdict={'fontsize': labelsize}, rotation=0, va='center')
     ax0.grid(False)
-    ax0.spines["left"].set_visible(False)
-    ax0.spines["bottom"].set_color("none")
-    ax0.spines["bottom"].set_visible(False)
+    ax0.spines['left'].set_visible(False)
+    ax0.spines['bottom'].set_color('none')
+    ax0.spines['bottom'].set_visible(False)
     ax0.set_xticks([])
     ax0.set_xticklabels([])
 
     # Carpet plot
     pos = ax1.imshow(
         data[order],
-        interpolation="nearest",
-        aspect="auto",
-        cmap="gray",
+        interpolation='nearest',
+        aspect='auto',
+        cmap='gray',
         vmin=vlimits[0],
         vmax=vlimits[1],
     )
@@ -1012,28 +1013,30 @@ def plot_carpet(
         # Add color bands to the carpet plot corresponding to censored volumes
         outlier_idx = list(np.where(temporal_mask)[0])
         gaps = [
-            [start, end] for start, end in zip(outlier_idx, outlier_idx[1:]) if start + 1 < end
+            [start, end]
+            for start, end in zip(outlier_idx, outlier_idx[1:], strict=False)
+            if start + 1 < end
         ]
         edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
-        consecutive_outliers_idx = list(zip(edges, edges))
+        consecutive_outliers_idx = list(zip(edges, edges, strict=False))
         for band in consecutive_outliers_idx:
             start = band[0] - 0.5
             end = band[1] + 0.5
-            ax1.axvspan(start, end, color="red", alpha=0.5)
+            ax1.axvspan(start, end, color='red', alpha=0.5)
 
     # Remove and redefine spines
-    for side in ["top", "right"]:
+    for side in ['top', 'right']:
         # Toggle the spine objects
-        ax0.spines[side].set_color("none")
+        ax0.spines[side].set_color('none')
         ax0.spines[side].set_visible(False)
-        ax1.spines[side].set_color("none")
+        ax1.spines[side].set_color('none')
         ax1.spines[side].set_visible(False)
 
-    ax1.yaxis.set_ticks_position("left")
-    ax1.xaxis.set_ticks_position("bottom")
-    ax1.spines["bottom"].set_visible(False)
-    ax1.spines["left"].set_color("none")
-    ax1.spines["left"].set_visible(False)
+    ax1.yaxis.set_ticks_position('left')
+    ax1.xaxis.set_ticks_position('bottom')
+    ax1.spines['bottom'].set_visible(False)
+    ax1.spines['left'].set_color('none')
+    ax1.spines['left'].set_visible(False)
 
     # Use the last axis for a colorbar
     if colorbar:
@@ -1046,7 +1049,7 @@ def plot_carpet(
     #  Write out file
     if output_file is not None:
         figure = plt.gcf()
-        figure.savefig(output_file, bbox_inches="tight")
+        figure.savefig(output_file, bbox_inches='tight')
         plt.close(figure)
         figure = None
         return output_file
@@ -1075,8 +1078,8 @@ def surf_data_from_cifti(data, axis, surf_name):
     else:
         if surf_name not in axis.nvertices:
             raise ValueError(
-                f"No structure named {surf_name}.\n\n"
-                f"Available structures are {list(axis.name.keys())}"
+                f'No structure named {surf_name}.\n\n'
+                f'Available structures are {list(axis.name.keys())}'
             )
         nvertices = axis.nvertices[surf_name]
         surf_data = np.zeros(nvertices)
@@ -1088,7 +1091,7 @@ def surf_data_from_cifti(data, axis, surf_name):
 
         return surf_data
 
-    raise ValueError(f"No structure named {surf_name}")
+    raise ValueError(f'No structure named {surf_name}')
 
 
 def plot_design_matrix(design_matrix, temporal_mask=None):
@@ -1117,12 +1120,12 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
     design_matrix_df = pd.read_table(design_matrix)
     if temporal_mask:
         censoring_df = pd.read_table(temporal_mask)
-        n_motion_outliers = censoring_df["framewise_displacement"].sum()
+        n_motion_outliers = censoring_df['framewise_displacement'].sum()
         motion_outliers_df = pd.DataFrame(
             data=np.zeros((censoring_df.shape[0], n_motion_outliers), dtype=np.int16),
-            columns=[f"outlier{i}" for i in range(1, n_motion_outliers + 1)],
+            columns=[f'outlier{i}' for i in range(1, n_motion_outliers + 1)],
         )
-        motion_outlier_idx = np.where(censoring_df["framewise_displacement"])[0]
+        motion_outlier_idx = np.where(censoring_df['framewise_displacement'])[0]
         for i_outlier, outlier_col in enumerate(motion_outliers_df.columns):
             outlier_row = motion_outlier_idx[i_outlier]
             motion_outliers_df.loc[outlier_row, outlier_col] = 1
@@ -1132,7 +1135,7 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
             axis=1,
         )
 
-    design_matrix_figure = os.path.abspath("design_matrix.svg")
+    design_matrix_figure = os.path.abspath('design_matrix.svg')
     plotting.plot_design_matrix(design_matrix_df, output_file=design_matrix_figure)
 
     return design_matrix_figure
