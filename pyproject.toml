@@ -69,17 +69,12 @@ doc = [
     "sphinxcontrib-bibtex",
     "svgutils",
 ]
+dev = [
+    "ruff ~= 0.4.3",
+    "pre-commit",
+]
 tests = [
     "coverage",
-    "flake8",
-    "flake8-absolute-import",
-    "flake8-black",
-    "flake8-docstrings",
-    "flake8-isort",
-    "flake8-pyproject",
-    "flake8-unused-arguments",
-    "flake8-use-fstring",
-    "pep8-naming",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
@@ -91,7 +86,7 @@ maint = [
 ]
 
 # Aliases
-all = ["xcp_d[doc,maint,tests]"]
+all = ["xcp_d[dev,doc,maint,tests]"]
 
 [project.scripts]
 xcp_d = "xcp_d.cli.run:main"
@@ -126,50 +121,54 @@ version-file = "xcp_d/_version.py"
 # Developer tool configurations
 #
 
+# Disable black
 [tool.black]
+exclude = ".*"
+
+[tool.ruff]
 line-length = 99
-target-version = ['py38']
-include = '\.pyi?$'
-exclude = '''
-(
-  /(
-      \.eggs         # exclude a few common directories in the
-    | \.git          # root of the project
-    | \.github
-    | \.hg
-    | \.pytest_cache
-    | _build
-    | build
-    | dist
-  )/
-  | versioneer.py
-  | xcp_d/_version.py
-)
-'''
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-src_paths = ["isort", "test"]
-known_local_folder = ["xcp_d"]
+[tool.ruff.lint]
+extend-select = [
+  "F",
+  "E",
+  "W",
+  "I",
+  "UP",
+  "YTT",
+  "S",
+  "BLE",
+  "B",
+  "A",
+  # "CPY",
+  "C4",
+  "DTZ",
+  "T10",
+  # "EM",
+  "EXE",
+  "FA",
+  "ISC",
+  "ICN",
+  "PT",
+  "Q",
+]
+ignore = [
+  "S311",  # We are not using random for cryptographic purposes
+  "ISC001",
+  "S603",
+]
 
-[tool.flake8]
-max-line-length = "99"
-doctests = "False"
-exclude = [
-    "*build/",
-    "xcp_d/_version.py",
-    "xcp_d/_warnings.py",
-    "xcp_d/config.py",
-    "xcp_d/data/",
-    "xcp_d/tests/",
-    "xcp_d/utils/sentry.py",
-]
-ignore = ["D107", "E203", "E402", "E722", "W503", "N803", "N806", "N815"]
-per-file-ignores = [
-    "**/__init__.py : F401",
-    "docs/conf.py : E265",
-]
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"*/test_*.py" = ["S101"]
+"xcp_d/utils/debug.py" = ["A002", "T100"]
+"docs/conf.py" = ["A001"]
+"docs/sphinxext/github_link.py" = ["BLE001"]
+
+[tool.ruff.format]
+quote-style = "single"
 
 [tool.pytest.ini_options]
 addopts = '-m "not integration"'
