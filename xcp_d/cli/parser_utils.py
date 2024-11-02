@@ -21,9 +21,9 @@ def _int_or_auto(string, is_parser=True):
     error = argparse.ArgumentTypeError if is_parser else ValueError
     try:
         intarg = int(string)
-    except ValueError:
+    except ValueError as exc:
         msg = "Argument must be a nonnegative integer or 'auto'."
-        raise error(msg)
+        raise error(msg) from exc
 
     if intarg < 0:
         raise error('Int argument must be nonnegative.')
@@ -38,9 +38,9 @@ def _float_or_auto(string, is_parser=True):
     error = argparse.ArgumentTypeError if is_parser else ValueError
     try:
         floatarg = float(string)
-    except ValueError:
+    except ValueError as exc:
         msg = "Argument must be a nonnegative float or 'auto'."
-        raise error(msg)
+        raise error(msg) from exc
 
     if floatarg < 0:
         raise error('Float argument must be nonnegative.')
@@ -55,9 +55,9 @@ def _float_or_auto_or_none(string, is_parser=True):
     error = argparse.ArgumentTypeError if is_parser else ValueError
     try:
         floatarg = float(string)
-    except ValueError:
+    except ValueError as exc:
         msg = f"Argument must be a nonnegative float, 'all', or 'none', not '{string}'."
-        raise error(msg)
+        raise error(msg) from exc
 
     if floatarg < 0:
         raise error('Float argument must be nonnegative.')
@@ -68,8 +68,8 @@ def _restricted_float(x):
     """From https://stackoverflow.com/a/12117065/2589328."""
     try:
         x = float(x)
-    except ValueError:
-        raise argparse.ArgumentTypeError(f'{x} not a floating-point literal')
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f'{x} not a floating-point literal') from exc
 
     if x < 0.0 or x > 1.0:
         raise argparse.ArgumentTypeError(f'{x} not in range [0.0, 1.0]')
@@ -120,8 +120,8 @@ def _bids_filter(value, parser):
         if Path(value).exists():
             try:
                 return loads(Path(value).read_text(), object_hook=_filter_pybids_none_any)
-            except JSONDecodeError:
-                raise parser.error(f'JSON syntax error in: <{value}>.')
+            except JSONDecodeError as exc:
+                raise parser.error(f'JSON syntax error in: <{value}>.') from exc
         else:
             raise parser.error(f'Path does not exist: <{value}>.')
 

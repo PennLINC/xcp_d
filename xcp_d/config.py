@@ -214,7 +214,7 @@ DEBUG_MODES = ('pdb',)
 class _Config:
     """An abstract class forbidding instantiation."""
 
-    _paths = tuple()
+    _paths = ()
 
     def __init__(self):
         """Avert instantiation."""

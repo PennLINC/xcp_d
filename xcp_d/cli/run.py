@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """The XCP-D postprocessing worklow.
 
 XCP-D postprocessing workflow

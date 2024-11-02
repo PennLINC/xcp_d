@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """The XCP-D preprocessing worklow.
 
 XCP-D preprocessing workflow
