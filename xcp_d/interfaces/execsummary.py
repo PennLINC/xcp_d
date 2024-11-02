@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Classes for building an executive summary file."""
 
 import os
@@ -193,7 +192,7 @@ class ExecutiveSummary:
         # Unique dictionary filter in list
         # Using map() + set() + items() + sorted() + tuple()
         unique_entity_sets = list(
-            map(dict, set(tuple(sorted(sub.items())) for sub in unique_entity_sets))
+            map(dict, {tuple(sorted(sub.items())) for sub in unique_entity_sets})
         )
         task_entity_sets = []
         for entity_set in unique_entity_sets:

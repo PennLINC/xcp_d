@@ -19,7 +19,7 @@ from xcp_d.utils.filemanip import ensure_list
 LOGGER = logging.getLogger('nipype.utils')
 
 
-def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters={}):
+def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters=None):
     """Convert UK Biobank derivatives to BIDS-compliant derivatives.
 
     Parameters
@@ -48,6 +48,7 @@ def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters={}):
     LOGGER.warning('convert_ukb2bids is an experimental function.')
     in_dir = os.path.abspath(in_dir)
     out_dir = os.path.abspath(out_dir)
+    bids_filters = bids_filters or {}
 
     if participant_ids is None:
         subject_folders = sorted(glob.glob(os.path.join(in_dir, '*_*_2_0')))

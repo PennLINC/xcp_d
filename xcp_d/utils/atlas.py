@@ -46,7 +46,7 @@ def select_atlases(atlases, subset):
         ],
     }
     BUILTIN_ATLASES['all'] = sorted(
-        list(set(BUILTIN_ATLASES['cortical'] + BUILTIN_ATLASES['subcortical']))
+        set(BUILTIN_ATLASES['cortical'] + BUILTIN_ATLASES['subcortical'])
     )
     subset_atlases = BUILTIN_ATLASES[subset]
     if atlases:
@@ -59,7 +59,7 @@ def select_atlases(atlases, subset):
     return selected_atlases
 
 
-def collect_atlases(datasets, atlases, file_format, bids_filters={}):
+def collect_atlases(datasets, atlases, file_format, bids_filters=None):
     """Collect atlases from a list of BIDS-Atlas datasets.
 
     Selection of labels files and metadata does not leverage the inheritance principle.
@@ -167,7 +167,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters={}):
         if atlas not in atlas_cache:
             LOGGER.warning(f'No atlas images found for {atlas} with query {atlas_filter}')
 
-    for atlas, atlas_info in atlas_cache.items():
+    for _atlas, atlas_info in atlas_cache.items():
         if not atlas_info['labels']:
             raise FileNotFoundError(f"No TSV file found for {atlas_info['image']}")
 

@@ -159,7 +159,7 @@ class C3d(CommandLine):
     _cmd = 'c3d'
 
     def __init__(self, **inputs):
-        super(C3d, self).__init__(**inputs)
+        super().__init__(**inputs)
         self.inputs.on_trait_change(self._is_4d, 'is_4d')
         if self.inputs.is_4d:
             self._is_4d()
@@ -173,7 +173,7 @@ class C3d(CommandLine):
             # Convert3d does not want to override file, by default
             # so we define a new output file
             self._gen_outfile()
-        runtime = super(C3d, self)._run_interface(runtime)
+        runtime = super()._run_interface(runtime)
         self._cmd = cmd
         return runtime
 

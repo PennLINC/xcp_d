@@ -645,7 +645,7 @@ class PNGAppend(FSLCommand):
 
             return ' + '.join(value)
 
-        return super(PNGAppend, self)._format_arg(name, spec, value)
+        return super()._format_arg(name, spec, value)
 
     def _list_outputs(self):
         outputs = self._outputs().get()

@@ -258,8 +258,8 @@ def _test_validate_parameters_fs_license(base_opts, base_parser, caplog, capsys,
     assert 'Freesurfer license DNE' not in caplog.text
 
     # If file doesn't exist, return_code should be 1
+    opts.fs_license_file = Path('/path/to/missing/file.txt')
     with pytest.raises(SystemExit, match='2'):
-        opts.fs_license_file = Path('/path/to/missing/file.txt')
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert 'Freesurfer license DNE' in capsys.readouterr().err
@@ -476,7 +476,7 @@ def test_build_parser_02(tmp_path_factory):
 
 
 @pytest.mark.parametrize(
-    'mode,combine_runs,expectation',
+    ('mode', 'combine_runs', 'expectation'),
     [
         ('linc', 'auto', False),
         ('abcd', 'auto', True),
@@ -528,7 +528,7 @@ def test_build_parser_03(tmp_path_factory, mode, combine_runs, expectation):
 
 
 @pytest.mark.parametrize(
-    'mode,despike,expectation',
+    ('mode', 'despike', 'expectation'),
     [
         ('linc', 'auto', True),
         ('abcd', 'auto', True),
@@ -582,7 +582,7 @@ def test_build_parser_04(tmp_path_factory, mode, despike, expectation):
 
 
 @pytest.mark.parametrize(
-    'mode,process_surfaces,expectation',
+    ('mode', 'process_surfaces', 'expectation'),
     [
         ('linc', 'auto', False),
         ('abcd', 'auto', True),
@@ -636,7 +636,7 @@ def test_build_parser_05(tmp_path_factory, mode, process_surfaces, expectation):
 
 
 @pytest.mark.parametrize(
-    'mode,file_format,expectation',
+    ('mode', 'file_format', 'expectation'),
     [
         ('linc', 'auto', 'cifti'),
         ('abcd', 'auto', 'cifti'),

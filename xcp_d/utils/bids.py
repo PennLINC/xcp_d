@@ -71,7 +71,7 @@ class BIDSError(ValueError):
             f"\n{header}\n{''.join([' '] * (indent + 1))}{message}\n"
             f"{''.join(['-'] * len(header))}"
         )
-        super(BIDSError, self).__init__(self.msg)
+        super().__init__(self.msg)
         self.bids_root = bids_root
 
 
@@ -708,7 +708,7 @@ def collect_confounds(
                 print(f'Not required: {k}')
                 continue
 
-            if isinstance(v, (Path, str)):
+            if isinstance(v, Path | str):
                 layout = BIDSLayout(
                     v,
                     config=['bids', 'derivatives', xcp_d_config],

@@ -146,7 +146,7 @@ class CompositeTransformUtil(ANTSCommand):
             return ''
         if name == 'out_file' and self.inputs.process == 'disassemble':
             return ''
-        return super(CompositeTransformUtil, self)._format_arg(name, spec, value)
+        return super()._format_arg(name, spec, value)
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
@@ -213,5 +213,5 @@ class ApplyTransforms(FixHeaderApplyTransforms):
                 use_ext=False,
             )
 
-        runtime = super(ApplyTransforms, self)._run_interface(runtime)
+        runtime = super()._run_interface(runtime)
         return runtime
