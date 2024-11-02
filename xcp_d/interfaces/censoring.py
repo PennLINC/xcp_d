@@ -512,7 +512,7 @@ class ProcessMotion(SimpleInterface):
         # First drop any columns that are not motion parameters
         orig_cols = list(motion_metadata.keys())
         orig_cols = [c for c in orig_cols if c[0] == c[0].lower()]
-        cols_to_drop = sorted(list(set(orig_cols) - set(motion_df.columns.tolist())))
+        cols_to_drop = sorted(set(orig_cols) - set(motion_df.columns.tolist()))
         motion_metadata = {k: v for k, v in motion_metadata.items() if k not in cols_to_drop}
         for col in motion_df.columns.tolist():
             col_metadata = motion_metadata.get(col, {})

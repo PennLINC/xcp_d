@@ -366,7 +366,7 @@ class ConnectPlot(SimpleInterface):
 
         # Get the community name associated with each network
         labels = np.array(network_labels)[community_order]
-        unique_labels = sorted(list(set(labels)))
+        unique_labels = sorted(set(labels))
         unique_labels = []
         for label in labels:
             if label not in unique_labels:

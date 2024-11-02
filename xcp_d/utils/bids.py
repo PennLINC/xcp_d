@@ -696,7 +696,7 @@ def collect_confounds(
     for confound_def in confound_spec['confounds'].values():
         req_datasets.append(confound_def['dataset'])
 
-    req_datasets = sorted(list(set(req_datasets)))
+    req_datasets = sorted(set(req_datasets))
 
     # Step 1: Build a dictionary of dataset: layout pairs.
     layout_dict = {}

@@ -84,7 +84,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
     )
 
     builtin_atlases = select_atlases(atlases=config.execution.atlases, subset='all')
-    external_atlases = sorted(list(set(config.execution.atlases) - set(builtin_atlases)))
+    external_atlases = sorted(set(config.execution.atlases) - set(builtin_atlases))
     builtin_cortical_atlases = select_atlases(atlases=builtin_atlases, subset='cortical')
     selected_atlases = builtin_cortical_atlases + external_atlases
     atlases = collect_atlases(

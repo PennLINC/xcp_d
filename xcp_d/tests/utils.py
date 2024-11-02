@@ -134,8 +134,8 @@ def check_generated_files(output_dir, output_list_file):
         expected_files = [f.rstrip() for f in expected_files]
 
     if sorted(found_files) != sorted(expected_files):
-        expected_not_found = sorted(list(set(expected_files) - set(found_files)))
-        found_not_expected = sorted(list(set(found_files) - set(expected_files)))
+        expected_not_found = sorted(set(expected_files) - set(found_files))
+        found_not_expected = sorted(set(found_files) - set(expected_files))
 
         msg = ''
         if expected_not_found:
@@ -265,7 +265,7 @@ def reorder_expected_outputs():
         with open(expected_output_file) as fo:
             file_contents = fo.readlines()
 
-        file_contents = sorted(list(set(file_contents)))
+        file_contents = sorted(set(file_contents))
 
         with open(expected_output_file, 'w') as fo:
             fo.writelines(file_contents)
