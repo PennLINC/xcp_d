@@ -143,7 +143,7 @@ def collect_participants(layout, participant_label=None, strict=False):
         )
         if strict:
             raise exc
-        warnings.warn(exc.msg, BIDSWarning)
+        warnings.warn(exc.msg, BIDSWarning, stacklevel=2)
 
     return found_label
 
@@ -722,7 +722,7 @@ def collect_confounds(
                 layout_dict[k] = v
 
     # Step 2: Loop over the confounds spec and search for each file in the corresponding dataset.
-    confounds = dict()
+    confounds = {}
     for confound_name, confound_def in confound_spec['confounds'].items():
         if confound_def['dataset'] not in layout_dict.keys():
             raise ValueError(
@@ -752,7 +752,7 @@ def write_derivative_description(
     fmri_dir,
     output_dir,
     atlases=None,
-    dataset_links={},
+    dataset_links=None,
 ):
     """Write dataset_description.json file for derivatives.
 
@@ -771,6 +771,8 @@ def write_derivative_description(
     import os
 
     from xcp_d.__about__ import DOWNLOAD_URL, __version__
+
+    dataset_links = dataset_links or {}
 
     orig_dset_description = os.path.join(fmri_dir, 'dataset_description.json')
     if not os.path.isfile(orig_dset_description):

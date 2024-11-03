@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for concatenating scans across runs."""
 
-import os
 from contextlib import suppress
 
 import nibabel as nb
@@ -59,4 +58,6 @@ def concatenate_niimgs(files, out_file):
         concat_preproc_img = concat_imgs(files)
         concat_preproc_img.to_filename(out_file)
     else:
-        os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(files)}")
+        import subprocess
+        cmd = ['wb_command', '-cifti-merge', out_file, '-cifti'] + files
+        subprocess.run(cmd, check=True)

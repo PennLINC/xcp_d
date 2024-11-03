@@ -11,7 +11,7 @@ import sys
 ###################################
 # Standard documentation entries
 #
-docdict = dict()
+docdict = {}
 
 docdict['omp_nthreads'] = """
 omp_nthreads : :obj:`int`
@@ -512,7 +512,7 @@ def fill_doc(f):
     except (TypeError, ValueError, KeyError) as exp:
         funcname = f.__name__
         funcname = docstring.split('\n')[0] if funcname is None else funcname
-        raise RuntimeError(f'Error documenting {funcname}:\n{str(exp)}')
+        raise RuntimeError(f'Error documenting {funcname}:\n{str(exp)}') from exp
     return f
 
 
@@ -537,7 +537,7 @@ def download_example_data(out_dir=None, overwrite=False):
         target_file = os.path.join(out_dir, 'ds001419-example.tar.gz')
 
         if overwrite or not os.path.isfile(target_file):
-            response = requests.get(url, stream=True)
+            response = requests.get(url, stream=True, timeout=10)
             if response.status_code == 200:
                 with open(target_file, 'wb') as fo:
                     fo.write(response.raw.read())
@@ -547,6 +547,6 @@ def download_example_data(out_dir=None, overwrite=False):
 
         # Expand the file
         with tarfile.open(target_file, 'r:gz') as fo:
-            fo.extractall(out_dir)
+            fo.extractall(out_dir)  # noqa: S202
 
     return target_path

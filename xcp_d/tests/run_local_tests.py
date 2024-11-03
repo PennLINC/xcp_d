@@ -38,17 +38,17 @@ def _get_parser():
 def run_command(command, env=None):
     """Run a given shell command with certain environment variables set.
 
-    Keep this out of the real xcp_d code so that devs don't need to install ASLPrep to run tests.
+    Keep this out of the real XCP-D code so that devs don't need to install XCP-D to run tests.
     """
     merged_env = os.environ
     if env:
         merged_env.update(env)
 
     process = subprocess.Popen(
-        command,
+        command.split(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        shell=True,
+        shell=False,
         env=merged_env,
     )
     while True:
@@ -64,26 +64,39 @@ def run_command(command, env=None):
         )
 
 
-def run_tests(test_regex, test_mark):
+def run_tests(test_regex, test_mark, check_path):
     """Run the tests."""
     local_patch = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     mounted_code = '/usr/local/miniconda/lib/python3.10/site-packages/xcp_d'
-    run_str = 'docker run --rm -ti '
-    run_str += f'-v {local_patch}:/usr/local/miniconda/lib/python3.10/site-packages/xcp_d '
-    run_str += '--entrypoint pytest '
-    run_str += 'pennlinc/xcp_d:unstable '
-    run_str += (
-        f'{mounted_code}/xcp_d '
-        f'--data_dir={mounted_code}/xcp_d/tests/test_data '
-        f'--output_dir={mounted_code}/xcp_d/tests/pytests/out '
-        f'--working_dir={mounted_code}/xcp_d/tests/pytests/work '
-    )
-    if test_regex:
-        run_str += f'-k {test_regex} '
-    elif test_mark:
-        run_str += f'-rP -o log_cli=true -m {test_mark} '
 
-    run_command(run_str)
+    if check_path:
+        run_str = (
+            'docker run --rm -ti '
+            '--entrypoint /bin/ls '
+            f'pennlinc/xcp_d:unstable {mounted_code}'
+        )
+        try:
+            run_command(run_str)
+            print(f'Path found: {mounted_code}.')
+        except RuntimeError as exc:
+            raise FileNotFoundError(f'Path not found: {mounted_code}') from exc
+    else:
+        run_str = 'docker run --rm -ti '
+        run_str += f'-v {local_patch}:/usr/local/miniconda/lib/python3.10/site-packages/xcp_d '
+        run_str += '--entrypoint pytest '
+        run_str += 'pennlinc/xcp_d:unstable '
+        run_str += (
+            f'{mounted_code}/xcp_d '
+            f'--data_dir={mounted_code}/xcp_d/tests/test_data '
+            f'--output_dir={mounted_code}/xcp_d/tests/pytests/out '
+            f'--working_dir={mounted_code}/xcp_d/tests/pytests/work '
+        )
+        if test_regex:
+            run_str += f'-k {test_regex} '
+        elif test_mark:
+            run_str += f'-rP -o log_cli=true -m {test_mark} '
+
+        run_command(run_str)
 
 
 def _main(argv=None):

@@ -237,7 +237,7 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
         assert band_stop_min is not None
         assert band_stop_min > 0
         if band_stop_max:
-            warnings.warn("The parameter 'band_stop_max' will be ignored.")
+            warnings.warn("The parameter 'band_stop_max' will be ignored.", stacklevel=2)
 
         lowpass_hz = band_stop_min / 60  # change BPM to right time unit
 
@@ -252,7 +252,8 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
         if band_stop_min_adjusted != band_stop_min:
             warnings.warn(
                 f'Low-pass filter frequency is above Nyquist frequency ({nyquist_bpm} BPM), '
-                f'so it has been changed ({band_stop_min} --> {band_stop_min_adjusted} BPM).'
+                f'so it has been changed ({band_stop_min} --> {band_stop_min_adjusted} BPM).',
+                stacklevel=2,
             )
             is_modified = True
 
@@ -282,7 +283,8 @@ def _modify_motion_filter(motion_filter_type, band_stop_min, band_stop_max, TR):
                 f'One or both filter frequencies are above Nyquist frequency ({nyquist_bpm} BPM), '
                 'so they have been changed '
                 f'({stopband[0]} --> {stopband_adjusted[0]}, '
-                f'{stopband[1]} --> {stopband_adjusted[1]} BPM).'
+                f'{stopband[1]} --> {stopband_adjusted[1]} BPM).',
+                stacklevel=2,
             )
             is_modified = True
 
