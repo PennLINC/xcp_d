@@ -208,8 +208,6 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "--nuisance-regressors=36P",
         "--linc-qc=n",
         "--warp-surfaces-native2std=n",
-        "--resource-monitor",
-        "--notrack",
     ]
     _run_and_generate(
         test_name=test_name,
