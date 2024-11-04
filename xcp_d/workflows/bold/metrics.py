@@ -353,7 +353,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         n_procs=config.nipype.omp_nthreads,
     )
 
-    # Calculate the reho by hemipshere
+    # Calculate the reho by hemisphere
     lh_reho = pe.Node(
         SurfaceReHo(surf_hemi='L'),
         name='reho_lh',

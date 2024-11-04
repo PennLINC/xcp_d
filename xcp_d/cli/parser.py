@@ -204,7 +204,7 @@ def _build_parser():
         dest='verbose_count',
         action='count',
         default=0,
-        help="Increases log verbosity for each occurence. Debug level is '-vvv'.",
+        help="Increases log verbosity for each occurrence. Debug level is '-vvv'.",
     )
 
     g_outputoption = parser.add_argument_group('Input flags')
