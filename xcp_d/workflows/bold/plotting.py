@@ -366,7 +366,7 @@ def init_qc_report_wf(
         ])  # fmt:skip
     else:
         # Need to explicitly add the outputnode to the workflow, since it's not set otherwise.
-        workflow.add_nodes([inputnode, outputnode])
+        workflow.add_nodes([outputnode])
 
     if config.workflow.abcc_qc:
         make_abcc_qc = pe.Node(
@@ -438,6 +438,12 @@ def init_qc_report_wf(
             (inputnode, ds_report_postproc_qc_es, [("name_source", "source_file")]),
             (make_qc_plots_es, ds_report_postproc_qc_es, [("after_process", "in_file")]),
         ])  # fmt:skip
+
+    if config.workflow.file_format != "nifti" and not (
+        config.workflow.linc_qc or config.workflow.abcc_qc
+    ):
+        # Need to explicitly add the inputnode to the workflow, since it's not set otherwise.
+        workflow.add_nodes([inputnode])
 
     return workflow
 
