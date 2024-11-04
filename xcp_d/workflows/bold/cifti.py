@@ -25,7 +25,7 @@ from xcp_d.workflows.bold.postprocessing import (
     init_prepare_confounds_wf,
 )
 
-LOGGER = logging.getLogger("nipype.workflow")
+LOGGER = logging.getLogger('nipype.workflow')
 
 
 @fill_doc
@@ -37,7 +37,7 @@ def init_postprocess_cifti_wf(
     t2w_available,
     n_runs,
     exact_scans,
-    name="cifti_postprocess_wf",
+    name='cifti_postprocess_wf',
 ):
     """Organize the cifti processing workflow.
 
@@ -133,37 +133,37 @@ def init_postprocess_cifti_wf(
     dummy_scans = config.workflow.dummy_scans
     despike = config.workflow.despike
 
-    TR = run_data["bold_metadata"]["RepetitionTime"]
+    TR = run_data['bold_metadata']['RepetitionTime']
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "bold_file",
-                "boldref",
-                "t1w",
-                "t2w",
-                "motion_file",
-                "motion_json",
-                "confounds_files",
-                "dummy_scans",
+                'bold_file',
+                'boldref',
+                't1w',
+                't2w',
+                'motion_file',
+                'motion_json',
+                'confounds_files',
+                'dummy_scans',
                 # if parcellation is performed
-                "atlases",
-                "atlas_files",
-                "atlas_labels_files",
+                'atlases',
+                'atlas_files',
+                'atlas_labels_files',
                 # CIFTI only
                 # for plotting, if the anatomical workflow was used
-                "lh_midthickness",
-                "rh_midthickness",
+                'lh_midthickness',
+                'rh_midthickness',
             ],
         ),
-        name="inputnode",
+        name='inputnode',
     )
 
     inputnode.inputs.bold_file = bold_file
-    inputnode.inputs.boldref = run_data["boldref"]
-    inputnode.inputs.motion_file = run_data["motion_file"]
-    inputnode.inputs.motion_json = run_data["motion_json"]
-    inputnode.inputs.confounds_files = run_data["confounds"]
+    inputnode.inputs.boldref = run_data['boldref']
+    inputnode.inputs.motion_file = run_data['motion_file']
+    inputnode.inputs.motion_json = run_data['motion_json']
+    inputnode.inputs.confounds_files = run_data['confounds']
     inputnode.inputs.dummy_scans = dummy_scans
 
     workflow.__desc__ = f"""
@@ -178,38 +178,38 @@ the following post-processing was performed.
     outputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "name_source",
-                "preprocessed_bold",
-                "motion_file",
-                "temporal_mask",
-                "denoised_bold",
-                "denoised_interpolated_bold",
-                "censored_denoised_bold",
-                "smoothed_denoised_bold",
-                "boldref",
-                "bold_mask",  # will not be defined
+                'name_source',
+                'preprocessed_bold',
+                'motion_file',
+                'temporal_mask',
+                'denoised_bold',
+                'denoised_interpolated_bold',
+                'censored_denoised_bold',
+                'smoothed_denoised_bold',
+                'boldref',
+                'bold_mask',  # will not be defined
                 # if parcellation is performed
-                "timeseries",
-                "timeseries_ciftis",
+                'timeseries',
+                'timeseries_ciftis',
             ],
         ),
-        name="outputnode",
+        name='outputnode',
     )
 
     mem_gbx = _create_mem_gb(bold_file)
 
     downcast_data = pe.Node(
         ConvertTo32(),
-        name="downcast_data",
-        mem_gb=mem_gbx["timeseries"],
+        name='downcast_data',
+        mem_gb=mem_gbx['timeseries'],
     )
 
     workflow.connect([
         (inputnode, outputnode, [
-            ("bold_file", "name_source"),
-            ("boldref", "boldref"),
+            ('bold_file', 'name_source'),
+            ('boldref', 'boldref'),
         ]),
-        (inputnode, downcast_data, [("bold_file", "bold_file")]),
+        (inputnode, downcast_data, [('bold_file', 'bold_file')]),
     ])  # fmt:skip
 
     prepare_confounds_wf = init_prepare_confounds_wf(
@@ -220,14 +220,14 @@ the following post-processing was performed.
 
     workflow.connect([
         (inputnode, prepare_confounds_wf, [
-            ("bold_file", "inputnode.name_source"),
-            ("motion_file", "inputnode.motion_file"),
-            ("motion_json", "inputnode.motion_json"),
-            ("confounds_files", "inputnode.confounds_files"),
+            ('bold_file', 'inputnode.name_source'),
+            ('motion_file', 'inputnode.motion_file'),
+            ('motion_json', 'inputnode.motion_json'),
+            ('confounds_files', 'inputnode.confounds_files'),
         ]),
-        (downcast_data, prepare_confounds_wf, [("bold_file", "inputnode.preprocessed_bold")]),
+        (downcast_data, prepare_confounds_wf, [('bold_file', 'inputnode.preprocessed_bold')]),
         (prepare_confounds_wf, outputnode, [
-            ("outputnode.preprocessed_bold", "preprocessed_bold"),
+            ('outputnode.preprocessed_bold', 'preprocessed_bold'),
         ]),
     ])  # fmt:skip
 
@@ -235,13 +235,13 @@ the following post-processing was performed.
 
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
-            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-            ("outputnode.confounds_tsv", "inputnode.confounds_tsv"),
-            ("outputnode.confounds_images", "inputnode.confounds_images"),
+            ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
+            ('outputnode.confounds_tsv', 'inputnode.confounds_tsv'),
+            ('outputnode.confounds_images', 'inputnode.confounds_images'),
         ]),
         (denoise_bold_wf, outputnode, [
-            ("outputnode.denoised_interpolated_bold", "denoised_interpolated_bold"),
-            ("outputnode.censored_denoised_bold", "censored_denoised_bold"),
+            ('outputnode.denoised_interpolated_bold', 'denoised_interpolated_bold'),
+            ('outputnode.censored_denoised_bold', 'censored_denoised_bold'),
         ]),
     ])  # fmt:skip
 
@@ -250,17 +250,17 @@ the following post-processing was performed.
 
         workflow.connect([
             (prepare_confounds_wf, despike_wf, [
-                ("outputnode.preprocessed_bold", "inputnode.bold_file"),
+                ('outputnode.preprocessed_bold', 'inputnode.bold_file'),
             ]),
             (despike_wf, denoise_bold_wf, [
-                ("outputnode.bold_file", "inputnode.preprocessed_bold"),
+                ('outputnode.bold_file', 'inputnode.preprocessed_bold'),
             ]),
         ])  # fmt:skip
 
     else:
         workflow.connect([
             (prepare_confounds_wf, denoise_bold_wf, [
-                ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),
+                ('outputnode.preprocessed_bold', 'inputnode.preprocessed_bold'),
             ]),
         ])  # fmt:skip
 
@@ -269,14 +269,14 @@ the following post-processing was performed.
 
         workflow.connect([
             (inputnode, alff_wf, [
-                ("lh_midthickness", "inputnode.lh_midthickness"),
-                ("rh_midthickness", "inputnode.rh_midthickness"),
+                ('lh_midthickness', 'inputnode.lh_midthickness'),
+                ('rh_midthickness', 'inputnode.rh_midthickness'),
             ]),
             (prepare_confounds_wf, alff_wf, [
-                ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+                ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
             ]),
             (denoise_bold_wf, alff_wf, [
-                ("outputnode.denoised_interpolated_bold", "inputnode.denoised_bold"),
+                ('outputnode.denoised_interpolated_bold', 'inputnode.denoised_bold'),
             ]),
         ])  # fmt:skip
 
@@ -284,75 +284,75 @@ the following post-processing was performed.
 
     workflow.connect([
         (inputnode, reho_wf, [
-            ("lh_midthickness", "inputnode.lh_midthickness"),
-            ("rh_midthickness", "inputnode.rh_midthickness"),
+            ('lh_midthickness', 'inputnode.lh_midthickness'),
+            ('rh_midthickness', 'inputnode.rh_midthickness'),
         ]),
         (denoise_bold_wf, reho_wf, [
-            ("outputnode.censored_denoised_bold", "inputnode.denoised_bold"),
+            ('outputnode.censored_denoised_bold', 'inputnode.denoised_bold'),
         ]),
     ])  # fmt:skip
 
     qc_report_wf = init_qc_report_wf(
         TR=TR,
         head_radius=head_radius,
-        name="qc_report_wf",
+        name='qc_report_wf',
     )
 
     workflow.connect([
-        (inputnode, qc_report_wf, [("bold_file", "inputnode.name_source")]),
+        (inputnode, qc_report_wf, [('bold_file', 'inputnode.name_source')]),
         (prepare_confounds_wf, qc_report_wf, [
-            ("outputnode.preprocessed_bold", "inputnode.preprocessed_bold"),
-            ("outputnode.dummy_scans", "inputnode.dummy_scans"),
-            ("outputnode.motion_file", "inputnode.motion_file"),
-            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+            ('outputnode.preprocessed_bold', 'inputnode.preprocessed_bold'),
+            ('outputnode.dummy_scans', 'inputnode.dummy_scans'),
+            ('outputnode.motion_file', 'inputnode.motion_file'),
+            ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
         ]),
         (denoise_bold_wf, qc_report_wf, [
-            ("outputnode.denoised_interpolated_bold", "inputnode.denoised_interpolated_bold"),
-            ("outputnode.censored_denoised_bold", "inputnode.censored_denoised_bold"),
+            ('outputnode.denoised_interpolated_bold', 'inputnode.denoised_interpolated_bold'),
+            ('outputnode.censored_denoised_bold', 'inputnode.censored_denoised_bold'),
         ]),
     ])  # fmt:skip
 
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         name_source=bold_file,
-        source_metadata=run_data["bold_metadata"],
+        source_metadata=run_data['bold_metadata'],
         exact_scans=exact_scans,
     )
 
     workflow.connect([
         (inputnode, postproc_derivatives_wf, [
-            ("motion_file", "inputnode.preproc_confounds_file"),
-            ("atlas_files", "inputnode.atlas_files"),
-            ("atlases", "inputnode.atlas_names"),
+            ('motion_file', 'inputnode.preproc_confounds_file'),
+            ('atlas_files', 'inputnode.atlas_files'),
+            ('atlases', 'inputnode.atlas_names'),
         ]),
         (denoise_bold_wf, postproc_derivatives_wf, [
-            ("outputnode.denoised_bold", "inputnode.denoised_bold"),
-            ("outputnode.smoothed_denoised_bold", "inputnode.smoothed_denoised_bold"),
+            ('outputnode.denoised_bold', 'inputnode.denoised_bold'),
+            ('outputnode.smoothed_denoised_bold', 'inputnode.smoothed_denoised_bold'),
         ]),
-        (qc_report_wf, postproc_derivatives_wf, [("outputnode.qc_file", "inputnode.qc_file")]),
+        (qc_report_wf, postproc_derivatives_wf, [('outputnode.qc_file', 'inputnode.qc_file')]),
         (prepare_confounds_wf, postproc_derivatives_wf, [
-            ("outputnode.confounds_tsv", "inputnode.confounds_tsv"),
-            ("outputnode.confounds_metadata", "inputnode.confounds_metadata"),
-            ("outputnode.motion_file", "inputnode.motion_file"),
-            ("outputnode.motion_metadata", "inputnode.motion_metadata"),
-            ("outputnode.temporal_mask", "inputnode.temporal_mask"),
-            ("outputnode.temporal_mask_metadata", "inputnode.temporal_mask_metadata"),
+            ('outputnode.confounds_tsv', 'inputnode.confounds_tsv'),
+            ('outputnode.confounds_metadata', 'inputnode.confounds_metadata'),
+            ('outputnode.motion_file', 'inputnode.motion_file'),
+            ('outputnode.motion_metadata', 'inputnode.motion_metadata'),
+            ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
+            ('outputnode.temporal_mask_metadata', 'inputnode.temporal_mask_metadata'),
         ]),
-        (reho_wf, postproc_derivatives_wf, [("outputnode.reho", "inputnode.reho")]),
+        (reho_wf, postproc_derivatives_wf, [('outputnode.reho', 'inputnode.reho')]),
         (postproc_derivatives_wf, outputnode, [
-            ("outputnode.motion_file", "motion_file"),
-            ("outputnode.temporal_mask", "temporal_mask"),
-            ("outputnode.denoised_bold", "denoised_bold"),
-            ("outputnode.smoothed_denoised_bold", "smoothed_denoised_bold"),
-            ("outputnode.timeseries", "timeseries"),
-            ("outputnode.timeseries_ciftis", "timeseries_ciftis"),
+            ('outputnode.motion_file', 'motion_file'),
+            ('outputnode.temporal_mask', 'temporal_mask'),
+            ('outputnode.denoised_bold', 'denoised_bold'),
+            ('outputnode.smoothed_denoised_bold', 'smoothed_denoised_bold'),
+            ('outputnode.timeseries', 'timeseries'),
+            ('outputnode.timeseries_ciftis', 'timeseries_ciftis'),
         ]),
     ])  # fmt:skip
 
     if bandpass_filter:
         workflow.connect([
             (alff_wf, postproc_derivatives_wf, [
-                ("outputnode.alff", "inputnode.alff"),
-                ("outputnode.smoothed_alff", "inputnode.smoothed_alff"),
+                ('outputnode.alff', 'inputnode.alff'),
+                ('outputnode.smoothed_alff', 'inputnode.smoothed_alff'),
             ]),
         ])  # fmt:skip
 
@@ -364,45 +364,45 @@ the following post-processing was performed.
 
         workflow.connect([
             (inputnode, connectivity_wf, [
-                ("bold_file", "inputnode.name_source"),
-                ("atlases", "inputnode.atlases"),
-                ("atlas_files", "inputnode.atlas_files"),
-                ("atlas_labels_files", "inputnode.atlas_labels_files"),
-                ("lh_midthickness", "inputnode.lh_midthickness"),
-                ("rh_midthickness", "inputnode.rh_midthickness"),
+                ('bold_file', 'inputnode.name_source'),
+                ('atlases', 'inputnode.atlases'),
+                ('atlas_files', 'inputnode.atlas_files'),
+                ('atlas_labels_files', 'inputnode.atlas_labels_files'),
+                ('lh_midthickness', 'inputnode.lh_midthickness'),
+                ('rh_midthickness', 'inputnode.rh_midthickness'),
             ]),
             (prepare_confounds_wf, connectivity_wf, [
-                ("outputnode.temporal_mask", "inputnode.temporal_mask"),
+                ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
             ]),
             (denoise_bold_wf, connectivity_wf, [
-                ("outputnode.denoised_bold", "inputnode.denoised_bold"),
+                ('outputnode.denoised_bold', 'inputnode.denoised_bold'),
             ]),
-            (reho_wf, connectivity_wf, [("outputnode.reho", "inputnode.reho")]),
+            (reho_wf, connectivity_wf, [('outputnode.reho', 'inputnode.reho')]),
             (connectivity_wf, postproc_derivatives_wf, [
-                ("outputnode.coverage_ciftis", "inputnode.coverage_ciftis"),
-                ("outputnode.timeseries_ciftis", "inputnode.timeseries_ciftis"),
-                ("outputnode.correlation_ciftis", "inputnode.correlation_ciftis"),
-                ("outputnode.correlation_ciftis_exact", "inputnode.correlation_ciftis_exact"),
-                ("outputnode.coverage", "inputnode.coverage"),
-                ("outputnode.timeseries", "inputnode.timeseries"),
-                ("outputnode.correlations", "inputnode.correlations"),
-                ("outputnode.correlations_exact", "inputnode.correlations_exact"),
-                ("outputnode.parcellated_reho", "inputnode.parcellated_reho"),
+                ('outputnode.coverage_ciftis', 'inputnode.coverage_ciftis'),
+                ('outputnode.timeseries_ciftis', 'inputnode.timeseries_ciftis'),
+                ('outputnode.correlation_ciftis', 'inputnode.correlation_ciftis'),
+                ('outputnode.correlation_ciftis_exact', 'inputnode.correlation_ciftis_exact'),
+                ('outputnode.coverage', 'inputnode.coverage'),
+                ('outputnode.timeseries', 'inputnode.timeseries'),
+                ('outputnode.correlations', 'inputnode.correlations'),
+                ('outputnode.correlations_exact', 'inputnode.correlations_exact'),
+                ('outputnode.parcellated_reho', 'inputnode.parcellated_reho'),
             ]),
         ])  # fmt:skip
 
         if bandpass_filter:
             workflow.connect([
-                (alff_wf, connectivity_wf, [("outputnode.alff", "inputnode.alff")]),
+                (alff_wf, connectivity_wf, [('outputnode.alff', 'inputnode.alff')]),
                 (connectivity_wf, postproc_derivatives_wf, [
-                    ("outputnode.parcellated_alff", "inputnode.parcellated_alff"),
+                    ('outputnode.parcellated_alff', 'inputnode.parcellated_alff'),
                 ]),
             ])  # fmt:skip
 
     if config.workflow.abcc_qc:
         # executive summary workflow
         execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
-            preproc_nifti=run_data["nifti_file"],
+            preproc_nifti=run_data['nifti_file'],
             t1w_available=t1w_available,
             t2w_available=t2w_available,
             mem_gb=mem_gbx,
@@ -412,9 +412,9 @@ the following post-processing was performed.
             # Use inputnode for executive summary instead of downcast_data because T1w is name
             # source.
             (inputnode, execsummary_functional_plots_wf, [
-                ("boldref", "inputnode.boldref"),
-                ("t1w", "inputnode.t1w"),
-                ("t2w", "inputnode.t2w"),
+                ('boldref', 'inputnode.boldref'),
+                ('t1w', 'inputnode.t1w'),
+                ('t2w', 'inputnode.t2w'),
             ]),
         ])  # fmt:skip
 

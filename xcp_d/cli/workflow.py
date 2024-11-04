@@ -23,30 +23,30 @@ def build_workflow(config_file, retval):
 
     version = config.environment.version
 
-    retval["return_code"] = 1
-    retval["workflow"] = None
+    retval['return_code'] = 1
+    retval['workflow'] = None
 
-    banner = [f"Running XCP-D version {version}"]
-    notice_path = data.load.readable("NOTICE")
+    banner = [f'Running XCP-D version {version}']
+    notice_path = data.load.readable('NOTICE')
     if notice_path.exists():
-        banner[0] += "\n"
+        banner[0] += '\n'
         banner += [f"License NOTICE {'#' * 50}"]
-        banner += [f"XCP-D {version}"]
+        banner += [f'XCP-D {version}']
         banner += notice_path.read_text().splitlines(keepends=False)[1:]
-        banner += ["#" * len(banner[1])]
+        banner += ['#' * len(banner[1])]
     build_log.log(25, f"\n{' ' * 9}".join(banner))
 
     # warn if older results exist: check for dataset_description.json in output folder
     msg = check_pipeline_version(
-        "XCP-D",
+        'XCP-D',
         version,
-        config.execution.output_dir / "dataset_description.json",
+        config.execution.output_dir / 'dataset_description.json',
     )
     if msg is not None:
         build_log.warning(msg)
 
     # Please note this is the input folder's dataset_description.json
-    dset_desc_path = config.execution.fmri_dir / "dataset_description.json"
+    dset_desc_path = config.execution.fmri_dir / 'dataset_description.json'
     if dset_desc_path.exists():
         from hashlib import sha256
 
@@ -61,9 +61,9 @@ def build_workflow(config_file, retval):
 
     # Called with reports only
     if config.execution.reports_only:
-        build_log.log(25, "Running --reports-only on participants %s", ", ".join(subject_list))
+        build_log.log(25, 'Running --reports-only on participants %s', ', '.join(subject_list))
         session_list = (
-            config.execution.bids_filters.get("bold", {}).get("session")
+            config.execution.bids_filters.get('bold', {}).get('session')
             if config.execution.bids_filters
             else None
         )
@@ -77,44 +77,44 @@ def build_workflow(config_file, retval):
         )
         if failed_reports:
             config.loggers.cli.error(
-                "Report generation was not successful for the following participants : %s.",
-                ", ".join(failed_reports),
+                'Report generation was not successful for the following participants : %s.',
+                ', '.join(failed_reports),
             )
 
-        retval["return_code"] = len(failed_reports)
+        retval['return_code'] = len(failed_reports)
         return retval
 
     # Build main workflow
     init_msg = [
         "Building XCP-D's workflow:",
-        f"Preprocessing derivatives path: {config.execution.fmri_dir}.",
-        f"Participant list: {subject_list}.",
-        f"Run identifier: {config.execution.run_uuid}.",
+        f'Preprocessing derivatives path: {config.execution.fmri_dir}.',
+        f'Participant list: {subject_list}.',
+        f'Run identifier: {config.execution.run_uuid}.',
     ]
 
     if config.execution.datasets:
-        init_msg += [f"Searching for derivatives and atlases: {config.execution.datasets}."]
+        init_msg += [f'Searching for derivatives and atlases: {config.execution.datasets}.']
 
     build_log.log(25, f"\n{' ' * 11}* ".join(init_msg))
 
-    retval["workflow"] = init_xcpd_wf()
+    retval['workflow'] = init_xcpd_wf()
 
     # Check workflow for missing commands
-    missing = check_deps(retval["workflow"])
+    missing = check_deps(retval['workflow'])
     if missing:
         build_log.critical(
-            "Cannot run XCP-D. Missing dependencies:%s",
-            "\n\t* ".join([""] + [f"{cmd} (Interface: {iface})" for iface, cmd in missing]),
+            'Cannot run XCP-D. Missing dependencies:%s',
+            '\n\t* '.join([''] + [f'{cmd} (Interface: {iface})' for iface, cmd in missing]),
         )
-        retval["return_code"] = 127  # 127 == command not found.
+        retval['return_code'] = 127  # 127 == command not found.
         return retval
 
     config.to_filename(config_file)
     build_log.info(
-        "XCP-D workflow graph with %d nodes built successfully.",
-        len(retval["workflow"]._get_all_nodes()),
+        'XCP-D workflow graph with %d nodes built successfully.',
+        len(retval['workflow']._get_all_nodes()),
     )
-    retval["return_code"] = 0
+    retval['return_code'] = 0
     return retval
 
 
@@ -123,9 +123,9 @@ def build_boilerplate(config_file, workflow):
     from xcp_d import config
 
     config.load(config_file)
-    logs_path = config.execution.output_dir / "logs"
+    logs_path = config.execution.output_dir / 'logs'
     boilerplate = workflow.visit_desc()
-    citation_files = {ext: logs_path / f"CITATION.{ext}" for ext in ("bib", "tex", "md", "html")}
+    citation_files = {ext: logs_path / f'CITATION.{ext}' for ext in ('bib', 'tex', 'md', 'html')}
 
     if boilerplate:
         # To please git-annex users and also to guarantee consistency
@@ -137,9 +137,9 @@ def build_boilerplate(config_file, workflow):
             except FileNotFoundError:
                 pass
 
-    citation_files["md"].write_text(boilerplate)
+    citation_files['md'].write_text(boilerplate)
 
-    if not config.execution.md_only_boilerplate and citation_files["md"].exists():
+    if not config.execution.md_only_boilerplate and citation_files['md'].exists():
         from shutil import copyfile
         from subprocess import CalledProcessError, TimeoutExpired, check_call
 
@@ -147,40 +147,40 @@ def build_boilerplate(config_file, workflow):
 
         # Generate HTML file resolving citations
         cmd = [
-            "pandoc",
-            "-s",
-            "--bibliography",
-            str(load_data("boilerplate.bib")),
-            "--filter",
-            "pandoc-citeproc",
-            "--metadata",
+            'pandoc',
+            '-s',
+            '--bibliography',
+            str(load_data('boilerplate.bib')),
+            '--filter',
+            'pandoc-citeproc',
+            '--metadata',
             'pagetitle="XCP-D citation boilerplate"',
-            str(citation_files["md"]),
-            "-o",
-            str(citation_files["html"]),
+            str(citation_files['md']),
+            '-o',
+            str(citation_files['html']),
         ]
 
-        config.loggers.cli.info("Generating an HTML version of the citation boilerplate...")
+        config.loggers.cli.info('Generating an HTML version of the citation boilerplate...')
         try:
             check_call(cmd, timeout=10)
         except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-            config.loggers.cli.warning("Could not generate CITATION.html file:\n%s", " ".join(cmd))
+            config.loggers.cli.warning('Could not generate CITATION.html file:\n%s', ' '.join(cmd))
 
         # Generate LaTex file resolving citations
         cmd = [
-            "pandoc",
-            "-s",
-            "--bibliography",
-            str(load_data("boilerplate.bib")),
-            "--natbib",
-            str(citation_files["md"]),
-            "-o",
-            str(citation_files["tex"]),
+            'pandoc',
+            '-s',
+            '--bibliography',
+            str(load_data('boilerplate.bib')),
+            '--natbib',
+            str(citation_files['md']),
+            '-o',
+            str(citation_files['tex']),
         ]
-        config.loggers.cli.info("Generating a LaTeX version of the citation boilerplate...")
+        config.loggers.cli.info('Generating a LaTeX version of the citation boilerplate...')
         try:
             check_call(cmd, timeout=10)
         except (FileNotFoundError, CalledProcessError, TimeoutExpired):
-            config.loggers.cli.warning("Could not generate CITATION.tex file:\n%s", " ".join(cmd))
+            config.loggers.cli.warning('Could not generate CITATION.tex file:\n%s', ' '.join(cmd))
         else:
-            copyfile(load_data("boilerplate.bib"), citation_files["bib"])
+            copyfile(load_data('boilerplate.bib'), citation_files['bib'])

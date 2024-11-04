@@ -18,20 +18,20 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.concatenation import concatenate_niimgs, concatenate_tsvs
 
-LOGGER = logging.getLogger("nipype.interface")
+LOGGER = logging.getLogger('nipype.interface')
 
 
 class _CleanNameSourceInputSpec(BaseInterfaceInputSpec):
     name_source = traits.List(
         File(exists=True),
         mandatory=True,
-        desc="Name source files.",
+        desc='Name source files.',
     )
 
 
 class _CleanNameSourceOutputSpec(TraitedSpec):
     name_source = traits.Str(
-        desc="Name source",
+        desc='Name source',
     )
 
 
@@ -45,11 +45,11 @@ class CleanNameSource(SimpleInterface):
         # Grab the first file and use that.
         name_source = self.inputs.name_source[0]
         # Remove the run entity.
-        cleaned_name_source = re.sub("_run-[0-9]+_", "_", name_source)
+        cleaned_name_source = re.sub('_run-[0-9]+_', '_', name_source)
         # Remove the dir entity.
-        cleaned_name_source = re.sub("_dir-[a-zA-Z0-9]+_", "_", cleaned_name_source)
+        cleaned_name_source = re.sub('_dir-[a-zA-Z0-9]+_', '_', cleaned_name_source)
 
-        self._results["name_source"] = cleaned_name_source
+        self._results['name_source'] = cleaned_name_source
         return runtime
 
 
@@ -60,7 +60,7 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
             Undefined,
         ),
         mandatory=True,
-        desc="Preprocessed BOLD files, after dummy volume removal.",
+        desc='Preprocessed BOLD files, after dummy volume removal.',
     )
     motion_file = traits.List(
         traits.Either(
@@ -68,7 +68,7 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
             Undefined,
         ),
         mandatory=True,
-        desc="TSV files with fMRIPrep confounds for individual BOLD runs.",
+        desc='TSV files with fMRIPrep confounds for individual BOLD runs.',
     )
     temporal_mask = traits.List(
         traits.Either(
@@ -76,7 +76,7 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
             Undefined,
         ),
         mandatory=True,
-        desc="TSV files with high-motion outliers indexed.",
+        desc='TSV files with high-motion outliers indexed.',
     )
     denoised_bold = traits.List(
         traits.Either(
@@ -84,7 +84,7 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
             Undefined,
         ),
         mandatory=True,
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     denoised_interpolated_bold = traits.List(
         traits.Either(
@@ -92,7 +92,7 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
             Undefined,
         ),
         mandatory=True,
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     censored_denoised_bold = traits.List(
         traits.Either(
@@ -100,34 +100,34 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
             Undefined,
         ),
         mandatory=True,
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     smoothed_denoised_bold = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
-        desc="Smoothed, denoised BOLD data. Only set if smoothing was done in postprocessing",
+        desc='Smoothed, denoised BOLD data. Only set if smoothing was done in postprocessing',
     )
     bold_mask = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
-        desc="BOLD-based brain mask file. Only used for NIFTI processing.",
+        desc='BOLD-based brain mask file. Only used for NIFTI processing.',
     )
     boldref = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
-        desc="BOLD reference files. Only used for NIFTI processing.",
+        desc='BOLD reference files. Only used for NIFTI processing.',
     )
     timeseries = traits.List(
         traits.List(File(exists=True)),
         mandatory=True,
-        desc="List of lists of parcellated time series TSV files.",
+        desc='List of lists of parcellated time series TSV files.',
     )
     timeseries_ciftis = traits.Either(
         traits.List(traits.List(File(exists=True))),
         Undefined,
         desc=(
-            "List of lists of parcellated time series CIFTI files. "
-            "Only defined for CIFTI processing."
+            'List of lists of parcellated time series CIFTI files. '
+            'Only defined for CIFTI processing.'
         ),
     )
 
@@ -135,58 +135,58 @@ class _FilterOutFailedRunsInputSpec(BaseInterfaceInputSpec):
 class _FilterOutFailedRunsOutputSpec(TraitedSpec):
     preprocessed_bold = traits.List(
         File(exists=True),
-        desc="Preprocessed BOLD files, after dummy volume removal.",
+        desc='Preprocessed BOLD files, after dummy volume removal.',
     )
     motion_file = traits.List(
         File(exists=True),
-        desc="fMRIPrep confounds files, after dummy volume removal.",
+        desc='fMRIPrep confounds files, after dummy volume removal.',
     )
     temporal_mask = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
         ),
-        desc="TSV files with high-motion outliers indexed.",
+        desc='TSV files with high-motion outliers indexed.',
     )
     denoised_bold = traits.List(
         File(exists=True),
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     denoised_interpolated_bold = traits.List(
         File(exists=True),
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     censored_denoised_bold = traits.List(
         File(exists=True),
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     smoothed_denoised_bold = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
         ),
-        desc="Smoothed, denoised BOLD data.",
+        desc='Smoothed, denoised BOLD data.',
     )
     bold_mask = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
         ),
-        desc="Smoothed, denoised BOLD data.",
+        desc='Smoothed, denoised BOLD data.',
     )
     boldref = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
         ),
-        desc="Smoothed, denoised BOLD data.",
+        desc='Smoothed, denoised BOLD data.',
     )
     timeseries = traits.List(
         traits.Either(
             traits.List(File(exists=True)),
             Undefined,
         ),
-        desc="List of lists of parcellated time series TSV files.",
+        desc='List of lists of parcellated time series TSV files.',
     )
     timeseries_ciftis = traits.List(
         traits.Either(
@@ -194,8 +194,8 @@ class _FilterOutFailedRunsOutputSpec(TraitedSpec):
             Undefined,
         ),
         desc=(
-            "List of lists of parcellated time series CIFTI files. "
-            "Only defined for CIFTI processing."
+            'List of lists of parcellated time series CIFTI files. '
+            'Only defined for CIFTI processing.'
         ),
     )
 
@@ -209,30 +209,30 @@ class FilterOutFailedRuns(SimpleInterface):
     def _run_interface(self, runtime):
         denoised_bold = self.inputs.denoised_bold
         inputs_to_filter = {
-            "preprocessed_bold": self.inputs.preprocessed_bold,
-            "motion_file": self.inputs.motion_file,
-            "temporal_mask": self.inputs.temporal_mask,
-            "denoised_interpolated_bold": self.inputs.denoised_interpolated_bold,
-            "censored_denoised_bold": self.inputs.censored_denoised_bold,
-            "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
-            "bold_mask": self.inputs.bold_mask,
-            "boldref": self.inputs.boldref,
-            "timeseries": self.inputs.timeseries,
-            "timeseries_ciftis": self.inputs.timeseries_ciftis,
+            'preprocessed_bold': self.inputs.preprocessed_bold,
+            'motion_file': self.inputs.motion_file,
+            'temporal_mask': self.inputs.temporal_mask,
+            'denoised_interpolated_bold': self.inputs.denoised_interpolated_bold,
+            'censored_denoised_bold': self.inputs.censored_denoised_bold,
+            'smoothed_denoised_bold': self.inputs.smoothed_denoised_bold,
+            'bold_mask': self.inputs.bold_mask,
+            'boldref': self.inputs.boldref,
+            'timeseries': self.inputs.timeseries,
+            'timeseries_ciftis': self.inputs.timeseries_ciftis,
         }
 
         n_runs = len(denoised_bold)
         successful_runs = [i for i, f in enumerate(denoised_bold) if isdefined(f)]
 
         if len(successful_runs) < n_runs:
-            LOGGER.warning(f"Of {n_runs} runs, only runs {successful_runs} were successful.")
+            LOGGER.warning(f'Of {n_runs} runs, only runs {successful_runs} were successful.')
 
-        self._results["denoised_bold"] = [denoised_bold[i] for i in successful_runs]
+        self._results['denoised_bold'] = [denoised_bold[i] for i in successful_runs]
 
         for input_name, input_list in inputs_to_filter.items():
             if len(input_list) != n_runs:
                 LOGGER.warning(
-                    f"{input_name} has {len(input_list)} elements, not {n_runs}. Ignoring."
+                    f'{input_name} has {len(input_list)} elements, not {n_runs}. Ignoring.'
                 )
                 input_list = [Undefined for _ in range(n_runs)]
 
@@ -245,48 +245,48 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
     preprocessed_bold = traits.List(
         File(exists=True),
         mandatory=True,
-        desc="Preprocessed BOLD files, after dummy volume removal.",
+        desc='Preprocessed BOLD files, after dummy volume removal.',
     )
     motion_file = traits.List(
         File(exists=True),
         mandatory=True,
-        desc="TSV files with fMRIPrep confounds for individual BOLD runs.",
+        desc='TSV files with fMRIPrep confounds for individual BOLD runs.',
     )
     temporal_mask = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
         ),
-        desc="TSV files with high-motion outliers indexed.",
+        desc='TSV files with high-motion outliers indexed.',
     )
     denoised_bold = traits.List(
         File(exists=True),
         mandatory=True,
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     denoised_interpolated_bold = traits.List(
         File(exists=True),
         mandatory=True,
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     censored_denoised_bold = traits.List(
         File(exists=True),
         mandatory=True,
-        desc="Denoised BOLD data.",
+        desc='Denoised BOLD data.',
     )
     smoothed_denoised_bold = traits.List(
         traits.Either(
             File(exists=True),
             Undefined,
         ),
-        desc="Smoothed, denoised BOLD data. Optional.",
+        desc='Smoothed, denoised BOLD data. Optional.',
     )
     timeseries = traits.List(
         traits.Either(
             traits.List(File(exists=True)),
             Undefined,
         ),
-        desc="List of lists of parcellated time series TSV files.",
+        desc='List of lists of parcellated time series TSV files.',
     )
     timeseries_ciftis = traits.List(
         traits.Either(
@@ -294,8 +294,8 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
             Undefined,
         ),
         desc=(
-            "List of lists of parcellated time series CIFTI files. "
-            "Only defined for CIFTI processing."
+            'List of lists of parcellated time series CIFTI files. '
+            'Only defined for CIFTI processing.'
         ),
     )
 
@@ -303,49 +303,49 @@ class _ConcatenateInputsInputSpec(BaseInterfaceInputSpec):
 class _ConcatenateInputsOutputSpec(TraitedSpec):
     preprocessed_bold = File(
         exists=True,
-        desc="Concatenated preprocessed BOLD file.",
+        desc='Concatenated preprocessed BOLD file.',
     )
     motion_file = File(
         exists=True,
-        desc="Concatenated TSV file with fMRIPrep confounds.",
+        desc='Concatenated TSV file with fMRIPrep confounds.',
     )
     temporal_mask = traits.Either(
         File(exists=True),
         Undefined,
-        desc="Concatenated TSV file with high-motion outliers indexed.",
+        desc='Concatenated TSV file with high-motion outliers indexed.',
     )
     denoised_bold = File(
         exists=True,
-        desc="Concatenated denoised BOLD data.",
+        desc='Concatenated denoised BOLD data.',
     )
     denoised_interpolated_bold = File(
         exists=True,
-        desc="Concatenated denoised BOLD data.",
+        desc='Concatenated denoised BOLD data.',
     )
     censored_denoised_bold = File(
         exists=True,
-        desc="Concatenated denoised BOLD data.",
+        desc='Concatenated denoised BOLD data.',
     )
     smoothed_denoised_bold = traits.Either(
         File(exists=True),
         Undefined,
-        desc="Concatenated, smoothed, denoised BOLD data. Optional.",
+        desc='Concatenated, smoothed, denoised BOLD data. Optional.',
     )
     timeseries = traits.List(
         File(exists=True),
-        desc="Concatenated list of parcellated time series TSV files.",
+        desc='Concatenated list of parcellated time series TSV files.',
     )
     timeseries_ciftis = traits.Either(
         traits.List(File(exists=True)),
         Undefined,
         desc=(
-            "Concatenated list of parcellated time series CIFTI files. "
-            "Only defined for CIFTI processing."
+            'Concatenated list of parcellated time series CIFTI files. '
+            'Only defined for CIFTI processing.'
         ),
     )
     run_index = traits.List(
         traits.Int(),
-        desc="Index of join points between the *uncensored* runs.",
+        desc='Index of join points between the *uncensored* runs.',
     )
 
 
@@ -357,15 +357,15 @@ class ConcatenateInputs(SimpleInterface):
 
     def _run_interface(self, runtime):
         merge_inputs = {
-            "preprocessed_bold": self.inputs.preprocessed_bold,
-            "denoised_bold": self.inputs.denoised_bold,
-            "denoised_interpolated_bold": self.inputs.denoised_interpolated_bold,
-            "censored_denoised_bold": self.inputs.censored_denoised_bold,
-            "smoothed_denoised_bold": self.inputs.smoothed_denoised_bold,
-            "timeseries_ciftis": self.inputs.timeseries_ciftis,
-            "motion_file": self.inputs.motion_file,
-            "temporal_mask": self.inputs.temporal_mask,
-            "timeseries": self.inputs.timeseries,
+            'preprocessed_bold': self.inputs.preprocessed_bold,
+            'denoised_bold': self.inputs.denoised_bold,
+            'denoised_interpolated_bold': self.inputs.denoised_interpolated_bold,
+            'censored_denoised_bold': self.inputs.censored_denoised_bold,
+            'smoothed_denoised_bold': self.inputs.smoothed_denoised_bold,
+            'timeseries_ciftis': self.inputs.timeseries_ciftis,
+            'motion_file': self.inputs.motion_file,
+            'temporal_mask': self.inputs.temporal_mask,
+            'timeseries': self.inputs.timeseries,
         }
 
         run_index, n_volumes = [], 0
@@ -373,17 +373,17 @@ class ConcatenateInputs(SimpleInterface):
             n_volumes = n_volumes + pd.read_table(run_motion).shape[0]
             run_index.append(n_volumes)
 
-        self._results["run_index"] = run_index
+        self._results['run_index'] = run_index
 
         for name, run_files in merge_inputs.items():
-            LOGGER.info(f"Concatenating {name}")
+            LOGGER.info(f'Concatenating {name}')
             if len(run_files) == 0 or any(not isdefined(f) for f in run_files):
-                LOGGER.warning(f"No {name} files found")
+                LOGGER.warning(f'No {name} files found')
                 self._results[name] = Undefined
                 continue
 
             elif isinstance(run_files[0], list) and not isdefined(run_files[0][0]):
-                LOGGER.warning(f"No {name} files found")
+                LOGGER.warning(f'No {name} files found')
                 self._results[name] = Undefined
                 continue
 
@@ -394,27 +394,27 @@ class ConcatenateInputs(SimpleInterface):
                 )
                 out_files = []
                 for i_atlas, parc_files in enumerate(transposed_run_files):
-                    extension = ".".join(os.path.basename(parc_files[0]).split(".")[1:])
-                    out_file = os.path.join(runtime.cwd, f"{name}_{i_atlas}.{extension}")
-                    if out_file.endswith(".tsv"):
+                    extension = '.'.join(os.path.basename(parc_files[0]).split('.')[1:])
+                    out_file = os.path.join(runtime.cwd, f'{name}_{i_atlas}.{extension}')
+                    if out_file.endswith('.tsv'):
                         concatenate_tsvs(parc_files, out_file=out_file)
                     else:
                         concatenate_niimgs(parc_files, out_file=out_file)
 
-                    assert os.path.isfile(out_file), f"Output file {out_file} not created."
+                    assert os.path.isfile(out_file), f'Output file {out_file} not created.'
                     out_files.append(out_file)
 
                 self._results[name] = out_files
             else:
                 # Files are a single list of paths.
-                extension = ".".join(os.path.basename(run_files[0]).split(".")[1:])
-                out_file = os.path.join(runtime.cwd, f"{name}.{extension}")
-                if out_file.endswith(".tsv"):
+                extension = '.'.join(os.path.basename(run_files[0]).split('.')[1:])
+                out_file = os.path.join(runtime.cwd, f'{name}.{extension}')
+                if out_file.endswith('.tsv'):
                     concatenate_tsvs(run_files, out_file=out_file)
                 else:
                     concatenate_niimgs(run_files, out_file=out_file)
 
-                assert os.path.isfile(out_file), f"Output file {out_file} not created."
+                assert os.path.isfile(out_file), f'Output file {out_file} not created.'
                 self._results[name] = out_file
 
         return runtime

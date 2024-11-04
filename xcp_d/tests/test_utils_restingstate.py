@@ -15,8 +15,8 @@ def test_compute_alff(ds001419_data):
     """
 
     # Get the file names
-    bold_file = ds001419_data["nifti_file"]
-    bold_mask = ds001419_data["brain_mask_file"]
+    bold_file = ds001419_data['nifti_file']
+    bold_mask = ds001419_data['brain_mask_file']
 
     # Let's initialize the ALFF node
     TR = 3

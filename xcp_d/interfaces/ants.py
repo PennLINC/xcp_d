@@ -21,16 +21,16 @@ from niworkflows.interfaces.fixes import (
 
 from xcp_d.utils.filemanip import fname_presuffix
 
-LOGGER = logging.getLogger("nipype.interface")
+LOGGER = logging.getLogger('nipype.interface')
 
 
 class _ConvertTransformFileInputSpec(CommandLineInputSpec):
-    dimension = traits.Enum(3, 2, usedefault=True, argstr="%d", position=0)
-    in_transform = traits.File(exists=True, argstr="%s", mandatory=True, position=1)
+    dimension = traits.Enum(3, 2, usedefault=True, argstr='%d', position=0)
+    in_transform = traits.File(exists=True, argstr='%s', mandatory=True, position=1)
     out_transform = traits.File(
-        argstr="%s",
-        name_source="in_transform",
-        name_template="%s.txt",
+        argstr='%s',
+        name_source='in_transform',
+        name_template='%s.txt',
         keep_extension=False,
         position=2,
         exists=False,
@@ -51,7 +51,7 @@ class ConvertTransformFile(CommandLine):
     text-formatted transform file.
     """
 
-    _cmd = "ConvertTransformFile"
+    _cmd = 'ConvertTransformFile'
     input_spec = _ConvertTransformFileInputSpec
     output_spec = _ConvertTransformFileOutputSpec
 
@@ -60,46 +60,46 @@ class _CompositeTransformUtilInputSpec(ANTSCommandInputSpec):
     """Input specification for CompositeTransformUtil."""
 
     process = traits.Enum(
-        "assemble",
-        "disassemble",
-        argstr="--%s",
+        'assemble',
+        'disassemble',
+        argstr='--%s',
         position=1,
         usedefault=True,
-        desc="What to do with the transform inputs (assemble or disassemble)",
+        desc='What to do with the transform inputs (assemble or disassemble)',
     )
     inverse = traits.Bool(
         False,
         usedefault=True,
-        desc="Whether to invert the order of the transform components. Not used by the command.",
+        desc='Whether to invert the order of the transform components. Not used by the command.',
     )
     out_file = File(
         exists=False,
-        argstr="%s",
+        argstr='%s',
         position=2,
-        desc="Output file path (only used for disassembly).",
+        desc='Output file path (only used for disassembly).',
     )
     in_file = InputMultiPath(
         File(exists=True),
         mandatory=True,
-        argstr="%s...",
+        argstr='%s...',
         position=3,
-        desc="Input transform file(s)",
+        desc='Input transform file(s)',
     )
     output_prefix = Str(
-        "transform",
+        'transform',
         usedefault=True,
-        argstr="%s",
+        argstr='%s',
         position=4,
-        desc="A prefix that is prepended to all output files (only used for assembly).",
+        desc='A prefix that is prepended to all output files (only used for assembly).',
     )
 
 
 class _CompositeTransformUtilOutputSpec(TraitedSpec):
     """Output specification for CompositeTransformUtil."""
 
-    affine_transform = File(desc="Affine transform component")
-    displacement_field = File(desc="Displacement field component")
-    out_file = File(desc="Compound transformation file")
+    affine_transform = File(desc='Affine transform component')
+    displacement_field = File(desc='Displacement field component')
+    out_file = File(desc='Compound transformation file')
 
 
 class CompositeTransformUtil(ANTSCommand):
@@ -129,7 +129,7 @@ class CompositeTransformUtil(ANTSCommand):
     >>> tran.run()  # doctest: +SKIP
     """
 
-    _cmd = "CompositeTransformUtil"
+    _cmd = 'CompositeTransformUtil'
     input_spec = _CompositeTransformUtilInputSpec
     output_spec = _CompositeTransformUtilOutputSpec
 
@@ -142,34 +142,34 @@ class CompositeTransformUtil(ANTSCommand):
         pass
 
     def _format_arg(self, name, spec, value):
-        if name == "output_prefix" and self.inputs.process == "assemble":
-            return ""
-        if name == "out_file" and self.inputs.process == "disassemble":
-            return ""
-        return super(CompositeTransformUtil, self)._format_arg(name, spec, value)
+        if name == 'output_prefix' and self.inputs.process == 'assemble':
+            return ''
+        if name == 'out_file' and self.inputs.process == 'disassemble':
+            return ''
+        return super()._format_arg(name, spec, value)
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
         if self.inputs.inverse:
-            if self.inputs.process == "disassemble":
-                outputs["affine_transform"] = os.path.abspath(
-                    f"{self.inputs.output_prefix}_01_AffineTransform.mat"
+            if self.inputs.process == 'disassemble':
+                outputs['affine_transform'] = os.path.abspath(
+                    f'{self.inputs.output_prefix}_01_AffineTransform.mat'
                 )
-                outputs["displacement_field"] = os.path.abspath(
-                    f"{self.inputs.output_prefix}_00_DisplacementFieldTransform.nii.gz"
+                outputs['displacement_field'] = os.path.abspath(
+                    f'{self.inputs.output_prefix}_00_DisplacementFieldTransform.nii.gz'
                 )
-            elif self.inputs.process == "assemble":
-                outputs["out_file"] = os.path.abspath(self.inputs.out_file)
+            elif self.inputs.process == 'assemble':
+                outputs['out_file'] = os.path.abspath(self.inputs.out_file)
         else:
-            if self.inputs.process == "disassemble":
-                outputs["affine_transform"] = os.path.abspath(
-                    f"{self.inputs.output_prefix}_00_AffineTransform.mat"
+            if self.inputs.process == 'disassemble':
+                outputs['affine_transform'] = os.path.abspath(
+                    f'{self.inputs.output_prefix}_00_AffineTransform.mat'
                 )
-                outputs["displacement_field"] = os.path.abspath(
-                    f"{self.inputs.output_prefix}_01_DisplacementFieldTransform.nii.gz"
+                outputs['displacement_field'] = os.path.abspath(
+                    f'{self.inputs.output_prefix}_01_DisplacementFieldTransform.nii.gz'
                 )
-            elif self.inputs.process == "assemble":
-                outputs["out_file"] = os.path.abspath(self.inputs.out_file)
+            elif self.inputs.process == 'assemble':
+                outputs['out_file'] = os.path.abspath(self.inputs.out_file)
 
         return outputs
 
@@ -177,17 +177,17 @@ class CompositeTransformUtil(ANTSCommand):
 class _ApplyTransformsInputSpec(_FixTraitApplyTransformsInputSpec):
     # Nipype's version doesn't have GenericLabel
     interpolation = traits.Enum(
-        "Linear",
-        "NearestNeighbor",
-        "CosineWindowedSinc",
-        "WelchWindowedSinc",
-        "HammingWindowedSinc",
-        "LanczosWindowedSinc",
-        "MultiLabel",
-        "Gaussian",
-        "BSpline",
-        "GenericLabel",
-        argstr="%s",
+        'Linear',
+        'NearestNeighbor',
+        'CosineWindowedSinc',
+        'WelchWindowedSinc',
+        'HammingWindowedSinc',
+        'LanczosWindowedSinc',
+        'MultiLabel',
+        'Gaussian',
+        'BSpline',
+        'GenericLabel',
+        argstr='%s',
         usedefault=True,
     )
 
@@ -208,10 +208,10 @@ class ApplyTransforms(FixHeaderApplyTransforms):
         if not isdefined(self.inputs.output_image):
             self.inputs.output_image = fname_presuffix(
                 self.inputs.input_image,
-                suffix="_trans.nii.gz",
+                suffix='_trans.nii.gz',
                 newpath=runtime.cwd,
                 use_ext=False,
             )
 
-        runtime = super(ApplyTransforms, self)._run_interface(runtime)
+        runtime = super()._run_interface(runtime)
         return runtime

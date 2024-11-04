@@ -11,12 +11,12 @@ from xcp_d.interfaces import nilearn
 
 def test_nilearn_merge(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.Merge."""
-    tmpdir = tmp_path_factory.mktemp("test_nilearn_merge")
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_merge')
 
-    in_file = ds001419_data["boldref"]
+    in_file = ds001419_data['boldref']
     interface = nilearn.Merge(
         in_files=[in_file, in_file],
-        out_file="merged.nii.gz",
+        out_file='merged.nii.gz',
     )
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.out_file)
@@ -27,13 +27,13 @@ def test_nilearn_merge(ds001419_data, tmp_path_factory):
 
 def test_nilearn_smooth(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.Smooth."""
-    tmpdir = tmp_path_factory.mktemp("test_nilearn_smooth")
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_smooth')
 
-    in_file = ds001419_data["boldref"]
+    in_file = ds001419_data['boldref']
     interface = nilearn.Smooth(
         in_file=in_file,
         fwhm=6,
-        out_file="smoothed_1len.nii.gz",
+        out_file='smoothed_1len.nii.gz',
     )
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.out_file)
@@ -43,7 +43,7 @@ def test_nilearn_smooth(ds001419_data, tmp_path_factory):
     interface = nilearn.Smooth(
         in_file=in_file,
         fwhm=[2, 3, 4],
-        out_file="smoothed_3len.nii.gz",
+        out_file='smoothed_3len.nii.gz',
     )
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.out_file)
@@ -53,13 +53,13 @@ def test_nilearn_smooth(ds001419_data, tmp_path_factory):
 
 def test_nilearn_binarymath(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.BinaryMath."""
-    tmpdir = tmp_path_factory.mktemp("test_nilearn_binarymath")
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_binarymath')
 
-    in_file = ds001419_data["brain_mask_file"]
+    in_file = ds001419_data['brain_mask_file']
     interface = nilearn.BinaryMath(
         in_file=in_file,
-        expression="img * 5",
-        out_file="mathed.nii.gz",
+        expression='img * 5',
+        out_file='mathed.nii.gz',
     )
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.out_file)
@@ -71,21 +71,21 @@ def test_nilearn_binarymath(ds001419_data, tmp_path_factory):
 
 def test_nilearn_resampletoimage(datasets, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.ResampleToImage."""
-    tmpdir = tmp_path_factory.mktemp("test_nilearn_resampletoimage")
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_resampletoimage')
 
     source_file = os.path.join(
-        datasets["nibabies"],
-        "sub-01",
-        "ses-1mo",
-        "func",
-        "sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_boldref.nii.gz",
+        datasets['nibabies'],
+        'sub-01',
+        'ses-1mo',
+        'func',
+        'sub-01_ses-1mo_task-rest_acq-PA_run-001_space-MNIInfant_cohort-1_boldref.nii.gz',
     )
     target_file = os.path.join(
-        datasets["nibabies"],
-        "sub-01",
-        "ses-1mo",
-        "anat",
-        "sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_desc-preproc_T1w.nii.gz",
+        datasets['nibabies'],
+        'sub-01',
+        'ses-1mo',
+        'anat',
+        'sub-01_ses-1mo_run-001_space-MNIInfant_cohort-1_desc-preproc_T1w.nii.gz',
     )
     target_img = nb.load(target_file)
     source_img = nb.load(source_file)
@@ -93,7 +93,7 @@ def test_nilearn_resampletoimage(datasets, tmp_path_factory):
     interface = nilearn.ResampleToImage(
         in_file=source_file,
         target_file=target_file,
-        out_file="resampled.nii.gz",
+        out_file='resampled.nii.gz',
     )
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.out_file)
@@ -105,24 +105,24 @@ def test_nilearn_resampletoimage(datasets, tmp_path_factory):
 
 def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.DenoiseNifti."""
-    tmpdir = tmp_path_factory.mktemp("test_nilearn_denoisenifti")
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_denoisenifti')
 
-    preprocessed_bold = ds001419_data["nifti_file"]
-    mask = ds001419_data["brain_mask_file"]
-    confounds_file = ds001419_data["confounds_file"]
+    preprocessed_bold = ds001419_data['nifti_file']
+    mask = ds001419_data['brain_mask_file']
+    confounds_file = ds001419_data['confounds_file']
 
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
-    reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
-    reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
+    reduced_confounds_df = confounds_df[['csf', 'white_matter']]
+    reduced_confounds_file = os.path.join(tmpdir, 'confounds.tsv')
+    reduced_confounds_df.to_csv(reduced_confounds_file, sep='\t', index=False)
 
     # Create the censoring file
-    censoring_df = confounds_df[["framewise_displacement"]]
-    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
-    assert censoring_df["framewise_displacement"].sum() > 0
-    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    censoring_df = confounds_df[['framewise_displacement']]
+    censoring_df['framewise_displacement'] = censoring_df['framewise_displacement'] > 0.3
+    assert censoring_df['framewise_displacement'].sum() > 0
+    temporal_mask = os.path.join(tmpdir, 'censoring.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
     preprocessed_img = nb.load(preprocessed_bold)
 
@@ -144,23 +144,23 @@ def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
 
 def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.nilearn.DenoiseCifti."""
-    tmpdir = tmp_path_factory.mktemp("test_nilearn_denoisecifti")
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_denoisecifti')
 
-    preprocessed_bold = ds001419_data["cifti_file"]
-    confounds_file = ds001419_data["confounds_file"]
+    preprocessed_bold = ds001419_data['cifti_file']
+    confounds_file = ds001419_data['confounds_file']
 
     # Select some confounds to use for denoising
     confounds_df = pd.read_table(confounds_file)
-    reduced_confounds_df = confounds_df[["csf", "white_matter"]]
-    reduced_confounds_file = os.path.join(tmpdir, "confounds.tsv")
-    reduced_confounds_df.to_csv(reduced_confounds_file, sep="\t", index=False)
+    reduced_confounds_df = confounds_df[['csf', 'white_matter']]
+    reduced_confounds_file = os.path.join(tmpdir, 'confounds.tsv')
+    reduced_confounds_df.to_csv(reduced_confounds_file, sep='\t', index=False)
 
     # Create the censoring file
-    censoring_df = confounds_df[["framewise_displacement"]]
-    censoring_df["framewise_displacement"] = censoring_df["framewise_displacement"] > 0.3
-    assert censoring_df["framewise_displacement"].sum() > 0
-    temporal_mask = os.path.join(tmpdir, "censoring.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    censoring_df = confounds_df[['framewise_displacement']]
+    censoring_df['framewise_displacement'] = censoring_df['framewise_displacement'] > 0.3
+    assert censoring_df['framewise_displacement'].sum() > 0
+    temporal_mask = os.path.join(tmpdir, 'censoring.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
     preprocessed_img = nb.load(preprocessed_bold)
 
@@ -182,10 +182,10 @@ def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
 def _check_denoising_outputs(preprocessed_img, outputs, cifti):
     if cifti:
         ndim = 2
-        hdr_attr = "nifti_header"
+        hdr_attr = 'nifti_header'
     else:
         ndim = 4
-        hdr_attr = "header"
+        hdr_attr = 'header'
 
     preprocessed_img_header = getattr(preprocessed_img, hdr_attr)
 

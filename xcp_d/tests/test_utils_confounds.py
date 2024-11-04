@@ -16,7 +16,7 @@ def test_modify_motion_filter():
 
     with pytest.warns(match="The parameter 'band_stop_max' will be ignored."):
         band_stop_min2, _, is_modified = confounds._modify_motion_filter(
-            motion_filter_type="lp",
+            motion_filter_type='lp',
             band_stop_min=band_stop_min,
             band_stop_max=18,
             TR=TR,
@@ -28,13 +28,13 @@ def test_modify_motion_filter():
     with pytest.warns(
         UserWarning,
         match=re.escape(
-            "Low-pass filter frequency is above Nyquist frequency (37.5 BPM), "
-            "so it has been changed (42 --> 33.0 BPM)."
+            'Low-pass filter frequency is above Nyquist frequency (37.5 BPM), '
+            'so it has been changed (42 --> 33.0 BPM).'
         ),
     ):
         band_stop_min2, _, is_modified = confounds._modify_motion_filter(
             TR=TR,  # 1.25 Hz
-            motion_filter_type="lp",
+            motion_filter_type='lp',
             band_stop_min=42,  # 0.7 Hz > (1.25 / 2)
             band_stop_max=None,
         )
@@ -47,13 +47,13 @@ def test_modify_motion_filter():
     with pytest.warns(
         UserWarning,
         match=re.escape(
-            "One or both filter frequencies are above Nyquist frequency (37.5 BPM), "
-            "so they have been changed (42 --> 33.0, 45 --> 30.0 BPM)."
+            'One or both filter frequencies are above Nyquist frequency (37.5 BPM), '
+            'so they have been changed (42 --> 33.0, 45 --> 30.0 BPM).'
         ),
     ):
         band_stop_min2, band_stop_max2, is_modified = confounds._modify_motion_filter(
             TR=TR,
-            motion_filter_type="notch",
+            motion_filter_type='notch',
             band_stop_min=42,
             band_stop_max=45,  # 0.7 Hz > (1.25 / 2)
         )
@@ -65,7 +65,7 @@ def test_modify_motion_filter():
     # Notch without modification
     band_stop_min2, band_stop_max2, is_modified = confounds._modify_motion_filter(
         TR=TR,
-        motion_filter_type="notch",
+        motion_filter_type='notch',
         band_stop_min=30,
         band_stop_max=33,
     )
@@ -86,15 +86,15 @@ def test_motion_filtering_lp():
     b, a = signal.butter(
         1,
         low_pass,
-        btype="lowpass",
-        output="ba",
+        btype='lowpass',
+        output='ba',
         fs=1 / TR,
     )
     lowpass_data_true = signal.filtfilt(
         b,
         a,
         raw_data,
-        padtype="constant",
+        padtype='constant',
         padlen=raw_data.size - 1,
     )
 
@@ -103,7 +103,7 @@ def test_motion_filtering_lp():
     lowpass_data_test = confounds.filter_motion(
         raw_data,
         TR=TR,
-        motion_filter_type="lp",
+        motion_filter_type='lp',
         band_stop_min=band_stop_min,
         band_stop_max=None,
         motion_filter_order=2,
@@ -117,7 +117,7 @@ def test_motion_filtering_lp():
         confounds.filter_motion(
             raw_data,
             TR=TR,
-            motion_filter_type="fail",
+            motion_filter_type='fail',
             band_stop_min=band_stop_min,
             band_stop_max=None,
             motion_filter_order=2,
@@ -142,7 +142,7 @@ def test_motion_filtering_notch():
         b,
         a,
         raw_data,
-        padtype="constant",
+        padtype='constant',
         padlen=raw_data.size - 1,
     )
 
@@ -151,7 +151,7 @@ def test_motion_filtering_notch():
     notch_data_test = confounds.filter_motion(
         raw_data,
         TR=TR,  # 1.25 Hz
-        motion_filter_type="notch",
+        motion_filter_type='notch',
         band_stop_min=band_stop_min,
         band_stop_max=band_stop_max,
         motion_filter_order=4,

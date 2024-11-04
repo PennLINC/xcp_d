@@ -3,8 +3,8 @@
 from xcp_d.ingression import abcdbids, hcpya, ukbiobank, utils
 
 __all__ = [
-    "abcdbids",
-    "hcpya",
-    "ukbiobank",
-    "utils",
+    'abcdbids',
+    'hcpya',
+    'ukbiobank',
+    'utils',
 ]

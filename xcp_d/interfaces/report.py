@@ -52,7 +52,7 @@ ABOUT_TEMPLATE = """\t<ul>
 class _SummaryInterfaceOutputSpec(TraitedSpec):
     """Output specification for SummaryInterface."""
 
-    out_report = File(exists=True, desc="HTML segment containing summary")
+    out_report = File(exists=True, desc='HTML segment containing summary')
 
 
 class SummaryInterface(SimpleInterface):
@@ -66,10 +66,10 @@ class SummaryInterface(SimpleInterface):
     def _run_interface(self, runtime):
         # Open a file to write information to
         segment = self._generate_segment()
-        file_name = os.path.join(runtime.cwd, "report.html")
-        with open(file_name, "w") as file_object:
+        file_name = os.path.join(runtime.cwd, 'report.html')
+        with open(file_name, 'w') as file_object:
             file_object.write(segment)
-        self._results["out_report"] = file_name
+        self._results['out_report'] = file_name
         return runtime
 
     def _generate_segment(self):
@@ -79,14 +79,14 @@ class SummaryInterface(SimpleInterface):
 class _SubjectSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for SubjectSummaryInterface."""
 
-    subject_id = Str(desc="Subject ID")
+    subject_id = Str(desc='Subject ID')
     # A list of files or a list of lists of files?
     bold = InputMultiObject(
         traits.Either(
             File(exists=True),
             traits.List(File(exists=True)),
         ),
-        desc="BOLD or CIFTI functional series",
+        desc='BOLD or CIFTI functional series',
     )
 
 
@@ -95,7 +95,7 @@ class _SubjectSummaryOutputSpec(_SummaryInterfaceOutputSpec):
 
     # This exists to ensure that the summary is run prior to the first ReconAll
     # call, allowing a determination whether there is a pre-existing directory
-    subject_id = Str(desc="Subject ID")
+    subject_id = Str(desc='Subject ID')
 
 
 class SubjectSummary(SummaryInterface):
@@ -106,8 +106,8 @@ class SubjectSummary(SummaryInterface):
 
     def _run_interface(self, runtime):
         if isdefined(self.inputs.subject_id):
-            self._results["subject_id"] = self.inputs.subject_id
-        return super(SubjectSummary, self)._run_interface(runtime)
+            self._results['subject_id'] = self.inputs.subject_id
+        return super()._run_interface(runtime)
 
     def _generate_segment(self):
         # Add list of tasks with number of runs
@@ -125,15 +125,15 @@ class _FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
         exists=False,
         mandatory=True,
         desc=(
-            "CIFTI or NIfTI BOLD file. "
-            "This file does not need to exist, "
-            "because this input is just used for extracting filename information."
+            'CIFTI or NIfTI BOLD file. '
+            'This file does not need to exist, '
+            'because this input is just used for extracting filename information.'
         ),
     )
-    qc_file = traits.File(exists=True, mandatory=True, desc="qc file")
+    qc_file = traits.File(exists=True, mandatory=True, desc='qc file')
     TR = traits.Float(
         mandatory=True,
-        desc="Repetition time",
+        desc='Repetition time',
     )
 
 
@@ -144,11 +144,11 @@ class FunctionalSummary(SummaryInterface):
     #   Get information from the QC file and return it
 
     def _generate_segment(self):
-        space = get_entity(self.inputs.bold_file, "space")
+        space = get_entity(self.inputs.bold_file, 'space')
         qcfile = pd.read_table(self.inputs.qc_file)
-        mean_fd = str(round(qcfile["mean_fd"][0], 4))
-        mean_relative_rms = str(round(qcfile["mean_relative_rms"][0], 4))
-        max_relative_rms = str(round(qcfile["max_relative_rms"][0], 4))
+        mean_fd = str(round(qcfile['mean_fd'][0], 4))
+        mean_relative_rms = str(round(qcfile['mean_relative_rms'][0], 4))
+        max_relative_rms = str(round(qcfile['max_relative_rms'][0], 4))
         dvars = (
             f"{round(qcfile['mean_dvars_initial'][0], 4)}, "
             f"{round(qcfile['mean_dvars_final'][0], 4)}"
@@ -157,7 +157,7 @@ class FunctionalSummary(SummaryInterface):
             f"{round(qcfile['fd_dvars_correlation_initial'][0], 4)}, "
             f"{round(qcfile['fd_dvars_correlation_final'][0], 4)}"
         )
-        num_vols_censored = str(round(qcfile["num_censored_volumes"][0], 4))
+        num_vols_censored = str(round(qcfile['num_censored_volumes'][0], 4))
 
         return QC_TEMPLATE.format(
             space=space,
@@ -174,8 +174,8 @@ class FunctionalSummary(SummaryInterface):
 class _AboutSummaryInputSpec(BaseInterfaceInputSpec):
     """Input specification for AboutSummary."""
 
-    version = Str(desc="xcp_d version")
-    command = Str(desc="xcp_d command")
+    version = Str(desc='xcp_d version')
+    command = Str(desc='xcp_d command')
     # Date not included - update timestamp only if version or command changes
 
 
@@ -188,5 +188,5 @@ class AboutSummary(SummaryInterface):
         return ABOUT_TEMPLATE.format(
             version=self.inputs.version,
             command=self.inputs.command,
-            date=time.strftime("%Y-%m-%d %H:%M:%S %z"),
+            date=time.strftime('%Y-%m-%d %H:%M:%S %z'),
         )

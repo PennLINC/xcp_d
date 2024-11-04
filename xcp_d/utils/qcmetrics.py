@@ -4,7 +4,7 @@ import nibabel as nb
 import numpy as np
 from nipype import logging
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 def compute_registration_qc(
@@ -48,71 +48,71 @@ def compute_registration_qc(
     template_mask_arr = nb.load(template_mask).get_fdata()
 
     reg_qc = {
-        "coreg_dice": [dice(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
-        "coreg_correlation": [pearson(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
-        "coreg_overlap": [overlap(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
-        "norm_dice": [dice(bold_mask_stdspace_arr, template_mask_arr)],
-        "norm_correlation": [pearson(bold_mask_stdspace_arr, template_mask_arr)],
-        "norm_overlap": [overlap(bold_mask_stdspace_arr, template_mask_arr)],
+        'coreg_dice': [dice(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
+        'coreg_correlation': [pearson(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
+        'coreg_overlap': [overlap(bold_mask_anatspace_arr, anat_mask_anatspace_arr)],
+        'norm_dice': [dice(bold_mask_stdspace_arr, template_mask_arr)],
+        'norm_correlation': [pearson(bold_mask_stdspace_arr, template_mask_arr)],
+        'norm_overlap': [overlap(bold_mask_stdspace_arr, template_mask_arr)],
     }
     qc_metadata = {
-        "coreg_dice": {
-            "LongName": "Coregistration Sørensen-Dice Coefficient",
-            "Description": (
-                "The Sørensen-Dice coefficient calculated between the binary brain masks from the "
-                "coregistered anatomical and functional images. "
-                "Values are bounded between 0 and 1, "
-                "with higher values indicating better coregistration."
+        'coreg_dice': {
+            'LongName': 'Coregistration Sørensen-Dice Coefficient',
+            'Description': (
+                'The Sørensen-Dice coefficient calculated between the binary brain masks from the '
+                'coregistered anatomical and functional images. '
+                'Values are bounded between 0 and 1, '
+                'with higher values indicating better coregistration.'
             ),
-            "Term URL": "https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient",
+            'Term URL': 'https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient',
         },
-        "coreg_correlation": {
-            "LongName": "Coregistration Pearson Correlation",
-            "Description": (
-                "The Pearson correlation coefficient calculated between the binary brain masks "
-                "from the coregistered anatomical and functional images. "
-                "Values are bounded between 0 and 1, "
-                "with higher values indicating better coregistration."
+        'coreg_correlation': {
+            'LongName': 'Coregistration Pearson Correlation',
+            'Description': (
+                'The Pearson correlation coefficient calculated between the binary brain masks '
+                'from the coregistered anatomical and functional images. '
+                'Values are bounded between 0 and 1, '
+                'with higher values indicating better coregistration.'
             ),
-            "Term URL": "https://en.wikipedia.org/wiki/Pearson_correlation_coefficient",
+            'Term URL': 'https://en.wikipedia.org/wiki/Pearson_correlation_coefficient',
         },
-        "coreg_overlap": {
-            "LongName": "Coregistration Coverage Metric",
-            "Description": (
-                "The Szymkiewicz-Simpson overlap coefficient calculated between the binary brain "
-                "masks from the normalized functional image and the associated template. "
-                "Higher values indicate better normalization."
+        'coreg_overlap': {
+            'LongName': 'Coregistration Coverage Metric',
+            'Description': (
+                'The Szymkiewicz-Simpson overlap coefficient calculated between the binary brain '
+                'masks from the normalized functional image and the associated template. '
+                'Higher values indicate better normalization.'
             ),
-            "Term URL": "https://en.wikipedia.org/wiki/Overlap_coefficient",
+            'Term URL': 'https://en.wikipedia.org/wiki/Overlap_coefficient',
         },
-        "norm_dice": {
-            "LongName": "Normalization Sørensen-Dice Coefficient",
-            "Description": (
-                "The Sørensen-Dice coefficient calculated between the binary brain masks from the "
-                "normalized functional image and the associated template. "
-                "Values are bounded between 0 and 1, "
-                "with higher values indicating better normalization."
+        'norm_dice': {
+            'LongName': 'Normalization Sørensen-Dice Coefficient',
+            'Description': (
+                'The Sørensen-Dice coefficient calculated between the binary brain masks from the '
+                'normalized functional image and the associated template. '
+                'Values are bounded between 0 and 1, '
+                'with higher values indicating better normalization.'
             ),
-            "Term URL": "https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient",
+            'Term URL': 'https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient',
         },
-        "norm_correlation": {
-            "LongName": "Normalization Pearson Correlation",
-            "Description": (
-                "The Pearson correlation coefficient calculated between the binary brain masks "
-                "from the normalized functional image and the associated template. "
-                "Values are bounded between 0 and 1, "
-                "with higher values indicating better normalization."
+        'norm_correlation': {
+            'LongName': 'Normalization Pearson Correlation',
+            'Description': (
+                'The Pearson correlation coefficient calculated between the binary brain masks '
+                'from the normalized functional image and the associated template. '
+                'Values are bounded between 0 and 1, '
+                'with higher values indicating better normalization.'
             ),
-            "Term URL": "https://en.wikipedia.org/wiki/Pearson_correlation_coefficient",
+            'Term URL': 'https://en.wikipedia.org/wiki/Pearson_correlation_coefficient',
         },
-        "norm_overlap": {
-            "LongName": "Normalization Overlap Coefficient",
-            "Description": (
-                "The Szymkiewicz-Simpson overlap coefficient calculated between the binary brain "
-                "masks from the normalized functional image and the associated template. "
-                "Higher values indicate better normalization."
+        'norm_overlap': {
+            'LongName': 'Normalization Overlap Coefficient',
+            'Description': (
+                'The Szymkiewicz-Simpson overlap coefficient calculated between the binary brain '
+                'masks from the normalized functional image and the associated template. '
+                'Higher values indicate better normalization.'
             ),
-            "Term URL": "https://en.wikipedia.org/wiki/Overlap_coefficient",
+            'Term URL': 'https://en.wikipedia.org/wiki/Overlap_coefficient',
         },
     }
     return reg_qc, qc_metadata
@@ -254,13 +254,13 @@ def compute_dvars(
     # Robust standard deviation (we are using "lower" interpolation because this is what FSL does
     try:
         func_sd = (
-            np.percentile(datat, 75, axis=1, method="lower")
-            - np.percentile(datat, 25, axis=1, method="lower")
+            np.percentile(datat, 75, axis=1, method='lower')
+            - np.percentile(datat, 25, axis=1, method='lower')
         ) / 1.349
     except TypeError:  # NP < 1.22
         func_sd = (
-            np.percentile(datat, 75, axis=1, interpolation="lower")
-            - np.percentile(datat, 25, axis=1, interpolation="lower")
+            np.percentile(datat, 75, axis=1, interpolation='lower')
+            - np.percentile(datat, 25, axis=1, interpolation='lower')
         ) / 1.349
 
     if remove_zerovariance:

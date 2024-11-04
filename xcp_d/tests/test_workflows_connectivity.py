@@ -29,72 +29,72 @@ np.set_printoptions(threshold=sys.maxsize)
 
 def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a nifti input."""
-    tmpdir = tmp_path_factory.mktemp("test_init_load_atlases_wf_nifti")
+    tmpdir = tmp_path_factory.mktemp('test_init_load_atlases_wf_nifti')
 
-    bold_file = ds001419_data["nifti_file"]
+    bold_file = ds001419_data['nifti_file']
 
     with mock_config():
         config.execution.output_dir = tmpdir
-        config.workflow.file_format = "nifti"
-        config.execution.atlases = ["4S156Parcels", "Glasser"]
+        config.workflow.file_format = 'nifti'
+        config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
-            "xcpdatlases": str(load_data("atlases")),
-            "xcpd4s": "/AtlasPack",
+            'xcpdatlases': str(load_data('atlases')),
+            'xcpd4s': '/AtlasPack',
         }
         config.nipype.omp_nthreads = 1
 
-        load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
+        load_atlases_wf = init_load_atlases_wf(name='load_atlases_wf')
         load_atlases_wf.inputs.inputnode.name_source = bold_file
         load_atlases_wf.inputs.inputnode.bold_file = bold_file
         load_atlases_wf.base_dir = tmpdir
         load_atlases_wf_res = load_atlases_wf.run()
 
         nodes = get_nodes(load_atlases_wf_res)
-        atlas_names = nodes["load_atlases_wf.warp_atlases_to_bold_space"].get_output(
-            "output_image"
+        atlas_names = nodes['load_atlases_wf.warp_atlases_to_bold_space'].get_output(
+            'output_image'
         )
         assert len(atlas_names) == 2
 
 
 def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
     """Test init_load_atlases_wf with a cifti input."""
-    tmpdir = tmp_path_factory.mktemp("test_init_load_atlases_wf_cifti")
+    tmpdir = tmp_path_factory.mktemp('test_init_load_atlases_wf_cifti')
 
-    bold_file = ds001419_data["cifti_file"]
+    bold_file = ds001419_data['cifti_file']
 
     with mock_config():
         config.execution.output_dir = tmpdir
-        config.workflow.file_format = "cifti"
-        config.execution.atlases = ["4S156Parcels", "Glasser"]
+        config.workflow.file_format = 'cifti'
+        config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
-            "xcpdatlases": str(load_data("atlases")),
-            "xcpd4s": "/AtlasPack",
+            'xcpdatlases': str(load_data('atlases')),
+            'xcpd4s': '/AtlasPack',
         }
         config.nipype.omp_nthreads = 1
 
-        load_atlases_wf = init_load_atlases_wf(name="load_atlases_wf")
+        load_atlases_wf = init_load_atlases_wf(name='load_atlases_wf')
         load_atlases_wf.inputs.inputnode.name_source = bold_file
         load_atlases_wf.inputs.inputnode.bold_file = bold_file
         load_atlases_wf.base_dir = tmpdir
         load_atlases_wf_res = load_atlases_wf.run()
 
         nodes = get_nodes(load_atlases_wf_res)
-        atlas_names = nodes["load_atlases_wf.copy_atlas"].get_output("out_file")
+        atlas_names = nodes['load_atlases_wf.copy_atlas'].get_output('out_file')
         assert len(atlas_names) == 2
 
 
 def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     """Test the nifti workflow."""
-    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_nifti_wf")
+    tmpdir = tmp_path_factory.mktemp('test_init_functional_connectivity_nifti_wf')
 
-    bold_file = ds001419_data["nifti_file"]
-    boldref = ds001419_data["boldref"]
-    bold_mask = ds001419_data["brain_mask_file"]
+    bold_file = ds001419_data['nifti_file']
+    boldref = ds001419_data['boldref']
+    bold_mask = ds001419_data['brain_mask_file']
 
     # Generate fake signal
     bold_data = read_ndata(bold_file, bold_mask)
     fake_signal = np.random.randint(1, 500, size=bold_data.shape)
-    fake_bold_file = os.path.join(tmpdir, "fake_signal_file.nii.gz")
+    fake_bold_file = os.path.join(tmpdir, 'fake_signal_file.nii.gz')
     write_ndata(
         fake_signal,
         template=bold_file,
@@ -108,30 +108,30 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
-        columns=["framewise_displacement", "exact_10"],
+        columns=['framewise_displacement', 'exact_10'],
         data=np.stack(
             (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
             axis=1,
         ),
     )
-    temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
     # Load atlases
-    atlas_names = ["Gordon", "Glasser"]
+    atlas_names = ['Gordon', 'Glasser']
     atlas_files = [
         str(
-            load_data("atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz")
+            load_data('atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz')
         ),
         str(
             load_data(
-                "atlases/atlas-Glasser/atlas-Glasser_space-MNI152NLin6Asym_res-01_dseg.nii.gz"
+                'atlases/atlas-Glasser/atlas-Glasser_space-MNI152NLin6Asym_res-01_dseg.nii.gz'
             )
         ),
     ]
     atlas_labels_files = [
-        str(load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv")),
-        str(load_data("atlases/atlas-Glasser/atlas-Glasser_dseg.tsv")),
+        str(load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv')),
+        str(load_data('atlases/atlas-Glasser/atlas-Glasser_dseg.tsv')),
     ]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
@@ -140,7 +140,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     transforms_from_MNI152NLin6Asym = get_std2bold_xfms(
         bold_file,
         source_file=None,
-        source_space="MNI152NLin6Asym",
+        source_space='MNI152NLin6Asym',
     )
     for atlas_file in atlas_files:
         # Using the generated transforms, apply them to get everything in the correct MNI form
@@ -148,7 +148,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
             reference_image=boldref,
             transforms=transforms_from_MNI152NLin6Asym,
             input_image=atlas_file,
-            interpolation="GenericLabel",
+            interpolation='GenericLabel',
             input_image_type=3,
             dimension=3,
         )
@@ -171,7 +171,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
-            name="connectivity_wf",
+            name='connectivity_wf',
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
@@ -189,28 +189,28 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         # Let's find the correct workflow outputs
         assert os.path.isfile(atlas_file)
-        coverage = nodes["connectivity_wf.parcellate_data"].get_output("coverage")[0]
+        coverage = nodes['connectivity_wf.parcellate_data'].get_output('coverage')[0]
         assert os.path.isfile(coverage)
-        timeseries = nodes["connectivity_wf.parcellate_data"].get_output("timeseries")[0]
+        timeseries = nodes['connectivity_wf.parcellate_data'].get_output('timeseries')[0]
         assert os.path.isfile(timeseries)
-        correlations = nodes["connectivity_wf.functional_connectivity"].get_output("correlations")[
+        correlations = nodes['connectivity_wf.functional_connectivity'].get_output('correlations')[
             0
         ]
         assert os.path.isfile(correlations)
 
         # Read that into a df
-        coverage_df = pd.read_table(coverage, index_col="Node")
+        coverage_df = pd.read_table(coverage, index_col='Node')
         coverage_arr = coverage_df.to_numpy()
         assert coverage_arr.shape[0] == n_parcels
-        correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
+        correlations_arr = pd.read_table(correlations, index_col='Node').to_numpy()
         assert correlations_arr.shape == (n_parcels, n_parcels)
 
         # Now to get ground truth correlations
-        labels_df = pd.read_table(atlas_labels_file, index_col="index")
+        labels_df = pd.read_table(atlas_labels_file, index_col='index')
         atlas_img, _ = _sanitize_nifti_atlas(atlas_file, labels_df)
         masker = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=["background"] + coverage_df.index.tolist(),
+            labels=['background'] + coverage_df.index.tolist(),
             smoothing_fwhm=None,
             standardize=False,
         )
@@ -223,7 +223,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         atlas_idx = np.arange(len(coverage_df.index.tolist()), dtype=int)
         idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
         idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
-        n_partial_parcels = np.where(coverage_df["coverage"] >= 0.5)[0].size
+        n_partial_parcels = np.where(coverage_df['coverage'] >= 0.5)[0].size
 
         # Drop missing parcels
         correlations_arr = correlations_arr[idx_in_atlas, :]
@@ -251,9 +251,9 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
 def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     """Test the cifti workflow - only correlation, not parcellation."""
-    tmpdir = tmp_path_factory.mktemp("test_init_functional_connectivity_cifti_wf")
+    tmpdir = tmp_path_factory.mktemp('test_init_functional_connectivity_cifti_wf')
 
-    bold_file = ds001419_data["cifti_file"]
+    bold_file = ds001419_data['cifti_file']
     TR = _get_tr(nb.load(bold_file))
 
     # Generate fake signal
@@ -261,7 +261,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     fake_signal = np.random.randint(1, 500, size=bold_data.shape).astype(np.float32)
     # Make half the vertices all zeros
     fake_signal[:5000, :] = 0
-    fake_bold_file = os.path.join(tmpdir, "fake_signal_file.dtseries.nii")
+    fake_bold_file = os.path.join(tmpdir, 'fake_signal_file.dtseries.nii')
     write_ndata(
         fake_signal,
         template=bold_file,
@@ -275,30 +275,30 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Create a fake temporal mask to satisfy the workflow
     n_volumes = bold_data.shape[1]
     censoring_df = pd.DataFrame(
-        columns=["framewise_displacement", "exact_10"],
+        columns=['framewise_displacement', 'exact_10'],
         data=np.stack(
             (np.zeros(n_volumes), np.concatenate((np.ones(10), np.zeros(n_volumes - 10)))),
             axis=1,
         ),
     )
-    temporal_mask = os.path.join(tmpdir, "temporal_mask.tsv")
-    censoring_df.to_csv(temporal_mask, sep="\t", index=False)
+    temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
     # Load atlases
-    atlas_names = ["4S1056Parcels", "4S156Parcels", "4S456Parcels", "Gordon", "Glasser"]
+    atlas_names = ['4S1056Parcels', '4S156Parcels', '4S456Parcels', 'Gordon', 'Glasser']
     atlas_files = [
-        "/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
-        "/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
-        "/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-91k_dseg.dlabel.nii",
-        str(load_data("atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii")),
-        str(load_data("atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii")),
+        '/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
+        '/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
+        '/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
+        str(load_data('atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii')),
+        str(load_data('atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii')),
     ]
     atlas_labels_files = [
-        "/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_dseg.tsv",
-        "/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv",
-        "/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_dseg.tsv",
-        str(load_data("atlases/atlas-Gordon/atlas-Gordon_dseg.tsv")),
-        str(load_data("atlases/atlas-Glasser/atlas-Glasser_dseg.tsv")),
+        '/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_dseg.tsv',
+        '/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv',
+        '/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_dseg.tsv',
+        str(load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv')),
+        str(load_data('atlases/atlas-Glasser/atlas-Glasser_dseg.tsv')),
     ]
 
     # Create the node and a tmpdir to write its results out to
@@ -313,7 +313,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,
             exact_scans=[],
-            name="connectivity_wf",
+            name='connectivity_wf',
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
@@ -329,27 +329,27 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         nodes = get_nodes(connectivity_wf_res)
 
         # Let's find the cifti files
-        pscalar = nodes["connectivity_wf.parcellate_bold_wf.parcellate_coverage"].get_output(
-            "out_file"
+        pscalar = nodes['connectivity_wf.parcellate_bold_wf.parcellate_coverage'].get_output(
+            'out_file'
         )[0]
         assert os.path.isfile(pscalar)
         timeseries_ciftis = nodes[
-            "connectivity_wf.parcellate_bold_wf.mask_parcellated_data"
-        ].get_output("out_file")[0]
+            'connectivity_wf.parcellate_bold_wf.mask_parcellated_data'
+        ].get_output('out_file')[0]
         assert os.path.isfile(timeseries_ciftis)
-        correlation_ciftis = nodes["connectivity_wf.correlate_bold"].get_output("out_file")[0]
+        correlation_ciftis = nodes['connectivity_wf.correlate_bold'].get_output('out_file')[0]
         assert os.path.isfile(correlation_ciftis)
 
         # Let's find the tsv files
-        coverage = nodes["connectivity_wf.parcellate_bold_wf.coverage_to_tsv"].get_output(
-            "out_file"
+        coverage = nodes['connectivity_wf.parcellate_bold_wf.coverage_to_tsv'].get_output(
+            'out_file'
         )[0]
         assert os.path.isfile(coverage)
-        timeseries = nodes["connectivity_wf.parcellate_bold_wf.cifti_to_tsv"].get_output(
-            "out_file"
+        timeseries = nodes['connectivity_wf.parcellate_bold_wf.cifti_to_tsv'].get_output(
+            'out_file'
         )[0]
         assert os.path.isfile(timeseries)
-        correlations = nodes["connectivity_wf.dconn_to_tsv"].get_output("out_file")[0]
+        correlations = nodes['connectivity_wf.dconn_to_tsv'].get_output('out_file')[0]
         assert os.path.isfile(correlations)
 
         # Let's read in the ciftis' data
@@ -363,7 +363,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         # Read in the tsvs' data
         coverage_arr = pd.read_table(coverage).to_numpy().T
         timeseries_arr = pd.read_table(timeseries).to_numpy()
-        correlations_arr = pd.read_table(correlations, index_col="Node").to_numpy()
+        correlations_arr = pd.read_table(correlations, index_col='Node').to_numpy()
 
         assert coverage_arr.shape == pscalar_arr.shape
         assert timeseries_arr.shape == ptseries_arr.shape
@@ -395,10 +395,10 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
                 np.where(np.isnan(pconn_arr) != np.isnan(calculated_correlations))
             ).T
             raise ValueError(
-                f"{mismatch_idx.shape} mismatches\n\n"
-                f"{mismatch_idx}\n\n"
-                f"{pconn_arr[mismatch_idx[:, 0], mismatch_idx[:, 1]]}\n\n"
-                f"{calculated_correlations[mismatch_idx[:, 0], mismatch_idx[:, 1]]}"
+                f'{mismatch_idx.shape} mismatches\n\n'
+                f'{mismatch_idx}\n\n'
+                f'{pconn_arr[mismatch_idx[:, 0], mismatch_idx[:, 1]]}\n\n'
+                f'{calculated_correlations[mismatch_idx[:, 0], mismatch_idx[:, 1]]}'
             )
 
         if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):

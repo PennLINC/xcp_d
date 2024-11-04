@@ -152,7 +152,7 @@ This is a patch release that fixes two important bugs.
 The two bugs are:
 (1) band-pass filter values were not respected in versions 0.7.1 - 0.7.3 (they were hardcoded to 0.01 - 0.1) and
 (2) when processing CIFTI files, parcellated ReHo values in TSVs were not correct, due to a problem with how we were reconstructing CIFTI ReHo files.
-The dense CIFTI files should still be useable though.
+The dense CIFTI files should still be usable though.
 
 ### 🎉 Exciting New Features
 
