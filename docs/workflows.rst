@@ -641,7 +641,7 @@ Dummy scan removal [OPTIONAL]
 :class:`~xcp_d.interfaces.censoring.RemoveDummyVolumes`
 
 XCP-D allows the first *N* volumes to be removed before processing.
-These volumes are usually refered to as dummy volumes.
+These volumes are usually referred to as dummy volumes.
 Most default scanning sequences include dummy volumes that are not reconstructed.
 However, some users still prefer to remove the first few reconstructed volumes.
 
@@ -923,7 +923,7 @@ Quality control
 
 The quality control (QC) in ``XCP-D`` estimates the quality of BOLD data before and after
 regression and also estimates BOLD-T1w coregistration and BOLD-Template normalization
-qualites.
+qualities.
 The QC metrics include the following:
 
    a. Motion parameters summary: mean FD, mean and maximum RMS

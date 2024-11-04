@@ -1,16 +1,16 @@
-# -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Miscellaneous file manipulation functions."""
+
 import os.path as op
 
 import numpy as np
 from nipype import logging
 from nipype.utils.misc import is_container
 
-fmlogger = logging.getLogger("nipype.utils")
+fmlogger = logging.getLogger('nipype.utils')
 
-related_filetype_sets = [(".hdr", ".img", ".mat"), (".nii", ".mat"), (".BRIK", ".HEAD")]
+related_filetype_sets = [('.hdr', '.img', '.mat'), ('.nii', '.mat'), ('.BRIK', '.HEAD')]
 
 
 def split_filename(fname):
@@ -45,35 +45,35 @@ def split_filename(fname):
     """
     # TM 07152022 - edited to add cifti and workbench extensions
     special_extensions = [
-        ".nii.gz",
-        ".tar.gz",
-        ".niml.dset",
-        ".dconn.nii",
-        ".dlabel.nii",
-        ".dpconn.nii",
-        ".dscalar.nii",
-        ".dtseries.nii",
-        ".fiberTEMP.nii",
-        ".trajTEMP.wbsparse",
-        ".pconn.nii",
-        ".pdconn.nii",
-        ".plabel.nii",
-        ".pscalar.nii",
-        ".ptseries.nii",
-        ".sdseries.nii",
-        ".label.gii",
-        ".label.gii",
-        ".func.gii",
-        ".shape.gii",
-        ".rgba.gii",
-        ".surf.gii",
-        ".dpconn.nii",
-        ".dtraj.nii",
-        ".pconnseries.nii",
-        ".pconnscalar.nii",
-        ".dfan.nii",
-        ".dfibersamp.nii",
-        ".dfansamp.nii",
+        '.nii.gz',
+        '.tar.gz',
+        '.niml.dset',
+        '.dconn.nii',
+        '.dlabel.nii',
+        '.dpconn.nii',
+        '.dscalar.nii',
+        '.dtseries.nii',
+        '.fiberTEMP.nii',
+        '.trajTEMP.wbsparse',
+        '.pconn.nii',
+        '.pdconn.nii',
+        '.plabel.nii',
+        '.pscalar.nii',
+        '.ptseries.nii',
+        '.sdseries.nii',
+        '.label.gii',
+        '.label.gii',
+        '.func.gii',
+        '.shape.gii',
+        '.rgba.gii',
+        '.surf.gii',
+        '.dpconn.nii',
+        '.dtraj.nii',
+        '.pconnseries.nii',
+        '.pconnscalar.nii',
+        '.dfan.nii',
+        '.dfibersamp.nii',
+        '.dfansamp.nii',
     ]
 
     pth = op.dirname(fname)
@@ -92,7 +92,7 @@ def split_filename(fname):
     return pth, fname, ext
 
 
-def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
+def fname_presuffix(fname, prefix='', suffix='', newpath=None, use_ext=True):
     """Manipulate path and name of input filename.
 
     Parameters
@@ -128,7 +128,7 @@ def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
     """
     pth, fname, ext = split_filename(fname)
     if not use_ext:
-        ext = ""
+        ext = ''
 
     # No need for isdefined: bool(Undefined) evaluates to False
     if newpath:
@@ -138,11 +138,11 @@ def fname_presuffix(fname, prefix="", suffix="", newpath=None, use_ext=True):
 
 def ensure_list(filename):
     """Return a list given either a string or a list."""
-    if isinstance(filename, (str, bytes)):
+    if isinstance(filename, str | bytes):
         return [filename]
-    elif isinstance(filename, (list, tuple, type(None), np.ndarray)):
+    elif isinstance(filename, list | tuple | type(None) | np.ndarray):
         return filename
     elif is_container(filename):
-        return [x for x in filename]
+        return list(filename)
     else:
         return None

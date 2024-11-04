@@ -10,10 +10,10 @@ from xcp_d.interfaces import concatenation
 def test_cleannamesource(datasets):
     """Test xcp_d.interfaces.concatenation.CleanNameSource."""
     nifti_file = os.path.join(
-        datasets["ds001419"],
-        "sub-01",
-        "func",
-        "sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz",
+        datasets['ds001419'],
+        'sub-01',
+        'func',
+        'sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz',
     )
 
     interface = concatenation.CleanNameSource(
@@ -23,18 +23,18 @@ def test_cleannamesource(datasets):
     name_source = results.outputs.name_source
 
     expected_name_source = os.path.join(
-        datasets["ds001419"],
-        "sub-01",
-        "func",
-        "sub-01_task-imagery_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz",
+        datasets['ds001419'],
+        'sub-01',
+        'func',
+        'sub-01_task-imagery_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz',
     )
     assert name_source == expected_name_source
 
 
 def test_filteroutfailedruns(ds001419_data):
     """Test xcp_d.interfaces.concatenation.FilterOutFailedRuns."""
-    nifti_file = ds001419_data["nifti_file"]
-    tsv_file = ds001419_data["confounds_file"]
+    nifti_file = ds001419_data['nifti_file']
+    tsv_file = ds001419_data['confounds_file']
 
     denoised_bold = [Undefined, nifti_file, Undefined, Undefined, nifti_file]
     n_runs = len(denoised_bold)
@@ -84,11 +84,11 @@ def test_filteroutfailedruns(ds001419_data):
 
 def test_concatenateinputs(ds001419_data, tmp_path_factory):
     """Test xcp_d.interfaces.concatenation.ConcatenateInputs."""
-    tmpdir = tmp_path_factory.mktemp("test_concatenateinputs")
+    tmpdir = tmp_path_factory.mktemp('test_concatenateinputs')
 
-    nifti_file = ds001419_data["nifti_file"]
-    cifti_file = ds001419_data["cifti_file"]
-    tsv_file = ds001419_data["confounds_file"]
+    nifti_file = ds001419_data['nifti_file']
+    cifti_file = ds001419_data['cifti_file']
+    tsv_file = ds001419_data['confounds_file']
 
     n_runs = 2
     n_atlases = 3

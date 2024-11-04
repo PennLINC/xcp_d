@@ -1,6 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for interpolating over high-motion volumes."""
+
 import os
 
 import nibabel as nb
@@ -12,7 +13,7 @@ from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, loa
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.filemanip import fname_presuffix
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 @fill_doc
@@ -34,9 +35,9 @@ def compute_fd(confound, head_radius=50, filtered=False):
         The framewise displacement time series.
     """
     confound = confound.replace(np.nan, 0)
-    motion_columns = ["trans_x", "trans_y", "trans_z", "rot_x", "rot_y", "rot_z"]
+    motion_columns = ['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']
     if filtered:
-        motion_columns = [f"{col}_filtered" for col in motion_columns]
+        motion_columns = [f'{col}_filtered' for col in motion_columns]
 
     mpars = confound[motion_columns].to_numpy()
     diff = mpars[:-1, :6] - mpars[1:, :6]
@@ -69,9 +70,9 @@ def _drop_dummy_scans(bold_file, dummy_scans):
 
     if bold_image.ndim == 2:  # cifti
         dropped_data = data[dummy_scans:, ...]  # time series is the first element
-        time_axis, brain_model_axis = [
+        time_axis, brain_model_axis = (
             bold_image.header.get_axis(i) for i in range(bold_image.ndim)
-        ]
+        )
         new_total_volumes = dropped_data.shape[0]
         dropped_time_axis = time_axis[:new_total_volumes]
         dropped_header = nb.cifti2.Cifti2Header.from_axes((dropped_time_axis, brain_model_axis))
@@ -112,10 +113,10 @@ def downcast_to_32(in_file):
         return in_file
 
     elif not os.path.isfile(in_file):
-        raise FileNotFoundError(f"File not found: {in_file}")
+        raise FileNotFoundError(f'File not found: {in_file}')
 
     img = nb.load(in_file)
-    if hasattr(img, "nifti_header"):
+    if hasattr(img, 'nifti_header'):
         header = img.nifti_header
     else:
         header = img.header
@@ -123,7 +124,7 @@ def downcast_to_32(in_file):
     SIZE32 = 4  # number of bytes in float32/int32
     dtype = header.get_data_dtype()
     if dtype.itemsize > SIZE32:
-        LOGGER.warning(f"Downcasting {in_file} to 32-bit.")
+        LOGGER.warning(f'Downcasting {in_file} to 32-bit.')
         if np.issubdtype(dtype, np.integer):
             header.set_data_dtype(np.int32)
         elif np.issubdtype(dtype, np.floating):
@@ -131,7 +132,7 @@ def downcast_to_32(in_file):
         else:
             raise TypeError(f"Unknown datatype '{dtype}'.")
 
-        out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix="_downcast", use_ext=True)
+        out_file = fname_presuffix(in_file, newpath=os.getcwd(), suffix='_downcast', use_ext=True)
         img.to_filename(out_file)
     else:
         out_file = in_file
@@ -284,16 +285,16 @@ def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
     dropped_exact_times = [t for t in float_times if t > scan_length]
     if dropped_exact_times:
         LOGGER.warning(
-            f"{scan_length} seconds in {os.path.basename(bold_file)} "
-            "survive high-motion outlier scrubbing. "
-            "Only retaining exact-time values greater than this "
-            f"({retained_exact_times})."
+            f'{scan_length} seconds in {os.path.basename(bold_file)} '
+            'survive high-motion outlier scrubbing. '
+            'Only retaining exact-time values greater than this '
+            f'({retained_exact_times}).'
         )
 
     if non_float_times:
         LOGGER.warning(
-            f"Non-float values {non_float_times} in {os.path.basename(bold_file)} "
-            "will be ignored."
+            f'Non-float values {non_float_times} in {os.path.basename(bold_file)} '
+            'will be ignored.'
         )
 
     exact_scans = [int(t // t_r) for t in retained_exact_times]
