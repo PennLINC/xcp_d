@@ -24,10 +24,10 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     os.chdir(tmpdir)
 
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
-    os.system(
+    os.system(  # noqa: S605
         f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {in_file} -mask {mask} '  # noqa: S605
-        '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'
-    )
+        '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'  # noqa: S605
+    )  # noqa: S605
 
     # Read the FWHM values from the .out file into an array
     with open('test_fwhm.out') as file:
@@ -55,10 +55,10 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
 
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
     # i.e : the "ShowMeClassicFWHM" option
-    os.system(
+    os.system(  # noqa: S605
         f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {out_file} -mask {mask} '  # noqa: S605
-        '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'
-    )
+        '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'  # noqa: S605
+    )  # noqa: S605
 
     # Read the FWHM values from the .out file into an array
     with open('test_fwhm.out') as file:
@@ -104,12 +104,12 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=None):
     )
 
     # Estimate the smoothness of the unsmoothed file
-    in_file_smoothness = os.popen(
+    in_file_smoothness = os.popen(  # noqa: S605
         f'wb_command -cifti-estimate-fwhm {in_file} '  # noqa: S605
-        f'-surface CORTEX_LEFT {left_surf} '
-        f'-surface CORTEX_RIGHT {right_surf} '
-        '-whole-file -merged-volume'
-    ).read()
+        f'-surface CORTEX_LEFT {left_surf} '  # noqa: S605
+        f'-surface CORTEX_RIGHT {right_surf} '  # noqa: S605
+        '-whole-file -merged-volume'  # noqa: S605
+    ).read()  # noqa: S605
     in_file_smoothness = re.findall(r'\d.+', in_file_smoothness)
     in_file_smoothness = [x.split(',') for x in in_file_smoothness]
     in_file_smoothness = [item for sublist in in_file_smoothness for item in sublist]
@@ -136,12 +136,12 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=None):
     out_file = results.outputs.out_file
 
     # Estimate the smoothness of the smoothed file
-    out_file_smoothness = os.popen(
+    out_file_smoothness = os.popen(  # noqa: S605
         f'wb_command -cifti-estimate-fwhm {out_file} '  # noqa: S605
-        f'-surface CORTEX_LEFT {left_surf} '
-        f'-surface CORTEX_RIGHT {right_surf} '
-        '-whole-file -merged-volume'
-    ).read()
+        f'-surface CORTEX_LEFT {left_surf} '  # noqa: S605
+        f'-surface CORTEX_RIGHT {right_surf} '  # noqa: S605
+        '-whole-file -merged-volume'  # noqa: S605
+    ).read()  # noqa: S605
     out_file_smoothness = re.findall(r'\d.+', out_file_smoothness)
     out_file_smoothness = [x.split(',') for x in out_file_smoothness]
     out_file_smoothness = [item for sublist in out_file_smoothness for item in sublist]
