@@ -339,7 +339,7 @@ class ExecutiveSummary:
 
         template_folder = str(load_data('executive_summary_templates/'))
         loader = FileSystemLoader(template_folder)
-        environment = Environment(loader=loader)
+        environment = Environment(loader=loader, autoescape=True)
         environment.filters['basename'] = os.path.basename
         environment.globals['include_file'] = include_file
 

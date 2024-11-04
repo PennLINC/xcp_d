@@ -833,7 +833,7 @@ def parse_args(args=None, namespace=None):
         import yaml
 
         with open(opts.use_plugin) as f:
-            plugin_settings = yaml.load(f, Loader=yaml.FullLoader)
+            plugin_settings = yaml.safe_load(f)
 
         _plugin = plugin_settings.get('plugin')
         if _plugin:
