@@ -25,7 +25,7 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
 
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
     os.system(
-        f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {in_file} -mask {mask} '
+        f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {in_file} -mask {mask} '  # noqa: S605
         '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'
     )
 
@@ -56,7 +56,7 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
     # i.e : the "ShowMeClassicFWHM" option
     os.system(
-        f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {out_file} -mask {mask} '
+        f'3dFWHMx -ShowMeClassicFWHM -acf -detrend -input {out_file} -mask {mask} '  # noqa: S605
         '-detprefix detrend.nii.gz -out test_file.out > test_fwhm.out'
     )
 
@@ -105,7 +105,7 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=None):
 
     # Estimate the smoothness of the unsmoothed file
     in_file_smoothness = os.popen(
-        f'wb_command -cifti-estimate-fwhm {in_file} '
+        f'wb_command -cifti-estimate-fwhm {in_file} '  # noqa: S605
         f'-surface CORTEX_LEFT {left_surf} '
         f'-surface CORTEX_RIGHT {right_surf} '
         '-whole-file -merged-volume'
@@ -137,7 +137,7 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=None):
 
     # Estimate the smoothness of the smoothed file
     out_file_smoothness = os.popen(
-        f'wb_command -cifti-estimate-fwhm {out_file} '
+        f'wb_command -cifti-estimate-fwhm {out_file} '  # noqa: S605
         f'-surface CORTEX_LEFT {left_surf} '
         f'-surface CORTEX_RIGHT {right_surf} '
         '-whole-file -merged-volume'

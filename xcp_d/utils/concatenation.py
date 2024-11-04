@@ -59,4 +59,4 @@ def concatenate_niimgs(files, out_file):
         concat_preproc_img = concat_imgs(files)
         concat_preproc_img.to_filename(out_file)
     else:
-        os.system(f"wb_command -cifti-merge {out_file} -cifti {' -cifti '.join(files)}")
+        os.system(f'wb_command -cifti-merge {out_file} -cifti {" -cifti ".join(files)}')  # noqa: S605

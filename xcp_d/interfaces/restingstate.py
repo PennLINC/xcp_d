@@ -243,7 +243,7 @@ class ReHoNamePatch(SimpleInterface):
         else:
             mask_cmd = ''
 
-        os.system(f'3dReHo -inset {in_file} {mask_cmd} -nneigh 27 -prefix {out_file}')
+        os.system(f'3dReHo -inset {in_file} {mask_cmd} -nneigh 27 -prefix {out_file}')  # noqa: S605
         self._results['out_file'] = out_file
 
 
