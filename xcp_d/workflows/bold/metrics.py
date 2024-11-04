@@ -28,7 +28,7 @@ def init_alff_wf(
     name_source,
     TR,
     mem_gb,
-    name="alff_wf",
+    name='alff_wf',
 ):
     """Compute alff for both nifti and cifti.
 
@@ -101,11 +101,11 @@ def init_alff_wf(
     smoothing = config.workflow.smoothing
     file_format = config.workflow.file_format
 
-    periodogram_desc = ""
+    periodogram_desc = ''
     if fd_thresh > 0:
         periodogram_desc = (
-            " using the Lomb-Scargle periodogram "
-            "[@lomb1976least;@scargle1982studies;@townsend2010fast;@taylorlomb]"
+            ' using the Lomb-Scargle periodogram '
+            '[@lomb1976least;@scargle1982studies;@townsend2010fast;@taylorlomb]'
         )
 
     workflow.__desc__ = f""" \
@@ -123,19 +123,19 @@ series to retain the original scaling.
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "denoised_bold",
-                "bold_mask",
-                "temporal_mask",
+                'denoised_bold',
+                'bold_mask',
+                'temporal_mask',
                 # only used for CIFTI data if the anatomical workflow is enabled
-                "lh_midthickness",
-                "rh_midthickness",
+                'lh_midthickness',
+                'rh_midthickness',
             ],
         ),
-        name="inputnode",
+        name='inputnode',
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["alff", "smoothed_alff"]),
-        name="outputnode",
+        niu.IdentityInterface(fields=['alff', 'smoothed_alff']),
+        name='outputnode',
     )
 
     # compute alff
@@ -146,17 +146,17 @@ series to retain the original scaling.
             high_pass=high_pass,
             n_threads=config.nipype.omp_nthreads,
         ),
-        mem_gb=mem_gb["resampled"],
-        name="alff_compt",
+        mem_gb=mem_gb['resampled'],
+        name='alff_compt',
         n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
         (inputnode, alff_compt, [
-            ("denoised_bold", "in_file"),
-            ("bold_mask", "mask"),
-            ("temporal_mask", "temporal_mask"),
+            ('denoised_bold', 'in_file'),
+            ('bold_mask', 'mask'),
+            ('temporal_mask', 'temporal_mask'),
         ]),
-        (alff_compt, outputnode, [("alff", "alff")])
+        (alff_compt, outputnode, [('alff', 'alff')])
     ])  # fmt:skip
 
     # Plot the ALFF map
@@ -164,89 +164,89 @@ series to retain the original scaling.
         DerivativesDataSink(
             source_file=name_source,
         ),
-        name="ds_report_alff",
+        name='ds_report_alff',
         run_without_submitting=False,
     )
 
-    if file_format == "cifti":
+    if file_format == 'cifti':
         alff_plot = pe.Node(
-            PlotDenseCifti(base_desc="alff"),
-            name="alff_plot",
+            PlotDenseCifti(base_desc='alff'),
+            name='alff_plot',
         )
         workflow.connect([
             (inputnode, alff_plot, [
-                ("lh_midthickness", "lh_underlay"),
-                ("rh_midthickness", "rh_underlay"),
+                ('lh_midthickness', 'lh_underlay'),
+                ('rh_midthickness', 'rh_underlay'),
             ]),
-            (alff_plot, ds_report_alff, [("desc", "desc")]),
+            (alff_plot, ds_report_alff, [('desc', 'desc')]),
         ])  # fmt:skip
     else:
         alff_plot = pe.Node(
             PlotNifti(name_source=name_source),
-            name="alff_plot",
+            name='alff_plot',
         )
-        ds_report_alff.inputs.desc = "alffVolumetricPlot"
+        ds_report_alff.inputs.desc = 'alffVolumetricPlot'
 
     workflow.connect([
-        (alff_compt, alff_plot, [("alff", "in_file")]),
-        (alff_plot, ds_report_alff, [("out_file", "in_file")]),
+        (alff_compt, alff_plot, [('alff', 'in_file')]),
+        (alff_plot, ds_report_alff, [('out_file', 'in_file')]),
     ])  # fmt:skip
 
     if smoothing:  # If we want to smooth
-        if file_format == "nifti":
+        if file_format == 'nifti':
             workflow.__desc__ = workflow.__desc__ + (
-                " The ALFF maps were smoothed with Nilearn using a Gaussian kernel "
-                f"(FWHM={str(smoothing)} mm)."
+                ' The ALFF maps were smoothed with Nilearn using a Gaussian kernel '
+                f'(FWHM={str(smoothing)} mm).'
             )
             # Smooth via Nilearn
             smooth_data = pe.Node(
                 Smooth(fwhm=smoothing),
-                name="niftismoothing",
+                name='niftismoothing',
             )
             workflow.connect([
-                (alff_compt, smooth_data, [("alff", "in_file")]),
-                (smooth_data, outputnode, [("out_file", "smoothed_alff")])
+                (alff_compt, smooth_data, [('alff', 'in_file')]),
+                (smooth_data, outputnode, [('out_file', 'smoothed_alff')])
             ])  # fmt:skip
 
         else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
-                " The ALFF maps were smoothed with the Connectome Workbench using a Gaussian "
-                f"kernel (FWHM={str(smoothing)} mm)."
+                ' The ALFF maps were smoothed with the Connectome Workbench using a Gaussian '
+                f'kernel (FWHM={str(smoothing)} mm).'
             )
 
             # Smooth via Connectome Workbench
             sigma_lx = fwhm2sigma(smoothing)  # Convert fwhm to standard deviation
             # Get templates for each hemisphere
             lh_midthickness = str(
-                get_template("fsLR", hemi="L", suffix="sphere", density="32k")[0]
+                get_template('fsLR', hemi='L', suffix='sphere', density='32k')[0]
             )
             rh_midthickness = str(
-                get_template("fsLR", hemi="R", suffix="sphere", density="32k")[0]
+                get_template('fsLR', hemi='R', suffix='sphere', density='32k')[0]
             )
             smooth_data = pe.Node(
                 CiftiSmooth(
                     sigma_surf=sigma_lx,
                     sigma_vol=sigma_lx,
-                    direction="COLUMN",
+                    direction='COLUMN',
                     right_surf=rh_midthickness,
                     left_surf=lh_midthickness,
                     num_threads=config.nipype.omp_nthreads,
                 ),
-                name="ciftismoothing",
-                mem_gb=mem_gb["resampled"],
+                name='ciftismoothing',
+                mem_gb=mem_gb['resampled'],
                 n_procs=config.nipype.omp_nthreads,
             )
 
             # Always check the intent code in CiftiSmooth's output file
             fix_cifti_intent = pe.Node(
                 FixCiftiIntent(),
-                name="fix_cifti_intent",
-                mem_gb=mem_gb["resampled"],
+                name='fix_cifti_intent',
+                mem_gb=mem_gb['resampled'],
             )
             workflow.connect([
-                (alff_compt, smooth_data, [("alff", "in_file")]),
-                (smooth_data, fix_cifti_intent, [("out_file", "in_file")]),
-                (fix_cifti_intent, outputnode, [("out_file", "smoothed_alff")]),
+                (alff_compt, smooth_data, [('alff', 'in_file')]),
+                (smooth_data, fix_cifti_intent, [('out_file', 'in_file')]),
+                (fix_cifti_intent, outputnode, [('out_file', 'smoothed_alff')]),
             ])  # fmt:skip
 
     return workflow
@@ -256,7 +256,7 @@ series to retain the original scaling.
 def init_reho_cifti_wf(
     name_source,
     mem_gb,
-    name="cifti_reho_wf",
+    name='cifti_reho_wf',
 ):
     """Compute ReHo from surface+volumetric (CIFTI) data.
 
@@ -314,81 +314,81 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold", "lh_midthickness", "rh_midthickness"]),
-        name="inputnode",
+        niu.IdentityInterface(fields=['denoised_bold', 'lh_midthickness', 'rh_midthickness']),
+        name='inputnode',
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=["reho"]),
-        name="outputnode",
+        niu.IdentityInterface(fields=['reho']),
+        name='outputnode',
     )
 
     # Extract left and right hemispheres via Connectome Workbench
     lh_surf = pe.Node(
         CiftiSeparateMetric(
-            metric="CORTEX_LEFT",
-            direction="COLUMN",
+            metric='CORTEX_LEFT',
+            direction='COLUMN',
             num_threads=config.nipype.omp_nthreads,
         ),
-        name="separate_lh",
-        mem_gb=mem_gb["resampled"],
+        name='separate_lh',
+        mem_gb=mem_gb['resampled'],
         n_procs=config.nipype.omp_nthreads,
     )
     rh_surf = pe.Node(
         CiftiSeparateMetric(
-            metric="CORTEX_RIGHT",
-            direction="COLUMN",
+            metric='CORTEX_RIGHT',
+            direction='COLUMN',
             num_threads=config.nipype.omp_nthreads,
         ),
-        name="separate_rh",
-        mem_gb=mem_gb["resampled"],
+        name='separate_rh',
+        mem_gb=mem_gb['resampled'],
         n_procs=config.nipype.omp_nthreads,
     )
     subcortical_nifti = pe.Node(
         CiftiSeparateVolumeAll(
-            direction="COLUMN",
+            direction='COLUMN',
             num_threads=config.nipype.omp_nthreads,
         ),
-        name="separate_subcortical",
-        mem_gb=mem_gb["resampled"],
+        name='separate_subcortical',
+        mem_gb=mem_gb['resampled'],
         n_procs=config.nipype.omp_nthreads,
     )
 
-    # Calculate the reho by hemipshere
+    # Calculate the reho by hemisphere
     lh_reho = pe.Node(
-        SurfaceReHo(surf_hemi="L"),
-        name="reho_lh",
-        mem_gb=mem_gb["resampled"],
+        SurfaceReHo(surf_hemi='L'),
+        name='reho_lh',
+        mem_gb=mem_gb['resampled'],
     )
     rh_reho = pe.Node(
-        SurfaceReHo(surf_hemi="R"),
-        name="reho_rh",
-        mem_gb=mem_gb["resampled"],
+        SurfaceReHo(surf_hemi='R'),
+        name='reho_rh',
+        mem_gb=mem_gb['resampled'],
     )
     subcortical_reho = pe.Node(
-        ReHoNamePatch(neighborhood="vertices"),
-        name="reho_subcortical",
-        mem_gb=mem_gb["resampled"],
+        ReHoNamePatch(neighborhood='vertices'),
+        name='reho_subcortical',
+        mem_gb=mem_gb['resampled'],
     )
 
     # Merge the surfaces and subcortical structures back into a CIFTI
     merge_cifti = pe.Node(
         CiftiCreateDenseFromTemplate(
             from_cropped=True,
-            out_file="reho.dscalar.nii",
+            out_file='reho.dscalar.nii',
             num_threads=config.nipype.omp_nthreads,
         ),
-        name="merge_cifti",
-        mem_gb=mem_gb["resampled"],
+        name='merge_cifti',
+        mem_gb=mem_gb['resampled'],
         n_procs=config.nipype.omp_nthreads,
     )
     reho_plot = pe.Node(
-        PlotDenseCifti(base_desc="reho"),
-        name="reho_cifti_plot",
+        PlotDenseCifti(base_desc='reho'),
+        name='reho_cifti_plot',
     )
     workflow.connect([
         (inputnode, reho_plot, [
-            ("lh_midthickness", "lh_underlay"),
-            ("rh_midthickness", "rh_underlay"),
+            ('lh_midthickness', 'lh_underlay'),
+            ('rh_midthickness', 'rh_underlay'),
         ]),
     ])  # fmt:skip
 
@@ -396,27 +396,27 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
         DerivativesDataSink(
             source_file=name_source,
         ),
-        name="ds_report_reho",
+        name='ds_report_reho',
         run_without_submitting=False,
     )
 
     # Write out results
     workflow.connect([
-        (inputnode, lh_surf, [("denoised_bold", "in_file")]),
-        (inputnode, rh_surf, [("denoised_bold", "in_file")]),
-        (inputnode, subcortical_nifti, [("denoised_bold", "in_file")]),
-        (lh_surf, lh_reho, [("out_file", "surf_bold")]),
-        (rh_surf, rh_reho, [("out_file", "surf_bold")]),
-        (subcortical_nifti, subcortical_reho, [("out_file", "in_file")]),
-        (inputnode, merge_cifti, [("denoised_bold", "template_cifti")]),
-        (lh_reho, merge_cifti, [("surf_gii", "left_metric")]),
-        (rh_reho, merge_cifti, [("surf_gii", "right_metric")]),
-        (subcortical_reho, merge_cifti, [("out_file", "volume_all")]),
-        (merge_cifti, outputnode, [("out_file", "reho")]),
-        (merge_cifti, reho_plot, [("out_file", "in_file")]),
+        (inputnode, lh_surf, [('denoised_bold', 'in_file')]),
+        (inputnode, rh_surf, [('denoised_bold', 'in_file')]),
+        (inputnode, subcortical_nifti, [('denoised_bold', 'in_file')]),
+        (lh_surf, lh_reho, [('out_file', 'surf_bold')]),
+        (rh_surf, rh_reho, [('out_file', 'surf_bold')]),
+        (subcortical_nifti, subcortical_reho, [('out_file', 'in_file')]),
+        (inputnode, merge_cifti, [('denoised_bold', 'template_cifti')]),
+        (lh_reho, merge_cifti, [('surf_gii', 'left_metric')]),
+        (rh_reho, merge_cifti, [('surf_gii', 'right_metric')]),
+        (subcortical_reho, merge_cifti, [('out_file', 'volume_all')]),
+        (merge_cifti, outputnode, [('out_file', 'reho')]),
+        (merge_cifti, reho_plot, [('out_file', 'in_file')]),
         (reho_plot, ds_report_reho, [
-            ("out_file", "in_file"),
-            ("desc", "desc"),
+            ('out_file', 'in_file'),
+            ('desc', 'desc'),
         ]),
     ])  # fmt:skip
 
@@ -424,7 +424,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
 
 @fill_doc
-def init_reho_nifti_wf(name_source, mem_gb, name="reho_nifti_wf"):
+def init_reho_nifti_wf(name_source, mem_gb, name='reho_nifti_wf'):
     """Compute ReHo on volumetric (NIFTI) data.
 
     Workflow Graph
@@ -472,42 +472,42 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
 """
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=["denoised_bold", "bold_mask"]),
-        name="inputnode",
+        niu.IdentityInterface(fields=['denoised_bold', 'bold_mask']),
+        name='inputnode',
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["reho"]), name="outputnode")
+    outputnode = pe.Node(niu.IdentityInterface(fields=['reho']), name='outputnode')
 
     # Run AFNI'S 3DReHo on the data
     compute_reho = pe.Node(
-        ReHoNamePatch(neighborhood="vertices"),
-        name="reho_3d",
-        mem_gb=mem_gb["resampled"],
+        ReHoNamePatch(neighborhood='vertices'),
+        name='reho_3d',
+        mem_gb=mem_gb['resampled'],
         n_procs=1,
     )
     # Get the svg
     reho_plot = pe.Node(
         PlotNifti(name_source=name_source),
-        name="reho_nifti_plot",
+        name='reho_nifti_plot',
     )
 
     ds_report_reho = pe.Node(
         DerivativesDataSink(
             source_file=name_source,
-            desc="rehoVolumetricPlot",
+            desc='rehoVolumetricPlot',
         ),
-        name="ds_report_reho",
+        name='ds_report_reho',
         run_without_submitting=False,
     )
 
     # Write the results out
     workflow.connect([
         (inputnode, compute_reho, [
-            ("denoised_bold", "in_file"),
-            ("bold_mask", "mask_file"),
+            ('denoised_bold', 'in_file'),
+            ('bold_mask', 'mask_file'),
         ]),
-        (compute_reho, outputnode, [("out_file", "reho")]),
-        (compute_reho, reho_plot, [("out_file", "in_file")]),
-        (reho_plot, ds_report_reho, [("out_file", "in_file")]),
+        (compute_reho, outputnode, [('out_file', 'reho')]),
+        (compute_reho, reho_plot, [('out_file', 'in_file')]),
+        (reho_plot, ds_report_reho, [('out_file', 'in_file')]),
     ])  # fmt:skip
 
     return workflow

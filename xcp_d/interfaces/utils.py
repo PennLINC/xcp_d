@@ -24,42 +24,42 @@ from xcp_d.utils.modified_data import downcast_to_32
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
 from xcp_d.utils.write_save import read_ndata
 
-LOGGER = logging.getLogger("nipype.interface")
+LOGGER = logging.getLogger('nipype.interface')
 
 
 class _ConvertTo32InputSpec(BaseInterfaceInputSpec):
     bold_file = traits.Either(
         None,
         File(exists=True),
-        desc="BOLD file",
+        desc='BOLD file',
         mandatory=False,
         usedefault=True,
     )
     boldref = traits.Either(
         None,
         File(exists=True),
-        desc="BOLD reference file",
+        desc='BOLD reference file',
         mandatory=False,
         usedefault=True,
     )
     bold_mask = traits.Either(
         None,
         File(exists=True),
-        desc="BOLD mask file",
+        desc='BOLD mask file',
         mandatory=False,
         usedefault=True,
     )
     t1w = traits.Either(
         None,
         File(exists=True),
-        desc="T1-weighted anatomical file",
+        desc='T1-weighted anatomical file',
         mandatory=False,
         usedefault=True,
     )
     t2w = traits.Either(
         None,
         File(exists=True),
-        desc="T2-weighted anatomical file",
+        desc='T2-weighted anatomical file',
         mandatory=False,
         usedefault=True,
     )
@@ -69,31 +69,31 @@ class _ConvertTo32OutputSpec(TraitedSpec):
     bold_file = traits.Either(
         None,
         File(exists=True),
-        desc="BOLD file",
+        desc='BOLD file',
         mandatory=False,
     )
     boldref = traits.Either(
         None,
         File(exists=True),
-        desc="BOLD reference file",
+        desc='BOLD reference file',
         mandatory=False,
     )
     bold_mask = traits.Either(
         None,
         File(exists=True),
-        desc="BOLD mask file",
+        desc='BOLD mask file',
         mandatory=False,
     )
     t1w = traits.Either(
         None,
         File(exists=True),
-        desc="T1-weighted anatomical file",
+        desc='T1-weighted anatomical file',
         mandatory=False,
     )
     t2w = traits.Either(
         None,
         File(exists=True),
-        desc="T2-weighted anatomical file",
+        desc='T2-weighted anatomical file',
         mandatory=False,
     )
 
@@ -105,11 +105,11 @@ class ConvertTo32(SimpleInterface):
     output_spec = _ConvertTo32OutputSpec
 
     def _run_interface(self, runtime):
-        self._results["bold_file"] = downcast_to_32(self.inputs.bold_file)
-        self._results["boldref"] = downcast_to_32(self.inputs.boldref)
-        self._results["bold_mask"] = downcast_to_32(self.inputs.bold_mask)
-        self._results["t1w"] = downcast_to_32(self.inputs.t1w)
-        self._results["t2w"] = downcast_to_32(self.inputs.t2w)
+        self._results['bold_file'] = downcast_to_32(self.inputs.bold_file)
+        self._results['boldref'] = downcast_to_32(self.inputs.boldref)
+        self._results['bold_mask'] = downcast_to_32(self.inputs.bold_mask)
+        self._results['t1w'] = downcast_to_32(self.inputs.t1w)
+        self._results['t2w'] = downcast_to_32(self.inputs.t2w)
 
         return runtime
 
@@ -122,14 +122,14 @@ class _FilterUndefinedInputSpec(BaseInterfaceInputSpec):
             Undefined,
         ),
         mandatory=True,
-        desc="List of objects to filter.",
+        desc='List of objects to filter.',
     )
 
 
 class _FilterUndefinedOutputSpec(TraitedSpec):
     outlist = OutputMultiObject(
         traits.Str,
-        desc="Filtered list of objects.",
+        desc='Filtered list of objects.',
     )
 
 
@@ -145,7 +145,7 @@ class FilterUndefined(SimpleInterface):
         for item in inlist:
             if item is not None and traits_extension.isdefined(item):
                 outlist.append(item)
-        self._results["outlist"] = outlist
+        self._results['outlist'] = outlist
         return runtime
 
 
@@ -154,44 +154,44 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
         exists=False,
         mandatory=True,
         desc=(
-            "Preprocessed BOLD file. Used to find files. "
-            "In the case of the concatenation workflow, "
-            "this may be a nonexistent file "
-            "(i.e., the preprocessed BOLD file, with the run entity removed)."
+            'Preprocessed BOLD file. Used to find files. '
+            'In the case of the concatenation workflow, '
+            'this may be a nonexistent file '
+            '(i.e., the preprocessed BOLD file, with the run entity removed).'
         ),
     )
     bold_file = File(
         exists=True,
         mandatory=True,
-        desc="Preprocessed BOLD file, after dummy scan removal. Used in carpet plot.",
+        desc='Preprocessed BOLD file, after dummy scan removal. Used in carpet plot.',
     )
-    dummy_scans = traits.Int(mandatory=True, desc="Dummy time to drop")
+    dummy_scans = traits.Int(mandatory=True, desc='Dummy time to drop')
     temporal_mask = traits.Either(
         File(exists=True),
         Undefined,
-        desc="Temporal mask",
+        desc='Temporal mask',
     )
     motion_file = File(
         exists=True,
         mandatory=True,
-        desc="fMRIPrep confounds file, after dummy scans removal",
+        desc='fMRIPrep confounds file, after dummy scans removal',
     )
     cleaned_file = File(
         exists=True,
         mandatory=True,
-        desc="Processed file, after denoising and censoring.",
+        desc='Processed file, after denoising and censoring.',
     )
-    TR = traits.Float(mandatory=True, desc="Repetition time, in seconds.")
-    head_radius = traits.Float(mandatory=True, desc="Head radius for FD calculation, in mm.")
+    TR = traits.Float(mandatory=True, desc='Repetition time, in seconds.')
+    head_radius = traits.Float(mandatory=True, desc='Head radius for FD calculation, in mm.')
     bold_mask_inputspace = traits.Either(
         None,
         File(exists=True),
         mandatory=True,
         desc=(
-            "Mask file from NIfTI. May be None, for CIFTI processing. "
-            "The mask is in the same space as the BOLD data, which may not be the same as the "
-            "bold_mask_stdspace file. "
-            "Used to load the masked BOLD data. Not used for QC metrics."
+            'Mask file from NIfTI. May be None, for CIFTI processing. '
+            'The mask is in the same space as the BOLD data, which may not be the same as the '
+            'bold_mask_stdspace file. '
+            'Used to load the masked BOLD data. Not used for QC metrics.'
         ),
     )
 
@@ -200,8 +200,8 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=False,
         desc=(
-            "Anatomically-derived brain mask in anatomical space. "
-            "Used to calculate coregistration QC metrics."
+            'Anatomically-derived brain mask in anatomical space. '
+            'Used to calculate coregistration QC metrics.'
         ),
     )
     template_mask = File(
@@ -209,31 +209,31 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
         mandatory=False,
         desc=(
             "Template's official brain mask. "
-            "This matches the space of bold_mask_stdspace, "
-            "but does not necessarily match the space of bold_mask_inputspace. "
-            "Used to calculate normalization QC metrics."
+            'This matches the space of bold_mask_stdspace, '
+            'but does not necessarily match the space of bold_mask_inputspace. '
+            'Used to calculate normalization QC metrics.'
         ),
     )
     bold_mask_anatspace = File(
         exists=True,
         mandatory=False,
-        desc="BOLD mask in anatomical space. Used to calculate coregistration QC metrics.",
+        desc='BOLD mask in anatomical space. Used to calculate coregistration QC metrics.',
     )
     bold_mask_stdspace = File(
         exists=True,
         mandatory=False,
         desc=(
-            "BOLD mask in template space. "
-            "This matches the space of template_mask, "
-            "but does not necessarily match the space of bold_mask_inputspace. "
-            "Used to calculate normalization QC metrics."
+            'BOLD mask in template space. '
+            'This matches the space of template_mask, '
+            'but does not necessarily match the space of bold_mask_inputspace. '
+            'Used to calculate normalization QC metrics.'
         ),
     )
 
 
 class _LINCQCOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, desc="QC TSV file.")
-    qc_metadata = File(exists=True, desc="Sidecar JSON for QC TSV file.")
+    qc_file = File(exists=True, desc='QC TSV file.')
+    qc_metadata = File(exists=True, desc='Sidecar JSON for QC TSV file.')
 
 
 class LINCQC(SimpleInterface):
@@ -245,14 +245,14 @@ class LINCQC(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        preproc_fd = motion_df["framewise_displacement"].to_numpy()
-        rmsd = motion_df["rmsd"].to_numpy()
+        preproc_fd = motion_df['framewise_displacement'].to_numpy()
+        rmsd = motion_df['rmsd'].to_numpy()
 
         # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = censoring_df["framewise_displacement"].values
+            tmask_arr = censoring_df['framewise_displacement'].values
         else:
             tmask_arr = np.zeros(preproc_fd.size, dtype=int)
 
@@ -276,17 +276,17 @@ class LINCQC(SimpleInterface):
             ),
         )[1]
         if preproc_fd.size != dvars_before_processing.size:
-            raise ValueError(f"FD {preproc_fd.size} != DVARS {dvars_before_processing.size}\n")
+            raise ValueError(f'FD {preproc_fd.size} != DVARS {dvars_before_processing.size}\n')
 
         # Get the different components in the bold file name
         # eg: ['sub-colornest001', 'ses-1'], etc.
         _, bold_file_name = os.path.split(self.inputs.name_source)
-        bold_file_name_components = bold_file_name.split("_")
+        bold_file_name_components = bold_file_name.split('_')
 
         # Fill out dictionary with entities from filename
         qc_values_dict = {}
         for entity in bold_file_name_components[:-1]:
-            qc_values_dict[entity.split("-")[0]] = entity.split("-")[1]
+            qc_values_dict[entity.split('-')[0]] = entity.split('-')[1]
 
         # Calculate QC measures
         mean_fd = np.mean(preproc_fd)
@@ -301,111 +301,111 @@ class LINCQC(SimpleInterface):
         # A summary of all the values
         qc_values_dict.update(
             {
-                "mean_fd": [mean_fd],
-                "mean_fd_post_censoring": [mean_fd_post_censoring],
-                "mean_relative_rms": [mean_relative_rms],
-                "max_relative_rms": [rmsd_max_value],
-                "mean_dvars_initial": [mean_dvars_before_processing],
-                "mean_dvars_final": [mean_dvars_after_processing],
-                "num_dummy_volumes": [dummy_scans],
-                "num_censored_volumes": [num_censored_volumes],
-                "num_retained_volumes": [num_retained_volumes],
-                "fd_dvars_correlation_initial": [fd_dvars_correlation_initial],
-                "fd_dvars_correlation_final": [fd_dvars_correlation_final],
+                'mean_fd': [mean_fd],
+                'mean_fd_post_censoring': [mean_fd_post_censoring],
+                'mean_relative_rms': [mean_relative_rms],
+                'max_relative_rms': [rmsd_max_value],
+                'mean_dvars_initial': [mean_dvars_before_processing],
+                'mean_dvars_final': [mean_dvars_after_processing],
+                'num_dummy_volumes': [dummy_scans],
+                'num_censored_volumes': [num_censored_volumes],
+                'num_retained_volumes': [num_retained_volumes],
+                'fd_dvars_correlation_initial': [fd_dvars_correlation_initial],
+                'fd_dvars_correlation_final': [fd_dvars_correlation_final],
             }
         )
 
         qc_metadata = {
-            "mean_fd": {
-                "LongName": "Mean Framewise Displacement",
-                "Description": (
-                    "Average framewise displacement without any motion parameter filtering. "
-                    "This value includes high-motion outliers, but not dummy volumes. "
-                    "FD is calculated according to the Power definition."
+            'mean_fd': {
+                'LongName': 'Mean Framewise Displacement',
+                'Description': (
+                    'Average framewise displacement without any motion parameter filtering. '
+                    'This value includes high-motion outliers, but not dummy volumes. '
+                    'FD is calculated according to the Power definition.'
                 ),
-                "Units": "mm",
-                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
+                'Units': 'mm',
+                'Term URL': 'https://doi.org/10.1016/j.neuroimage.2011.10.018',
             },
-            "mean_fd_post_censoring": {
-                "LongName": "Mean Framewise Displacement After Censoring",
-                "Description": (
-                    "Average framewise displacement without any motion parameter filtering. "
-                    "This value does not include high-motion outliers or dummy volumes. "
-                    "FD is calculated according to the Power definition."
+            'mean_fd_post_censoring': {
+                'LongName': 'Mean Framewise Displacement After Censoring',
+                'Description': (
+                    'Average framewise displacement without any motion parameter filtering. '
+                    'This value does not include high-motion outliers or dummy volumes. '
+                    'FD is calculated according to the Power definition.'
                 ),
-                "Units": "mm",
-                "Term URL": "https://doi.org/10.1016/j.neuroimage.2011.10.018",
+                'Units': 'mm',
+                'Term URL': 'https://doi.org/10.1016/j.neuroimage.2011.10.018',
             },
-            "mean_relative_rms": {
-                "LongName": "Mean Relative Root Mean Squared",
-                "Description": (
-                    "Average relative root mean squared calculated from motion parameters, "
-                    "after removal of dummy volumes and high-motion outliers. "
+            'mean_relative_rms': {
+                'LongName': 'Mean Relative Root Mean Squared',
+                'Description': (
+                    'Average relative root mean squared calculated from motion parameters, '
+                    'after removal of dummy volumes and high-motion outliers. '
                     "Relative in this case means 'relative to the previous scan'."
                 ),
-                "Units": "arbitrary",
+                'Units': 'arbitrary',
             },
-            "max_relative_rms": {
-                "LongName": "Maximum Relative Root Mean Squared",
-                "Description": (
-                    "Maximum relative root mean squared calculated from motion parameters, "
-                    "after removal of dummy volumes and high-motion outliers. "
+            'max_relative_rms': {
+                'LongName': 'Maximum Relative Root Mean Squared',
+                'Description': (
+                    'Maximum relative root mean squared calculated from motion parameters, '
+                    'after removal of dummy volumes and high-motion outliers. '
                     "Relative in this case means 'relative to the previous scan'."
                 ),
-                "Units": "arbitrary",
+                'Units': 'arbitrary',
             },
-            "mean_dvars_initial": {
-                "LongName": "Mean DVARS Before Postprocessing",
-                "Description": (
-                    "Average DVARS (temporal derivative of root mean squared variance over "
-                    "voxels) calculated from the preprocessed BOLD file, after dummy scan removal."
+            'mean_dvars_initial': {
+                'LongName': 'Mean DVARS Before Postprocessing',
+                'Description': (
+                    'Average DVARS (temporal derivative of root mean squared variance over '
+                    'voxels) calculated from the preprocessed BOLD file, after dummy scan removal.'
                 ),
-                "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
+                'TermURL': 'https://doi.org/10.1016/j.neuroimage.2011.02.073',
             },
-            "mean_dvars_final": {
-                "LongName": "Mean DVARS After Postprocessing",
-                "Description": (
-                    "Average DVARS (temporal derivative of root mean squared variance over "
-                    "voxels) calculated from the denoised BOLD file."
+            'mean_dvars_final': {
+                'LongName': 'Mean DVARS After Postprocessing',
+                'Description': (
+                    'Average DVARS (temporal derivative of root mean squared variance over '
+                    'voxels) calculated from the denoised BOLD file.'
                 ),
-                "TermURL": "https://doi.org/10.1016/j.neuroimage.2011.02.073",
+                'TermURL': 'https://doi.org/10.1016/j.neuroimage.2011.02.073',
             },
-            "num_dummy_volumes": {
-                "LongName": "Number of Dummy Volumes",
-                "Description": (
-                    "The number of non-steady state volumes removed from the time series by XCP-D."
-                ),
-            },
-            "num_censored_volumes": {
-                "LongName": "Number of Censored Volumes",
-                "Description": (
-                    "The number of high-motion outlier volumes censored by XCP-D. "
-                    "This does not include dummy volumes."
+            'num_dummy_volumes': {
+                'LongName': 'Number of Dummy Volumes',
+                'Description': (
+                    'The number of non-steady state volumes removed from the time series by XCP-D.'
                 ),
             },
-            "num_retained_volumes": {
-                "LongName": "Number of Retained Volumes",
-                "Description": (
-                    "The number of volumes retained in the denoised dataset. "
-                    "This does not include dummy volumes or high-motion outliers."
+            'num_censored_volumes': {
+                'LongName': 'Number of Censored Volumes',
+                'Description': (
+                    'The number of high-motion outlier volumes censored by XCP-D. '
+                    'This does not include dummy volumes.'
                 ),
             },
-            "fd_dvars_correlation_initial": {
-                "LongName": "FD-DVARS Correlation Before Postprocessing",
-                "Description": (
-                    "The Pearson correlation coefficient between framewise displacement and DVARS "
-                    "(temporal derivative of root mean squared variance over voxels), "
-                    "after removal of dummy volumes, but before removal of high-motion outliers."
+            'num_retained_volumes': {
+                'LongName': 'Number of Retained Volumes',
+                'Description': (
+                    'The number of volumes retained in the denoised dataset. '
+                    'This does not include dummy volumes or high-motion outliers.'
                 ),
             },
-            "fd_dvars_correlation_final": {
-                "LongName": "FD-DVARS Correlation After Postprocessing",
-                "Description": (
-                    "The Pearson correlation coefficient between framewise displacement and DVARS "
-                    "(temporal derivative of root mean squared variance over voxels), "
-                    "after postprocessing. "
-                    "The FD time series is unfiltered, but censored. "
-                    "The DVARS time series is calculated from the denoised BOLD data."
+            'fd_dvars_correlation_initial': {
+                'LongName': 'FD-DVARS Correlation Before Postprocessing',
+                'Description': (
+                    'The Pearson correlation coefficient between framewise displacement and DVARS '
+                    '(temporal derivative of root mean squared variance over voxels), '
+                    'after removal of dummy volumes, but before removal of high-motion outliers.'
+                ),
+            },
+            'fd_dvars_correlation_final': {
+                'LongName': 'FD-DVARS Correlation After Postprocessing',
+                'Description': (
+                    'The Pearson correlation coefficient between framewise displacement and DVARS '
+                    '(temporal derivative of root mean squared variance over voxels), '
+                    'after postprocessing. '
+                    'The FD time series is unfiltered, but censored. '
+                    'The DVARS time series is calculated from the denoised BOLD data.'
                 ),
             },
         }
@@ -423,22 +423,22 @@ class LINCQC(SimpleInterface):
 
         # Convert dictionary to df and write out the qc file
         df = pd.DataFrame(qc_values_dict)
-        self._results["qc_file"] = fname_presuffix(
+        self._results['qc_file'] = fname_presuffix(
             self.inputs.cleaned_file,
-            suffix="qc_bold.tsv",
+            suffix='qc_bold.tsv',
             newpath=runtime.cwd,
             use_ext=False,
         )
-        df.to_csv(self._results["qc_file"], index=False, header=True, sep="\t")
+        df.to_csv(self._results['qc_file'], index=False, header=True, sep='\t')
 
         # Write out the metadata file
-        self._results["qc_metadata"] = fname_presuffix(
+        self._results['qc_metadata'] = fname_presuffix(
             self.inputs.cleaned_file,
-            suffix="qc_bold.json",
+            suffix='qc_bold.json',
             newpath=runtime.cwd,
             use_ext=False,
         )
-        with open(self._results["qc_metadata"], "w") as fo:
+        with open(self._results['qc_metadata'], 'w') as fo:
             json.dump(qc_metadata, fo, indent=4, sort_keys=True)
 
         return runtime
@@ -448,13 +448,13 @@ class _ABCCQCInputSpec(BaseInterfaceInputSpec):
     motion_file = File(
         exists=True,
         mandatory=True,
-        desc="",
+        desc='',
     )
-    TR = traits.Float(mandatory=True, desc="Repetition Time")
+    TR = traits.Float(mandatory=True, desc='Repetition Time')
 
 
 class _ABCCQCOutputSpec(TraitedSpec):
-    qc_file = File(exists=True, desc="ABCC QC HDF5 file.")
+    qc_file = File(exists=True, desc='ABCC QC HDF5 file.')
 
 
 class ABCCQC(SimpleInterface):
@@ -486,58 +486,58 @@ class ABCCQC(SimpleInterface):
     def _run_interface(self, runtime):
         TR = self.inputs.TR
 
-        self._results["qc_file"] = fname_presuffix(
+        self._results['qc_file'] = fname_presuffix(
             self.inputs.motion_file,
-            suffix="qc_bold.hdf5",
+            suffix='qc_bold.hdf5',
             newpath=runtime.cwd,
             use_ext=False,
         )
 
         # Load filtered framewise_displacement values from file
         motion_df = pd.read_table(self.inputs.motion_file)
-        if "framewise_displacement_filtered" in motion_df.columns:
-            fd = motion_df["framewise_displacement_filtered"].values
+        if 'framewise_displacement_filtered' in motion_df.columns:
+            fd = motion_df['framewise_displacement_filtered'].values
         else:
-            fd = motion_df["framewise_displacement"].values
+            fd = motion_df['framewise_displacement'].values
 
-        with h5py.File(self._results["qc_file"], "w") as dcan:
+        with h5py.File(self._results['qc_file'], 'w') as dcan:
             for thresh in np.linspace(0, 1, 101):
                 thresh = np.around(thresh, 2)
 
                 dcan.create_dataset(
-                    f"/dcan_motion/fd_{thresh}/skip",
+                    f'/dcan_motion/fd_{thresh}/skip',
                     data=0,
-                    dtype="float",
+                    dtype='float',
                 )
                 dcan.create_dataset(
-                    f"/dcan_motion/fd_{thresh}/binary_mask",
+                    f'/dcan_motion/fd_{thresh}/binary_mask',
                     data=(fd > thresh).astype(int),
-                    dtype="float",
+                    dtype='float',
                 )
                 dcan.create_dataset(
-                    f"/dcan_motion/fd_{thresh}/threshold",
+                    f'/dcan_motion/fd_{thresh}/threshold',
                     data=thresh,
-                    dtype="float",
+                    dtype='float',
                 )
                 dcan.create_dataset(
-                    f"/dcan_motion/fd_{thresh}/total_frame_count",
+                    f'/dcan_motion/fd_{thresh}/total_frame_count',
                     data=len(fd),
-                    dtype="float",
+                    dtype='float',
                 )
                 dcan.create_dataset(
-                    f"/dcan_motion/fd_{thresh}/remaining_total_frame_count",
+                    f'/dcan_motion/fd_{thresh}/remaining_total_frame_count',
                     data=len(fd[fd <= thresh]),
-                    dtype="float",
+                    dtype='float',
                 )
                 dcan.create_dataset(
-                    f"/dcan_motion/fd_{thresh}/remaining_seconds",
+                    f'/dcan_motion/fd_{thresh}/remaining_seconds',
                     data=len(fd[fd <= thresh]) * TR,
-                    dtype="float",
+                    dtype='float',
                 )
                 dcan.create_dataset(
-                    f"/dcan_motion/fd_{thresh}/remaining_frame_mean_FD",
+                    f'/dcan_motion/fd_{thresh}/remaining_frame_mean_FD',
                     data=(fd[fd <= thresh]).mean(),
-                    dtype="float",
+                    dtype='float',
                 )
 
         return runtime

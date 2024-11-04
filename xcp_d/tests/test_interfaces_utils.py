@@ -10,13 +10,13 @@ from xcp_d.interfaces.utils import ConvertTo32
 
 def test_conversion_to_32bit_nifti(ds001419_data, tmp_path_factory):
     """Convert nifti files to 32-bit."""
-    tmpdir = tmp_path_factory.mktemp("test_conversion_to_32bit")
+    tmpdir = tmp_path_factory.mktemp('test_conversion_to_32bit')
 
-    float_file = ds001419_data["nifti_file"]
-    int_file = ds001419_data["brain_mask_file"]
+    float_file = ds001419_data['nifti_file']
+    int_file = ds001419_data['brain_mask_file']
 
-    float64_file = os.path.join(tmpdir, "float64.nii.gz")
-    int64_file = os.path.join(tmpdir, "int64.nii.gz")
+    float64_file = os.path.join(tmpdir, 'float64.nii.gz')
+    int64_file = os.path.join(tmpdir, 'int64.nii.gz')
 
     # Create a float64 image to downcast
     float_img = nb.load(float_file)
@@ -62,12 +62,12 @@ def test_conversion_to_32bit_nifti(ds001419_data, tmp_path_factory):
 
 def test_conversion_to_32bit_cifti(ds001419_data, tmp_path_factory):
     """Convert nifti files to 32-bit."""
-    tmpdir = tmp_path_factory.mktemp("test_conversion_to_32bit")
+    tmpdir = tmp_path_factory.mktemp('test_conversion_to_32bit')
 
-    float_file = ds001419_data["cifti_file"]
+    float_file = ds001419_data['cifti_file']
 
-    float64_file = os.path.join(tmpdir, "float64.dtseries.nii")
-    int64_file = os.path.join(tmpdir, "int64.dtseries.nii")
+    float64_file = os.path.join(tmpdir, 'float64.dtseries.nii')
+    int64_file = os.path.join(tmpdir, 'int64.dtseries.nii')
 
     # Create a float64 image to downcast
     float_img = nb.load(float_file)

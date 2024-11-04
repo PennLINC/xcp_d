@@ -6,6 +6,7 @@ These functions are specifically designed to work with HCP-YA data downloaded ar
 Because HCP-YA doesn't really version their processing pipeline and derivatives,
 we have to pin to download periods.
 """
+
 import glob
 import os
 import re
@@ -26,7 +27,7 @@ from xcp_d.ingression.utils import (
 )
 from xcp_d.utils.filemanip import ensure_list
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
@@ -53,34 +54,34 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
     Since the T1w is in standard space already, we use identity transforms instead of the
     individual transforms available in the DCAN derivatives.
     """
-    LOGGER.warning("convert_hcp2bids is an experimental function.")
+    LOGGER.warning('convert_hcp2bids is an experimental function.')
     in_dir = os.path.abspath(in_dir)
     out_dir = os.path.abspath(out_dir)
 
     # a list of folders that are not subject identifiers
     EXCLUDE_LIST = [
-        "BiasField",
-        "Native",
-        "ROIs",
-        "Results",
-        "T1w",
-        "T1w_restore",
-        "T1w_restore_brain",
-        "T2w",
-        "T2w_restore",
-        "T2w_restore_brain",
-        "aparc",
-        "aparc.a2009s+aseg",
-        "brainmask_fs",
-        "fsaverage_LR32k",
-        "ribbon",
-        "wmparc",
-        "xfms",
+        'BiasField',
+        'Native',
+        'ROIs',
+        'Results',
+        'T1w',
+        'T1w_restore',
+        'T1w_restore_brain',
+        'T2w',
+        'T2w_restore',
+        'T2w_restore_brain',
+        'aparc',
+        'aparc.a2009s+aseg',
+        'brainmask_fs',
+        'fsaverage_LR32k',
+        'ribbon',
+        'wmparc',
+        'xfms',
     ]
 
     if participant_ids is None:
         subject_folders = sorted(
-            glob.glob(os.path.join(in_dir, "*", "*", "*", "*R.pial.32k_fs_LR.surf.gii"))
+            glob.glob(os.path.join(in_dir, '*', '*', '*', '*R.pial.32k_fs_LR.surf.gii'))
         )
         subject_folders = [
             subject_folder for subject_folder in subject_folders if os.path.exists(subject_folder)
@@ -88,20 +89,20 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
         participant_ids = [os.path.basename(subject_folder) for subject_folder in subject_folders]
         all_subject_ids = []
         for subject_id in participant_ids:
-            subject_id = subject_id.split(".")[0]
+            subject_id = subject_id.split('.')[0]
             if subject_id not in all_subject_ids and subject_id not in EXCLUDE_LIST:
-                all_subject_ids.append(f"sub-{subject_id}")
+                all_subject_ids.append(f'sub-{subject_id}')
 
         participant_ids = all_subject_ids
 
         if len(participant_ids) == 0:
-            raise ValueError(f"No subject found in {in_dir}")
+            raise ValueError(f'No subject found in {in_dir}')
 
     else:
         participant_ids = ensure_list(participant_ids)
 
     for subject_id in participant_ids:
-        LOGGER.info(f"Converting {subject_id}")
+        LOGGER.info(f'Converting {subject_id}')
         convert_hcp_to_bids_single_subject(
             in_dir=in_dir,
             out_dir=out_dir,
@@ -164,30 +165,30 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
                     └── ribbon.nii.gz
     """
     assert isinstance(in_dir, str)
-    assert os.path.isdir(in_dir), f"Folder DNE: {in_dir}"
+    assert os.path.isdir(in_dir), f'Folder DNE: {in_dir}'
     assert isinstance(out_dir, str)
     assert isinstance(sub_ent, str)
 
-    sub_id = sub_ent.replace("sub-", "")
+    sub_id = sub_ent.replace('sub-', '')
     # Reset the subject entity in case the sub- prefix wasn't included originally.
-    sub_ent = f"sub-{sub_id}"
+    sub_ent = f'sub-{sub_id}'
     subses_ents = sub_ent
 
-    VOLSPACE = "MNI152NLin6Asym"
-    volspace_ent = f"space-{VOLSPACE}"
-    RES_ENT = "res-2"
+    VOLSPACE = 'MNI152NLin6Asym'
+    volspace_ent = f'space-{VOLSPACE}'
+    RES_ENT = 'res-2'
 
-    anat_dir_orig = os.path.join(in_dir, sub_id, "MNINonLinear")
-    func_dir_orig = os.path.join(anat_dir_orig, "Results")
+    anat_dir_orig = os.path.join(in_dir, sub_id, 'MNINonLinear')
+    func_dir_orig = os.path.join(anat_dir_orig, 'Results')
     subject_dir_bids = os.path.join(out_dir, sub_ent)
-    anat_dir_bids = os.path.join(subject_dir_bids, "anat")
-    func_dir_bids = os.path.join(subject_dir_bids, "func")
-    work_dir = os.path.join(subject_dir_bids, "work")
+    anat_dir_bids = os.path.join(subject_dir_bids, 'anat')
+    func_dir_bids = os.path.join(subject_dir_bids, 'func')
+    work_dir = os.path.join(subject_dir_bids, 'work')
 
-    dataset_description_fmriprep = os.path.join(out_dir, "dataset_description.json")
+    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
 
     if os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info("Converted dataset already exists. Skipping conversion.")
+        LOGGER.info('Converted dataset already exists. Skipping conversion.')
         return
 
     os.makedirs(anat_dir_bids, exist_ok=True)
@@ -195,31 +196,31 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     os.makedirs(work_dir, exist_ok=True)
 
     # Get masks to be used to extract confounds
-    csf_mask = str(load_data(f"masks/{volspace_ent}_{RES_ENT}_label-CSF_mask.nii.gz"))
-    wm_mask = str(load_data(f"masks/{volspace_ent}_{RES_ENT}_label-WM_mask.nii.gz"))
+    csf_mask = str(load_data(f'masks/{volspace_ent}_{RES_ENT}_label-CSF_mask.nii.gz'))
+    wm_mask = str(load_data(f'masks/{volspace_ent}_{RES_ENT}_label-WM_mask.nii.gz'))
 
     # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
     # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
 
     # The identity xform is used in place of any actual ones.
-    identity_xfm = str(load_data("transform/itkIdentityTransform.txt"))
+    identity_xfm = str(load_data('transform/itkIdentityTransform.txt'))
     copy_dictionary[identity_xfm] = []
 
     t1w_to_template_fmriprep = os.path.join(
         anat_dir_bids,
-        f"{subses_ents}_from-T1w_to-{VOLSPACE}_mode-image_xfm.txt",
+        f'{subses_ents}_from-T1w_to-{VOLSPACE}_mode-image_xfm.txt',
     )
     copy_dictionary[identity_xfm].append(t1w_to_template_fmriprep)
 
     template_to_t1w_fmriprep = os.path.join(
         anat_dir_bids,
-        f"{subses_ents}_from-{VOLSPACE}_to-T1w_mode-image_xfm.txt",
+        f'{subses_ents}_from-{VOLSPACE}_to-T1w_mode-image_xfm.txt',
     )
     copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
     # Collect anatomical files to copy
-    base_anatomical_ents = f"{subses_ents}_{volspace_ent}_{RES_ENT}"
+    base_anatomical_ents = f'{subses_ents}_{volspace_ent}_{RES_ENT}'
     anat_dict = collect_anatomical_files(anat_dir_orig, anat_dir_bids, base_anatomical_ents)
     copy_dictionary = {**copy_dictionary, **anat_dict}
 
@@ -229,19 +230,19 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     # Convert morphometry files
     morphometry_dict = collect_morphs(anat_dir_orig, anat_dir_bids, sub_id, subses_ents)
-    LOGGER.info("Finished collecting anatomical files")
+    LOGGER.info('Finished collecting anatomical files')
 
     # Collect functional files to copy
-    task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, "*")))
+    task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, '*')))
     task_names = [
-        os.path.basename(f) for f in task_dirs_orig if f.endswith("RL") or f.endswith("LR")
+        os.path.basename(f) for f in task_dirs_orig if f.endswith('RL') or f.endswith('LR')
     ]
 
     for base_task_name in task_names:
-        LOGGER.info(f"Processing {base_task_name}")
+        LOGGER.info(f'Processing {base_task_name}')
         # NOTE: What is the first element in the folder name?
-        _, base_task_id, dir_id = base_task_name.split("_")
-        match = re.match(r"([A-Za-z0-9]+[a-zA-Z]+)(\d+)$", base_task_id)
+        _, base_task_id, dir_id = base_task_name.split('_')
+        match = re.match(r'([A-Za-z0-9]+[a-zA-Z]+)(\d+)$', base_task_id)
         if match:
             task_id = match.group(1).lower()
             run_id = int(match.group(2))
@@ -249,61 +250,61 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             task_id = base_task_id.lower()
             run_id = 1
 
-        task_ent = f"task-{task_id}"
-        run_ent = f"run-{run_id}"
-        dir_ent = f"dir-{dir_id}"
+        task_ent = f'task-{task_id}'
+        run_ent = f'run-{run_id}'
+        dir_ent = f'dir-{dir_id}'
 
         task_dir_orig = os.path.join(func_dir_orig, base_task_name)
-        func_prefix = f"{subses_ents}_{task_ent}_{dir_ent}_{run_ent}"
+        func_prefix = f'{subses_ents}_{task_ent}_{dir_ent}_{run_ent}'
 
         # Find original task files
-        sbref_orig = os.path.join(task_dir_orig, "SBRef_dc.nii.gz")
+        sbref_orig = os.path.join(task_dir_orig, 'SBRef_dc.nii.gz')
         boldref_fmriprep = os.path.join(
             func_dir_bids,
-            f"{func_prefix}_{volspace_ent}_{RES_ENT}_boldref.nii.gz",
+            f'{func_prefix}_{volspace_ent}_{RES_ENT}_boldref.nii.gz',
         )
         copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
-        bold_nifti_orig = os.path.join(task_dir_orig, f"{base_task_name}.nii.gz")
+        bold_nifti_orig = os.path.join(task_dir_orig, f'{base_task_name}.nii.gz')
         bold_nifti_fmriprep = os.path.join(
             func_dir_bids,
-            f"{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.nii.gz",
+            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.nii.gz',
         )
         copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
         bold_cifti_orig = os.path.join(
             task_dir_orig,
-            f"{base_task_name}_Atlas_MSMAll.dtseries.nii",
+            f'{base_task_name}_Atlas_MSMAll.dtseries.nii',
         )
         bold_cifti_fmriprep = os.path.join(
             func_dir_bids,
-            f"{func_prefix}_space-fsLR_den-91k_bold.dtseries.nii",
+            f'{func_prefix}_space-fsLR_den-91k_bold.dtseries.nii',
         )
         copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
         # Extract metadata for JSON files
         bold_metadata = {
-            "RepetitionTime": float(nb.load(bold_nifti_orig).header.get_zooms()[-1]),
-            "TaskName": task_id,
+            'RepetitionTime': float(nb.load(bold_nifti_orig).header.get_zooms()[-1]),
+            'TaskName': task_id,
         }
         bold_nifti_json_fmriprep = os.path.join(
             func_dir_bids,
-            f"{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.json",
+            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.json',
         )
         write_json(bold_metadata, bold_nifti_json_fmriprep)
 
         bold_metadata.update(
             {
-                "grayordinates": "91k",
-                "space": "HCP grayordinates",
-                "surface": "fsLR",
-                "surface_density": "32k",
-                "volume": "MNI152NLin6Asym",
+                'grayordinates': '91k',
+                'space': 'HCP grayordinates',
+                'surface': 'fsLR',
+                'surface_density': '32k',
+                'volume': 'MNI152NLin6Asym',
             },
         )
         bold_cifti_json_fmriprep = os.path.join(
             func_dir_bids,
-            f"{func_prefix}_space-fsLR_den-91k_bold.dtseries.json",
+            f'{func_prefix}_space-fsLR_den-91k_bold.dtseries.json',
         )
         write_json(bold_metadata, bold_cifti_json_fmriprep)
 
@@ -314,20 +315,20 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             prefix=func_prefix,
             work_dir=work_dir,
             bold_file=bold_nifti_orig,
-            brainmask_file=os.path.join(task_dir_orig, "brainmask_fs.2.nii.gz"),
+            brainmask_file=os.path.join(task_dir_orig, 'brainmask_fs.2.nii.gz'),
             csf_mask_file=csf_mask,
             wm_mask_file=wm_mask,
         )
 
         # Make figures
-        figdir = os.path.join(subject_dir_bids, "figures")
+        figdir = os.path.join(subject_dir_bids, 'figures')
         os.makedirs(figdir, exist_ok=True)
         bbref_fig_fmriprep = os.path.join(
             figdir,
-            f"{func_prefix}_desc-bbregister_bold.svg",
+            f'{func_prefix}_desc-bbregister_bold.svg',
         )
-        t1w = os.path.join(anat_dir_orig, "T1w.nii.gz")
-        ribbon = os.path.join(anat_dir_orig, "ribbon.nii.gz")
+        t1w = os.path.join(anat_dir_orig, 'T1w.nii.gz')
+        ribbon = os.path.join(anat_dir_orig, 'ribbon.nii.gz')
         bbref_fig_fmriprep = plot_bbreg(
             fixed_image=t1w,
             moving_image=sbref_orig,
@@ -335,25 +336,25 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             contour=ribbon,
         )
 
-        LOGGER.info(f"Finished {base_task_name}")
+        LOGGER.info(f'Finished {base_task_name}')
 
-    LOGGER.info("Finished collecting functional files")
+    LOGGER.info('Finished collecting functional files')
 
     # Copy HCP files to fMRIPrep folder
-    LOGGER.info("Copying files")
+    LOGGER.info('Copying files')
     copy_files_in_dict(copy_dictionary)
-    LOGGER.info("Finished copying files")
+    LOGGER.info('Finished copying files')
 
     # Write the dataset description out last
     dataset_description_dict = {
-        "Name": "HCP",
-        "BIDSVersion": "1.9.0",
-        "DatasetType": "derivative",
-        "GeneratedBy": [
+        'Name': 'HCP',
+        'BIDSVersion': '1.9.0',
+        'DatasetType': 'derivative',
+        'GeneratedBy': [
             {
-                "Name": "HCP",
-                "Version": "unknown",
-                "CodeURL": "https://github.com/Washington-University/HCPpipelines",
+                'Name': 'HCP',
+                'Version': 'unknown',
+                'CodeURL': 'https://github.com/Washington-University/HCPpipelines',
             },
         ],
     }
@@ -369,7 +370,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             scans_dict[item] = key
 
     scans_tuple = tuple(scans_dict.items())
-    scans_df = pd.DataFrame(scans_tuple, columns=["filename", "source_file"])
-    scans_tsv = os.path.join(subject_dir_bids, f"{subses_ents}_scans.tsv")
-    scans_df.to_csv(scans_tsv, sep="\t", index=False)
-    LOGGER.info("Conversion completed")
+    scans_df = pd.DataFrame(scans_tuple, columns=['filename', 'source_file'])
+    scans_tsv = os.path.join(subject_dir_bids, f'{subses_ents}_scans.tsv')
+    scans_df.to_csv(scans_tsv, sep='\t', index=False)
+    LOGGER.info('Conversion completed')

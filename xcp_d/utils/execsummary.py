@@ -1,9 +1,10 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for generating the executive summary."""
+
 from nipype import logging
 
-LOGGER = logging.getLogger("nipype.utils")
+LOGGER = logging.getLogger('nipype.utils')
 
 
 def make_mosaic(png_files):
@@ -18,13 +19,13 @@ def make_mosaic(png_files):
     import numpy as np
     from PIL import Image  # for BrainSprite
 
-    mosaic_file = os.path.abspath("mosaic.png")
+    mosaic_file = os.path.abspath('mosaic.png')
     files = png_files[::-1]  # we want last first, I guess?
 
     IMAGE_DIM = 218
     images_per_side = int(np.ceil(np.sqrt(len(files))))
     square_dim = IMAGE_DIM * images_per_side
-    result = Image.new("RGB", (square_dim, square_dim), color=1)
+    result = Image.new('RGB', (square_dim, square_dim), color=1)
 
     for index, file_ in enumerate(files):
         # Get relative path to file, from user's home folder
@@ -38,7 +39,7 @@ def make_mosaic(png_files):
             w, h = img.size
             result.paste(img, (x, y, x + w, y + h))
 
-    result.save(mosaic_file, "PNG", quality=95)
+    result.save(mosaic_file, 'PNG', quality=95)
     return mosaic_file
 
 
@@ -59,32 +60,32 @@ def modify_brainsprite_scene_template(
     import os
 
     paths = {
-        "TX_IMG": anat_file,
-        "RPIAL": rh_pial_surf,
-        "LPIAL": lh_pial_surf,
-        "RWHITE": rh_wm_surf,
-        "LWHITE": lh_wm_surf,
+        'TX_IMG': anat_file,
+        'RPIAL': rh_pial_surf,
+        'LPIAL': lh_pial_surf,
+        'RWHITE': rh_wm_surf,
+        'LWHITE': lh_wm_surf,
     }
 
-    out_file = os.path.abspath("modified_scene.scene")
+    out_file = os.path.abspath('modified_scene.scene')
 
-    if scene_template.endswith(".gz"):
-        with gzip.open(scene_template, mode="rt") as fo:
+    if scene_template.endswith('.gz'):
+        with gzip.open(scene_template, mode='rt') as fo:
             data = fo.read()
     else:
-        with open(scene_template, "r") as fo:
+        with open(scene_template) as fo:
             data = fo.read()
 
-    data = data.replace("XAXIS_COORDINATE", str(slice_number))
+    data = data.replace('XAXIS_COORDINATE', str(slice_number))
 
     for template, path in paths.items():
         filename = os.path.basename(path)
 
         # Replace templated pathnames and filenames in local copy.
-        data = data.replace(f"{template}_PATH", path)
-        data = data.replace(f"{template}_NAME", filename)
+        data = data.replace(f'{template}_PATH', path)
+        data = data.replace(f'{template}_NAME', filename)
 
-    with open(out_file, "w") as fo:
+    with open(out_file, 'w') as fo:
         fo.write(data)
 
     return out_file
@@ -106,30 +107,30 @@ def modify_pngs_scene_template(
     import os
 
     paths = {
-        "TX_IMG": anat_file,
-        "RPIAL": rh_pial_surf,
-        "LPIAL": lh_pial_surf,
-        "RWHITE": rh_wm_surf,
-        "LWHITE": lh_wm_surf,
+        'TX_IMG': anat_file,
+        'RPIAL': rh_pial_surf,
+        'LPIAL': lh_pial_surf,
+        'RWHITE': rh_wm_surf,
+        'LWHITE': lh_wm_surf,
     }
 
-    out_file = os.path.abspath("modified_scene.scene")
+    out_file = os.path.abspath('modified_scene.scene')
 
-    if scene_template.endswith(".gz"):
-        with gzip.open(scene_template, mode="rt") as fo:
+    if scene_template.endswith('.gz'):
+        with gzip.open(scene_template, mode='rt') as fo:
             data = fo.read()
     else:
-        with open(scene_template, "r") as fo:
+        with open(scene_template) as fo:
             data = fo.read()
 
     for template, path in paths.items():
         filename = os.path.basename(path)
 
         # Replace templated pathnames and filenames in local copy.
-        data = data.replace(f"{template}_PATH", path)
-        data = data.replace(f"{template}_NAME", filename)
+        data = data.replace(f'{template}_PATH', path)
+        data = data.replace(f'{template}_NAME', filename)
 
-    with open(out_file, "w") as fo:
+    with open(out_file, 'w') as fo:
         fo.write(data)
 
     return out_file
@@ -172,15 +173,15 @@ def get_png_image_names():
     NOTE: This is a Node function.
     """
     image_descriptions = [
-        "AxialInferiorTemporalCerebellum",
-        "AxialBasalGangliaPutamen",
-        "AxialSuperiorFrontal",
-        "CoronalPosteriorParietalLingual",
-        "CoronalCaudateAmygdala",
-        "CoronalOrbitoFrontal",
-        "SagittalInsulaFrontoTemporal",
-        "SagittalCorpusCallosum",
-        "SagittalInsulaTemporalHippocampalSulcus",
+        'AxialInferiorTemporalCerebellum',
+        'AxialBasalGangliaPutamen',
+        'AxialSuperiorFrontal',
+        'CoronalPosteriorParietalLingual',
+        'CoronalCaudateAmygdala',
+        'CoronalOrbitoFrontal',
+        'SagittalInsulaFrontoTemporal',
+        'SagittalCorpusCallosum',
+        'SagittalInsulaTemporalHippocampalSulcus',
     ]
 
     scene_index = list(range(1, len(image_descriptions) + 1))

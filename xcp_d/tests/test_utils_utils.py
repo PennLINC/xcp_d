@@ -10,9 +10,9 @@ from xcp_d.utils import utils
 
 def test_estimate_brain_radius(ds001419_data):
     """Ensure that the brain radius estimation function returns the right value."""
-    bold_mask = ds001419_data["brain_mask_file"]
+    bold_mask = ds001419_data['brain_mask_file']
 
-    radius = utils.estimate_brain_radius(bold_mask, head_radius="auto")
+    radius = utils.estimate_brain_radius(bold_mask, head_radius='auto')
     assert radius == 77.39268749395897
 
     radius = utils.estimate_brain_radius(bold_mask, head_radius=50)
@@ -67,7 +67,7 @@ def test_denoise_with_nilearn():
     data_arr += confound_arr
     confounds_df = pd.DataFrame(
         confound_timeseries,
-        columns=[f"confound_{i}" for i in range(n_confounds)],
+        columns=[f'confound_{i}' for i in range(n_confounds)],
     )
 
     # Check that signals are present in the "raw" data at this point
@@ -95,13 +95,13 @@ def test_denoise_with_nilearn():
 
     # First, try out filtering without censoring or denoising
     params = {
-        "confounds": None,
-        "voxelwise_confounds": None,
-        "sample_mask": np.ones(n_volumes, dtype=bool),
-        "low_pass": low_pass,
-        "high_pass": high_pass,
-        "filter_order": filter_order,
-        "TR": TR,
+        'confounds': None,
+        'voxelwise_confounds': None,
+        'sample_mask': np.ones(n_volumes, dtype=bool),
+        'low_pass': low_pass,
+        'high_pass': high_pass,
+        'filter_order': filter_order,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -113,13 +113,13 @@ def test_denoise_with_nilearn():
     sample_mask[10:20] = False
     sample_mask[150:160] = False
     params = {
-        "confounds": confounds_df,
-        "voxelwise_confounds": None,
-        "sample_mask": sample_mask,
-        "low_pass": None,
-        "high_pass": None,
-        "filter_order": 0,
-        "TR": TR,
+        'confounds': confounds_df,
+        'voxelwise_confounds': None,
+        'sample_mask': sample_mask,
+        'low_pass': None,
+        'high_pass': None,
+        'filter_order': 0,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -133,13 +133,13 @@ def test_denoise_with_nilearn():
 
     # Denoise without censoring or filtering
     params = {
-        "confounds": confounds_df,
-        "voxelwise_confounds": None,
-        "sample_mask": np.ones(n_volumes, dtype=bool),
-        "low_pass": None,
-        "high_pass": None,
-        "filter_order": 0,
-        "TR": TR,
+        'confounds': confounds_df,
+        'voxelwise_confounds': None,
+        'sample_mask': np.ones(n_volumes, dtype=bool),
+        'low_pass': None,
+        'high_pass': None,
+        'filter_order': 0,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -154,13 +154,13 @@ def test_denoise_with_nilearn():
     sample_mask[10:20] = False
     sample_mask[150:160] = False
     params = {
-        "confounds": None,
-        "voxelwise_confounds": None,
-        "sample_mask": sample_mask,
-        "low_pass": low_pass,
-        "high_pass": high_pass,
-        "filter_order": filter_order,
-        "TR": TR,
+        'confounds': None,
+        'voxelwise_confounds': None,
+        'sample_mask': sample_mask,
+        'low_pass': low_pass,
+        'high_pass': high_pass,
+        'filter_order': filter_order,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -182,13 +182,13 @@ def test_denoise_with_nilearn():
 
     # Run without denoising or filtering (censoring + interpolation only)
     params = {
-        "confounds": None,
-        "voxelwise_confounds": None,
-        "sample_mask": sample_mask,
-        "low_pass": None,
-        "high_pass": None,
-        "filter_order": 0,
-        "TR": TR,
+        'confounds': None,
+        'voxelwise_confounds': None,
+        'sample_mask': sample_mask,
+        'low_pass': None,
+        'high_pass': None,
+        'filter_order': 0,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -220,7 +220,7 @@ def test_denoise_with_nilearn_voxelwise():
     confounds = np.random.random((n_volumes, n_confounds))
     confounds_df = pd.DataFrame(
         confounds,
-        columns=[f"confound_{i}" for i in range(n_confounds)],
+        columns=[f'confound_{i}' for i in range(n_confounds)],
     )
     voxelwise_confounds = [
         np.random.random((n_volumes, n_voxels)) for _ in range(n_voxelwise_confounds)
@@ -230,52 +230,52 @@ def test_denoise_with_nilearn_voxelwise():
 
     # Denoising with bandpass filtering and censoring
     params = {
-        "confounds": confounds_df,
-        "voxelwise_confounds": voxelwise_confounds,
-        "sample_mask": sample_mask,
-        "low_pass": low_pass,
-        "high_pass": high_pass,
-        "filter_order": filter_order,
-        "TR": TR,
+        'confounds': confounds_df,
+        'voxelwise_confounds': voxelwise_confounds,
+        'sample_mask': sample_mask,
+        'low_pass': low_pass,
+        'high_pass': high_pass,
+        'filter_order': filter_order,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
 
     # Denoising without bandpass filtering
     params = {
-        "confounds": confounds_df,
-        "voxelwise_confounds": voxelwise_confounds,
-        "sample_mask": sample_mask,
-        "low_pass": None,
-        "high_pass": None,
-        "filter_order": None,
-        "TR": TR,
+        'confounds': confounds_df,
+        'voxelwise_confounds': voxelwise_confounds,
+        'sample_mask': sample_mask,
+        'low_pass': None,
+        'high_pass': None,
+        'filter_order': None,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
 
     # Denoising with bandpass filtering but no general confounds
     params = {
-        "confounds": None,
-        "voxelwise_confounds": voxelwise_confounds,
-        "sample_mask": sample_mask,
-        "low_pass": low_pass,
-        "high_pass": high_pass,
-        "filter_order": filter_order,
-        "TR": TR,
+        'confounds': None,
+        'voxelwise_confounds': voxelwise_confounds,
+        'sample_mask': sample_mask,
+        'low_pass': low_pass,
+        'high_pass': high_pass,
+        'filter_order': filter_order,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
 
     # Denoising without bandpass filtering or general confounds
     params = {
-        "confounds": None,
-        "voxelwise_confounds": voxelwise_confounds,
-        "sample_mask": sample_mask,
-        "low_pass": None,
-        "high_pass": None,
-        "filter_order": None,
-        "TR": TR,
+        'confounds': None,
+        'voxelwise_confounds': voxelwise_confounds,
+        'sample_mask': sample_mask,
+        'low_pass': None,
+        'high_pass': None,
+        'filter_order': None,
+        'TR': TR,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -324,23 +324,23 @@ def _check_signal(data, signals, sample_mask, atol=0.001):
 
 def test_list_to_str():
     """Test the list_to_str function."""
-    string = utils.list_to_str(["a"])
-    assert string == "a"
+    string = utils.list_to_str(['a'])
+    assert string == 'a'
 
-    string = utils.list_to_str(["a", "b"])
-    assert string == "a and b"
+    string = utils.list_to_str(['a', 'b'])
+    assert string == 'a and b'
 
-    string = utils.list_to_str(["a", "b", "c"])
-    assert string == "a, b, and c"
+    string = utils.list_to_str(['a', 'b', 'c'])
+    assert string == 'a, b, and c'
 
-    with pytest.raises(ValueError, match="Zero-length list provided."):
+    with pytest.raises(ValueError, match='Zero-length list provided.'):
         utils.list_to_str([])
 
 
 def test_get_bold2std_and_t1w_xfms(ds001419_data):
     """Test get_bold2std_and_t1w_xfms."""
-    bold_file_nlin6asym = ds001419_data["nifti_file"]
-    nlin6asym_to_anat_xfm = ds001419_data["template_to_anat_xfm"]
+    bold_file_nlin6asym = ds001419_data['nifti_file']
+    nlin6asym_to_anat_xfm = ds001419_data['template_to_anat_xfm']
 
     # MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     (
@@ -359,12 +359,12 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # MNI152NLin2009cAsym --> MNI152NLin2009cAsym/T1w
     bold_file_nlin2009c = bold_file_nlin6asym.replace(
-        "space-MNI152NLin6Asym_",
-        "space-MNI152NLin2009cAsym_",
+        'space-MNI152NLin6Asym_',
+        'space-MNI152NLin2009cAsym_',
     )
     nlin2009c_to_anat_xfm = nlin6asym_to_anat_xfm.replace(
-        "from-MNI152NLin6Asym_",
-        "from-MNI152NLin2009cAsym_",
+        'from-MNI152NLin6Asym_',
+        'from-MNI152NLin2009cAsym_',
     )
     (
         xforms_to_mni,
@@ -382,12 +382,12 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # MNIInfant --> MNI152NLin2009cAsym/T1w
     bold_file_infant = bold_file_nlin6asym.replace(
-        "space-MNI152NLin6Asym_",
-        "space-MNIInfant_cohort-1_",
+        'space-MNI152NLin6Asym_',
+        'space-MNIInfant_cohort-1_',
     )
     infant_to_anat_xfm = nlin6asym_to_anat_xfm.replace(
-        "from-MNI152NLin6Asym_",
-        "from-MNIInfant+1_",
+        'from-MNI152NLin6Asym_',
+        'from-MNIInfant+1_',
     )
     (
         xforms_to_mni,
@@ -404,7 +404,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     assert len(xforms_to_t1w_invert) == 1
 
     # T1w --> MNI152NLin2009cAsym/T1w
-    bold_file_t1w = bold_file_nlin6asym.replace("space-MNI152NLin6Asym_", "space-T1w_")
+    bold_file_t1w = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-T1w_')
     with pytest.raises(ValueError, match="BOLD space 'T1w' not supported."):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_t1w,
@@ -412,7 +412,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         )
 
     # T1w --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
-    bold_file_t1w = bold_file_nlin6asym.replace("space-MNI152NLin6Asym_", "space-T1w_")
+    bold_file_t1w = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-T1w_')
     with pytest.raises(ValueError, match="BOLD space 'T1w' not supported."):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_t1w,
@@ -420,7 +420,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         )
 
     # native --> MNI152NLin2009cAsym/T1w
-    bold_file_native = bold_file_nlin6asym.replace("space-MNI152NLin6Asym_", "")
+    bold_file_native = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', '')
     with pytest.raises(ValueError, match="BOLD space 'native' not supported."):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_native,
@@ -428,7 +428,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         )
 
     # native --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
-    bold_file_native = bold_file_nlin6asym.replace("space-MNI152NLin6Asym_", "")
+    bold_file_native = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', '')
     with pytest.raises(ValueError, match="BOLD space 'native' not supported."):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_native,
@@ -436,14 +436,14 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         )
 
     # tofail --> MNI152NLin2009cAsym/T1w
-    bold_file_tofail = bold_file_nlin6asym.replace("space-MNI152NLin6Asym_", "space-tofail_")
-    with pytest.raises(ValueError, match="Transform does not match BOLD space"):
+    bold_file_tofail = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-tofail_')
+    with pytest.raises(ValueError, match='Transform does not match BOLD space'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_tofail,
             nlin6asym_to_anat_xfm,
         )
 
-    tofail_to_anat_xfm = nlin6asym_to_anat_xfm.replace("from-MNI152NLin6Asym_", "from-tofail_")
+    tofail_to_anat_xfm = nlin6asym_to_anat_xfm.replace('from-MNI152NLin6Asym_', 'from-tofail_')
     with pytest.raises(ValueError, match="Space 'tofail'"):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_tofail,
@@ -456,12 +456,12 @@ def test_get_std2bold_xfms(ds001419_data):
 
     get_std2bold_xfms finds transforms to go from a source file's space to the BOLD file's space.
     """
-    bold_file_nlin6asym = ds001419_data["nifti_file"]
+    bold_file_nlin6asym = ds001419_data['nifti_file']
 
     # MNI152NLin6Asym --> MNI152NLin6Asym with source file containing tpl entity
     xforms_to_mni = utils.get_std2bold_xfms(
         bold_file_nlin6asym,
-        source_file="tpl-MNI152NLin6Asym_T1w.nii.gz",
+        source_file='tpl-MNI152NLin6Asym_T1w.nii.gz',
         source_space=None,
     )
     assert len(xforms_to_mni) == 1
@@ -469,27 +469,27 @@ def test_get_std2bold_xfms(ds001419_data):
     # MNI152NLin6Asym --> MNI152NLin6Asym with source file containing space entity
     xforms_to_mni = utils.get_std2bold_xfms(
         bold_file_nlin6asym,
-        source_file="space-MNI152NLin6Asym_T1w.nii.gz",
+        source_file='space-MNI152NLin6Asym_T1w.nii.gz',
         source_space=None,
     )
     assert len(xforms_to_mni) == 1
 
     SPACES = [
-        ("MNI152NLin6Asym", "MNI152NLin6Asym", 1),
-        ("MNI152NLin6Asym", "MNI152NLin2009cAsym", 1),
-        ("MNI152NLin6Asym", "MNIInfant", 2),
-        ("MNI152NLin2009cAsym", "MNI152NLin2009cAsym", 1),
-        ("MNI152NLin2009cAsym", "MNI152NLin6Asym", 1),
-        ("MNI152NLin2009cAsym", "MNIInfant", 1),
-        ("MNIInfant", "MNIInfant", 1),
-        ("MNIInfant", "MNI152NLin2009cAsym", 1),
-        ("MNIInfant", "MNI152NLin6Asym", 2),
+        ('MNI152NLin6Asym', 'MNI152NLin6Asym', 1),
+        ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 1),
+        ('MNI152NLin6Asym', 'MNIInfant', 2),
+        ('MNI152NLin2009cAsym', 'MNI152NLin2009cAsym', 1),
+        ('MNI152NLin2009cAsym', 'MNI152NLin6Asym', 1),
+        ('MNI152NLin2009cAsym', 'MNIInfant', 1),
+        ('MNIInfant', 'MNIInfant', 1),
+        ('MNIInfant', 'MNI152NLin2009cAsym', 1),
+        ('MNIInfant', 'MNI152NLin6Asym', 2),
     ]
     for space_check in SPACES:
         target_space, source_space, n_xforms = space_check
         bold_file_target_space = bold_file_nlin6asym.replace(
-            "space-MNI152NLin6Asym_",
-            f"space-{target_space}_",
+            'space-MNI152NLin6Asym_',
+            f'space-{target_space}_',
         )
         xforms_to_mni = utils.get_std2bold_xfms(
             bold_file_target_space,
@@ -500,17 +500,17 @@ def test_get_std2bold_xfms(ds001419_data):
 
     # Outside of the supported spaces, we expect an error
     # No space or tpl entity in source file
-    with pytest.raises(ValueError, match="Unknown space"):
-        utils.get_std2bold_xfms(bold_file_nlin6asym, source_file="T1w.nii.gz", source_space=None)
+    with pytest.raises(ValueError, match='Unknown space'):
+        utils.get_std2bold_xfms(bold_file_nlin6asym, source_file='T1w.nii.gz', source_space=None)
 
     # MNI152NLin6Asym --> tofail
-    bold_file_tofail = bold_file_nlin6asym.replace("space-MNI152NLin6Asym_", "space-tofail_")
+    bold_file_tofail = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-tofail_')
     with pytest.raises(ValueError, match="BOLD space 'tofail' not supported"):
-        utils.get_std2bold_xfms(bold_file_tofail, source_file=None, source_space="MNI152NLin6Asym")
+        utils.get_std2bold_xfms(bold_file_tofail, source_file=None, source_space='MNI152NLin6Asym')
 
     # tofail --> MNI152NLin6Asym
     with pytest.raises(ValueError, match="Source space 'tofail' not supported"):
-        utils.get_std2bold_xfms(bold_file_nlin6asym, source_file=None, source_space="tofail")
+        utils.get_std2bold_xfms(bold_file_nlin6asym, source_file=None, source_space='tofail')
 
 
 def test_fwhm2sigma():
@@ -522,35 +522,35 @@ def test_fwhm2sigma():
 
 def test_select_first():
     """Test _select_first."""
-    lst = ["a", "b", "c"]
-    assert utils._select_first(lst) == "a"
+    lst = ['a', 'b', 'c']
+    assert utils._select_first(lst) == 'a'
 
-    lst = "abc"
-    assert utils._select_first(lst) == "a"
+    lst = 'abc'
+    assert utils._select_first(lst) == 'a'
 
 
 def test_transpose_lol():
     """Test _transpose_lol."""
     inputs = [
         [
-            ["a", "b", "c"],
+            ['a', 'b', 'c'],
             [1, 2, 3],
         ],
         [
-            ["a", "b", "c", "d"],
+            ['a', 'b', 'c', 'd'],
             [1, 2, 3],
         ],
     ]
     outputs = [
         [
-            ["a", 1],
-            ["b", 2],
-            ["c", 3],
+            ['a', 1],
+            ['b', 2],
+            ['c', 3],
         ],
         [
-            ["a", 1],
-            ["b", 2],
-            ["c", 3],
+            ['a', 1],
+            ['b', 2],
+            ['c', 3],
         ],
     ]
     for i, input_ in enumerate(inputs):
