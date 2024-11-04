@@ -46,13 +46,13 @@ def test_copy_atlas(tmp_path_factory):
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
     }
+    copyatlas = bids.CopyAtlas(
+        name_source=name_source,
+        in_file=atlas_info_diff_affine['image'],
+        output_dir=tmpdir,
+        atlas='Y',
+    )
     with pytest.raises(ValueError, match='is different from the input file affine'):
-        copyatlas = bids.CopyAtlas(
-            name_source=name_source,
-            in_file=atlas_info_diff_affine['image'],
-            output_dir=tmpdir,
-            atlas='Y',
-        )
         copyatlas.run(cwd=tmpdir)
 
     # CIFTI

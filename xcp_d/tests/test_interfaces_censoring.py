@@ -156,7 +156,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     out_df = pd.read_table(out_confounds_file)
     assert out_df.shape[1] == 24  # 24 parameters (doesn't include 25th signal column)
     assert 'signal__fingerpress_condition' not in out_df.columns
-    assert all([col.endswith('_orth') for col in out_df.columns])
+    assert all(col.endswith('_orth') for col in out_df.columns)
     assert 'signal__fingerpress_condition' in results.outputs.confounds_metadata.keys()
 
     # Test with image-based confounds
@@ -337,15 +337,10 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
         # Have the confounds changed correctly?
         assert dropped_confounds.shape[0] == original_confounds.shape[0] - n
         # Has the nifti changed correctly?
-        try:
-            assert (
-                nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
-                == original_nvols_nifti - n
-            )
-        except Exception:
-            exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
+        n_vols = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[3]
+        if n_vols != (original_nvols_nifti - n):
             print(f'Tests failing at N = {n}.')
-            raise Exception(f'Number of volumes in dropped nifti is {exc}.')
+            raise ValueError(f'Number of volumes in dropped nifti is {n_vols}.')
 
 
 def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
@@ -400,15 +395,10 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
         # Have the confounds changed correctly?
         assert dropped_confounds.shape[0] == original_confounds.shape[0] - n
         # Has the cifti changed correctly?
-        try:
-            assert (
-                nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
-                == original_nvols_cifti - n
-            )
-        except Exception:
-            exc = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
+        n_vols = nb.load(results.outputs.bold_file_dropped_TR).get_fdata().shape[0]
+        if n_vols != (original_nvols_cifti - n):
             print(f'Tests failing at N = {n}.')
-            raise Exception(f'Number of volumes in dropped cifti is {exc}.')
+            raise ValueError(f'Number of volumes in dropped cifti is {n_vols}.')
 
 
 def test_random_censor(tmp_path_factory):
