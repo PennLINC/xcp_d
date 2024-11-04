@@ -366,7 +366,7 @@ def init_qc_report_wf(
         ])  # fmt:skip
     else:
         # Need to explicitly add the outputnode to the workflow, since it's not set otherwise.
-        workflow.add_nodes([outputnode])
+        workflow.add_nodes([inputnode, outputnode])
 
     if config.workflow.abcc_qc:
         make_abcc_qc = pe.Node(
