@@ -213,8 +213,6 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         "480",
         "all",
         "--linc-qc=n",
-        "--abcc-qc=n",
-        "--warp-surfaces-native2std=n",
     ]
     _run_and_generate(
         test_name=test_name,
