@@ -98,9 +98,9 @@ def download_test_data(dset, data_dir=None):
         LOGGER.info(f'Downloading {dset} to {out_dir}')
 
     os.makedirs(out_dir, exist_ok=True)
-    with requests.get(URLS[dset], stream=True) as req:
+    with requests.get(URLS[dset], stream=True, timeout=10) as req:
         with tarfile.open(fileobj=GzipFile(fileobj=BytesIO(req.content))) as t:
-            t.extractall(out_dir)
+            t.extractall(out_dir)  # noqa: S202
 
     if dset.startswith('ds001419'):
         # These test datasets have an extra folder level
@@ -214,15 +214,19 @@ def check_affines(data_dir, out_dir, input_type):
 
 
 def run_command(command, env=None):
-    """Run a given shell command with certain environment variables set."""
+    """Run a given shell command with certain environment variables set.
+
+    Keep this out of the real XCP-D code so that devs don't need to install XCP-D to run tests.
+    """
     merged_env = os.environ
     if env:
         merged_env.update(env)
+
     process = subprocess.Popen(
-        command,
+        command.split(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        shell=True,
+        shell=False,
         env=merged_env,
     )
     while True:
@@ -233,7 +237,7 @@ def run_command(command, env=None):
             break
 
     if process.returncode != 0:
-        raise Exception(
+        raise RuntimeError(
             f'Non zero return code: {process.returncode}\n' f'{command}\n\n{process.stdout.read()}'
         )
 

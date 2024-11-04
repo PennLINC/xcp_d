@@ -40,7 +40,9 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     fwhm_unsmoothed = np.array(fwhm)
 
     # else this will need to be overwritten later
-    os.system('rm -rf 3dFWHMx.1D test_fwhm.out test_file.out')
+    os.remove('3dFWHMx.1D')
+    os.remove('test_fwhm.out')
+    os.remove('test_file.out')
 
     # Smooth the data
     smooth_data = pe.Node(
