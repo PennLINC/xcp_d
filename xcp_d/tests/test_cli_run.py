@@ -424,7 +424,7 @@ def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
     opts = deepcopy(base_opts)
     opts.mode = 'other'
 
-    with pytest.raises(AssertionError, match="Unsupported mode 'other'"):
+    with pytest.raises(AssertionError, match='Unsupported mode "other"'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
