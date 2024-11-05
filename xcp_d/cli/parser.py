@@ -940,7 +940,13 @@ def _validate_parameters(opts, build_log, parser):
     assert opts.despike in (True, False, 'auto')
     assert opts.file_format in ('nifti', 'cifti', 'auto')
     assert opts.linc_qc in (True, False, 'auto')
-    assert opts.mode in ('abcd', 'hbcd', 'linc', 'nichart', 'none'), f'Unsupported mode "{opts.mode}".'
+    assert opts.mode in (
+        'abcd',
+        'hbcd',
+        'linc',
+        'nichart',
+        'none',
+    ), f'Unsupported mode "{opts.mode}".'
     assert opts.output_type in ('censored', 'interpolated', 'auto')
     assert opts.process_surfaces in (True, False, 'auto')
 
