@@ -70,7 +70,7 @@ def _build_parser():
         '--mode',
         dest='mode',
         action='store',
-        choices=['abcd', 'hbcd', 'linc', 'none'],
+        choices=['abcd', 'hbcd', 'linc', 'nichart', 'none'],
         required=True,
         help=(
             'The mode of operation for XCP-D. '
@@ -285,9 +285,10 @@ def _build_parser():
     g_param.add_argument(
         '--smoothing',
         dest='smoothing',
-        default=6,
+        default='auto',
         action='store',
-        type=float,
+        type=parser_utils._float_or_auto,
+        metavar='{{auto,FLOAT}}',
         help=(
             'FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD '
             'data. '
@@ -531,13 +532,13 @@ The default is 240 (4 minutes).
         '--min_coverage',
         dest='min_coverage',
         required=False,
-        default=0.5,
+        default='auto',
         type=parser_utils._restricted_float,
+        metavar='{auto,FLOAT}',
         help=(
             'Coverage threshold to apply to parcels in each atlas. '
             'Any parcels with lower coverage than the threshold will be replaced with NaNs. '
-            'Must be a value between zero and one, indicating proportion of the parcel. '
-            'Default is 0.5.'
+            'Must be a value between zero and one, indicating proportion of the parcel.'
         ),
     )
 
@@ -939,7 +940,7 @@ def _validate_parameters(opts, build_log, parser):
     assert opts.despike in (True, False, 'auto')
     assert opts.file_format in ('nifti', 'cifti', 'auto')
     assert opts.linc_qc in (True, False, 'auto')
-    assert opts.mode in ('abcd', 'hbcd', 'linc', 'none'), f"Unsupported mode '{opts.mode}'."
+    assert opts.mode in ('abcd', 'hbcd', 'linc', 'nichart', 'none'), f'Unsupported mode "{opts.mode}".'
     assert opts.output_type in ('censored', 'interpolated', 'auto')
     assert opts.process_surfaces in (True, False, 'auto')
 
@@ -968,12 +969,14 @@ def _validate_parameters(opts, build_log, parser):
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
+        opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
         opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
+        opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
         opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
         opts.process_surfaces = (
             True if (opts.process_surfaces == 'auto') else opts.process_surfaces
@@ -994,12 +997,14 @@ def _validate_parameters(opts, build_log, parser):
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
         opts.input_type = 'nibabies' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
+        opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
         opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
+        opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
         opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
         opts.process_surfaces = (
             True if (opts.process_surfaces == 'auto') else opts.process_surfaces
@@ -1017,16 +1022,40 @@ def _validate_parameters(opts, build_log, parser):
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
+        opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         opts.output_correlations = True
         if opts.output_type == 'interpolated':
             error_messages.append(
                 f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
             )
         opts.output_type = 'censored'
+        opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
         opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
+    elif opts.mode == 'nichart':
+        opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
+        opts.confounds_config = (
+            '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
+        )
+        opts.dcan_correlation_lengths = (
+            'all' if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
+        )
+        opts.despike = True if (opts.despike == 'auto') else opts.despike
+        opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
+        opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format
+        opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
+        opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
+        opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
+        opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
+        opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
+        opts.smoothing = 0 if opts.smoothing == 'auto' else opts.smoothing
+        opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
+        opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
+        # Remove "all" from the list of correlation lengths
+        opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != 'all']
     elif opts.mode == 'none':
         if opts.abcc_qc == 'auto':
             error_messages.append("'--abcc-qc' (y or n) is required for 'none' mode.")
@@ -1057,6 +1086,9 @@ def _validate_parameters(opts, build_log, parser):
         if opts.linc_qc == 'auto':
             error_messages.append("'--linc-qc' (y or n) is required for 'none' mode.")
 
+        if opts.min_coverage == 'auto':
+            error_messages.append("'--min-coverage' is required for 'none' mode.")
+
         if opts.motion_filter_type is None:
             error_messages.append("'--motion-filter-type' is required for 'none' mode.")
 
@@ -1069,6 +1101,9 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(
                 "'--warp-surfaces-native2std' (y or n) is required for 'none' mode."
             )
+
+        if opts.smoothing == 'auto':
+            error_messages.append("'--smoothing' is required for 'none' mode.")
 
         # Remove "all" from the list of correlation lengths
         opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != 'all']
