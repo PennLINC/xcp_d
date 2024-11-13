@@ -120,7 +120,7 @@ def _build_parser():
         help=(
             "A JSON file describing custom BIDS input filters using PyBIDS. "
             "For further details, please check out "
-            "https://xcp_d.readthedocs.io/en/"
+            "https://xcp-d.readthedocs.io/en/"
             f"{currentv.base_version if is_release else 'latest'}/usage.html#"
             "filtering-inputs-with-bids-filter-files"
         ),
@@ -749,7 +749,7 @@ By default, this workflow is disabled.
             f"""\
 You are using XCP-D v{currentv}, and a newer version of XCP-D is available: v{latest}.
 Please check out our documentation about how and when to upgrade:
-https://xcp_d.readthedocs.io/en/latest/faq.html#upgrading""",
+https://xcp-d.readthedocs.io/en/latest/faq.html#upgrading""",
             file=sys.stderr,
         )
 
