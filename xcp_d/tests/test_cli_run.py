@@ -45,10 +45,12 @@ def base_opts():
         'motion_filter_order': None,
         'process_surfaces': 'auto',
         'atlases': ['Glasser'],
+        'min_coverage': 'auto',
         'dcan_correlation_lengths': None,
         'despike': 'auto',
         'abcc_qc': 'auto',
         'linc_qc': 'auto',
+        'smoothing': 'auto',
         'combine_runs': 'auto',
         'output_type': 'auto',
         'fs_license_file': None,
@@ -276,6 +278,8 @@ def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
     assert opts.abcc_qc is False
     assert opts.linc_qc is True
     assert opts.file_format == 'cifti'
+    assert opts.min_coverage == 0.5
+    assert opts.smoothing == 6.0
 
     # --create-matrices is not supported
     opts.dcan_correlation_lengths = [300]
@@ -304,8 +308,10 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     assert opts.file_format == 'cifti'
     assert opts.input_type == 'fmriprep'
     assert opts.linc_qc is True
+    assert opts.min_coverage == 0.5
     assert opts.output_correlations is False
     assert opts.process_surfaces is True
+    assert opts.smoothing == 6.0
 
     opts.dcan_correlation_lengths = ['300', 'all']
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
@@ -339,8 +345,10 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     assert opts.file_format == 'cifti'
     assert opts.input_type == 'nibabies'
     assert opts.linc_qc is True
+    assert opts.min_coverage == 0.5
     assert opts.output_correlations is False
     assert opts.process_surfaces is True
+    assert opts.smoothing == 6.0
 
     opts.dcan_correlation_lengths = ['300', 'all']
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
@@ -354,6 +362,21 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
 
     stderr = capsys.readouterr().err
     assert "'--motion-filter-type' is required for" in stderr
+
+
+def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
+    """Test parser._validate_parameters with nichart mode."""
+    opts = deepcopy(base_opts)
+    opts.mode = 'nichart'
+
+    # linc mode doesn't use abcc_qc but does use linc_qc
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.abcc_qc is False
+    assert opts.linc_qc is True
+    assert opts.file_format == 'nifti'
+    assert opts.min_coverage == 0.4
+    assert opts.smoothing == 0
 
 
 def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
@@ -372,9 +395,11 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     assert "'--file-format' is required for 'none' mode." in stderr
     assert "'--input-type' is required for 'none' mode." in stderr
     assert "'--linc-qc' (y or n) is required for 'none' mode." in stderr
+    assert "'--min-coverage' is required for 'none' mode." in stderr
     assert "'--motion-filter-type' is required for 'none' mode." in stderr
     assert "'--nuisance-regressors' is required for 'none' mode." in stderr
     assert "'--output-type' is required for 'none' mode." in stderr
+    assert "'--smoothing' is required for 'none' mode." in stderr
     assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
 
     opts.abcc_qc = False
@@ -385,10 +410,12 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     opts.file_format = 'nifti'
     opts.input_type = 'fmriprep'
     opts.linc_qc = False
+    opts.min_coverage = 0.5
     opts.motion_filter_type = 'none'
     opts.output_type = 'censored'
     opts.params = '36P'
     opts.process_surfaces = False
+    opts.smoothing = 0
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
@@ -397,7 +424,7 @@ def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
     opts = deepcopy(base_opts)
     opts.mode = 'other'
 
-    with pytest.raises(AssertionError, match="Unsupported mode 'other'"):
+    with pytest.raises(AssertionError, match='Unsupported mode "other"'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
