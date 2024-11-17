@@ -978,7 +978,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
-        opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
+        opts.output_correlations = bool(opts.dcan_correlation_lengths)
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
@@ -1006,7 +1006,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
-        opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
+        opts.output_correlations = bool(opts.dcan_correlation_lengths)
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
@@ -1055,7 +1055,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
         opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
-        opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
+        opts.output_correlations = bool(opts.dcan_correlation_lengths)
         opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
         opts.smoothing = 0 if opts.smoothing == 'auto' else opts.smoothing
         opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
@@ -1098,7 +1098,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.motion_filter_type is None:
             error_messages.append("'--motion-filter-type' is required for 'none' mode.")
 
-        opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
+        opts.output_correlations = bool(opts.dcan_correlation_lengths)
 
         if opts.output_type == 'auto':
             error_messages.append("'--output-type' is required for 'none' mode.")
