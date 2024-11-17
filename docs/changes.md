@@ -1,5 +1,52 @@
 # What's New
 
+## 0.10.0
+
+This backwards-incompatible release brings XCP-D further in line with the fMRIPost workflows in the NiPreps ecosystem.
+We have added the ability to provide custom confound sets defined as YAML config files,
+ingress derivatives from fMRIPost BIDS Apps (for example, fMRIPost-AROMA),
+and provide external atlases organized as BIDS-Atlas datasets.
+
+Please note that the BIDS-Atlas extension proposal has not been merged into BIDS yet,
+so the expected organization of these external atlas datasets may change over time.
+
+### 🛠 Breaking Changes
+
+* Replace restricted confound sets with config files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1255
+* Rename `--derivatives` parameter to `--datasets` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1276
+* Accept external atlases by searching BIDS-Atlas datasets by @tsalo in https://github.com/PennLINC/xcp_d/pull/1265
+* Move hemi entity before space by @tsalo in https://github.com/PennLINC/xcp_d/pull/1287
+
+### 🎉 Exciting New Features
+
+* Remove Freesurfer node from surface normalization workflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/1273
+* Track Sources with BIDSURI interface by @tsalo in https://github.com/PennLINC/xcp_d/pull/1283
+* Add nichart mode by @tsalo in https://github.com/PennLINC/xcp_d/pull/1320
+
+### 🐛 Bug Fixes
+
+* Patch task_id into bids_filters by @tsalo in https://github.com/PennLINC/xcp_d/pull/1271
+* Fix NIfTI-surface connection by @tsalo in https://github.com/PennLINC/xcp_d/pull/1284
+* Update build image version by @tsalo in https://github.com/PennLINC/xcp_d/pull/1293
+* Fix bug with surfaces and external atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/1304
+* Apply notch filter appropriate number of times based on `--motion-filter-order` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1300
+* Fix ingression of standard-space mesh files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1309
+* Fix init_qc_report_wf connections when linc-qc and abcc-qc are disabled by @tsalo in https://github.com/PennLINC/xcp_d/pull/1314
+
+### Other Changes
+
+* Don't rerun alff if num threads changes by @mattcieslak in https://github.com/PennLINC/xcp_d/pull/1263
+* Remove xcp_d_dir and clean datasinks by @tsalo in https://github.com/PennLINC/xcp_d/pull/1262
+* Add dataset links to config object by @tsalo in https://github.com/PennLINC/xcp_d/pull/1266
+* Document minimal required inputs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1270
+* Correct documentation regarding Freesurfer by @tsalo in https://github.com/PennLINC/xcp_d/pull/1277
+* Improve custom confound documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1280
+* Improve documentation of new features by @tsalo in https://github.com/PennLINC/xcp_d/pull/1281
+* Use ruff for linting by @tsalo in https://github.com/PennLINC/xcp_d/pull/1312
+* Fix links to documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1323
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.9.1...0.10.0
+
 
 ## 0.9.1
 
@@ -18,7 +65,7 @@ This release improves performance with multi-core processing.
 ## 0.9.0
 
 This backwards-incompatible release makes two important breaking changes.
-First, we changd the default file format for 'linc' mode from NIfTI to CIFTI.
+First, we changed the default file format for 'linc' mode from NIfTI to CIFTI.
 Second, XCP-D no longer ingresses and warps the anatomical tissue segmentation file (`*_dseg.nii.gz`),
 since no one was using it and it's easy enough to collect separately.
 
