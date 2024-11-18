@@ -32,7 +32,7 @@ Starting in version 0.8.0, XCP-D includes a required ``--mode`` parameter.
 The ``mode`` parameter automatically defines sets of other parameters,
 based on recommended processing pipelines for different studies.
 
-XCP-D can be run in one of three modes: ``linc``, ``abcd``, or ``hbcd``.
+XCP-D can be run in one of four modes: ``linc``, ``abcd``, ``hbcd``, or ``nichart``.
 Each mode is designed by a different group, and has different requirements.
 
 Users may also run XCP-D in ``none`` mode, in which case almost all of the parameters must be
