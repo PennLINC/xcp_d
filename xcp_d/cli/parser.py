@@ -982,11 +982,8 @@ def _validate_parameters(opts, build_log, parser):
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
+        opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
-        opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
-        opts.process_surfaces = (
-            True if (opts.process_surfaces == 'auto') else opts.process_surfaces
-        )
         # Remove "all" from the list of correlation lengths
         opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != 'all']
     elif opts.mode == 'hbcd':
@@ -1010,11 +1007,8 @@ def _validate_parameters(opts, build_log, parser):
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
+        opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
-        opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
-        opts.process_surfaces = (
-            True if (opts.process_surfaces == 'auto') else opts.process_surfaces
-        )
         # Remove "all" from the list of correlation lengths
         opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != 'all']
     elif opts.mode == 'linc':
@@ -1035,9 +1029,8 @@ def _validate_parameters(opts, build_log, parser):
                 f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
             )
         opts.output_type = 'censored'
-        opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
-        opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
         if opts.dcan_correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
     elif opts.mode == 'nichart':
@@ -1057,9 +1050,8 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
         opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
         opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
-        opts.smoothing = 0 if opts.smoothing == 'auto' else opts.smoothing
-        opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.smoothing = 0 if opts.smoothing == 'auto' else opts.smoothing
         # Remove "all" from the list of correlation lengths
         opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != 'all']
     elif opts.mode == 'none':
