@@ -83,10 +83,10 @@ def test_float_or_auto_or_none():
     assert out == 'none'
 
     out = parser_utils._float_or_auto_or_none('3')
-    assert out == 3.0
+    assert out == '3.0'
 
     out = parser_utils._float_or_auto_or_none(3)
-    assert out == 3.0
+    assert out == '3.0'
 
 
 def test_is_file(tmp_path_factory):

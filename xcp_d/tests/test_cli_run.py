@@ -459,7 +459,7 @@ def test_build_parser_01(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.correlation_lengths == ['all', '300', '480']
+    assert opts.correlation_lengths == ['all', '300.0', '480.0']
 
 
 def test_build_parser_02(tmp_path_factory):
@@ -496,7 +496,7 @@ def test_build_parser_02(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.correlation_lengths == ['all', '300', '480']
+    assert opts.correlation_lengths == ['all', '300.0', '480.0']
 
 
 @pytest.mark.parametrize(
