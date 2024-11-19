@@ -32,7 +32,7 @@ Starting in version 0.8.0, XCP-D includes a required ``--mode`` parameter.
 The ``mode`` parameter automatically defines sets of other parameters,
 based on recommended processing pipelines for different studies.
 
-XCP-D can be run in one of three modes: ``linc``, ``abcd``, or ``hbcd``.
+XCP-D can be run in one of four modes: ``linc``, ``abcd``, ``hbcd``, or ``nichart``.
 Each mode is designed by a different group, and has different requirements.
 
 Users may also run XCP-D in ``none`` mode, in which case almost all of the parameters must be
@@ -66,6 +66,8 @@ which may be overridden by the user:
 -  ``--fd-thresh 0``: Censoring is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--linc-qc``: The LINC QC file will be created by default.
+-  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
+-  ``--smoothing 6``: Smoothing is enabled by default.
 
 Optional Parameters
 -------------------
@@ -116,6 +118,8 @@ which may be overridden by the user:
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
 -  ``--linc-qc``: The LINC QC file will be created by default.
+-  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
+-  ``--smoothing 6``: Smoothing is enabled by default.
 
 Required Parameters
 -------------------
@@ -167,6 +171,8 @@ which may be overridden by the user:
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
 -  ``--linc-qc``: The LINC QC file will be created by default.
+-  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
+-  ``--smoothing 6``: Smoothing is enabled by default.
 
 Required Parameters
 -------------------
@@ -187,6 +193,30 @@ Optional Parameters
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
    as well as the special value "all", which uses all of the low-motion data from the run.
+
+
+nichart Mode
+============
+
+The ``nichart`` mode is used by the `NiChart project <https://neuroimagingchart.com/>`_.
+
+This mode is very similar to ``linc`` mode, with the exception that it processes NIfTI files
+by default and has smoothing disabled.
+
+Defaults
+--------
+
+By default, the ``nichart`` mode will apply the following parameters,
+which may be overridden by the user:
+
+-  ``--file-format nifti``: NIfTI files are used as input.
+-  ``--despike``: Despiking is enabled by default.
+-  ``--fd-thresh 0``: Motion-based censoring is disabled by default.
+-  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
+-  ``--linc-qc``: The LINC QC file will be created by default.
+-  ``--min-coverage 0.4``: The default coverage threshold is 0.4 instead of the more common 0.5.
+-  ``--output-type censored``: Censored data are the primary output.
+-  ``--smoothing 0``: Smoothing is disabled by default.
 
 
 Major Differences Between Modes
