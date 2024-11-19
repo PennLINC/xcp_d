@@ -562,8 +562,6 @@ class workflow(_Config):
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     output_interpolated = None
     """Output interpolated data, not censored data."""
-    output_correlations = None
-    """Output correlations from censored data. This doesn't affect exact_scans."""
     combine_runs = None
     """Combine runs of the same task."""
     motion_filter_type = None
@@ -590,8 +588,10 @@ class workflow(_Config):
     """Order of the band-pass filter."""
     min_coverage = None
     """Coverage threshold to apply to parcels in each atlas."""
-    dcan_correlation_lengths = None
-    """Produce correlation matrices limited to each requested amount of time."""
+    correlation_lengths = None
+    """Produce correlation matrices limited to each requested amount of time.
+    If this list includes 'all' then correlations from the full (censored) time series will
+    be produced."""
     process_surfaces = None
     """Warp fsnative-space surfaces to the MNI space."""
     abcc_qc = None

@@ -327,7 +327,10 @@ def init_prepare_confounds_wf(
             ]),
         ])  # fmt:skip
 
-    if config.workflow.dcan_correlation_lengths:
+    if any(
+        isinstance(length, int | float) for length in
+        config.workflow.correlation_lengths
+    ):
         random_censor = pe.Node(
             RandomCensor(exact_scans=exact_scans, random_seed=config.seeds.master),
             name='random_censor',

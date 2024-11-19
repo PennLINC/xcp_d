@@ -167,7 +167,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         config.workflow.min_coverage = 0.5
         config.nipype.omp_nthreads = 2
         config.execution.atlases = atlas_names
-        config.workflow.output_correlations = True
+        config.workflow.correlation_lengths = ['all']
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
@@ -308,7 +308,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         config.workflow.min_coverage = 0.5
         config.nipype.omp_nthreads = 2
         config.execution.atlases = atlas_names
-        config.workflow.output_correlations = True
+        config.workflow.correlation_lengths = ['all']
 
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,

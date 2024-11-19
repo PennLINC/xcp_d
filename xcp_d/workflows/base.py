@@ -458,9 +458,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             # Reduce exact_times to only include values greater than the post-scrubbing duration.
             exact_scans = []
-            if config.workflow.dcan_correlation_lengths:
+            if any(
+                isinstance(length, int | float) for length in
+                config.workflow.correlation_lengths
+            ):
                 exact_scans = calculate_exact_scans(
-                    exact_times=config.workflow.dcan_correlation_lengths,
+                    exact_times=config.workflow.correlation_lengths,
                     scan_length=post_scrubbing_duration,
                     t_r=run_data['bold_metadata']['RepetitionTime'],
                     bold_file=bold_file,
