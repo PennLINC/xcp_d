@@ -61,7 +61,7 @@ def _float_or_auto_or_none(string, is_parser=True):
 
     if floatarg < 0:
         raise error('Float argument must be nonnegative.')
-    return floatarg
+    return str(floatarg)
 
 
 def _restricted_float(x):

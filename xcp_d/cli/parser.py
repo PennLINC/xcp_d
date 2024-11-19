@@ -967,9 +967,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = (
-            [] if opts.correlation_lengths is None else opts.correlation_lengths
-        )
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
@@ -989,9 +987,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = (
-            [] if opts.correlation_lengths is None else opts.correlation_lengths
-        )
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1034,9 +1030,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = (
-            'all' if opts.correlation_lengths is None else opts.correlation_lengths
-        )
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else 'all'
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1056,9 +1050,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.confounds_config == 'auto':
             error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
-        opts.correlation_lengths = (
-            [] if opts.correlation_lengths is None else opts.correlation_lengths
-        )
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
 
         if opts.despike == 'auto':
             error_messages.append("'--despike' (y or n) is required for 'none' mode.")

@@ -602,3 +602,12 @@ def _create_mem_gb(bold_fname):
         mem_gbz['resampled'] = 3
 
     return mem_gbz
+
+
+def is_number(s):
+    """Check if a string is a number."""
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False

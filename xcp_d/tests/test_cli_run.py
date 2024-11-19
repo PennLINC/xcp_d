@@ -283,7 +283,7 @@ def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
     assert opts.correlation_lengths == ['all']
 
     # --create-matrices is not supported
-    opts.correlation_lengths = [300]
+    opts.correlation_lengths = ['300']
     with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
@@ -459,7 +459,7 @@ def test_build_parser_01(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.correlation_lengths == ['all', 300, 480]
+    assert opts.correlation_lengths == ['all', '300', '480']
 
 
 def test_build_parser_02(tmp_path_factory):
@@ -496,7 +496,7 @@ def test_build_parser_02(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.correlation_lengths == ['all', 300, 480]
+    assert opts.correlation_lengths == ['all', '300', '480']
 
 
 @pytest.mark.parametrize(

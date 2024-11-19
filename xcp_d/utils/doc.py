@@ -253,7 +253,7 @@ band_stop_max : :obj:`float` or None
 """
 
 docdict['correlation_lengths'] = """
-correlation_lengths : :obj:`list` of :obj:`float`, optional
+correlation_lengths : :obj:`list` of :obj:`str`, optional
     If used, this parameter will produce correlation matrices limited to each requested
     amount of time.
     If there is more than the required amount of low-motion data,
