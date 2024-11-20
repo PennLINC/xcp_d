@@ -180,20 +180,38 @@ image yourself.
    when preparing a pull request.
 
 
-Running tests
-=============
+Running tests locally
+=====================
 
 While CircleCI will automatically run *XCP-D*'s tests for any open PRs,
 we strongly recommend running at least some tests locally, to make sure your proposed changes work.
 
 *XCP-D* has a file, ``xcp_d/tests/run_local_tests.py``, that builds Docker ``run`` commands to
-run selected tests.
+to automatically mount the local clone into ``pennlinc/xcp_d:unstable`` and run tests with
+``pytest``.
+The script will also download any required test data from Box.
 Please use that script to run some tests locally before opening your PR.
+
+To run the tests, navigate to the tests folder and run ``run_local_tests.py``::
+
+    $ cd /path/to/xcp_d/xcp_d/tests
+    $ python run_local_tests.py
+
+You can select individual tests to run by using the ``-m`` (to select markers) or
+``-k`` (the select tests by name) flags::
+
+    $ python run_local_tests.py -m "dsdti_fmap"
+    $ python run_local_tests.py -k "test_some_name"
 
 If all tests pass, this is a strong indication that your proposed changes do not introduce bugs.
 However, we strongly recommend reviewing the output files- especially the HTML reports-
 from the integration tests to see how your proposed changes affect the primary outputs from
 *XCP-D*.
+
+.. warning::
+
+    Please note that the integration tests in *XCP-D* are computationally intensive
+    and may take a long time to run, so be prepared for that before running them on a laptop.
 
 
 ********************************
