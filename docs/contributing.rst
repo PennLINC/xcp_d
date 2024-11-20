@@ -4,7 +4,7 @@
 Contributing to *XCP-D*
 #######################
 
-This guide describes the organization and preferred coding style for XCP-D,
+This guide describes the organization and preferred coding style for *XCP-D*,
 for prospective code contributors.
 
 .. important::
@@ -57,7 +57,7 @@ but the main ones are ``black`` and ``isort``.
 
 .. tip::
 
-   Please run ``isort`` and ``black`` on the ``XCP-D`` codebase before opening a pull request.
+   Please run ``isort`` and ``black`` on the *XCP-D* codebase before opening a pull request.
 
    Also run ``flake8`` to check for any additional style issues.
 
@@ -129,9 +129,9 @@ Here is an example of a basic workflow, written in the preferred style for *XCP-
       return workflow
 
 
-*************************************************
-Contributing to XCP-D without adding dependencies
-*************************************************
+***************************************************
+Contributing to *XCP-D* without adding dependencies
+***************************************************
 
 In the most common case, you will want to modify *XCP-D*'s Python code without adding any
 dependencies (Python or not) to the Docker image.
@@ -144,7 +144,7 @@ image yourself.
 
       docker pull pennlinc/xcp_d:unstable
 
-2. Fork the XCP-D repository to your GitHub account.
+2. Fork the *XCP-D* repository to your GitHub account.
    For more information on contributing via the fork-and-branch approach,
    see `GitHub's contributing guide
    <https://docs.github.com/en/get-started/quickstart/contributing-to-projects>`_.
@@ -152,7 +152,7 @@ image yourself.
 3. Clone your forked repository to your local machine.
 
 4. Create a branch to work on.
-   **Make sure your branch is up to date with XCP-D's ``main`` branch before making any
+   **Make sure your branch is up to date with *XCP-D*'s ``main`` branch before making any
    changes!**
 
 5. Make changes to the codebase that you want to try out.
@@ -175,25 +175,43 @@ image yourself.
 
 7. Push your changes to GitHub.
 
-8. Open a pull request to PennLINC/XCP-D's ``main`` branch.
+8. Open a pull request to ``pennlinc/xcp_d``'s ``main`` branch.
    Please follow `NiPreps contributing guidelines <https://www.nipreps.org/community/>`_
    when preparing a pull request.
 
 
-Running tests
-=============
+Running tests locally
+=====================
 
 While CircleCI will automatically run *XCP-D*'s tests for any open PRs,
 we strongly recommend running at least some tests locally, to make sure your proposed changes work.
 
 *XCP-D* has a file, ``xcp_d/tests/run_local_tests.py``, that builds Docker ``run`` commands to
-run selected tests.
+to automatically mount the local clone into ``pennlinc/xcp_d:unstable`` and run tests with
+``pytest``.
+The script will also download any required test data from Box.
 Please use that script to run some tests locally before opening your PR.
+
+To run the tests, navigate to the tests folder and run ``run_local_tests.py``::
+
+    $ cd /path/to/xcp_d/xcp_d/tests
+    $ python run_local_tests.py
+
+You can select individual tests to run by using the ``-m`` (to select markers) or
+``-k`` (the select tests by name) flags::
+
+    $ python run_local_tests.py -m "dsdti_fmap"
+    $ python run_local_tests.py -k "test_some_name"
 
 If all tests pass, this is a strong indication that your proposed changes do not introduce bugs.
 However, we strongly recommend reviewing the output files- especially the HTML reports-
 from the integration tests to see how your proposed changes affect the primary outputs from
 *XCP-D*.
+
+.. warning::
+
+    Please note that the integration tests in *XCP-D* are computationally intensive
+    and may take a long time to run, so be prepared for that before running them on a laptop.
 
 
 ********************************
@@ -220,9 +238,9 @@ and rebuild the *XCP-D* Docker image locally to test out your change.
 Once your change is working, you can open a pull request to the *XCP-D* repo.
 
 
-*****************
-Maintaining XCP-D
-*****************
+*******************
+Maintaining *XCP-D*
+*******************
 
 
 Making a Release
@@ -239,7 +257,7 @@ To make an *XCP-D* release, complete the following steps:
       (e.g., ``1.0.0``).
    #. For pre-releases, select the "This is a pre-release" option.
    #. Select the "Generate release notes" button.
-      This will create most of the necessary release notes based on XCP-D's config file.
+      This will create most of the necessary release notes based on *XCP-D*'s config file.
    #. At the top of the release notes, add some information summarizing the release.
 
 3. Once the release notes have been completed, open a new PR with the following changes:

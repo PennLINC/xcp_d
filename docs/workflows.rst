@@ -10,37 +10,37 @@ Processing Pipeline Details
 Input data
 **********
 
-XCP-D can post-process data from several different preprocessing pipelines,
+*XCP-D* can post-process data from several different preprocessing pipelines,
 including ``fMRIPrep`` (``--input-type fmriprep``), ``Nibabies`` (``--input-type nibabies``),
 ``HCPPipelines`` (``--input-type hcp``), ``abcd-hcp-pipeline`` (``--input-type dcan``),
 and UK Biobank's pipeline (``--input-type ukb``).
 
-The default input type depends on the mode that XCP-D is run in-
+The default input type depends on the mode that *XCP-D* is run in-
 ``fmriprep`` for ``abcd`` and ``linc`` modes, ``nibabies`` for ``hbcd`` mode.
 
-XCP-D's support for fMRIPrep and Nibabies derivatives will be the most robust,
+*XCP-D*'s support for fMRIPrep and Nibabies derivatives will be the most robust,
 as these pipelines produces BIDS-compliant derivatives.
 For the HCP, ABCD-HCP, and UK Biobank pipelines,
-XCP-D will read in the post-processed data and convert it to a BIDS-like structure.
+*XCP-D* will read in the post-processed data and convert it to a BIDS-like structure.
 
 
 ****************
 Processing Modes
 ****************
 
-Starting in version 0.8.0, XCP-D includes a required ``--mode`` parameter.
+Starting in version 0.8.0, *XCP-D* includes a required ``--mode`` parameter.
 The ``mode`` parameter automatically defines sets of other parameters,
 based on recommended processing pipelines for different studies.
 
-XCP-D can be run in one of four modes: ``linc``, ``abcd``, ``hbcd``, or ``nichart``.
+*XCP-D* can be run in one of four modes: ``linc``, ``abcd``, ``hbcd``, or ``nichart``.
 Each mode is designed by a different group, and has different requirements.
 
-Users may also run XCP-D in ``none`` mode, in which case almost all of the parameters must be
+Users may also run *XCP-D* in ``none`` mode, in which case almost all of the parameters must be
 defined by the user.
 
 .. important::
 
-   If you have a "mode" you would like to see supported by XCP-D, follow the instructions in
+   If you have a "mode" you would like to see supported by *XCP-D*, follow the instructions in
    :ref:`contrib_modes`.
 
 
@@ -49,7 +49,7 @@ linc Mode
 
 The ``linc`` mode is designed by the `PennLINC`_ lab.
 
-In this mode, XCP-D will generate PennLINC-preferred outputs,
+In this mode, *XCP-D* will generate PennLINC-preferred outputs,
 such as the NiPreps-format HTML report and the LINC QC file.
 
 All denoised BOLD data, including dense time series, parcellated time series,
@@ -72,12 +72,12 @@ which may be overridden by the user:
 Optional Parameters
 -------------------
 
--  ``--abcc-qc``: By default, XCP-D will not create the DCAN executive summary or QC file when run
+-  ``--abcc-qc``: By default, *XCP-D* will not create the DCAN executive summary or QC file when run
    in the ``linc`` mode.
    If you would like to create these files, you must include the ``--abcc-qc`` flag.
--  ``--combine-runs``: By default, XCP-D will not combine runs when run in the ``linc`` mode.
+-  ``--combine-runs``: By default, *XCP-D* will not combine runs when run in the ``linc`` mode.
    If you would like to combine runs, you must include the ``--combine-runs`` flag.
--  ``--warp-surfaces-native2std``: By default, XCP-D will not warp surfaces to standard space when
+-  ``--warp-surfaces-native2std``: By default, *XCP-D* will not warp surfaces to standard space when
    run in the ``linc`` mode.
    If you would like to warp surfaces, you must include the ``--warp-surfaces-native2std`` flag.
 
@@ -94,7 +94,7 @@ abcd Mode
 
 The ``abcd`` mode is designed by the `DCAN`_ lab for processing data from the `ABCD`_ study.
 
-In this mode, XCP-D will generate DCAN-preferred outputs,
+In this mode, *XCP-D* will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
 
 Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
@@ -136,7 +136,7 @@ In ``abcd`` mode, the following parameters are required:
 Optional Parameters
 -------------------
 
--  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``abcd`` mode.
+-  ``--create-matrices``: By default, *XCP-D* will not create correlation matrices when run in the ``abcd`` mode.
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
    as well as the special value "all", which uses all of the low-motion data from the run.
@@ -147,7 +147,7 @@ hbcd Mode
 
 The ``hbcd`` mode is designed by the `DCAN`_ lab for processing data from the `HBCD`_ study.
 
-In this mode, XCP-D will generate DCAN-preferred outputs,
+In this mode, *XCP-D* will generate DCAN-preferred outputs,
 such as the executive summary and the DCAN QC file.
 
 Denoised BOLD data, including dense time series and parcellated time series, will be interpolated.
@@ -189,7 +189,7 @@ In ``hbcd`` mode, the following parameters are required:
 Optional Parameters
 -------------------
 
--  ``--create-matrices``: By default, XCP-D will not create correlation matrices when run in the ``hbcd`` mode.
+-  ``--create-matrices``: By default, *XCP-D* will not create correlation matrices when run in the ``hbcd`` mode.
    If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
    as well as the special value "all", which uses all of the low-motion data from the run.
@@ -285,7 +285,7 @@ Anatomical processing
 =====================
 :func:`~xcp_d.workflows.anatomical.volume.init_postprocess_anat_wf`
 
-XCP-D performs minimal postprocessing on anatomical derivatives from the preprocessing pipeline.
+*XCP-D* performs minimal postprocessing on anatomical derivatives from the preprocessing pipeline.
 This includes applying existing transforms to preprocessed T1w and T2w volumes,
 in order to warp them from native T1w space to the target standard space,
 while retaining the original resolution.
@@ -304,7 +304,7 @@ Identification of high-motion outlier volumes
 :func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.censoring.GenerateConfounds`
 
-XCP-D uses framewise displacement to identify high-motion outlier volumes.
+*XCP-D* uses framewise displacement to identify high-motion outlier volumes.
 These outlier volumes are removed from the BOLD data prior to denoising.
 
 The threshold used to identify outlier volumes can be set with the ``--fd-thresh`` parameter.
@@ -321,7 +321,7 @@ Motion parameter filtering [OPTIONAL]
 :func:`~xcp_d.utils.confounds.load_motion`
 
 Motion parameters may be contaminated with respiratory effects.:footcite:p:`power2019distinctions`
-In order to address this issue, XCP-D optionally allows users to specify a band-stop or low-pass
+In order to address this issue, *XCP-D* optionally allows users to specify a band-stop or low-pass
 filter to remove respiration-related signals from the motion parameters, prior to framewise
 displacement calculation.
 Please refer to :footcite:t:`fair2020correction` and :footcite:t:`gratton2020removal` for
@@ -396,10 +396,10 @@ Confound regressor selection
 :func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :func:`~xcp_d.interfaces.censoring.GenerateConfounds`
 
-XCP-D supports several different confound regressor strategies.
+*XCP-D* supports several different confound regressor strategies.
 In addition to the built-in regressor sets described below,
 users may design their own confound configuration files and use those instead.
-The default confound regressor set depends on the mode in which XCP-D is run-
+The default confound regressor set depends on the mode in which *XCP-D* is run-
 this corresponds to ``--nuisance-regressors auto``.
 
 If you want to skip the denoising step completely, you can use ``--nuisance-regressors none``.
@@ -489,7 +489,7 @@ please refer to :footcite:t:`benchmarkp`.
 
 .. warning::
 
-   In XCP-D versions prior to 0.3.1, the selected AROMA confounds were incorrect.
+   In *XCP-D* versions prior to 0.3.1, the selected AROMA confounds were incorrect.
    We strongly advise users of these versions not to use the ``aroma`` or ``aroma_gsr``
    options.
 
@@ -570,8 +570,8 @@ please refer to :footcite:t:`benchmarkp`.
 .. important::
    fMRIPrep removed AROMA support in 23.1.0.
    In order to use the ``aroma`` or ``aroma_gsr`` strategies,
-   please run ``fMRIPost-AROMA`` on your fMRIPrep outputs before running XCP-D.
-   You will need to supply the AROMA derivatives dataset to XCP-D via the ``--datasets``
+   please run ``fMRIPost-AROMA`` on your fMRIPrep outputs before running *XCP-D*.
+   You will need to supply the AROMA derivatives dataset to *XCP-D* via the ``--datasets``
    parameter (i.e., ``--datasets aroma=/path/to/fmripost-aroma/dset``).
 
 
@@ -597,18 +597,18 @@ while the ``confounds`` section specifies which confounds will actually be used.
 The ``confounds`` section is a dictionary/object, with a unique key for each set of confounds.
 Each set of confounds must contain a ``dataset`` key, which specifies the dataset to use.
 The dataset must be linked to what the user provides in the ``--datasets`` parameter,
-though the "preprocessed" key is a protected value for the dataset given to XCP-D as the
+though the "preprocessed" key is a protected value for the dataset given to *XCP-D* as the
 ``fmri_dir`` positional argument.
 For example, in the example below, three columns are collected from the fMRIPrep confounds file:
 "global_signal", "csf", and "white_matter".
 Other confounds must come from the "aroma" dataset (i.e., the output from fMRIPost-AROMA).
 Note that the "aroma" columns are selected using regular expressions, as they start with "^"
 and end with "$".
-XCP-D will collect any columns in the selected file that match the regular expression.
+*XCP-D* will collect any columns in the selected file that match the regular expression.
 
 Finally, there is the ``query`` field in each confound set.
 This defines the BIDS entities that will be used to find the confounds file associated with the
-preprocessed BOLD file that is being post-processed by XCP-D.
+preprocessed BOLD file that is being post-processed by *XCP-D*.
 
 .. code-block:: yaml
 
@@ -646,7 +646,7 @@ preprocessed BOLD file that is being post-processed by XCP-D.
          columns:
          - ^aroma_orth_motion_.*$
 
-In addition to TSV-based confound files, XCP-D also supports the use of voxel-wise confound files.
+In addition to TSV-based confound files, *XCP-D* also supports the use of voxel-wise confound files.
 Take this partial example:
 
 .. code-block:: yaml
@@ -670,7 +670,7 @@ Dummy scan removal [OPTIONAL]
 :func:`~xcp_d.workflows.bold.postprocessing.init_prepare_confounds_wf`,
 :class:`~xcp_d.interfaces.censoring.RemoveDummyVolumes`
 
-XCP-D allows the first *N* volumes to be removed before processing.
+*XCP-D* allows the first *N* volumes to be removed before processing.
 These volumes are usually referred to as dummy volumes.
 Most default scanning sequences include dummy volumes that are not reconstructed.
 However, some users still prefer to remove the first few reconstructed volumes.
@@ -696,7 +696,7 @@ Denoising
 =========
 :class:`~xcp_d.interfaces.nilearn.DenoiseNifti`, :class:`~xcp_d.interfaces.nilearn.DenoiseCifti`
 
-The denoising approach in XCP-D is heavily based on Nilearn's :footcite:p:`abraham2014machine`
+The denoising approach in *XCP-D* is heavily based on Nilearn's :footcite:p:`abraham2014machine`
 approach from :py:func:`~nilearn.signal.clean`,
 which was designed to follow recommendations made in :footcite:t:`lindquist2019modular`.
 
@@ -705,16 +705,16 @@ but the confounds are orthogonalized with respect to the temporal filter prior t
 regression,
 so that no variance from the temporal filter is reintroduced by the confound regression.
 
-XCP-D modifies Nilearn's approach in the following ways:
+*XCP-D* modifies Nilearn's approach in the following ways:
 
-1. XCP-D uses :func:`numpy.linalg.lstsq` to estimate betas instead of QR decomposition,
+1. *XCP-D* uses :func:`numpy.linalg.lstsq` to estimate betas instead of QR decomposition,
    in order to denoise the interpolated data as well.
    -  QR decomposition will not produce betas that can be applied to the interpolated data.
 
-2. XCP-D sets any leading or trailing high-motion volumes to the closest low-motion volume's values
+2. *XCP-D* sets any leading or trailing high-motion volumes to the closest low-motion volume's values
    instead of extrapolating those volumes or removing them completely.
 
-Both of these modifications allow XCP-D to produce a denoised, interpolated BOLD time series,
+Both of these modifications allow *XCP-D* to produce a denoised, interpolated BOLD time series,
 while Nilearn only produces the denoised, _censored_ BOLD time series.
 The interpolated BOLD time series is necessary for DCAN-specific tools,
 such as `biceps <https://biceps-cmdln.readthedocs.io/en/latest/>`_.
@@ -783,13 +783,13 @@ to satisfy DCAN-specific tools.
    so simply regressing the noise components out of the BOLD data,
    without considering the signal components, may remove signal of interest.
 
-   To address this issue, XCP-D will look for signal regressors in the selected confounds.
+   To address this issue, *XCP-D* will look for signal regressors in the selected confounds.
    If any signal regressors are detected
    (i.e., if any columns in the confounds file have a ``signal__`` prefix),
    then the noise regressors will be orthogonalized with respect to the signal regressors,
    to produce "pure evil" regressors.
 
-   This is done automatically for XCP-D's built-in nuisance strategies which include AROMA
+   This is done automatically for *XCP-D*'s built-in nuisance strategies which include AROMA
    components, but users must manually add the ``signal__`` prefix to any signal regressors in
    their custom confounds files, if they choose to use them.
 
@@ -952,7 +952,7 @@ Quality control
 ===============
 :func:`~xcp_d.workflows.bold.plotting.init_qc_report_wf`
 
-The quality control (QC) in ``XCP-D`` estimates the quality of BOLD data before and after
+The quality control (QC) in *XCP-D* estimates the quality of BOLD data before and after
 regression and also estimates BOLD-T1w coregistration and BOLD-Template normalization
 qualities.
 The QC metrics include the following:
@@ -967,9 +967,9 @@ The QC metrics include the following:
 Outputs
 *******
 
-XCP-D generates three main types of outputs for every subject.
+*XCP-D* generates three main types of outputs for every subject.
 
-First, XCP-D generates HTML visual reports that display relevant information about the processed data.
+First, *XCP-D* generates HTML visual reports that display relevant information about the processed data.
 
 The first of these reports is a NiPreps-style HTML file for each subject.
 The report contains a Processing Summary with QC values, with the BOLD volume space, the TR,
@@ -977,7 +977,7 @@ mean FD, mean RMSD, and mean and maximum RMS,
 the correlation between DVARS and FD before and after processing, and the number of volumes
 censored.
 Next, pre and post regression "carpet" plots are alongside DVARS and FD.
-An About section that notes the release version of XCP-D, a Methods section that can be copied and
+An About section that notes the release version of *XCP-D*, a Methods section that can be copied and
 pasted into the user's paper,
 which is customized based on command line options, and an Error section, which will read
 "No errors to report!" if no errors are found.
@@ -994,7 +994,7 @@ Beside the segmentations, users can see the pre-regression and post-regression "
 as well as DVARS, FD, the global signal.
 The number of volumes remaining at various FD thresholds are shown.
 
-Second, XCP-D outputs processed BOLD data, including denoised unsmoothed and smoothed timeseries in
+Second, *XCP-D* outputs processed BOLD data, including denoised unsmoothed and smoothed timeseries in
 MNI152NLin2009cAsym and fsLR-32k spaces, parcellated time series, functional connectivity matrices,
 and ALFF and ReHo (smoothed and unsmoothed).
 
@@ -1003,7 +1003,7 @@ If both images are not in MNI152NLin6Asym space, they are resampled to MNI space
 The fMRIPrep surfaces (gifti files) in each subject are also resampled to standard space
 (fsLR-32K).
 
-See :doc:`outputs` for details about XCP-D outputs.
+See :doc:`outputs` for details about *XCP-D* outputs.
 
 **********
 References

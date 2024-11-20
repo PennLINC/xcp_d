@@ -1,12 +1,12 @@
 .. include:: links.rst
 
-#############
-Running XCP-D
-#############
+###############
+Running *XCP-D*
+###############
 
 .. warning::
 
-   XCP-D may not run correctly on **M1 chips**.
+   *XCP-D* may not run correctly on **M1 chips**.
 
 
 .. _usage_inputs:
@@ -25,11 +25,11 @@ Additionally, each of these should be in directories that can be parsed by the B
 (even if it is not BIDS valid - we do not require BIDS valid directories).
 The directories must also include a valid `dataset_description.json`.
 
-The exact command to run in *xcp_d* depends on the :doc:`installation` method and data that needs to be
+The exact command to run in *XCP-D* depends on the :doc:`installation` method and data that needs to be
 processed.
 We start first with the *bare-metal* :ref:`installation_manually_prepared_environment`
 installation, as the command line is simpler.
-XCP-D can be executed on the command line, processesing fMRIPrep outputs, using the following
+*XCP-D* can be executed on the command line, processesing fMRIPrep outputs, using the following
 command-line structure, for example:
 
 .. code-block:: bash
@@ -38,7 +38,7 @@ command-line structure, for example:
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
-followed by the XCP-D command-line options as if you were running it on a *bare-metal*
+followed by the *XCP-D* command-line options as if you were running it on a *bare-metal*
 installation.
 
 
@@ -143,7 +143,7 @@ Command-Line Arguments
 Minimal Inputs
 **************
 
-The minimal inputs required to run XCP-D are:
+The minimal inputs required to run *XCP-D* are:
 
 -  A native-space preprocessed T1w or T2w image.
 -  A preprocessed BOLD image in MNI152NLin6Asym, MNI152NLin2009cAsym,
@@ -164,7 +164,7 @@ Below are an example lists of inputs.
    Please note that the filenames may differ based on the pipeline,
    or even version of the pipeline, used for preprocessing.
 
-   The specific files required by XCP-D may also vary slightly depending on the settings you use.
+   The specific files required by *XCP-D* may also vary slightly depending on the settings you use.
 
 For NIfTI processing:
 
@@ -241,11 +241,11 @@ Surface files:
 Filtering Inputs with BIDS Filter Files
 ***************************************
 
-XCP-D allows users to choose which preprocessed files will be post-processed with the
+*XCP-D* allows users to choose which preprocessed files will be post-processed with the
 ``--bids-filter-file`` parameter.
 This argument must point to a JSON file, containing filters that will be fed into PyBIDS.
 
-The keys in this JSON file are unique to XCP-D.
+The keys in this JSON file are unique to *XCP-D*.
 They are our internal terms for different inputs that will be selected from the preprocessed
 dataset.
 The full list of keys can be found in the file ``xcp_d/data/io_spec.yaml``.
@@ -287,7 +287,7 @@ This field is not reflected in the ``io_spec.yaml`` file.
 Example bids-filter-file
 ========================
 
-In this example file, we only run XCP-D on resting-state preprocessed BOLD runs from session
+In this example file, we only run *XCP-D* on resting-state preprocessed BOLD runs from session
 "01".
 
 .. code-block:: json
@@ -300,16 +300,16 @@ In this example file, we only run XCP-D on resting-state preprocessed BOLD runs 
    }
 
 
-****************************
-Running XCP-D via containers
-****************************
+******************************
+Running *XCP-D* via containers
+******************************
 
 .. _run_docker:
 
 Docker
 ======
 
-If you are running XCP-D locally, we recommend Docker.
+If you are running *XCP-D* locally, we recommend Docker.
 See :ref:`installation_container_technologies` for installation instructions.
 
 In order to run Docker smoothly, it is best to prevent permissions issues associated with the root
@@ -339,7 +339,7 @@ Apptainer.
 See :ref:`installation_container_technologies` for installation instructions.
 
 If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run
-*xcp_d*.
+*XCP-D*.
 
 .. code-block:: bash
 
@@ -412,7 +412,7 @@ see `tedana's documentation <https://tedana.readthedocs.io/en/latest/denoising.h
 `this NeuroStars topic <https://neurostars.org/t/aggressive-vs-nonaggressive-denoising/5612>`_,
 and/or `Pruim et al. (2015) <https://doi.org/10.1016/j.neuroimage.2015.02.064>`_.
 
-So how do we implement this in XCP-D?
+So how do we implement this in *XCP-D*?
 In order to define regressors that should be treated as signal,
 and thus orthogonalize the noise regressors with respect to known signals instead of regressing
 them without modification,
@@ -528,10 +528,10 @@ Something like this should work:
          - condition2
 
 
-Command Line XCP-D with Custom Confounds
-========================================
+Command Line *XCP-D* with Custom Confounds
+==========================================
 
-Last, run XCP-D with your custom configuration file and the path to the custom derivatives dataset.
+Last, run *XCP-D* with your custom configuration file and the path to the custom derivatives dataset.
 
 .. code-block:: bash
 
@@ -548,23 +548,23 @@ Last, run XCP-D with your custom configuration file and the path to the custom d
 External Atlases
 ****************
 
-While XCP-D comes with many built-in parcellations,
+While *XCP-D* comes with many built-in parcellations,
 we understand that many users will want to use different ones.
 
 As long as the parcellation is organized in a BIDS-Atlas dataset and is in
 fsLR-32k space (for CIFTI processing) or
 MNIInfant, MNI152NLin6Asym, or MNI152NLin2009cAsym space (for NIfTI processing),
-you can use it with XCP-D.
+you can use it with *XCP-D*.
 
 .. warning::
    BIDS Extension Proposal 38 (Atlas Specification) has not been integrated in BIDS yet,
    so the organization and naming for atlas datasets may change in the future.
 
-   We have attempted to follow the proposed structure in XCP-D,
+   We have attempted to follow the proposed structure in *XCP-D*,
    but we cannot guarantee that this will not change.
 
 .. tip::
-   The main elements from the BIDS-Atlas dataset that XCP-D uses are:
+   The main elements from the BIDS-Atlas dataset that *XCP-D* uses are:
 
    1. There must be a dataset_description.json file with DatasetType set to "atlas".
    2. The atlas metadata files must have the same entities as the atlas image files,
@@ -606,8 +606,8 @@ The file structure for these two datasets might look like this:
             atlas-AAL_space-fsLR_den-32k_dseg.json
 
 You may want to only apply the Schaefer100 atlas from the ``schaefer`` dataset and the AAL atlas
-from the ``aal`` dataset, along with one of XCP-D's built-in atlases (``4S156Parcels``).
-Here's what the XCP-D call might look like:
+from the ``aal`` dataset, along with one of *XCP-D*'s built-in atlases (``4S156Parcels``).
+Here's what the *XCP-D* call might look like:
 
 .. code-block:: bash
 
@@ -619,48 +619,48 @@ Here's what the XCP-D call might look like:
       --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
       --atlases Schaefer100 AAL 4S156Parcels
 
-XCP-D will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
-``schaefer``, ``aal``, and XCP-D's built-in atlas datasets.
+*XCP-D* will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
+``schaefer``, ``aal``, and *XCP-D*'s built-in atlas datasets.
 If the atlases are found, then they will be used for parcellation.
 
 .. important::
 
    Atlas names must be unique across BIDS-Atlas datasets.
-   If two atlases have the same name, XCP-D will raise an error.
+   If two atlases have the same name, *XCP-D* will raise an error.
 
 
 *********************
 Advanced Applications
 *********************
 
-XCP-D can be used in conjunction with other tools, such as ``tedana`` and ``phys2denoise``.
+*XCP-D* can be used in conjunction with other tools, such as ``tedana`` and ``phys2denoise``.
 We have attempted to document these applications with working code in
 `PennLINC/xcp_d-examples <https://github.com/PennLINC/xcp_d-examples>`_.
 If there is an application you think would be useful to document, please open an issue in that
 repository.
 
 
-************************************
-Preprocessing Requirements for XCP-D
-************************************
+**************************************
+Preprocessing Requirements for *XCP-D*
+**************************************
 
-XCP-D is designed to ingest data from a variety of different preprocessing pipelines.
-However, each supported pipeline must be explicitly supported within XCP-D in order for the
+*XCP-D* is designed to ingest data from a variety of different preprocessing pipelines.
+However, each supported pipeline must be explicitly supported within *XCP-D* in order for the
 workflow to select the correct files.
 
-Additionally, XCP-D may require files that are only created with specific settings in the
+Additionally, *XCP-D* may require files that are only created with specific settings in the
 preprocessing pipelines.
 
 
 fMRIPrep/Nibabies
 =================
 
-In order to work on fMRIPrep or Nibabies derivatives, XCP-D needs derivatives in one of a few
+In order to work on fMRIPrep or Nibabies derivatives, *XCP-D* needs derivatives in one of a few
 template spaces,
 including "MNI152NLin6Asym", "MNI152NLin2009cAsym", "MNIInfant", and "fsLR".
 We may add support for additional templates in the future, but currently you must have at least one
 of these among your output spaces.
-XCP-D does not have any specific requirements for resolution of volumetric derivatives,
+*XCP-D* does not have any specific requirements for resolution of volumetric derivatives,
 but we do require fsLR-space CIFTIs be outputted in 91k density.
 
 
@@ -682,7 +682,7 @@ Support and communication
 All bugs, concerns and enhancement requests for this software can be submitted here:
 https://github.com/PennLINC/xcp_d/issues.
 
-If you have a question about using XCP-D, please create a new topic on
+If you have a question about using *XCP-D*, please create a new topic on
 `NeuroStars <https://neurostars.org>`_ with `the "Software Support" category and the "xcp_d" tag
 <https://neurostars.org/tags/c/software-support/234/xcp_d>`_.
-The XCP-D developers follow NeuroStars, and will be able to answer your question there.
+The *XCP-D* developers follow NeuroStars, and will be able to answer your question there.

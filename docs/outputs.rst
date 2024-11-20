@@ -74,7 +74,7 @@ the HCP thalamic atlas :footcite:p:`najdenovska2018vivo`,
 and the amygdala and hippocampus parcels from the HCP CIFTI subcortical parcellation
 :footcite:p:`glasser2013minimal`.
 The 4S atlas is used in the same manner across three PennLINC BIDS Apps:
-XCP-D, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
+*XCP-D*, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
 For more information about the 4S atlas, please see https://github.com/PennLINC/AtlasPack.
 
 .. tip::
