@@ -39,7 +39,7 @@ from xcp_d.utils.bids import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import calculate_exact_scans, flag_bad_run
-from xcp_d.utils.utils import estimate_brain_radius
+from xcp_d.utils.utils import estimate_brain_radius, is_number
 from xcp_d.workflows.anatomical.parcellation import init_parcellate_surfaces_wf
 from xcp_d.workflows.anatomical.surface import init_postprocess_surfaces_wf
 from xcp_d.workflows.anatomical.volume import init_postprocess_anat_wf
@@ -458,9 +458,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
             # Reduce exact_times to only include values greater than the post-scrubbing duration.
             exact_scans = []
-            if config.workflow.dcan_correlation_lengths:
+            if any(is_number(length) for length in config.workflow.correlation_lengths):
                 exact_scans = calculate_exact_scans(
-                    exact_times=config.workflow.dcan_correlation_lengths,
+                    exact_times=config.workflow.correlation_lengths,
                     scan_length=post_scrubbing_duration,
                     t_r=run_data['bold_metadata']['RepetitionTime'],
                     bold_file=bold_file,

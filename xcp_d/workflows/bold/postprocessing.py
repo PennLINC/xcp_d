@@ -29,7 +29,7 @@ from xcp_d.utils.boilerplate import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
-from xcp_d.utils.utils import fwhm2sigma
+from xcp_d.utils.utils import fwhm2sigma, is_number
 
 
 @fill_doc
@@ -327,7 +327,7 @@ def init_prepare_confounds_wf(
             ]),
         ])  # fmt:skip
 
-    if config.workflow.dcan_correlation_lengths:
+    if any(is_number(length) for length in config.workflow.correlation_lengths):
         random_censor = pe.Node(
             RandomCensor(exact_scans=exact_scans, random_seed=config.seeds.master),
             name='random_censor',

@@ -112,7 +112,6 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         '--upper-bpf=0.0',
         '--min-time=100',
         '--create-matrices',
-        'all',
         '80',
         '200',
         '--atlases',

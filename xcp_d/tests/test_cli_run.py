@@ -46,7 +46,7 @@ def base_opts():
         'process_surfaces': 'auto',
         'atlases': ['Glasser'],
         'min_coverage': 'auto',
-        'dcan_correlation_lengths': None,
+        'correlation_lengths': None,
         'despike': 'auto',
         'abcc_qc': 'auto',
         'linc_qc': 'auto',
@@ -280,9 +280,10 @@ def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
     assert opts.file_format == 'cifti'
     assert opts.min_coverage == 0.5
     assert opts.smoothing == 6.0
+    assert opts.correlation_lengths == ['all']
 
     # --create-matrices is not supported
-    opts.dcan_correlation_lengths = [300]
+    opts.correlation_lengths = ['300']
     with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
@@ -302,21 +303,19 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is True
     assert opts.combine_runs is True
-    assert opts.dcan_correlation_lengths == []
+    assert opts.correlation_lengths == []
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
     assert opts.file_format == 'cifti'
     assert opts.input_type == 'fmriprep'
     assert opts.linc_qc is True
     assert opts.min_coverage == 0.5
-    assert opts.output_correlations is False
     assert opts.process_surfaces is True
     assert opts.smoothing == 6.0
 
-    opts.dcan_correlation_lengths = ['300', 'all']
+    opts.correlation_lengths = ['300', 'all']
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-    assert opts.dcan_correlation_lengths == ['300']
-    assert opts.output_correlations is True
+    assert opts.correlation_lengths == ['300', 'all']
 
     # --motion-filter-type is required
     opts.motion_filter_type = None
@@ -339,21 +338,19 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
 
     assert opts.abcc_qc is True
     assert opts.combine_runs is True
-    assert opts.dcan_correlation_lengths == []
+    assert opts.correlation_lengths == []
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
     assert opts.file_format == 'cifti'
     assert opts.input_type == 'nibabies'
     assert opts.linc_qc is True
     assert opts.min_coverage == 0.5
-    assert opts.output_correlations is False
     assert opts.process_surfaces is True
     assert opts.smoothing == 6.0
 
-    opts.dcan_correlation_lengths = ['300', 'all']
+    opts.correlation_lengths = ['300', 'all']
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-    assert opts.dcan_correlation_lengths == ['300']
-    assert opts.output_correlations is True
+    assert opts.correlation_lengths == ['300', 'all']
 
     # --motion-filter-type is required
     opts.motion_filter_type = None
@@ -462,7 +459,7 @@ def test_build_parser_01(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths == ['all', 300, 480]
+    assert opts.correlation_lengths == ['all', '300.0', '480.0']
 
 
 def test_build_parser_02(tmp_path_factory):
@@ -499,7 +496,7 @@ def test_build_parser_02(tmp_path_factory):
     opts = parser_obj.parse_args(args=test_args, namespace=None)
     assert opts.fmri_dir == data_path
     assert opts.output_dir == out_path
-    assert opts.dcan_correlation_lengths == ['all', 300, 480]
+    assert opts.correlation_lengths == ['all', '300.0', '480.0']
 
 
 @pytest.mark.parametrize(

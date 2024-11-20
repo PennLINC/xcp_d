@@ -362,52 +362,53 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (make_timeseries_dict, ds_timeseries, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
 
-        correlate_timeseries = pe.MapNode(
-            TSVConnect(),
-            run_without_submitting=True,
-            mem_gb=1,
-            name='correlate_timeseries',
-            iterfield=['timeseries'],
-        )
-        workflow.connect([
-            (concatenate_inputs, correlate_timeseries, [
-                ('timeseries', 'timeseries'),
-                ('temporal_mask', 'temporal_mask'),
-            ]),
-        ])  # fmt:skip
+        if 'all' in config.workflow.correlation_lengths:
+            correlate_timeseries = pe.MapNode(
+                TSVConnect(),
+                run_without_submitting=True,
+                mem_gb=1,
+                name='correlate_timeseries',
+                iterfield=['timeseries'],
+            )
+            workflow.connect([
+                (concatenate_inputs, correlate_timeseries, [
+                    ('timeseries', 'timeseries'),
+                    ('temporal_mask', 'temporal_mask'),
+                ]),
+            ])  # fmt:skip
 
-        make_correlations_dict = pe.MapNode(
-            BIDSURI(
-                numinputs=1,
-                dataset_links=config.execution.dataset_links,
-                out_dir=str(output_dir),
-            ),
-            run_without_submitting=True,
-            mem_gb=1,
-            name='make_correlations_dict',
-            iterfield=['in1'],
-        )
-        workflow.connect([(ds_timeseries, make_correlations_dict, [('out_file', 'in1')])])
+            make_correlations_dict = pe.MapNode(
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
+                ),
+                run_without_submitting=True,
+                mem_gb=1,
+                name='make_correlations_dict',
+                iterfield=['in1'],
+            )
+            workflow.connect([(ds_timeseries, make_correlations_dict, [('out_file', 'in1')])])
 
-        ds_correlations = pe.MapNode(
-            DerivativesDataSink(
-                dismiss_entities=['desc'],
-                statistic='pearsoncorrelation',
-                suffix='relmat',
-                extension='.tsv',
-            ),
-            name='ds_correlations',
-            run_without_submitting=True,
-            mem_gb=1,
-            iterfield=['segmentation', 'in_file', 'meta_dict'],
-        )
-        ds_correlations.inputs.segmentation = atlases
+            ds_correlations = pe.MapNode(
+                DerivativesDataSink(
+                    dismiss_entities=['desc'],
+                    statistic='pearsoncorrelation',
+                    suffix='relmat',
+                    extension='.tsv',
+                ),
+                name='ds_correlations',
+                run_without_submitting=True,
+                mem_gb=1,
+                iterfield=['segmentation', 'in_file', 'meta_dict'],
+            )
+            ds_correlations.inputs.segmentation = atlases
 
-        workflow.connect([
-            (clean_name_source, ds_correlations, [('name_source', 'source_file')]),
-            (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
-            (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
-        ])  # fmt:skip
+            workflow.connect([
+                (clean_name_source, ds_correlations, [('name_source', 'source_file')]),
+                (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
+                (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
+            ])  # fmt:skip
 
         if file_format == 'cifti':
             cifti_ts_src = pe.MapNode(
