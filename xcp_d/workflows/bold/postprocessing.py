@@ -269,11 +269,10 @@ def init_prepare_confounds_wf(
             (inputnode, remove_dummy_scans, [
                 ('preprocessed_bold', 'bold_file'),
                 ('dummy_scans', 'dummy_scans'),
-            ]),
-            (process_motion, remove_dummy_scans, [
+                # *not* the filtered motion file, which has dummy volume columns removed
                 ('motion_file', 'motion_file'),
-                ('temporal_mask', 'temporal_mask'),
             ]),
+            (process_motion, remove_dummy_scans, [('temporal_mask', 'temporal_mask')]),
             (remove_dummy_scans, dummy_scan_buffer, [
                 ('bold_file_dropped_TR', 'preprocessed_bold'),
                 ('confounds_tsv_dropped_TR', 'confounds_tsv'),
