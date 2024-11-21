@@ -83,5 +83,5 @@ keywords:
   - BIDS-App
   - Neuroimaging
 license: BSD-3-Clause
-version: 0.10.0
-date-released: '2024-11-17'
+version: 0.10.1
+date-released: '2024-11-21'
