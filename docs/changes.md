@@ -1,5 +1,22 @@
 # What's New
 
+## 0.10.1
+
+A patch release fixing bugs stemming from 0.10.0.
+
+### 🐛 Bug Fixes
+
+* Write out correlations when `--create-matrices` doesn't include "all" by @tsalo in https://github.com/PennLINC/xcp_d/pull/1326
+* Use confounds file with non-steady-state columns to identify dummy volumes by @tsalo in https://github.com/PennLINC/xcp_d/pull/1330
+
+### Other Changes
+
+* Document the nichart mode by @tsalo in https://github.com/PennLINC/xcp_d/pull/1325
+* Update indexed-gzip requirement from ~=1.8.7 to ~=1.9.1 by @dependabot in https://github.com/PennLINC/xcp_d/pull/1327
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.0...0.10.1
+
+
 ## 0.10.0
 
 This backwards-incompatible release brings XCP-D further in line with the fMRIPost workflows in the NiPreps ecosystem.
