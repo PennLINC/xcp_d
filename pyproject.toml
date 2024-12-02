@@ -27,7 +27,7 @@ dependencies = [
     "matplotlib ~= 3.9.0",
     "networkx <= 3.4.2",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
-    "nilearn == 0.10.4",  # 0.10.2 raises error with compcor from fMRIPrep 23
+    "nilearn == 0.11.0",  # 0.10.2 raises error with compcor from fMRIPrep 23
     "nipype ~= 1.9.1",
     "nireports ~= 24.0.2",
     "niworkflows == 1.11.0",
