@@ -24,7 +24,7 @@ dependencies = [
     "indexed_gzip ~= 1.9.1",  # for loading imgs in nibabel
     "jinja2 ~= 3.1.2",  # for executive summary
     "joblib <= 1.4.2",
-    "matplotlib ~= 3.9.0",
+    "matplotlib ~= 3.10.0",
     "networkx <= 3.4.2",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
     "nilearn == 0.11.0",  # 0.10.2 raises error with compcor from fMRIPrep 23
