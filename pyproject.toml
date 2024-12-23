@@ -29,7 +29,7 @@ dependencies = [
     "nibabel >= 3.2.1",
     "nilearn == 0.11.0",  # 0.10.2 raises error with compcor from fMRIPrep 23
     "nipype ~= 1.9.1",
-    "nireports ~= 24.0.2",
+    "nireports ~= 24.1.0",
     "niworkflows == 1.12.0",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
