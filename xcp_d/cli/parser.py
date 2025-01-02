@@ -90,6 +90,7 @@ def _build_parser():
         dest='participant_label',
         action='store',
         nargs='+',
+        type=lambda label: label.removeprefix('sub-'),
         help=(
             'A space-delimited list of participant identifiers, or a single identifier. '
             "The 'sub-' prefix can be removed."
