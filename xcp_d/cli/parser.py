@@ -738,8 +738,9 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         help="""\
 If used, a workflow will be run to warp native-space (``fsnative``) reconstructed cortical
 surfaces (``surf.gii`` files) produced by Freesurfer into standard (``fsLR``) space.
+Additionally, the fsLR-space surfaces will be warped such that they can be overlaid on the
+MNI152NLin6Asym template.
 These surface files are primarily used for visual quality assessment.
-By default, this workflow is disabled.
 
 **IMPORTANT**: This parameter can only be run if the --file-format flag is set to cifti.
 """,
