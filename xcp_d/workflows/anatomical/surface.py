@@ -52,6 +52,8 @@ def init_postprocess_surfaces_wf(
     they will be copied to the output directory.
     These fsLR-space mesh files retain the subject's morphology,
     and are thus useful for visualizing fsLR-space statistical derivatives on the subject's brain.
+    The workflow will also rigidly align the meshes to the MNI152NLin6Asym template,
+    so that they can be overlaid on top of the template for visualization.
 
     As long as process-surfaces is enabled and mesh files (in either space) are available,
     HCP-style midthickness, inflated, and very-inflated surfaces will be generated from them.
@@ -297,6 +299,9 @@ def init_warp_surfaces_to_template_wf(
     name='warp_surfaces_to_template_wf',
 ):
     """Transform surfaces from native to standard fsLR-32k space.
+
+    The workflow will also rigidly align the meshes to the MNI152NLin6Asym template,
+    so that they can be overlaid on top of the template for visualization.
 
     Workflow Graph
         .. workflow::
@@ -926,7 +931,7 @@ def init_warp_one_hemisphere_wf(
     6. Apply the anatomical-to-template warpfield to the 32k surfaces.
        This and the previous step make it so you can overlay the pial and white matter surfaces
        on the associated volumetric template (e.g., for XCP-D's brainsprite).
-        - This important thing is that the volumetric template must match the template space
+        - The important thing is that the volumetric template must match the template space
           used here.
     """
     workflow = Workflow(name=name)
@@ -988,7 +993,8 @@ def init_warp_one_hemisphere_wf(
     ])  # fmt:skip
 
     # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
-    # NOTE: What does this step do? Aren't the data in fsLR/dhcpAsym-32k from resample_to_fsLR32k?
+    # I think this makes it so you can overlay the pial and white matter surfaces on the
+    # associated volumetric template (e.g., for XCP-D's brainsprite).
     apply_affine_to_fsLR32k = pe.MapNode(
         ApplyAffine(num_threads=omp_nthreads),
         name='apply_affine_to_fsLR32k',
@@ -1002,7 +1008,8 @@ def init_warp_one_hemisphere_wf(
     ])  # fmt:skip
 
     # Apply FNIRT-format (forward) anatomical-to-template warpfield
-    # NOTE: What does this step do?
+    # I think this makes it so you can overlay the pial and white matter surfaces on the
+    # associated volumetric template (e.g., for XCP-D's brainsprite).
     apply_warpfield_to_fsLR32k = pe.MapNode(
         ApplyWarpfield(num_threads=omp_nthreads),
         name='apply_warpfield_to_fsLR32k',
