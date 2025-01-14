@@ -328,7 +328,7 @@ class ExecutiveSummary:
                     'LaTeX',
                     f"""<pre>{text}</pre>
 <h3>Bibliography</h3>
-<pre>{load_data("boilerplate.bib").read_text()}</pre>
+<pre>{load_data('boilerplate.bib').read_text()}</pre>
 """,
                 )
             )

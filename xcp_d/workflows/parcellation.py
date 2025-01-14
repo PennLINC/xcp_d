@@ -382,7 +382,7 @@ def init_parcellate_cifti_wf(
         CiftiParcellateWorkbench(
             direction='COLUMN',
             only_numeric=True,
-            out_file=f"parcellated_data.{'ptseries' if compute_mask else 'pscalar'}.nii",
+            out_file=f'parcellated_data.{"ptseries" if compute_mask else "pscalar"}.nii',
             num_threads=config.nipype.omp_nthreads,
         ),
         name='parcellate_data',

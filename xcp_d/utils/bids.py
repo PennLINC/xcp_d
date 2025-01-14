@@ -64,12 +64,10 @@ class BIDSError(ValueError):
     def __init__(self, message, bids_root):
         indent = 10
         header = (
-            f'{"".join(["-"] * indent)} BIDS root folder: "{bids_root}" '
-            f'{"".join(["-"] * indent)}'
+            f'{"".join(["-"] * indent)} BIDS root folder: "{bids_root}" {"".join(["-"] * indent)}'
         )
         self.msg = (
-            f"\n{header}\n{''.join([' '] * (indent + 1))}{message}\n"
-            f"{''.join(['-'] * len(header))}"
+            f'\n{header}\n{"".join([" "] * (indent + 1))}{message}\n{"".join(["-"] * len(header))}'
         )
         super().__init__(self.msg)
         self.bids_root = bids_root
@@ -132,13 +130,13 @@ def collect_participants(layout, participant_label=None, strict=False):
     found_label = sorted(set(participant_label) & all_participants)
     if not found_label:
         raise BIDSError(
-            f"Could not find participants [{', '.join(participant_label)}]",
+            f'Could not find participants [{", ".join(participant_label)}]',
             layout,
         )
 
     if notfound_label := sorted(set(participant_label) - all_participants):
         exc = BIDSError(
-            f"Some participants were not found: {', '.join(notfound_label)}",
+            f'Some participants were not found: {", ".join(notfound_label)}',
             layout,
         )
         if strict:
@@ -210,9 +208,9 @@ def collect_data(
             [f.path for f in layout.get(extension=['.nii.gz', '.dtseries.nii'])]
         )
         raise FileNotFoundError(
-            f"No BOLD data found in allowed spaces ({', '.join(allowed_spaces)}).\n\n"
-            f"Query: {queries['bold']}\n\n"
-            f"Found files:\n\n{filenames}"
+            f'No BOLD data found in allowed spaces ({", ".join(allowed_spaces)}).\n\n'
+            f'Query: {queries["bold"]}\n\n'
+            f'Found files:\n\n{filenames}'
         )
 
     if file_format == 'cifti':
@@ -521,9 +519,7 @@ def collect_morphometry_data(layout, participant_label, bids_filters):
         elif len(files) > 1:
             surface_str = '\n\t'.join(files)
             raise ValueError(
-                f'More than one {name} found.\n'
-                f'Surfaces found:\n\t{surface_str}\n'
-                f'Query: {query}'
+                f'More than one {name} found.\nSurfaces found:\n\t{surface_str}\nQuery: {query}'
             )
         else:
             morphometry_files[name] = None
@@ -726,8 +722,8 @@ def collect_confounds(
     for confound_name, confound_def in confound_spec['confounds'].items():
         if confound_def['dataset'] not in layout_dict.keys():
             raise ValueError(
-                f"Missing dataset required by confound spec: *{confound_def['dataset']}*. "
-                "Did you provide it with the `--datasets` flag?"
+                f'Missing dataset required by confound spec: *{confound_def["dataset"]}*. '
+                'Did you provide it with the `--datasets` flag?'
             )
 
         layout = layout_dict[confound_def['dataset']]

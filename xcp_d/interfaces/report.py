@@ -150,12 +150,12 @@ class FunctionalSummary(SummaryInterface):
         mean_relative_rms = str(round(qcfile['mean_relative_rms'][0], 4))
         max_relative_rms = str(round(qcfile['max_relative_rms'][0], 4))
         dvars = (
-            f"{round(qcfile['mean_dvars_initial'][0], 4)}, "
-            f"{round(qcfile['mean_dvars_final'][0], 4)}"
+            f'{round(qcfile["mean_dvars_initial"][0], 4)}, '
+            f'{round(qcfile["mean_dvars_final"][0], 4)}'
         )
         fd_dvars_correlation = (
-            f"{round(qcfile['fd_dvars_correlation_initial'][0], 4)}, "
-            f"{round(qcfile['fd_dvars_correlation_final'][0], 4)}"
+            f'{round(qcfile["fd_dvars_correlation_initial"][0], 4)}, '
+            f'{round(qcfile["fd_dvars_correlation_final"][0], 4)}'
         )
         num_vols_censored = str(round(qcfile['num_censored_volumes'][0], 4))
 

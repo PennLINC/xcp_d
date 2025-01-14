@@ -1444,8 +1444,7 @@ class _CiftiSmoothInputSpec(_WBCommandInputSpec):
         exists=True,
         position=6,
         argstr='-left-corrected-areas %s',
-        desc='vertex areas (as a metric) to use instead of computing them from '
-        'the left surface.',
+        desc='vertex areas (as a metric) to use instead of computing them from the left surface.',
     )
     right_surf = File(
         exists=True,
@@ -1458,8 +1457,7 @@ class _CiftiSmoothInputSpec(_WBCommandInputSpec):
         exists=True,
         position=8,
         argstr='-right-corrected-areas %s',
-        desc='vertex areas (as a metric) to use instead of computing them from '
-        'the right surface',
+        desc='vertex areas (as a metric) to use instead of computing them from the right surface',
     )
     cerebellum_surf = File(
         exists=True,

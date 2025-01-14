@@ -252,8 +252,7 @@ def calculate_exact_scans(exact_times, scan_length, t_r, bold_file):
 
     if non_float_times:
         LOGGER.warning(
-            f'Non-float values {non_float_times} in {os.path.basename(bold_file)} '
-            'will be ignored.'
+            f'Non-float values {non_float_times} in {os.path.basename(bold_file)} will be ignored.'
         )
 
     exact_scans = [int(t // t_r) for t in retained_exact_times]
