@@ -119,11 +119,11 @@ def _build_parser():
         default=None,
         metavar='FILE',
         help=(
-            "A JSON file describing custom BIDS input filters using PyBIDS. "
-            "For further details, please check out "
-            "https://xcp-d.readthedocs.io/en/"
-            f"{currentv.base_version if is_release else 'latest'}/usage.html#"
-            "filtering-inputs-with-bids-filter-files"
+            'A JSON file describing custom BIDS input filters using PyBIDS. '
+            'For further details, please check out '
+            'https://xcp-d.readthedocs.io/en/'
+            f'{currentv.base_version if is_release else "latest"}/usage.html#'
+            'filtering-inputs-with-bids-filter-files'
         ),
     )
     g_bids.add_argument(
@@ -868,7 +868,7 @@ def parse_args(args=None, namespace=None):
 
     # Ensure input and output folders are not the same
     if output_dir == fmri_dir:
-        rec_path = fmri_dir / 'derivatives' / f"xcp_d-{version.split('+')[0]}"
+        rec_path = fmri_dir / 'derivatives' / f'xcp_d-{version.split("+")[0]}'
         parser.error(
             'The selected output folder is the same as the input BIDS folder. '
             f'Please modify the output path (suggestion: {rec_path}).'
@@ -897,8 +897,8 @@ def parse_args(args=None, namespace=None):
     missing_subjects = participant_label - set(all_subjects)
     if missing_subjects:
         parser.error(
-            "One or more participant labels were not found in the BIDS directory: "
-            f"{', '.join(missing_subjects)}."
+            'One or more participant labels were not found in the BIDS directory: '
+            f'{", ".join(missing_subjects)}.'
         )
 
     config.execution.participant_label = sorted(participant_label)
@@ -1105,8 +1105,7 @@ def _validate_parameters(opts, build_log, parser):
         and (opts.high_pass > 0 and opts.low_pass > 0)
     ):
         parser.error(
-            f"'--lower-bpf' ({opts.high_pass}) must be lower than "
-            f"'--upper-bpf' ({opts.low_pass})."
+            f"'--lower-bpf' ({opts.high_pass}) must be lower than '--upper-bpf' ({opts.low_pass})."
         )
     elif not opts.bandpass_filter:
         build_log.warning('Bandpass filtering is disabled. ALFF outputs will not be generated.')

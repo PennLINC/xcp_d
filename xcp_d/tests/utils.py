@@ -77,7 +77,7 @@ def download_test_data(dset, data_dir=None):
         return
 
     if dset not in URLS:
-        raise ValueError(f"dset ({dset}) must be one of: {', '.join(URLS.keys())}")
+        raise ValueError(f'dset ({dset}) must be one of: {", ".join(URLS.keys())}')
 
     if not data_dir:
         data_dir = os.path.join(os.path.dirname(get_test_data_path()), 'test_data')
@@ -238,7 +238,7 @@ def run_command(command, env=None):
 
     if process.returncode != 0:
         raise RuntimeError(
-            f'Non zero return code: {process.returncode}\n' f'{command}\n\n{process.stdout.read()}'
+            f'Non zero return code: {process.returncode}\n{command}\n\n{process.stdout.read()}'
         )
 
 

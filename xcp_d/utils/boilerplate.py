@@ -104,12 +104,12 @@ def describe_censoring(*, motion_filter_type, head_radius, fd_thresh, exact_scan
     desc = ''
     if fd_thresh > 0:
         desc += (
-            "Framewise displacement was calculated from the "
-            f"{'filtered ' if motion_filter_type else ''}motion parameters using the formula from "
-            f"@power_fd_dvars, with a head radius of {head_radius} mm. "
-            f"Volumes with {'filtered ' if motion_filter_type else ''}framewise displacement "
-            f"greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of "
-            "later censoring [@power_fd_dvars]."
+            'Framewise displacement was calculated from the '
+            f'{"filtered " if motion_filter_type else ""}motion parameters using the formula from '
+            f'@power_fd_dvars, with a head radius of {head_radius} mm. '
+            f'Volumes with {"filtered " if motion_filter_type else ""}framewise displacement '
+            f'greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of '
+            'later censoring [@power_fd_dvars].'
         )
 
     if exact_scans and (fd_thresh > 0):

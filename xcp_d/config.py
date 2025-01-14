@@ -201,7 +201,7 @@ try:
             if _proc_oc_kbytes.exists():
                 _oc_limit = _proc_oc_kbytes.read_text().strip()
             if _oc_limit in ('0', 'n/a') and Path('/proc/sys/vm/overcommit_ratio').exists():
-                _oc_limit = f"{Path('/proc/sys/vm/overcommit_ratio').read_text().strip()}%"
+                _oc_limit = f'{Path("/proc/sys/vm/overcommit_ratio").read_text().strip()}%'
 except Exception:  # noqa: S110, BLE001
     pass
 
@@ -416,7 +416,7 @@ class execution(_Config):
     """Folder where derivatives will be stored."""
     atlases = []
     """Selection of atlases to apply to the data."""
-    run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
+    run_uuid = f'{strftime("%Y%m%d-%H%M%S")}_{uuid4()}'
     """Unique identifier of this particular run."""
     participant_label = None
     """List of participant identifiers that are to be preprocessed."""

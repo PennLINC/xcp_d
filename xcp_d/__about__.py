@@ -10,8 +10,7 @@ except ImportError:
 __packagename__ = 'xcp_d'
 __copyright__ = 'Copyright 2020, PennLINC and DCAN labs'
 __credits__ = (
-    'Contributors: please check the ``.zenodo.json`` file at the top-level folder'
-    'of the repository'
+    'Contributors: please check the ``.zenodo.json`` file at the top-level folderof the repository'
 )
 __url__ = 'https://github.com/PennLINC/xcp_d'
 

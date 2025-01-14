@@ -575,7 +575,7 @@ def list_to_str(lst):
     elif len(lst_str) == 2:
         return ' and '.join(lst_str)
     else:
-        return f"{', '.join(lst_str[:-1])}, and {lst_str[-1]}"
+        return f'{", ".join(lst_str[:-1])}, and {lst_str[-1]}'
 
 
 def _transpose_lol(lol):

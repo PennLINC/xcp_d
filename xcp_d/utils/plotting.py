@@ -866,9 +866,9 @@ def plot_carpet(
     img = nb.load(func)
 
     if isinstance(img, nb.Cifti2Image):  # CIFTI
-        assert (
-            img.nifti_header.get_intent()[0] == 'ConnDenseSeries'
-        ), f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}'
+        assert img.nifti_header.get_intent()[0] == 'ConnDenseSeries', (
+            f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}'
+        )
 
         # Get required information
         data = img.get_fdata().T
@@ -917,9 +917,9 @@ def plot_carpet(
         order = seg_data.argsort(kind='stable')
         # Get color maps
         cmap = ListedColormap([plt.get_cmap('Paired').colors[i] for i in (1, 0, 7, 3)])
-        assert len(cmap.colors) == len(
-            struct_map
-        ), 'Mismatch between expected # of structures and colors'
+        assert len(cmap.colors) == len(struct_map), (
+            'Mismatch between expected # of structures and colors'
+        )
     else:
         # Order following segmentation labels
         order = np.argsort(seg_data)[::-1]
