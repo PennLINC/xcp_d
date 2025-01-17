@@ -1,5 +1,22 @@
 # What's New
 
+## 0.10.2
+
+A patch release.
+
+### 🐛 Bug Fixes
+
+* Downgrade connectome workbench version by @tsalo in https://github.com/PennLINC/xcp_d/pull/1358
+* Allow `sub-` prefix in participant labels by @tsalo in https://github.com/PennLINC/xcp_d/pull/1347
+
+### Other Changes
+
+* Clarify that warped surfaces can be overlaid on the MNI152NLin6Asym template by @tsalo in https://github.com/PennLINC/xcp_d/pull/1349
+* Run ruff by @tsalo in https://github.com/PennLINC/xcp_d/pull/1357
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.1...0.10.2
+
+
 ## 0.10.1
 
 A patch release fixing bugs stemming from 0.10.0.
