@@ -32,6 +32,13 @@ def _get_parser():
         required=False,
         default=None,
     )
+    parser.add_argument(
+        '--check_path',
+        action='store_true',
+        help='Check if the path is correct.',
+        required=False,
+        default=False,
+    )
     return parser
 
 
