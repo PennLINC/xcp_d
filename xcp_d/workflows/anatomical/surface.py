@@ -665,7 +665,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     # Use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms.
     disassemble_h5 = pe.Node(
         CompositeTransformUtil(
-            inverse=False,
             process='disassemble',
             output_prefix='T1w_to_MNI152NLin6Asym',
         ),
@@ -680,7 +679,6 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     disassemble_h5_inv = pe.Node(
         CompositeTransformUtil(
             process='disassemble',
-            inverse=True,
             output_prefix='MNI152NLin6Asym_to_T1w',
         ),
         name='disassemble_h5_inv',
@@ -689,27 +687,30 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     workflow.connect([(inputnode, disassemble_h5_inv, [('template_to_anat_xfm', 'in_file')])])
 
     # Convert anat-to-template affine from ITK binary to txt
-    convert_ants_xfm = pe.Node(
+    convert_ants_xfm = pe.MapNode(
         ConvertTransformFile(dimension=3),
         name='convert_ants_xfm',
+        iterfield=['in_transform'],
     )
-    workflow.connect([(disassemble_h5, convert_ants_xfm, [('affine_transform', 'in_transform')])])
+    workflow.connect([(disassemble_h5, convert_ants_xfm, [('affine_transforms', 'in_transform')])])
 
     # Change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
     # since wb_command doesn't recognize "AffineTransform"
     # (AffineTransform is a subclass of MatrixOffsetTransformBase which prob makes this okay to do)
-    change_xfm_type = pe.Node(
+    change_xfm_type = pe.MapNode(
         ChangeXfmType(num_threads=config.nipype.omp_nthreads),
         name='change_xfm_type',
         n_procs=config.nipype.omp_nthreads,
+        iterfield=['in_transform'],
     )
     workflow.connect([(convert_ants_xfm, change_xfm_type, [('out_transform', 'in_transform')])])
 
     # Convert affine xfm to "world" so it works with -surface-apply-affine
-    convert_xfm2world = pe.Node(
+    convert_xfm2world = pe.MapNode(
         ConvertAffine(fromwhat='itk', towhat='world', num_threads=config.nipype.omp_nthreads),
         name='convert_xfm2world',
         n_procs=config.nipype.omp_nthreads,
+        iterfield=['in_file'],
     )
     workflow.connect([(change_xfm_type, convert_xfm2world, [('out_transform', 'in_file')])])
 
@@ -733,8 +734,8 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (disassemble_h5, get_xyz_components, [('displacement_field', 'in_file')]),
-        (disassemble_h5_inv, get_inv_xyz_components, [('displacement_field', 'in_file')]),
+        (disassemble_h5, get_xyz_components, [('displacement_fields', 'in_file')]),
+        (disassemble_h5_inv, get_inv_xyz_components, [('displacement_fields', 'in_file')]),
     ])  # fmt:skip
 
     # Select x-component after separating warpfield above

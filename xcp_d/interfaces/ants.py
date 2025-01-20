@@ -97,8 +97,8 @@ class _CompositeTransformUtilInputSpec(ANTSCommandInputSpec):
 class _CompositeTransformUtilOutputSpec(TraitedSpec):
     """Output specification for CompositeTransformUtil."""
 
-    affine_transform = File(desc='Affine transform component')
-    displacement_field = File(desc='Displacement field component')
+    affine_transforms = traits.List(File(exists=True), desc='Affine transform component')
+    displacement_fields = traits.List(File(exists=True), desc='Displacement field component')
     out_file = File(desc='Compound transformation file')
 
 
@@ -149,27 +149,36 @@ class CompositeTransformUtil(ANTSCommand):
         return super()._format_arg(name, spec, value)
 
     def _list_outputs(self):
+        from glob import glob
+
         outputs = self.output_spec().get()
-        if self.inputs.inverse:
-            if self.inputs.process == 'disassemble':
-                outputs['affine_transform'] = os.path.abspath(
-                    f'{self.inputs.output_prefix}_01_AffineTransform.mat'
+        if self.inputs.process == 'disassemble':
+            affines = sorted(glob(f'{self.inputs.output_prefix}_*_AffineTransform.mat'))
+            warps = sorted(
+                glob(f'{self.inputs.output_prefix}_*_DisplacementFieldTransform.nii.gz')
+            )
+            if len(affines) == 0:
+                raise FileNotFoundError(
+                    'No affine transforms found with pattern '
+                    f'{self.inputs.output_prefix}_*_AffineTransform.mat'
                 )
-                outputs['displacement_field'] = os.path.abspath(
-                    f'{self.inputs.output_prefix}_00_DisplacementFieldTransform.nii.gz'
+
+            if len(warps) == 0:
+                raise FileNotFoundError(
+                    'No displacement fields found with pattern '
+                    f'{self.inputs.output_prefix}_*_DisplacementFieldTransform.nii.gz'
                 )
-            elif self.inputs.process == 'assemble':
-                outputs['out_file'] = os.path.abspath(self.inputs.out_file)
-        else:
-            if self.inputs.process == 'disassemble':
-                outputs['affine_transform'] = os.path.abspath(
-                    f'{self.inputs.output_prefix}_00_AffineTransform.mat'
+
+            if len(affines) != len(warps):
+                raise ValueError(
+                    f'Different number of affine transforms ({len(affines)}) '
+                    f'and displacement fields ({len(warps)}) found.'
                 )
-                outputs['displacement_field'] = os.path.abspath(
-                    f'{self.inputs.output_prefix}_01_DisplacementFieldTransform.nii.gz'
-                )
-            elif self.inputs.process == 'assemble':
-                outputs['out_file'] = os.path.abspath(self.inputs.out_file)
+
+            outputs['affine_transforms'] = affines
+            outputs['displacement_fields'] = warps
+        elif self.inputs.process == 'assemble':
+            outputs['out_file'] = os.path.abspath(self.inputs.out_file)
 
         return outputs
 
