@@ -1045,12 +1045,12 @@ def init_warp_one_hemisphere_wf(
         iterfield=['in_file'],
     )
     workflow.connect([
-        (resample_to_fsLR32k, apply_transforms_wf_node, [('out_file', 'in_file')]),
         (inputnode, apply_transforms_wf_node, [
             ('world_xfms', 'world_xfms'),
             ('merged_warpfields', 'merged_warpfields'),
             ('merged_inv_warpfields', 'merged_inv_warpfields'),
         ]),
+        (resample_to_fsLR32k, apply_transforms_wf_node, [('out_file', 'in_file')]),
         (apply_transforms_wf_node, outputnode, [('out_file', 'warped_hemi_files')]),
     ])  # fmt:skip
 
