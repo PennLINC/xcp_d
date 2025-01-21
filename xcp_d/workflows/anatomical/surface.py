@@ -1185,6 +1185,8 @@ class ApplyTransformsWorkflow(SimpleInterface):
         workflow.base_dir = runtime.cwd
         results = workflow.run()
         workflow_nodes = {node.fullname: node for node in results.nodes}
-        self._results['out_file'] = workflow_nodes['xfm_wf.outputnode'].get_output('out_file')
+        self._results['out_file'] = workflow_nodes[
+            f'xfm_wf.apply_warpfield_to_template_step{i_transform}'
+        ].get_output('out_file')
 
         return runtime
