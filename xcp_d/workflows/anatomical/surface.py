@@ -8,16 +8,13 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.ants import CompositeTransformUtil, ConvertTransformFile
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import CollectRegistrationFiles, DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
 from xcp_d.interfaces.workbench import (  # MB,TM
-    ApplyAffine,
     ApplyWarpfield,
-    ChangeXfmType,
     CiftiSurfaceResample,
-    ConvertAffine,
     SurfaceAverage,
     SurfaceGenerateInflated,
     SurfaceSphereProjectUnproject,
@@ -423,9 +420,8 @@ def init_warp_surfaces_to_template_wf(
                 (f'{hemi_label}_subject_sphere', 'inputnode.subject_sphere'),
             ]),
             (update_xfm_wf, apply_transforms_wf, [
-                ('outputnode.merged_warpfield', 'inputnode.merged_warpfield'),
-                ('outputnode.merged_inv_warpfield', 'inputnode.merged_inv_warpfield'),
-                ('outputnode.world_xfm', 'inputnode.world_xfm'),
+                ('outputnode.forward_displacement', 'inputnode.forward_displacement'),
+                ('outputnode.reverse_displacement', 'inputnode.reverse_displacement'),
             ]),
             (collect_surfaces, apply_transforms_wf, [('out', 'inputnode.hemi_files')]),
         ])  # fmt:skip
@@ -639,15 +635,10 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
 
     Outputs
     -------
-    world_xfm
-        The affine portion of the volumetric anatomical-to-template transform,
-        in NIfTI (world) format.
-    merged_warpfield
-        The warpfield portion of the volumetric anatomical-to-template transform,
-        in FSL (FNIRT) format.
-    merged_inv_warpfield
-        The warpfield portion of the volumetric template-to-anatomical transform,
-        in FSL (FNIRT) format.
+    forward_displacement
+        The volumetric anatomical-to-template transform as a displacement field.
+    reverse_displacement
+        The volumetric template-to-anatomical transform as a displacement field.
     """
     workflow = Workflow(name=name)
 
@@ -657,84 +648,51 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['world_xfm', 'merged_warpfield', 'merged_inv_warpfield']),
+        niu.IdentityInterface(fields=['forward_displacement', 'reverse_displacement']),
         name='outputnode',
     )
 
-    # Now we can start the actual workflow.
-    # Use ANTs CompositeTransformUtil to separate the .h5 into affine and warpfield xfms.
-    disassemble_h5 = pe.Node(
-        CompositeTransformUtil(
-            inverse=False,
-            process='disassemble',
-            output_prefix='T1w_to_MNI152NLin6Asym',
-        ),
-        name='disassemble_h5',
+    # Convert the transform into a displacement field.
+    make_fwd_displacement = pe.Node(
+        ApplyTransforms(),
+        name='make_fwd_displacement',
         mem_gb=mem_gb,
     )
-    workflow.connect([(inputnode, disassemble_h5, [('anat_to_template_xfm', 'in_file')])])
+    workflow.connect([
+        (inputnode, make_fwd_displacement, [('anat_to_template_xfm', 'transforms')]),
+    ])  # fmt:skip
 
-    # Nipype's CompositeTransformUtil assumes a certain file naming and
-    # concatenation order of xfms which does not work for the inverse .h5,
-    # so we use our modified class with an additional inverse flag.
-    disassemble_h5_inv = pe.Node(
-        CompositeTransformUtil(
-            process='disassemble',
-            inverse=True,
-            output_prefix='MNI152NLin6Asym_to_T1w',
-        ),
-        name='disassemble_h5_inv',
+    make_rvs_displacement = pe.Node(
+        ApplyTransforms(),
+        name='make_rvs_displacement',
         mem_gb=mem_gb,
     )
-    workflow.connect([(inputnode, disassemble_h5_inv, [('template_to_anat_xfm', 'in_file')])])
-
-    # Convert anat-to-template affine from ITK binary to txt
-    convert_ants_xfm = pe.Node(
-        ConvertTransformFile(dimension=3),
-        name='convert_ants_xfm',
-    )
-    workflow.connect([(disassemble_h5, convert_ants_xfm, [('affine_transform', 'in_transform')])])
-
-    # Change xfm type from "AffineTransform" to "MatrixOffsetTransformBase"
-    # since wb_command doesn't recognize "AffineTransform"
-    # (AffineTransform is a subclass of MatrixOffsetTransformBase which prob makes this okay to do)
-    change_xfm_type = pe.Node(
-        ChangeXfmType(num_threads=config.nipype.omp_nthreads),
-        name='change_xfm_type',
-        n_procs=config.nipype.omp_nthreads,
-    )
-    workflow.connect([(convert_ants_xfm, change_xfm_type, [('out_transform', 'in_transform')])])
-
-    # Convert affine xfm to "world" so it works with -surface-apply-affine
-    convert_xfm2world = pe.Node(
-        ConvertAffine(fromwhat='itk', towhat='world', num_threads=config.nipype.omp_nthreads),
-        name='convert_xfm2world',
-        n_procs=config.nipype.omp_nthreads,
-    )
-    workflow.connect([(change_xfm_type, convert_xfm2world, [('out_transform', 'in_file')])])
+    workflow.connect([
+        (inputnode, make_rvs_displacement, [('template_to_anat_xfm', 'transforms')]),
+    ])  # fmt:skip
 
     # Use C3d to separate the combined warpfield xfm into x, y, and z components
-    get_xyz_components = pe.Node(
+    get_fwd_xyz_components = pe.Node(
         C3d(
             is_4d=True,
             multicomp_split=True,
             out_files=['e1.nii.gz', 'e2.nii.gz', 'e3.nii.gz'],
         ),
-        name='get_xyz_components',
+        name='get_fwd_xyz_components',
         mem_gb=mem_gb,
     )
-    get_inv_xyz_components = pe.Node(
+    get_rvs_xyz_components = pe.Node(
         C3d(
             is_4d=True,
             multicomp_split=True,
             out_files=['e1inv.nii.gz', 'e2inv.nii.gz', 'e3inv.nii.gz'],
         ),
-        name='get_inv_xyz_components',
+        name='get_rvs_xyz_components',
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (disassemble_h5, get_xyz_components, [('displacement_field', 'in_file')]),
-        (disassemble_h5_inv, get_inv_xyz_components, [('displacement_field', 'in_file')]),
+        (make_fwd_displacement, get_fwd_xyz_components, [('output_image', 'in_file')]),
+        (make_rvs_displacement, get_rvs_xyz_components, [('output_image', 'in_file')]),
     ])  # fmt:skip
 
     # Select x-component after separating warpfield above
@@ -773,12 +731,12 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (get_xyz_components, select_x_component, [('out_files', 'inlist')]),
-        (get_xyz_components, select_y_component, [('out_files', 'inlist')]),
-        (get_xyz_components, select_z_component, [('out_files', 'inlist')]),
-        (get_inv_xyz_components, select_inv_x_component, [('out_files', 'inlist')]),
-        (get_inv_xyz_components, select_inv_y_component, [('out_files', 'inlist')]),
-        (get_inv_xyz_components, select_inv_z_component, [('out_files', 'inlist')]),
+        (get_fwd_xyz_components, select_x_component, [('out_files', 'inlist')]),
+        (get_fwd_xyz_components, select_y_component, [('out_files', 'inlist')]),
+        (get_fwd_xyz_components, select_z_component, [('out_files', 'inlist')]),
+        (get_rvs_xyz_components, select_inv_x_component, [('out_files', 'inlist')]),
+        (get_rvs_xyz_components, select_inv_y_component, [('out_files', 'inlist')]),
+        (get_rvs_xyz_components, select_inv_z_component, [('out_files', 'inlist')]),
     ])  # fmt:skip
 
     # Reverse y-component of the warpfield
@@ -819,23 +777,22 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
         (select_inv_z_component, collect_new_inv_components, [('out', 'in3')]),
     ])  # fmt:skip
 
-    # Merge warpfield components in FSL FNIRT format, with the reversed y-component from above
-    remerge_warpfield = pe.Node(
+    # Merge displacement fields in FSL FNIRT format, with the reversed y-component from above
+    remerge_fwd_displacement = pe.Node(
         Merge(),
-        name='remerge_warpfield',
+        name='remerge_fwd_displacement',
         mem_gb=mem_gb,
     )
-    remerge_inv_warpfield = pe.Node(
+    remerge_rvs_displacement = pe.Node(
         Merge(),
-        name='remerge_inv_warpfield',
+        name='remerge_rvs_displacement',
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (collect_new_components, remerge_warpfield, [('out', 'in_files')]),
-        (collect_new_inv_components, remerge_inv_warpfield, [('out', 'in_files')]),
-        (convert_xfm2world, outputnode, [('out_file', 'world_xfm')]),
-        (remerge_warpfield, outputnode, [('out_file', 'merged_warpfield')]),
-        (remerge_inv_warpfield, outputnode, [('out_file', 'merged_inv_warpfield')]),
+        (collect_new_components, remerge_fwd_displacement, [('out', 'in_files')]),
+        (collect_new_inv_components, remerge_rvs_displacement, [('out', 'in_files')]),
+        (remerge_fwd_displacement, outputnode, [('out_file', 'forward_displacement')]),
+        (remerge_rvs_displacement, outputnode, [('out_file', 'reverse_displacement')]),
     ])  # fmt:skip
 
     return workflow
@@ -940,9 +897,8 @@ def init_warp_one_hemisphere_wf(
         niu.IdentityInterface(
             fields=[
                 'hemi_files',
-                'world_xfm',
-                'merged_warpfield',
-                'merged_inv_warpfield',
+                'forward_displacement',
+                'reverse_displacement',
                 'subject_sphere',
             ],
         ),
@@ -992,22 +948,7 @@ def init_warp_one_hemisphere_wf(
         (surface_sphere_project_unproject, resample_to_fsLR32k, [('out_file', 'current_sphere')]),
     ])  # fmt:skip
 
-    # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
-    # I think this makes it so you can overlay the pial and white matter surfaces on the
-    # associated volumetric template (e.g., for XCP-D's brainsprite).
-    apply_affine_to_fsLR32k = pe.MapNode(
-        ApplyAffine(num_threads=omp_nthreads),
-        name='apply_affine_to_fsLR32k',
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=['in_file'],
-    )
-    workflow.connect([
-        (inputnode, apply_affine_to_fsLR32k, [('world_xfm', 'affine')]),
-        (resample_to_fsLR32k, apply_affine_to_fsLR32k, [('out_file', 'in_file')]),
-    ])  # fmt:skip
-
-    # Apply FNIRT-format (forward) anatomical-to-template warpfield
+    # Apply FNIRT-format (forward) anatomical-to-template displacement field
     # I think this makes it so you can overlay the pial and white matter surfaces on the
     # associated volumetric template (e.g., for XCP-D's brainsprite).
     apply_warpfield_to_fsLR32k = pe.MapNode(
@@ -1019,10 +960,10 @@ def init_warp_one_hemisphere_wf(
     )
     workflow.connect([
         (inputnode, apply_warpfield_to_fsLR32k, [
-            ('merged_warpfield', 'forward_warp'),
-            ('merged_inv_warpfield', 'warpfield'),
+            ('forward_displacement', 'forward_warp'),
+            ('reverse_displacement', 'warpfield'),
         ]),
-        (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [('out_file', 'in_file')]),
+        (resample_to_fsLR32k, apply_warpfield_to_fsLR32k, [('out_file', 'in_file')]),
         (apply_warpfield_to_fsLR32k, outputnode, [('out_file', 'warped_hemi_files')]),
     ])  # fmt:skip
 
