@@ -653,23 +653,20 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     )
 
     # Convert the transform into a displacement field.
-    make_fwd_displacement = pe.Node(
+    # XXX: This is the step that I need to get working.
+    fwd_to_displacement = pe.Node(
         ApplyTransforms(),
-        name='make_fwd_displacement',
+        name='fwd_to_displacement',
         mem_gb=mem_gb,
     )
-    workflow.connect([
-        (inputnode, make_fwd_displacement, [('anat_to_template_xfm', 'transforms')]),
-    ])  # fmt:skip
+    workflow.connect([(inputnode, fwd_to_displacement, [('anat_to_template_xfm', 'transforms')])])
 
-    make_rvs_displacement = pe.Node(
+    rvs_to_displacement = pe.Node(
         ApplyTransforms(),
-        name='make_rvs_displacement',
+        name='rvs_to_displacement',
         mem_gb=mem_gb,
     )
-    workflow.connect([
-        (inputnode, make_rvs_displacement, [('template_to_anat_xfm', 'transforms')]),
-    ])  # fmt:skip
+    workflow.connect([(inputnode, rvs_to_displacement, [('template_to_anat_xfm', 'transforms')])])
 
     # Use C3d to separate the combined warpfield xfm into x, y, and z components
     get_fwd_xyz_components = pe.Node(
@@ -691,90 +688,90 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (make_fwd_displacement, get_fwd_xyz_components, [('output_image', 'in_file')]),
-        (make_rvs_displacement, get_rvs_xyz_components, [('output_image', 'in_file')]),
+        (fwd_to_displacement, get_fwd_xyz_components, [('output_image', 'in_file')]),
+        (rvs_to_displacement, get_rvs_xyz_components, [('output_image', 'in_file')]),
     ])  # fmt:skip
 
     # Select x-component after separating warpfield above
-    select_x_component = pe.Node(
+    select_fwd_x_component = pe.Node(
         niu.Select(index=[0]),
-        name='select_x_component',
+        name='select_fwd_x_component',
         mem_gb=mem_gb,
     )
-    select_inv_x_component = pe.Node(
+    select_rvs_x_component = pe.Node(
         niu.Select(index=[0]),
-        name='select_inv_x_component',
+        name='select_rvs_x_component',
         mem_gb=mem_gb,
     )
 
     # Select y-component
-    select_y_component = pe.Node(
+    select_fwd_y_component = pe.Node(
         niu.Select(index=[1]),
-        name='select_y_component',
+        name='select_fwd_y_component',
         mem_gb=mem_gb,
     )
-    select_inv_y_component = pe.Node(
+    select_rvs_y_component = pe.Node(
         niu.Select(index=[1]),
-        name='select_inv_y_component',
+        name='select_rvs_y_component',
         mem_gb=mem_gb,
     )
 
     # Select z-component
-    select_z_component = pe.Node(
+    select_fwd_z_component = pe.Node(
         niu.Select(index=[2]),
-        name='select_z_component',
+        name='select_fwd_z_component',
         mem_gb=mem_gb,
     )
-    select_inv_z_component = pe.Node(
+    select_rvs_z_component = pe.Node(
         niu.Select(index=[2]),
-        name='select_inv_z_component',
+        name='select_rvs_z_component',
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (get_fwd_xyz_components, select_x_component, [('out_files', 'inlist')]),
-        (get_fwd_xyz_components, select_y_component, [('out_files', 'inlist')]),
-        (get_fwd_xyz_components, select_z_component, [('out_files', 'inlist')]),
-        (get_rvs_xyz_components, select_inv_x_component, [('out_files', 'inlist')]),
-        (get_rvs_xyz_components, select_inv_y_component, [('out_files', 'inlist')]),
-        (get_rvs_xyz_components, select_inv_z_component, [('out_files', 'inlist')]),
+        (get_fwd_xyz_components, select_fwd_x_component, [('out_files', 'inlist')]),
+        (get_fwd_xyz_components, select_fwd_y_component, [('out_files', 'inlist')]),
+        (get_fwd_xyz_components, select_fwd_z_component, [('out_files', 'inlist')]),
+        (get_rvs_xyz_components, select_rvs_x_component, [('out_files', 'inlist')]),
+        (get_rvs_xyz_components, select_rvs_y_component, [('out_files', 'inlist')]),
+        (get_rvs_xyz_components, select_rvs_z_component, [('out_files', 'inlist')]),
     ])  # fmt:skip
 
     # Reverse y-component of the warpfield
     # (need to do this when converting a warpfield from ANTs to FNIRT format
     # for use with wb_command -surface-apply-warpfield)
-    reverse_y_component = pe.Node(
+    reverse_fwd_y_component = pe.Node(
         BinaryMath(expression='img * -1'),
-        name='reverse_y_component',
+        name='reverse_fwd_y_component',
         mem_gb=mem_gb,
     )
-    reverse_inv_y_component = pe.Node(
+    reverse_rvs_y_component = pe.Node(
         BinaryMath(expression='img * -1'),
-        name='reverse_inv_y_component',
+        name='reverse_rvs_y_component',
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (select_y_component, reverse_y_component, [('out', 'in_file')]),
-        (select_inv_y_component, reverse_inv_y_component, [('out', 'in_file')]),
+        (select_fwd_y_component, reverse_fwd_y_component, [('out', 'in_file')]),
+        (select_rvs_y_component, reverse_rvs_y_component, [('out', 'in_file')]),
     ])  # fmt:skip
 
     # Collect new warpfield components in individual nodes
-    collect_new_components = pe.Node(
+    collect_fwd_components = pe.Node(
         niu.Merge(3),
-        name='collect_new_components',
+        name='collect_fwd_components',
         mem_gb=mem_gb,
     )
-    collect_new_inv_components = pe.Node(
+    collect_rvs_components = pe.Node(
         niu.Merge(3),
-        name='collect_new_inv_components',
+        name='collect_rvs_components',
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (select_x_component, collect_new_components, [('out', 'in1')]),
-        (reverse_y_component, collect_new_components, [('out_file', 'in2')]),
-        (select_z_component, collect_new_components, [('out', 'in3')]),
-        (select_inv_x_component, collect_new_inv_components, [('out', 'in1')]),
-        (reverse_inv_y_component, collect_new_inv_components, [('out_file', 'in2')]),
-        (select_inv_z_component, collect_new_inv_components, [('out', 'in3')]),
+        (select_fwd_x_component, collect_fwd_components, [('out', 'in1')]),
+        (reverse_fwd_y_component, collect_fwd_components, [('out_file', 'in2')]),
+        (select_fwd_z_component, collect_fwd_components, [('out', 'in3')]),
+        (select_rvs_x_component, collect_rvs_components, [('out', 'in1')]),
+        (reverse_rvs_y_component, collect_rvs_components, [('out_file', 'in2')]),
+        (select_rvs_z_component, collect_rvs_components, [('out', 'in3')]),
     ])  # fmt:skip
 
     # Merge displacement fields in FSL FNIRT format, with the reversed y-component from above
@@ -789,8 +786,8 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
         mem_gb=mem_gb,
     )
     workflow.connect([
-        (collect_new_components, remerge_fwd_displacement, [('out', 'in_files')]),
-        (collect_new_inv_components, remerge_rvs_displacement, [('out', 'in_files')]),
+        (collect_fwd_components, remerge_fwd_displacement, [('out', 'in_files')]),
+        (collect_rvs_components, remerge_rvs_displacement, [('out', 'in_files')]),
         (remerge_fwd_displacement, outputnode, [('out_file', 'forward_displacement')]),
         (remerge_rvs_displacement, outputnode, [('out_file', 'reverse_displacement')]),
     ])  # fmt:skip
