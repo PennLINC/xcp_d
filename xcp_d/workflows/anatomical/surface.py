@@ -4,6 +4,13 @@
 
 from nipype import logging
 from nipype.interfaces import utility as niu
+from nipype.interfaces.base import (
+    BaseInterfaceInputSpec,
+    File,
+    SimpleInterface,
+    TraitedSpec,
+    traits,
+)
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
@@ -1030,39 +1037,151 @@ def init_warp_one_hemisphere_wf(
         (surface_sphere_project_unproject, resample_to_fsLR32k, [('out_file', 'current_sphere')]),
     ])  # fmt:skip
 
-    # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
-    # I think this makes it so you can overlay the pial and white matter surfaces on the
-    # associated volumetric template (e.g., for XCP-D's brainsprite).
-    # TODO: Need to loop over affine-warp pairs here rather than apply them in parallel.
-    apply_affine_to_template = pe.MapNode(
-        ApplyAffine(num_threads=omp_nthreads),
-        name='apply_affine_to_template',
+    apply_transforms_wf_node = pe.MapNode(
+        ApplyTransformsWorkflow(mem_gb=mem_gb, omp_nthreads=omp_nthreads),
+        name='apply_transforms_wf_node',
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=['in_file'],
     )
     workflow.connect([
-        (inputnode, apply_affine_to_template, [('world_xfms', 'affine')]),
-        (resample_to_fsLR32k, apply_affine_to_template, [('out_file', 'in_file')]),
-    ])  # fmt:skip
-
-    # Apply FNIRT-format (forward) anatomical-to-template warpfield
-    # I think this makes it so you can overlay the pial and white matter surfaces on the
-    # associated volumetric template (e.g., for XCP-D's brainsprite).
-    apply_warpfield_to_template = pe.MapNode(
-        ApplyWarpfield(num_threads=omp_nthreads),
-        name='apply_warpfield_to_template',
-        mem_gb=mem_gb,
-        n_procs=omp_nthreads,
-        iterfield=['in_file'],
-    )
-    workflow.connect([
-        (inputnode, apply_warpfield_to_template, [
-            ('merged_warpfields', 'forward_warp'),
-            ('merged_inv_warpfields', 'warpfield'),
+        (resample_to_fsLR32k, apply_transforms_wf_node, [('out_file', 'in_file')]),
+        (collect_registration_files, apply_transforms_wf_node, [
+            ('world_xfms', 'world_xfms'),
+            ('merged_warpfields', 'merged_warpfields'),
+            ('merged_inv_warpfields', 'merged_inv_warpfields'),
         ]),
-        (apply_affine_to_template, apply_warpfield_to_template, [('out_file', 'in_file')]),
-        (apply_warpfield_to_template, outputnode, [('out_file', 'warped_hemi_files')]),
+        (apply_transforms_wf_node, outputnode, [('out_file', 'warped_hemi_files')]),
     ])  # fmt:skip
 
     return workflow
+
+
+class _ApplyTransformsWorkflowInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, desc='the file to transform')
+    merged_warpfields = traits.List(File(exists=True), desc='the warpfields to apply')
+    merged_inv_warpfields = traits.List(File(exists=True), desc='the inverse warpfields to apply')
+    world_xfms = traits.List(File(exists=True), desc='the affine transforms to apply')
+    omp_nthreads = traits.Int(desc='number of threads to use')
+    mem_gb = traits.Float(desc='the amount of memory to use')
+
+
+class _ApplyTransformsWorkflowOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc='the transformed file')
+
+
+class ApplyTransformsWorkflow(SimpleInterface):
+    """A pseudo-interface that runs a workflow.
+
+    This seems to be the best way to run multiple interfaces using information from the parent
+    workflow. We need to build this workflow using the number of transforms as a parameter,
+    so we need to embed the workflow in an interface.
+    """
+
+    input_spec = _ApplyTransformsWorkflowInputSpec
+    output_spec = _ApplyTransformsWorkflowOutputSpec
+
+    def _run_interface(self, runtime):
+        workflow = pe.Workflow(name='apply_transforms_workflow')
+
+        inputnode = pe.Node(
+            niu.IdentityInterface(
+                fields=[
+                    'in_file',
+                    'merged_warpfields',
+                    'merged_inv_warpfields',
+                    'world_xfms',
+                ],
+            ),
+            name='inputnode',
+        )
+        n_transforms = len(self.inputs.world_xfms)
+        if not (
+            n_transforms == len(self.inputs.merged_warpfields) ==
+            len(self.inputs.merged_inv_warpfields)
+        ):
+            raise ValueError(
+                'The number of transforms must match the number of warpfields and inverse '
+                'warpfields.'
+            )
+
+        inputnode.inputs.in_file = self.inputs.in_file
+        inputnode.inputs.merged_warpfields = self.inputs.merged_warpfields
+        inputnode.inputs.merged_inv_warpfields = self.inputs.merged_inv_warpfields
+        inputnode.inputs.world_xfms = self.inputs.world_xfms
+
+        outputnode = pe.Node(
+            niu.IdentityInterface(fields=['out_file']),
+            name='outputnode',
+        )
+
+        buffer_node = pe.Node(
+            niu.IdentityInterface(fields=['transformed_file']),
+            name='buffer_node_raw',
+        )
+        workflow.connect([(inputnode, buffer_node, [('in_file', 'transformed_file')])])
+
+        for i_transform in n_transforms:
+            select_world_xfm = pe.Node(
+                niu.Select(index=i_transform),
+                name=f'select_world_xfm_step{i_transform}',
+            )
+            workflow.connect([(inputnode, select_world_xfm, [('world_xfms', 'inlist')])])
+
+            select_warpfield = pe.Node(
+                niu.Select(index=i_transform),
+                name=f'select_warpfield_step{i_transform}',
+            )
+            workflow.connect([(inputnode, select_warpfield, [('merged_warpfields', 'inlist')])])
+
+            select_inv_warpfield = pe.Node(
+                niu.Select(index=i_transform),
+                name=f'select_inv_warpfield_step{i_transform}',
+            )
+            workflow.connect([
+                (inputnode, select_inv_warpfield, [('merged_inv_warpfields', 'inlist')]),
+            ])  # fmt:skip
+
+            # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
+            # I think this makes it so you can overlay the pial and white matter surfaces on the
+            # associated volumetric template (e.g., for XCP-D's brainsprite).
+            apply_affine_to_template = pe.Node(
+                ApplyAffine(num_threads=self.inputs.omp_nthreads),
+                name=f'apply_affine_to_template_step{i_transform}',
+                mem_gb=self.inputs.mem_gb,
+                n_procs=self.inputs.omp_nthreads,
+            )
+            workflow.connect([
+                (buffer_node, apply_affine_to_template, [('transformed_file', 'in_file')]),
+                (select_world_xfm, apply_affine_to_template, [('out', 'affine')]),
+            ])  # fmt:skip
+
+            # Apply FNIRT-format (forward) anatomical-to-template warpfield
+            # I think this makes it so you can overlay the pial and white matter surfaces on the
+            # associated volumetric template (e.g., for XCP-D's brainsprite).
+            apply_warpfield_to_template = pe.Node(
+                ApplyWarpfield(num_threads=self.inputs.omp_nthreads),
+                name=f'apply_warpfield_to_template_step{i_transform}',
+                mem_gb=self.inputs.mem_gb,
+                n_procs=self.inputs.omp_nthreads,
+            )
+            workflow.connect([
+                (select_warpfield, apply_warpfield_to_template, [('out', 'forward_warp')]),
+                (select_inv_warpfield, apply_warpfield_to_template, [('out', 'warpfield')]),
+                (apply_affine_to_template, apply_warpfield_to_template, [('out_file', 'in_file')]),
+            ])  # fmt:skip
+
+            buffer_node = pe.Node(
+                niu.IdentityInterface(fields=['transformed_file']),
+                name=f'buffer_node_step{i_transform}',
+            )
+            workflow.connect([
+                (apply_warpfield_to_template, buffer_node, [('out_file', 'transformed_file')]),
+            ])  # fmt:skip
+
+        workflow.connect([(buffer_node, outputnode, [('transformed_file', 'out_file')])])
+
+        results = workflow.run()
+        self._results['out_file'] = results.outputs.outputnode.out_file
+
+        return runtime
