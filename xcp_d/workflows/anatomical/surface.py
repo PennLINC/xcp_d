@@ -1097,8 +1097,9 @@ class ApplyTransformsWorkflow(SimpleInterface):
         )
         n_transforms = len(self.inputs.world_xfms)
         if not (
-            n_transforms == len(self.inputs.merged_warpfields) ==
-            len(self.inputs.merged_inv_warpfields)
+            n_transforms
+            == len(self.inputs.merged_warpfields)
+            == len(self.inputs.merged_inv_warpfields)
         ):
             raise ValueError(
                 'The number of transforms must match the number of warpfields and inverse '
