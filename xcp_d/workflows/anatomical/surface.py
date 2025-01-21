@@ -1046,7 +1046,7 @@ def init_warp_one_hemisphere_wf(
     )
     workflow.connect([
         (resample_to_fsLR32k, apply_transforms_wf_node, [('out_file', 'in_file')]),
-        (collect_registration_files, apply_transforms_wf_node, [
+        (inputnode, apply_transforms_wf_node, [
             ('world_xfms', 'world_xfms'),
             ('merged_warpfields', 'merged_warpfields'),
             ('merged_inv_warpfields', 'merged_inv_warpfields'),
