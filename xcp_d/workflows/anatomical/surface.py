@@ -1082,7 +1082,7 @@ class ApplyTransformsWorkflow(SimpleInterface):
     output_spec = _ApplyTransformsWorkflowOutputSpec
 
     def _run_interface(self, runtime):
-        workflow = pe.Workflow(name='apply_transforms_workflow')
+        workflow = pe.Workflow(name='xfm_wf')
 
         inputnode = pe.Node(
             niu.IdentityInterface(
@@ -1182,7 +1182,9 @@ class ApplyTransformsWorkflow(SimpleInterface):
 
         workflow.connect([(buffer_node, outputnode, [('transformed_file', 'out_file')])])
 
+        workflow.base_dir = runtime.cwd
         results = workflow.run()
-        self._results['out_file'] = results.outputs.outputnode.out_file
+        workflow_nodes = {node.fullname: node for node in results.nodes}
+        self._results['out_file'] = workflow_nodes['xfm_wf.outputnode'].get_output('out_file')
 
         return runtime
