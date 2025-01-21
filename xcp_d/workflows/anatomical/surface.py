@@ -8,7 +8,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.ants import ApplyTransforms
+from xcp_d.interfaces.ants import TransformsToDisplacement
 from xcp_d.interfaces.bids import CollectRegistrationFiles, DerivativesDataSink
 from xcp_d.interfaces.c3 import C3d  # TM
 from xcp_d.interfaces.nilearn import BinaryMath, Merge
@@ -654,15 +654,17 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
 
     # Convert the transform into a displacement field.
     # XXX: This is the step that I need to get working.
+    # XXX: Reference image is necessary here
     fwd_to_displacement = pe.Node(
-        ApplyTransforms(),
+        TransformsToDisplacement(dimension=3),
         name='fwd_to_displacement',
         mem_gb=mem_gb,
     )
     workflow.connect([(inputnode, fwd_to_displacement, [('anat_to_template_xfm', 'transforms')])])
 
+    # XXX: Reference image is necessary here
     rvs_to_displacement = pe.Node(
-        ApplyTransforms(),
+        TransformsToDisplacement(dimension=3),
         name='rvs_to_displacement',
         mem_gb=mem_gb,
     )

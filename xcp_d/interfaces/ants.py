@@ -8,6 +8,7 @@ from nipype.interfaces.base import (
     CommandLine,
     CommandLineInputSpec,
     File,
+    InputMultiObject,
     InputMultiPath,
     Str,
     TraitedSpec,
@@ -215,3 +216,67 @@ class ApplyTransforms(FixHeaderApplyTransforms):
 
         runtime = super()._run_interface(runtime)
         return runtime
+
+
+class _TransformsToDisplacementInputSpec(ANTSCommandInputSpec):
+    dimension = traits.Enum(
+        2,
+        3,
+        4,
+        argstr='--dimensionality %d',
+        desc=(
+            'This option forces the image to be treated '
+            'as a specified-dimensional image. If not '
+            'specified, antsWarp tries to infer the '
+            'dimensionality from the input image.'
+        ),
+    )
+    output_image = traits.Str(
+        argstr='--output [%s,1]', desc='output file name', genfile=True, hash_files=False
+    )
+    reference_image = File(
+        argstr='--reference-image %s',
+        mandatory=True,
+        desc='reference image space that you wish to warp INTO',
+        exists=True,
+    )
+    transforms = InputMultiObject(
+        traits.Either(File(exists=True), 'identity'),
+        argstr='%s',
+        mandatory=True,
+        desc='transform files: will be applied in reverse order. For '
+        'example, the last specified transform will be applied first.',
+    )
+    float = traits.Bool(
+        argstr='--float %d',
+        default_value=False,
+        usedefault=True,
+        desc='Use float instead of double for computations.',
+    )
+
+
+class _TransformsToDisplacementOutputSpec(TraitedSpec):
+    output_image = File(exists=True, desc='Warped image')
+
+
+class TransformsToDisplacement(ANTSCommand):
+    """ApplyTransforms, applied to an input image, transforms it according to a
+    reference image and a transform (or a set of transforms).
+    """
+
+    _cmd = 'antsApplyTransforms'
+    input_spec = _TransformsToDisplacementInputSpec
+    output_spec = _TransformsToDisplacementOutputSpec
+
+    def _gen_filename(self, name):
+        if name == 'output_image':
+            output = self.inputs.output_image
+            if not isdefined(output):
+                output = 'transforms.nii.gz'
+            return output
+        return None
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['output_image'] = os.path.abspath(self._gen_filename('output_image'))
+        return outputs
