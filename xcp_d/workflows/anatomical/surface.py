@@ -423,9 +423,9 @@ def init_warp_surfaces_to_template_wf(
                 (f'{hemi_label}_subject_sphere', 'inputnode.subject_sphere'),
             ]),
             (update_xfm_wf, apply_transforms_wf, [
-                ('outputnode.merged_warpfield', 'inputnode.merged_warpfield'),
-                ('outputnode.merged_inv_warpfield', 'inputnode.merged_inv_warpfield'),
-                ('outputnode.world_xfm', 'inputnode.world_xfm'),
+                ('outputnode.merged_warpfields', 'inputnode.merged_warpfields'),
+                ('outputnode.merged_inv_warpfields', 'inputnode.merged_inv_warpfields'),
+                ('outputnode.world_xfms', 'inputnode.world_xfms'),
             ]),
             (collect_surfaces, apply_transforms_wf, [('out', 'inputnode.hemi_files')]),
         ])  # fmt:skip
@@ -653,7 +653,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
         where the transform is composed of four transforms (anat-to-MNIInfant affine,
         anat-to-MNIInfant warp, MNIInfant-to-MNI152 affine, MNI152-to-MNI152 warp),
         this will be a list of two files.
-    merged_inv_warpfield : list of str
+    merged_inv_warpfields : list of str
         The warpfield portion of the volumetric template-to-anatomical transform,
         in FSL (FNIRT) format.
         For most workflows, this will be a single file, but for the Nibabies workflow,
@@ -669,7 +669,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     )
 
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['world_xfm', 'merged_warpfield', 'merged_inv_warpfield']),
+        niu.IdentityInterface(fields=['world_xfms', 'merged_warpfields', 'merged_inv_warpfields']),
         name='outputnode',
     )
 
@@ -928,7 +928,7 @@ def init_warp_one_hemisphere_wf(
         where the transform is composed of four transforms (anat-to-MNIInfant affine,
         anat-to-MNIInfant warp, MNIInfant-to-MNI152 affine, MNI152-to-MNI152 warp),
         this will be a list of two files.
-    merged_inv_warpfield : list of str
+    merged_inv_warpfields : list of str
         The warpfield portion of the volumetric template-to-anatomical transform,
         in FSL (FNIRT) format.
         For most workflows, this will be a single file, but for the Nibabies workflow,
