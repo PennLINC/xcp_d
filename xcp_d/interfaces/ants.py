@@ -175,8 +175,8 @@ class CompositeTransformUtil(ANTSCommand):
                     f'and displacement fields ({len(warps)}) found.'
                 )
 
-            outputs['affine_transforms'] = affines
-            outputs['displacement_fields'] = warps
+            outputs['affine_transforms'] = [os.path.abspath(aff) for aff in affines]
+            outputs['displacement_fields'] = [os.path.abspath(warp) for warp in warps]
         elif self.inputs.process == 'assemble':
             outputs['out_file'] = os.path.abspath(self.inputs.out_file)
 
