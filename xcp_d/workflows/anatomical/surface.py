@@ -1122,7 +1122,7 @@ class ApplyTransformsWorkflow(SimpleInterface):
         )
         workflow.connect([(inputnode, buffer_node, [('in_file', 'transformed_file')])])
 
-        for i_transform in n_transforms:
+        for i_transform in range(n_transforms):
             select_world_xfm = pe.Node(
                 niu.Select(index=i_transform),
                 name=f'select_world_xfm_step{i_transform}',
