@@ -1071,7 +1071,7 @@ class _ApplyTransformsWorkflowOutputSpec(TraitedSpec):
 
 
 class ApplyTransformsWorkflow(SimpleInterface):
-    """A pseudo-interface that runs a workflow.
+    """An interface that runs a workflow.
 
     This seems to be the best way to run multiple interfaces using information from the parent
     workflow. We need to build this workflow using the number of transforms as a parameter,
@@ -1108,6 +1108,9 @@ class ApplyTransformsWorkflow(SimpleInterface):
 
         inputnode.inputs.in_file = self.inputs.in_file
         inputnode.inputs.merged_warpfields = self.inputs.merged_warpfields
+        # XXX: Should I reverse the order of the inverse warpfields here?
+        # Warpfields would be anat-to-MNIInfant, MNIInfant-to-MNI152
+        # Inv warpfields would be MNI152-to-MNIInfant, MNIInfant-to-anat
         inputnode.inputs.merged_inv_warpfields = self.inputs.merged_inv_warpfields
         inputnode.inputs.world_xfms = self.inputs.world_xfms
 
