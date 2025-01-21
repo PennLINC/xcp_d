@@ -639,15 +639,27 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
 
     Outputs
     -------
-    world_xfm
-        The affine portion of the volumetric anatomical-to-template transform,
-        in NIfTI (world) format.
-    merged_warpfield
+    world_xfms : list of str
+        A list of transform files, where each one is the affine portion of one step of
+        the volumetric anatomical-to-template transform, in NIfTI (world) format.
+        For most workflows, this will be a single file, but for the Nibabies workflow,
+        where the transform is composed of four transforms (anat-to-MNIInfant affine,
+        anat-to-MNIInfant warp, MNIInfant-to-MNI152 affine, MNI152-to-MNI152 warp),
+        this will be a list of two files.
+    merged_warpfields : list of str
         The warpfield portion of the volumetric anatomical-to-template transform,
         in FSL (FNIRT) format.
-    merged_inv_warpfield
+        For most workflows, this will be a single file, but for the Nibabies workflow,
+        where the transform is composed of four transforms (anat-to-MNIInfant affine,
+        anat-to-MNIInfant warp, MNIInfant-to-MNI152 affine, MNI152-to-MNI152 warp),
+        this will be a list of two files.
+    merged_inv_warpfield : list of str
         The warpfield portion of the volumetric template-to-anatomical transform,
         in FSL (FNIRT) format.
+        For most workflows, this will be a single file, but for the Nibabies workflow,
+        where the transform is composed of four transforms (anat-to-MNIInfant affine,
+        anat-to-MNIInfant warp, MNIInfant-to-MNI152 affine, MNI152-to-MNI152 warp),
+        this will be a list of two files.
     """
     workflow = Workflow(name=name)
 
@@ -715,7 +727,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     workflow.connect([(change_xfm_type, convert_xfm2world, [('out_transform', 'in_file')])])
 
     # Use C3d to separate the combined warpfield xfm into x, y, and z components
-    get_xyz_components = pe.Node(
+    get_xyz_components = pe.MapNode(
         C3d(
             is_4d=True,
             multicomp_split=True,
@@ -723,8 +735,9 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
         ),
         name='get_xyz_components',
         mem_gb=mem_gb,
+        iterfield=['in_file'],
     )
-    get_inv_xyz_components = pe.Node(
+    get_inv_xyz_components = pe.MapNode(
         C3d(
             is_4d=True,
             multicomp_split=True,
@@ -732,6 +745,7 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
         ),
         name='get_inv_xyz_components',
         mem_gb=mem_gb,
+        iterfield=['in_file'],
     )
     workflow.connect([
         (disassemble_h5, get_xyz_components, [('displacement_fields', 'in_file')]),
@@ -739,39 +753,45 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     ])  # fmt:skip
 
     # Select x-component after separating warpfield above
-    select_x_component = pe.Node(
+    select_x_component = pe.MapNode(
         niu.Select(index=[0]),
         name='select_x_component',
         mem_gb=mem_gb,
+        iterfield=['inlist'],
     )
-    select_inv_x_component = pe.Node(
+    select_inv_x_component = pe.MapNode(
         niu.Select(index=[0]),
         name='select_inv_x_component',
         mem_gb=mem_gb,
+        iterfield=['inlist'],
     )
 
     # Select y-component
-    select_y_component = pe.Node(
+    select_y_component = pe.MapNode(
         niu.Select(index=[1]),
         name='select_y_component',
         mem_gb=mem_gb,
+        iterfield=['inlist'],
     )
-    select_inv_y_component = pe.Node(
+    select_inv_y_component = pe.MapNode(
         niu.Select(index=[1]),
         name='select_inv_y_component',
         mem_gb=mem_gb,
+        iterfield=['inlist'],
     )
 
     # Select z-component
-    select_z_component = pe.Node(
+    select_z_component = pe.MapNode(
         niu.Select(index=[2]),
         name='select_z_component',
         mem_gb=mem_gb,
+        iterfield=['inlist'],
     )
-    select_inv_z_component = pe.Node(
+    select_inv_z_component = pe.MapNode(
         niu.Select(index=[2]),
         name='select_inv_z_component',
         mem_gb=mem_gb,
+        iterfield=['inlist'],
     )
     workflow.connect([
         (get_xyz_components, select_x_component, [('out_files', 'inlist')]),
@@ -785,15 +805,17 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     # Reverse y-component of the warpfield
     # (need to do this when converting a warpfield from ANTs to FNIRT format
     # for use with wb_command -surface-apply-warpfield)
-    reverse_y_component = pe.Node(
+    reverse_y_component = pe.MapNode(
         BinaryMath(expression='img * -1'),
         name='reverse_y_component',
         mem_gb=mem_gb,
+        iterfield=['in_file'],
     )
-    reverse_inv_y_component = pe.Node(
+    reverse_inv_y_component = pe.MapNode(
         BinaryMath(expression='img * -1'),
         name='reverse_inv_y_component',
         mem_gb=mem_gb,
+        iterfield=['in_file'],
     )
     workflow.connect([
         (select_y_component, reverse_y_component, [('out', 'in_file')]),
@@ -801,15 +823,17 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     ])  # fmt:skip
 
     # Collect new warpfield components in individual nodes
-    collect_new_components = pe.Node(
+    collect_new_components = pe.MapNode(
         niu.Merge(3),
         name='collect_new_components',
         mem_gb=mem_gb,
+        iterfield=['in1', 'in2', 'in3'],
     )
-    collect_new_inv_components = pe.Node(
+    collect_new_inv_components = pe.MapNode(
         niu.Merge(3),
         name='collect_new_inv_components',
         mem_gb=mem_gb,
+        iterfield=['in1', 'in2', 'in3'],
     )
     workflow.connect([
         (select_x_component, collect_new_components, [('out', 'in1')]),
@@ -821,22 +845,24 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     ])  # fmt:skip
 
     # Merge warpfield components in FSL FNIRT format, with the reversed y-component from above
-    remerge_warpfield = pe.Node(
+    remerge_warpfield = pe.MapNode(
         Merge(),
         name='remerge_warpfield',
         mem_gb=mem_gb,
+        iterfield=['in_files'],
     )
-    remerge_inv_warpfield = pe.Node(
+    remerge_inv_warpfield = pe.MapNode(
         Merge(),
         name='remerge_inv_warpfield',
         mem_gb=mem_gb,
+        iterfield=['in_files'],
     )
     workflow.connect([
         (collect_new_components, remerge_warpfield, [('out', 'in_files')]),
         (collect_new_inv_components, remerge_inv_warpfield, [('out', 'in_files')]),
-        (convert_xfm2world, outputnode, [('out_file', 'world_xfm')]),
-        (remerge_warpfield, outputnode, [('out_file', 'merged_warpfield')]),
-        (remerge_inv_warpfield, outputnode, [('out_file', 'merged_inv_warpfield')]),
+        (convert_xfm2world, outputnode, [('out_file', 'world_xfms')]),
+        (remerge_warpfield, outputnode, [('out_file', 'merged_warpfields')]),
+        (remerge_inv_warpfield, outputnode, [('out_file', 'merged_inv_warpfields')]),
     ])  # fmt:skip
 
     return workflow
@@ -888,16 +914,28 @@ def init_warp_one_hemisphere_wf(
     hemi_files : list of str
         A list of surface files (i.e., pial and white matter) for the requested hemisphere,
         in fsnative space.
-    world_xfm
-        The affine portion of the volumetric anatomical-to-template transform,
-        in NIfTI (world) format.
-    merged_warpfield
+    world_xfms : list of str
+        A list of transform files, where each one is the affine portion of one step of
+        the volumetric anatomical-to-template transform, in NIfTI (world) format.
+        For most workflows, this will be a single file, but for the Nibabies workflow,
+        where the transform is composed of four transforms (anat-to-MNIInfant affine,
+        anat-to-MNIInfant warp, MNIInfant-to-MNI152 affine, MNI152-to-MNI152 warp),
+        this will be a list of two files.
+    merged_warpfields : list of str
         The warpfield portion of the volumetric anatomical-to-template transform,
         in FSL (FNIRT) format.
-    merged_inv_warpfield
+        For most workflows, this will be a single file, but for the Nibabies workflow,
+        where the transform is composed of four transforms (anat-to-MNIInfant affine,
+        anat-to-MNIInfant warp, MNIInfant-to-MNI152 affine, MNI152-to-MNI152 warp),
+        this will be a list of two files.
+    merged_inv_warpfield : list of str
         The warpfield portion of the volumetric template-to-anatomical transform,
         in FSL (FNIRT) format.
-    subject_sphere
+        For most workflows, this will be a single file, but for the Nibabies workflow,
+        where the transform is composed of four transforms (anat-to-MNIInfant affine,
+        anat-to-MNIInfant warp, MNIInfant-to-MNI152 affine, MNI152-to-MNI152 warp),
+        this will be a list of two files.
+    subject_sphere : str
         The subject's fsnative sphere registration file to fsaverage
         (sphere.reg in FreeSurfer parlance).
         The file contains the vertices from the subject's fsnative sphere,
@@ -941,9 +979,9 @@ def init_warp_one_hemisphere_wf(
         niu.IdentityInterface(
             fields=[
                 'hemi_files',
-                'world_xfm',
-                'merged_warpfield',
-                'merged_inv_warpfield',
+                'world_xfms',
+                'merged_warpfields',
+                'merged_inv_warpfields',
                 'subject_sphere',
             ],
         ),
@@ -961,7 +999,6 @@ def init_warp_one_hemisphere_wf(
         n_procs=1,
     )
 
-    # NOTE: What does this step do?
     # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
     # fsLR/dhcpAsym-in-fsaverage
     # (fsLR or dhcpAsym vertices with coordinates on the fsaverage sphere) sphere?
@@ -996,35 +1033,36 @@ def init_warp_one_hemisphere_wf(
     # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
     # I think this makes it so you can overlay the pial and white matter surfaces on the
     # associated volumetric template (e.g., for XCP-D's brainsprite).
-    apply_affine_to_fsLR32k = pe.MapNode(
+    # TODO: Need to loop over affine-warp pairs here rather than apply them in parallel.
+    apply_affine_to_template = pe.MapNode(
         ApplyAffine(num_threads=omp_nthreads),
-        name='apply_affine_to_fsLR32k',
+        name='apply_affine_to_template',
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=['in_file'],
     )
     workflow.connect([
-        (inputnode, apply_affine_to_fsLR32k, [('world_xfm', 'affine')]),
-        (resample_to_fsLR32k, apply_affine_to_fsLR32k, [('out_file', 'in_file')]),
+        (inputnode, apply_affine_to_template, [('world_xfms', 'affine')]),
+        (resample_to_fsLR32k, apply_affine_to_template, [('out_file', 'in_file')]),
     ])  # fmt:skip
 
     # Apply FNIRT-format (forward) anatomical-to-template warpfield
     # I think this makes it so you can overlay the pial and white matter surfaces on the
     # associated volumetric template (e.g., for XCP-D's brainsprite).
-    apply_warpfield_to_fsLR32k = pe.MapNode(
+    apply_warpfield_to_template = pe.MapNode(
         ApplyWarpfield(num_threads=omp_nthreads),
-        name='apply_warpfield_to_fsLR32k',
+        name='apply_warpfield_to_template',
         mem_gb=mem_gb,
         n_procs=omp_nthreads,
         iterfield=['in_file'],
     )
     workflow.connect([
-        (inputnode, apply_warpfield_to_fsLR32k, [
-            ('merged_warpfield', 'forward_warp'),
-            ('merged_inv_warpfield', 'warpfield'),
+        (inputnode, apply_warpfield_to_template, [
+            ('merged_warpfields', 'forward_warp'),
+            ('merged_inv_warpfields', 'warpfield'),
         ]),
-        (apply_affine_to_fsLR32k, apply_warpfield_to_fsLR32k, [('out_file', 'in_file')]),
-        (apply_warpfield_to_fsLR32k, outputnode, [('out_file', 'warped_hemi_files')]),
+        (apply_affine_to_template, apply_warpfield_to_template, [('out_file', 'in_file')]),
+        (apply_warpfield_to_template, outputnode, [('out_file', 'warped_hemi_files')]),
     ])  # fmt:skip
 
     return workflow
