@@ -425,7 +425,7 @@ def init_fsnative_to_fsLR_wf(
             )
             workflow.connect([
                 (inputnode, ds_fsLR_surf, [(surf_label, 'source_file')]),
-                (resample_to_fsLR32k, ds_fsLR_surf, [(surf_label, 'in_file')]),
+                (resample_to_fsLR32k, ds_fsLR_surf, [('out_file', 'in_file')]),
                 (ds_fsLR_surf, outputnode, [('out_file', surf_label)]),
             ])  # fmt:skip
 
