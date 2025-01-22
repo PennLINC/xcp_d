@@ -349,7 +349,7 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
                 'warped_surf_gii',
             ],
         ),
-        name='inputnode',
+        name='outputnode',
     )
 
     convert_to_csv = pe.Node(GiftiToCSV(itk_lps=True), name='convert_to_csv')
