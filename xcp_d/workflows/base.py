@@ -320,7 +320,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ('rh_wm_surf', 'inputnode.rh_wm_surf'),
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
-                ('anat_to_template_xfm', 'inputnode.anat_to_template_xfm'),
                 ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
             ]),
         ])  # fmt:skip
