@@ -26,7 +26,12 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 
 @fill_doc
-def init_brainsprite_figures_wf(t1w_available, t2w_available, name='brainsprite_figures_wf'):
+def init_brainsprite_figures_wf(
+    t1w_available,
+    t2w_available,
+    apply_transform,
+    name='brainsprite_figures_wf',
+):
     """Create mosaic and PNG files for executive summary brainsprite.
 
     Workflow Graph
@@ -42,6 +47,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name='brainsprite_
                 wf = init_brainsprite_figures_wf(
                     t1w_available=True,
                     t2w_available=True,
+                    apply_transform=True,
                     name="brainsprite_figures_wf",
                 )
 
@@ -51,6 +57,8 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name='brainsprite_
         True if a T1w image is available.
     t2w_available : bool
         True if a T2w image is available.
+    apply_transform : bool
+        Whether to apply the transform to the surfaces.
     %(name)s
         Default is "init_brainsprite_figures_wf".
 
@@ -64,6 +72,7 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name='brainsprite_
     rh_wm_surf
     lh_pial_surf
     rh_pial_surf
+    anat_to_template_xfm
     """
     workflow = Workflow(name=name)
 
@@ -76,10 +85,40 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name='brainsprite_
                 'rh_wm_surf',
                 'lh_pial_surf',
                 'rh_pial_surf',
+                'anat_to_template_xfm',
             ],
         ),
         name='inputnode',
     )
+
+    # Modify the surfaces to be in the same space as the T1w image
+    surface_buffer = pe.Node(
+        niu.IdentityInterface(
+            fields=['lh_wm_surf', 'rh_wm_surf', 'lh_pial_surf', 'rh_pial_surf'],
+        ),
+        name='surface_buffer',
+    )
+
+    if apply_transform:
+        for surface in ['lh_wm_surf', 'rh_wm_surf', 'lh_pial_surf', 'rh_pial_surf']:
+            # Warp the surfaces to the template space
+            workflow.connect([
+                (inputnode, warp_to_template_wf, [
+                    (surface, 'inputnode.in_file'),
+                    ('anat_to_template_xfm', 'transform'),
+                ]),
+                (warp_to_template_wf, surface_buffer, [('outputnode.out_file', surface)]),
+            ])  # fmt:skip
+
+    else:
+        workflow.connect([
+            (inputnode, surface_buffer, [
+                ('lh_wm_surf', 'lh_wm_surf'),
+                ('rh_wm_surf', 'rh_wm_surf'),
+                ('lh_pial_surf', 'lh_pial_surf'),
+                ('rh_pial_surf', 'rh_pial_surf'),
+            ]),
+        ])  # fmt:skip
 
     # Load template scene file
     brainsprite_scene_template = str(
@@ -131,8 +170,8 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name='brainsprite_
         )
         modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
         workflow.connect([
-            (inputnode, modify_brainsprite_template_scene, [
-                (inputnode_anat_name, 'anat_file'),
+            (inputnode, modify_brainsprite_template_scene, [(inputnode_anat_name, 'anat_file')]),
+            (surface_buffer, modify_brainsprite_template_scene, [
                 ('lh_wm_surf', 'lh_wm_surf'),
                 ('rh_wm_surf', 'rh_wm_surf'),
                 ('lh_pial_surf', 'lh_pial_surf'),
@@ -207,8 +246,8 @@ def init_brainsprite_figures_wf(t1w_available, t2w_available, name='brainsprite_
         )
         modify_pngs_template_scene.inputs.scene_template = pngs_scene_template
         workflow.connect([
-            (inputnode, modify_pngs_template_scene, [
-                (inputnode_anat_name, 'anat_file'),
+            (inputnode, modify_pngs_template_scene, [(inputnode_anat_name, 'anat_file')]),
+            (surface_buffer, modify_pngs_template_scene, [
                 ('lh_wm_surf', 'lh_wm_surf'),
                 ('rh_wm_surf', 'rh_wm_surf'),
                 ('lh_pial_surf', 'lh_pial_surf'),
