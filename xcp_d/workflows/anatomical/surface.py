@@ -983,7 +983,7 @@ def init_warp_fsnative_to_fsLR_wf(
         iterfield=['in_file'],
     )
     workflow.connect([
-        (inputnode, resample_to_fsLR32k, [('hemi_files', 'in_file')]),
+        (inputnode, resample_to_fsLR32k, [('fsnative_hemi_files', 'in_file')]),
         (collect_registration_files, resample_to_fsLR32k, [('target_sphere', 'new_sphere')]),
         (surface_sphere_project_unproject, resample_to_fsLR32k, [('out_file', 'current_sphere')]),
         (resample_to_fsLR32k, outputnode, [('out_file', 'fsLR_hemi_files')]),
@@ -1046,7 +1046,7 @@ def init_warp_surface_to_volumetric_template_wf(
     Outputs
     -------
     warped_hemi_files : list of str
-        The ``hemi_files`` warped from fsnative space to standard space.
+        The ``fsLR_hemi_files`` warped from fsLR space to standard space.
 
     Notes
     -----
