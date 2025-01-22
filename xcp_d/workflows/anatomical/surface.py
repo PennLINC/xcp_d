@@ -1083,6 +1083,8 @@ class _ApplyTransformsWorkflowInputSpec(BaseInterfaceInputSpec):
     world_xfms = traits.List(File(exists=True), desc='the affine transforms to apply')
     omp_nthreads = traits.Int(desc='number of threads to use')
     mem_gb = traits.Float(desc='the amount of memory to use')
+    fwd_order = traits.List(traits.Int, desc='the order of the forward transforms')
+    rvs_order = traits.List(traits.Int, desc='the order of the reverse transforms')
 
 
 class _ApplyTransformsWorkflowOutputSpec(TraitedSpec):
