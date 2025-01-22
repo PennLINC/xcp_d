@@ -386,11 +386,11 @@ def init_fsnative_to_fsLR_wf(
         # sphere?
         project_unproject = pe.Node(
             SurfaceSphereProjectUnproject(num_threads=omp_nthreads),
-            name=f'surface_sphere_project_unproject_{hemi}',
+            name=f'project_unproject_{hemi}',
             n_procs=omp_nthreads,
         )
         workflow.connect([
-            (inputnode, project_unproject, [('subject_sphere', 'in_file')]),
+            (inputnode, project_unproject, [(f'{hemi_label}_subject_sphere', 'in_file')]),
             (collect_spheres, project_unproject, [
                 ('source_sphere', 'sphere_project_to'),
                 ('sphere_to_sphere', 'sphere_unproject_from'),
