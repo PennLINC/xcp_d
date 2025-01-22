@@ -383,6 +383,7 @@ def init_warp_surfaces_to_template_wf(
 
     # Warp the surfaces to space-fsLR, den-32k.
     # First, we create the Connectome WorkBench-compatible transform files.
+    # TODO: Remove this. We can use GIFTItoCSV --> antsApplyTransformsToPoints --> CSVtoGIFTI
     update_xfm_wf = init_ants_xfm_to_fsl_wf(
         mem_gb=1,
         name='update_xfm_wf',
@@ -426,6 +427,9 @@ def init_warp_surfaces_to_template_wf(
             (collect_surfaces, warp_to_fsLR_wf, [('out', 'inputnode.fsnative_hemi_files')]),
         ])  # fmt:skip
 
+        # TODO: Stop passing fsLR-space surfaces here. Unnecessary since this is just for the
+        # brainsprite and works on fsnative-space surfaces.
+        # XXX: In fact, move this whole step into the brainsprite workflow!!!
         warp_surface_to_template_wf = init_warp_surface_to_volumetric_template_wf(
             mem_gb=2,  # TODO: Fix
             omp_nthreads=omp_nthreads,
