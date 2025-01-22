@@ -4,8 +4,10 @@
 
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
+from nipype.interfaces.ants import ApplyTransformsToPoints
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+from niworkflows.interfaces.surf import CSVToGifti, GiftiToCSV
 
 from xcp_d import config
 from xcp_d.data import load as load_data
@@ -102,12 +104,13 @@ def init_brainsprite_figures_wf(
     if apply_transform:
         for surface in ['lh_wm_surf', 'rh_wm_surf', 'lh_pial_surf', 'rh_pial_surf']:
             # Warp the surfaces to the template space
+            warp_to_template_wf = init_itk_warp_gifti_surface_wf(name=f'{surface}_warp_wf')
             workflow.connect([
                 (inputnode, warp_to_template_wf, [
-                    (surface, 'inputnode.in_file'),
-                    ('anat_to_template_xfm', 'transform'),
+                    (surface, 'inputnode.native_surf_gii'),
+                    ('anat_to_template_xfm', 'inputnode.itk_warp_file'),
                 ]),
-                (warp_to_template_wf, surface_buffer, [('outputnode.out_file', surface)]),
+                (warp_to_template_wf, surface_buffer, [('outputnode.warped_surf_gii', surface)]),
             ])  # fmt:skip
 
     else:
@@ -292,6 +295,84 @@ def init_brainsprite_figures_wf(
             (get_png_scene_names, ds_report_scenewise_pngs, [('scene_descriptions', 'desc')]),
             (create_scenewise_pngs, ds_report_scenewise_pngs, [('out_file', 'in_file')]),
         ])  # fmt:skip
+
+    return workflow
+
+
+@fill_doc
+def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
+    """Apply an arbitrary ITK transform to a Gifti file.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
+            from xcp_d.workflows.anatomical.plotting import init_itk_warp_gifti_surface_wf
+
+            with mock_config():
+                wf = init_itk_warp_gifti_surface_wf()
+    Parameters
+    ----------
+    %(name)s
+
+    Inputs
+    ------
+    native_surf_gii
+        T1w image, after warping to standard space.
+    itk_warp_file
+        T2w image, after warping to standard space.
+
+    Outputs
+    -------
+    warped_surf_gii
+        Gifti file where the transform in ``itk_warp_file`` has been applied
+        to the vertices in ``native_surf_gii``.
+
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'native_surf_gii',
+                'itk_warp_file',
+            ],
+        ),
+        name='inputnode',
+    )
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'warped_surf_gii',
+            ],
+        ),
+        name='inputnode',
+    )
+
+    convert_to_csv = pe.Node(
+        GiftiToCSV(itk_lps=True), name='convert_to_csv'
+    )
+
+    transform_vertices = pe.Node(
+        ApplyTransformsToPoints(dimension=3),
+        name='transform_vertices',
+    )
+
+    csv_to_gifti = pe.Node(CSVToGifti(itk_lps=True), name='csv_to_gifti')
+
+    workflow.connect(
+        [
+            (inputnode, convert_to_csv, [('native_surf_gii', 'in_file')]),
+            (inputnode, transform_vertices, [('itk_warp_file', 'transforms')]),
+            (inputnode, csv_to_gifti, [('native_surf_gii', 'gii_file')]),
+            (convert_to_csv, transform_vertices, [('out_file', 'input_file')]),
+            (transform_vertices, csv_to_gifti, [('output_file', 'in_file')]),
+            (csv_to_gifti, outputnode, [('out_file', 'warped_surf_gii')]),
+        ]
+    )
 
     return workflow
 
