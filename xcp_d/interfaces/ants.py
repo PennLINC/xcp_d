@@ -242,10 +242,9 @@ class _TransformsToDisplacementInputSpec(ANTSCommandInputSpec):
     )
     transforms = InputMultiObject(
         traits.Either(File(exists=True), 'identity'),
-        argstr='%s',
+        argstr='-t %s',
         mandatory=True,
-        desc='transform files: will be applied in reverse order. For '
-        'example, the last specified transform will be applied first.',
+        desc='transform files: will be applied in forward order.',
     )
     float = traits.Bool(
         argstr='--float %d',
