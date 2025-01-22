@@ -332,6 +332,8 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
         Gifti file where the transform in ``itk_warp_file`` has been applied
         to the vertices in ``native_surf_gii``.
     """
+    from bids.utils import listify
+
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
@@ -352,6 +354,15 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
         name='outputnode',
     )
 
+    listify_transform = pe.Node(
+        niu.Function(
+            function=listify,
+            input_names=['obj'],
+            output_names=['out_list'],
+        )
+    )
+    workflow.connect([(inputnode, listify_transform, [('itk_warp_file', 'obj')])])
+
     convert_to_csv = pe.Node(GiftiToCSV(itk_lps=True), name='convert_to_csv')
     workflow.connect([(inputnode, convert_to_csv, [('native_surf_gii', 'in_file')])])
 
@@ -360,7 +371,7 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
         name='transform_vertices',
     )
     workflow.connect([
-        (inputnode, transform_vertices, [('itk_warp_file', 'transforms')]),
+        (listify_transform, transform_vertices, [('out_list', 'transforms')]),
         (convert_to_csv, transform_vertices, [('out_file', 'input_file')]),
     ])  # fmt:skip
 
