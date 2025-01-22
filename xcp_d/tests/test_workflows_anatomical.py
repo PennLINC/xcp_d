@@ -59,7 +59,7 @@ def surface_files(datasets, tmp_path_factory):
     return final_files
 
 
-def test_warp_surfaces_to_template_wf(
+def test_fsnative_to_fsLR_wf(
     pnc_data,
     surface_files,
     tmp_path_factory,
@@ -68,13 +68,13 @@ def test_warp_surfaces_to_template_wf(
 
     The transforms should be applied and all of the standard-space outputs should be generated.
     """
-    tmpdir = tmp_path_factory.mktemp('test_warp_surfaces_to_template_wf')
+    tmpdir = tmp_path_factory.mktemp('test_fsnative_to_fsLR_wf')
 
     with mock_config():
         config.nipype.omp_nthreads = 1
         config.execution.output_dir = tmpdir
 
-        wf = anatomical.surface.init_warp_surfaces_to_template_wf(
+        wf = anatomical.surface.init_fsnative_to_fsLR_wf(
             software='FreeSurfer',
             omp_nthreads=1,
         )
@@ -85,10 +85,6 @@ def test_warp_surfaces_to_template_wf(
         wf.inputs.inputnode.rh_wm_surf = surface_files['native_rh_wm']
         wf.inputs.inputnode.lh_subject_sphere = surface_files['lh_subject_sphere']
         wf.inputs.inputnode.rh_subject_sphere = surface_files['rh_subject_sphere']
-        # transforms (only used if warp_to_standard is True)
-        wf.inputs.inputnode.anat_to_template_xfm = pnc_data['anat_to_template_xfm']
-        wf.inputs.inputnode.template_to_anat_xfm = pnc_data['template_to_anat_xfm']
-
         wf.base_dir = tmpdir
         wf = clean_datasinks(wf)
         wf.run()
@@ -100,6 +96,24 @@ def test_warp_surfaces_to_template_wf(
                 out_fname = os.path.basename(filename)
                 out_file = os.path.join(out_anat_dir, out_fname)
                 assert os.path.isfile(out_file), '\n'.join(sorted(os.listdir(tmpdir)))
+
+
+def test_itk_warp_gifti_surface_wf(
+    pnc_data,
+    surface_files,
+    tmp_path_factory,
+):
+    """Test workflow that warps surfaces to standard space using antsApplyTransformsToPoints."""
+    tmpdir = tmp_path_factory.mktemp('test_itk_warp_gifti_surface_wf')
+
+    wf = anatomical.plotting.init_itk_warp_gifti_surface_wf(name='wf')
+    wf.inputs.inputnode.native_surf_gii = surface_files['native_lh_pial']
+    wf.inputs.inputnode.itk_warp_file = pnc_data['template_to_anat_xfm']
+    wf.base_dir = tmpdir
+    wf = clean_datasinks(wf)
+    wf_res = wf.run()
+    wf_nodes = get_nodes(wf_res)
+    assert os.path.isfile(wf_nodes['wf.csv_to_gifti'].get_output('out_file'))
 
 
 def test_postprocess_anat_wf(ds001419_data, tmp_path_factory):
