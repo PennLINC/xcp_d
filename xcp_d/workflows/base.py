@@ -311,6 +311,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             t2w_available=t2w_available,
             software=software,
         )
+        # XXX: We need to pass along the standard-space anatomical and the native space anatomical.
 
         workflow.connect([
             (inputnode, postprocess_surfaces_wf, [
@@ -338,6 +339,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ('outputnode.t2w', 'inputnode.t2w'),
                 ]),
             ])  # fmt:skip
+
+            if t2w_available:
+                workflow.connect([
+                    (inputnode, postprocess_surfaces_wf, [('t2w', 'inputnode.anat_native')]),
+                ])  # fmt:skip
+            else:
+                workflow.connect([
+                    (inputnode, postprocess_surfaces_wf, [('t1w', 'inputnode.anat_native')]),
+                ])  # fmt:skip
 
         else:
             # Use native-space structurals

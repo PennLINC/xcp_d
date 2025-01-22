@@ -96,8 +96,10 @@ def init_postprocess_surfaces_wf(
     ------
     t1w
         Preprocessed T1w file. May be in native or standard space.
+        If process_surfaces is True, then this file must be in standard space.
     t2w
         Preprocessed T2w file. May be in native or standard space.
+        If process_surfaces is True, then this file must be in standard space.
     %(anat_to_template_xfm)s
     %(template_to_anat_xfm)s
     lh_pial_surf, rh_pial_surf
@@ -121,6 +123,7 @@ def init_postprocess_surfaces_wf(
             fields=[
                 't1w',
                 't2w',
+                'anat_native',  # native-space anatomical, used as reference image for brainsprite
                 'anat_to_template_xfm',
                 'template_to_anat_xfm',
                 'lh_subject_sphere',
@@ -251,6 +254,7 @@ def init_postprocess_surfaces_wf(
         )
         workflow.connect([
             (inputnode, warp_surfaces_to_template_wf, [
+                ('anat_native', 'anat_native'),
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
                 ('lh_pial_surf', 'inputnode.lh_pial_surf'),
@@ -269,6 +273,11 @@ def init_postprocess_surfaces_wf(
                 ('outputnode.rh_wm_surf', 'inputnode.wm_surf'),
             ]),
         ])  # fmt:skip
+
+        if t2w_available:
+            workflow.connect([
+                (inputnode, warp_surfaces_to_template_wf, [('t2w', 'inputnode.anat_std')]),
+            ])  # fmt:skip
 
         if abcc_qc:
             # Use standard-space T1w and surfaces for brainsprite.
@@ -350,6 +359,9 @@ def init_warp_surfaces_to_template_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
+                # anatomical images to use as reference images in transforms
+                'anat_native',
+                'anat_std',
                 # transforms
                 'anat_to_template_xfm',
                 'template_to_anat_xfm',
@@ -388,6 +400,8 @@ def init_warp_surfaces_to_template_wf(
         (inputnode, update_xfm_wf, [
             ('anat_to_template_xfm', 'inputnode.anat_to_template_xfm'),
             ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
+            ('anat_native', 'inputnode.anat_native'),
+            ('anat_std', 'inputnode.anat_std'),
         ]),
     ])  # fmt:skip
 
@@ -628,6 +642,10 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
 
     Inputs
     ------
+    anat_native
+        The native-space anatomical image.
+    anat_std
+        The standard-space anatomical image.
     anat_to_template_xfm
         ANTS/fMRIPrep-style H5 transform from anatomical image to template.
     template_to_anat_xfm
@@ -643,7 +661,14 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
-        niu.IdentityInterface(fields=['anat_to_template_xfm', 'template_to_anat_xfm']),
+        niu.IdentityInterface(
+            fields=[
+                'anat_native',
+                'anat_std',
+                'anat_to_template_xfm',
+                'template_to_anat_xfm',
+            ],
+        ),
         name='inputnode',
     )
 
@@ -654,21 +679,29 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
 
     # Convert the transform into a displacement field.
     # XXX: This is the step that I need to get working.
-    # XXX: Reference image is necessary here
     fwd_to_displacement = pe.Node(
         TransformsToDisplacement(dimension=3),
         name='fwd_to_displacement',
         mem_gb=mem_gb,
     )
-    workflow.connect([(inputnode, fwd_to_displacement, [('anat_to_template_xfm', 'transforms')])])
+    workflow.connect([
+        (inputnode, fwd_to_displacement, [
+            ('anat_std', 'reference_image'),
+            ('anat_to_template_xfm', 'transforms'),
+        ]),
+    ])  # fmt:skip
 
-    # XXX: Reference image is necessary here
     rvs_to_displacement = pe.Node(
         TransformsToDisplacement(dimension=3),
         name='rvs_to_displacement',
         mem_gb=mem_gb,
     )
-    workflow.connect([(inputnode, rvs_to_displacement, [('template_to_anat_xfm', 'transforms')])])
+    workflow.connect([
+        (inputnode, rvs_to_displacement, [
+            ('anat_native', 'reference_image'),
+            ('template_to_anat_xfm', 'transforms'),
+        ]),
+    ])  # fmt:skip
 
     # Use C3d to separate the combined warpfield xfm into x, y, and z components
     get_fwd_xyz_components = pe.Node(
