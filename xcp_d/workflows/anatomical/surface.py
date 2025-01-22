@@ -254,7 +254,7 @@ def init_postprocess_surfaces_wf(
         )
         workflow.connect([
             (inputnode, warp_surfaces_to_template_wf, [
-                ('anat_native', 'anat_native'),
+                ('anat_native', 'inputnode.anat_native'),
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
                 ('lh_pial_surf', 'inputnode.lh_pial_surf'),
