@@ -99,6 +99,7 @@ class _CompositeTransformUtilOutputSpec(TraitedSpec):
 
     affine_transforms = traits.List(File(exists=True), desc='Affine transform component')
     displacement_fields = traits.List(File(exists=True), desc='Displacement field component')
+    order = traits.List(traits.Str, desc='Order of transforms. Values are "affine" or "warp".')
     out_file = File(desc='Compound transformation file')
 
 
@@ -177,6 +178,15 @@ class CompositeTransformUtil(ANTSCommand):
 
             outputs['affine_transforms'] = [os.path.abspath(aff) for aff in affines]
             outputs['displacement_fields'] = [os.path.abspath(warp) for warp in warps]
+            # Extract the order of the two types of transforms
+            # Transform files include the order after the prefix (*_00_*.mat, *_01_*.nii.gz, etc.)
+            aff_order = [int(aff.split('_')[-2]) for aff in affines]
+            warp_order = [int(warp.split('_')[-2]) for warp in warps]
+            # Combine the two lists into a list of tuples
+            combined = [(i, 'affine') for i in aff_order] + [(i, 'warp') for i in warp_order]
+            # Sort the combined list based on the indices
+            combined.sort()
+            outputs['order'] = [value for _, value in combined]
         elif self.inputs.process == 'assemble':
             outputs['out_file'] = os.path.abspath(self.inputs.out_file)
 
