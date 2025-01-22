@@ -423,7 +423,7 @@ def init_warp_surfaces_to_template_wf(
             (inputnode, warp_to_fsLR_wf, [
                 (f'{hemi_label}_subject_sphere', 'inputnode.subject_sphere'),
             ]),
-            (collect_surfaces, warp_to_fsLR_wf, [('out', 'inputnode.hemi_files')]),
+            (collect_surfaces, warp_to_fsLR_wf, [('out', 'inputnode.fsnative_hemi_files')]),
         ])  # fmt:skip
 
         warp_surface_to_template_wf = init_warp_surface_to_volumetric_template_wf(
