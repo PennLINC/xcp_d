@@ -359,7 +359,8 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
             function=listify,
             input_names=['obj'],
             output_names=['out_list'],
-        )
+        ),
+        name='listify_transform',
     )
     workflow.connect([(inputnode, listify_transform, [('itk_warp_file', 'obj')])])
 
