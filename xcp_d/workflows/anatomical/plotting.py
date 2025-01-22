@@ -74,7 +74,7 @@ def init_brainsprite_figures_wf(
     rh_wm_surf
     lh_pial_surf
     rh_pial_surf
-    anat_to_template_xfm
+    template_to_anat_xfm
     """
     workflow = Workflow(name=name)
 
@@ -87,7 +87,7 @@ def init_brainsprite_figures_wf(
                 'rh_wm_surf',
                 'lh_pial_surf',
                 'rh_pial_surf',
-                'anat_to_template_xfm',
+                'template_to_anat_xfm',
             ],
         ),
         name='inputnode',
@@ -108,7 +108,7 @@ def init_brainsprite_figures_wf(
             workflow.connect([
                 (inputnode, warp_to_template_wf, [
                     (surface, 'inputnode.native_surf_gii'),
-                    ('anat_to_template_xfm', 'inputnode.itk_warp_file'),
+                    ('template_to_anat_xfm', 'inputnode.itk_warp_file'),
                 ]),
                 (warp_to_template_wf, surface_buffer, [('outputnode.warped_surf_gii', surface)]),
             ])  # fmt:skip

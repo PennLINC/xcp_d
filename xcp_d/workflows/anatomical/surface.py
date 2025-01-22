@@ -94,7 +94,7 @@ def init_postprocess_surfaces_wf(
         Preprocessed T1w file. May be in native or standard space.
     t2w
         Preprocessed T2w file. May be in native or standard space.
-    %(anat_to_template_xfm)s
+    %(template_to_anat_xfm)s
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
     lh_subject_sphere, rh_subject_sphere
@@ -118,7 +118,7 @@ def init_postprocess_surfaces_wf(
                 't1w',
                 't2w',
                 # Transform to allow the surfaces to be overlaid on the MNI152NLin6Asym template
-                'anat_to_template_xfm',
+                'template_to_anat_xfm',
                 # Spheres to use for warping mesh files to fsLR space
                 'lh_subject_sphere',
                 'rh_subject_sphere',
@@ -274,7 +274,7 @@ def init_postprocess_surfaces_wf(
                 (inputnode, brainsprite_wf, [
                     ('t1w', 'inputnode.t1w'),
                     ('t2w', 'inputnode.t2w'),
-                    ('anat_to_template_xfm', 'inputnode.anat_to_template_xfm'),
+                    ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
                     ('lh_pial_surf', 'inputnode.lh_pial_surf'),
                     ('rh_pial_surf', 'inputnode.rh_pial_surf'),
                     ('lh_wm_surf', 'inputnode.lh_wm_surf'),
