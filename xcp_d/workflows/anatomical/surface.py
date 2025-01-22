@@ -411,23 +411,35 @@ def init_warp_surfaces_to_template_wf(
             ]),
         ])  # fmt:skip
 
-        apply_transforms_wf = init_warp_one_hemisphere_wf(
+        # Warp fsnative to fsLR
+        warp_to_fsLR_wf = init_warp_fsnative_to_fsLR_wf(
             hemisphere=hemi,
             software=software,
             mem_gb=2,
             omp_nthreads=omp_nthreads,
+            name=f'{hemi_label}_warp_to_fsLR_wf',
+        )
+        workflow.connect([
+            (inputnode, warp_to_fsLR_wf, [
+                (f'{hemi_label}_subject_sphere', 'inputnode.subject_sphere'),
+            ]),
+            (collect_surfaces, warp_to_fsLR_wf, [('out', 'inputnode.hemi_files')]),
+        ])  # fmt:skip
+
+        warp_surface_to_template_wf = init_warp_surface_to_volumetric_template_wf(
+            mem_gb=2,  # TODO: Fix
+            omp_nthreads=omp_nthreads,
             name=f'{hemi_label}_apply_transforms_wf',
         )
         workflow.connect([
-            (inputnode, apply_transforms_wf, [
-                (f'{hemi_label}_subject_sphere', 'inputnode.subject_sphere'),
-            ]),
-            (update_xfm_wf, apply_transforms_wf, [
+            (update_xfm_wf, warp_surface_to_template_wf, [
                 ('outputnode.merged_warpfield', 'inputnode.merged_warpfield'),
                 ('outputnode.merged_inv_warpfield', 'inputnode.merged_inv_warpfield'),
                 ('outputnode.world_xfm', 'inputnode.world_xfm'),
             ]),
-            (collect_surfaces, apply_transforms_wf, [('out', 'inputnode.hemi_files')]),
+            (warp_to_fsLR_wf, warp_surface_to_template_wf, [
+                ('outputnode.fsLR_hemi_files', 'inputnode.fsLR_hemi_files'),
+            ]),
         ])  # fmt:skip
 
         # Split up the surfaces
@@ -443,7 +455,7 @@ def init_warp_surfaces_to_template_wf(
             name=f'split_up_surfaces_fsLR_32k_{hemi_label}',
         )
         workflow.connect([
-            (apply_transforms_wf, split_up_surfaces_fsLR_32k, [
+            (warp_surface_to_template_wf, split_up_surfaces_fsLR_32k, [
                 ('outputnode.warped_hemi_files', 'inlist'),
             ]),
             (split_up_surfaces_fsLR_32k, outputnode, [
@@ -465,7 +477,7 @@ def init_warp_surfaces_to_template_wf(
         )
         workflow.connect([
             (collect_surfaces, ds_standard_space_surfaces, [('out', 'source_file')]),
-            (apply_transforms_wf, ds_standard_space_surfaces, [
+            (warp_surface_to_template_wf, ds_standard_space_surfaces, [
                 ('outputnode.warped_hemi_files', 'in_file'),
             ]),
         ])  # fmt:skip
@@ -841,13 +853,12 @@ def init_ants_xfm_to_fsl_wf(mem_gb, name='ants_xfm_to_fsl_wf'):
     return workflow
 
 
-@fill_doc
-def init_warp_one_hemisphere_wf(
+def init_warp_fsnative_to_fsLR_wf(
     hemisphere,
     software,
     mem_gb,
     omp_nthreads,
-    name='warp_one_hemisphere_wf',
+    name='warp_fsnative_to_fsLR_wf',
 ):
     """Apply transforms to warp one hemisphere's surface files into standard space.
 
@@ -866,7 +877,6 @@ def init_warp_one_hemisphere_wf(
 
             wf = init_warp_one_hemisphere_wf(
                 hemisphere="L",
-                software="FreeSurfer",
                 mem_gb=0.1,
                 omp_nthreads=1,
                 name="warp_one_hemisphere_wf",
@@ -884,18 +894,9 @@ def init_warp_one_hemisphere_wf(
 
     Inputs
     ------
-    hemi_files : list of str
+    fsnative_hemi_files : list of str
         A list of surface files (i.e., pial and white matter) for the requested hemisphere,
         in fsnative space.
-    world_xfm
-        The affine portion of the volumetric anatomical-to-template transform,
-        in NIfTI (world) format.
-    merged_warpfield
-        The warpfield portion of the volumetric anatomical-to-template transform,
-        in FSL (FNIRT) format.
-    merged_inv_warpfield
-        The warpfield portion of the volumetric template-to-anatomical transform,
-        in FSL (FNIRT) format.
     subject_sphere
         The subject's fsnative sphere registration file to fsaverage
         (sphere.reg in FreeSurfer parlance).
@@ -904,8 +905,8 @@ def init_warp_one_hemisphere_wf(
 
     Outputs
     -------
-    warped_hemi_files : list of str
-        The ``hemi_files`` warped from fsnative space to standard space.
+    fsLR_hemi_files : list of str
+        The ``fsnative_hemi_files`` warped from fsnative space to fsLR-32k space.
 
     Notes
     -----
@@ -927,29 +928,20 @@ def init_warp_one_hemisphere_wf(
        to the target space. This includes downsampling to 32k.
         - For Freesurfer, this means the coordinates for these files are fsLR-32k.
         - For MCRIBS, this means the coordinates for these files are dhcpAsym-32k.
-    5. Apply the anatomical-to-template affine transform to the 32k surfaces.
-    6. Apply the anatomical-to-template warpfield to the 32k surfaces.
-       This and the previous step make it so you can overlay the pial and white matter surfaces
-       on the associated volumetric template (e.g., for XCP-D's brainsprite).
-        - The important thing is that the volumetric template must match the template space
-          used here.
     """
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                'hemi_files',
-                'world_xfm',
-                'merged_warpfield',
-                'merged_inv_warpfield',
+                'fsnative_hemi_files',
                 'subject_sphere',
             ],
         ),
         name='inputnode',
     )
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=['warped_hemi_files']),
+        niu.IdentityInterface(fields=['fsLR_hemi_files']),
         name='outputnode',
     )
 
@@ -990,7 +982,96 @@ def init_warp_one_hemisphere_wf(
         (inputnode, resample_to_fsLR32k, [('hemi_files', 'in_file')]),
         (collect_registration_files, resample_to_fsLR32k, [('target_sphere', 'new_sphere')]),
         (surface_sphere_project_unproject, resample_to_fsLR32k, [('out_file', 'current_sphere')]),
+        (resample_to_fsLR32k, outputnode, [('out_file', 'fsLR_hemi_files')]),
     ])  # fmt:skip
+
+    return workflow
+
+
+@fill_doc
+def init_warp_surface_to_volumetric_template_wf(
+    mem_gb,
+    omp_nthreads,
+    name='warp_surface_to_volumetric_template_wf',
+):
+    """Apply transforms to warp one hemisphere's surface files into standard space.
+
+    Basically, the resulting surface files will have the same vertices as the standard-space
+    surfaces, but the coordinates/mesh of those vertices will be the subject's native-space
+    coordinates/mesh.
+    This way we can visualize surface statistical maps on the subject's unique morphology
+    (sulci, gyri, etc.).
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.workflows.anatomical.surface import (
+                init_warp_surface_to_volumetric_template_wf,
+            )
+
+            wf = init_warp_surface_to_volumetric_template_wf(
+                mem_gb=0.1,
+                omp_nthreads=1,
+                name="warp_surface_to_volumetric_template_wf",
+            )
+
+    Parameters
+    ----------
+    %(mem_gb)s
+    %(omp_nthreads)s
+    %(name)s
+        Default is "warp_surface_to_volumetric_template_wf".
+
+    Inputs
+    ------
+    fsLR_hemi_files : list of str
+        A list of surface files (i.e., pial and white matter) for the requested hemisphere,
+        in fsLR space.
+    world_xfm
+        The affine portion of the volumetric anatomical-to-template transform,
+        in NIfTI (world) format.
+    merged_warpfield
+        The warpfield portion of the volumetric anatomical-to-template transform,
+        in FSL (FNIRT) format.
+    merged_inv_warpfield
+        The warpfield portion of the volumetric template-to-anatomical transform,
+        in FSL (FNIRT) format.
+
+    Outputs
+    -------
+    warped_hemi_files : list of str
+        The ``hemi_files`` warped from fsnative space to standard space.
+
+    Notes
+    -----
+    Steps:
+
+    1. Apply the anatomical-to-template affine transform to the 32k surfaces.
+    2. Apply the anatomical-to-template warpfield to the 32k surfaces.
+       This and the previous step make it so you can overlay the pial and white matter surfaces
+       on the associated volumetric template (e.g., for XCP-D's brainsprite).
+        - The important thing is that the volumetric template must match the template space
+          used here.
+    """
+    workflow = Workflow(name=name)
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'fsLR_hemi_files',
+                'world_xfm',
+                'merged_warpfield',
+                'merged_inv_warpfield',
+            ],
+        ),
+        name='inputnode',
+    )
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=['warped_hemi_files']),
+        name='outputnode',
+    )
 
     # Apply FLIRT-format anatomical-to-template affine transform to 32k surfs
     # I think this makes it so you can overlay the pial and white matter surfaces on the
@@ -1003,8 +1084,10 @@ def init_warp_one_hemisphere_wf(
         iterfield=['in_file'],
     )
     workflow.connect([
-        (inputnode, apply_affine_to_fsLR32k, [('world_xfm', 'affine')]),
-        (resample_to_fsLR32k, apply_affine_to_fsLR32k, [('out_file', 'in_file')]),
+        (inputnode, apply_affine_to_fsLR32k, [
+            ('fsLR_hemi_files', 'in_file'),
+            ('world_xfm', 'affine'),
+        ]),
     ])  # fmt:skip
 
     # Apply FNIRT-format (forward) anatomical-to-template warpfield
