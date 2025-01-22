@@ -314,6 +314,7 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
 
             with mock_config():
                 wf = init_itk_warp_gifti_surface_wf()
+
     Parameters
     ----------
     %(name)s
@@ -330,7 +331,6 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
     warped_surf_gii
         Gifti file where the transform in ``itk_warp_file`` has been applied
         to the vertices in ``native_surf_gii``.
-
     """
     workflow = Workflow(name=name)
 
@@ -352,27 +352,24 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
         name='inputnode',
     )
 
-    convert_to_csv = pe.Node(
-        GiftiToCSV(itk_lps=True), name='convert_to_csv'
-    )
+    convert_to_csv = pe.Node(GiftiToCSV(itk_lps=True), name='convert_to_csv')
+    workflow.connect([(inputnode, convert_to_csv, [('native_surf_gii', 'in_file')])])
 
     transform_vertices = pe.Node(
         ApplyTransformsToPoints(dimension=3),
         name='transform_vertices',
     )
+    workflow.connect([
+        (inputnode, transform_vertices, [('itk_warp_file', 'transforms')]),
+        (convert_to_csv, transform_vertices, [('out_file', 'input_file')]),
+    ])  # fmt:skip
 
     csv_to_gifti = pe.Node(CSVToGifti(itk_lps=True), name='csv_to_gifti')
-
-    workflow.connect(
-        [
-            (inputnode, convert_to_csv, [('native_surf_gii', 'in_file')]),
-            (inputnode, transform_vertices, [('itk_warp_file', 'transforms')]),
-            (inputnode, csv_to_gifti, [('native_surf_gii', 'gii_file')]),
-            (convert_to_csv, transform_vertices, [('out_file', 'input_file')]),
-            (transform_vertices, csv_to_gifti, [('output_file', 'in_file')]),
-            (csv_to_gifti, outputnode, [('out_file', 'warped_surf_gii')]),
-        ]
-    )
+    workflow.connect([
+        (inputnode, csv_to_gifti, [('native_surf_gii', 'gii_file')]),
+        (transform_vertices, csv_to_gifti, [('output_file', 'in_file')]),
+        (csv_to_gifti, outputnode, [('out_file', 'warped_surf_gii')]),
+    ])  # fmt:skip
 
     return workflow
 
