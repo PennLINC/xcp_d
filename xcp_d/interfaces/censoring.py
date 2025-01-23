@@ -39,8 +39,7 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
         None,
         mandatory=False,
         desc=(
-            'TSV file with selected confounds for denoising. '
-            'May be None if denoising is disabled.'
+            'TSV file with selected confounds for denoising. May be None if denoising is disabled.'
         ),
     )
     confounds_images = traits.Either(
@@ -71,8 +70,7 @@ class _RemoveDummyVolumesOutputSpec(TraitedSpec):
         File(exists=True),
         None,
         desc=(
-            'TSV file with selected confounds for denoising. '
-            'May be None if denoising is disabled.'
+            'TSV file with selected confounds for denoising. May be None if denoising is disabled.'
         ),
     )
     confounds_images_dropped_TR = traits.Either(
@@ -386,8 +384,7 @@ class RandomCensor(SimpleInterface):
             censoring_df.loc[random_censor, column_name] = 0
             temporal_mask_metadata[column_name] = {
                 'Description': (
-                    f'Randomly selected low-motion volumes to retain exactly {exact_scan} '
-                    'volumes.'
+                    f'Randomly selected low-motion volumes to retain exactly {exact_scan} volumes.'
                 ),
                 'Levels': {
                     '0': 'Retained or high-motion volume',
@@ -905,9 +902,9 @@ class GenerateConfounds(SimpleInterface):
         signal_regressors = [c for c in new_confound_df.columns if c.startswith('signal__')]
         if signal_regressors:
             LOGGER.warning(
-                "Signal regressors detected. "
-                "Orthogonalizing nuisance regressors w.r.t. the following signal regressors: "
-                f"{', '.join(signal_regressors)}"
+                'Signal regressors detected. '
+                'Orthogonalizing nuisance regressors w.r.t. the following signal regressors: '
+                f'{", ".join(signal_regressors)}'
             )
             noise_regressors = [c for c in new_confound_df.columns if not c.startswith('signal__')]
 
@@ -936,15 +933,15 @@ class GenerateConfounds(SimpleInterface):
             for col in noise_regressors:
                 desc_str = (
                     "This regressor is orthogonalized with respect to the 'signal' regressors "
-                    f"({', '.join(signal_regressors)}) after dummy scan removal, "
-                    "but prior to any censoring."
+                    f'({", ".join(signal_regressors)}) after dummy scan removal, '
+                    'but prior to any censoring.'
                 )
 
                 col_metadata = {}
                 if col in confounds_metadata.keys():
                     col_metadata = confounds_metadata.pop(col)
                     if 'Description' in col_metadata.keys():
-                        desc_str = f"{col_metadata['Description']} {desc_str}"
+                        desc_str = f'{col_metadata["Description"]} {desc_str}'
 
                 col_metadata['Description'] = desc_str
                 confounds_metadata[f'{col}_orth'] = col_metadata

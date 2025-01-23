@@ -151,7 +151,7 @@ if not _disable_et:
     # Just get so analytics track one hit
     from contextlib import suppress
 
-    from requests import ConnectionError, ReadTimeout
+    from requests import ConnectionError, ReadTimeout  # noqa: A004
     from requests import get as _get_url
 
     with suppress((ConnectionError, ReadTimeout)):
@@ -201,7 +201,7 @@ try:
             if _proc_oc_kbytes.exists():
                 _oc_limit = _proc_oc_kbytes.read_text().strip()
             if _oc_limit in ('0', 'n/a') and Path('/proc/sys/vm/overcommit_ratio').exists():
-                _oc_limit = f"{Path('/proc/sys/vm/overcommit_ratio').read_text().strip()}%"
+                _oc_limit = f'{Path("/proc/sys/vm/overcommit_ratio").read_text().strip()}%'
 except Exception:  # noqa: S110, BLE001
     pass
 
@@ -416,7 +416,7 @@ class execution(_Config):
     """Folder where derivatives will be stored."""
     atlases = []
     """Selection of atlases to apply to the data."""
-    run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
+    run_uuid = f'{strftime("%Y%m%d-%H%M%S")}_{uuid4()}'
     """Unique identifier of this particular run."""
     participant_label = None
     """List of participant identifiers that are to be preprocessed."""
@@ -562,8 +562,6 @@ class workflow(_Config):
     """Full-width at half-maximum (FWHM) of the smoothing kernel."""
     output_interpolated = None
     """Output interpolated data, not censored data."""
-    output_correlations = None
-    """Output correlations from censored data. This doesn't affect exact_scans."""
     combine_runs = None
     """Combine runs of the same task."""
     motion_filter_type = None
@@ -590,8 +588,10 @@ class workflow(_Config):
     """Order of the band-pass filter."""
     min_coverage = None
     """Coverage threshold to apply to parcels in each atlas."""
-    dcan_correlation_lengths = None
-    """Produce correlation matrices limited to each requested amount of time."""
+    correlation_lengths = None
+    """Produce correlation matrices limited to each requested amount of time.
+    If this list includes 'all' then correlations from the full (censored) time series will
+    be produced."""
     process_surfaces = None
     """Warp fsnative-space surfaces to the MNI space."""
     abcc_qc = None

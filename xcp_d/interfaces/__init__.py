@@ -5,7 +5,6 @@
 from xcp_d.interfaces import (
     ants,
     bids,
-    c3,
     censoring,
     connectivity,
     execsummary,
@@ -19,7 +18,6 @@ from xcp_d.interfaces import (
 __all__ = [
     'ants',
     'bids',
-    'c3',
     'connectivity',
     'execsummary',
     'nilearn',

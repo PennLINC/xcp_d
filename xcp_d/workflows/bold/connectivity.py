@@ -130,7 +130,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ]),
     ])  # fmt:skip
 
-    if config.workflow.output_correlations:
+    if 'all' in config.workflow.correlation_lengths:
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
@@ -405,10 +405,12 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    if config.workflow.output_correlations:
+    if 'all' in config.workflow.correlation_lengths:
         # Correlate the parcellated data
         correlate_bold = pe.MapNode(
-            CiftiCorrelation(num_threads=config.nipype.omp_nthreads),
+            CiftiCorrelation(
+                num_threads=config.nipype.omp_nthreads,
+            ),
             name='correlate_bold',
             iterfield=['in_file'],
             n_procs=config.nipype.omp_nthreads,

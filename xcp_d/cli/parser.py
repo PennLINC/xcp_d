@@ -70,7 +70,7 @@ def _build_parser():
         '--mode',
         dest='mode',
         action='store',
-        choices=['abcd', 'hbcd', 'linc', 'none'],
+        choices=['abcd', 'hbcd', 'linc', 'nichart', 'none'],
         required=True,
         help=(
             'The mode of operation for XCP-D. '
@@ -90,6 +90,7 @@ def _build_parser():
         dest='participant_label',
         action='store',
         nargs='+',
+        type=lambda label: label.removeprefix('sub-'),
         help=(
             'A space-delimited list of participant identifiers, or a single identifier. '
             "The 'sub-' prefix can be removed."
@@ -118,11 +119,11 @@ def _build_parser():
         default=None,
         metavar='FILE',
         help=(
-            "A JSON file describing custom BIDS input filters using PyBIDS. "
-            "For further details, please check out "
-            "https://xcp_d.readthedocs.io/en/"
-            f"{currentv.base_version if is_release else 'latest'}/usage.html#"
-            "filtering-inputs-with-bids-filter-files"
+            'A JSON file describing custom BIDS input filters using PyBIDS. '
+            'For further details, please check out '
+            'https://xcp-d.readthedocs.io/en/'
+            f'{currentv.base_version if is_release else "latest"}/usage.html#'
+            'filtering-inputs-with-bids-filter-files'
         ),
     )
     g_bids.add_argument(
@@ -285,9 +286,10 @@ def _build_parser():
     g_param.add_argument(
         '--smoothing',
         dest='smoothing',
-        default=6,
+        default='auto',
         action='store',
-        type=float,
+        type=parser_utils._float_or_auto,
+        metavar='{{auto,FLOAT}}',
         help=(
             'FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD '
             'data. '
@@ -532,13 +534,13 @@ The default is 240 (4 minutes).
         '--min_coverage',
         dest='min_coverage',
         required=False,
-        default=0.5,
+        default='auto',
         type=parser_utils._restricted_float,
+        metavar='{auto,FLOAT}',
         help=(
             'Coverage threshold to apply to parcels in each atlas. '
             'Any parcels with lower coverage than the threshold will be replaced with NaNs. '
-            'Must be a value between zero and one, indicating proportion of the parcel. '
-            'Default is 0.5.'
+            'Must be a value between zero and one, indicating proportion of the parcel.'
         ),
     )
 
@@ -546,7 +548,7 @@ The default is 240 (4 minutes).
     g_dcan.add_argument(
         '--create-matrices',
         '--create_matrices',
-        dest='dcan_correlation_lengths',
+        dest='correlation_lengths',
         required=False,
         default=None,
         nargs='+',
@@ -737,8 +739,9 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         help="""\
 If used, a workflow will be run to warp native-space (``fsnative``) reconstructed cortical
 surfaces (``surf.gii`` files) produced by Freesurfer into standard (``fsLR``) space.
+Additionally, the fsLR-space surfaces will be warped such that they can be overlaid on the
+MNI152NLin6Asym template.
 These surface files are primarily used for visual quality assessment.
-By default, this workflow is disabled.
 
 **IMPORTANT**: This parameter can only be run if the --file-format flag is set to cifti.
 """,
@@ -750,7 +753,7 @@ By default, this workflow is disabled.
             f"""\
 You are using XCP-D v{currentv}, and a newer version of XCP-D is available: v{latest}.
 Please check out our documentation about how and when to upgrade:
-https://xcp_d.readthedocs.io/en/latest/faq.html#upgrading""",
+https://xcp-d.readthedocs.io/en/latest/faq.html#upgrading""",
             file=sys.stderr,
         )
 
@@ -866,7 +869,7 @@ def parse_args(args=None, namespace=None):
 
     # Ensure input and output folders are not the same
     if output_dir == fmri_dir:
-        rec_path = fmri_dir / 'derivatives' / f"xcp_d-{version.split('+')[0]}"
+        rec_path = fmri_dir / 'derivatives' / f'xcp_d-{version.split("+")[0]}'
         parser.error(
             'The selected output folder is the same as the input BIDS folder. '
             f'Please modify the output path (suggestion: {rec_path}).'
@@ -895,8 +898,8 @@ def parse_args(args=None, namespace=None):
     missing_subjects = participant_label - set(all_subjects)
     if missing_subjects:
         parser.error(
-            "One or more participant labels were not found in the BIDS directory: "
-            f"{', '.join(missing_subjects)}."
+            'One or more participant labels were not found in the BIDS directory: '
+            f'{", ".join(missing_subjects)}.'
         )
 
     config.execution.participant_label = sorted(participant_label)
@@ -940,7 +943,13 @@ def _validate_parameters(opts, build_log, parser):
     assert opts.despike in (True, False, 'auto')
     assert opts.file_format in ('nifti', 'cifti', 'auto')
     assert opts.linc_qc in (True, False, 'auto')
-    assert opts.mode in ('abcd', 'hbcd', 'linc', 'none'), f"Unsupported mode '{opts.mode}'."
+    assert opts.mode in (
+        'abcd',
+        'hbcd',
+        'linc',
+        'nichart',
+        'none',
+    ), f'Unsupported mode "{opts.mode}".'
     assert opts.output_type in ('censored', 'interpolated', 'auto')
     assert opts.process_surfaces in (True, False, 'auto')
 
@@ -961,52 +970,40 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.dcan_correlation_lengths = (
-            [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
-        )
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
+        opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
-        opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
-        opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
-        opts.process_surfaces = (
-            True if (opts.process_surfaces == 'auto') else opts.process_surfaces
-        )
-        # Remove "all" from the list of correlation lengths
-        opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != 'all']
+        opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'hbcd':
         opts.abcc_qc = True if (opts.abcc_qc == 'auto') else opts.abcc_qc
         opts.combine_runs = True if (opts.combine_runs == 'auto') else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.dcan_correlation_lengths = (
-            [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
-        )
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
         opts.input_type = 'nibabies' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
+        opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
-        opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
-        opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
-        opts.process_surfaces = (
-            True if (opts.process_surfaces == 'auto') else opts.process_surfaces
-        )
-        # Remove "all" from the list of correlation lengths
-        opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != 'all']
+        opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'linc':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
         opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
@@ -1018,16 +1015,34 @@ def _validate_parameters(opts, build_log, parser):
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
-        opts.output_correlations = True
+        opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.output_type == 'interpolated':
             error_messages.append(
                 f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
             )
         opts.output_type = 'censored'
-        opts.confounds_config = '36P' if opts.confounds_config == 'auto' else opts.confounds_config
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
-        if opts.dcan_correlation_lengths is not None:
+        opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
+        if opts.correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
+        # Patch 'all' into the list of correlation lengths
+        opts.correlation_lengths = ['all']
+    elif opts.mode == 'nichart':
+        opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
+        opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
+        opts.confounds_config = (
+            '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
+        )
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else 'all'
+        opts.despike = True if (opts.despike == 'auto') else opts.despike
+        opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
+        opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format
+        opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
+        opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
+        opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
+        opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
+        opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.smoothing = 0 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'none':
         if opts.abcc_qc == 'auto':
             error_messages.append("'--abcc-qc' (y or n) is required for 'none' mode.")
@@ -1038,9 +1053,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.confounds_config == 'auto':
             error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
-        opts.dcan_correlation_lengths = (
-            [] if opts.dcan_correlation_lengths is None else opts.dcan_correlation_lengths
-        )
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
 
         if opts.despike == 'auto':
             error_messages.append("'--despike' (y or n) is required for 'none' mode.")
@@ -1058,10 +1071,11 @@ def _validate_parameters(opts, build_log, parser):
         if opts.linc_qc == 'auto':
             error_messages.append("'--linc-qc' (y or n) is required for 'none' mode.")
 
+        if opts.min_coverage == 'auto':
+            error_messages.append("'--min-coverage' is required for 'none' mode.")
+
         if opts.motion_filter_type is None:
             error_messages.append("'--motion-filter-type' is required for 'none' mode.")
-
-        opts.output_correlations = True if 'all' in opts.dcan_correlation_lengths else False
 
         if opts.output_type == 'auto':
             error_messages.append("'--output-type' is required for 'none' mode.")
@@ -1071,8 +1085,8 @@ def _validate_parameters(opts, build_log, parser):
                 "'--warp-surfaces-native2std' (y or n) is required for 'none' mode."
             )
 
-        # Remove "all" from the list of correlation lengths
-        opts.dcan_correlation_lengths = [c for c in opts.dcan_correlation_lengths if c != 'all']
+        if opts.smoothing == 'auto':
+            error_messages.append("'--smoothing' is required for 'none' mode.")
 
     # Load the confound configuration file
     if opts.confounds_config == 'none':
@@ -1092,8 +1106,7 @@ def _validate_parameters(opts, build_log, parser):
         and (opts.high_pass > 0 and opts.low_pass > 0)
     ):
         parser.error(
-            f"'--lower-bpf' ({opts.high_pass}) must be lower than "
-            f"'--upper-bpf' ({opts.low_pass})."
+            f"'--lower-bpf' ({opts.high_pass}) must be lower than '--upper-bpf' ({opts.low_pass})."
         )
     elif not opts.bandpass_filter:
         build_log.warning('Bandpass filtering is disabled. ALFF outputs will not be generated.')

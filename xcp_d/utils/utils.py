@@ -575,7 +575,7 @@ def list_to_str(lst):
     elif len(lst_str) == 2:
         return ' and '.join(lst_str)
     else:
-        return f"{', '.join(lst_str[:-1])}, and {lst_str[-1]}"
+        return f'{", ".join(lst_str[:-1])}, and {lst_str[-1]}'
 
 
 def _transpose_lol(lol):
@@ -602,3 +602,12 @@ def _create_mem_gb(bold_fname):
         mem_gbz['resampled'] = 3
 
     return mem_gbz
+
+
+def is_number(s):
+    """Check if a string is a number."""
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False

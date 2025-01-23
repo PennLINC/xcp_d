@@ -32,6 +32,13 @@ def _get_parser():
         required=False,
         default=None,
     )
+    parser.add_argument(
+        '--check_path',
+        action='store_true',
+        help='Check if the path is correct.',
+        required=False,
+        default=False,
+    )
     return parser
 
 
@@ -60,7 +67,7 @@ def run_command(command, env=None):
 
     if process.returncode != 0:
         raise RuntimeError(
-            f'Non zero return code: {process.returncode}\n' f'{command}\n\n{process.stdout.read()}'
+            f'Non zero return code: {process.returncode}\n{command}\n\n{process.stdout.read()}'
         )
 
 
@@ -71,9 +78,7 @@ def run_tests(test_regex, test_mark, check_path):
 
     if check_path:
         run_str = (
-            'docker run --rm -ti '
-            '--entrypoint /bin/ls '
-            f'pennlinc/xcp_d:unstable {mounted_code}'
+            f'docker run --rm -ti --entrypoint /bin/ls pennlinc/xcp_d:unstable {mounted_code}'
         )
         try:
             run_command(run_str)

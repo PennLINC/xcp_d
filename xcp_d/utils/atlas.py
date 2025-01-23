@@ -169,7 +169,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
 
     for _atlas, atlas_info in atlas_cache.items():
         if not atlas_info['labels']:
-            raise FileNotFoundError(f"No TSV file found for {atlas_info['image']}")
+            raise FileNotFoundError(f'No TSV file found for {atlas_info["image"]}')
 
         # Check the contents of the labels file
         df = pd.read_table(atlas_info['labels'])

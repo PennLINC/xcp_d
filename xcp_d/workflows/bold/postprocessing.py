@@ -29,7 +29,7 @@ from xcp_d.utils.boilerplate import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
-from xcp_d.utils.utils import fwhm2sigma
+from xcp_d.utils.utils import fwhm2sigma, is_number
 
 
 @fill_doc
@@ -269,11 +269,10 @@ def init_prepare_confounds_wf(
             (inputnode, remove_dummy_scans, [
                 ('preprocessed_bold', 'bold_file'),
                 ('dummy_scans', 'dummy_scans'),
-            ]),
-            (process_motion, remove_dummy_scans, [
+                # *not* the filtered motion file, which has dummy volume columns removed
                 ('motion_file', 'motion_file'),
-                ('temporal_mask', 'temporal_mask'),
             ]),
+            (process_motion, remove_dummy_scans, [('temporal_mask', 'temporal_mask')]),
             (remove_dummy_scans, dummy_scan_buffer, [
                 ('bold_file_dropped_TR', 'preprocessed_bold'),
                 ('confounds_tsv_dropped_TR', 'confounds_tsv'),
@@ -327,7 +326,7 @@ def init_prepare_confounds_wf(
             ]),
         ])  # fmt:skip
 
-    if config.workflow.dcan_correlation_lengths:
+    if any(is_number(length) for length in config.workflow.correlation_lengths):
         random_censor = pe.Node(
             RandomCensor(exact_scans=exact_scans, random_seed=config.seeds.master),
             name='random_censor',

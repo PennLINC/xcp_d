@@ -21,28 +21,28 @@ dependencies = [
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
     "bids-validator <= 1.14.7.post0",
     "h5py <= 3.12.1",  # for DCAN motion file
-    "indexed_gzip ~= 1.8.7",  # for loading imgs in nibabel
+    "indexed_gzip ~= 1.9.1",  # for loading imgs in nibabel
     "jinja2 ~= 3.1.2",  # for executive summary
     "joblib <= 1.4.2",
-    "matplotlib ~= 3.9.0",
+    "matplotlib ~= 3.10.0",
     "networkx <= 3.4.2",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
-    "nilearn == 0.10.4",  # 0.10.2 raises error with compcor from fMRIPrep 23
-    "nipype ~= 1.8.5",
-    "nireports ~= 24.0.2",
-    "niworkflows == 1.11.0",
+    "nilearn == 0.11.1",  # 0.10.2 raises error with compcor from fMRIPrep 23
+    "nipype ~= 1.9.1",
+    "nireports ~= 24.1.0",
+    "niworkflows == 1.12.1",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
     "numpy ~= 2.0",
     "packaging",  # for version string parsing
     "pandas",
     "psutil >= 5.4",  # for sentry
-    "pybids ~= 0.17.0",
+    "pybids ~= 0.18.1",
     "pyyaml",
-    "scikit-learn <= 1.5.2",
-    "scipy >= 1.14.0,<= 1.14.1",  # nipype needs networkx, which needs scipy > 1.8.0
+    "scikit-learn <= 1.6.1",
+    "scipy >= 1.14.0,<= 1.15.1",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.18.0",  # for usage reports
+    "sentry-sdk ~= 2.20.0",  # for usage reports
     "templateflow ~= 24.2.0",
     "toml",
 ]
@@ -70,7 +70,7 @@ doc = [
     "svgutils",
 ]
 dev = [
-    "ruff ~= 0.4.3",
+    "ruff ~= 0.9.2",
     "pre-commit",
 ]
 tests = [

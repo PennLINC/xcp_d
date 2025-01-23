@@ -74,7 +74,7 @@ the HCP thalamic atlas :footcite:p:`najdenovska2018vivo`,
 and the amygdala and hippocampus parcels from the HCP CIFTI subcortical parcellation
 :footcite:p:`glasser2013minimal`.
 The 4S atlas is used in the same manner across three PennLINC BIDS Apps:
-XCP-D, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
+*XCP-D*, QSIPrep_, and ASLPrep_, to produce synchronized outputs across modalities.
 For more information about the 4S atlas, please see https://github.com/PennLINC/AtlasPack.
 
 .. tip::
@@ -127,6 +127,9 @@ in the preprocessed dataset, then these surfaces will be warped to fsLR space at
 The resulting mesh files will reflect the subject's morphology with the same geometry and density
 as fsLR-32k surfaces, which may be useful for visualizing fsLR-space derivatives on a subject's
 brain.
+
+The mesh files are also warped so that they can be overlaid on top of the MNI152NLin6Asym template,
+as in XCP-D's brainsprite.
 
 .. code-block::
 

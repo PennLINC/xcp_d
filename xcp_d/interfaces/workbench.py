@@ -103,174 +103,6 @@ class FixCiftiIntent(SimpleInterface):
         return runtime
 
 
-class _ConvertAffineInputSpec(_WBCommandInputSpec):
-    """Input specification for ConvertAffine."""
-
-    fromwhat = traits.Str(
-        mandatory=True,
-        argstr='-from-%s',
-        position=0,
-        desc='world, itk, or flirt',
-    )
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        argstr='%s',
-        position=1,
-        desc='The input file',
-    )
-    towhat = traits.Str(
-        mandatory=True,
-        argstr='-to-%s',
-        position=2,
-        desc='world, itk, or flirt',
-    )
-    out_file = File(
-        argstr='%s',
-        name_source='in_file',
-        name_template='%s_world.nii.gz',
-        keep_extension=False,
-        position=3,
-    )
-
-
-class _ConvertAffineOutputSpec(TraitedSpec):
-    """Output specification for ConvertAffine."""
-
-    out_file = File(exists=True, desc='output file')
-
-
-class ConvertAffine(WBCommand):
-    """Interface for wb_command's -convert-affine command."""
-
-    input_spec = _ConvertAffineInputSpec
-    output_spec = _ConvertAffineOutputSpec
-    _cmd = 'wb_command -convert-affine'
-
-
-class _ApplyAffineInputSpec(_WBCommandInputSpec):
-    """Input specification for ApplyAffine."""
-
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        argstr='%s',
-        position=0,
-        desc='The input file',
-    )
-    affine = File(
-        exists=True,
-        mandatory=True,
-        argstr='%s',
-        position=1,
-        desc='The affine file',
-    )
-    out_file = File(
-        argstr='%s',
-        name_source='in_file',
-        name_template='MNIAffine_%s.gii',
-        keep_extension=True,
-        extensions=['.surf.gii', '.shape.gii'],
-        position=2,
-    )
-
-
-class _ApplyAffineOutputSpec(TraitedSpec):
-    """Output specification for ApplyAffine."""
-
-    out_file = File(exists=True, desc='output file')
-
-
-class ApplyAffine(WBCommand):
-    """Interface for wb_command's -surface-apply-affine command.
-
-    .. code-block::
-
-        wb_command -surface-apply-affine
-            <in-surf> - the surface to transform
-            <affine> - the affine file
-            <out-surf> - output - the output transformed surface
-
-            [-flirt] - MUST be used if affine is a flirt affine
-                <source-volume> - the source volume used when generating the affine
-                <target-volume> - the target volume used when generating the affine
-
-    For flirt matrices, you must use the -flirt option, because flirt
-    matrices are not a complete description of the coordinate transform they
-    represent.  If the -flirt option is not present, the affine must be a
-    nifti 'world' affine, which can be obtained with the -convert-affine
-    command, or aff_conv from the 4dfp suite.
-    """
-
-    input_spec = _ApplyAffineInputSpec
-    output_spec = _ApplyAffineOutputSpec
-    _cmd = 'wb_command -surface-apply-affine'
-
-
-class _ApplyWarpfieldInputSpec(_WBCommandInputSpec):
-    """Input specification for ApplyWarpfield."""
-
-    in_file = File(
-        exists=True,
-        mandatory=True,
-        argstr='%s',
-        position=0,
-        desc='The input file',
-    )
-    warpfield = File(
-        exists=True,
-        mandatory=True,
-        argstr='%s',
-        position=1,
-        desc='The warpfield file',
-    )
-    out_file = File(
-        argstr='%s',
-        name_source='in_file',
-        name_template='MNIwarped_%s.gii',
-        extensions=['.surf.gii', '.shape.gii'],
-        position=2,
-    )
-    forward_warp = File(
-        argstr='-fnirt %s',
-        position=3,
-        desc='fnirt forward warpfield',
-    )
-
-
-class _ApplyWarpfieldOutputSpec(TraitedSpec):
-    """Output specification for ApplyWarpfield."""
-
-    out_file = File(exists=True, desc='output file')
-
-
-class ApplyWarpfield(WBCommand):
-    """Apply warpfield to surface file.
-
-    .. code-block::
-
-        wb_command -surface-apply-warpfield
-            <in-surf> - the surface to transform
-            <warpfield> - the INVERSE warpfield
-            <out-surf> - output - the output transformed surface
-
-            [-fnirt] - MUST be used if using a fnirt warpfield
-                <forward-warp> - the forward warpfield
-
-    Warping a surface requires the INVERSE of the warpfield used to warp the volume it lines up
-    with.
-    The header of the forward warp is needed by the -fnirt option in order to correctly
-    interpret the displacements in the fnirt warpfield.
-
-    If the -fnirt option is not present, the warpfield must be a nifti 'world' warpfield,
-    which can be obtained with the -convert-warpfield command.
-    """
-
-    input_spec = _ApplyWarpfieldInputSpec
-    output_spec = _ApplyWarpfieldOutputSpec
-    _cmd = 'wb_command -surface-apply-warpfield'
-
-
 class _SurfaceSphereProjectUnprojectInputSpec(_WBCommandInputSpec):
     """Input specification for SurfaceSphereProjectUnproject."""
 
@@ -360,35 +192,6 @@ class SurfaceSphereProjectUnproject(WBCommand):
     input_spec = _SurfaceSphereProjectUnprojectInputSpec
     output_spec = _SurfaceSphereProjectUnprojectOutputSpec
     _cmd = 'wb_command -surface-sphere-project-unproject'
-
-
-class _ChangeXfmTypeInputSpec(_WBCommandInputSpec):
-    in_transform = File(exists=True, argstr='%s', mandatory=True, position=0)
-
-
-class _ChangeXfmTypeOutputSpec(TraitedSpec):
-    out_transform = File(exists=True)
-
-
-class ChangeXfmType(SimpleInterface):
-    """Change transform type."""
-
-    input_spec = _ChangeXfmTypeInputSpec
-    output_spec = _ChangeXfmTypeOutputSpec
-
-    def _run_interface(self, runtime):
-        with open(self.inputs.in_transform) as f:
-            lines = f.readlines()
-        listcomp = [line.replace('AffineTransform', 'MatrixOffsetTransformBase') for line in lines]
-        outfile = fname_presuffix(
-            self.inputs.in_transform,
-            suffix='_MatrixOffsetTransformBase',
-            newpath=runtime.cwd,
-        )
-        with open(outfile, 'w') as write_file:
-            write_file.write(''.join(listcomp))
-        self._results['out_transform'] = outfile
-        return runtime
 
 
 class _SurfaceAverageInputSpec(_WBCommandInputSpec):
@@ -1444,8 +1247,7 @@ class _CiftiSmoothInputSpec(_WBCommandInputSpec):
         exists=True,
         position=6,
         argstr='-left-corrected-areas %s',
-        desc='vertex areas (as a metric) to use instead of computing them from '
-        'the left surface.',
+        desc='vertex areas (as a metric) to use instead of computing them from the left surface.',
     )
     right_surf = File(
         exists=True,
@@ -1458,8 +1260,7 @@ class _CiftiSmoothInputSpec(_WBCommandInputSpec):
         exists=True,
         position=8,
         argstr='-right-corrected-areas %s',
-        desc='vertex areas (as a metric) to use instead of computing them from '
-        'the right surface',
+        desc='vertex areas (as a metric) to use instead of computing them from the right surface',
     )
     cerebellum_surf = File(
         exists=True,
