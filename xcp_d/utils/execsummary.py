@@ -46,7 +46,7 @@ def get_mesh(filename):
     return mesh
 
 
-def plot_slice_for_brainsprite(nifti, pials, wms):
+def plot_slice_for_brainsprite(nifti, lh_wm, lh_pial, rh_wm, rh_pial):
     import os
 
     import matplotlib.pyplot as plt
@@ -57,10 +57,10 @@ def plot_slice_for_brainsprite(nifti, pials, wms):
 
     img = nb.load(nifti)
     affine = img.affine
-    lh_wm = get_mesh(wms[0])
-    lh_pial = get_mesh(pials[0])
-    rh_wm = get_mesh(wms[1])
-    rh_pial = get_mesh(pials[1])
+    lh_wm = get_mesh(lh_wm)
+    lh_pial = get_mesh(lh_pial)
+    rh_wm = get_mesh(rh_wm)
+    rh_pial = get_mesh(rh_pial)
 
     n_x = img.shape[0]
     filenames = []
