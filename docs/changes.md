@@ -1,8 +1,42 @@
 # What's New
 
+## 0.10.4
+
+This release makes the brainsprite work with composite transforms from Nibabies.
+
+### 🐛 Bug Fixes
+
+* Support multi-step composite transforms from Nibabies by @tsalo in https://github.com/PennLINC/xcp_d/pull/1365
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.3...0.10.4
+
+
+## 0.10.3
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+This release fixes a testing bug that prevented 0.10.2 from deploying.
+
+## What's Changed
+
+### 🐛 Bug Fixes
+
+* Allow `sub-` prefix in participant labels by @tsalo in https://github.com/PennLINC/xcp_d/pull/1347
+* Downgrade connectome workbench version by @tsalo in https://github.com/PennLINC/xcp_d/pull/1358
+* Fix resource class of CIFTI tests by @tsalo in https://github.com/PennLINC/xcp_d/pull/1362
+
+### Other Changes
+
+* Clarify that warped surfaces can be overlaid on the MNI152NLin6Asym template by @tsalo in https://github.com/PennLINC/xcp_d/pull/1349
+* Run ruff by @tsalo in https://github.com/PennLINC/xcp_d/pull/1357
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.1...0.10.3
+
+
 ## 0.10.2
 
 A patch release.
+
+**WARNING**: THIS RELEASE DID NOT DEPLOY. PLEASE USE 0.10.3.
 
 ### 🐛 Bug Fixes
 
