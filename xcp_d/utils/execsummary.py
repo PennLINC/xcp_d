@@ -7,6 +7,93 @@ from nipype import logging
 LOGGER = logging.getLogger('nipype.utils')
 
 
+def plot_gii(mesh, coord, color, slicer, view):
+    _ax = slicer.axes[list(slicer.axes.keys())[0]]
+
+    if view == 'x':
+        plane_origin = [coord, 0, 0]
+        plane_normal = [1, 0, 0]  # Normal for the sagittal plane
+    elif view == 'y':
+        plane_origin = [0, coord, 0]
+        plane_normal = [0, 1, 0]  # Normal for the coronal plane
+    else:
+        plane_origin = [0, 0, coord]
+        plane_normal = [0, 0, 1]  # Normal for the axial plane
+
+    # Use trimesh to find the intersection of the mesh and the plane
+    slice_section = mesh.section(plane_origin=plane_origin, plane_normal=plane_normal)
+    if slice_section is None:
+        return
+
+    for disc in slice_section.discrete:
+        temp = disc
+        if view == 'x':
+            _ax.ax.plot(temp[:, 1], temp[:, 2], color=color)
+        elif view == 'y':
+            _ax.ax.plot(temp[:, 0], temp[:, 2], color=color)
+        else:
+            _ax.ax.plot(temp[:, 0], temp[:, 1], color=color)
+
+
+def get_mesh(filename):
+    import nibabel as nb
+    import trimesh
+
+    img = nb.load(filename)
+    vertices = img.darrays[0].data  # Vertex coordinates
+    faces = img.darrays[1].data  # Triangle indices
+    mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+    return mesh
+
+
+def plot_slice_for_brainsprite(nifti, pials, wms):
+    import os
+
+    import matplotlib.pyplot as plt
+    import nibabel as nb
+    from nilearn import plotting
+
+    from xcp_d.utils.execsummary import get_mesh, plot_gii
+
+    img = nb.load(nifti)
+    affine = img.affine
+    lh_wm = get_mesh(wms[0])
+    lh_pial = get_mesh(pials[0])
+    rh_wm = get_mesh(wms[1])
+    rh_pial = get_mesh(pials[1])
+
+    n_x = img.shape[0]
+    filenames = []
+
+    for i_slice in range(n_x):
+        fig, ax = plt.subplots(figsize=(9, 7.5))
+
+        # Get the appropriate coordinate
+        # TODO: Shift so middle is center of image
+        coord = nb.affines.apply_affine(affine, [i_slice, 0, 0])[0]
+
+        # Display a sagittal slice (adjust 'display_mode' and 'cut_coords' as needed)
+        slicer = plotting.plot_anat(
+            img,
+            display_mode='x',
+            cut_coords=[coord],
+            axes=ax,
+            figure=fig,
+            annotate=False,
+        )
+
+        # Load the surface mesh (GIFTI format)
+        plot_gii(lh_wm, coord, 'darkred', slicer, 'x')
+        plot_gii(rh_wm, coord, 'darkred', slicer, 'x')
+        plot_gii(lh_pial, coord, 'black', slicer, 'x')
+        plot_gii(rh_pial, coord, 'black', slicer, 'x')
+
+        filename = os.path.abspath(f'test_{i_slice:03d}.png')
+        fig.savefig(filename, bbox_inches='tight', facecolor='black')
+        filenames.append(filename)
+    return filenames
+
+
 def make_mosaic(png_files):
     """Take path to .png anatomical slices, create a mosaic, and save to file.
 
