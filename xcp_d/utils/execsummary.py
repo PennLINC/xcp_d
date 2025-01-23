@@ -51,6 +51,7 @@ def plot_slice_for_brainsprite(nifti, lh_wm, lh_pial, rh_wm, rh_pial):
 
     import matplotlib.pyplot as plt
     import nibabel as nb
+    import numpy as np
     from nilearn import plotting
 
     from xcp_d.utils.execsummary import get_mesh, plot_gii
@@ -64,6 +65,10 @@ def plot_slice_for_brainsprite(nifti, lh_wm, lh_pial, rh_wm, rh_pial):
 
     n_x = img.shape[0]
     filenames = []
+
+    data = img.get_fdata()
+    vmin = np.percentile(data, 2)
+    vmax = np.percentile(data, 98)
 
     for i_slice in range(n_x):
         fig, ax = plt.subplots(figsize=(9, 7.5))
@@ -80,13 +85,15 @@ def plot_slice_for_brainsprite(nifti, lh_wm, lh_pial, rh_wm, rh_pial):
             axes=ax,
             figure=fig,
             annotate=False,
+            vmin=vmin,
+            vmax=vmax,
         )
 
         # Load the surface mesh (GIFTI format)
-        plot_gii(lh_wm, coord, 'darkred', slicer, 'x')
-        plot_gii(rh_wm, coord, 'darkred', slicer, 'x')
-        plot_gii(lh_pial, coord, 'black', slicer, 'x')
-        plot_gii(rh_pial, coord, 'black', slicer, 'x')
+        plot_gii(lh_pial, coord, 'darkred', slicer, 'x')
+        plot_gii(rh_pial, coord, 'darkred', slicer, 'x')
+        plot_gii(lh_wm, coord, 'black', slicer, 'x')
+        plot_gii(rh_wm, coord, 'black', slicer, 'x')
 
         filename = os.path.abspath(f'test_{i_slice:03d}.png')
         fig.savefig(filename, bbox_inches='tight', facecolor='black')
@@ -118,7 +125,7 @@ def make_mosaic(png_files):
         # Get relative path to file, from user's home folder
         path = os.path.expanduser(file_)
         with Image.open(path) as img:
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            # img = img.transpose(Image.FLIP_LEFT_RIGHT)
             img.thumbnail((IMAGE_DIM, IMAGE_DIM), resample=Image.Resampling.LANCZOS)
 
             x = index % images_per_side * IMAGE_DIM
