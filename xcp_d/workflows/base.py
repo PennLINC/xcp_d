@@ -187,6 +187,7 @@ def init_group_wf(subject_ids: list):
     )
     workflow.connect([(concatenate_qc_files, ds_linc_qc, [('out_file', 'in_file')])])
 
+    # Flatten and concatenate correlation matrices
     corrmats = [field for field in fields if field.startswith('corrmat')]
     for corrmat in corrmats:
         atlas = corrmat.split('_')[-1].split('-')[-1]
@@ -220,7 +221,6 @@ def init_group_wf(subject_ids: list):
     # Compare distributions of QC metrics across groups?
     # Plot distributions of QC metrics against demographics (e.g., age)?
     # Plot mean and variance of statistical maps (parcellated and otherwise)
-    # Flatten and concatenate correlation matrices
 
     return workflow
 
