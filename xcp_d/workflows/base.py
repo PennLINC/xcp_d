@@ -77,25 +77,66 @@ def init_xcpd_wf():
     xcpd_wf = Workflow(name=f'xcp_d_{ver.major}_{ver.minor}_wf')
     xcpd_wf.base_dir = config.execution.work_dir
 
-    for subject_id in config.execution.participant_label:
-        single_subject_wf = init_single_subject_wf(subject_id)
-
-        single_subject_wf.config['execution']['crashdump_dir'] = str(
-            config.execution.output_dir / f'sub-{subject_id}' / 'log' / config.execution.run_uuid
-        )
-        for node in single_subject_wf._get_all_nodes():
-            node.config = deepcopy(single_subject_wf.config)
-
-        xcpd_wf.add_nodes([single_subject_wf])
-
-        # Dump a copy of the config file into the log directory
-        log_dir = (
-            config.execution.output_dir / f'sub-{subject_id}' / 'log' / config.execution.run_uuid
-        )
+    if config.execution.analysis_level == 'group':
+        group_wf = init_group_wf(config.execution.participant_label)
+        log_dir = config.execution.output_dir / 'log' / config.execution.run_uuid
         log_dir.mkdir(exist_ok=True, parents=True)
-        config.to_filename(log_dir / 'xcp_d.toml')
+
+        group_wf.config['execution']['crashdump_dir'] = str(log_dir)
+        xcpd_wf.add_nodes([group_wf])
+    else:
+        for subject_id in config.execution.participant_label:
+            single_subject_wf = init_single_subject_wf(subject_id)
+
+            log_dir = (
+                config.execution.output_dir / f'sub-{subject_id}' / 'log' /
+                config.execution.run_uuid
+            )
+            log_dir.mkdir(exist_ok=True, parents=True)
+
+            single_subject_wf.config['execution']['crashdump_dir'] = str(log_dir)
+            for node in single_subject_wf._get_all_nodes():
+                node.config = deepcopy(single_subject_wf.config)
+
+            xcpd_wf.add_nodes([single_subject_wf])
+
+            # Dump a copy of the config file into the log directory
+            config.to_filename(log_dir / 'xcp_d.toml')
 
     return xcpd_wf
+
+
+def init_group_wf(subject_ids: list):
+    """Organize a QC aggregation pipeline for multiple subjects.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
+            from xcp_d.workflows.base import init_group_wf
+
+            with mock_config():
+                wf = init_group_wf(["01"])
+
+    Parameters
+    ----------
+    subject_ids : :obj:`list` of :obj:`str`
+        Subject labels for this group workflow.
+    """
+    import pandas as pd
+
+    qc_files = []
+    for dirpath, _, filenames in os.walk(config.execution.output_dir):
+        for filename in filenames:
+            if filename.endswith('_desc-linc_qc.tsv'):
+                qc_files.append(os.path.join(dirpath, filename))
+
+    dfs = [pd.read_table(qc_file) for qc_file in qc_files]
+    df = pd.concat(dfs, axis=0)
+    df.to_csv(outputfile, index=False, sep='\t')
 
 
 @fill_doc

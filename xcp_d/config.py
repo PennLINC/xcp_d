@@ -384,6 +384,8 @@ class execution(_Config):
     """Path(s) to search for other datasets (either derivatives or atlases)."""
     aggr_ses_reports = None
     """Maximum number of sessions aggregated in one subject's visual report."""
+    analysis_level = None
+    """Level of the analysis. 'participant' or 'group'"""
     bids_database_dir = None
     """Path to the directory containing SQLite database indices for the input BIDS dataset."""
     bids_description_hash = None
