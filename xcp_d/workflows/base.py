@@ -139,15 +139,16 @@ def init_group_wf(subject_ids: list):
 
     workflow = Workflow(name='grp_wf')
 
+    fields = list(group_data.keys())
+
     inputnode = pe.Node(
         niu.IdentityInterface(
-            fields=[
-                'linc_qc',
-            ],
+            fields=fields,
         ),
         name='inputnode',
     )
-    inputnode.inputs.linc_qc = group_data['linc_qc']
+    for field in fields:
+        setattr(inputnode.inputs, field, group_data[field])
 
     concatenate_qc_files = pe.Node(
         niu.Function(
@@ -185,6 +186,35 @@ def init_group_wf(subject_ids: list):
         name='ds_linc_qc',
     )
     workflow.connect([(concatenate_qc_files, ds_linc_qc, [('out_file', 'in_file')])])
+
+    corrmats = [field for field in fields if field.startswith('corrmat')]
+    for corrmat in corrmats:
+        atlas = corrmat.split('_')[-1].split('-')[-1]
+        flatten_correlation_matrices = pe.Node(
+            niu.Function(
+                input_names=['in_files'],
+                output_names=['out_file'],
+                function=concatenate_tsvs,
+            ),
+            name=f'flatten_correlation_matrices_{atlas}',
+        )
+        workflow.connect([(inputnode, flatten_correlation_matrices, [(corrmat, 'in_files')])])
+
+        ds_flatten_correlation_matrices = pe.Node(
+            DerivativesDataSink(
+                source_file='out.tsv',
+                segmentation=atlas,
+                statistic='pearsoncorrelation',
+                suffix='relmat',
+                extension='.tsv',
+            ),
+            name=f'ds_flatten_correlation_matrices_{atlas}',
+        )
+        workflow.connect([
+            (flatten_correlation_matrices, ds_flatten_correlation_matrices, [
+                ('out_file', 'in_file'),
+            ]),
+        ])  # fmt:skip
 
     # Summarize the sample demographics?
     # Compare distributions of QC metrics across groups?

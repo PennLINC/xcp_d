@@ -155,7 +155,7 @@ queries:
             desc: linc
             suffix: qc
             extension: .tsv
-        connectivity:
+        corrmat:
             datatype: func
             segmentation: '*'
             statistic: pearsoncorrelation
