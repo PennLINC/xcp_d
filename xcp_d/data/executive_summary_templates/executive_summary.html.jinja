@@ -153,6 +153,7 @@
     {# Generate scripts and list of images for different mode-specific cyclers. #}
     {% include "cyclers.html.jinja" %}
 
+{% autoescape false %}
 <div id="boilerplate">
     <h1 class="sub-report-title">Methods</h1>
     {% if boilerplate %}
@@ -173,6 +174,7 @@
     <p class="text-danger">Failed to generate the boilerplate</p>
     {% endif %}
 </div>
+{% endautoescape %}
 
 <script type="text/javascript">
     function toggle(id) {
