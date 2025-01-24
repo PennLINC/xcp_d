@@ -126,7 +126,6 @@ def init_group_wf(subject_ids: list):
     subject_ids : :obj:`list` of :obj:`str`
         Subject labels for this group workflow.
     """
-    import pandas as pd
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     from xcp_d.interfaces.plotting import PlotDistributions
@@ -159,6 +158,7 @@ def init_group_wf(subject_ids: list):
         name='concatenate_qc_files',
     )
 
+    # Plot distributions of QC metrics
     make_distribution_plot = pe.Node(
         PlotDistributions(),
         name='make_distribution_plot',
@@ -172,16 +172,25 @@ def init_group_wf(subject_ids: list):
         name='ds_distribution_plot',
     )
     workflow.connect([
-        (inputnode, concatenate_qc_files, [('linc_qc', 'qc_files')]),
-        (concatenate_qc_files, make_distribution_plot, [('qc_file', 'in_file')]),
+        (inputnode, concatenate_qc_files, [('linc_qc', 'in_files')]),
+        (concatenate_qc_files, make_distribution_plot, [('out_file', 'in_file')]),
         (make_distribution_plot, ds_distribution_plot, [('plot', 'in_file')]),
     ])  # fmt:skip
 
-    # Plot distributions of QC metrics
-    ...
+    ds_linc_qc = pe.Node(
+        DerivativesDataSink(
+            source_file='out.tsv',
+            desc='qc',
+        ),
+        name='ds_linc_qc',
+    )
+    workflow.connect([(concatenate_qc_files, ds_linc_qc, [('out_file', 'in_file')])])
 
     # Summarize the sample demographics?
-    ...
+    # Compare distributions of QC metrics across groups?
+    # Plot distributions of QC metrics against demographics (e.g., age)?
+    # Plot mean and variance of statistical maps (parcellated and otherwise)
+    # Flatten and concatenate correlation matrices
 
     return workflow
 
