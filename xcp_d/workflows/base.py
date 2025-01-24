@@ -127,16 +127,63 @@ def init_group_wf(subject_ids: list):
         Subject labels for this group workflow.
     """
     import pandas as pd
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
-    qc_files = []
-    for dirpath, _, filenames in os.walk(config.execution.output_dir):
-        for filename in filenames:
-            if filename.endswith('_desc-linc_qc.tsv'):
-                qc_files.append(os.path.join(dirpath, filename))
+    from xcp_d.interfaces.plotting import PlotDistributions
+    from xcp_d.utils.bids import collect_group_data
+    from xcp_d.utils.utils import concatenate_tsvs
 
-    dfs = [pd.read_table(qc_file) for qc_file in qc_files]
-    df = pd.concat(dfs, axis=0)
-    df.to_csv(outputfile, index=False, sep='\t')
+    group_data = collect_group_data(
+        layout=config.execution.layout,
+        participant_labels=subject_ids,
+    )
+
+    workflow = Workflow(name='grp_wf')
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'linc_qc',
+            ],
+        ),
+        name='inputnode',
+    )
+    inputnode.inputs.linc_qc = group_data['linc_qc']
+
+    concatenate_qc_files = pe.Node(
+        niu.Function(
+            input_names=['in_files'],
+            output_names=['out_file'],
+            function=concatenate_tsvs,
+        ),
+        name='concatenate_qc_files',
+    )
+
+    make_distribution_plot = pe.Node(
+        PlotDistributions(),
+        name='make_distribution_plot',
+    )
+
+    ds_distribution_plot = pe.Node(
+        DerivativesDataSink(
+            source_file='out.tsv',
+            desc='distribution',
+        ),
+        name='ds_distribution_plot',
+    )
+    workflow.connect([
+        (inputnode, concatenate_qc_files, [('linc_qc', 'qc_files')]),
+        (concatenate_qc_files, make_distribution_plot, [('qc_file', 'in_file')]),
+        (make_distribution_plot, ds_distribution_plot, [('plot', 'in_file')]),
+    ])  # fmt:skip
+
+    # Plot distributions of QC metrics
+    ...
+
+    # Summarize the sample demographics?
+    ...
+
+    return workflow
 
 
 @fill_doc

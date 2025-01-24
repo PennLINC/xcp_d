@@ -611,3 +611,15 @@ def is_number(s):
         return True
     except ValueError:
         return False
+
+
+def concatenate_tsvs(in_files):
+    import os
+
+    import pandas as pd
+
+    out_file = os.path.abspath('out.tsv')
+
+    dfs = [pd.read_table(in_file) for in_file in in_files]
+    df = pd.concat(dfs, axis=0)
+    df.to_csv(out_file, index=False, sep='\t')

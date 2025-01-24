@@ -350,6 +350,30 @@ def collect_data(
     return subj_data
 
 
+def collect_group_data(layout, participant_labels):
+    """Collect group data from an XCP-D derivatives dataset.
+
+    Parameters
+    ----------
+    layout : :obj:`BIDSLayout`
+        BIDSLayout object.
+    participant_labels : :obj:`list` of :obj:`str`
+        List of subject labels.
+
+    Returns
+    -------
+    group_data : :obj:`dict`
+        Dictionary of group data.
+    """
+    _spec = yaml.safe_load(load_data.readable('io_spec.yaml').read_text())
+    queries = _spec['queries']['group']
+    group_data = {}
+    for name, query in queries.items():
+        group_data[name] = layout.get(return_type='file', subject=participant_labels, **query)
+
+    return group_data
+
+
 @fill_doc
 def collect_mesh_data(layout, participant_label, bids_filters):
     """Collect surface files from preprocessed derivatives.

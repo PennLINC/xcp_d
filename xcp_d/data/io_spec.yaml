@@ -149,3 +149,9 @@ queries:
             extension: .dscalar.nii
             space: fsLR
             suffix: sulc
+    group:
+        linc_qc:
+            datatype: func
+            desc: linc
+            suffix: qc
+            extension: .tsv
