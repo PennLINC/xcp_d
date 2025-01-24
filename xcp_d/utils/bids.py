@@ -368,8 +368,18 @@ def collect_group_data(layout, participant_labels):
     _spec = yaml.safe_load(load_data.readable('io_spec.yaml').read_text())
     queries = _spec['queries']['group']
     group_data = {}
+    atlases = layout.get_atlases()
     for name, query in queries.items():
-        group_data[name] = layout.get(return_type='file', subject=participant_labels, **query)
+        if 'segmentation' in query.keys():
+            for atlas in atlases:
+                group_data[f'{name}_atlas-{atlas}'] = layout.get(
+                    return_type='file',
+                    subject=participant_labels,
+                    segmentation=atlas,
+                    **query,
+                )
+        else:
+            group_data[name] = layout.get(return_type='file', subject=participant_labels, **query)
 
     return group_data
 
