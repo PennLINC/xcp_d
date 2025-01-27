@@ -142,54 +142,6 @@ def make_mosaic(png_files):
     return mosaic_file
 
 
-def modify_brainsprite_scene_template(
-    slice_number,
-    anat_file,
-    rh_pial_surf,
-    lh_pial_surf,
-    rh_wm_surf,
-    lh_wm_surf,
-    scene_template,
-):
-    """Create modified .scene text file to be used for creating brainsprite PNGs later.
-
-    NOTE: This is a Node function.
-    """
-    import gzip
-    import os
-
-    paths = {
-        'TX_IMG': anat_file,
-        'RPIAL': rh_pial_surf,
-        'LPIAL': lh_pial_surf,
-        'RWHITE': rh_wm_surf,
-        'LWHITE': lh_wm_surf,
-    }
-
-    out_file = os.path.abspath('modified_scene.scene')
-
-    if scene_template.endswith('.gz'):
-        with gzip.open(scene_template, mode='rt') as fo:
-            data = fo.read()
-    else:
-        with open(scene_template) as fo:
-            data = fo.read()
-
-    data = data.replace('XAXIS_COORDINATE', str(slice_number))
-
-    for template, path in paths.items():
-        filename = os.path.basename(path)
-
-        # Replace templated pathnames and filenames in local copy.
-        data = data.replace(f'{template}_PATH', path)
-        data = data.replace(f'{template}_NAME', filename)
-
-    with open(out_file, 'w') as fo:
-        fo.write(data)
-
-    return out_file
-
-
 def modify_pngs_scene_template(
     anat_file,
     rh_pial_surf,
@@ -233,37 +185,6 @@ def modify_pngs_scene_template(
         fo.write(data)
 
     return out_file
-
-
-def get_n_frames(anat_file):
-    """Infer the number of slices in x axis from an image.
-
-    NOTE: This is a Node function.
-
-    Parameters
-    ----------
-    anat_file
-
-    Returns
-    -------
-    frame_numbers
-    """
-    import nibabel as nb
-    import numpy as np
-
-    img = nb.load(anat_file)
-
-    # Get number of slices in x axis.
-    n_slices = img.shape[0]
-
-    frame_numbers = np.arange(1, n_slices + 1, dtype=int)
-    ijk = np.ones((2, 3), dtype=int)
-    ijk[:, 0] = [0, n_slices]
-    xyz = nb.affines.apply_affine(img.affine, ijk)
-    first_slice, last_slice = sorted(xyz[:, 0].astype(int))
-    frame_numbers = list(np.arange(first_slice, last_slice + 1, dtype=int))
-
-    return frame_numbers
 
 
 def get_png_image_names():
