@@ -160,34 +160,39 @@ def init_group_wf(subject_ids: list):
         ),
         name='concatenate_qc_files',
     )
+    workflow.connect([(inputnode, concatenate_qc_files, [('linc_qc', 'in_files')])])
 
     # Plot distributions of QC metrics
     make_distribution_plot = pe.Node(
         PlotDistributions(),
         name='make_distribution_plot',
     )
+    workflow.connect([(concatenate_qc_files, make_distribution_plot, [('out_file', 'in_file')])])
 
     ds_distribution_plot = pe.Node(
         DerivativesDataSink(
-            source_file='out.tsv',
             desc='distribution',
+            extension='.svg',
+            dismiss_entities=('subject', 'session', 'task', 'acquisition', 'run'),
         ),
         name='ds_distribution_plot',
     )
     workflow.connect([
-        (inputnode, concatenate_qc_files, [('linc_qc', 'in_files')]),
-        (concatenate_qc_files, make_distribution_plot, [('out_file', 'in_file')]),
+        (inputnode, ds_distribution_plot, [('linc_qc', 'source_file')]),
         (make_distribution_plot, ds_distribution_plot, [('plot', 'in_file')]),
     ])  # fmt:skip
 
     ds_linc_qc = pe.Node(
         DerivativesDataSink(
-            source_file='out.tsv',
             desc='qc',
+            dismiss_entities=('subject', 'session', 'task', 'acquisition', 'run'),
         ),
         name='ds_linc_qc',
     )
-    workflow.connect([(concatenate_qc_files, ds_linc_qc, [('out_file', 'in_file')])])
+    workflow.connect([
+        (inputnode, ds_linc_qc, [('linc_qc', 'source_file')]),
+        (concatenate_qc_files, ds_linc_qc, [('out_file', 'in_file')]),
+    ])
 
     # Flatten and concatenate correlation matrices
     corrmats = [field for field in fields if field.startswith('corrmat')]
@@ -203,18 +208,19 @@ def init_group_wf(subject_ids: list):
         )
         workflow.connect([(inputnode, flatten_correlation_matrices, [(corrmat, 'in_files')])])
 
-        ds_flatten_correlation_matrices = pe.Node(
+        ds_corrmats = pe.Node(
             DerivativesDataSink(
-                source_file='out.tsv',
                 segmentation=atlas,
                 statistic='pearsoncorrelation',
                 suffix='relmat',
                 extension='.tsv',
+                dismiss_entities=('subject', 'session', 'task', 'acquisition', 'run'),
             ),
-            name=f'ds_flatten_correlation_matrices_{atlas}',
+            name=f'ds_corrmats_{atlas}',
         )
         workflow.connect([
-            (flatten_correlation_matrices, ds_flatten_correlation_matrices, [
+            (inputnode, ds_corrmats, [(corrmat, 'source_file')]),
+            (flatten_correlation_matrices, ds_corrmats, [
                 ('out_file', 'in_file'),
             ]),
         ])  # fmt:skip
