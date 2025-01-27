@@ -3,11 +3,13 @@
 """Functions for generating the executive summary."""
 
 from nipype import logging
+import numpy as np
+
 
 LOGGER = logging.getLogger('nipype.utils')
 
 
-def plot_gii(mesh, coord, color, slicer, view):
+def plot_gii(mesh, coord, color, slicer, view, max_distance=10.):
     _ax = slicer.axes[list(slicer.axes.keys())[0]]
 
     if view == 'x':
@@ -27,6 +29,10 @@ def plot_gii(mesh, coord, color, slicer, view):
 
     for disc in slice_section.discrete:
         temp = disc
+        # Check that there aren't defects in the Line
+        differences = np.abs(np.diff(temp, axis=0))
+        if np.any(differences.max(axis=0) > max_distance):
+            continue
         if view == 'x':
             _ax.ax.plot(temp[:, 1], temp[:, 2], color=color)
         elif view == 'y':
