@@ -2,9 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for generating the executive summary."""
 
-from nipype import logging
 import numpy as np
-
+from nipype import logging
 
 LOGGER = logging.getLogger('nipype.utils')
 
