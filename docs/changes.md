@@ -1,5 +1,14 @@
 # What's New
 
+## 0.10.5
+
+### 🐛 Bug Fixes
+
+* Stop autoescaping the boilerplate by @mattcieslak in https://github.com/PennLINC/xcp_d/pull/1369
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.4...0.10.5
+
+
 ## 0.10.4
 
 This release makes the brainsprite work with composite transforms from Nibabies.
