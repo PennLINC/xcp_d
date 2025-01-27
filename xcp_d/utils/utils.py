@@ -620,6 +620,49 @@ def concatenate_tsvs(in_files):
 
     out_file = os.path.abspath('out.tsv')
 
-    dfs = [pd.read_table(in_file) for in_file in in_files]
+    test_df = pd.read_table(in_files[0])
+    if test_df.shape[0] > 1:
+        # DF is a correlation matrix
+        dfs = [pd.read_table(in_file, index_col='Node') for in_file in in_files]
+        # Flatten using the upper triangle
+        dfs = [flatten_correlation_matrix(df) for df in dfs]
+    else:
+        dfs = [pd.read_table(in_file) for in_file in in_files]
+
     df = pd.concat(dfs, axis=0)
     df.to_csv(out_file, index=False, sep='\t')
+    return out_file
+
+
+def flatten_correlation_matrix(corr_matrix):
+    """Flatten a correlation matrix into a 1D DataFrame.
+
+    Parameters
+    ----------
+    corr_matrix : :obj:`pandas.DataFrame` of shape (n_nodes, n_nodes)
+        The correlation matrix to flatten.
+
+    Returns
+    -------
+    flattened_df : :obj:`pandas.DataFrame` of shape (1, n_nodes * (n_nodes - 1) / 2)
+        The flattened correlation matrix.
+    """
+    import numpy as np
+    import pandas as pd
+
+    # Get the upper triangle of the correlation matrix
+    upper_triangle_indices = np.triu_indices_from(corr_matrix, k=1)
+
+    # Extract the values from the upper triangle
+    values = corr_matrix.values[upper_triangle_indices]
+
+    # Create the new column names
+    columns = [
+        f'{corr_matrix.index[i]} - {corr_matrix.columns[j]}'
+        for i, j in zip(*upper_triangle_indices, strict=False)
+    ]
+
+    # Create a new DataFrame with the flattened values
+    flattened_df = pd.DataFrame(values[None, :], columns=columns)
+
+    return flattened_df

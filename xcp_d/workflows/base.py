@@ -89,8 +89,10 @@ def init_xcpd_wf():
             single_subject_wf = init_single_subject_wf(subject_id)
 
             log_dir = (
-                config.execution.output_dir / f'sub-{subject_id}' / 'log' /
-                config.execution.run_uuid
+                config.execution.output_dir
+                / f'sub-{subject_id}'
+                / 'log'
+                / config.execution.run_uuid
             )
             log_dir.mkdir(exist_ok=True, parents=True)
 
