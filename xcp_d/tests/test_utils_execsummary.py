@@ -29,30 +29,6 @@ def test_make_mosaic(tmp_path_factory):
     assert os.path.isfile(mosaic_file)
 
 
-def test_modify_brainsprite_scene_template(tmp_path_factory):
-    """Test modify_brainsprite_scene_template."""
-    tmpdir = tmp_path_factory.mktemp('test_modify_brainsprite_scene_template')
-
-    brainsprite_scene_template = str(
-        load_data(
-            'executive_summary_scenes/brainsprite_template.scene.gz',
-        )
-    )
-
-    with chdir(tmpdir):
-        scene_file = execsummary.modify_brainsprite_scene_template(
-            slice_number=10,
-            anat_file='anat.nii.gz',
-            rh_pial_surf='rh_pial.surf.gii',
-            lh_pial_surf='lh_pial.surf.gii',
-            rh_wm_surf='rh_wm.surf.gii',
-            lh_wm_surf='lh_wm.surf.gii',
-            scene_template=brainsprite_scene_template,
-        )
-
-    assert os.path.isfile(scene_file)
-
-
 def test_modify_pngs_scene_template(tmp_path_factory):
     """Test modify_pngs_scene_template."""
     tmpdir = tmp_path_factory.mktemp('test_modify_pngs_scene_template')
@@ -70,13 +46,6 @@ def test_modify_pngs_scene_template(tmp_path_factory):
         )
 
     assert os.path.isfile(scene_file)
-
-
-def test_get_n_frames(ds001419_data):
-    """Test get_n_frames."""
-    anat_file = ds001419_data['brain_mask_file']
-    frame_numbers = execsummary.get_n_frames(anat_file)
-    assert len(frame_numbers) == 183
 
 
 def test_get_png_image_names():
