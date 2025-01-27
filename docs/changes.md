@@ -2,6 +2,10 @@
 
 ## 0.10.5
 
+### 🎉 Exciting New Features
+
+* Use trimesh to generate brainsprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1368
+
 ### 🐛 Bug Fixes
 
 * Stop autoescaping the boilerplate by @mattcieslak in https://github.com/PennLINC/xcp_d/pull/1369
