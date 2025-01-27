@@ -80,6 +80,19 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         input_type='nifti',
     )
 
+    group_out_dir = os.path.join(output_dir, 'derivatives', f'{test_name}_group')
+    group_parameters = [
+        out_dir,
+        group_out_dir,
+        'group',
+    ]
+
+    _run_and_generate(
+        test_name='ds001419_nifti_group',
+        parameters=group_parameters,
+        input_type='nifti',
+    )
+
 
 def test_ds001419_nifti_group(output_dir, working_dir):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options, in group mode."""
