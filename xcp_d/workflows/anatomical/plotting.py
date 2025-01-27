@@ -16,11 +16,10 @@ from xcp_d.interfaces.nilearn import ResampleToImage
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.execsummary import (
-    get_n_frames,
     get_png_image_names,
     make_mosaic,
-    modify_brainsprite_scene_template,
     modify_pngs_scene_template,
+    plot_slice_for_brainsprite,
 )
 from xcp_d.workflows.plotting import init_plot_overlay_wf
 
@@ -124,9 +123,6 @@ def init_brainsprite_figures_wf(
         ])  # fmt:skip
 
     # Load template scene file
-    brainsprite_scene_template = str(
-        load_data('executive_summary_scenes/brainsprite_template.scene.gz')
-    )
     pngs_scene_template = str(load_data('executive_summary_scenes/pngs_template.scene.gz'))
 
     if t1w_available and t2w_available:
@@ -138,68 +134,30 @@ def init_brainsprite_figures_wf(
 
     for image_type in image_types:
         inputnode_anat_name = f'{image_type.lower()}w'
-        # Create frame-wise PNGs
-        get_number_of_frames = pe.Node(
-            Function(
-                function=get_n_frames,
-                input_names=['anat_file'],
-                output_names=['frame_numbers'],
-            ),
-            name=f'get_number_of_frames_{image_type}',
-            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
-        )
-        workflow.connect([
-            (inputnode, get_number_of_frames, [(inputnode_anat_name, 'anat_file')]),
-        ])  # fmt:skip
 
         # Modify template scene file with file paths
-        modify_brainsprite_template_scene = pe.MapNode(
+        plot_slices = pe.Node(
             Function(
-                function=modify_brainsprite_scene_template,
+                function=plot_slice_for_brainsprite,
                 input_names=[
-                    'slice_number',
-                    'anat_file',
-                    'rh_pial_surf',
-                    'lh_pial_surf',
-                    'rh_wm_surf',
-                    'lh_wm_surf',
-                    'scene_template',
+                    'nifti',
+                    'lh_wm',
+                    'rh_wm',
+                    'lh_pial',
+                    'rh_pial',
                 ],
-                output_names=['out_file'],
+                output_names=['out_files'],
             ),
-            name=f'modify_brainsprite_template_scene_{image_type}',
-            iterfield=['slice_number'],
+            name=f'plot_slices_{image_type}',
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
-        modify_brainsprite_template_scene.inputs.scene_template = brainsprite_scene_template
         workflow.connect([
-            (inputnode, modify_brainsprite_template_scene, [(inputnode_anat_name, 'anat_file')]),
-            (surface_buffer, modify_brainsprite_template_scene, [
-                ('lh_wm_surf', 'lh_wm_surf'),
-                ('rh_wm_surf', 'rh_wm_surf'),
-                ('lh_pial_surf', 'lh_pial_surf'),
-                ('rh_pial_surf', 'rh_pial_surf'),
-            ]),
-            (get_number_of_frames, modify_brainsprite_template_scene, [
-                ('frame_numbers', 'slice_number'),
-            ]),
-        ])  # fmt:skip
-
-        create_framewise_pngs = pe.MapNode(
-            ShowScene(
-                scene_name_or_number=1,
-                image_width=900,
-                image_height=800,
-                num_threads=config.nipype.omp_nthreads,
-            ),
-            name=f'create_framewise_pngs_{image_type}',
-            iterfield=['scene_file'],
-            mem_gb=1,
-            n_procs=config.nipype.omp_nthreads,
-        )
-        workflow.connect([
-            (modify_brainsprite_template_scene, create_framewise_pngs, [
-                ('out_file', 'scene_file'),
+            (inputnode, plot_slices, [(inputnode_anat_name, 'nifti')]),
+            (surface_buffer, plot_slices, [
+                ('lh_wm_surf', 'lh_wm'),
+                ('rh_wm_surf', 'rh_wm'),
+                ('lh_pial_surf', 'lh_pial'),
+                ('rh_pial_surf', 'rh_pial'),
             ]),
         ])  # fmt:skip
 
@@ -213,8 +171,7 @@ def init_brainsprite_figures_wf(
             name=f'make_mosaic_{image_type}',
             mem_gb=1,
         )
-
-        workflow.connect([(create_framewise_pngs, make_mosaic_node, [('out_file', 'png_files')])])
+        workflow.connect([(plot_slices, make_mosaic_node, [('out_files', 'png_files')])])
 
         ds_report_mosaic_file = pe.Node(
             DerivativesDataSink(

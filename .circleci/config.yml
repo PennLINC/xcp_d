@@ -293,7 +293,7 @@ jobs:
 
   ds001419_cifti:
     <<: *dockersetup
-    resource_class: large
+    resource_class: xlarge
     environment:
       CIRCLE_CPUS: 4
     steps:
