@@ -90,8 +90,6 @@ class CollectRegistrationFiles(SimpleInterface):
     def _run_interface(self, runtime):
         from templateflow.api import get as get_template
 
-        from xcp_d.data import load as load_data
-
         hemisphere = self.inputs.hemisphere
 
         if self.inputs.software == 'FreeSurfer':
