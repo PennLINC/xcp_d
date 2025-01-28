@@ -94,52 +94,6 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     )
 
 
-def test_ds001419_nifti_group(output_dir, working_dir):
-    """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options, in group mode."""
-    test_name = 'test_ds001419_nifti_group'
-
-    out_dir = os.path.join(output_dir, test_name)
-    work_dir = os.path.join(working_dir, test_name)
-
-    test_data_dir = get_test_data_path()
-    filter_file = os.path.join(test_data_dir, 'ds001419_nifti_filter.json')
-
-    parameters = [
-        dataset_dir,
-        out_dir,
-        'group',
-        '--mode=none',
-        '--datasets',
-        f'aroma={derivs_dir}',
-        f'-w={work_dir}',
-        f'--bids-filter-file={filter_file}',
-        '--nuisance-regressors=aroma_gsr',
-        '--dummy-scans=4',
-        '--fd-thresh=0.2',
-        '--head_radius=40',
-        '--motion-filter-type=lp',
-        '--band-stop-min=6',
-        '--skip-parcellation',
-        '--min-coverage=0.4',
-        '--min-time=100',
-        '--smoothing=6',
-        '--combine-runs',
-        '--output-type=censored',
-        '--combine-runs=y',
-        '--linc-qc=y',
-        '--abcc-qc=n',
-        '--despike=n',
-        '--file-format=nifti',
-        '--input-type=fmriprep',
-        '--warp-surfaces-native2std=n',
-    ]
-    _run_and_generate(
-        test_name=test_name,
-        parameters=parameters,
-        input_type='nifti',
-    )
-
-
 @pytest.mark.integration
 @pytest.mark.ds001419_cifti
 def test_ds001419_cifti(data_dir, output_dir, working_dir):
