@@ -177,7 +177,6 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         voxel_data /= sd_scale
 
         if sample_mask is not None:
-            assert sample_mask.size == time_arr.size, f'{sample_mask.size} != {time_arr.size}'
             time_arr = time_arr[sample_mask]
             frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
             angular_frequencies = 2 * np.pi * frequencies_hz
