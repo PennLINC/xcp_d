@@ -152,20 +152,26 @@ class ComputeALFF(SimpleInterface):
         data_matrix = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
         n_voxels, n_volumes = data_matrix.shape
 
-        # Split the data_matrix into n_threads chunks of voxels
-        voxel_indices = np.array_split(np.arange(n_voxels), self.inputs.n_threads)
-        split_arrays = np.array_split(data_matrix, self.inputs.n_threads, axis=0)
-
-        del data_matrix
-        gc.collect()
-
         sample_mask = None
         temporal_mask = self.inputs.temporal_mask
         if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
             sample_mask = ~censoring_df['framewise_displacement'].values.astype(bool)
+            if sample_mask.sum() != n_volumes:
+                # Data are not censored
+                assert sample_mask.size == n_volumes, f'{sample_mask.size} != {n_volumes}'
+                # Censor the data
+                data_matrix = data_matrix[:, sample_mask]
+
             assert sample_mask.sum() == n_volumes, f'{sample_mask.sum()} != {n_volumes}'
+
+        # Split the data_matrix into n_threads chunks of voxels
+        voxel_indices = np.array_split(np.arange(n_voxels), self.inputs.n_threads)
+        split_arrays = np.array_split(data_matrix, self.inputs.n_threads, axis=0)
+
+        del data_matrix
+        gc.collect()
 
         alff_mat = np.zeros(n_voxels)
         with Pool(processes=self.inputs.n_threads) as pool:
