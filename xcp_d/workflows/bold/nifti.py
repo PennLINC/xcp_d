@@ -293,6 +293,7 @@ the following post-processing was performed.
             ]),
             (denoise_bold_wf, alff_wf, [
                 ('outputnode.denoised_interpolated_bold', 'inputnode.denoised_bold'),
+                ('outputnode.smoothed_denoised_bold', 'inputnode.smoothed_bold'),
             ]),
         ])  # fmt:skip
 
