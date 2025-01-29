@@ -120,7 +120,7 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
     Parameters
     ----------
     data_matrix : numpy.ndarray
-        data matrix points by timepoints
+        data matrix points by timepoints, after optional censoring
     low_pass : float
         low pass frequency in Hz
     high_pass : float
@@ -151,6 +151,13 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
     fs = 1 / TR  # sampling frequency
     n_voxels, n_volumes = data_matrix.shape
 
+    if sample_mask is not None:
+        assert sample_mask.sum() == n_volumes, f'{sample_mask.sum()} != {n_volumes}'
+
+        time_arr = np.arange(0, sample_mask.size * TR, TR)
+        time_arr = time_arr[sample_mask]
+        assert time_arr.size == n_volumes, f'{time_arr.size} != {n_volumes}'
+
     alff = np.zeros(n_voxels)
     for i_voxel in range(n_voxels):
         voxel_data = data_matrix[i_voxel, :]
@@ -166,25 +173,21 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         # However, this also changes ALFF's scale, so we retain the SD to rescale ALFF.
         sd_scale = np.std(voxel_data)
 
-        if sample_mask is not None:
-            voxel_data_censored = voxel_data[sample_mask]
-            voxel_data_censored -= np.mean(voxel_data_censored)
-            voxel_data_censored /= np.std(voxel_data_censored)
+        voxel_data -= np.mean(voxel_data)
+        voxel_data /= sd_scale
 
-            time_arr = np.arange(n_volumes) * TR
+        if sample_mask is not None:
             assert sample_mask.size == time_arr.size, f'{sample_mask.size} != {time_arr.size}'
             time_arr = time_arr[sample_mask]
             frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
             angular_frequencies = 2 * np.pi * frequencies_hz
             power_spectrum = signal.lombscargle(
                 time_arr,
-                voxel_data_censored,
+                voxel_data,
                 angular_frequencies,
                 normalize=True,
             )
         else:
-            voxel_data -= np.mean(voxel_data)
-            voxel_data /= np.std(voxel_data)
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
                 voxel_data,
