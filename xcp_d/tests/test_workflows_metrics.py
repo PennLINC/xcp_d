@@ -175,6 +175,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         alff_wf.base_dir = tempdir
         alff_wf.inputs.inputnode.bold_mask = bold_mask
         alff_wf.inputs.inputnode.denoised_bold = filename
+        alff_wf.inputs.inputnode.smoothed_bold = filename
         compute_alff_res = alff_wf.run()
         nodes = get_nodes(compute_alff_res)
 
