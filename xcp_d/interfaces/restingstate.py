@@ -163,6 +163,7 @@ class ComputeALFF(SimpleInterface):
                 assert sample_mask.size == n_volumes, f'{sample_mask.size} != {n_volumes}'
                 # Censor the data
                 data_matrix = data_matrix[:, sample_mask]
+                n_volumes = data_matrix.shape[1]
 
             assert sample_mask.sum() == n_volumes, f'{sample_mask.sum()} != {n_volumes}'
 
