@@ -242,6 +242,11 @@ series to retain the original scaling.
             )
             ds_smoothed_alff_plot.inputs.desc = 'alffSmoothedVolumetricPlot'
 
+        workflow.connect([
+            (compute_smoothed_alff, plot_smoothed_alff, [('alff', 'in_file')]),
+            (plot_smoothed_alff, ds_smoothed_alff_plot, [('out_file', 'in_file')]),
+        ])  # fmt:skip
+
     return workflow
 
 
