@@ -214,11 +214,11 @@ series to retain the original scaling.
         ])  # fmt:skip
 
         # Plot the ALFF map
-        ds_smoothed_alff_plot = pe.Node(
+        ds_report_smoothed_alff = pe.Node(
             DerivativesDataSink(
                 source_file=name_source,
             ),
-            name='ds_smoothed_alff_plot',
+            name='ds_report_smoothed_alff',
             run_without_submitting=False,
         )
 
@@ -232,19 +232,19 @@ series to retain the original scaling.
                     ('lh_midthickness', 'lh_underlay'),
                     ('rh_midthickness', 'rh_underlay'),
                 ]),
-                (plot_smoothed_alff, ds_smoothed_alff_plot, [('desc', 'desc')]),
+                (plot_smoothed_alff, ds_report_smoothed_alff, [('desc', 'desc')]),
             ])  # fmt:skip
-            ds_smoothed_alff_plot.inputs.desc = 'alffSmoothedSurfacePlot'
+            ds_report_smoothed_alff.inputs.desc = 'alffSmoothedSurfacePlot'
         else:
             plot_smoothed_alff = pe.Node(
                 PlotNifti(name_source=name_source),
                 name='plot_smoothed_alff',
             )
-            ds_smoothed_alff_plot.inputs.desc = 'alffSmoothedVolumetricPlot'
+            ds_report_smoothed_alff.inputs.desc = 'alffSmoothedVolumetricPlot'
 
         workflow.connect([
             (compute_smoothed_alff, plot_smoothed_alff, [('alff', 'in_file')]),
-            (plot_smoothed_alff, ds_smoothed_alff_plot, [('out_file', 'in_file')]),
+            (plot_smoothed_alff, ds_report_smoothed_alff, [('out_file', 'in_file')]),
         ])  # fmt:skip
 
     return workflow
