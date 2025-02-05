@@ -97,6 +97,18 @@ def _build_parser():
         ),
     )
     g_bids.add_argument(
+        '--session-id',
+        '--session_id',
+        dest='session_id',
+        action='store',
+        nargs='+',
+        type=lambda label: label.removeprefix('ses-'),
+        help=(
+            'A space-delimited list of session identifiers, or a single identifier. '
+            'By default, all sessions will be postprocessed.'
+        ),
+    )
+    g_bids.add_argument(
         '-t',
         '--task-id',
         '--task_id',

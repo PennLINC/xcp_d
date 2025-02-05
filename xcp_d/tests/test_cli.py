@@ -196,6 +196,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         out_dir,
         'participant',
         '--mode=abcd',
+        '--session-id=PNC1',
         f'-w={work_dir}',
         f'--bids-filter-file={filter_file}',
         '--min-time=60',
