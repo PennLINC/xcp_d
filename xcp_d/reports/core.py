@@ -112,6 +112,7 @@ def generate_reports(
                 )
 
             # Drop ses- prefixes
+            session_list = [ses for ses in session_list if isinstance(ses, str)]  # drop Queries
             session_list = [ses[4:] if ses.startswith('ses-') else ses for ses in session_list]
 
             for session_label in session_list:
