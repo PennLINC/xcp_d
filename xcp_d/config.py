@@ -520,6 +520,7 @@ class execution(_Config):
                 cls.bids_filters[field]['session'] = session_id
 
         if cls.bids_filters:
+
             def _process_value(value):
                 """Convert string with "Query" in it to Query object."""
                 if isinstance(value, list):
