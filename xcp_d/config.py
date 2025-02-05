@@ -525,7 +525,7 @@ class execution(_Config):
 
         if cls.session_id:
             # Patch session ID into all of the filters
-            session_id = listify(cls.session_id) + [None]  # allow none (esp. for anats)
+            session_id = listify(cls.session_id) + [Query.NONE]  # allow none (esp. for anats)
 
             cls.bids_filters = cls.bids_filters or {}
 
