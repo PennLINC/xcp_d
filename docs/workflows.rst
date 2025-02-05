@@ -867,12 +867,19 @@ ReHo
 :func:`~xcp_d.workflows.bold.metrics.init_reho_nifti_wf`,
 :func:`~xcp_d.workflows.bold.metrics.init_reho_cifti_wf`
 
-Regional Homogeneity (ReHo) is a measure of local temporal uniformity in the BOLD signal computed at each voxel of the processed image.
-Greater ReHo values correspond to greater synchrony among BOLD activity patterns measured in a local neighborhood of voxels, with neighborhood size determined by a user-specified radius of voxels.
-ReHo is calculated as the coefficient of concordance among all voxels in a sphere centered on the target voxel.
+Regional Homogeneity (ReHo) is a measure of local temporal uniformity in the BOLD signal computed
+at each voxel of the processed image.
+Greater ReHo values correspond to greater synchrony among BOLD activity patterns measured in a
+local neighborhood of voxels, with neighborhood size determined by a user-specified radius of voxels.
+ReHo is calculated as the coefficient of concordance among all voxels in a sphere centered on the
+target voxel.
 
-For NIfTIs, ReHo is always calculated via AFNI’s 3dReho with 27 voxels in each neighborhood, using Kendall's coefficient of concordance (KCC).
-For CIFTIs, the left and right hemisphere are extracted into GIFTI format via Connectome Workbench’s CIFTISeparateMetric. Next, the mesh adjacency matrix is obtained,and Kendall's coefficient of concordance (KCC) is calculated, with each vertex having four neighbors.
+For NIfTIs, ReHo is always calculated via AFNI's 3dReho with 27 voxels in each neighborhood,
+using Kendall's coefficient of concordance (KCC).
+For CIFTIs, the left and right hemisphere are extracted into GIFTI format via
+Connectome Workbench's CIFTISeparateMetric.
+Next, the mesh adjacency matrix is obtained,and Kendall's coefficient of concordance (KCC) is calculated,
+with each vertex having four neighbors.
 For subcortical voxels in the CIFTIs, 3dReho is used with the same parameters that are used for NIfTIs.
 
 

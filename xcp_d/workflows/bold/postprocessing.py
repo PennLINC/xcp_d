@@ -74,28 +74,37 @@ def init_prepare_confounds_wf(
     ------
     %(name_source)s
     preprocessed_bold : :obj:`str`
+        The BOLD series before dummy scan removal.
     motion_file : :obj:`str`
         The motion parameters estimated by fMRIPrep.
     motion_json : :obj:`str`
         JSON file associated with the fMRIPrep confounds TSV.
     confounds_files : :obj:`dict`
+        A dictionary of confound files to be used in the denoising step.
+        The keys are the names of the confounds, and the values are the paths to the files.
     %(dummy_scans)s
         Set from the parameter.
 
     Outputs
     -------
     preprocessed_bold : :obj:`str`
-    motion_file
+        The BOLD series with dummy scans removed.
+    motion_file : :obj:`str`
+        The motion parameters after dummy scan removal.
+    motion_metadata : :obj:`dict`
+        Dictionary defining metadata for the motion file.
+    %(temporal_mask)s
+        This is the temporal mask after dummy scans have been removed.
+    temporal_mask_metadata : :obj:`dict`
+        Dictionary defining metadata for the temporal mask.
     confounds_tsv : :obj:`str`
         The selected confounds, potentially including custom confounds, after dummy scan removal.
     confounds_images : :obj:`list` of :obj:`str`
+        List of voxel-wise confound files. Each element in the list is the path to a file.
     confounds_metadata : :obj:`dict`
+        Dictionary defining metadata for the full set of confounds.
     %(dummy_scans)s
         If originally set to "auto", this output will have the actual number of dummy volumes.
-    motion_file
-    motion_metadata : :obj:`dict`
-    %(temporal_mask)s
-    temporal_mask_metadata : :obj:`dict`
     """
     workflow = Workflow(name=name)
 
