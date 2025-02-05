@@ -460,7 +460,7 @@ class execution(_Config):
         if cls._layout is None:
             import re
 
-            from bids.layout import BIDSLayout
+            from bids.layout import BIDSLayout, Query
             from bids.layout.index import BIDSLayoutIndexer
 
             _db_path = cls.bids_database_dir or (cls.work_dir / cls.run_uuid / 'bids_db')
@@ -499,25 +499,6 @@ class execution(_Config):
 
         cls.layout = cls._layout
 
-        if cls.bids_filters:
-            from bids.layout import Query
-
-            def _process_value(value):
-                """Convert string with "Query" in it to Query object."""
-                if isinstance(value, list):
-                    return [_process_value(val) for val in value]
-                else:
-                    return (
-                        getattr(Query, value[7:-4])
-                        if not isinstance(value, Query) and 'Query' in value
-                        else value
-                    )
-
-            # unserialize pybids Query enum values
-            for acq, filters in cls.bids_filters.items():
-                for k, v in filters.items():
-                    cls.bids_filters[acq][k] = _process_value(v)
-
         if cls.task_id:
             cls.bids_filters = cls.bids_filters or {}
             cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
@@ -537,6 +518,23 @@ class execution(_Config):
             for field in filter_fields:
                 cls.bids_filters[field] = cls.bids_filters.get(field, {})
                 cls.bids_filters[field]['session'] = session_id
+
+        if cls.bids_filters:
+            def _process_value(value):
+                """Convert string with "Query" in it to Query object."""
+                if isinstance(value, list):
+                    return [_process_value(val) for val in value]
+                else:
+                    return (
+                        getattr(Query, value[7:-4])
+                        if not isinstance(value, Query) and 'Query' in value
+                        else value
+                    )
+
+            # unserialize pybids Query enum values
+            for acq, filters in cls.bids_filters.items():
+                for k, v in filters.items():
+                    cls.bids_filters[acq][k] = _process_value(v)
 
         dataset_links = {
             'preprocessed': cls.fmri_dir,
