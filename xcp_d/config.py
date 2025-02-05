@@ -92,6 +92,7 @@ import os
 from multiprocessing import set_start_method
 
 import yaml
+from bids.layout import Query
 from bids.utils import listify
 from templateflow.conf import TF_LAYOUT
 
@@ -460,7 +461,7 @@ class execution(_Config):
         if cls._layout is None:
             import re
 
-            from bids.layout import BIDSLayout, Query
+            from bids.layout import BIDSLayout
             from bids.layout.index import BIDSLayoutIndexer
 
             _db_path = cls.bids_database_dir or (cls.work_dir / cls.run_uuid / 'bids_db')
