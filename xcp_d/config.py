@@ -511,6 +511,7 @@ class execution(_Config):
 
             cls.bids_filters = cls.bids_filters or {}
 
+            # Load the io_spec to get the filter fields
             _spec = yaml.safe_load(load_data.readable('io_spec.yaml').read_text())
             filter_fields = []
             for subspec in _spec['queries'].values():

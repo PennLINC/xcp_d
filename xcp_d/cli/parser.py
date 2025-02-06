@@ -93,7 +93,7 @@ def _build_parser():
         type=lambda label: label.removeprefix('sub-'),
         help=(
             'A space-delimited list of participant identifiers, or a single identifier. '
-            "The 'sub-' prefix can be removed."
+            'The "sub-" prefix can be removed.'
         ),
     )
     g_bids.add_argument(
@@ -105,6 +105,7 @@ def _build_parser():
         type=lambda label: label.removeprefix('ses-'),
         help=(
             'A space-delimited list of session identifiers, or a single identifier. '
+            'The "ses-" prefix can be removed. '
             'By default, all sessions will be postprocessed.'
         ),
     )
