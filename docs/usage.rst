@@ -34,7 +34,7 @@ command-line structure, for example:
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <output_dir> --file-format cifti --despike --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d <fmriprep_dir> <output_dir> participant --file-format cifti --despike --head_radius 40 -w /wkdir --smoothing 6
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
@@ -346,6 +346,7 @@ If the data to be preprocessed is also on the HPC or a personal computer, you ar
     apptainer run --cleanenv xcp_d-<version>.simg \
         /dset/derivatives/fmriprep  \
         /dset/derivatives/xcp_d \
+        participant \
         --participant-label label
 
 
@@ -535,7 +536,7 @@ Last, run *XCP-D* with your custom configuration file and the path to the custom
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /my/project/directory:/mnt xcpd_latest.sif \
+   apptainer run --cleanenv -B /my/project/directory:/mnt xcpd_<version>.simg \
       /mnt/input/fmriprep \
       /mnt/output/directory \
       participant \
@@ -611,7 +612,7 @@ Here's what the *XCP-D* call might look like:
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /data:/data xcpd_latest.sif \
+   apptainer run --cleanenv -B /data:/data xcpd_<version>.simg \
       /data/dataset/derivatives/fmriprep \
       /data/dataset/derivatives/xcp_d \
       participant \
