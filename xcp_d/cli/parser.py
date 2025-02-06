@@ -102,11 +102,12 @@ def _build_parser():
         '--task_id',
         dest='task_id',
         action='store',
+        nargs='*',
         help=(
-            'The name of a specific task to postprocess. '
+            'The name(s) of specific task(s) to postprocess. '
             'By default, all tasks will be postprocessed. '
             'If you want to select more than one task to postprocess (but not all of them), '
-            'you can either run XCP-D with the --task-id parameter, separately for each task, '
+            'you can provide a space-delimited list of task names with the --task-id parameter, '
             'or you can use the --bids-filter-file to specify the tasks to postprocess.'
         ),
     )
