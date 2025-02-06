@@ -343,7 +343,7 @@ If the data to be preprocessed is also on the HPC or a personal computer, you ar
 
 .. code-block:: bash
 
-    apptainer run --cleanenv xcp_d.sif \
+    apptainer run --cleanenv xcp_d-<version>.simg \
         /dset/derivatives/fmriprep  \
         /dset/derivatives/xcp_d \
         --participant-label label
@@ -366,7 +366,7 @@ argument (``--home``) as follows:
 
     apptainer run -B $HOME:/home/xcp \
         --home /home/xcp \
-        --cleanenv xcp_d.simg \
+        --cleanenv xcp_d-<version>.simg \
         <xcp_d arguments>
 
 Therefore, once a user specifies the container options and the image to be run,
