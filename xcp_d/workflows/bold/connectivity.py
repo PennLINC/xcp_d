@@ -487,10 +487,12 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ])  # fmt:skip
 
             # Correlate the parcellated data
+            # Only use single threads because the parcellated data is tiny
             correlate_exact_bold = pe.MapNode(
-                CiftiCorrelation(),
+                CiftiCorrelation(num_threads=1),
                 name=f'correlate_bold_{exact_scan}volumes',
                 iterfield=['in_file'],
+                n_procs=1,
             )
             workflow.connect([
                 (reduce_exact_bold, correlate_exact_bold, [('out_file', 'in_file')]),
