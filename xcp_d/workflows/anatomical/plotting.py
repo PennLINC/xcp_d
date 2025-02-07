@@ -145,12 +145,15 @@ def init_brainsprite_figures_wf(
                     'rh_wm',
                     'lh_pial',
                     'rh_pial',
+                    'n_procs',
                 ],
                 output_names=['out_files'],
             ),
             name=f'plot_slices_{image_type}',
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+            n_procs=config.nipype.omp_nthreads
         )
+        plot_slices.inputs.n_procs = config.nipype.omp_nthreads
         workflow.connect([
             (inputnode, plot_slices, [(inputnode_anat_name, 'nifti')]),
             (surface_buffer, plot_slices, [
