@@ -73,6 +73,8 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--file-format=nifti',
         '--input-type=fmriprep',
         '--warp-surfaces-native2std=n',
+        '--nthreads=2',
+        '--omp-nthreads=2',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -122,6 +124,8 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         '4S356Parcels',
         '4S456Parcels',
         '--linc-qc',
+        '--nthreads=2',
+        '--omp-nthreads=2',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -159,6 +163,8 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         '--min-coverage=0.1',
         '--random-seed=8675309',
         '--min-time=100',
+        '--nthreads=2',
+        '--omp-nthreads=2'
     ]
     _run_and_generate(
         test_name=test_name,
@@ -216,6 +222,8 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         '480',
         'all',
         '--linc-qc=n',
+        '--nthreads=2',
+        '--omp-nthreads=2'
     ]
     _run_and_generate(
         test_name=test_name,
@@ -270,6 +278,8 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         '--disable-bandpass-filter',
         '--create-matrices=all',
         '--linc-qc=n',
+        '--nthreads=2',
+        '--omp-nthreads=2',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -416,6 +426,8 @@ def test_nibabies(data_dir, output_dir, working_dir):
         '--create-matrices=all',
         '--motion-filter-type=none',
         '--linc-qc=n',
+        '--nthreads=2',
+        '--omp-nthreads=2',
     ]
     _run_and_generate(
         test_name=test_name,

@@ -645,6 +645,7 @@ approach.
             high_pass=high_pass,
             filter_order=bpf_order,
             bandpass_filter=bandpass_filter,
+            num_threads=config.nipype.omp_nthreads
         ),
         name='regress_and_filter_bold',
         mem_gb=mem_gb['timeseries'],

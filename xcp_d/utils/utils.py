@@ -1,5 +1,7 @@
 """Miscellaneous utility functions for xcp_d."""
 
+import multiprocessing
+
 import nibabel as nb
 import numpy as np
 from nipype import logging
@@ -301,8 +303,66 @@ def estimate_brain_radius(mask_file, head_radius='auto'):
     return brain_radius
 
 
-@fill_doc
 def denoise_with_nilearn(
+    preprocessed_bold,
+    confounds,
+    voxelwise_confounds,
+    sample_mask,
+    low_pass,
+    high_pass,
+    filter_order,
+    TR,
+    num_threads,
+):
+    """A wrapper to call _denoise_with_nilearn using multiprocessing"""
+    if num_threads < 1:
+        raise Exception('num_threads must be a positive integer')
+    elif num_threads == 1:
+        return _denoise_with_nilearn(
+            preprocessed_bold,
+            confounds,
+            voxelwise_confounds,
+            sample_mask,
+            low_pass,
+            high_pass,
+            filter_order,
+            TR,
+        )
+
+    # Split the bold data into chunks to br processed in parallel
+    preprocessed_bold_chunks = np.array_split(preprocessed_bold, num_threads, axis=1)
+    # This np.array_split works on lists too - we just don't use an axis arg
+    if voxelwise_confounds is None:
+        voxelwise_confounds_chunks = [None] * num_threads
+    else:
+        voxelwise_confounds_chunks = np.array_split(voxelwise_confounds, num_threads)
+
+    arg_chunks = [
+        (
+            preprocessed_bold_chunk,
+            confounds,
+            voxelwise_confounds_chunk,
+            sample_mask,
+            low_pass,
+            high_pass,
+            filter_order,
+            TR,
+        )
+        for preprocessed_bold_chunk, voxelwise_confounds_chunk in zip(
+            preprocessed_bold_chunks,
+            voxelwise_confounds_chunks,
+            strict=True,
+        )
+    ]
+
+    with multiprocessing.Pool(processes=num_threads) as pool:
+        results = pool.starmap(_denoise_with_nilearn, arg_chunks)
+
+    return np.column_stack(results)
+
+
+@fill_doc
+def _denoise_with_nilearn(
     preprocessed_bold,
     confounds,
     voxelwise_confounds,
