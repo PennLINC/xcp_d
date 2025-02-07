@@ -163,6 +163,8 @@ jobs:
 
   nifti_without_freesurfer:
     <<: *dockersetup
+    macos:
+      xcode: 15.4.0
     resource_class: m2pro.medium
     environment:
       CIRCLE_CPUS: 4
