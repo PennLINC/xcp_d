@@ -55,6 +55,93 @@ such as the NiPreps-format HTML report and the LINC QC file.
 All denoised BOLD data, including dense time series, parcellated time series,
 and correlation matrices, will be censored.
 
+.. dropdown:: Full paramaters and details of linc mode are in the .toml file below:
+
+    .. code-block:: toml
+
+      [environment]
+      cpu_count = 40
+      exec_env = "posix"
+      free_mem = 726.8
+      overcommit_policy = "always"
+      overcommit_limit = "50%"
+      nipype_version = "1.9.2"
+      templateflow_version = "24.2.2"
+      version = "0.10.5"
+
+      [execution]
+      fmri_dir = "/cbica/projects/grmpy/xcpd_hackathon/fmriprep/fmriprep"
+      aggr_ses_reports = 4
+      bids_database_dir = "/cbica/projects/grmpy/xcpd_hackathon/working_dir/20250206-111530_e51b4966-f223-4549-8273-3d9d0cb5b54d/bids_db"
+      bids_description_hash = "44c661ca1e6f1baa2cffc3f29ebc26265830b70f6625ffa9f326cbffe40a9def"
+      boilerplate_only = false
+      confounds_config = "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/data/nuisance/36P.yml"
+      debug = []
+      layout = "BIDS Layout: ...pd_hackathon/fmriprep/fmriprep | Subjects: 1 | Sessions: 1 | Runs: 2"
+      log_dir = "/cbica/projects/grmpy/xcpd_hackathon/xcp_d/logs"
+      log_level = 25
+      low_mem = false
+      md_only_boilerplate = false
+      notrack = false
+      reports_only = false
+      output_dir = "/cbica/projects/grmpy/xcpd_hackathon/xcp_d"
+      atlases = [ "4S1056Parcels", "4S156Parcels", "4S256Parcels", "4S356Parcels", "4S456Parcels", "4S556Parcels", "4S656Parcels", "4S756Parcels", "4S856Parcels", "4S956Parcels", "Glasser", "Gordon", "HCP", "MIDB", "MyersLabonte", "Tian",]
+      run_uuid = "20250206-111530_e51b4966-f223-4549-8273-3d9d0cb5b54d"
+      participant_label = [ "109735",]
+      templateflow_home = "/cbica/projects/grmpy/.cache/templateflow"
+      work_dir = "/cbica/projects/grmpy/xcpd_hackathon/working_dir"
+      write_graph = false
+
+      [workflow]
+      mode = "linc"
+      file_format = "cifti"
+      dummy_scans = 0
+      input_type = "fmriprep"
+      despike = true
+      smoothing = 6
+      output_interpolated = false
+      combine_runs = false
+      motion_filter_order = 4
+      head_radius = 50
+      fd_thresh = 0
+      min_time = 0
+      bandpass_filter = true
+      high_pass = 0.01
+      low_pass = 0.08
+      bpf_order = 2
+      min_coverage = 0.5
+      correlation_lengths = [ "all",]
+      process_surfaces = false
+      abcc_qc = false
+      linc_qc = true
+
+      [nipype]
+      crashfile_format = "txt"
+      get_linked_libs = false
+      nprocs = 2
+      omp_nthreads = 1
+      plugin = "MultiProc"
+      resource_monitor = false
+      stop_on_first_crash = false
+
+      [seeds]
+      master = 1235
+
+      [execution.datasets]
+      xcpdatlases = "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/data/atlases"
+      xcpd4s = "/AtlasPack"
+
+      [execution.dataset_links]
+      preprocessed = "/cbica/projects/grmpy/xcpd_hackathon/fmriprep/fmriprep"
+      templateflow = "/cbica/projects/grmpy/.cache/templateflow"
+      atlas = "/cbica/projects/grmpy/xcpd_hackathon/xcp_d/atlases"
+      xcpdatlases = "/usr/local/miniconda/lib/python3.10/site-packages/xcp_d/data/atlases"
+      xcpd4s = "/AtlasPack"
+
+      [nipype.plugin_args]
+      maxtasksperchild = 1
+      raise_insufficient = false
+
 Defaults
 --------
 
