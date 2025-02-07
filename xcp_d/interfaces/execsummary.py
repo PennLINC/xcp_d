@@ -1,9 +1,11 @@
 """Classes for building an executive summary file."""
 
+import multiprocessing
 import os
 import re
 from pathlib import Path
 
+import nibabel as nb
 import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout, Query
@@ -14,12 +16,15 @@ from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
     InputMultiPath,
+    OutputMultiObject,
     SimpleInterface,
     TraitedSpec,
+    traits,
 )
 from PIL import Image
 
 from xcp_d.data import load as load_data
+from xcp_d.utils.execsummary import get_mesh, plot_gii
 from xcp_d.utils.filemanip import fname_presuffix
 
 
@@ -420,3 +425,79 @@ class FormatForBrainSwipes(SimpleInterface):
         self._results['out_file'] = output_file
 
         return runtime
+
+
+class _PlotSlicesForBrainSpriteInputSpec(BaseInterfaceInputSpec):
+    n_procs = traits.Int(1, usedefault=True)
+    lh_wm = File()
+    rh_wm = File()
+    lh_pial = File()
+    rh_pial = File()
+    nifti = File()
+
+
+class _PlotSlicesForBrainSpriteOutputSpec(BaseInterfaceInputSpec):
+    out_files = OutputMultiObject(File(), desc='png files')
+
+
+class PlotSlicesForBrainSprite(SimpleInterface):
+    input_spec = _PlotSlicesForBrainSpriteInputSpec
+    output_spec = _PlotSlicesForBrainSpriteOutputSpec
+
+    def _run_interface(self, runtime):
+        img = nb.load(self.inputs.nifti)
+        lh_wm = get_mesh(self.inputs.lh_wm)
+        lh_pial = get_mesh(self.inputs.lh_pial)
+        rh_wm = get_mesh(self.inputs.rh_wm)
+        rh_pial = get_mesh(self.inputs.rh_pial)
+
+        n_x = img.shape[0]
+        filenames = []
+        slice_args = [
+            (img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, runtime.cwd) for i_slice in range(n_x)
+        ]
+
+        with multiprocessing.Pool(processes=self.inputs.n_procs) as pool:
+            filenames = pool.starmap(_plot_single_slice, slice_args)
+        self._results['out_files'] = filenames
+
+        return runtime
+
+
+def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
+    import os
+
+    import matplotlib.pyplot as plt
+    import nibabel as nb
+    from nilearn import plotting
+
+    fig, ax = plt.subplots(figsize=(9, 7.5))
+
+    # Get the appropriate coordinate
+    # TODO: Shift so middle is center of image
+    coord = nb.affines.apply_affine(img.affine, [i_slice, 0, 0])[0]
+
+    # Display a sagittal slice (adjust 'display_mode' and 'cut_coords' as needed)
+    data = img.get_fdata()
+    vmin = np.percentile(data, 2)
+    vmax = np.percentile(data, 98)
+    slicer = plotting.plot_anat(
+        img,
+        display_mode='x',
+        cut_coords=[coord],
+        axes=ax,
+        figure=fig,
+        annotate=False,
+        vmin=vmin,
+        vmax=vmax,
+    )
+
+    # Load the surface mesh (GIFTI format)
+    plot_gii(lh_pial, coord, 'darkred', slicer, 'x')
+    plot_gii(rh_pial, coord, 'darkred', slicer, 'x')
+    plot_gii(lh_wm, coord, 'black', slicer, 'x')
+    plot_gii(rh_wm, coord, 'black', slicer, 'x')
+
+    filename = os.path.join(root_dir, f'test_{i_slice:03d}.png')
+    fig.savefig(filename, bbox_inches='tight', facecolor='black')
+    return filename
