@@ -13,7 +13,7 @@ def test_plotslicesforbrainsprite(datasets, tmp_path_factory):
 
     anat_dir = os.path.join(datasets['pnc'], 'sub-1648798153', 'ses-PNC1', 'anat')
 
-    anat = os.path.join(anat_dir, 'sub-1648798153_ses-PNC1_acq-refaced_T1w.nii.gz')
+    anat = os.path.join(anat_dir, 'sub-1648798153_ses-PNC1_acq-refaced_desc-preproc_T1w.nii.gz')
     lh_pial = os.path.join(anat_dir, 'sub-1648798153_ses-PNC1_acq-refaced_hemi-L_pial.surf.gii')
     lh_wm = os.path.join(anat_dir, 'sub-1648798153_ses-PNC1_acq-refaced_hemi-L_white.surf.gii')
     rh_pial = os.path.join(anat_dir, 'sub-1648798153_ses-PNC1_acq-refaced_hemi-R_pial.surf.gii')
