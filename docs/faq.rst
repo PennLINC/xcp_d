@@ -40,3 +40,13 @@ While there are always new methods being developed, we have limited *XCP-D* to m
 have been validated and are commonly used in the field.
 If there is a method you would like to see included in *XCP-D*, please open an issue on GitHub,
 but please be aware that we may not be willing to include all methods.
+
+
+*******************************************************
+Can I use XCP-D on my data if it is not in BIDS format?
+*******************************************************
+
+No. *XCP-D* is designed to work with BIDS-formatted data.
+Since *XCP-D* uses preprocessed data (i.e., data from a BIDS Derivatives dataset) and
+the BIDS Derivatives dataset structure is not finalized, we largely follow the conventions
+of NiPreps BIDS apps (especially fMRIPrep) for the input data.
