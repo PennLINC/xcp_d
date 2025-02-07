@@ -319,7 +319,7 @@ def denoise_with_nilearn(
         raise Exception('num_threads must be a positive integer')
     elif num_threads == 1:
         return _denoise_with_nilearn(
-            preprocessed_bold,
+            preprocessed_bold.copy(),
             confounds,
             voxelwise_confounds,
             sample_mask,
@@ -436,9 +436,6 @@ def _denoise_with_nilearn(
     .. footbibliography::
     """
     from nilearn.signal import butterworth, standardize_signal
-
-    # Don't want to modify the input arrays
-    preprocessed_bold = preprocessed_bold.copy()
 
     n_volumes = preprocessed_bold.shape[0]
     n_voxels = preprocessed_bold.shape[1]

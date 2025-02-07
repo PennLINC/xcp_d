@@ -102,6 +102,7 @@ def test_denoise_with_nilearn():
         'high_pass': high_pass,
         'filter_order': filter_order,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -120,6 +121,7 @@ def test_denoise_with_nilearn():
         'high_pass': None,
         'filter_order': 0,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -140,6 +142,7 @@ def test_denoise_with_nilearn():
         'high_pass': None,
         'filter_order': 0,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -161,6 +164,7 @@ def test_denoise_with_nilearn():
         'high_pass': high_pass,
         'filter_order': filter_order,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -189,6 +193,7 @@ def test_denoise_with_nilearn():
         'high_pass': None,
         'filter_order': 0,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -237,6 +242,7 @@ def test_denoise_with_nilearn_voxelwise():
         'high_pass': high_pass,
         'filter_order': filter_order,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -250,6 +256,7 @@ def test_denoise_with_nilearn_voxelwise():
         'high_pass': None,
         'filter_order': None,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -263,6 +270,7 @@ def test_denoise_with_nilearn_voxelwise():
         'high_pass': high_pass,
         'filter_order': filter_order,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
@@ -276,6 +284,7 @@ def test_denoise_with_nilearn_voxelwise():
         'high_pass': None,
         'filter_order': None,
         'TR': TR,
+        'num_threads': 1,
     }
     out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
     assert out_arr.shape == (n_volumes, n_voxels)
