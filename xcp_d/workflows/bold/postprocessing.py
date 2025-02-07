@@ -370,7 +370,7 @@ def init_prepare_confounds_wf(
                 extension='.svg',
             ),
             name='ds_report_design_matrix',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
 
         workflow.connect([
@@ -403,7 +403,7 @@ def init_prepare_confounds_wf(
             extension='.svg',
         ),
         name='ds_report_censoring',
-        run_without_submitting=False,
+        run_without_submitting=True,
     )
 
     workflow.connect([

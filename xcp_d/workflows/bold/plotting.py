@@ -327,7 +327,7 @@ def init_qc_report_wf(
         ds_report_preproc_qc_nipreps = pe.Node(
             DerivativesDataSink(desc='preprocessing'),
             name='ds_report_preproc_qc_nipreps',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_preproc_qc_nipreps, [('name_source', 'source_file')]),
@@ -337,7 +337,7 @@ def init_qc_report_wf(
         ds_report_postproc_qc_nipreps = pe.Node(
             DerivativesDataSink(desc='postprocessing'),
             name='ds_report_postproc_qc_nipreps',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_postproc_qc_nipreps, [('name_source', 'source_file')]),
@@ -347,7 +347,6 @@ def init_qc_report_wf(
         functional_qc = pe.Node(
             FunctionalSummary(TR=TR),
             name='qcsummary',
-            run_without_submitting=False,
             mem_gb=2,
         )
         workflow.connect([
@@ -358,7 +357,7 @@ def init_qc_report_wf(
         ds_report_qualitycontrol = pe.Node(
             DerivativesDataSink(desc='qualitycontrol'),
             name='ds_report_qualitycontrol',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_qualitycontrol, [('name_source', 'source_file')]),

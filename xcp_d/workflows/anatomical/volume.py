@@ -113,7 +113,7 @@ def init_postprocess_anat_wf(
                 extension='.nii.gz',
             ),
             name='ds_t1w_std',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_t1w_std, [('t1w', 'source_file')]),
@@ -128,7 +128,7 @@ def init_postprocess_anat_wf(
                 extension='.nii.gz',
             ),
             name='ds_t2w_std',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_t2w_std, [('t2w', 'source_file')]),

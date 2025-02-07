@@ -180,7 +180,6 @@ The following atlases were used in the workflow: {atlas_str}.
         ),
         name='atlas_srcs',
         iterfield=['in1'],
-        run_without_submitting=True,
     )
     workflow.connect([(inputnode, atlas_srcs, [('atlas_files', 'in1')])])
 
@@ -188,7 +187,6 @@ The following atlases were used in the workflow: {atlas_str}.
         CopyAtlas(output_dir=output_dir),
         name='copy_atlas',
         iterfield=['in_file', 'atlas', 'meta_dict', 'Sources'],
-        run_without_submitting=True,
     )
     workflow.connect([
         (inputnode, copy_atlas, [
@@ -399,7 +397,7 @@ def init_parcellate_cifti_wf(
     ])  # fmt:skip
 
     # Threshold node coverage values based on coverage threshold.
-    # Id doesn't benefit from multiple cpus
+    # It doesn't benefit from multiple cpus
     threshold_coverage = pe.MapNode(
         CiftiMath(
             expression=f'data > {config.workflow.min_coverage}',
@@ -407,7 +405,7 @@ def init_parcellate_cifti_wf(
         ),
         name='threshold_coverage',
         iterfield=['data'],
-        mem_gb=mem_gb['resampled'],
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
     workflow.connect([(coverage_buffer, threshold_coverage, [('coverage_cifti', 'data')])])
 
@@ -416,7 +414,7 @@ def init_parcellate_cifti_wf(
         CiftiMask(),
         name='mask_parcellated_data',
         iterfield=['in_file', 'mask'],
-        mem_gb=mem_gb['resampled'],
+        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
     workflow.connect([
         (parcellate_data, mask_parcellated_data, [('out_file', 'in_file')]),

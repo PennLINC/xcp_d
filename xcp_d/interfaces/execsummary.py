@@ -428,19 +428,25 @@ class FormatForBrainSwipes(SimpleInterface):
 
 
 class _PlotSlicesForBrainSpriteInputSpec(BaseInterfaceInputSpec):
-    n_procs = traits.Int(1, usedefault=True)
-    lh_wm = File()
-    rh_wm = File()
-    lh_pial = File()
-    rh_pial = File()
-    nifti = File()
+    n_procs = traits.Int(1, usedefault=True, desc='number of cpus to use for making figures')
+    lh_wm = File(exists=True, mandatory=True, desc='left hemisphere wm surface in gifti format')
+    rh_wm = File(exists=True, mandatory=True, desc='right hemisphere wm surface in gifti format')
+    lh_pial = File(
+        exists=True, mandatory=True, desc='left hemisphere pial surface in gifti format'
+    )
+    rh_pial = File(
+        exists=True, mandatory=True, desc='right hemisphere pial surface in gifti format'
+    )
+    nifti = File(exists=True, mandatory=True, desc='3dVolume aligned to the wm and pial surfaces')
 
 
 class _PlotSlicesForBrainSpriteOutputSpec(BaseInterfaceInputSpec):
-    out_files = OutputMultiObject(File(), desc='png files')
+    out_files = OutputMultiObject(File(exist=True), desc='png files')
 
 
 class PlotSlicesForBrainSprite(SimpleInterface):
+    """A class that produces images for BrainSprite mosaics."""
+
     input_spec = _PlotSlicesForBrainSpriteInputSpec
     output_spec = _PlotSlicesForBrainSpriteOutputSpec
 
@@ -465,6 +471,31 @@ class PlotSlicesForBrainSprite(SimpleInterface):
 
 
 def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
+    """Filter translation and rotation motion parameters.
+
+    Parameters
+    ----------
+    img : nb.Nifti1Image
+        NiBabel Spatial Image
+    i_slice : int
+        Which slice number to create a png of
+    rh_pial : trimesh.Trimesh
+        Right hemisphere pial surface loaded as a Trimesh
+    lh_pial : trimesh.Trimesh
+        Left hemisphere pial surface loaded as a Trimesh
+    rh_wm : trimesh.Trimesh
+        Right hemisphere wm surface loaded as a Trimesh
+    lh_wm : trimesh.Trimesh
+        Left hemisphere wm surface loaded as a Trimesh
+    root_dir : str
+        Strin representing the directory where files will be written
+
+    Returns
+    -------
+    filename : str
+        Absolute path of the png created
+    """
+
     import os
 
     import matplotlib.pyplot as plt

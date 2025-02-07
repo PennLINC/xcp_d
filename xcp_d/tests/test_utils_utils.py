@@ -170,6 +170,24 @@ def test_denoise_with_nilearn():
     assert out_arr.shape == (n_volumes, n_voxels)
     assert not np.allclose(out_arr, data_arr)  # data aren't modified
 
+    # Run without denoising (censoring + interpolation + filtering): 2 cpus
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[10:20] = False
+    sample_mask[150:160] = False
+    params = {
+        'confounds': None,
+        'voxelwise_confounds': None,
+        'sample_mask': sample_mask,
+        'low_pass': low_pass,
+        'high_pass': high_pass,
+        'filter_order': filter_order,
+        'TR': TR,
+        'num_threads': 2,
+    }
+    out_arr = utils.denoise_with_nilearn(preprocessed_bold=data_arr, **params)
+    assert out_arr.shape == (n_volumes, n_voxels)
+    assert not np.allclose(out_arr, data_arr)  # data aren't modified
+
     # signals were retained
     _check_signal(data_arr, signal_timeseries, sample_mask)
     # XXX: I don't like how high the atol is here, but it's not terrible

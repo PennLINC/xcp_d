@@ -164,7 +164,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 desc='connectivityplot',
             ),
             name='ds_report_connectivity_plot',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_connectivity_plot, [('name_source', 'source_file')]),
@@ -355,6 +355,8 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 vmax=1,
             ),
             name='plot_coverage',
+            n_procs=1,
+            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
         workflow.connect([
             (inputnode, plot_coverage, [
@@ -368,7 +370,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ds_report_coverage = pe.Node(
             DerivativesDataSink(),
             name='ds_report_coverage',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_coverage, [('name_source', 'source_file')]),
@@ -450,7 +452,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 desc='connectivityplot',
             ),
             name='ds_report_connectivity',
-            run_without_submitting=False,
+            run_without_submitting=True,
             mem_gb=0.1,
         )
         workflow.connect([
@@ -550,7 +552,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ds_report_reho = pe.Node(
             DerivativesDataSink(),
             name='ds_report_reho',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_reho, [('name_source', 'source_file')]),
@@ -601,7 +603,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ds_report_alff = pe.Node(
                 DerivativesDataSink(),
                 name='ds_report_alff',
-                run_without_submitting=False,
+                run_without_submitting=True,
             )
             workflow.connect([
                 (inputnode, ds_report_alff, [('name_source', 'source_file')]),

@@ -171,7 +171,7 @@ def init_brainsprite_figures_wf(
                 suffix=f'{image_type}w',
             ),
             name=f'ds_report_mosaic_file_{image_type}',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_mosaic_file, [(inputnode_anat_name, 'source_file')]),
@@ -234,7 +234,7 @@ def init_brainsprite_figures_wf(
                 suffix=f'{image_type}w',
             ),
             name=f'ds_report_scenewise_pngs_{image_type}',
-            run_without_submitting=False,
+            run_without_submitting=True,
             iterfield=['desc', 'in_file'],
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )

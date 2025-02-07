@@ -488,7 +488,7 @@ def init_generate_hcp_surfaces_wf(name='generate_hcp_surfaces_wf'):
             extension='.surf.gii',
         ),
         name='ds_midthickness',
-        run_without_submitting=False,
+        run_without_submitting=True,
         mem_gb=2,
     )
     workflow.connect([
@@ -520,7 +520,7 @@ def init_generate_hcp_surfaces_wf(name='generate_hcp_surfaces_wf'):
             extension='.surf.gii',
         ),
         name='ds_inflated',
-        run_without_submitting=False,
+        run_without_submitting=True,
         mem_gb=2,
     )
     workflow.connect([
@@ -538,7 +538,7 @@ def init_generate_hcp_surfaces_wf(name='generate_hcp_surfaces_wf'):
             extension='.surf.gii',
         ),
         name='ds_vinflated',
-        run_without_submitting=False,
+        run_without_submitting=True,
         mem_gb=2,
     )
     workflow.connect([
