@@ -154,27 +154,31 @@ def init_postprocess_surfaces_wf(
 
     if abcc_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
+        kwargs = {'apply_transform': True}
         if (not process_surfaces) or (mesh_available and standard_space_mesh):
             # Use original surfaces for brainsprite.
             # For fMRIPrep derivatives, this will be the native-space surfaces.
             # For DCAN/HCP derivatives, it will be standard-space surfaces.
-            brainsprite_wf = init_brainsprite_figures_wf(
-                t1w_available=t1w_available,
-                t2w_available=t2w_available,
-                apply_transform=False,
-                name='brainsprite_wf',
-            )
+            kwargs = {'apply_transform': False}
 
-            workflow.connect([
-                (inputnode, brainsprite_wf, [
-                    ('t1w', 'inputnode.t1w'),
-                    ('t2w', 'inputnode.t2w'),
-                    ('lh_pial_surf', 'inputnode.lh_pial_surf'),
-                    ('rh_pial_surf', 'inputnode.rh_pial_surf'),
-                    ('lh_wm_surf', 'inputnode.lh_wm_surf'),
-                    ('rh_wm_surf', 'inputnode.rh_wm_surf'),
-                ]),
-            ])  # fmt:skip
+        # Use standard-space T1w and surfaces for brainsprite.
+        brainsprite_wf = init_brainsprite_figures_wf(
+            t1w_available=t1w_available,
+            t2w_available=t2w_available,
+            name='brainsprite_wf',
+            **kwargs,
+        )
+        workflow.connect([
+            (inputnode, brainsprite_wf, [
+                ('t1w', 'inputnode.t1w'),
+                ('t2w', 'inputnode.t2w'),
+                ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
+                ('lh_pial_surf', 'inputnode.lh_pial_surf'),
+                ('rh_pial_surf', 'inputnode.rh_pial_surf'),
+                ('lh_wm_surf', 'inputnode.lh_wm_surf'),
+                ('rh_wm_surf', 'inputnode.rh_wm_surf'),
+            ]),
+        ])  # fmt:skip
 
     if not process_surfaces:
         # Return early, as all other steps require process_surfaces.
@@ -261,26 +265,6 @@ def init_postprocess_surfaces_wf(
                 ('outputnode.rh_wm_surf', 'inputnode.wm_surf'),
             ]),
         ])  # fmt:skip
-
-        if abcc_qc:
-            # Use standard-space T1w and surfaces for brainsprite.
-            brainsprite_wf = init_brainsprite_figures_wf(
-                t1w_available=t1w_available,
-                t2w_available=t2w_available,
-                apply_transform=True,
-                name='brainsprite_wf',
-            )
-            workflow.connect([
-                (inputnode, brainsprite_wf, [
-                    ('t1w', 'inputnode.t1w'),
-                    ('t2w', 'inputnode.t2w'),
-                    ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
-                    ('lh_pial_surf', 'inputnode.lh_pial_surf'),
-                    ('rh_pial_surf', 'inputnode.rh_pial_surf'),
-                    ('lh_wm_surf', 'inputnode.lh_wm_surf'),
-                    ('rh_wm_surf', 'inputnode.rh_wm_surf'),
-                ]),
-            ])  # fmt:skip
 
     elif not morphometry_files:
         raise ValueError(
