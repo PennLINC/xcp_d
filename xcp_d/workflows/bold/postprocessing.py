@@ -557,9 +557,9 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
     """
     # Log the start of workflow initialization
     config.loggers.workflow.debug(
-        f"Initializing denoise BOLD workflow: {name}"
+        f'Initializing denoise BOLD workflow: {name}'
     )
-    
+
     # Create the main workflow object
     workflow = Workflow(name=name)
 
@@ -573,9 +573,9 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
     file_format = config.workflow.file_format
 
     config.loggers.workflow.debug(
-    f"Workflow parameters: fd_thresh={fd_thresh}, low_pass={low_pass}, high_pass={high_pass}, "
-    f"bpf_order={bpf_order}, bandpass_filter={bandpass_filter}, smoothing={smoothing}, "
-    f"file_format={file_format}"
+    f'Workflow parameters: fd_thresh={fd_thresh}, low_pass={low_pass}, high_pass={high_pass}, '
+    f'bpf_order={bpf_order}, bandpass_filter={bandpass_filter}, smoothing={smoothing}, '
+    f'file_format={file_format}'
     )
 
     # Build the workflow description that details the denoising steps
@@ -633,11 +633,11 @@ approach.
     # Denoise BOLD Workflow summary:
     # Node1: preprocessed_bold -> regress_and_filter_bold -> denoised_interpolated_bold
     # Node2: denoised_interpolated_bold -> censor_interpolated_data -> censored_denoised_bold
-    # Node3: 
+    # Node3:
     #   if output_interpolated: denoised_interpolated_bold -> denoised_bold_buffer -> denoised_bold
     #   if not output_interpolated: censored_denoised_bold -> denoised_bold_buffer -> denoised_bold
     # Node4 if smoothing: denoised_bold -> resd_smoothing_wf -> smoothed_denoised_bold
-    
+
     # Define the input node with all necessary fields for the workflow
     inputnode = pe.Node(
         niu.IdentityInterface(
@@ -665,10 +665,10 @@ approach.
     )
 
     # Denoise BOLD using Nilearn. Details in:
-    # :py:class:`~xcp_d.interfaces.nilearn.DenoiseCifti`, 
-    # :py:class:`~xcp_d.interfaces.nilearn.DenoiseNifti`, 
+    # :py:class:`~xcp_d.interfaces.nilearn.DenoiseCifti`,
+    # :py:class:`~xcp_d.interfaces.nilearn.DenoiseNifti`,
     # and :py:func:`~xcp_d.utils.utils.denoise_with_nilearn`.
-    
+
     # Select the appropriate denoising interface based on file format
     denoising_interface = DenoiseCifti if (file_format == 'cifti') else DenoiseNifti
 
@@ -684,12 +684,12 @@ approach.
         name='regress_and_filter_bold',
         mem_gb=mem_gb['timeseries'],
     )
-    config.loggers.workflow.debug("Created node for regression and filtering of BOLD data.")
+    config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')
 
     # Node1: preprocessed_bold -> regress_and_filter_bold -> denoised_interpolated_bold
-    # regress_and_filter_bold includes: 
-    # interpolation, 
-    # detrending + mean centering (if have_confounds or have_voxelwise_confounds), 
+    # regress_and_filter_bold includes:
+    # interpolation,
+    # detrending + mean centering (if have_confounds or have_voxelwise_confounds),
     # bandpass filtering, and denoising
     workflow.connect([
         (inputnode, regress_and_filter_bold, [
@@ -712,7 +712,7 @@ approach.
         name='censor_interpolated_data',
         mem_gb=mem_gb['resampled'],
     )
-    config.loggers.workflow.debug("Created censor node for high-motion volumes.")
+    config.loggers.workflow.debug('Created censor node for high-motion volumes.')
 
    # Node2: denoised_interpolated_bold -> censor_interpolated_data -> censored_denoised_bold
     workflow.connect([
@@ -728,7 +728,7 @@ approach.
         niu.IdentityInterface(fields=['denoised_bold']),
         name='denoised_bold_buffer',
     )
-    config.loggers.workflow.debug("Created denoised_bold_buffer node.")
+    config.loggers.workflow.debug('Created denoised_bold_buffer node.')
 
     # Node3:
     # if output_interpolated: denoised_interpolated_bold -> denoised_bold_buffer -> denoised_bold
@@ -760,8 +760,8 @@ approach.
         ])  # fmt:skip
 
     # Final log message indicating completion of workflow setup
-    config.loggers.workflow.debug("Denoise BOLD workflow initialization complete.")
-    
+    config.loggers.workflow.debug('Denoise BOLD workflow initialization complete.')
+
     return workflow
 
 
