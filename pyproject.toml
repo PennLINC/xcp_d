@@ -69,6 +69,7 @@ doc = [
     "sphinxcontrib-apidoc",
     "sphinxcontrib-bibtex",
     "svgutils",
+    "sphinx_design",
 ]
 dev = [
     "ruff ~= 0.9.2",
