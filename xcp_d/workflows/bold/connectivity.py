@@ -355,7 +355,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 vmax=1,
             ),
             name='plot_coverage',
-            mem_gb=mem_gb['resampled'],
         )
         workflow.connect([
             (inputnode, plot_coverage, [
