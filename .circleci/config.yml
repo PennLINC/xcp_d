@@ -163,7 +163,7 @@ jobs:
 
   nifti_without_freesurfer:
     <<: *dockersetup
-    resource_class: large
+    resource_class: m2pro.medium
     environment:
       CIRCLE_CPUS: 4
     steps:
