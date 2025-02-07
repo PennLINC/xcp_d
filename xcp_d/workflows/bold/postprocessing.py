@@ -370,7 +370,7 @@ def init_prepare_confounds_wf(
                 extension='.svg',
             ),
             name='ds_report_design_matrix',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
 
         workflow.connect([
@@ -403,7 +403,7 @@ def init_prepare_confounds_wf(
             extension='.svg',
         ),
         name='ds_report_censoring',
-        run_without_submitting=False,
+        run_without_submitting=True,
     )
 
     workflow.connect([
@@ -678,9 +678,11 @@ approach.
             high_pass=high_pass,
             filter_order=bpf_order,
             bandpass_filter=bandpass_filter,
+            num_threads=config.nipype.omp_nthreads,
         ),
         name='regress_and_filter_bold',
         mem_gb=mem_gb['timeseries'],
+        n_procs=config.nipype.omp_nthreads,
     )
     config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')
 

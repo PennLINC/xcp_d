@@ -264,6 +264,7 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
     low_pass = traits.Float(mandatory=True, desc='Lowpass filter in Hz')
     high_pass = traits.Float(mandatory=True, desc='Highpass filter in Hz')
     filter_order = traits.Int(mandatory=True, desc='Filter order')
+    num_threads = traits.Int(1, usedefault=True, desc='denoise on this many cpus')
 
 
 class _DenoiseImageOutputSpec(TraitedSpec):
@@ -335,6 +336,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             high_pass=high_pass,
             filter_order=self.inputs.filter_order,
             TR=self.inputs.TR,
+            num_threads=self.inputs.num_threads,
         )
 
         # Transpose from TxS (nilearn order) to SxT (xcpd order)
@@ -421,6 +423,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             high_pass=high_pass,
             filter_order=self.inputs.filter_order,
             TR=self.inputs.TR,
+            num_threads=self.inputs.num_threads,
         )
 
         self._results['denoised_interpolated_bold'] = os.path.join(

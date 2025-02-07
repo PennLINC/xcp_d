@@ -34,7 +34,11 @@ command-line structure, for example:
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <output_dir> --file-format cifti --despike --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d /path/to/fmriprep_dir \
+      /path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
@@ -322,12 +326,15 @@ A Docker container can be created using the following command:
 .. code-block:: bash
 
    docker run --rm -it \
-      -v /dset/derivatives/fmriprep:/fmriprep:ro \
+      -v /path/to/fmriprep_dir:/fmriprep:ro \
       -v /tmp/wkdir:/work:rw \
-      -v /dset/derivatives/xcp_d:/out:rw \
-      pennlinc/xcp_d:latest \
-      /fmriprep /out participant \
-      --file-format cifti --despike --head_radius 40 -w /work --smoothing 6
+      -v /path/to/output_dir:/out:rw \
+      pennlinc/xcp_d:<version> \
+      /fmriprep \
+      /out \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
 
 .. _run_apptainer:
 
@@ -343,10 +350,12 @@ If the data to be preprocessed is also on the HPC or a personal computer, you ar
 
 .. code-block:: bash
 
-    apptainer run --cleanenv xcp_d.sif \
-        /dset/derivatives/fmriprep  \
-        /dset/derivatives/xcp_d \
-        --participant-label label
+   apptainer run --cleanenv xcp_d-<version>.simg \
+      /path/to/fmriprep_dir \
+      /path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
 
 
 Relevant aspects of the ``$HOME`` directory within the container
@@ -364,10 +373,10 @@ argument (``--home``) as follows:
 
 .. code-block:: bash
 
-    apptainer run -B $HOME:/home/xcp \
-        --home /home/xcp \
-        --cleanenv xcp_d.simg \
-        <xcp_d arguments>
+   apptainer run -B $HOME:/home/xcp \
+      --home /home/xcp \
+      --cleanenv xcp_d-<version>.simg \
+      <xcp_d arguments>
 
 Therefore, once a user specifies the container options and the image to be run,
 the command line options are the same as the *bare-metal* installation.
@@ -535,13 +544,15 @@ Last, run *XCP-D* with your custom configuration file and the path to the custom
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /my/project/directory:/mnt xcpd_latest.sif \
-      /mnt/input/fmriprep \
-      /mnt/output/directory \
-      participant \
-      --participant_label X \
-      --datasets custom=/mnt/custom_confounds \
-      --nuisance-regressors /mnt/custom_config.yaml
+   apptainer run -B /data:/data \
+      --cleanenv xcpd_<version>.simg \
+      /path/to/fmriprep_dir \
+      /path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
+      --datasets custom=/path/to/custom_confounds \
+      --nuisance-regressors /path/to/custom_config.yaml
 
 
 ****************
@@ -611,12 +622,13 @@ Here's what the *XCP-D* call might look like:
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /data:/data xcpd_latest.sif \
-      /data/dataset/derivatives/fmriprep \
-      /data/dataset/derivatives/xcp_d \
-      participant \
-      --mode linc \
-      --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
+   apptainer run -B /data:/data \
+      --cleanenv xcpd_<version>.simg \
+      /path/to/fmriprep_dir \
+      /path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --datasets schaefer=/path/to/schaefer_atlas aal==/path/to/aal_atlas \
       --atlases Schaefer100 AAL 4S156Parcels
 
 *XCP-D* will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
