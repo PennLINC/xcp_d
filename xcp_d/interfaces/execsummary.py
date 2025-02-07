@@ -488,7 +488,7 @@ def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
     lh_wm : trimesh.Trimesh
         Left hemisphere wm surface loaded as a Trimesh
     root_dir : str
-        Strin representing the directory where files will be written
+        String representing the directory where files will be written
 
     Returns
     -------
