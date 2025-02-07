@@ -221,7 +221,7 @@ Correlation matrices can be created optionally from the censored data.
        mode = "hbcd"
        file_format = "cifti"
        dummy_scans = 0
-       input_type = "fmriprep"
+       input_type = "nibabies"
        despike = true
        smoothing = 6
        output_interpolated = true
