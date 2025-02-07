@@ -68,7 +68,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--output-type=censored',
         '--combine-runs=y',
         '--linc-qc=y',
-        '--abcc-qc=n',
+        '--abcc-qc=y',
         '--despike=n',
         '--file-format=nifti',
         '--input-type=fmriprep',
