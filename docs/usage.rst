@@ -326,9 +326,9 @@ A Docker container can be created using the following command:
 .. code-block:: bash
 
    docker run --rm -it \
-      -v /dset/derivatives/fmriprep:/fmriprep:ro \
+      -v /path/to/fmriprep_dir:/fmriprep:ro \
       -v /tmp/wkdir:/work:rw \
-      -v /dset/derivatives/xcp_d:/out:rw \
+      -v /path/to/output_dir:/out:rw \
       pennlinc/xcp_d:<version> \
       /path/to/fmriprep_dir \
       /path/to/output_dir \
@@ -544,7 +544,7 @@ Last, run *XCP-D* with your custom configuration file and the path to the custom
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /my/project/directory:/mnt xcpd_<version>.simg \
+   apptainer run --cleanenv -B /my/project/directory:/data xcpd_<version>.simg \
       /path/to/fmriprep_dir \
       /path/to/output_dir \
       participant \ # analysis_level
