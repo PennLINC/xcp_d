@@ -192,40 +192,6 @@ Correlation matrices can be created optionally from the censored data.
    Currently, ``abcd`` mode is identical to ``hbcd`` mode, except for the expected preprocessing
    pipeline.
 
-.. raw:: html
-
-    <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-            Full parameters and details of linc mode are in the .toml file below:
-        </button>
-        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
-            <li>
-                <div class="dropdown-item">
-                    .. code-block:: toml
-
-                        [environment]
-                        cpu_count = 40
-                        exec_env = "posix"
-                        free_mem = 726.8
-                        overcommit_policy = "always"
-                        overcommit_limit = "50%"
-                        nipype_version = "1.9.2"
-                        templateflow_version = "24.2.2"
-                        version = "0.10.5"
-
-                        [execution]
-                        fmri_dir = "/cbica/projects/grmpy/xcpd_hackathon/fmriprep/fmriprep"
-                        aggr_ses_reports = 4
-                        bids_database_dir = <your_value_here>
-                </div>
-            </li>
-        </ul>
-    </div>
-
-
 
 Defaults
 --------
