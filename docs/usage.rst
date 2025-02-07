@@ -331,7 +331,7 @@ A Docker container can be created using the following command:
       -v /path/to/output_dir:/out:rw \
       pennlinc/xcp_d:<version> \
       /fmriprep \
-      /path/to/output_dir \
+      /output_dir \
       participant \ # analysis_level
       --mode <mode> \ # required
       --participant-label <label> # optional
