@@ -327,7 +327,7 @@ A Docker container can be created using the following command:
 
    docker run --rm -it \
       -v /path/to/fmriprep_dir:/fmriprep:ro \
-      -v /tmp/wkdir:/work:rw \
+      -v /path/to/wkdir:/work:rw \
       -v /path/to/output_dir:/out:rw \
       pennlinc/xcp_d:<version> \
       /fmriprep \
@@ -345,42 +345,31 @@ If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommen
 Apptainer.
 See :ref:`installation_container_technologies` for installation instructions.
 
-If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run
-*XCP-D*.
+Once a user specifies the container options and the image to be run,
+the command line options are the same as the *bare-metal* installation.
 
 .. code-block:: bash
 
-   apptainer run --cleanenv xcp_d-<version>.simg \
-      /path/to/fmriprep_dir \
+   apptainer run --cleanenv xcp_d-<version>.simg \ # container args
+      /path/to/fmriprep_dir \ #xcpd args
       /path/to/output_dir \
       participant \ # analysis_level
       --mode <mode> \ # required
       --participant-label <label> # optional
 
 
-Relevant aspects of the ``$HOME`` directory within the container
-================================================================
-
-By default, Apptainer will bind the user's ``$HOME`` directory on the host
-into the ``/home/$USER`` directory (or equivalent) in the container.
-Most of the time, it will also redefine the ``$HOME`` environment variable and
-update it to point to the corresponding mount point in ``/home/$USER``.
-However, these defaults can be overwritten in your system.
-It is recommended that you check your settings with your system's administrator.
-If your Apptainer installation allows it, you can work around the ``$HOME``
-specification, combining the bind mounts argument (``-B``) with the home overwrite
-argument (``--home``) as follows:
+By default, Apptainer will mount (make accessible) your current working directory inside the container.
+If you need to access files from other locations on your system, you'll need to explicitly bind those
+directories using the ``-B`` flag. For example:
 
 .. code-block:: bash
 
-   apptainer run -B $HOME:/home/xcp \
-      --home /home/xcp \
+   apptainer run -B /home/user/data \ # Mount data directory
       --cleanenv xcp_d-<version>.simg \
-      <xcp_d arguments>
-
-Therefore, once a user specifies the container options and the image to be run,
-the command line options are the same as the *bare-metal* installation.
-
+      /home/user/data/fmriprep \
+      /home/user/data/xcpd_output \
+      participant \
+      --mode <mode>
 
 ****************
 Custom Confounds
@@ -544,15 +533,15 @@ Last, run *XCP-D* with your custom configuration file and the path to the custom
 
 .. code-block:: bash
 
-   apptainer run -B /data:/data \
+   apptainer run -B /home/user/data \
       --cleanenv xcpd_<version>.simg \
-      /path/to/fmriprep_dir \
-      /path/to/output_dir \
+      /home/user/data/path/to/fmriprep_dir \
+      /home/user/data/path/to/output_dir \
       participant \ # analysis_level
       --mode <mode> \ # required
       --participant-label <label> # optional
-      --datasets custom=/path/to/custom_confounds \
-      --nuisance-regressors /path/to/custom_config.yaml
+      --datasets custom=/home/user/data/path/to/custom_confounds \
+      --nuisance-regressors /home/user/data/path/to/custom_config.yaml
 
 
 ****************
@@ -622,13 +611,13 @@ Here's what the *XCP-D* call might look like:
 
 .. code-block:: bash
 
-   apptainer run -B /data:/data \
+   apptainer run -B /home/user/data \
       --cleanenv xcpd_<version>.simg \
-      /path/to/fmriprep_dir \
-      /path/to/output_dir \
+      /home/user/data/path/to/fmriprep_dir \
+      /home/user/data/path/to/output_dir \
       participant \ # analysis_level
       --mode <mode> \ # required
-      --datasets schaefer=/path/to/schaefer_atlas aal==/path/to/aal_atlas \
+      --datasets schaefer=/home/user/data/path/to/schaefer_atlas aal==/home/user/data/path/to/aal_atlas \
       --atlases Schaefer100 AAL 4S156Parcels
 
 *XCP-D* will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
