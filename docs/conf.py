@@ -60,6 +60,7 @@ extensions = [
     'sphinxarg.ext',  # argparse extension
     'sphinxcontrib.apidoc',
     'sphinxcontrib.bibtex',
+    'sphinx_design',
 ]
 
 # Mock modules in autodoc:
