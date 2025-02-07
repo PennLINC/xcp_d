@@ -14,7 +14,7 @@ Should I use *XCP-D* for my analysis?
 
 This is a complicated question.
 *XCP-D* is designed for resting-state or pseudo-resting-state functional connectivity analyses.
-It also produces a number of resting-state-specific derivatives, includng ALFF and ReHo.
+It also produces a number of resting-state-specific derivatives, including ALFF and ReHo.
 
 If your goal is just to denoise your resting-state data, *XCP-D* may be overkill.
 You can perform simple denoising with tools like Nilearn or FSL.
