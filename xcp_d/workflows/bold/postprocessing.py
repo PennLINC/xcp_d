@@ -556,9 +556,7 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
         The selected denoised BOLD data to write out.
     """
     # Log the start of workflow initialization
-    config.loggers.workflow.debug(
-        f'Initializing denoise BOLD workflow: {name}'
-    )
+    config.loggers.workflow.debug(f'Initializing denoise BOLD workflow: {name}')
 
     # Create the main workflow object
     workflow = Workflow(name=name)
@@ -573,9 +571,9 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
     file_format = config.workflow.file_format
 
     config.loggers.workflow.debug(
-    f'Workflow parameters: fd_thresh={fd_thresh}, low_pass={low_pass}, high_pass={high_pass}, '
-    f'bpf_order={bpf_order}, bandpass_filter={bandpass_filter}, smoothing={smoothing}, '
-    f'file_format={file_format}'
+        f'Workflow parameters: fd_thresh={fd_thresh}, low_pass={low_pass}, high_pass={high_pass}, '
+        f'bpf_order={bpf_order}, bandpass_filter={bandpass_filter}, smoothing={smoothing}, '
+        f'file_format={file_format}'
     )
 
     # Build the workflow description that details the denoising steps
@@ -584,7 +582,7 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
 Nuisance regressors were regressed from the BOLD data using a denoising method based on *Nilearn*'s
 approach.
 """
-     # Describe interpolation of high-motion volumes if applicable
+    # Describe interpolation of high-motion volumes if applicable
     if fd_thresh > 0:
         workflow.__desc__ += (
             'Any volumes censored earlier in the workflow were first cubic spline interpolated in '
@@ -714,7 +712,7 @@ approach.
     )
     config.loggers.workflow.debug('Created censor node for high-motion volumes.')
 
-   # Node2: denoised_interpolated_bold -> censor_interpolated_data -> censored_denoised_bold
+    # Node2: denoised_interpolated_bold -> censor_interpolated_data -> censored_denoised_bold
     workflow.connect([
         (inputnode, censor_interpolated_data, [('temporal_mask', 'temporal_mask')]),
         (regress_and_filter_bold, censor_interpolated_data, [
@@ -738,7 +736,7 @@ approach.
                 ('denoised_interpolated_bold', 'denoised_bold'),
             ]),
         ])  # fmt:skip
-   # if not output_interpolated: censored_denoised_bold -> denoised_bold_buffer -> denoised_bold
+    # if not output_interpolated: censored_denoised_bold -> denoised_bold_buffer -> denoised_bold
     else:
         workflow.connect([
             (censor_interpolated_data, denoised_bold_buffer, [('out_file', 'denoised_bold')]),
