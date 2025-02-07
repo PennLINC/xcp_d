@@ -229,7 +229,7 @@ def init_brainsprite_figures_wf(
             name=f'create_scenewise_pngs_{image_type}',
             iterfield=['scene_name_or_number'],
             mem_gb=1,
-            n_procs=config.nipype.omp_nthreads
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (modify_pngs_template_scene, create_scenewise_pngs, [('out_file', 'scene_file')]),
