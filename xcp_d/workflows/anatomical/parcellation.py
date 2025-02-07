@@ -90,7 +90,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
     atlases = collect_atlases(
         datasets=config.execution.datasets,
         atlases=selected_atlases,
-        file_format=config.workflow.file_format,
+        file_format='cifti',
         bids_filters=config.execution.bids_filters,
     )
 
