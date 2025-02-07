@@ -136,6 +136,7 @@ def test_nilearn_denoisenifti(ds001419_data, tmp_path_factory):
         high_pass=0.01,
         low_pass=0.08,
         filter_order=2,
+        num_threads=1,
     )
     results = interface.run(cwd=tmpdir)
 
