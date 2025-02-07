@@ -544,7 +544,8 @@ Last, run *XCP-D* with your custom configuration file and the path to the custom
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /my/project/directory:/data xcpd_<version>.simg \
+   apptainer run -B /data:/data \
+      --cleanenv xcpd_<version>.simg \
       /path/to/fmriprep_dir \
       /path/to/output_dir \
       participant \ # analysis_level
@@ -621,7 +622,8 @@ Here's what the *XCP-D* call might look like:
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /data:/data xcpd_<version>.simg \
+   apptainer run -B /data:/data \
+      --cleanenv xcpd_<version>.simg \
       /path/to/fmriprep_dir \
       /path/to/output_dir \
       participant \ # analysis_level
