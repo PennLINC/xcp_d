@@ -399,15 +399,15 @@ def init_parcellate_cifti_wf(
     ])  # fmt:skip
 
     # Threshold node coverage values based on coverage threshold.
+    # Id doesn't benefit from multiple cpus
     threshold_coverage = pe.MapNode(
         CiftiMath(
             expression=f'data > {config.workflow.min_coverage}',
-            num_threads=config.nipype.omp_nthreads,
+            num_threads=1,
         ),
         name='threshold_coverage',
         iterfield=['data'],
         mem_gb=mem_gb['resampled'],
-        n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([(coverage_buffer, threshold_coverage, [('coverage_cifti', 'data')])])
 

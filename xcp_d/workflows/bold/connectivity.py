@@ -535,7 +535,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 cortical_atlases=cortical_atlases,
             ),
             name='plot_parcellated_reho',
-            mem_gb=mem_gb['resampled'],
         )
         workflow.connect([
             (inputnode, plot_parcellated_reho, [
@@ -587,7 +586,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                     cortical_atlases=cortical_atlases,
                 ),
                 name='plot_parcellated_alff',
-                mem_gb=mem_gb['resampled'],
             )
             workflow.connect([
                 (inputnode, plot_parcellated_alff, [
