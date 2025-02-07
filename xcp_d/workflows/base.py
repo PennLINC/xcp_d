@@ -361,26 +361,28 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ])  # fmt:skip
 
     # Estimate head radius, if necessary
-    # Need to warp the standard-space brain mask to the anatomical space to estimate head radius
-    warp_brainmask = ApplyTransforms(
-        input_image=subj_data['anat_brainmask'],
-        transforms=[subj_data['template_to_anat_xfm']],
-        reference_image=subj_data[anat_mod],
-        num_threads=2,
-        interpolation='GenericLabel',
-        input_image_type=3,
-        dimension=3,
-    )
-    os.makedirs(config.execution.work_dir / workflow.fullname, exist_ok=True)
-    warp_brainmask_results = warp_brainmask.run(
-        cwd=(config.execution.work_dir / workflow.fullname),
-    )
-    anat_brainmask_in_anat_space = warp_brainmask_results.outputs.output_image
+    head_radius = config.workflow.head_radius
+    if config.workflow.head_radius == 'auto':
+        # Warp the standard-space brain mask to the anatomical space to estimate head radius
+        warp_brainmask = ApplyTransforms(
+            input_image=subj_data['anat_brainmask'],
+            transforms=[subj_data['template_to_anat_xfm']],
+            reference_image=subj_data[anat_mod],
+            num_threads=2,
+            interpolation='GenericLabel',
+            input_image_type=3,
+            dimension=3,
+        )
+        os.makedirs(config.execution.work_dir / workflow.fullname, exist_ok=True)
+        warp_brainmask_results = warp_brainmask.run(
+            cwd=(config.execution.work_dir / workflow.fullname),
+        )
+        anat_brainmask_in_anat_space = warp_brainmask_results.outputs.output_image
 
-    head_radius = estimate_brain_radius(
-        mask_file=anat_brainmask_in_anat_space,
-        head_radius=config.workflow.head_radius,
-    )
+        head_radius = estimate_brain_radius(
+            mask_file=anat_brainmask_in_anat_space,
+            head_radius=config.workflow.head_radius,
+        )
 
     n_runs = len(preproc_files)
     # group files across runs and directions, to facilitate concatenation

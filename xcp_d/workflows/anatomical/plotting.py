@@ -12,6 +12,7 @@ from niworkflows.interfaces.surf import CSVToGifti, GiftiToCSV
 from xcp_d import config
 from xcp_d.data import load as load_data
 from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.execsummary import PlotSlicesForBrainSprite
 from xcp_d.interfaces.nilearn import ResampleToImage
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
@@ -19,7 +20,6 @@ from xcp_d.utils.execsummary import (
     get_png_image_names,
     make_mosaic,
     modify_pngs_scene_template,
-    plot_slice_for_brainsprite,
 )
 from xcp_d.workflows.plotting import init_plot_overlay_wf
 
@@ -137,19 +137,10 @@ def init_brainsprite_figures_wf(
 
         # Modify template scene file with file paths
         plot_slices = pe.Node(
-            Function(
-                function=plot_slice_for_brainsprite,
-                input_names=[
-                    'nifti',
-                    'lh_wm',
-                    'rh_wm',
-                    'lh_pial',
-                    'rh_pial',
-                ],
-                output_names=['out_files'],
-            ),
+            PlotSlicesForBrainSprite(n_procs=config.nipype.omp_nthreads),
             name=f'plot_slices_{image_type}',
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+            n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, plot_slices, [(inputnode_anat_name, 'nifti')]),
@@ -180,7 +171,7 @@ def init_brainsprite_figures_wf(
                 suffix=f'{image_type}w',
             ),
             name=f'ds_report_mosaic_file_{image_type}',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_mosaic_file, [(inputnode_anat_name, 'source_file')]),
@@ -244,7 +235,7 @@ def init_brainsprite_figures_wf(
                 suffix=f'{image_type}w',
             ),
             name=f'ds_report_scenewise_pngs_{image_type}',
-            run_without_submitting=False,
+            run_without_submitting=True,
             iterfield=['desc', 'in_file'],
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
