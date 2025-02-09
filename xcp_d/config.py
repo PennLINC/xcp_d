@@ -91,6 +91,7 @@ The :py:mod:`config` is responsible for other conveniency actions.
 import os
 from multiprocessing import set_start_method
 
+from bids.utils import listify
 from templateflow.conf import TF_LAYOUT
 
 # Disable NiPype etelemetry always
@@ -421,7 +422,7 @@ class execution(_Config):
     participant_label = None
     """List of participant identifiers that are to be preprocessed."""
     task_id = None
-    """Select a particular task from all available in the dataset."""
+    """Select particular tasks from all available in the dataset."""
     templateflow_home = _templateflow_home
     """The root folder of the TemplateFlow client."""
     work_dir = Path('work').absolute()
@@ -517,7 +518,7 @@ class execution(_Config):
         if cls.task_id:
             cls.bids_filters = cls.bids_filters or {}
             cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
-            cls.bids_filters['bold']['task'] = cls.task_id
+            cls.bids_filters['bold']['task'] = listify(cls.task_id)
 
         dataset_links = {
             'preprocessed': cls.fmri_dir,
