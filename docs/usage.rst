@@ -308,34 +308,6 @@ In this example file, we only run *XCP-D* on resting-state preprocessed BOLD run
 Running *XCP-D* via containers
 ******************************
 
-.. _run_docker:
-
-Docker
-======
-
-If you are running *XCP-D* locally, we recommend Docker.
-See :ref:`installation_container_technologies` for installation instructions.
-
-In order to run Docker smoothly, it is best to prevent permissions issues associated with the root
-file system.
-Running Docker as user on the host will ensure the ownership of files written during the container
-execution.
-
-A Docker container can be created using the following command:
-
-.. code-block:: bash
-
-   docker run --rm -it \ # docker args
-      -v /home/user/data/fmriprep \
-      -v /home/user/data/wkdir \
-      -v //home/user/data/xcpd_output \
-      pennlinc/xcp_d:<version> \
-      /home/user/data/fmriprep \ #xcpd args
-      /home/user/data/xcpd_output \
-      participant \ # analysis_level
-      --mode <mode> \ # required
-      --participant-label <label> # optional
-
 .. _run_apptainer:
 
 Apptainer
@@ -370,6 +342,35 @@ directories using the ``-B`` flag. For example:
       /home/user/data/xcpd_output \
       participant \
       --mode <mode>
+
+
+.. _run_docker:
+
+Docker
+======
+
+If you are running *XCP-D* locally, we recommend Docker.
+See :ref:`installation_container_technologies` for installation instructions.
+
+In order to run Docker smoothly, it is best to prevent permissions issues associated with the root
+file system.
+Running Docker as user on the host will ensure the ownership of files written during the container
+execution.
+
+A Docker container can be created using the following command:
+
+.. code-block:: bash
+
+   docker run --rm -it \ # docker args
+      -v /home/user/data/fmriprep \
+      -v /home/user/data/wkdir \
+      -v //home/user/data/xcpd_output \
+      pennlinc/xcp_d:<version> \
+      /home/user/data/fmriprep \ #xcpd args
+      /home/user/data/xcpd_output \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
 
 ****************
 Custom Confounds
