@@ -55,6 +55,34 @@ such as the NiPreps-format HTML report and the LINC QC file.
 All denoised BOLD data, including dense time series, parcellated time series,
 and correlation matrices, will be censored.
 
+.. dropdown:: Default parameters of linc mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "linc"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 6
+       output_interpolated = false
+       combine_runs = false
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0
+       min_time = 0
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       correlation_lengths = [ "all",]
+       process_surfaces = false
+       abcc_qc = false
+       linc_qc = true
+
+
 Defaults
 --------
 
@@ -104,6 +132,33 @@ Correlation matrices can be created optionally from the censored data.
 
    Currently, ``abcd`` mode is identical to ``hbcd`` mode, except for the expected preprocessing
    pipeline.
+
+.. dropdown:: Default parameters of abcd mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "abcd"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 6
+       output_interpolated = true
+       combine_runs = true
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0.3
+       min_time = 240
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       correlation_lengths = []
+       process_surfaces = true
+       abcc_qc = true
+       linc_qc = true
 
 Defaults
 --------
@@ -158,6 +213,33 @@ Correlation matrices can be created optionally from the censored data.
    Currently, ``hbcd`` mode is identical to ``abcd`` mode, except for the expected preprocessing
    pipeline.
 
+.. dropdown:: Default parameters of hbcd mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "hbcd"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "nibabies"
+       despike = true
+       smoothing = 6
+       output_interpolated = true
+       combine_runs = true
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0.3
+       min_time = 240
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       correlation_lengths = []
+       process_surfaces = true
+       abcc_qc = true
+       linc_qc = true
+
 Defaults
 --------
 
@@ -202,6 +284,33 @@ The ``nichart`` mode is used by the `NiChart project <https://neuroimagingchart.
 
 This mode is very similar to ``linc`` mode, with the exception that it processes NIfTI files
 by default and has smoothing disabled.
+
+.. dropdown:: Default parameters of nichart mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "nichart"
+       file_format = "nifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 0
+       output_interpolated = false
+       combine_runs = false
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0
+       min_time = 0
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.4
+       correlation_lengths = "all"
+       process_surfaces = false
+       abcc_qc = false
+       linc_qc = true
 
 Defaults
 --------
