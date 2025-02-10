@@ -10,6 +10,7 @@ from nilearn import image, maskers
 from nipype import logging
 from niworkflows.interfaces.confounds import NormalizeMotionParams
 
+from xcp_d import config
 from xcp_d.interfaces.workbench import CiftiCreateDenseScalar
 
 LOGGER = logging.getLogger('nipype.utils')
@@ -87,10 +88,12 @@ def collect_morphs(anat_dir_orig, anat_dir_bids, sub_id, subses_ents):
             LOGGER.warning(f'File(s) DNE:\n\t{lh_file}\n\t{rh_file}')
             continue
 
+        # Use nprocs because this is run outside of nipype
         interface = CiftiCreateDenseScalar(
             left_metric=lh_file,
             right_metric=rh_file,
             out_file=out_file,
+            num_threads=config.nipype.nprocs,
         )
         interface.run()
         mapping_dictionary[lh_file] = out_file
