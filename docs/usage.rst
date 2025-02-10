@@ -325,13 +325,13 @@ A Docker container can be created using the following command:
 
 .. code-block:: bash
 
-   docker run --rm -it \
-      -v /path/to/fmriprep_dir:/fmriprep:ro \
-      -v /path/to/wkdir:/work:rw \
-      -v /path/to/output_dir:/out:rw \
+   docker run --rm -it \ # docker args
+      -v /home/user/data/fmriprep \
+      -v /home/user/data/wkdir \
+      -v //home/user/data/xcpd_output \
       pennlinc/xcp_d:<version> \
-      /fmriprep \
-      /out \
+      /home/user/data/fmriprep \ #xcpd args
+      /home/user/data/xcpd_output \
       participant \ # analysis_level
       --mode <mode> \ # required
       --participant-label <label> # optional
