@@ -416,6 +416,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 for io_name in merge_elements
             }
 
+        n_processed_task_runs = 0
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(
                 layout=config.execution.layout,
@@ -478,6 +479,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 name=f'postprocess_{run_counter}_wf',
             )
             run_counter += 1
+            n_processed_task_runs += 1
 
             workflow.connect([
                 (postprocess_anat_wf, postprocess_bold_wf, [
@@ -510,12 +512,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     (inputnode, postprocess_bold_wf, [
                         ('anat_brainmask', 'inputnode.anat_brainmask'),
                         ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
+                        # The workflow needs a native anat-space image as a reference
+                        (anat_mod, 'inputnode.anat_native'),
                     ]),
-                ])  # fmt:skip
-
-                # The post-processing workflow needs a native anatomical-space image as a reference
-                workflow.connect([
-                    (inputnode, postprocess_bold_wf, [(anat_mod, 'inputnode.anat_native')]),
                 ])  # fmt:skip
 
             if config.workflow.combine_runs and (n_task_runs > 1):
@@ -524,7 +523,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                         (postprocess_bold_wf, node, [(f'outputnode.{io_name}', f'in{j_run + 1}')]),
                     ])  # fmt:skip
 
-        if config.workflow.combine_runs and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_processed_task_runs > 1):
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,
