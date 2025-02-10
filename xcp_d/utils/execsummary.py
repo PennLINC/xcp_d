@@ -51,61 +51,6 @@ def get_mesh(filename):
     return mesh
 
 
-def plot_slice_for_brainsprite(nifti, lh_wm, lh_pial, rh_wm, rh_pial):
-    import os
-
-    import matplotlib.pyplot as plt
-    import nibabel as nb
-    import numpy as np
-    from nilearn import plotting
-
-    from xcp_d.utils.execsummary import get_mesh, plot_gii
-
-    img = nb.load(nifti)
-    affine = img.affine
-    lh_wm = get_mesh(lh_wm)
-    lh_pial = get_mesh(lh_pial)
-    rh_wm = get_mesh(rh_wm)
-    rh_pial = get_mesh(rh_pial)
-
-    n_x = img.shape[0]
-    filenames = []
-
-    data = img.get_fdata()
-    vmin = np.percentile(data, 2)
-    vmax = np.percentile(data, 98)
-
-    for i_slice in range(n_x):
-        fig, ax = plt.subplots(figsize=(9, 7.5))
-
-        # Get the appropriate coordinate
-        # TODO: Shift so middle is center of image
-        coord = nb.affines.apply_affine(affine, [i_slice, 0, 0])[0]
-
-        # Display a sagittal slice (adjust 'display_mode' and 'cut_coords' as needed)
-        slicer = plotting.plot_anat(
-            img,
-            display_mode='x',
-            cut_coords=[coord],
-            axes=ax,
-            figure=fig,
-            annotate=False,
-            vmin=vmin,
-            vmax=vmax,
-        )
-
-        # Load the surface mesh (GIFTI format)
-        plot_gii(lh_pial, coord, 'darkred', slicer, 'x')
-        plot_gii(rh_pial, coord, 'darkred', slicer, 'x')
-        plot_gii(lh_wm, coord, 'black', slicer, 'x')
-        plot_gii(rh_wm, coord, 'black', slicer, 'x')
-
-        filename = os.path.abspath(f'test_{i_slice:03d}.png')
-        fig.savefig(filename, bbox_inches='tight', facecolor='black')
-        filenames.append(filename)
-    return filenames
-
-
 def make_mosaic(png_files):
     """Take path to .png anatomical slices, create a mosaic, and save to file.
 
