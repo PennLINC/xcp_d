@@ -17,7 +17,7 @@ LOGGER = logging.getLogger('nipype.utils')
 
 
 def read_ndata(datafile, maskfile=None):
-    """Read nifti or cifti file.
+    """Read nifti or cifti file as numpy array.
 
     Parameters
     ----------
@@ -29,7 +29,7 @@ def read_ndata(datafile, maskfile=None):
 
     Outputs
     -------
-    data : (TxS) :obj:`numpy.ndarray`
+    data : (SxT) :obj:`numpy.ndarray`
         Vertices or voxels by timepoints.
     """
     # read cifti series
