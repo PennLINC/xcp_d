@@ -137,11 +137,12 @@ def test_lincqc(ds001419_data, tmp_path):
     lincqc = LINCQC(
         name_source='sub-01_task-rest_bold.nii.gz',
         bold_file=ds001419_data['nifti_file'],
-        dummy_scans=4,
+        dummy_scans=dummy_scans,
         motion_file=ds001419_data['confounds_file'],
         cleaned_file=ds001419_data['nifti_file'],
         TR=2.0,
         head_radius=50,
+        temporal_mask=temporal_mask_file,
         bold_mask_inputspace=ds001419_data['brain_mask_file'],
         anat_mask_anatspace=ds001419_data['brain_mask_file'],
         template_mask=ds001419_data['brain_mask_file'],
