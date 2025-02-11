@@ -407,6 +407,8 @@ class ConnectPlot(SimpleInterface):
         return ax
 
     def _run_interface(self, runtime):
+        from matplotlib.gridspec import GridSpec
+
         priority_list = [
             'MIDB',
             'MyersLabonte',
@@ -442,21 +444,20 @@ class ConnectPlot(SimpleInterface):
         }
 
         if len(selected_atlases) == 4:
-            nrows, ncols, figsize, ax_idx = 2, 2, (20, 20), [(0, 0), (0, 1), (1, 0), (1, 1)]
+            nrows, ncols, figsize = 2, 2, (20, 20)
         else:
             nrows, ncols, figsize = 1, len(selected_atlases), (10 * len(selected_atlases), 10)
-            ax_idx = list(range(ncols))
 
-        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
-        if isinstance(axes, plt.Axes):
-            axes = np.array([axes])
+        fig = plt.figure(figsize=figsize)
+        gs = GridSpec(nrows, ncols + 1, width_ratios=[*[1]*ncols, 0.05])
 
+        # Create axes for each matrix
         for i_ax, atlas in enumerate(selected_atlases):
+            i_row, i_col = divmod(i_ax, ncols)
+            ax = fig.add_subplot(gs[i_row, i_col])
             atlas_idx = self.inputs.atlases.index(atlas)
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
             dseg_file = self.inputs.atlas_tsvs[atlas_idx]
-
-            sel_ax_idx = ax_idx[i_ax]
 
             column_name = COMMUNITY_LOOKUP.get(atlas, 'network_label')
             dseg_df = pd.read_table(dseg_file)
@@ -475,7 +476,6 @@ class ConnectPlot(SimpleInterface):
             else:
                 network_labels = ['None'] * dseg_df.shape[0]
 
-            ax = axes[sel_ax_idx]
             ax = self.plot_matrix(
                 corr_mat=corrs_df.to_numpy(),
                 network_labels=network_labels,
@@ -486,6 +486,9 @@ class ConnectPlot(SimpleInterface):
                 fontdict={'weight': 'normal', 'size': 20},
             )
 
+        # Add colorbar in the reserved space
+        cbar_ax = fig.add_subplot(gs[0, -1])
+        plt.colorbar(ax, cax=cbar_ax)
         fig.tight_layout()
 
         # Write the results out
