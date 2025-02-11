@@ -449,7 +449,7 @@ class ConnectPlot(SimpleInterface):
             nrows, ncols, figsize = 1, len(selected_atlases), (10 * len(selected_atlases), 10)
 
         fig = plt.figure(figsize=figsize)
-        gs = GridSpec(nrows, ncols + 1, width_ratios=[*[1]*ncols, 0.05])
+        gs = GridSpec(nrows, ncols + 1, width_ratios=[*[1] * ncols, 0.05])
 
         # Create axes for each matrix
         for i_ax, atlas in enumerate(selected_atlases):
