@@ -294,8 +294,20 @@ class LINCQC(SimpleInterface):
         mean_relative_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
         mean_dvars_before_processing = np.nanmean(dvars_before_processing)
         mean_dvars_after_processing = np.nanmean(dvars_after_processing)
-        fd_dvars_correlation_initial = np.corrcoef(preproc_fd, dvars_before_processing)[0, 1]
-        fd_dvars_correlation_final = np.corrcoef(postproc_fd, dvars_after_processing)[0, 1]
+
+        tmp_fd = preproc_fd.copy()
+        tmp_fd[np.isnan(tmp_fd)] = 0
+        tmp_dvars = dvars_before_processing.copy()
+        tmp_dvars[np.isnan(tmp_dvars)] = 0
+        fd_dvars_correlation_initial = np.corrcoef(tmp_fd, tmp_dvars)[0, 1]
+        del tmp_fd, tmp_dvars
+
+        tmp_fd = postproc_fd.copy()
+        tmp_fd[np.isnan(tmp_fd)] = 0
+        tmp_dvars = dvars_after_processing.copy()
+        tmp_dvars[np.isnan(tmp_dvars)] = 0
+        fd_dvars_correlation_final = np.corrcoef(tmp_fd, tmp_dvars)[0, 1]
+        del tmp_fd, tmp_dvars
         rmsd_max_value = np.nanmax(rmsd_censored)
 
         # A summary of all the values
