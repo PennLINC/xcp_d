@@ -1,10 +1,10 @@
 """Adapted interfaces from Niworkflows."""
 
-import filelock
 import os
 import shutil
 from json import dump, loads
 
+import filelock
 import nibabel as nb
 import numpy as np
 from bids.layout import Config
