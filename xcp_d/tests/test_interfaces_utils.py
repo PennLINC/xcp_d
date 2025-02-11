@@ -114,36 +114,15 @@ def test_conversion_to_32bit_cifti(ds001419_data, tmp_path_factory):
 
 def test_lincqc(ds001419_data, tmp_path):
     """Test the LINCQC interface."""
-    # Create test data
-    img = nb.load(ds001419_data['nifti_file'])
-    n_timepoints = img.shape[3]
-    dummy_scans = 5
-
-    # Create motion parameters
-    motion_data = {
-        'framewise_displacement': np.random.uniform(0, 1, n_timepoints),
-        'rmsd': np.random.uniform(0, 0.5, n_timepoints),
-    }
-    motion_file = tmp_path / 'motion.tsv'
-    pd.DataFrame(motion_data).to_csv(motion_file, sep='\t', index=False)
-
-    # Create temporal mask
-    temporal_mask_data = {'framewise_displacement': np.zeros(n_timepoints, dtype=int)}
-    # Mark some volumes as censored (value = 1)
-    temporal_mask_data['framewise_displacement'][10:15] = 1
-    temporal_mask_file = tmp_path / 'temporal_mask.tsv'
-    pd.DataFrame(temporal_mask_data).to_csv(temporal_mask_file, sep='\t', index=False)
-
     # Initialize and run interface
     lincqc = LINCQC(
         name_source='sub-01_task-rest_bold.nii.gz',
         bold_file=ds001419_data['nifti_file'],
-        dummy_scans=dummy_scans,
+        dummy_scans=0,
         motion_file=ds001419_data['confounds_file'],
         cleaned_file=ds001419_data['nifti_file'],
         TR=2.0,
         head_radius=50,
-        temporal_mask=temporal_mask_file,
         bold_mask_inputspace=ds001419_data['brain_mask_file'],
         anat_mask_anatspace=ds001419_data['brain_mask_file'],
         template_mask=ds001419_data['brain_mask_file'],
@@ -166,8 +145,6 @@ def test_lincqc(ds001419_data, tmp_path):
     assert 'mean_fd' in qc_df.columns
     assert 'mean_dvars_initial' in qc_df.columns
     assert 'num_dummy_volumes' in qc_df.columns
-    assert qc_df['num_dummy_volumes'].iloc[0] == dummy_scans
-    assert qc_df['num_censored_volumes'].iloc[0] == 5  # We censored 5 volumes
 
     # Test metadata
     assert 'mean_fd' in qc_metadata

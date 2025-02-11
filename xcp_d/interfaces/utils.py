@@ -169,12 +169,12 @@ class _LINCQCInputSpec(BaseInterfaceInputSpec):
     temporal_mask = traits.Either(
         File(exists=True),
         Undefined,
-        desc='Temporal mask',
+        desc='Temporal mask without dummy scans',
     )
     motion_file = File(
         exists=True,
         mandatory=True,
-        desc='fMRIPrep confounds file, after dummy scans removal',
+        desc='fMRIPrep confounds file, after dummy scan removal',
     )
     cleaned_file = File(
         exists=True,
