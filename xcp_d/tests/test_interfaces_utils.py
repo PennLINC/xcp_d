@@ -1,14 +1,13 @@
 """Tests for xcp_d.interfaces.utils module."""
 
-import os
 import json
+import os
 
 import nibabel as nb
 import numpy as np
 import pandas as pd
-import pytest
 
-from xcp_d.interfaces.utils import ConvertTo32, LINCQC
+from xcp_d.interfaces.utils import LINCQC, ConvertTo32
 
 
 def test_conversion_to_32bit_nifti(ds001419_data, tmp_path_factory):
@@ -128,9 +127,7 @@ def test_lincqc(ds001419_data, tmp_path):
     pd.DataFrame(motion_data).to_csv(motion_file, sep='\t', index=False)
 
     # Create temporal mask
-    temporal_mask_data = {
-        'framewise_displacement': np.zeros(n_timepoints, dtype=int)
-    }
+    temporal_mask_data = {'framewise_displacement': np.zeros(n_timepoints, dtype=int)}
     # Mark some volumes as censored (value = 1)
     temporal_mask_data['framewise_displacement'][10:15] = 1
     temporal_mask_file = tmp_path / 'temporal_mask.tsv'
