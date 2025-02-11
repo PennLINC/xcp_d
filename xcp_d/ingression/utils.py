@@ -319,7 +319,7 @@ def extract_mean_signal(mask, nifti, work_dir):
     assert os.path.isfile(nifti), f'File DNE: {nifti}'
     masker = maskers.NiftiMasker(mask_img=mask, memory=work_dir, memory_level=5)
     signals = masker.fit_transform(nifti)
-    return np.mean(signals, axis=1)
+    return np.nanmean(signals, axis=1)
 
 
 def plot_bbreg(fixed_image, moving_image, contour, out_file='report.svg'):

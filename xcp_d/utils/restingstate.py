@@ -51,7 +51,7 @@ def compute_2d_reho(datat, adjacency_matrix):
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
         # kc is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared
-        kc = np.sum(np.power(rankmean, 2)) - n_volumes * np.power(np.mean(rankmean), 2)
+        kc = np.sum(np.power(rankmean, 2)) - n_volumes * np.power(np.nanmean(rankmean), 2)
 
         # square number of neighbours, multiply by (cubed timepoint - timepoint)
         denom = np.power(n_neighbors, 2) * (np.power(n_volumes, 3) - n_volumes)
@@ -156,7 +156,7 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         voxel_data = data_matrix[i_voxel, :]
         # Check if the voxel's data are all the same value (esp. zeros).
         # Set ALFF to 0 in that case and move on to the next voxel.
-        if np.std(voxel_data) == 0:
+        if np.nanstd(voxel_data) == 0:
             alff[i_voxel] = 0
             continue
 
@@ -164,12 +164,12 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         # This will ensure that the power spectra from the standard and Lomb-Scargle periodograms
         # have the same scale.
         # However, this also changes ALFF's scale, so we retain the SD to rescale ALFF.
-        sd_scale = np.std(voxel_data)
+        sd_scale = np.nanstd(voxel_data)
 
         if sample_mask is not None:
             voxel_data_censored = voxel_data[sample_mask]
-            voxel_data_censored -= np.mean(voxel_data_censored)
-            voxel_data_censored /= np.std(voxel_data_censored)
+            voxel_data_censored -= np.nanmean(voxel_data_censored)
+            voxel_data_censored /= np.nanstd(voxel_data_censored)
 
             time_arr = np.arange(n_volumes) * TR
             assert sample_mask.size == time_arr.size, f'{sample_mask.size} != {time_arr.size}'
@@ -183,8 +183,8 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
                 normalize=True,
             )
         else:
-            voxel_data -= np.mean(voxel_data)
-            voxel_data /= np.std(voxel_data)
+            voxel_data -= np.nanmean(voxel_data)
+            voxel_data /= np.nanstd(voxel_data)
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
                 voxel_data,
@@ -210,7 +210,7 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         # alff for that voxel is 2 * the mean of the sqrt of the power spec
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+        alff[i_voxel] = len(ff_alff) * np.nanmean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
         # Rescale ALFF based on original BOLD scale
         alff[i_voxel] *= sd_scale
 

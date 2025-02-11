@@ -378,7 +378,7 @@ class ConnectPlot(SimpleInterface):
         for label in unique_labels:
             start_idx = np.where(labels == label)[0][0]
             if end_idx:
-                break_idx.append(np.mean([start_idx, end_idx]))
+                break_idx.append(np.nanmean([start_idx, end_idx]))
 
             end_idx = np.where(labels == label)[0][-1]
 
@@ -386,7 +386,7 @@ class ConnectPlot(SimpleInterface):
         break_idx = np.array(break_idx)
 
         # Find the locations for the labels in the middles of the communities
-        label_idx = np.mean(np.vstack((break_idx[1:], break_idx[:-1])), axis=0)
+        label_idx = np.nanmean(np.vstack((break_idx[1:], break_idx[:-1])), axis=0)
 
         np.fill_diagonal(corr_mat, 0)
 

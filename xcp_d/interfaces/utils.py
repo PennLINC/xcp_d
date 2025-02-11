@@ -289,11 +289,11 @@ class LINCQC(SimpleInterface):
             qc_values_dict[entity.split('-')[0]] = entity.split('-')[1]
 
         # Calculate QC measures
-        mean_fd = np.mean(preproc_fd)
-        mean_fd_post_censoring = np.mean(postproc_fd)
+        mean_fd = np.nanmean(preproc_fd)
+        mean_fd_post_censoring = np.nanmean(postproc_fd)
         mean_relative_rms = np.nanmean(rmsd_censored)  # first value can be NaN if no dummy scans
-        mean_dvars_before_processing = np.mean(dvars_before_processing)
-        mean_dvars_after_processing = np.mean(dvars_after_processing)
+        mean_dvars_before_processing = np.nanmean(dvars_before_processing)
+        mean_dvars_after_processing = np.nanmean(dvars_after_processing)
         fd_dvars_correlation_initial = np.corrcoef(preproc_fd, dvars_before_processing)[0, 1]
         fd_dvars_correlation_final = np.corrcoef(postproc_fd, dvars_after_processing)[0, 1]
         rmsd_max_value = np.nanmax(rmsd_censored)

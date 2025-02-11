@@ -31,8 +31,8 @@ def test_nifti_despike(fmriprep_without_freesurfer_data, tmp_path_factory):
     # Create some spikes in the second voxel
     file_data = read_ndata(boldfile, maskfile)
     voxel_data = file_data[2, :]  # a voxel across time
-    voxel_data_mean = np.mean(voxel_data)
-    voxel_data_std = np.std(voxel_data)
+    voxel_data_mean = np.nanmean(voxel_data)
+    voxel_data_std = np.nanstd(voxel_data)
     voxel_data[2] = voxel_data_mean + 10 * voxel_data_std
     voxel_data[3] = voxel_data_mean - 10 * voxel_data_std
 
@@ -88,8 +88,8 @@ def test_cifti_despike(ds001419_data, tmp_path_factory):
     # Let's add some noise
     file_data = read_ndata(boldfile)
     voxel_data = file_data[2, :]  # a voxel across time
-    voxel_data_mean = np.mean(voxel_data)
-    voxel_data_std = np.std(voxel_data)
+    voxel_data_mean = np.nanmean(voxel_data)
+    voxel_data_std = np.nanstd(voxel_data)
     voxel_data[2] = voxel_data_mean + 10 * voxel_data_std
     voxel_data[3] = voxel_data_mean - 10 * voxel_data_std
 
