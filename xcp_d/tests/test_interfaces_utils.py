@@ -115,7 +115,8 @@ def test_conversion_to_32bit_cifti(ds001419_data, tmp_path_factory):
 def test_lincqc(ds001419_data, tmp_path):
     """Test the LINCQC interface."""
     # Create test data
-    n_timepoints = 100
+    img = nb.load(ds001419_data['nifti_file'])
+    n_timepoints = img.shape[3]
     dummy_scans = 5
 
     # Create motion parameters
