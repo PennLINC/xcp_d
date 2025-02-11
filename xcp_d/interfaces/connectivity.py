@@ -489,6 +489,7 @@ class ConnectPlot(SimpleInterface):
         # Add colorbar in the reserved space
         cbar_ax = fig.add_subplot(gs[0, -1])
         plt.colorbar(im, cax=cbar_ax)
+        cbar_ax.set_yticks([-1, 0, 1])
         fig.tight_layout()
 
         # Write the results out
