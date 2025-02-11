@@ -146,6 +146,7 @@ def test_lincqc(ds001419_data, tmp_path):
         anat_mask_anatspace=ds001419_data['brain_mask_file'],
         template_mask=ds001419_data['brain_mask_file'],
         bold_mask_anatspace=ds001419_data['brain_mask_file'],
+        bold_mask_stdspace=ds001419_data['brain_mask_file'],
     )
 
     res = lincqc.run(cwd=tmp_path)
