@@ -1,11 +1,14 @@
 """Tests for xcp_d.interfaces.utils module."""
 
 import os
+import json
 
 import nibabel as nb
 import numpy as np
+import pandas as pd
+import pytest
 
-from xcp_d.interfaces.utils import ConvertTo32
+from xcp_d.interfaces.utils import ConvertTo32, LINCQC
 
 
 def test_conversion_to_32bit_nifti(ds001419_data, tmp_path_factory):
@@ -108,3 +111,65 @@ def test_conversion_to_32bit_cifti(ds001419_data, tmp_path_factory):
     assert float32_img.dataobj.dtype == np.float32
     int32_img = nb.load(int32_file)
     assert int32_img.dataobj.dtype == np.int32
+
+
+def test_lincqc(ds001419_data, tmp_path):
+    """Test the LINCQC interface."""
+    # Create test data
+    n_timepoints = 100
+    dummy_scans = 5
+
+    # Create motion parameters
+    motion_data = {
+        'framewise_displacement': np.random.uniform(0, 1, n_timepoints),
+        'rmsd': np.random.uniform(0, 0.5, n_timepoints),
+    }
+    motion_file = tmp_path / 'motion.tsv'
+    pd.DataFrame(motion_data).to_csv(motion_file, sep='\t', index=False)
+
+    # Create temporal mask
+    temporal_mask_data = {
+        'framewise_displacement': np.zeros(n_timepoints, dtype=int)
+    }
+    # Mark some volumes as censored (value = 1)
+    temporal_mask_data['framewise_displacement'][10:15] = 1
+    temporal_mask_file = tmp_path / 'temporal_mask.tsv'
+    pd.DataFrame(temporal_mask_data).to_csv(temporal_mask_file, sep='\t', index=False)
+
+    # Initialize and run interface
+    lincqc = LINCQC(
+        name_source='sub-01_task-rest_bold.nii.gz',
+        bold_file=ds001419_data['nifti_file'],
+        dummy_scans=4,
+        motion_file=ds001419_data['confounds_file'],
+        cleaned_file=ds001419_data['nifti_file'],
+        TR=2.0,
+        head_radius=50,
+        bold_mask_inputspace=ds001419_data['brain_mask_file'],
+        anat_mask_anatspace=ds001419_data['brain_mask_file'],
+        template_mask=ds001419_data['brain_mask_file'],
+        bold_mask_anatspace=ds001419_data['brain_mask_file'],
+    )
+
+    res = lincqc.run(cwd=tmp_path)
+
+    # Test outputs exist
+    assert os.path.exists(res.outputs.qc_file)
+    assert os.path.exists(res.outputs.qc_metadata)
+
+    # Load and check QC results
+    qc_df = pd.read_table(res.outputs.qc_file)
+    with open(res.outputs.qc_metadata) as f:
+        qc_metadata = json.load(f)
+
+    # Test basic expectations
+    assert 'mean_fd' in qc_df.columns
+    assert 'mean_dvars_initial' in qc_df.columns
+    assert 'num_dummy_volumes' in qc_df.columns
+    assert qc_df['num_dummy_volumes'].iloc[0] == dummy_scans
+    assert qc_df['num_censored_volumes'].iloc[0] == 5  # We censored 5 volumes
+
+    # Test metadata
+    assert 'mean_fd' in qc_metadata
+    assert 'Description' in qc_metadata['mean_fd']
+    assert 'Units' in qc_metadata['mean_fd']
