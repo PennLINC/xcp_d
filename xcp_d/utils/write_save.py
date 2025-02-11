@@ -39,7 +39,8 @@ def read_ndata(datafile, maskfile=None):
 
     # or nifti data, mask is required
     elif datafile.endswith('.nii.gz'):
-        assert maskfile is not None, 'Input `maskfile` must be provided if `datafile` is a nifti.'
+        if maskfile is None:
+            raise ValueError('Input `maskfile` must be provided if `datafile` is a nifti.')
         data = masking.apply_mask(datafile, maskfile)
 
     else:
@@ -103,8 +104,10 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     -----
     This function currently only works for NIfTIs and .dtseries.nii and .dscalar.nii CIFTIs.
     """
-    assert data_matrix.ndim in (1, 2), f'Input data must be a 1-2D array, not {data_matrix.ndim}.'
-    assert os.path.isfile(template)
+    if data_matrix.ndim not in (1, 2):
+        raise ValueError(f'Input data must be a 1-2D array, not {data_matrix.ndim}.')
+    if not os.path.isfile(template):
+        raise ValueError(f'Template file does not exist: {template}')
 
     cifti_intents = get_cifti_intents()
 
@@ -113,8 +116,10 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         file_format = 'cifti'
     elif template.endswith('.nii.gz'):
         file_format = 'nifti'
-        assert mask is not None, 'A binary mask must be provided for nifti inputs.'
-        assert os.path.isfile(mask), f'The mask file does not exist: {mask}'
+        if mask is None:
+            raise ValueError('A binary mask must be provided for nifti inputs.')
+        if not os.path.isfile(mask):
+            raise ValueError(f'The mask file does not exist: {mask}')
     else:
         raise ValueError(f'Unknown extension for {template}')
 

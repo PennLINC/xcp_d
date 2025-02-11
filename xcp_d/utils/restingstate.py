@@ -98,7 +98,8 @@ def mesh_adjacency(hemi):
                 if vertex1 != vertex2:  # don't include the vertex as its own neighbor
                     adjacency_matrix[vertex1, vertex2] = True
 
-    assert np.array_equal(adjacency_matrix, adjacency_matrix.T)
+    if not np.array_equal(adjacency_matrix, adjacency_matrix.T):
+        raise ValueError('Adjacency matrix is not symmetric')
     return adjacency_matrix
 
 
@@ -172,7 +173,11 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
             voxel_data_censored /= np.std(voxel_data_censored)
 
             time_arr = np.arange(n_volumes) * TR
-            assert sample_mask.size == time_arr.size, f'{sample_mask.size} != {time_arr.size}'
+            if sample_mask.size != time_arr.size:
+                raise ValueError(
+                    f'Sample mask size {sample_mask.size} does not match time array size '
+                    f'{time_arr.size}'
+                )
             time_arr = time_arr[sample_mask]
             frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
             angular_frequencies = 2 * np.pi * frequencies_hz
@@ -214,5 +219,6 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         # Rescale ALFF based on original BOLD scale
         alff[i_voxel] *= sd_scale
 
-    assert alff.size == n_voxels, f'{alff.shape} != {n_voxels}'
+    if alff.size != n_voxels:
+        raise ValueError(f'ALFF size {alff.size} does not match number of voxels {n_voxels}')
     return alff

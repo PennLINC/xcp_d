@@ -137,9 +137,11 @@ def collect_hcp_confounds(
     import pandas as pd
 
     mvreg_file = os.path.join(task_dir_orig, 'Movement_Regressors.txt')
-    assert os.path.isfile(mvreg_file)
+    if not os.path.isfile(mvreg_file):
+        raise ValueError(f'File does not exist: {mvreg_file}')
     rmsd_file = os.path.join(task_dir_orig, 'Movement_AbsoluteRMS.txt')
-    assert os.path.isfile(rmsd_file)
+    if not os.path.isfile(rmsd_file):
+        raise ValueError(f'File does not exist: {rmsd_file}')
 
     mvreg = pd.read_csv(mvreg_file, header=None, delimiter=r'\s+')
 
@@ -251,9 +253,11 @@ def collect_ukbiobank_confounds(
 
     # Find necessary files
     par_file = os.path.join(task_dir_orig, 'mc', 'prefiltered_func_data_mcf.par')
-    assert os.path.isfile(par_file), os.listdir(os.path.join(task_dir_orig, 'mc'))
+    if not os.path.isfile(par_file):
+        raise ValueError(f'File does not exist: {par_file}')
     rmsd_file = os.path.join(task_dir_orig, 'mc', 'prefiltered_func_data_mcf_abs.rms')
-    assert os.path.isfile(rmsd_file)
+    if not os.path.isfile(rmsd_file):
+        raise ValueError(f'File does not exist: {rmsd_file}')
 
     tmpdir = os.path.join(work_dir, prefix)
     os.makedirs(tmpdir, exist_ok=True)
@@ -315,8 +319,10 @@ def collect_ukbiobank_confounds(
 
 def extract_mean_signal(mask, nifti, work_dir):
     """Extract mean signal within mask from NIFTI."""
-    assert os.path.isfile(mask), f'File DNE: {mask}'
-    assert os.path.isfile(nifti), f'File DNE: {nifti}'
+    if not os.path.isfile(mask):
+        raise ValueError(f'File does not exist: {mask}')
+    if not os.path.isfile(nifti):
+        raise ValueError(f'File does not exist: {nifti}')
     masker = maskers.NiftiMasker(mask_img=mask, memory=work_dir, memory_level=5)
     signals = masker.fit_transform(nifti)
     return np.mean(signals, axis=1)

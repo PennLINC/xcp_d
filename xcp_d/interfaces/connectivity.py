@@ -150,7 +150,11 @@ class NiftiParcellate(SimpleInterface):
 
         # Use nilearn to parcellate the file
         timeseries_arr = masker.fit_transform(self.inputs.filtered_file)
-        assert timeseries_arr.shape[1] == n_found_nodes
+        # Check that timeseries array has correct shape
+        if timeseries_arr.shape[1] != n_found_nodes:
+            raise ValueError(
+                f'Timeseries array shape {timeseries_arr.shape[1]} does not match number of found nodes {n_found_nodes}'
+            )
         masker_labels = masker.labels_[:]
         del masker
         gc.collect()
@@ -347,8 +351,14 @@ class ConnectPlot(SimpleInterface):
 
     def plot_matrix(self, corr_mat, network_labels, ax):
         """Plot matrix in subplot Axes."""
-        assert corr_mat.shape[0] == len(network_labels)
-        assert corr_mat.shape[1] == len(network_labels)
+        if corr_mat.shape[0] != len(network_labels):
+            raise ValueError(
+                f'Correlation matrix shape {corr_mat.shape[0]} does not match number of network labels {len(network_labels)}'
+            )
+        if corr_mat.shape[1] != len(network_labels):
+            raise ValueError(
+                f'Correlation matrix shape {corr_mat.shape[1]} does not match number of network labels {len(network_labels)}'
+            )
 
         # Determine order of nodes while retaining original order of networks
         unique_labels = []
@@ -556,7 +566,8 @@ class CiftiToTSV(SimpleInterface):
         in_file = self.inputs.in_file
         atlas_labels = self.inputs.atlas_labels
 
-        assert in_file.endswith(('.ptseries.nii', '.pscalar.nii', '.pconn.nii')), in_file
+        if not in_file.endswith(('.ptseries.nii', '.pscalar.nii', '.pconn.nii')):
+            raise ValueError(f"Unsupported CIFTI extension for 'in_file': {in_file}")
 
         img = nb.load(in_file)
         node_labels_df = pd.read_table(atlas_labels, index_col='index')
@@ -600,7 +611,8 @@ class CiftiToTSV(SimpleInterface):
         else:
             # Second axis is the parcels
             ax1 = img.header.get_axis(1)
-            assert isinstance(ax1, nb.cifti2.ParcelsAxis), type(ax1)
+            if not isinstance(ax1, nb.cifti2.ParcelsAxis):
+                raise ValueError(f'Expected ax1 to be ParcelsAxis, but got {type(ax1)}')
             df = pd.DataFrame(columns=ax1.name, data=img.get_fdata())
             check_axes = [1]
 

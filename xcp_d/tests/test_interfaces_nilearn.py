@@ -194,13 +194,19 @@ def _check_denoising_outputs(preprocessed_img, outputs, cifti):
     assert os.path.isfile(outputs.denoised_interpolated_bold)
     filtered_denoised_img = nb.load(outputs.denoised_interpolated_bold)
     filtered_denoised_img_header = getattr(filtered_denoised_img, hdr_attr)
-    assert filtered_denoised_img.ndim == ndim
-    assert filtered_denoised_img.shape == preprocessed_img.shape
-    assert np.array_equal(
+    if filtered_denoised_img.ndim != ndim:
+        raise ValueError(f'Expected {ndim} dimensions, got {filtered_denoised_img.ndim}')
+    if filtered_denoised_img.shape != preprocessed_img.shape:
+        raise ValueError(
+            f'Shape mismatch: {filtered_denoised_img.shape} != {preprocessed_img.shape}'
+        )
+    if not np.array_equal(
         filtered_denoised_img_header.get_sform(),
         preprocessed_img_header.get_sform(),
-    )
-    assert np.array_equal(
+    ):
+        raise ValueError('Sform mismatch between filtered and preprocessed images')
+    if not np.array_equal(
         filtered_denoised_img_header.get_zooms()[:-1],
         preprocessed_img_header.get_zooms()[:-1],
-    )
+    ):
+        raise ValueError('Zoom parameters mismatch between filtered and preprocessed images')

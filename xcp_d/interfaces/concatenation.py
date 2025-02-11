@@ -401,7 +401,8 @@ class ConcatenateInputs(SimpleInterface):
                     else:
                         concatenate_niimgs(parc_files, out_file=out_file)
 
-                    assert os.path.isfile(out_file), f'Output file {out_file} not created.'
+                    if not os.path.isfile(out_file):
+                        raise ValueError(f'Output file {out_file} not created.')
                     out_files.append(out_file)
 
                 self._results[name] = out_files
@@ -414,7 +415,8 @@ class ConcatenateInputs(SimpleInterface):
                 else:
                     concatenate_niimgs(run_files, out_file=out_file)
 
-                assert os.path.isfile(out_file), f'Output file {out_file} not created.'
+                if not os.path.isfile(out_file):
+                    raise ValueError(f'Output file {out_file} not created.')
                 self._results[name] = out_file
 
         return runtime

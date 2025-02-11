@@ -165,7 +165,11 @@ class ComputeALFF(SimpleInterface):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
             sample_mask = ~censoring_df['framewise_displacement'].values.astype(bool)
-            assert sample_mask.size == n_volumes, f'{sample_mask.size} != {n_volumes}'
+            if sample_mask.size != n_volumes:
+                raise ValueError(
+                    f'Sample mask size {sample_mask.size} does not match number of '
+                    f'volumes {n_volumes}'
+                )
 
         alff_mat = np.zeros(n_voxels)
         with Pool(processes=self.inputs.n_threads) as pool:
