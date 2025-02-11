@@ -391,7 +391,7 @@ class ConnectPlot(SimpleInterface):
         np.fill_diagonal(corr_mat, 0)
 
         # Plot the correlation matrix
-        ax.imshow(corr_mat, vmin=-1, vmax=1, cmap='seismic')
+        im = ax.imshow(corr_mat, vmin=-1, vmax=1, cmap='seismic')
 
         # Add lines separating networks
         for idx in break_idx[1:-1]:
@@ -404,7 +404,7 @@ class ConnectPlot(SimpleInterface):
         ax.axes.set_yticklabels(unique_labels)
         ax.axes.set_xticklabels(unique_labels, rotation=90)
 
-        return ax
+        return im, ax
 
     def _run_interface(self, runtime):
         from matplotlib.gridspec import GridSpec
@@ -476,7 +476,7 @@ class ConnectPlot(SimpleInterface):
             else:
                 network_labels = ['None'] * dseg_df.shape[0]
 
-            ax = self.plot_matrix(
+            im, ax = self.plot_matrix(
                 corr_mat=corrs_df.to_numpy(),
                 network_labels=network_labels,
                 ax=ax,
@@ -488,7 +488,7 @@ class ConnectPlot(SimpleInterface):
 
         # Add colorbar in the reserved space
         cbar_ax = fig.add_subplot(gs[0, -1])
-        plt.colorbar(ax, cax=cbar_ax)
+        plt.colorbar(im, cax=cbar_ax)
         fig.tight_layout()
 
         # Write the results out
