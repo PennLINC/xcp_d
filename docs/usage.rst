@@ -364,7 +364,7 @@ A Docker container can be created using the following command:
    docker run --rm -it \ # docker args
       -v /home/user/data/fmriprep \
       -v /home/user/data/wkdir \
-      -v //home/user/data/xcpd_output \
+      -v /home/user/data/xcpd_output \
       pennlinc/xcp_d:<version> \
       /home/user/data/fmriprep \ #xcpd args
       /home/user/data/xcpd_output \
