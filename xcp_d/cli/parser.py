@@ -93,7 +93,20 @@ def _build_parser():
         type=lambda label: label.removeprefix('sub-'),
         help=(
             'A space-delimited list of participant identifiers, or a single identifier. '
-            "The 'sub-' prefix can be removed."
+            'The "sub-" prefix can be removed.'
+        ),
+    )
+    g_bids.add_argument(
+        '--session-id',
+        '--session_id',
+        dest='session_id',
+        action='store',
+        nargs='+',
+        type=lambda label: label.removeprefix('ses-'),
+        help=(
+            'A space-delimited list of session identifiers, or a single identifier. '
+            'The "ses-" prefix can be removed. '
+            'By default, all sessions will be postprocessed.'
         ),
     )
     g_bids.add_argument(
@@ -398,7 +411,8 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
             'The default value is 50 mm, which is recommended for adults. '
             'For infants, we recommend a value of 35 mm. '
             "A value of 'auto' is also supported, in which case the brain radius is "
-            'estimated from the preprocessed brain mask by treating the mask as a sphere.'
+            'estimated from the preprocessed brain mask by treating the mask as a sphere. '
+            'The auto option typically results in a higher estimate than the default.'
         ),
     )
     g_censor.add_argument(

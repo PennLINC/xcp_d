@@ -91,6 +91,9 @@ The :py:mod:`config` is responsible for other conveniency actions.
 import os
 from multiprocessing import set_start_method
 
+import yaml
+from bids.layout import Query
+from bids.utils import listify
 from templateflow.conf import TF_LAYOUT
 
 # Disable NiPype etelemetry always
@@ -420,6 +423,8 @@ class execution(_Config):
     """Unique identifier of this particular run."""
     participant_label = None
     """List of participant identifiers that are to be preprocessed."""
+    session_id = None
+    """Select a particular session from all available in the dataset."""
     task_id = None
     """Select a particular task from all available in the dataset."""
     templateflow_home = _templateflow_home
@@ -495,8 +500,28 @@ class execution(_Config):
 
         cls.layout = cls._layout
 
+        if cls.task_id:
+            cls.bids_filters = cls.bids_filters or {}
+            cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
+            cls.bids_filters['bold']['task'] = cls.task_id
+
+        if cls.session_id:
+            # Patch session ID into all of the filters
+            session_id = listify(cls.session_id) + [Query.NONE]  # allow none (esp. for anats)
+
+            cls.bids_filters = cls.bids_filters or {}
+
+            # Load the io_spec to get the filter fields
+            _spec = yaml.safe_load(load_data.readable('io_spec.yaml').read_text())
+            filter_fields = []
+            for subspec in _spec['queries'].values():
+                filter_fields += list(subspec.keys())
+
+            for field in filter_fields:
+                cls.bids_filters[field] = cls.bids_filters.get(field, {})
+                cls.bids_filters[field]['session'] = session_id
+
         if cls.bids_filters:
-            from bids.layout import Query
 
             def _process_value(value):
                 """Convert string with "Query" in it to Query object."""
@@ -513,11 +538,6 @@ class execution(_Config):
             for acq, filters in cls.bids_filters.items():
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
-
-        if cls.task_id:
-            cls.bids_filters = cls.bids_filters or {}
-            cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
-            cls.bids_filters['bold']['task'] = cls.task_id
 
         dataset_links = {
             'preprocessed': cls.fmri_dir,
