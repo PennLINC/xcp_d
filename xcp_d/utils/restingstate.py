@@ -51,7 +51,7 @@ def compute_2d_reho(datat, adjacency_matrix):
         rankmean = np.sum(rankeddata, axis=0)  # add up ranks
         # kc is the sum of the squared rankmean minus the timepoints into
         # the mean of the rankmean squared
-        kc = np.sum(np.power(rankmean, 2)) - n_volumes * np.power(np.nanmean(rankmean), 2)
+        kc = np.sum(np.power(rankmean, 2)) - n_volumes * np.power(np.mean(rankmean), 2)
 
         # square number of neighbours, multiply by (cubed timepoint - timepoint)
         denom = np.power(n_neighbors, 2) * (np.power(n_volumes, 3) - n_volumes)
