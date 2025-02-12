@@ -295,19 +295,18 @@ class LINCQC(SimpleInterface):
         mean_dvars_before_processing = np.nanmean(dvars_before_processing)
         mean_dvars_after_processing = np.nanmean(dvars_after_processing)
 
-        tmp_fd = preproc_fd.copy()
-        tmp_fd[np.isnan(tmp_fd)] = 0
-        tmp_dvars = dvars_before_processing.copy()
-        tmp_dvars[np.isnan(tmp_dvars)] = 0
-        fd_dvars_correlation_initial = np.corrcoef(tmp_fd, tmp_dvars)[0, 1]
-        del tmp_fd, tmp_dvars
+        preproc_mask = ~np.isnan(preproc_fd) & ~np.isnan(dvars_before_processing)
+        fd_dvars_correlation_initial = np.corrcoef(
+            preproc_fd[preproc_mask],
+            dvars_before_processing[preproc_mask],
+        )[0, 1]
 
-        tmp_fd = postproc_fd.copy()
-        tmp_fd[np.isnan(tmp_fd)] = 0
-        tmp_dvars = dvars_after_processing.copy()
-        tmp_dvars[np.isnan(tmp_dvars)] = 0
-        fd_dvars_correlation_final = np.corrcoef(tmp_fd, tmp_dvars)[0, 1]
-        del tmp_fd, tmp_dvars
+        postproc_mask = ~np.isnan(postproc_fd) & ~np.isnan(dvars_after_processing)
+        fd_dvars_correlation_final = np.corrcoef(
+            postproc_fd[postproc_mask],
+            dvars_after_processing[postproc_mask],
+        )[0, 1]
+
         rmsd_max_value = np.nanmax(rmsd_censored)
 
         # A summary of all the values
