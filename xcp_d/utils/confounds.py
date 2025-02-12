@@ -181,7 +181,7 @@ def filter_motion(
         highpass_hz = band_stop_max / 60
         stopband_hz = np.array([lowpass_hz, highpass_hz])
         # Convert stopband to a single notch frequency.
-        freq_to_remove = np.mean(stopband_hz)
+        freq_to_remove = np.nanmean(stopband_hz)
         bandwidth = np.abs(np.diff(stopband_hz))
 
         # Create filter coefficients.
