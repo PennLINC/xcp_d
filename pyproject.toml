@@ -42,7 +42,7 @@ dependencies = [
     "scikit-learn <= 1.6.1",
     "scipy >= 1.14.0,<= 1.15.2",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.20.0",  # for usage reports
+    "sentry-sdk ~= 2.22.0",  # for usage reports
     "templateflow ~= 24.2.0",
     "toml",
     "trimesh",
