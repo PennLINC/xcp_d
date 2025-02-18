@@ -155,32 +155,41 @@ def main():
         errno = 0
 
     finally:
-        from xcp_d.reports.core import generate_reports
+        if config.execution.analysis_level == 'participant':
+            from xcp_d.reports.core import generate_reports
 
-        # Write dataset description before generating reports
-        write_derivative_description(
-            config.execution.fmri_dir,
-            config.execution.output_dir,
-            atlases=config.execution.atlases,
-            dataset_links=config.execution.dataset_links,
-        )
+            # Write dataset description before generating reports
+            write_derivative_description(
+                config.execution.fmri_dir,
+                config.execution.output_dir,
+                atlases=config.execution.atlases,
+                dataset_links=config.execution.dataset_links,
+            )
 
-        if config.execution.atlases:
-            write_atlas_dataset_description(config.execution.output_dir / 'atlases')
+            if config.execution.atlases:
+                write_atlas_dataset_description(config.execution.output_dir / 'atlases')
 
-        # Generate reports phase
-        session_list = (
-            config.execution.get().get('bids_filters', {}).get('bold', {}).get('session')
-        )
+            # Generate reports phase
+            session_list = (
+                config.execution.get().get('bids_filters', {}).get('bold', {}).get('session')
+            )
 
-        # Generate reports phase
-        failed_reports = generate_reports(
-            subject_list=config.execution.participant_label,
-            output_dir=config.execution.output_dir,
-            abcc_qc=config.workflow.abcc_qc,
-            run_uuid=config.execution.run_uuid,
-            session_list=session_list,
-        )
+            # Generate reports phase
+            failed_reports = generate_reports(
+                subject_list=config.execution.participant_label,
+                output_dir=config.execution.output_dir,
+                abcc_qc=config.workflow.abcc_qc,
+                run_uuid=config.execution.run_uuid,
+                session_list=session_list,
+            )
+
+        else:
+            from xcp_d.reports.core import generate_group_report
+
+            failed_reports = generate_group_report(
+                output_dir=config.execution.output_dir,
+                run_uuid=config.execution.run_uuid,
+            )
 
         if failed_reports:
             msg = (
