@@ -135,10 +135,14 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                         ├── vent_2mm_<sub_id>_mask_eroded.nii.gz
                         └── wm_2mm_<sub_id>_mask_eroded.nii.gz
     """
-    assert isinstance(in_dir, str)
-    assert os.path.isdir(in_dir), f'Folder DNE: {in_dir}'
-    assert isinstance(out_dir, str)
-    assert isinstance(sub_ent, str)
+    if not isinstance(in_dir, str):
+        raise ValueError("in_dir must be a string")
+    if not os.path.isdir(in_dir):
+        raise ValueError(f'Folder does not exist: {in_dir}')
+    if not isinstance(out_dir, str):
+        raise ValueError("out_dir must be a string")
+    if not isinstance(sub_ent, str):
+        raise ValueError("sub_ent must be a string")
 
     sub_id = sub_ent.replace('sub-', '')
     # Reset the subject entity in case the sub- prefix wasn't included originally.
