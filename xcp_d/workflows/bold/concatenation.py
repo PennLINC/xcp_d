@@ -13,7 +13,7 @@ from xcp_d.interfaces.concatenation import (
 )
 from xcp_d.interfaces.connectivity import TSVConnect
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _select_first, _transpose_lol
+from xcp_d.utils.utils import _select_first
 from xcp_d.workflows.bold.plotting import init_qc_report_wf
 
 
@@ -132,26 +132,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ('timeseries_ciftis', 'timeseries_ciftis'),
         ])
     ])  # fmt:skip
-
-    transpose_timeseries = pe.Node(
-        niu.Function(
-            input_names=['lst'],
-            output_names=['out'],
-            function=_transpose_lol,
-        ),
-        name='transpose_timeseries',
-    )
-    workflow.connect([(filter_runs, transpose_timeseries, [('timeseries', 'lst')])])
-
-    transpose_timeseries_ciftis = pe.Node(
-        niu.Function(
-            input_names=['lst'],
-            output_names=['out'],
-            function=_transpose_lol,
-        ),
-        name='transpose_timeseries_ciftis',
-    )
-    workflow.connect([(filter_runs, transpose_timeseries_ciftis, [('timeseries_ciftis', 'lst')])])
 
     concatenate_inputs = pe.Node(
         ConcatenateInputs(),
@@ -332,7 +312,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name='make_timeseries_dict',
             iterfield=['in1'],
         )
-        workflow.connect([(transpose_timeseries, make_timeseries_dict, [('out', 'in1')])])
+        workflow.connect([(filter_runs, make_timeseries_dict, [('timeseries', 'in1')])])
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
@@ -347,7 +327,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
 
         workflow.connect([
-            (transpose_timeseries, ds_timeseries, [(('out', _combine_name), 'source_file')]),
+            (filter_runs, ds_timeseries, [(('timeseries', _combine_name), 'source_file')]),
             (concatenate_inputs, ds_timeseries, [('timeseries', 'in_file')]),
             (make_timeseries_dict, ds_timeseries, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
@@ -395,7 +375,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             )
 
             workflow.connect([
-                (transpose_timeseries, ds_correlations, [(('out', _combine_name), 'source_file')]),
+                (filter_runs, ds_correlations, [(('timeseries', _combine_name), 'source_file')]),
                 (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
                 (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
@@ -412,7 +392,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 name='cifti_ts_src',
                 iterfield=['in1'],
             )
-            workflow.connect([(transpose_timeseries_ciftis, cifti_ts_src, [('out', 'in1')])])
+            workflow.connect([(filter_runs, cifti_ts_src, [('timeseries_ciftis', 'in1')])])
 
             ds_cifti_ts = pe.MapNode(
                 DerivativesDataSink(
@@ -426,8 +406,8 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             )
 
             workflow.connect([
-                (transpose_timeseries_ciftis, ds_cifti_ts, [(
-                    ('out', _combine_name), 'source_file'),
+                (filter_runs, ds_cifti_ts, [(
+                    ('timeseries_ciftis', _combine_name), 'source_file'),
                 ]),
                 (concatenate_inputs, ds_cifti_ts, [('timeseries_ciftis', 'in_file')]),
                 (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
