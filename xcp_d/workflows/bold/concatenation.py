@@ -421,50 +421,51 @@ def _combine_name(in_files):
 
     Parameters
     ----------
-    in_files : :obj:`list`
-        List of file paths.
+    in_files : :obj:`list` of :obj:`list` of :obj:`str`
+        List of lists of file paths. Each sublist contains files for a single atlas.
 
     Returns
     -------
-    name : :obj:`str`
-        Combined name, containing only the entities that are present in all files.
+    names : :obj:`list` of :obj:`str`
+        Combined names, containing only the entities that are present in all files in a sublist.
 
     Examples
     --------
     >>> _combine_name([
-    ...     '/path/to/sub-01_task-rest_run-1_bold.nii.gz',
-    ...     '/path/to/sub-01_task-rest_run-2_bold.nii.gz',
+    ...     ['/path/to/sub-01_task-rest_run-1_bold.nii.gz',
+    ...      '/path/to/sub-01_task-rest_run-2_bold.nii.gz'],
     ... ])
-    '/path/to/sub-01_task-rest_bold.nii.gz'
+    ['/path/to/sub-01_task-rest_bold.nii.gz']
 
     >>> _combine_name([
-    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
-    ...     '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz',
+    ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...      '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz'],
     ... ])
-    '/path/to/sub-01_task-rest_bold.nii.gz'
+    ['/path/to/sub-01_task-rest_bold.nii.gz']
 
     >>> _combine_name([
-    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
-    ...     '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz',
+    ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...      '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz'],
     ... ])
-    '/path/to/sub-01_task-rest_dir-AP_bold.nii.gz'
+    ['/path/to/sub-01_task-rest_dir-AP_bold.nii.gz']
 
     """
     import os
 
-    try:
-        directory = os.path.dirname(in_files[0])
-    except TypeError as e:
-        raise ValueError(in_files) from e
+    names = []
+    for atlas_files in in_files:
+        directory = os.path.dirname(atlas_files[0])
+        filenames = [os.path.basename(f) for f in atlas_files]
+        filename_parts = [f.split('_') for f in filenames]
+        to_remove = []
+        for part in filename_parts[0]:
+            for next_filename_part in filename_parts[1:]:
+                if part not in next_filename_part:
+                    to_remove.append(part)
 
-    filenames = [os.path.basename(f) for f in in_files]
-    filename_parts = [f.split('_') for f in filenames]
-    to_remove = []
-    for part in filename_parts[0]:
-        for next_filename_part in filename_parts[1:]:
-            if part not in next_filename_part:
-                to_remove.append(part)
+        new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
+        new_filename = '_'.join(new_filename_parts)
+        new_file = os.path.join(directory, new_filename)
+        names.append(new_file)
 
-    new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
-    new_filename = '_'.join(new_filename_parts)
-    return os.path.join(directory, new_filename)
+    return names
