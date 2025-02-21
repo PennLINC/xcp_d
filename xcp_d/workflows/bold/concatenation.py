@@ -459,10 +459,12 @@ def _combine_name(in_files):
     directory = os.path.dirname(in_files[0])
     filenames = [os.path.basename(f) for f in in_files]
     filename_parts = [f.split('_') for f in filenames]
+    to_remove = []
     for part in filename_parts[0]:
         for next_filename_part in filename_parts[1:]:
             if part not in next_filename_part:
-                filename_parts.remove(part)
+                to_remove.append(part)
 
-    new_filename = '_'.join(filename_parts[0])
+    new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
+    new_filename = '_'.join(new_filename_parts)
     return os.path.join(directory, new_filename)
