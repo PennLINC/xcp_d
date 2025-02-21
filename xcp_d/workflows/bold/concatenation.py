@@ -452,7 +452,11 @@ def _combine_name(in_files):
     """
     import os
 
-    directory = os.path.dirname(in_files[0])
+    try:
+        directory = os.path.dirname(in_files[0])
+    except TypeError as e:
+        raise ValueError(in_files) from e
+
     filenames = [os.path.basename(f) for f in in_files]
     filename_parts = [f.split('_') for f in filenames]
     to_remove = []
