@@ -175,7 +175,7 @@ inline-quotes = "single"
 quote-style = "single"
 
 [tool.pytest.ini_options]
-addopts = '--doctest-modules -m "not integration"'
+addopts = '-m "not integration"'
 markers = [
     "integration: mark test as an integration test",
     "ds001419_nifti: mark NIfTI integration test for fMRIPrep derivatives from ds001419",
