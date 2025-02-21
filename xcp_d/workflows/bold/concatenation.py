@@ -194,17 +194,13 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([(filter_runs, motion_src, [('motion_file', 'in1')])])
 
     ds_motion_file = pe.Node(
-        DerivativesDataSink(
-            dismiss_entities=['segmentation', 'den', 'res', 'space', 'cohort', 'desc'],
-            suffix='motion',
-            extension='.tsv',
-        ),
+        DerivativesDataSink(extension='.tsv'),
         name='ds_motion_file',
         run_without_submitting=True,
         mem_gb=1,
     )
     workflow.connect([
-        (clean_name_source, ds_motion_file, [('name_source', 'source_file')]),
+        ((filter_runs, _combine_name), ds_motion_file, [('motion_file', 'source_file')]),
         (concatenate_inputs, ds_motion_file, [('motion_file', 'in_file')]),
         (motion_src, ds_motion_file, [('out', 'Sources')]),
     ])  # fmt:skip
@@ -222,29 +218,20 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         workflow.connect([(filter_runs, temporal_mask_src, [('temporal_mask', 'in1')])])
 
         ds_temporal_mask = pe.Node(
-            DerivativesDataSink(
-                dismiss_entities=['segmentation', 'den', 'res', 'space', 'cohort', 'desc'],
-                suffix='outliers',
-                extension='.tsv',
-            ),
+            DerivativesDataSink(extension='.tsv'),
             name='ds_temporal_mask',
             run_without_submitting=True,
             mem_gb=1,
         )
         workflow.connect([
-            (clean_name_source, ds_temporal_mask, [('name_source', 'source_file')]),
+            ((filter_runs, _combine_name), ds_temporal_mask, [('temporal_mask', 'source_file')]),
             (concatenate_inputs, ds_temporal_mask, [('temporal_mask', 'in_file')]),
             (temporal_mask_src, ds_temporal_mask, [('out', 'Sources')]),
         ])  # fmt:skip
 
     if file_format == 'cifti':
         ds_denoised_bold = pe.Node(
-            DerivativesDataSink(
-                dismiss_entities=['den'],
-                desc='denoised',
-                den='91k',
-                extension='.dtseries.nii',
-            ),
+            DerivativesDataSink(extension='.dtseries.nii'),
             name='ds_denoised_bold',
             run_without_submitting=True,
             mem_gb=2,
@@ -252,12 +239,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
-                DerivativesDataSink(
-                    dismiss_entities=['den'],
-                    desc='denoisedSmoothed',
-                    den='91k',
-                    extension='.dtseries.nii',
-                ),
+                DerivativesDataSink(extension='.dtseries.nii'),
                 name='ds_smoothed_denoised_bold',
                 run_without_submitting=True,
                 mem_gb=2,
@@ -265,11 +247,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     else:
         ds_denoised_bold = pe.Node(
-            DerivativesDataSink(
-                desc='denoised',
-                extension='.nii.gz',
-                compression=True,
-            ),
+            DerivativesDataSink(extension='.nii.gz', compression=True),
             name='ds_denoised_bold',
             run_without_submitting=True,
             mem_gb=2,
@@ -277,11 +255,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
-                DerivativesDataSink(
-                    desc='denoisedSmoothed',
-                    extension='.nii.gz',
-                    compression=True,
-                ),
+                DerivativesDataSink(extension='.nii.gz', compression=True),
                 name='ds_smoothed_denoised_bold',
                 run_without_submitting=True,
                 mem_gb=2,
@@ -299,7 +273,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([(filter_runs, denoised_bold_src, [('denoised_bold', 'in1')])])
 
     workflow.connect([
-        (clean_name_source, ds_denoised_bold, [('name_source', 'source_file')]),
+        ((filter_runs, _combine_name), ds_denoised_bold, [('denoised_bold', 'source_file')]),
         (concatenate_inputs, ds_denoised_bold, [('denoised_bold', 'in_file')]),
         (denoised_bold_src, ds_denoised_bold, [('out', 'Sources')]),
     ])  # fmt:skip
@@ -316,7 +290,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
         workflow.connect([
             (filter_runs, smoothed_src, [('smoothed_denoised_bold', 'in1')]),
-            (clean_name_source, ds_smoothed_denoised_bold, [('name_source', 'source_file')]),
+            ((filter_runs, _combine_name), ds_smoothed_denoised_bold, [
+                ('smoothed_denoised_bold', 'source_file'),
+            ]),
             (concatenate_inputs, ds_smoothed_denoised_bold, [
                 ('smoothed_denoised_bold', 'in_file'),
             ]),
@@ -342,9 +318,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
-                dismiss_entities=['desc', 'den', 'res'],
-                statistic='mean',
-                suffix='timeseries',
                 extension='.tsv',
                 # Metadata
                 SamplingFrequency='TR',
@@ -352,12 +325,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             name='ds_timeseries',
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=['segmentation', 'in_file', 'meta_dict'],
+            iterfield=['source_file', 'in_file', 'meta_dict'],
         )
-        ds_timeseries.inputs.segmentation = atlases
 
         workflow.connect([
-            (clean_name_source, ds_timeseries, [('name_source', 'source_file')]),
+            ((filter_runs, _combine_name), ds_timeseries, [('timeseries', 'source_file')]),
             (concatenate_inputs, ds_timeseries, [('timeseries', 'in_file')]),
             (make_timeseries_dict, ds_timeseries, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
@@ -392,6 +364,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
             ds_correlations = pe.MapNode(
                 DerivativesDataSink(
+                    # Be explicit with entities because the source file is the timeseries
                     dismiss_entities=['desc'],
                     statistic='pearsoncorrelation',
                     suffix='relmat',
@@ -400,12 +373,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 name='ds_correlations',
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=['segmentation', 'in_file', 'meta_dict'],
+                iterfield=['source_file', 'in_file', 'meta_dict'],
             )
-            ds_correlations.inputs.segmentation = atlases
 
             workflow.connect([
-                (clean_name_source, ds_correlations, [('name_source', 'source_file')]),
+                ((filter_runs, _combine_name), ds_correlations, [('timeseries', 'source_file')]),
                 (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
                 (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
@@ -429,23 +401,57 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ds_cifti_ts = pe.MapNode(
                 DerivativesDataSink(
                     check_hdr=False,
-                    dismiss_entities=['desc', 'den'],
-                    den='91k',
-                    statistic='mean',
-                    suffix='timeseries',
                     extension='.ptseries.nii',
                 ),
                 name='ds_cifti_ts',
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=['segmentation', 'in_file', 'meta_dict'],
+                iterfield=['source_file', 'in_file', 'meta_dict'],
             )
-            ds_cifti_ts.inputs.segmentation = atlases
 
             workflow.connect([
-                (clean_name_source, ds_cifti_ts, [('name_source', 'source_file')]),
+                ((filter_runs, _combine_name), ds_cifti_ts, [('timeseries_ciftis', 'source_file')]),
                 (concatenate_inputs, ds_cifti_ts, [('timeseries_ciftis', 'in_file')]),
                 (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
 
     return workflow
+
+
+def _combine_name(in_files):
+    """Remove unmatched entities from a list of files to produce a single name.
+
+    Parameters
+    ----------
+    in_files : :obj:`list`
+        List of file paths.
+
+    Returns
+    -------
+    name : :obj:`str`
+        Combined name, containing only the entities that are present in all files.
+
+    Examples
+    --------
+    >>> _combine_name(['/path/to/sub-01_task-rest_run-1_bold.nii.gz', '/path/to/sub-01_task-rest_run-2_bold.nii.gz'])
+    '/path/to/sub-01_task-rest_bold.nii.gz'
+
+    >>> _combine_name(['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz', '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz'])
+    '/path/to/sub-01_task-rest_bold.nii.gz'
+
+    >>> _combine_name(['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz', '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz'])
+    '/path/to/sub-01_task-rest_dir-AP_bold.nii.gz'
+
+    """
+    import os
+
+    directory = os.path.dirname(in_files[0])
+    filenames = [os.path.basename(f) for f in in_files]
+    filename_parts = [f.split('_') for f in filenames]
+    for part in filename_parts[0]:
+        for next_filename_part in filename_parts[1:]:
+            if part not in next_filename_part:
+                filename_parts.remove(part)
+
+    new_filename = '_'.join(filename_parts[0])
+    return os.path.join(directory, new_filename)
