@@ -64,7 +64,6 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--min-coverage=0.4',
         '--min-time=100',
         '--smoothing=6',
-        '--combine-runs',
         '--output-type=censored',
         '--combine-runs=y',
         '--linc-qc=y',
