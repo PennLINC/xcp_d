@@ -410,7 +410,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             )
 
             workflow.connect([
-                ((filter_runs, _combine_name), ds_cifti_ts, [('timeseries_ciftis', 'source_file')]),
+                ((filter_runs, _combine_name), ds_cifti_ts, [
+                    ('timeseries_ciftis', 'source_file'),
+                ]),
                 (concatenate_inputs, ds_cifti_ts, [('timeseries_ciftis', 'in_file')]),
                 (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
@@ -433,13 +435,22 @@ def _combine_name(in_files):
 
     Examples
     --------
-    >>> _combine_name(['/path/to/sub-01_task-rest_run-1_bold.nii.gz', '/path/to/sub-01_task-rest_run-2_bold.nii.gz'])
+    >>> _combine_name([
+    ...     '/path/to/sub-01_task-rest_run-1_bold.nii.gz',
+    ...     '/path/to/sub-01_task-rest_run-2_bold.nii.gz',
+    ... ])
     '/path/to/sub-01_task-rest_bold.nii.gz'
 
-    >>> _combine_name(['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz', '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz'])
+    >>> _combine_name([
+    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...     '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz',
+    ... ])
     '/path/to/sub-01_task-rest_bold.nii.gz'
 
-    >>> _combine_name(['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz', '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz'])
+    >>> _combine_name([
+    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...     '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz',
+    ... ])
     '/path/to/sub-01_task-rest_dir-AP_bold.nii.gz'
 
     """
