@@ -329,7 +329,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
 
         workflow.connect([
-            (filter_runs, ds_timeseries, [(('timeseries', _combine_name), 'source_file')]),
+            (filter_runs, ds_timeseries, [(
+                (('timeseries', _transpose_lol), _combine_name), 'source_file'),
+            ]),
             (concatenate_inputs, ds_timeseries, [('timeseries', 'in_file')]),
             (make_timeseries_dict, ds_timeseries, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
@@ -377,7 +379,9 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             )
 
             workflow.connect([
-                (filter_runs, ds_correlations, [(('timeseries', _combine_name), 'source_file')]),
+                (filter_runs, ds_correlations, [(
+                    (('timeseries', _transpose_lol), _combine_name), 'source_file'),
+                ]),
                 (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
                 (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
@@ -411,7 +415,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
             workflow.connect([
                 (filter_runs, ds_cifti_ts, [
-                    (('timeseries_ciftis', _combine_name), 'source_file'),
+                    ((('timeseries_ciftis', _transpose_lol), _combine_name), 'source_file'),
                 ]),
                 (concatenate_inputs, ds_cifti_ts, [('timeseries_ciftis', 'in_file')]),
                 (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
