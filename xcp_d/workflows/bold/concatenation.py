@@ -28,7 +28,7 @@ def init_concatenate_data_wf(TR, head_radius, name='concatenate_data_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.concatenation import init_concatenate_data_wf
+            from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
 
             with mock_config():
                 wf = init_concatenate_data_wf(
