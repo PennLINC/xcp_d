@@ -34,7 +34,6 @@ def test_collect_participants(datasets):
         xbids.collect_participants(bids_layout, participant_label=['01', 'fail'])
 
     # Pass in BIDS folder with only some participants to get BIDSError.
-    raise Exception(bids_layout.get_files())
     with pytest.raises(xbids.BIDSError, match='Some participants were not found'):
         xbids.collect_participants(bids_layout, participant_label=['01', 'fail'], strict=True)
 
