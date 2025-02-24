@@ -447,18 +447,6 @@ class CiftiParcellateWorkbench(WBCommand):
 
     The input cifti file must have a brain models mapping on the chosen
     dimension, columns for .dtseries.
-
-    Examples
-    --------
-    >>> ciftiparcel = CiftiParcellateWorkbench()
-    >>> ciftiparcel.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
-    >>> ciftiparcel.inputs.out_file = 'sub_01XX_task-rest.ptseries.nii'
-    >>> ciftiparcel.inputs.atlas_label = 'schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii'
-    >>> ciftiparcel.inputs.direction = 'COLUMN'
-    >>> ciftiparcel.cmdline
-    wb_command -cifti-parcellate sub-01XX_task-rest.dtseries.nii \
-    schaefer_space-fsLR_den-32k_desc-400_atlas.dlabel.nii COLUMN \
-    sub_01XX_task-rest.ptseries.nii
     """
 
     input_spec = _CiftiParcellateWorkbenchInputSpec
@@ -589,17 +577,6 @@ class CiftiSeparateMetric(WBCommand):
     Other structures can also be extracted.
     The input cifti file must have a brain models mapping on the chosen
     dimension, columns for .dtseries,
-
-    Examples
-    --------
-    >>> ciftiseparate = CiftiSeparateMetric()
-    >>> ciftiseparate.inputs.in_file = 'sub-01XX_task-rest.dtseries.nii'
-    >>> ciftiseparate.inputs.metric = "CORTEX_LEFT" # extract left hemisphere
-    >>> ciftiseparate.inputs.out_file = 'sub_01XX_task-rest_hemi-L.func.gii'
-    >>> ciftiseparate.inputs.direction = 'COLUMN'
-    >>> ciftiseparate.cmdline
-    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii'  COLUMN \
-      -metric CORTEX_LEFT 'sub_01XX_task-rest_hemi-L.func.gii'
     """
 
     input_spec = _CiftiSeparateMetricInputSpec
@@ -655,19 +632,7 @@ class CiftiSeparateVolumeAll(WBCommand):
 
     Other structures can also be extracted.
     The input cifti file must have a brain models mapping on the chosen
-    dimension, columns for .dtseries,
-
-    Examples
-    --------
-    >>> ciftiseparate = CiftiSeparateVolumeAll()
-    >>> ciftiseparate.inputs.in_file = 'sub-01_task-rest.dtseries.nii'
-    >>> ciftiseparate.inputs.out_file = 'sub_01_task-rest_volumetric_data.nii.gz'
-    >>> ciftiseparate.inputs.label_file = 'sub_01_task-rest_labels.nii.gz'
-    >>> ciftiseparate.inputs.direction = 'COLUMN'
-    >>> ciftiseparate.cmdline
-    wb_command  -cifti-separate 'sub-01XX_task-rest.dtseries.nii' COLUMN \
-        -volume-all 'sub_01_task-rest_volumetric_data.nii.gz' \
-        -label 'sub_01_task-rest_labels.nii.gz'
+    dimension, columns for .dtseries.
     """
 
     input_spec = _CiftiSeparateVolumeAllInputSpec
@@ -727,21 +692,7 @@ class CiftiCreateDenseScalar(WBCommand):
 
     Other structures can also be extracted.
     The input cifti file must have a brain models mapping on the chosen
-    dimension, columns for .dtseries,
-
-    Examples
-    --------
-    >>> cifticreatedensescalar = CiftiCreateDenseScalar()
-    >>> cifticreatedensescalar.inputs.out_file = 'sub_01_task-rest.dscalar.nii'
-    >>> cifticreatedensescalar.inputs.left_metric = 'sub_01_task-rest_hemi-L.func.gii'
-    >>> cifticreatedensescalar.inputs.left_metric = 'sub_01_task-rest_hemi-R.func.gii'
-    >>> cifticreatedensescalar.inputs.volume_data = 'sub_01_task-rest_subcortical.nii.gz'
-    >>> cifticreatedensescalar.inputs.structure_label_volume = 'sub_01_task-rest_labels.nii.gz'
-    >>> cifticreatedensescalar.cmdline
-    wb_command -cifti-create-dense-scalar 'sub_01_task-rest.dscalar.nii' \
-        -left-metric 'sub_01_task-rest_hemi-L.func.gii' \
-        -right-metric 'sub_01_task-rest_hemi-R.func.gii' \
-        -volume-data 'sub_01_task-rest_subcortical.nii.gz' 'sub_01_task-rest_labels.nii.gz'
+    dimension, columns for .dtseries.
     """
 
     input_spec = _CiftiCreateDenseScalarInputSpec
@@ -942,17 +893,7 @@ class _CiftiConvertOutputSpec(TraitedSpec):
 
 
 class CiftiConvert(WBCommand):
-    """Convert between CIFTI and NIFTI file formats.
-
-    Examples
-    --------
-    >>> cifticonvert = CiftiConvert()
-    >>> cifticonvert.inputs.in_file = 'sub-01_task-rest_bold.dscalar.nii'
-    >>> cifticonvert.target = "to"
-    >>> cifticonvert.cmdline
-    wb_command -cifti-convert -to-nifti 'sub-01_task-rest_bold.dscalar.nii' \
-        'sub-01_task-rest_bold_converted.nii.gz'
-    """
+    """Convert between CIFTI and NIFTI file formats."""
 
     input_spec = _CiftiConvertInputSpec
     output_spec = _CiftiConvertOutputSpec
@@ -1050,23 +991,6 @@ class CiftiCreateDenseFromTemplate(WBCommand):
 
     Any structure that isn't covered by an input is filled with zeros or the
     unlabeled key.
-
-    Examples
-    --------
-    >>> ccdft = CiftiCreateDenseFromTemplate()
-    >>> ccdft.inputs.template_cifti = "sub-01_task-rest_bold.dtseries.nii"
-    >>> ccdft.inputs.volume_all = "parcellation.nii.gz"
-    >>> ccdft.inputs.from_cropped = True
-    >>> ccdft.inputs.left_metric = "lh.func.gii"
-    >>> ccdft.inputs.right_metric = "rh.func.gii"
-    >>> ccdft.cmdline
-    wb_command -cifti-create-dense-from-template \
-        sub-01_task-rest_bold.dtseries.nii \
-        resampled_parcellation.dscalar.nii \
-        -volume-all parcellation.nii.gz \
-        -from-cropped \
-        -metric CORTEX_LEFT lh.func.gii \
-        -metric CORTEX_RIGHT rh.func.gii
     """
 
     input_spec = _CiftiCreateDenseFromTemplateInputSpec
@@ -1136,16 +1060,6 @@ class CiftiMath(WBCommand):
 
     I should use a dynamic trait for the variables going into the math expression,
     but I hardcoded data and mask because those are the only ones I'm currently using.
-
-    Examples
-    --------
-    >>> ciftimath = CiftiMath()
-    >>> ciftimath.inputs.data = 'sub-01XX_task-rest.dtseries.nii'
-    >>> ciftimath.inputs.out_file = 'mathed_sub_01XX_task-rest.dtseries.nii'
-    >>> ciftimath.inputs.expression = 'data * 2'
-    >>> ciftimath.cmdline
-    wb_command -cifti-math "data * 2" mathed_sub_01XX_task-rest.dtseries.nii \
-    -var data sub-01XX_task-rest.dtseries.nii
     """
 
     input_spec = _CiftiMathInputSpec
@@ -1183,16 +1097,6 @@ class CiftiCorrelation(WBCommand):
     """Generate correlation of rows in CIFTI file.
 
     This interface only supports parcellated time series files for now.
-
-    Examples
-    --------
-    >>> cifticorrelation = CiftiCorrelation()
-    >>> cifticorrelation.inputs.in_file = 'sub-01XX_task-rest_bold.ptseries.nii'
-    >>> cifticorrelation.inputs.out_file = 'sub-01XX_task-rest_bold.pconn.nii'
-    >>> cifticorrelation.cmdline
-    wb_command -cifti-correlation \
-    sub-01XX_task-rest_bold.ptseries.nii \
-    sub-01XX_task-rest_bold.pconn.nii
     """
 
     input_spec = _CiftiCorrelationInputSpec
@@ -1323,20 +1227,6 @@ class CiftiSmooth(WBCommand):
     zeros with extrapolated values.  The ROI should have a brain models
     mapping along columns, exactly matching the mapping of the chosen
     direction in the input file.  Data outside the ROI is ignored.
-
-    >>> from xcp_d.interfaces.workbench import CiftiSmooth
-    >>> smooth = CiftiSmooth()
-    >>> smooth.inputs.in_file = 'sub-01_task-rest.dtseries.nii'
-    >>> smooth.inputs.sigma_surf = 4
-    >>> smooth.inputs.sigma_vol = 4
-    >>> smooth.inputs.direction = 'COLUMN'
-    >>> smooth.inputs.right_surf = 'sub-01.R.midthickness.32k_fs_LR.surf.gii'
-    >>> smooth.inputs.left_surf = 'sub-01.L.midthickness.32k_fs_LR.surf.gii'
-    >>> smooth.cmdline
-    'wb_command -cifti-smoothing sub-01_task-rest.dtseries.nii 4.0 4.0 COLUMN \
-    smoothed_sub-01_task-rest.dtseries.nii \
-    -left-surface sub-01.L.midthickness.32k_fs_LR.surf.gii \
-    -right-surface sub-01.R.midthickness.32k_fs_LR.surf.gii'
     """
 
     input_spec = _CiftiSmoothInputSpec

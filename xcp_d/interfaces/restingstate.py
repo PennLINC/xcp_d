@@ -42,22 +42,7 @@ class _SurfaceReHoOutputSpec(TraitedSpec):
 
 
 class SurfaceReHo(SimpleInterface):
-    """Calculate regional homogeneity (ReHo) on a surface file.
-
-    Examples
-    --------
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    >>> surfacereho_wf = SurfaceReHo()
-    >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
-    >>> surfacereho_wf.inputs.surf_hemi = 'R'
-    >>> surfacereho_wf.run()
-    .. testcleanup::
-    >>> tmpdir.cleanup()
-    """
+    """Calculate regional homogeneity (ReHo) on a surface file."""
 
     input_spec = _SurfaceReHoInputSpec
     output_spec = _SurfaceReHoOutputSpec
@@ -212,18 +197,7 @@ class ReHoNamePatch(SimpleInterface):
     """Compute ReHo for a given neighbourhood, based on a local neighborhood of that voxel.
 
     For complete details, see the `3dReHo Documentation.
-    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dReHo.html>`_
-
-    Examples
-    --------
-    >>> from nipype.interfaces import afni
-    >>> reho = afni.ReHo()
-    >>> reho.inputs.in_file = 'functional.nii'
-    >>> reho.inputs.out_file = 'reho.nii.gz'
-    >>> reho.inputs.neighborhood = 'vertices'
-    >>> reho.cmdline
-    '3dReHo -prefix reho.nii.gz -inset functional.nii -nneigh 27'
-    >>> res = reho.run()  # doctest: +SKIP
+    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dReHo.html>`_.
     """
 
     _cmd = '3dReHo'
@@ -260,16 +234,7 @@ class DespikePatch(Despike):
     """Remove 'spikes' from the 3D+time input dataset.
 
     For complete details, see the `3dDespike Documentation.
-    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDespike.html>`_
-
-    Examples
-    --------
-    >>> from nipype.interfaces import afni
-    >>> despike = afni.Despike()
-    >>> despike.inputs.in_file = 'functional.nii'
-    >>> despike.cmdline
-    '3dDespike -prefix functional_despike functional.nii'
-    >>> res = despike.run()  # doctest: +SKIP
+    <https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDespike.html>`_.
     """
 
     input_spec = _DespikePatchInputSpec
