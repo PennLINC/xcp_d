@@ -278,7 +278,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-brain_mask.nii.gz',
         )
         copy_dictionary[boldmask_nifti_orig] = [boldmask_nifti_fmriprep]
-        
+
         bold_cifti_orig = os.path.join(
             task_dir_orig,
             f'{base_task_name}_Atlas_MSMAll.dtseries.nii',
