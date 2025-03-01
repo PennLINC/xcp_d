@@ -389,7 +389,8 @@ class FormatForBrainSwipes(SimpleInterface):
 
     def _run_interface(self, runtime):
         input_files = self.inputs.in_files
-        assert len(input_files) == 9, 'There must be 9 input files.'
+        if len(input_files) != 9:
+            raise ValueError('There must be 9 input files.')
         idx = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         widths, rows = [], []
         for i_row in range(3):
