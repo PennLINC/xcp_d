@@ -702,7 +702,7 @@ def collect_confounds(
         for k, v in derivatives_datasets.items():
             # Don't index datasets we don't need for confounds.
             if k not in req_datasets:
-                print(f'Not required: {k}')
+                print(f'Dataset not required for confounds: {k}')
                 continue
 
             if isinstance(v, Path | str):
@@ -711,8 +711,11 @@ def collect_confounds(
                     config=['bids', 'derivatives', xcp_d_config],
                     indexer=_indexer,
                 )
-                if layout.get_dataset_description().get('DatasetType') != 'derivatives':
-                    print(f'Dataset {k} is not a derivatives dataset. Skipping.')
+                if layout.get_dataset_description().get('DatasetType', 'raw') != 'derivative':
+                    print(
+                        f'Dataset {k} is not a derivative dataset. '
+                        'Be aware that this may cause issues.'
+                    )
 
                 layout_dict[k] = layout
             else:
