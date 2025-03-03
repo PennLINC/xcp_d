@@ -20,7 +20,7 @@ dependencies = [
     "acres",
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
     "bids-validator <= 1.14.7.post0",
-    "h5py <= 3.12.1",  # for DCAN motion file
+    "h5py <= 3.13.0",  # for DCAN motion file
     "indexed_gzip ~= 1.9.1",  # for loading imgs in nibabel
     "jinja2 ~= 3.1.2",  # for executive summary
     "joblib <= 1.4.2",
