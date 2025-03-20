@@ -36,6 +36,7 @@ def _build_parser():
     IsFile = partial(parser_utils._is_file, parser=parser)
     PositiveInt = partial(parser_utils._min_one, parser=parser)
     BIDSFilter = partial(parser_utils._bids_filter, parser=parser)
+    _to_gb = partial(parser_utils._to_gb, parser=parser)
 
     # important parameters required
     parser.add_argument(
@@ -189,7 +190,7 @@ def _build_parser():
         '--mem_mb',
         dest='memory_mb',
         action='store',
-        type=int,
+        type=_to_gb,
         help='Upper bound memory limit, in megabytes, for XCP-D processes.',
     )
     g_perfm.add_argument(
