@@ -339,8 +339,8 @@ class nipype(_Config):
         }
         if cls.plugin in ('MultiProc', 'LegacyMultiProc'):
             out['plugin_args']['n_procs'] = int(cls.nprocs)
-            if cls.memory_gb:
-                out['plugin_args']['memory_gb'] = float(cls.memory_gb)
+            if cls.memory_mb:
+                out['plugin_args']['memory_gb'] = float(cls.memory_mb) / 1024
         return out
 
     @classmethod
