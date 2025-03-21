@@ -153,20 +153,15 @@ def init_postprocess_surfaces_wf(
     workflow.__desc__ = ''
 
     if abcc_qc and mesh_available:
-        # Plot the white and pial surfaces on the brain in a brainsprite figure.
-        kwargs = {'apply_transform': True}
-        if not process_surfaces:
-            # Use original surfaces for brainsprite.
-            # For fMRIPrep derivatives, this will be the native-space surfaces.
-            # For DCAN/HCP derivatives, it will be standard-space surfaces.
-            kwargs = {'apply_transform': False}
+        # Determine whether to warp the surfaces to standard space or not.
+        apply_transform = True if process_surfaces else False
 
-        # Use standard-space T1w and surfaces for brainsprite.
+        # Plot the white and pial surfaces on the brain in a brainsprite figure.
         brainsprite_wf = init_brainsprite_figures_wf(
             t1w_available=t1w_available,
             t2w_available=t2w_available,
             name='brainsprite_wf',
-            **kwargs,
+            apply_transform=apply_transform,
         )
         workflow.connect([
             (inputnode, brainsprite_wf, [
