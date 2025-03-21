@@ -155,7 +155,7 @@ def init_postprocess_surfaces_wf(
     if abcc_qc and mesh_available:
         # Plot the white and pial surfaces on the brain in a brainsprite figure.
         kwargs = {'apply_transform': True}
-        if (not process_surfaces) or (mesh_available and standard_space_mesh):
+        if not process_surfaces:
             # Use original surfaces for brainsprite.
             # For fMRIPrep derivatives, this will be the native-space surfaces.
             # For DCAN/HCP derivatives, it will be standard-space surfaces.
