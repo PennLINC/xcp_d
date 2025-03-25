@@ -98,10 +98,10 @@ class ExecutiveSummary:
             # "SubcorticalsOnAtlas",
         ]
         ANAT_REGISTRATION_TITLES = [
-            'Atlas On {modality}',  # noqa: FS003
-            '{modality} On Atlas',  # noqa: FS003
-            # "Atlas On {modality} Subcorticals",  # noqa: FS003
-            # "{modality} Subcorticals On Atlas",  # noqa: FS003
+            'Atlas On {modality}',
+            '{modality} On Atlas',
+            # "Atlas On {modality} Subcorticals",
+            # "{modality} Subcorticals On Atlas",
         ]
         TASK_REGISTRATION_DESCS = [
             'TaskOnT1w',
@@ -340,7 +340,7 @@ class ExecutiveSummary:
             boiler_idx += 1
 
         def include_file(name):
-            return Markup(loader.get_source(environment, name)[0])
+            return Markup(loader.get_source(environment, name)[0])  # noqa: S704
 
         template_folder = str(load_data('executive_summary_templates/'))
         loader = FileSystemLoader(template_folder)
