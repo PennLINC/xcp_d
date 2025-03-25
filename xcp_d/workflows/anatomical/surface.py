@@ -267,10 +267,10 @@ def init_postprocess_surfaces_wf(
         # Warp the surfaces to the template space
         warp_to_template_wf = init_itk_warp_gifti_surface_wf(name=f'{surface}_warp_wf')
         workflow.connect([
-            (fslr_mesh_buffer, warp_to_template_wf, [
-                (surface, 'inputnode.native_surf_gii'),
+            (inputnode, warp_to_template_wf, [
                 ('template_to_anat_xfm', 'inputnode.itk_warp_file'),
             ]),
+            (fslr_mesh_buffer, warp_to_template_wf, [(surface, 'inputnode.native_surf_gii')]),
         ])  # fmt:skip
 
         hcp_wf = hcp_surface_wfs['lh'] if surface.startswith('lh') else hcp_surface_wfs['rh']
