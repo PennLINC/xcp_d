@@ -17,7 +17,10 @@ from xcp_d.interfaces.workbench import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.workflows.anatomical.outputs import init_copy_inputs_to_outputs_wf
-from xcp_d.workflows.anatomical.plotting import init_brainsprite_figures_wf
+from xcp_d.workflows.anatomical.plotting import (
+    init_brainsprite_figures_wf,
+    init_itk_warp_gifti_surface_wf,
+)
 
 LOGGER = logging.getLogger('nipype.workflow')
 
@@ -179,12 +182,11 @@ def init_postprocess_surfaces_wf(
         # Return early, as all other steps require process_surfaces.
         return workflow
 
-    if morphometry_files or (mesh_available and standard_space_mesh):
+    if morphometry_files:
         # At least some surfaces are already in fsLR space and must be copied,
         # without modification, to the output directory.
         copy_morphs_wf = init_copy_inputs_to_outputs_wf(name='copy_morphs_wf')
 
-    if morphometry_files:
         workflow.__desc__ += (
             ' fsLR-space morphometry surfaces were copied from the preprocessing derivatives to '
             'the XCP-D derivatives.'
@@ -211,31 +213,22 @@ def init_postprocess_surfaces_wf(
             (hcp_surface_wfs['rh'], outputnode, [('outputnode.midthickness', 'rh_midthickness')]),
         ])  # fmt:skip
 
+    fslr_mesh_buffer = pe.Node(
+        niu.IdentityInterface(fields=['lh_wm_surf', 'rh_wm_surf', 'lh_pial_surf', 'rh_pial_surf']),
+        name='fslr_mesh_buffer',
+    )
     if mesh_available and standard_space_mesh:
-        workflow.__desc__ += (
-            ' All surface files were already in fsLR space, and were copied to the output '
-            'directory.'
-        )
-        # Mesh files are already in fsLR.
         workflow.connect([
-            (inputnode, copy_morphs_wf, [
-                ('lh_pial_surf', 'inputnode.lh_pial_surf'),
-                ('rh_pial_surf', 'inputnode.rh_pial_surf'),
-                ('lh_wm_surf', 'inputnode.lh_wm_surf'),
-                ('rh_wm_surf', 'inputnode.rh_wm_surf'),
-            ]),
-            (inputnode, hcp_surface_wfs['lh'], [
-                ('lh_pial_surf', 'inputnode.pial_surf'),
-                ('lh_wm_surf', 'inputnode.wm_surf'),
-            ]),
-            (inputnode, hcp_surface_wfs['rh'], [
-                ('rh_pial_surf', 'inputnode.pial_surf'),
-                ('rh_wm_surf', 'inputnode.wm_surf'),
+            (inputnode, fslr_mesh_buffer, [
+                ('lh_wm_surf', 'lh_wm_surf'),
+                ('rh_wm_surf', 'rh_wm_surf'),
+                ('lh_pial_surf', 'lh_pial_surf'),
+                ('rh_pial_surf', 'rh_pial_surf'),
             ]),
         ])  # fmt:skip
 
     elif mesh_available:
-        workflow.__desc__ += ' fsnative-space surfaces were then warped to fsLR space.'
+        workflow.__desc__ += ' The fsnative-space surfaces were then warped to fsLR space.'
         # Mesh files are in fsnative and must be warped to fsLR.
         fsnative_to_fsLR_wf = init_fsnative_to_fsLR_wf(
             software=software,
@@ -251,13 +244,11 @@ def init_postprocess_surfaces_wf(
                 ('lh_wm_surf', 'inputnode.lh_wm_surf'),
                 ('rh_wm_surf', 'inputnode.rh_wm_surf'),
             ]),
-            (fsnative_to_fsLR_wf, hcp_surface_wfs['lh'], [
-                ('outputnode.lh_pial_surf', 'inputnode.pial_surf'),
-                ('outputnode.lh_wm_surf', 'inputnode.wm_surf'),
-            ]),
-            (fsnative_to_fsLR_wf, hcp_surface_wfs['rh'], [
-                ('outputnode.rh_pial_surf', 'inputnode.pial_surf'),
-                ('outputnode.rh_wm_surf', 'inputnode.wm_surf'),
+            (fsnative_to_fsLR_wf, fslr_mesh_buffer, [
+                ('outputnode.lh_pial_surf', 'lh_pial_surf'),
+                ('outputnode.rh_pial_surf', 'rh_pial_surf'),
+                ('outputnode.lh_wm_surf', 'lh_wm_surf'),
+                ('outputnode.rh_wm_surf', 'rh_wm_surf'),
             ]),
         ])  # fmt:skip
 
@@ -265,6 +256,44 @@ def init_postprocess_surfaces_wf(
         raise ValueError(
             'No surfaces found. Surfaces are required if `--warp-surfaces-native2std` is enabled.'
         )
+
+    workflow.__desc__ += (
+        ' The vertices of fsLR-space mesh files were transformed to align with the '
+        'volumetric template.'
+    )
+
+    # Mesh files are already in fsLR, but the vertices are not aligned with NLin6.
+    for surface in ['lh_wm_surf', 'rh_wm_surf', 'lh_pial_surf', 'rh_pial_surf']:
+        # Warp the surfaces to the template space
+        warp_to_template_wf = init_itk_warp_gifti_surface_wf(name=f'{surface}_warp_wf')
+        workflow.connect([
+            (fslr_mesh_buffer, warp_to_template_wf, [
+                (surface, 'inputnode.native_surf_gii'),
+                ('template_to_anat_xfm', 'inputnode.itk_warp_file'),
+            ]),
+        ])  # fmt:skip
+
+        hcp_wf = hcp_surface_wfs['lh'] if surface.startswith('lh') else hcp_surface_wfs['rh']
+        workflow.connect([
+            (warp_to_template_wf, hcp_wf, [
+                ('outputnode.warped_surf_gii', f'inputnode.{surface[3:]}'),
+            ]),
+        ])  # fmt:skip
+
+        ds_fslr_surf = pe.Node(
+            DerivativesDataSink(
+                space='fsLR',
+                den='32k',
+                extension='.surf.gii',  # the extension is taken from the in_file by default
+            ),
+            name=f'ds_fslr_{surface}',
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        workflow.connect([
+            (inputnode, ds_fslr_surf, [(surface, 'source_file')]),
+            (warp_to_template_wf, ds_fslr_surf, [('outputnode.warped_surf_gii', 'in_file')]),
+        ])  # fmt:skip
 
     return workflow
 
@@ -390,22 +419,7 @@ def init_fsnative_to_fsLR_wf(
                 (inputnode, resample_to_fsLR32k, [(surf_label, 'in_file')]),
                 (collect_spheres, resample_to_fsLR32k, [('target_sphere', 'new_sphere')]),
                 (project_unproject, resample_to_fsLR32k, [('out_file', 'current_sphere')]),
-            ])  # fmt:skip
-
-            ds_fsLR_surf = pe.Node(
-                DerivativesDataSink(
-                    space='fsLR',
-                    den='32k',
-                    extension='.surf.gii',  # the extension is taken from the in_file by default
-                ),
-                name=f'ds_fsLR_surf_{surf_label}',
-                run_without_submitting=True,
-                mem_gb=1,
-            )
-            workflow.connect([
-                (inputnode, ds_fsLR_surf, [(surf_label, 'source_file')]),
-                (resample_to_fsLR32k, ds_fsLR_surf, [('out_file', 'in_file')]),
-                (ds_fsLR_surf, outputnode, [('out_file', surf_label)]),
+                (resample_to_fsLR32k, outputnode, [('out_file', surf_label)]),
             ])  # fmt:skip
 
     return workflow
