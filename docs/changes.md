@@ -1,5 +1,18 @@
 # What's New
 
+## 0.10.7
+
+### 🐛 Bug Fixes
+
+* Warp fsLR surfaces to NLin6 for brainsprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1419
+
+### Other Changes
+
+* Run vertex normalization on output surfaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1420
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.6...0.10.7
+
+
 ## 0.10.6
 
 ### 🎉 Exciting New Features
