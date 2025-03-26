@@ -214,6 +214,13 @@ def collect_data(
             f'Found files:\n\n{filenames}'
         )
 
+    cohorts = [bold_file.entities.get('cohort') for bold_file in bold_data]
+    cohorts = [c for c in cohorts if c is not None]
+    if len(cohorts) > 1:
+        raise ValueError(f'Multiple cohorts found: {", ".join(cohorts)}')
+
+    cohort = cohorts[0] if cohorts else None
+
     if file_format == 'cifti':
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
@@ -243,13 +250,19 @@ def collect_data(
                 f'No BOLD NIfTI or transforms found to allowed space ({volspace})'
             )
 
-        queries['anat_to_template_xfm']['to'] = volspace
-        queries['template_to_anat_xfm']['from'] = volspace
+        volspace_cohort = volspace
+        if cohort:
+            volspace_cohort += f'+{cohort}'
+        queries['anat_to_template_xfm']['to'] = volspace_cohort
+        queries['template_to_anat_xfm']['from'] = volspace_cohort
         queries['anat_brainmask']['space'] = volspace
     else:
+        volspace_cohort = queries['bold']['space']
+        if cohort:
+            volspace_cohort += f'+{cohort}'
         # use the BOLD file's space if the BOLD file is a nifti.
-        queries['anat_to_template_xfm']['to'] = queries['bold']['space']
-        queries['template_to_anat_xfm']['from'] = queries['bold']['space']
+        queries['anat_to_template_xfm']['to'] = volspace_cohort
+        queries['template_to_anat_xfm']['from'] = volspace_cohort
         queries['anat_brainmask']['space'] = queries['bold']['space']
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
