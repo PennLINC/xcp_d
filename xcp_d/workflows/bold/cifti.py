@@ -9,6 +9,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
 from xcp_d import config
+from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _create_mem_gb
@@ -118,8 +119,8 @@ def init_postprocess_cifti_wf(
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     %(boldref)s
+    anat_mask
     bold_mask
-        This will not be defined.
     %(timeseries)s
     %(timeseries_ciftis)s
 
@@ -187,7 +188,8 @@ the following post-processing was performed.
                 'censored_denoised_bold',
                 'smoothed_denoised_bold',
                 'boldref',
-                'bold_mask',  # will not be defined
+                'anat_mask',  # used for plotting
+                'bold_mask',  # used for plotting
                 # if parcellation is performed
                 'timeseries',
                 'timeseries_ciftis',
@@ -400,6 +402,33 @@ the following post-processing was performed.
             ])  # fmt:skip
 
     if config.workflow.abcc_qc:
+        # mask BOLD NIfTI file and anatomical NIfTI file
+        mask_preproc_nifti = pe.Node(
+            niu.Function(
+                input_names=['bold_file', 'anat_mask'],
+                output_names=['masked_bold_file'],
+                function=...,
+            ),
+            name='mask_preproc_nifti',
+        )
+        mask_preproc_nifti.inputs.bold_file = run_data['nifti_file']
+        workflow.connect([(inputnode, mask_preproc_nifti, [('bold_mask', 'mask')])])
+
+        mask_boldref = pe.Node(
+            niu.Function(
+                input_names=['in_file', 'mask_file'],
+                output_names=['out_file'],
+                function=...,
+            ),
+            name='mask_boldref',
+        )
+        workflow.connect([
+            (inputnode, mask_boldref, [
+                ('boldref', 'in_file'),
+                ('bold_mask', 'mask'),
+            ]),
+        ])  # fmt:skip
+
         # executive summary workflow
         execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
             preproc_nifti=run_data['nifti_file'],
@@ -407,15 +436,73 @@ the following post-processing was performed.
             t2w_available=t2w_available,
             mem_gb=mem_gbx,
         )
-
         workflow.connect([
             # Use inputnode for executive summary instead of downcast_data because T1w is name
             # source.
             (inputnode, execsummary_functional_plots_wf, [
-                ('boldref', 'inputnode.boldref'),
                 ('t1w', 'inputnode.t1w'),
                 ('t2w', 'inputnode.t2w'),
             ]),
+            (mask_preproc_nifti, execsummary_functional_plots_wf, [
+                ('out_file', 'inputnode.preproc_nifti'),
+            ]),
+            (mask_boldref, execsummary_functional_plots_wf, [('out_file', 'inputnode.boldref')]),
         ])  # fmt:skip
+
+        if t1w_available or t2w_available:
+            warp_anatmask_to_anat = pe.Node(
+                ApplyTransforms(
+                    num_threads=2,
+                    interpolation='GenericLabel',
+                    input_image_type=3,
+                    dimension=3,
+                ),
+                name='warp_anatmask_to_anat',
+            )
+            workflow.connect([
+                (inputnode, warp_anatmask_to_anat, [
+                    ('anat_mask', 'input_image'),
+                    ('template_to_anat_xfm', 'transforms'),
+                ]),
+            ])  # fmt:skip
+
+            if t1w_available:
+                workflow.connect([
+                    (inputnode, warp_anatmask_to_anat, [('t1w', 'reference_image')]),
+                ])  # fmt:skip
+            else:
+                workflow.connect([
+                    (inputnode, warp_anatmask_to_anat, [('t2w', 'reference_image')]),
+                ])  # fmt:skip
+
+        if t1w_available:
+            mask_t1w = pe.Node(
+                niu.Function(
+                    input_names=['in_file', 'mask_file'],
+                    output_names=['out_file'],
+                    function=...,
+                ),
+                name='mask_t1w',
+            )
+            workflow.connect([
+                (inputnode, mask_t1w, [('t1w', 'in_file')]),
+                (warp_anatmask_to_anat, mask_t1w, [('output_image', 'mask_file')]),
+                (mask_t1w, execsummary_functional_plots_wf, [('out_file', 'inputnode.t1w')]),
+            ])  # fmt:skip
+
+        if t2w_available:
+            mask_t2w = pe.Node(
+                niu.Function(
+                    input_names=['in_file', 'mask_file'],
+                    output_names=['out_file'],
+                    function=...,
+                ),
+                name='mask_t2w',
+            )
+            workflow.connect([
+                (inputnode, mask_t2w, [('t2w', 'in_file')]),
+                (warp_anatmask_to_anat, mask_t2w, [('output_image', 'mask_file')]),
+                (mask_t2w, execsummary_functional_plots_wf, [('out_file', 'inputnode.t2w')]),
+            ])  # fmt:skip
 
     return workflow

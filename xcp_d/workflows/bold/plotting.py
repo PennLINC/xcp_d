@@ -519,8 +519,6 @@ def init_execsummary_functional_plots_wf(
             'No preprocessed NIfTI found. Executive summary figures cannot be generated.'
         )
 
-    inputnode.inputs.preproc_nifti = preproc_nifti
-
     # Get bb_registration_file prefix from fmriprep
     # TODO: Replace with interfaces.
     current_bold_file = os.path.basename(preproc_nifti)
