@@ -203,12 +203,11 @@ def init_qc_report_wf(
         )
         workflow.connect([
             (inputnode, warp_anatmask_to_t1w, [
-                ('bold_mask', 'input_image'),
+                ('anat_brainmask', 'input_image'),
                 ('anat', 'reference_image'),
             ]),
-            (get_native2space_transforms, warp_anatmask_to_t1w, [
-                ('bold_to_t1w_xfms', 'transforms'),
-                ('bold_to_t1w_xfms_invert', 'invert_transform_flags'),
+            (inputnode, warp_anatmask_to_t1w, [
+                ('template_to_anat_xfm', 'transforms'),
             ]),
         ])  # fmt:skip
 
