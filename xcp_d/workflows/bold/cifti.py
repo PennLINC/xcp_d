@@ -166,6 +166,7 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.motion_json = run_data['motion_json']
     inputnode.inputs.confounds_files = run_data['confounds']
     inputnode.inputs.dummy_scans = dummy_scans
+    inputnode.inputs.bold_mask = run_data['bold_mask']
 
     workflow.__desc__ = f"""
 
@@ -437,12 +438,6 @@ the following post-processing was performed.
             mem_gb=mem_gbx,
         )
         workflow.connect([
-            # Use inputnode for executive summary instead of downcast_data because T1w is name
-            # source.
-            (inputnode, execsummary_functional_plots_wf, [
-                ('t1w', 'inputnode.t1w'),
-                ('t2w', 'inputnode.t2w'),
-            ]),
             (mask_preproc_nifti, execsummary_functional_plots_wf, [
                 ('out_file', 'inputnode.preproc_nifti'),
             ]),
