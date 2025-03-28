@@ -121,7 +121,7 @@ def init_postprocess_cifti_wf(
     %(smoothed_denoised_bold)s
     %(boldref)s
     anat_mask
-    bold_mask
+    boldmask
     %(timeseries)s
     %(timeseries_ciftis)s
 
@@ -167,7 +167,7 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.motion_json = run_data['motion_json']
     inputnode.inputs.confounds_files = run_data['confounds']
     inputnode.inputs.dummy_scans = dummy_scans
-    inputnode.inputs.bold_mask = run_data['bold_mask']
+    inputnode.inputs.boldmask = run_data['boldmask']
 
     workflow.__desc__ = f"""
 
@@ -191,7 +191,7 @@ the following post-processing was performed.
                 'smoothed_denoised_bold',
                 'boldref',
                 'anat_mask',  # used for plotting
-                'bold_mask',  # used for plotting
+                'boldmask',  # used for plotting
                 # if parcellation is performed
                 'timeseries',
                 'timeseries_ciftis',
@@ -410,7 +410,7 @@ the following post-processing was performed.
             name='mask_preproc_nifti',
         )
         mask_preproc_nifti.inputs.bold_file = run_data['nifti_file']
-        workflow.connect([(inputnode, mask_preproc_nifti, [('bold_mask', 'mask')])])
+        workflow.connect([(inputnode, mask_preproc_nifti, [('boldmask', 'mask')])])
 
         mask_boldref = pe.Node(
             ApplyMask(),
@@ -419,7 +419,7 @@ the following post-processing was performed.
         workflow.connect([
             (inputnode, mask_boldref, [
                 ('boldref', 'in_file'),
-                ('bold_mask', 'mask'),
+                ('boldmask', 'mask'),
             ]),
         ])  # fmt:skip
 
