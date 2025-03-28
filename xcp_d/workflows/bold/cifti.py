@@ -409,7 +409,7 @@ the following post-processing was performed.
             ApplyMask(),
             name='mask_preproc_nifti',
         )
-        mask_preproc_nifti.inputs.bold_file = run_data['nifti_file']
+        mask_preproc_nifti.inputs.in_file = run_data['nifti_file']
         workflow.connect([(inputnode, mask_preproc_nifti, [('boldmask', 'mask')])])
 
         mask_boldref = pe.Node(
