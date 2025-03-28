@@ -10,6 +10,7 @@ from num2words import num2words
 
 from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
+from xcp_d.interfaces.nilearn import ApplyMask
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _create_mem_gb
@@ -405,22 +406,14 @@ the following post-processing was performed.
     if config.workflow.abcc_qc:
         # mask BOLD NIfTI file and anatomical NIfTI file
         mask_preproc_nifti = pe.Node(
-            niu.Function(
-                input_names=['bold_file', 'anat_mask'],
-                output_names=['masked_bold_file'],
-                function=...,
-            ),
+            ApplyMask(),
             name='mask_preproc_nifti',
         )
         mask_preproc_nifti.inputs.bold_file = run_data['nifti_file']
         workflow.connect([(inputnode, mask_preproc_nifti, [('bold_mask', 'mask')])])
 
         mask_boldref = pe.Node(
-            niu.Function(
-                input_names=['in_file', 'mask_file'],
-                output_names=['out_file'],
-                function=...,
-            ),
+            ApplyMask(),
             name='mask_boldref',
         )
         workflow.connect([
@@ -472,11 +465,7 @@ the following post-processing was performed.
 
         if t1w_available:
             mask_t1w = pe.Node(
-                niu.Function(
-                    input_names=['in_file', 'mask_file'],
-                    output_names=['out_file'],
-                    function=...,
-                ),
+                ApplyMask(),
                 name='mask_t1w',
             )
             workflow.connect([
@@ -487,11 +476,7 @@ the following post-processing was performed.
 
         if t2w_available:
             mask_t2w = pe.Node(
-                niu.Function(
-                    input_names=['in_file', 'mask_file'],
-                    output_names=['out_file'],
-                    function=...,
-                ),
+                ApplyMask(),
                 name='mask_t2w',
             )
             workflow.connect([

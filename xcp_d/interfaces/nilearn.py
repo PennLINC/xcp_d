@@ -187,6 +187,52 @@ class BinaryMath(NilearnBaseInterface, SimpleInterface):
         return runtime
 
 
+class _ApplyMaskInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc='An image to do math on.',
+    )
+    mask = File(
+        exists=True,
+        mandatory=True,
+        desc='A mask image.',
+    )
+    out_file = File(
+        'out_img.nii.gz',
+        usedefault=True,
+        exists=False,
+        desc='The name of the mathified file to write out. out_img.nii.gz by default.',
+    )
+
+
+class _ApplyMaskOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc='Masked output file.',
+    )
+
+
+class ApplyMask(NilearnBaseInterface, SimpleInterface):
+    """Apply a mask to an image."""
+
+    input_spec = _ApplyMaskInputSpec
+    output_spec = _ApplyMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        from nilearn.image import math_img
+
+        img_masked = math_img(
+            'img * mask',
+            img=self.inputs.in_file,
+            mask=self.inputs.mask,
+        )
+        self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
+        img_masked.to_filename(self._results['out_file'])
+
+        return runtime
+
+
 class _ResampleToImageInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
