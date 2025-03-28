@@ -156,6 +156,9 @@ def init_postprocess_cifti_wf(
                 # for plotting, if the anatomical workflow was used
                 'lh_midthickness',
                 'rh_midthickness',
+                # NIfTI stuff
+                'anat_brainmask',
+                'boldmask',
             ],
         ),
         name='inputnode',
@@ -449,7 +452,7 @@ the following post-processing was performed.
             )
             workflow.connect([
                 (inputnode, warp_anatmask_to_anat, [
-                    ('anat_mask', 'input_image'),
+                    ('anat_brainmask', 'input_image'),
                     ('template_to_anat_xfm', 'transforms'),
                 ]),
             ])  # fmt:skip
