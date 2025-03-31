@@ -12,7 +12,7 @@ from templateflow.api import get as get_template
 from xcp_d import config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
+from xcp_d.interfaces.nilearn import ApplyMask, BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.utils import ABCCQC, LINCQC
@@ -479,6 +479,8 @@ def init_execsummary_functional_plots_wf(
     preproc_nifti : :obj:`str` or None
         BOLD data before post-processing.
         A NIFTI file, not a CIFTI.
+        Used as a DerivativesDataSink source_file and to find the bbregister figure from
+        fMRIPrep derivatives.
     t1w_available : :obj:`bool`
         Generally True.
     t2w_available : :obj:`bool`
@@ -493,6 +495,7 @@ def init_execsummary_functional_plots_wf(
         BOLD data before post-processing.
         A NIFTI file, not a CIFTI.
         Set from the parameter.
+        Used for figures.
     %(boldref)s
     t1w
         T1w image in a standard space, taken from the output of init_postprocess_anat_wf.
@@ -508,12 +511,15 @@ def init_execsummary_functional_plots_wf(
             fields=[
                 'preproc_nifti',
                 'boldref',  # a nifti boldref
+                'bold_mask',  # a nifti bold_mask
                 't1w',
                 't2w',  # optional
+                'anat_brainmask',  # a nifti anat_brainmask
             ],
         ),
         name='inputnode',
     )
+    inputnode.inputs.preproc_nifti = preproc_nifti
     if not preproc_nifti:
         raise ValueError(
             'No preprocessed NIfTI found. Executive summary figures cannot be generated.'
@@ -556,13 +562,38 @@ def init_execsummary_functional_plots_wf(
         )
         workflow.add_nodes([ds_report_registration])
 
+    # mask BOLD NIfTI file and anatomical NIfTI file
+    mask_preproc_nifti = pe.Node(
+        ApplyMask(),
+        name='mask_preproc_nifti',
+    )
+    workflow.connect([
+        (inputnode, mask_preproc_nifti, [
+            ('preproc_nifti', 'in_file'),
+            ('bold_mask', 'mask'),
+        ]),
+    ])  # fmt:skip
+
+    mask_boldref = pe.Node(
+        ApplyMask(),
+        name='mask_boldref',
+    )
+    workflow.connect([
+        (inputnode, mask_boldref, [
+            ('boldref', 'in_file'),
+            ('bold_mask', 'mask'),
+        ]),
+    ])  # fmt:skip
+
     # Calculate the mean bold image
     calculate_mean_bold = pe.Node(
         BinaryMath(expression='np.mean(img, axis=3)'),
         name='calculate_mean_bold',
         mem_gb=mem_gb['timeseries'],
     )
-    workflow.connect([(inputnode, calculate_mean_bold, [('preproc_nifti', 'in_file')])])
+    workflow.connect([
+        (mask_preproc_nifti, calculate_mean_bold, [('out_file', 'in_file')]),
+    ])  # fmt:skip
 
     # Plot the mean bold image
     plot_meanbold = pe.Node(AnatomicalPlot(), name='plot_meanbold')
@@ -583,7 +614,7 @@ def init_execsummary_functional_plots_wf(
 
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name='plot_boldref')
-    workflow.connect([(inputnode, plot_boldref, [('boldref', 'in_file')])])
+    workflow.connect([(mask_boldref, plot_boldref, [('out_file', 'in_file')])])
 
     # Write out the figures.
     ds_report_boldref = pe.Node(
@@ -613,13 +644,25 @@ def init_execsummary_functional_plots_wf(
             (calculate_mean_bold, resample_bold_to_anat, [('out_file', 'in_file')]),
         ])  # fmt:skip
 
+        # Mask the anatomical image
+        mask_anat = pe.Node(
+            ApplyMask(),
+            name=f'mask_{anat}',
+        )
+        workflow.connect([
+            (inputnode, mask_anat, [
+                (anat, 'in_file'),
+                ('anat_brainmask', 'mask'),
+            ]),
+        ])  # fmt:skip
+
         plot_anat_on_task_wf = init_plot_overlay_wf(
             desc=f'{anat[0].upper()}{anat[1:]}OnTask',
             name=f'plot_{anat}_on_task_wf',
         )
         plot_anat_on_task_wf.inputs.inputnode.name_source = preproc_nifti
         workflow.connect([
-            (inputnode, plot_anat_on_task_wf, [(anat, 'inputnode.overlay_file')]),
+            (mask_anat, plot_anat_on_task_wf, [('out_file', 'inputnode.overlay_file')]),
             (resample_bold_to_anat, plot_anat_on_task_wf, [
                 ('out_file', 'inputnode.underlay_file'),
             ]),
@@ -631,7 +674,7 @@ def init_execsummary_functional_plots_wf(
         )
         plot_task_on_anat_wf.inputs.inputnode.name_source = preproc_nifti
         workflow.connect([
-            (inputnode, plot_task_on_anat_wf, [(anat, 'inputnode.underlay_file')]),
+            (mask_anat, plot_task_on_anat_wf, [('out_file', 'inputnode.underlay_file')]),
             (resample_bold_to_anat, plot_task_on_anat_wf, [
                 ('out_file', 'inputnode.overlay_file'),
             ]),

@@ -485,6 +485,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, postprocess_bold_wf, [
                     ('anat_brainmask', 'inputnode.anat_brainmask'),
                     ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
+                    # The workflow needs a native anat-space image as a reference
                     (anat_mod, 'inputnode.anat_native'),
                 ]),
                 (postprocess_anat_wf, postprocess_bold_wf, [

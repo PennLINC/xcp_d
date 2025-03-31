@@ -158,7 +158,7 @@ def init_postprocess_cifti_wf(
                 'rh_midthickness',
                 # NIfTI stuff
                 'anat_brainmask',
-                'boldmask',
+                'bold_mask',
                 'template_to_anat_xfm',
                 'anat_native',
             ],
@@ -172,7 +172,7 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.motion_json = run_data['motion_json']
     inputnode.inputs.confounds_files = run_data['confounds']
     inputnode.inputs.dummy_scans = dummy_scans
-    inputnode.inputs.boldmask = run_data['boldmask']
+    inputnode.inputs.bold_mask = run_data['boldmask']
 
     workflow.__desc__ = f"""
 
@@ -409,25 +409,6 @@ the following post-processing was performed.
             ])  # fmt:skip
 
     if config.workflow.abcc_qc:
-        # mask BOLD NIfTI file and anatomical NIfTI file
-        mask_preproc_nifti = pe.Node(
-            ApplyMask(),
-            name='mask_preproc_nifti',
-        )
-        mask_preproc_nifti.inputs.in_file = run_data['nifti_file']
-        workflow.connect([(inputnode, mask_preproc_nifti, [('boldmask', 'mask')])])
-
-        mask_boldref = pe.Node(
-            ApplyMask(),
-            name='mask_boldref',
-        )
-        workflow.connect([
-            (inputnode, mask_boldref, [
-                ('boldref', 'in_file'),
-                ('boldmask', 'mask'),
-            ]),
-        ])  # fmt:skip
-
         # executive summary workflow
         execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
             preproc_nifti=run_data['nifti_file'],
@@ -436,55 +417,13 @@ the following post-processing was performed.
             mem_gb=mem_gbx,
         )
         workflow.connect([
-            (mask_preproc_nifti, execsummary_functional_plots_wf, [
-                ('out_file', 'inputnode.preproc_nifti'),
+            (inputnode, execsummary_functional_plots_wf, [
+                ('boldref', 'inputnode.boldref'),
+                ('t1w', 'inputnode.t1w'),
+                ('t2w', 'inputnode.t2w'),
+                ('anat_brainmask', 'inputnode.anat_brainmask'),
+                ('bold_mask', 'inputnode.bold_mask'),
             ]),
-            (mask_boldref, execsummary_functional_plots_wf, [('out_file', 'inputnode.boldref')]),
         ])  # fmt:skip
-
-        if t1w_available or t2w_available:
-            warp_anatmask_to_anat = pe.Node(
-                ApplyTransforms(
-                    dimension=3,
-                    interpolation='NearestNeighbor',
-                    num_threads=config.nipype.omp_nthreads,
-                ),
-                name='warp_anatmask_to_anat',
-                mem_gb=1,
-                n_procs=config.nipype.omp_nthreads,
-            )
-            workflow.connect([
-                (inputnode, warp_anatmask_to_anat, [
-                    ('anat_brainmask', 'input_image'),
-                    ('anat_native', 'reference_image'),
-                    ('template_to_anat_xfm', 'transforms'),
-                ]),
-            ])  # fmt:skip
-
-        if t1w_available:
-            mask_t1w = pe.Node(
-                ApplyMask(),
-                name='mask_t1w',
-            )
-            workflow.connect([
-                (inputnode, mask_t1w, [
-                    ('t1w', 'in_file'),
-                    ('anat_brainmask', 'mask'),
-                ]),
-                (mask_t1w, execsummary_functional_plots_wf, [('out_file', 'inputnode.t1w')]),
-            ])  # fmt:skip
-
-        if t2w_available:
-            mask_t2w = pe.Node(
-                ApplyMask(),
-                name='mask_t2w',
-            )
-            workflow.connect([
-                (inputnode, mask_t2w, [
-                    ('t2w', 'in_file'),
-                    ('anat_brainmask', 'mask'),
-                ]),
-                (mask_t2w, execsummary_functional_plots_wf, [('out_file', 'inputnode.t2w')]),
-            ])  # fmt:skip
 
     return workflow
