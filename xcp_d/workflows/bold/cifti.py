@@ -446,8 +446,8 @@ the following post-processing was performed.
                 ApplyTransforms(
                     num_threads=2,
                     interpolation='GenericLabel',
-                    input_image_type=3,
-                    dimension=2,
+                    input_image_type=2,
+                    dimension=3,
                 ),
                 name='warp_anatmask_to_anat',
             )
