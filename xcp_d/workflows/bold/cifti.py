@@ -9,8 +9,6 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from num2words import num2words
 
 from xcp_d import config
-from xcp_d.interfaces.ants import ApplyTransforms
-from xcp_d.interfaces.nilearn import ApplyMask
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _create_mem_gb
