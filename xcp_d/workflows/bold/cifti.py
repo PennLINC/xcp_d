@@ -467,8 +467,10 @@ the following post-processing was performed.
                 name='mask_t1w',
             )
             workflow.connect([
-                (inputnode, mask_t1w, [('t1w', 'in_file')]),
-                (warp_anatmask_to_anat, mask_t1w, [('output_image', 'mask')]),
+                (inputnode, mask_t1w, [
+                    ('t1w', 'in_file'),
+                    ('anat_brainmask', 'mask'),
+                ]),
                 (mask_t1w, execsummary_functional_plots_wf, [('out_file', 'inputnode.t1w')]),
             ])  # fmt:skip
 
@@ -478,8 +480,10 @@ the following post-processing was performed.
                 name='mask_t2w',
             )
             workflow.connect([
-                (inputnode, mask_t2w, [('t2w', 'in_file')]),
-                (warp_anatmask_to_anat, mask_t2w, [('output_image', 'mask')]),
+                (inputnode, mask_t2w, [
+                    ('t2w', 'in_file'),
+                    ('anat_brainmask', 'mask'),
+                ]),
                 (mask_t2w, execsummary_functional_plots_wf, [('out_file', 'inputnode.t2w')]),
             ])  # fmt:skip
 
