@@ -17,6 +17,7 @@ Contents
    usage
    workflows
    outputs
+   faq
    contributing
    api
    changes
