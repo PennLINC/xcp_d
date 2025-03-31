@@ -291,6 +291,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ('t1w', 'inputnode.t1w'),
             ('t2w', 'inputnode.t2w'),
             ('anat_to_template_xfm', 'inputnode.anat_to_template_xfm'),
+            ('anat_brainmask', 'inputnode.anat_brainmask'),
         ]),
     ])  # fmt:skip
 

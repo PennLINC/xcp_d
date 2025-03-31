@@ -85,6 +85,7 @@ def init_postprocess_anat_wf(
                 't2w',
                 'anat_to_template_xfm',
                 'template',
+                'anat_brainmask',
             ],
         ),
         name='inputnode',
@@ -101,7 +102,13 @@ def init_postprocess_anat_wf(
         target_space, cohort = target_space.split('+')
 
     template_file = str(
-        get_template(template=target_space, cohort=cohort, resolution=1, desc=None, suffix='T1w')
+        get_template(
+            template=target_space,
+            cohort=cohort,
+            resolution=1,
+            desc='brain',
+            suffix='T1w',
+        )
     )
     inputnode.inputs.template = template_file
 
@@ -205,7 +212,10 @@ resolution.
             t2w_available=t2w_available,
         )
         workflow.connect([
-            (inputnode, execsummary_anatomical_plots_wf, [('template', 'inputnode.template')]),
+            (inputnode, execsummary_anatomical_plots_wf, [
+                ('template', 'inputnode.template'),
+                ('anat_brainmask', 'inputnode.anat_brainmask'),
+            ]),
         ])  # fmt:skip
 
         if t1w_available:
