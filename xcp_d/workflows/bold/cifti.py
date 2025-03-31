@@ -445,12 +445,13 @@ the following post-processing was performed.
         if t1w_available or t2w_available:
             warp_anatmask_to_anat = pe.Node(
                 ApplyTransforms(
-                    num_threads=2,
-                    interpolation='GenericLabel',
-                    input_image_type=2,
                     dimension=3,
+                    interpolation='NearestNeighbor',
+                    num_threads=config.nipype.omp_nthreads,
                 ),
                 name='warp_anatmask_to_anat',
+                mem_gb=1,
+                n_procs=config.nipype.omp_nthreads,
             )
             workflow.connect([
                 (inputnode, warp_anatmask_to_anat, [
