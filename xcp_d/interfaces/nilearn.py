@@ -220,13 +220,18 @@ class ApplyMask(NilearnBaseInterface, SimpleInterface):
     output_spec = _ApplyMaskOutputSpec
 
     def _run_interface(self, runtime):
-        from nilearn.image import math_img
+        import nibabel as nb
 
-        img_masked = math_img(
-            'img * mask[:, :, :, None]',
-            img=self.inputs.in_file,
-            mask=self.inputs.mask,
-        )
+        img = nb.load(self.inputs.in_file)
+        mask_img = nb.load(self.inputs.mask)
+        mask_data = mask_img.get_fdata()
+        img_data = img.get_fdata()
+        if img.ndim == 3:
+            img_data = img_data * mask_data
+        else:
+            img_data = img_data * mask_data[:, :, :, None]
+
+        img_masked = nb.Nifti1Image(img_data, img.affine, img.header)
         self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
         img_masked.to_filename(self._results['out_file'])
 
