@@ -223,7 +223,7 @@ class ApplyMask(NilearnBaseInterface, SimpleInterface):
         from nilearn.image import math_img
 
         img_masked = math_img(
-            'img * mask',
+            'img * mask[:, :, :, None]',
             img=self.inputs.in_file,
             mask=self.inputs.mask,
         )
