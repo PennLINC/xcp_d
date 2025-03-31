@@ -160,6 +160,7 @@ def init_postprocess_cifti_wf(
                 'anat_brainmask',
                 'boldmask',
                 'template_to_anat_xfm',
+                'anat_native',
             ],
         ),
         name='inputnode',
@@ -454,18 +455,10 @@ the following post-processing was performed.
             workflow.connect([
                 (inputnode, warp_anatmask_to_anat, [
                     ('anat_brainmask', 'input_image'),
+                    ('anat_native', 'reference_image'),
                     ('template_to_anat_xfm', 'transforms'),
                 ]),
             ])  # fmt:skip
-
-            if t1w_available:
-                workflow.connect([
-                    (inputnode, warp_anatmask_to_anat, [('t1w', 'reference_image')]),
-                ])  # fmt:skip
-            else:
-                workflow.connect([
-                    (inputnode, warp_anatmask_to_anat, [('t2w', 'reference_image')]),
-                ])  # fmt:skip
 
         if t1w_available:
             mask_t1w = pe.Node(
