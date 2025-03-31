@@ -447,7 +447,7 @@ the following post-processing was performed.
                     num_threads=2,
                     interpolation='GenericLabel',
                     input_image_type=3,
-                    dimension=3,
+                    dimension=2,
                 ),
                 name='warp_anatmask_to_anat',
             )
