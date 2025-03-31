@@ -101,15 +101,22 @@ def init_postprocess_anat_wf(
     if '+' in target_space:
         target_space, cohort = target_space.split('+')
 
-    template_file = str(
-        get_template(
+    template_file = get_template(
+        template=target_space,
+        cohort=cohort,
+        resolution=1,
+        desc='brain',
+        suffix='T1w',
+    )
+    if not template_file:
+        template_file = get_template(
             template=target_space,
             cohort=cohort,
             resolution=1,
-            desc='brain',
+            desc=None,
             suffix='T1w',
         )
-    )
+    template_file = str(template_file)
     inputnode.inputs.template = template_file
 
     if t1w_available:
