@@ -169,3 +169,39 @@ def generate_reports(
         config.loggers.cli.info('Reports generated successfully')
 
     return errors
+
+
+def generate_group_report(
+    output_dir,
+    run_uuid,
+    bootstrap_file=None,
+    work_dir=None,
+):
+    """Generate group report."""
+    reportlets_dir = None
+    if work_dir is not None:
+        reportlets_dir = Path(work_dir) / 'reportlets'
+
+    bootstrap_file = data.load('reports-spec-group.yml')
+    html_report = 'group_report.html'
+
+    report_error = run_reports(
+        output_dir,
+        'group',
+        run_uuid,
+        bootstrap_file=bootstrap_file,
+        out_filename=html_report,
+        reportlets_dir=reportlets_dir,
+        errorname=f'group-report-{run_uuid}.err',
+    )
+
+    if report_error is not None:
+        config.loggers.cli.error(
+            'Processing did not finish successfully. Errors occurred while processing '
+            'data from participants: %s. Check the HTML reports for details.',
+            report_error,
+        )
+    else:
+        config.loggers.cli.info('Group report generated successfully')
+
+    return report_error
