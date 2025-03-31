@@ -545,6 +545,7 @@ def init_execsummary_functional_plots_wf(
 
         ds_report_registration = pe.Node(
             DerivativesDataSink(
+                source_file=preproc_nifti,
                 in_file=bold_t1w_registration_file,
                 dismiss_entities=['den'],
                 desc='bbregister',
@@ -553,8 +554,7 @@ def init_execsummary_functional_plots_wf(
             run_without_submitting=True,
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
-
-        workflow.connect([(inputnode, ds_report_registration, [('preproc_nifti', 'source_file')])])
+        workflow.add_nodes([ds_report_registration])
 
     # Calculate the mean bold image
     calculate_mean_bold = pe.Node(
@@ -571,6 +571,7 @@ def init_execsummary_functional_plots_wf(
     # Write out the figures.
     ds_report_meanbold = pe.Node(
         DerivativesDataSink(
+            source_file=preproc_nifti,
             dismiss_entities=['den'],
             desc='mean',
         ),
@@ -578,10 +579,7 @@ def init_execsummary_functional_plots_wf(
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
-    workflow.connect([
-        (inputnode, ds_report_meanbold, [('preproc_nifti', 'source_file')]),
-        (plot_meanbold, ds_report_meanbold, [('out_file', 'in_file')]),
-    ])  # fmt:skip
+    workflow.connect([(plot_meanbold, ds_report_meanbold, [('out_file', 'in_file')])])
 
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name='plot_boldref')
@@ -590,6 +588,7 @@ def init_execsummary_functional_plots_wf(
     # Write out the figures.
     ds_report_boldref = pe.Node(
         DerivativesDataSink(
+            source_file=preproc_nifti,
             dismiss_entities=['den'],
             desc='boldref',
         ),
@@ -597,10 +596,7 @@ def init_execsummary_functional_plots_wf(
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
-    workflow.connect([
-        (inputnode, ds_report_boldref, [('preproc_nifti', 'source_file')]),
-        (plot_boldref, ds_report_boldref, [('out_file', 'in_file')]),
-    ])  # fmt:skip
+    workflow.connect([(plot_boldref, ds_report_boldref, [('out_file', 'in_file')])])
 
     # Start plotting the overlay figures
     # T1 in Task, Task in T1, Task in T2, T2 in Task
@@ -621,11 +617,9 @@ def init_execsummary_functional_plots_wf(
             desc=f'{anat[0].upper()}{anat[1:]}OnTask',
             name=f'plot_{anat}_on_task_wf',
         )
+        plot_anat_on_task_wf.inputs.inputnode.name_source = preproc_nifti
         workflow.connect([
-            (inputnode, plot_anat_on_task_wf, [
-                ('preproc_nifti', 'inputnode.name_source'),
-                (anat, 'inputnode.overlay_file'),
-            ]),
+            (inputnode, plot_anat_on_task_wf, [(anat, 'inputnode.overlay_file')]),
             (resample_bold_to_anat, plot_anat_on_task_wf, [
                 ('out_file', 'inputnode.underlay_file'),
             ]),
@@ -635,11 +629,9 @@ def init_execsummary_functional_plots_wf(
             desc=f'TaskOn{anat[0].upper()}{anat[1:]}',
             name=f'plot_task_on_{anat}_wf',
         )
+        plot_task_on_anat_wf.inputs.inputnode.name_source = preproc_nifti
         workflow.connect([
-            (inputnode, plot_task_on_anat_wf, [
-                ('preproc_nifti', 'inputnode.name_source'),
-                (anat, 'inputnode.underlay_file'),
-            ]),
+            (inputnode, plot_task_on_anat_wf, [(anat, 'inputnode.underlay_file')]),
             (resample_bold_to_anat, plot_task_on_anat_wf, [
                 ('out_file', 'inputnode.overlay_file'),
             ]),
