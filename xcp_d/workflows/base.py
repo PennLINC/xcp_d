@@ -482,7 +482,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             n_processed_task_runs += 1
 
             workflow.connect([
-                (inputnode, postprocess_bold_wf, [('anat_brainmask', 'inputnode.anat_brainmask')]),
+                (inputnode, postprocess_bold_wf, [
+                    ('anat_brainmask', 'inputnode.anat_brainmask'),
+                    ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
+                ]),
                 (postprocess_anat_wf, postprocess_bold_wf, [
                     ('outputnode.t1w', 'inputnode.t1w'),
                     ('outputnode.t2w', 'inputnode.t2w'),
@@ -511,7 +514,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             if config.workflow.file_format == 'nifti':
                 workflow.connect([
                     (inputnode, postprocess_bold_wf, [
-                        ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
                         # The workflow needs a native anat-space image as a reference
                         (anat_mod, 'inputnode.anat_native'),
                     ]),

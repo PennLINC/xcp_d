@@ -159,6 +159,7 @@ def init_postprocess_cifti_wf(
                 # NIfTI stuff
                 'anat_brainmask',
                 'boldmask',
+                'template_to_anat_xfm',
             ],
         ),
         name='inputnode',
