@@ -86,6 +86,7 @@ def init_postprocess_anat_wf(
                 'anat_to_template_xfm',
                 'template',
                 'anat_brainmask',
+                'template_mask',
             ],
         ),
         name='inputnode',
@@ -102,6 +103,7 @@ def init_postprocess_anat_wf(
         target_space, cohort = target_space.split('+')
 
     # Use skull-stripped template when available
+    apply_template_mask = False
     template_file = get_template(
         template=target_space,
         cohort=cohort,
@@ -118,8 +120,20 @@ def init_postprocess_anat_wf(
             desc=None,
             suffix='T1w',
         )
+        mask_file = get_template(
+            template=target_space,
+            cohort=cohort,
+            resolution=1,
+            desc='brain',
+            suffix='mask',
+        )
+        if mask_file:
+            apply_template_mask = True
+            mask_file = str(mask_file)
+
     template_file = str(template_file)
     inputnode.inputs.template = template_file
+    inputnode.inputs.template_mask = mask_file
 
     if t1w_available:
         ds_t1w_std = pe.Node(
@@ -219,11 +233,13 @@ resolution.
         execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
             t1w_available=t1w_available,
             t2w_available=t2w_available,
+            apply_template_mask=apply_template_mask,
         )
         workflow.connect([
             (inputnode, execsummary_anatomical_plots_wf, [
                 ('template', 'inputnode.template'),
                 ('anat_brainmask', 'inputnode.anat_brainmask'),
+                ('template_mask', 'inputnode.template_mask'),
             ]),
         ])  # fmt:skip
 
