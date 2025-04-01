@@ -13,7 +13,7 @@ from xcp_d import config
 from xcp_d.data import load as load_data
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.execsummary import PlotSlicesForBrainSprite
-from xcp_d.interfaces.nilearn import ResampleToImage
+from xcp_d.interfaces.nilearn import ApplyMask, ResampleToImage
 from xcp_d.interfaces.workbench import ShowScene
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.execsummary import (
@@ -339,6 +339,7 @@ def init_itk_warp_gifti_surface_wf(name='itk_warp_gifti_surface_wf'):
 def init_execsummary_anatomical_plots_wf(
     t1w_available,
     t2w_available,
+    apply_template_mask=False,
     name='execsummary_anatomical_plots_wf',
 ):
     """Generate the anatomical figures for an executive summary.
@@ -356,6 +357,7 @@ def init_execsummary_anatomical_plots_wf(
                 wf = init_execsummary_anatomical_plots_wf(
                     t1w_available=True,
                     t2w_available=True,
+                    apply_template_mask=True,
                 )
 
     Parameters
@@ -364,6 +366,9 @@ def init_execsummary_anatomical_plots_wf(
         Generally True.
     t2w_available : bool
         Generally False.
+    apply_template_mask : bool
+        Whether to apply the template mask to the template image
+        (i.e., a skullstripped template image wasn't available).
     %(name)s
 
     Inputs
@@ -373,6 +378,9 @@ def init_execsummary_anatomical_plots_wf(
     t2w
         T2w image, after warping to standard space.
     template
+        Template image.
+    template_mask
+        Template mask image.
     """
     workflow = Workflow(name=name)
 
@@ -381,16 +389,50 @@ def init_execsummary_anatomical_plots_wf(
             fields=[
                 't1w',
                 't2w',
+                'anat_brainmask',
                 'template',
+                'template_mask',
             ],
         ),
         name='inputnode',
     )
 
+    if apply_template_mask:
+        mask_template = pe.Node(
+            ApplyMask(),
+            name='mask_template',
+        )
+        workflow.connect([
+            (inputnode, mask_template, [
+                ('template', 'in_file'),
+                ('template_mask', 'mask'),
+            ]),
+        ])  # fmt:skip
+    else:
+        mask_template = pe.Node(
+            niu.IdentityInterface(
+                fields=['out_file'],
+            ),
+            name='mask_template',
+        )
+        workflow.connect([(inputnode, mask_template, [('template', 'out_file')])])
+
     # Start plotting the overlay figures
     # Atlas in T1w/T2w, T1w/T2w in Atlas
     anatomicals = (['t1w'] if t1w_available else []) + (['t2w'] if t2w_available else [])
     for anat in anatomicals:
+        # Mask the anatomical image
+        mask_anat = pe.Node(
+            ApplyMask(),
+            name=f'mask_{anat}',
+        )
+        workflow.connect([
+            (inputnode, mask_anat, [
+                (anat, 'in_file'),
+                ('anat_brainmask', 'mask'),
+            ]),
+        ])  # fmt:skip
+
         # Resample anatomical to match resolution of template data
         resample_anat = pe.Node(
             ResampleToImage(),
@@ -398,10 +440,8 @@ def init_execsummary_anatomical_plots_wf(
             mem_gb=1,
         )
         workflow.connect([
-            (inputnode, resample_anat, [
-                (anat, 'in_file'),
-                ('template', 'target_file'),
-            ]),
+            (inputnode, resample_anat, [('template', 'target_file')]),
+            (mask_anat, resample_anat, [('out_file', 'in_file')]),
         ])  # fmt:skip
 
         plot_anat_on_atlas_wf = init_plot_overlay_wf(
@@ -409,10 +449,8 @@ def init_execsummary_anatomical_plots_wf(
             name=f'plot_{anat}_on_atlas_wf',
         )
         workflow.connect([
-            (inputnode, plot_anat_on_atlas_wf, [
-                ('template', 'inputnode.underlay_file'),
-                (anat, 'inputnode.name_source'),
-            ]),
+            (inputnode, plot_anat_on_atlas_wf, [(anat, 'inputnode.name_source')]),
+            (mask_template, plot_anat_on_atlas_wf, [('out_file', 'inputnode.underlay_file')]),
             (resample_anat, plot_anat_on_atlas_wf, [('out_file', 'inputnode.overlay_file')]),
         ])  # fmt:skip
 
@@ -421,10 +459,8 @@ def init_execsummary_anatomical_plots_wf(
             name=f'plot_atlas_on_{anat}_wf',
         )
         workflow.connect([
-            (inputnode, plot_atlas_on_anat_wf, [
-                ('template', 'inputnode.overlay_file'),
-                (anat, 'inputnode.name_source'),
-            ]),
+            (inputnode, plot_atlas_on_anat_wf, [(anat, 'inputnode.name_source')]),
+            (mask_template, plot_atlas_on_anat_wf, [('out_file', 'inputnode.overlay_file')]),
             (resample_anat, plot_atlas_on_anat_wf, [('out_file', 'inputnode.underlay_file')]),
         ])  # fmt:skip
 
