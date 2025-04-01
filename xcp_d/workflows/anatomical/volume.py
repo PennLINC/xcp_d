@@ -101,6 +101,7 @@ def init_postprocess_anat_wf(
     if '+' in target_space:
         target_space, cohort = target_space.split('+')
 
+    # Use skull-stripped template when available
     template_file = get_template(
         template=target_space,
         cohort=cohort,
@@ -109,6 +110,7 @@ def init_postprocess_anat_wf(
         suffix='T1w',
     )
     if not template_file:
+        # Otherwise, use unstripped template
         template_file = get_template(
             template=target_space,
             cohort=cohort,

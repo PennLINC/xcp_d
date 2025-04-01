@@ -118,7 +118,6 @@ def init_postprocess_cifti_wf(
     %(censored_denoised_bold)s
     %(smoothed_denoised_bold)s
     %(boldref)s
-    anat_mask
     bold_mask
     %(timeseries)s
     %(timeseries_ciftis)s
@@ -193,7 +192,6 @@ the following post-processing was performed.
                 'censored_denoised_bold',
                 'smoothed_denoised_bold',
                 'boldref',
-                'anat_mask',  # used for plotting
                 'bold_mask',  # used for plotting
                 # if parcellation is performed
                 'timeseries',
