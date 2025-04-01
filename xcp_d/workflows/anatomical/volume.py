@@ -130,10 +130,10 @@ def init_postprocess_anat_wf(
         if mask_file:
             apply_template_mask = True
             mask_file = str(mask_file)
+            inputnode.inputs.template_mask = mask_file
 
     template_file = str(template_file)
     inputnode.inputs.template = template_file
-    inputnode.inputs.template_mask = mask_file
 
     if t1w_available:
         ds_t1w_std = pe.Node(
