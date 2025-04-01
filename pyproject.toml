@@ -28,9 +28,9 @@ dependencies = [
     "networkx <= 3.4.2",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
     "nilearn == 0.11.1",  # 0.10.2 raises error with compcor from fMRIPrep 23
-    "nipype ~= 1.9.1",
-    "nireports ~= 24.1.0",
-    "niworkflows == 1.12.2",
+    "nipype ~= 1.10.0",
+    "nireports ~= 25.0.1",
+    "niworkflows == 1.13.0",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
     "numpy ~= 2.0",
@@ -42,7 +42,7 @@ dependencies = [
     "scikit-learn <= 1.6.1",
     "scipy >= 1.14.0,<= 1.15.2",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.24.1",  # for usage reports
+    "sentry-sdk ~= 2.25.0",  # for usage reports
     "templateflow ~= 24.2.0",
     "toml",
     "trimesh",
