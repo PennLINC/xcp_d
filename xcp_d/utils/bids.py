@@ -619,6 +619,25 @@ def collect_run_data(layout, bold_file, file_format, target_space):
             extension=['.nii', '.nii.gz'],
             invalid_filters='allow',
         )
+        run_data['boldmask'] = layout.get_nearest(
+            bids_file.path,
+            strict=True,
+            ignore_strict_entities=[
+                'cohort',
+                'space',
+                'res',
+                'den',
+                'desc',
+                'suffix',
+                'extension',
+            ],
+            space=target_space,
+            cohort=cohort,
+            desc='brain',
+            suffix='mask',
+            extension=['.nii', '.nii.gz'],
+            invalid_filters='allow',
+        )
         run_data['nifti_file'] = layout.get_nearest(
             bids_file.path,
             strict=True,
