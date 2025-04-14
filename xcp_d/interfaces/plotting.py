@@ -1141,3 +1141,49 @@ class PlotNifti(SimpleInterface):
             output_file=self._results['out_file'],
         )
         return runtime
+
+
+class _PlotDistributionsInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc='CIFTI file to plot.',
+    )
+    name_source = File(
+        exists=False,
+        mandatory=True,
+        desc='File to use as the name source.',
+    )
+
+
+class _PlotDistributionsOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc='Output file.')
+
+
+class PlotDistributions(SimpleInterface):
+    """Plot distributions of numeric variables in a TSV file."""
+
+    input_spec = _PlotDistributionsInputSpec
+    output_spec = _PlotDistributionsOutputSpec
+
+    def _run_interface(self, runtime):
+        import seaborn as sns
+
+        df = pd.read_table(self.inputs.in_file)
+        # Drop columns that are BIDS entities or are not numeric
+        df = df.select_dtypes(include=[np.number, 'number'])
+
+        self._results['out_file'] = fname_presuffix(
+            self.inputs.in_file,
+            suffix='_plot.svg',
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+
+        g = sns.PairGrid(df, diag_sharey=False)
+        g.map_upper(sns.scatterplot, s=15)
+        g.map_lower(sns.kdeplot)
+        g.map_diag(sns.kdeplot, lw=2)
+        g.savefig(self._results['out_file'])
+
+        return runtime

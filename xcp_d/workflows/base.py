@@ -77,25 +77,160 @@ def init_xcpd_wf():
     xcpd_wf = Workflow(name=f'xcp_d_{ver.major}_{ver.minor}_wf')
     xcpd_wf.base_dir = config.execution.work_dir
 
-    for subject_id in config.execution.participant_label:
-        single_subject_wf = init_single_subject_wf(subject_id)
-
-        single_subject_wf.config['execution']['crashdump_dir'] = str(
-            config.execution.output_dir / f'sub-{subject_id}' / 'log' / config.execution.run_uuid
-        )
-        for node in single_subject_wf._get_all_nodes():
-            node.config = deepcopy(single_subject_wf.config)
-
-        xcpd_wf.add_nodes([single_subject_wf])
-
-        # Dump a copy of the config file into the log directory
-        log_dir = (
-            config.execution.output_dir / f'sub-{subject_id}' / 'log' / config.execution.run_uuid
-        )
+    if config.execution.analysis_level == 'group':
+        group_wf = init_group_wf(config.execution.participant_label)
+        log_dir = config.execution.output_dir / 'log' / config.execution.run_uuid
         log_dir.mkdir(exist_ok=True, parents=True)
-        config.to_filename(log_dir / 'xcp_d.toml')
+
+        group_wf.config['execution']['crashdump_dir'] = str(log_dir)
+        xcpd_wf.add_nodes([group_wf])
+    else:
+        for subject_id in config.execution.participant_label:
+            single_subject_wf = init_single_subject_wf(subject_id)
+
+            log_dir = (
+                config.execution.output_dir
+                / f'sub-{subject_id}'
+                / 'log'
+                / config.execution.run_uuid
+            )
+            log_dir.mkdir(exist_ok=True, parents=True)
+
+            single_subject_wf.config['execution']['crashdump_dir'] = str(log_dir)
+            for node in single_subject_wf._get_all_nodes():
+                node.config = deepcopy(single_subject_wf.config)
+
+            xcpd_wf.add_nodes([single_subject_wf])
+
+            # Dump a copy of the config file into the log directory
+            config.to_filename(log_dir / 'xcp_d.toml')
 
     return xcpd_wf
+
+
+def init_group_wf(subject_ids: list):
+    """Organize a QC aggregation pipeline for multiple subjects.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
+            from xcp_d.workflows.base import init_group_wf
+
+            with mock_config():
+                wf = init_group_wf(["01"])
+
+    Parameters
+    ----------
+    subject_ids : :obj:`list` of :obj:`str`
+        Subject labels for this group workflow.
+    """
+    from niworkflows.engine.workflows import LiterateWorkflow as Workflow
+
+    from xcp_d.interfaces.plotting import PlotDistributions
+    from xcp_d.utils.bids import collect_group_data
+    from xcp_d.utils.utils import concatenate_tsvs
+
+    group_data = collect_group_data(
+        layout=config.execution.layout,
+        participant_labels=subject_ids,
+    )
+
+    workflow = Workflow(name='grp_wf')
+
+    fields = list(group_data.keys())
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=fields,
+        ),
+        name='inputnode',
+    )
+    for field in fields:
+        setattr(inputnode.inputs, field, group_data[field])
+
+    concatenate_qc_files = pe.Node(
+        niu.Function(
+            input_names=['in_files'],
+            output_names=['out_file'],
+            function=concatenate_tsvs,
+        ),
+        name='concatenate_qc_files',
+    )
+    workflow.connect([(inputnode, concatenate_qc_files, [('linc_qc', 'in_files')])])
+
+    # Plot distributions of QC metrics
+    make_distribution_plot = pe.Node(
+        PlotDistributions(),
+        name='make_distribution_plot',
+    )
+    workflow.connect([(concatenate_qc_files, make_distribution_plot, [('out_file', 'in_file')])])
+
+    ds_distribution_plot = pe.Node(
+        DerivativesDataSink(
+            desc='distribution',
+            extension='.svg',
+            dismiss_entities=('subject', 'session', 'task', 'acquisition', 'run'),
+        ),
+        name='ds_distribution_plot',
+    )
+    workflow.connect([
+        (inputnode, ds_distribution_plot, [('linc_qc', 'source_file')]),
+        (make_distribution_plot, ds_distribution_plot, [('plot', 'in_file')]),
+    ])  # fmt:skip
+
+    ds_linc_qc = pe.Node(
+        DerivativesDataSink(
+            desc='qc',
+            dismiss_entities=('subject', 'session', 'task', 'acquisition', 'run'),
+        ),
+        name='ds_linc_qc',
+    )
+    workflow.connect([
+        (inputnode, ds_linc_qc, [('linc_qc', 'source_file')]),
+        (concatenate_qc_files, ds_linc_qc, [('out_file', 'in_file')]),
+    ])
+
+    # Flatten and concatenate correlation matrices
+    corrmats = [field for field in fields if field.startswith('corrmat')]
+    for corrmat in corrmats:
+        atlas = corrmat.split('_')[-1].split('-')[-1]
+        flatten_correlation_matrices = pe.Node(
+            niu.Function(
+                input_names=['in_files'],
+                output_names=['out_file'],
+                function=concatenate_tsvs,
+            ),
+            name=f'flatten_correlation_matrices_{atlas}',
+        )
+        workflow.connect([(inputnode, flatten_correlation_matrices, [(corrmat, 'in_files')])])
+
+        ds_corrmats = pe.Node(
+            DerivativesDataSink(
+                segmentation=atlas,
+                statistic='pearsoncorrelation',
+                suffix='relmat',
+                extension='.tsv',
+                dismiss_entities=('subject', 'session', 'task', 'acquisition', 'run'),
+            ),
+            name=f'ds_corrmats_{atlas}',
+        )
+        workflow.connect([
+            (inputnode, ds_corrmats, [(corrmat, 'source_file')]),
+            (flatten_correlation_matrices, ds_corrmats, [
+                ('out_file', 'in_file'),
+            ]),
+        ])  # fmt:skip
+
+    # Summarize the sample demographics?
+    # Compare distributions of QC metrics across groups?
+    # Plot distributions of QC metrics against demographics (e.g., age)?
+    # Plot mean and variance of statistical maps (parcellated and otherwise)
+
+    return workflow
 
 
 @fill_doc
