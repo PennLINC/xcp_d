@@ -365,14 +365,18 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         timeseries_arr = pd.read_table(timeseries).to_numpy()
         correlations_arr = pd.read_table(correlations, index_col='Node').to_numpy()
 
-        assert coverage_arr.shape == pscalar_arr.shape
-        assert timeseries_arr.shape == ptseries_arr.shape
-        assert correlations_arr.shape == pconn_arr.shape
-
-        assert np.allclose(coverage_arr, pscalar_arr)
-        assert np.allclose(timeseries_arr, ptseries_arr, equal_nan=True)
-        assert np.allclose(correlations_arr, pconn_arr, equal_nan=True)
-
+        if coverage_arr.shape != pscalar_arr.shape:
+            raise ValueError(f'Shape mismatch: {coverage_arr.shape} != {pscalar_arr.shape}')
+        if timeseries_arr.shape != ptseries_arr.shape:
+            raise ValueError(f'Shape mismatch: {timeseries_arr.shape} != {ptseries_arr.shape}')
+        if correlations_arr.shape != pconn_arr.shape:
+            raise ValueError(f'Shape mismatch: {correlations_arr.shape} != {pconn_arr.shape}')
+        if not np.allclose(coverage_arr, pscalar_arr):
+            raise ValueError('Coverage arrays do not match')
+        if not np.allclose(timeseries_arr, ptseries_arr, equal_nan=True):
+            raise ValueError('Timeseries arrays do not match')
+        if not np.allclose(correlations_arr, pconn_arr, equal_nan=True):
+            raise ValueError('Correlation arrays do not match')
         # Calculate correlations from timeseries data
         calculated_correlations = np.corrcoef(ptseries_arr.T)
         assert calculated_correlations.shape == (1056, 1056)

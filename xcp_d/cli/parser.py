@@ -827,7 +827,8 @@ def parse_args(args=None, namespace=None):
         )
 
         opts.fmri_dir = converted_fmri_dir
-        assert converted_fmri_dir.exists(), f'Conversion to BIDS failed: {converted_fmri_dir}'
+        if not converted_fmri_dir.exists():
+            raise ValueError(f'Conversion to BIDS failed: {converted_fmri_dir}')
 
     if not os.path.isfile(os.path.join(opts.fmri_dir, 'dataset_description.json')):
         config.loggers.cli.error(
@@ -838,9 +839,8 @@ def parse_args(args=None, namespace=None):
 
     config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     config.from_dict(vars(opts), init=['nipype'])
-    assert config.execution.fmri_dir.exists(), (
-        f'Conversion to BIDS failed: {config.execution.fmri_dir}',
-    )
+    if not config.execution.fmri_dir.exists():
+        raise ValueError(f'Conversion to BIDS failed: {config.execution.fmri_dir}')
 
     # Retrieve logging level
     build_log = config.loggers.cli
@@ -951,20 +951,20 @@ def _validate_parameters(opts, build_log, parser):
             os.environ['FS_LICENSE'] = str(fs_license_file)
 
     # Check parameter value types/valid values
-    assert opts.abcc_qc in (True, False, 'auto')
-    assert opts.combine_runs in (True, False, 'auto')
-    assert opts.despike in (True, False, 'auto')
-    assert opts.file_format in ('nifti', 'cifti', 'auto')
-    assert opts.linc_qc in (True, False, 'auto')
-    assert opts.mode in (
-        'abcd',
-        'hbcd',
-        'linc',
-        'nichart',
-        'none',
-    ), f'Unsupported mode "{opts.mode}".'
-    assert opts.output_type in ('censored', 'interpolated', 'auto')
-    assert opts.process_surfaces in (True, False, 'auto')
+    if opts.abcc_qc not in (True, False, 'auto'):
+        raise ValueError("abcc_qc must be True, False, or 'auto'")
+    if opts.combine_runs not in (True, False, 'auto'):
+        raise ValueError("combine_runs must be True, False, or 'auto'")
+    if opts.file_format not in ('nifti', 'cifti', 'auto'):
+        raise ValueError("file_format must be 'nifti', 'cifti', or 'auto'")
+    if opts.linc_qc not in (True, False, 'auto'):
+        raise ValueError("linc_qc must be True, False, or 'auto'")
+    if opts.mode not in ('abcd', 'hbcd', 'linc', 'nichart', 'none'):
+        raise ValueError(f'Unsupported mode "{opts.mode}"')
+    if opts.output_type not in ('censored', 'interpolated', 'auto'):
+        raise ValueError("output_type must be 'censored', 'interpolated', or 'auto'")
+    if opts.process_surfaces not in (True, False, 'auto'):
+        raise ValueError("process_surfaces must be True, False, or 'auto'")
 
     # Add internal atlas datasets to the list of datasets
     opts.datasets = opts.datasets or {}
