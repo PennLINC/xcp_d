@@ -136,7 +136,7 @@ def test_collect_data_nibabies_ignore_t2w(tmp_path_factory):
     )
     subj_data = xbids.collect_data(
         layout=layout,
-        input_type='fmriprep',
+        input_type='nibabies',
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
@@ -158,7 +158,7 @@ def test_collect_data_nibabies_t1w_only(tmp_path_factory):
     )
     subj_data = xbids.collect_data(
         layout=layout,
-        input_type='fmriprep',
+        input_type='nibabies',
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
@@ -180,7 +180,7 @@ def test_collect_data_nibabies_t2w_only(tmp_path_factory):
     )
     subj_data = xbids.collect_data(
         layout=layout,
-        input_type='fmriprep',
+        input_type='nibabies',
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
