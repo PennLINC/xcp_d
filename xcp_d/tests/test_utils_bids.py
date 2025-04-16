@@ -145,6 +145,50 @@ def test_collect_data_nibabies_ignore_t2w(tmp_path_factory):
     assert subj_data['t2w'] is None
 
 
+def test_collect_data_nibabies_t1w_only(tmp_path_factory):
+    """Test that nibabies collects T1w when T2w is absent."""
+    skeleton = load_data('tests/skeletons/nibabies_t1w_only.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_data_nibabies_t1w_only') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    subj_data = xbids.collect_data(
+        layout=layout,
+        input_type='fmriprep',
+        participant_label='01',
+        bids_filters=None,
+        file_format='cifti',
+    )
+    assert subj_data['t1w'] is not None
+    assert subj_data['t2w'] is None
+
+
+def test_collect_data_nibabies_t2w_only(tmp_path_factory):
+    """Test that nibabies collects T2w when T1w is absent and T2w is present."""
+    skeleton = load_data('tests/skeletons/nibabies_t2w_only.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_data_nibabies_t2w_only') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    subj_data = xbids.collect_data(
+        layout=layout,
+        input_type='fmriprep',
+        participant_label='01',
+        bids_filters=None,
+        file_format='cifti',
+    )
+    assert subj_data['t1w'] is None
+    assert subj_data['t2w'] is not None
+
+
 def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
     # Dataset without mesh files
