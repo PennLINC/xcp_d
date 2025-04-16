@@ -298,10 +298,12 @@ def collect_data(
                         'T2w-to-template transform not found. Attempting T1w-only processing.'
                     )
                     queries['t1w']['space'] = ['T1w', None]
+                    queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
                     queries['template_to_anat_xfm']['to'] = 'T1w'
                     queries['anat_to_template_xfm']['from'] = 'T1w'
                 else:
                     LOGGER.info('Performing T2w-only processing.')
+                    queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
                     queries['template_to_anat_xfm']['to'] = 'T2w'
                     queries['anat_to_template_xfm']['from'] = 'T2w'
             else:

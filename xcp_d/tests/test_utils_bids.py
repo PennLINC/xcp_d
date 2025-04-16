@@ -122,6 +122,26 @@ def test_collect_data_nibabies(datasets):
         )
 
 
+def test_collect_data_nibabies_t1w_only():
+    """Test that nibabies T1w-only processing works."""
+    bids_dir = load_data('tests/skeletons/nibabies_01.yml')
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    subj_data = xbids.collect_data(
+        layout=layout,
+        input_type='fmriprep',
+        participant_label='01',
+        bids_filters=None,
+        file_format='nifti',
+    )
+    assert subj_data['t1w'] is not None
+    assert subj_data['t2w'] is None
+
+
 def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
     # Dataset without mesh files
