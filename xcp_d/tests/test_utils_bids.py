@@ -6,6 +6,7 @@ import shutil
 
 import pytest
 from bids.layout import BIDSLayout
+from niworkflows.utils.testing import generate_bids_skeleton
 
 import xcp_d.utils.bids as xbids
 from xcp_d.data import load as load_data
@@ -122,9 +123,11 @@ def test_collect_data_nibabies(datasets):
         )
 
 
-def test_collect_data_nibabies_ignore_t2w():
+def test_collect_data_nibabies_ignore_t2w(tmp_path_factory):
     """Test that nibabies does not collect T2w when T1w is present and no T1w-space T2w."""
-    bids_dir = load_data('tests/skeletons/nibabies_t1w_t2w.yml')
+    skeleton = load_data('tests/skeletons/nibabies_t1w_t2w.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_data_nibabies_ignore_t2w') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
     xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
     layout = BIDSLayout(
         bids_dir,
