@@ -122,9 +122,9 @@ def test_collect_data_nibabies(datasets):
         )
 
 
-def test_collect_data_nibabies_t1w_only():
-    """Test that nibabies T1w-only processing works."""
-    bids_dir = load_data('tests/skeletons/nibabies_01.yml')
+def test_collect_data_nibabies_ignore_t2w():
+    """Test that nibabies does not collect T2w when T1w is present and no T1w-space T2w."""
+    bids_dir = load_data('tests/skeletons/nibabies_t1w_t2w.yml')
     xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
     layout = BIDSLayout(
         bids_dir,
@@ -136,7 +136,7 @@ def test_collect_data_nibabies_t1w_only():
         input_type='fmriprep',
         participant_label='01',
         bids_filters=None,
-        file_format='nifti',
+        file_format='cifti',
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is None

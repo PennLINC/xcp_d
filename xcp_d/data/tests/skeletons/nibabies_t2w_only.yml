@@ -1,58 +1,44 @@
 # Skeleton based on Nibabies derivatives
+# There is only a T2w anatomical image, so it should only collect T2w files.
 "01":
   - session: V03
     anat:
     - run: 1
       desc: preproc
-      suffix: T1w
-    - run: 1
-      desc: preproc
       suffix: T2w
     - run: 1
       from: MNI152NLin6Asym
-      to: T1w
-      mode: image
-      suffix: xfm
-      extension: .h5
-    - run: 1
-      from: MNIInfant+2
-      to: T1w
-      mode: image
-      suffix: xfm
-      extension: .h5
-    - run: 1
-      from: T1w
-      to: MNI152NLin6Asym
-      mode: image
-      suffix: xfm
-      extension: .h5
-    - run: 1
-      from: T1w
-      to: MNIInfant+2
-      mode: image
-      suffix: xfm
-      extension: .h5
-    - run: 1
-      from: T1w
       to: T2w
       mode: image
       suffix: xfm
       extension: .h5
     - run: 1
-      from: T1w
+      from: MNIInfant+2
+      to: T2w
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      from: T2w
+      to: MNI152NLin6Asym
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      from: T2w
+      to: MNIInfant+2
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      from: T2w
       to: fsnative
       mode: image
       suffix: xfm
       extension: .txt
     - run: 1
-      from: T2w
-      to: T1w
-      mode: image
-      suffix: xfm
-      extension: .h5
-    - run: 1
       from: fsnative
-      to: T1w
+      to: T2w
       mode: image
       suffix: xfm
       extension: .h5
@@ -177,7 +163,7 @@
       space: MNI152NLin6Asym
       res: 2
       desc: preproc
-      suffix: T1w
+      suffix: T2w
     - run: 1
       space: MNI152NLin6Asym
       res: 2
@@ -198,30 +184,30 @@
       label: WM
       suffix: probseg
     - run: 1
-      space: T1w
+      space: T2w
       desc: aparcaseg
       suffix: dseg
     - run: 1
-      space: T1w
+      space: T2w
       desc: aseg
       suffix: dseg
     - run: 1
-      space: T1w
+      space: T2w
       desc: ribbon
       suffix: mask
     - run: 1
-      space: T1w
+      space: T2w
       suffix: dseg
     - run: 1
-      space: T1w
+      space: T2w
       label: CSF
       suffix: probseg
     - run: 1
-      space: T1w
+      space: T2w
       label: GM
       suffix: probseg
     - run: 1
-      space: T1w
+      space: T2w
       label: WM
       suffix: probseg
     - run: 1
@@ -318,18 +304,18 @@
     - task: rest
       dir: PA
       run: 1
-      space: T1w
+      space: T2w
       desc: preproc
       suffix: bold
     - task: rest
       dir: PA
       run: 1
-      space: T1w
+      space: T2w
       suffix: boldref
     - task: rest
       dir: PA
       run: 1
-      space: T1w
+      space: T2w
       desc: brain
       suffix: mask
     - task: rest
@@ -352,7 +338,7 @@
       dir: PA
       run: 1
       from: boldref
-      to: T1w
+      to: T2w
       mode: image
       suffix: xfm
       extension: .txt
