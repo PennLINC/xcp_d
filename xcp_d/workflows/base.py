@@ -133,7 +133,7 @@ def init_single_subject_wf(subject_id: str):
     )
     t1w_available = subj_data['t1w'] is not None
     t2w_available = subj_data['t2w'] is not None
-    anat_mod = 't1w' if t1w_available else 't2w'
+    anat_mod = get_entity(subj_data['anat_to_template_xfm'], 'from')
 
     mesh_available, standard_space_mesh, software, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
@@ -162,6 +162,8 @@ def init_single_subject_wf(subject_id: str):
                 'anat_brainmask',  # used to estimate head radius and for QC metrics
                 'template_to_anat_xfm',  # not used by cifti workflow
                 'anat_to_template_xfm',
+                't1w_to_t2w_xfm',
+                't2w_to_t1w_xfm',
                 # mesh files
                 'lh_pial_surf',
                 'rh_pial_surf',
@@ -185,6 +187,8 @@ def init_single_subject_wf(subject_id: str):
     inputnode.inputs.anat_brainmask = subj_data['anat_brainmask']
     inputnode.inputs.template_to_anat_xfm = subj_data['template_to_anat_xfm']
     inputnode.inputs.anat_to_template_xfm = subj_data['anat_to_template_xfm']
+    inputnode.inputs.t1w_to_t2w_xfm = subj_data['t1w_to_t2w_xfm']
+    inputnode.inputs.t2w_to_t1w_xfm = subj_data['t2w_to_t1w_xfm']
 
     # surface mesh files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = mesh_files['lh_pial_surf']
@@ -279,6 +283,63 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # Extract target volumetric space for T1w image
     target_space = get_entity(subj_data['anat_to_template_xfm'], 'to')
+    anat_buffer = pe.Node(
+        niu.IdentityInterface(fields=['t1w', 't2w']),
+        name='anat_buffer',
+    )
+    if subj_data['t1w_to_t2w_xfm'] is not None and t1w_available and t2w_available:
+        workflow.connect([(inputnode, anat_buffer, [('t2w', 't2w')])])
+
+        # Warp T1w to T2w
+        warp_t1w_to_t2w = pe.Node(
+            ApplyTransforms(
+                interpolation='LanczosWindowedSinc',
+                input_image_type=3,
+                dimension=3,
+                num_threads=config.nipype.omp_nthreads,
+            ),
+            name='warp_t1w_to_t2w',
+            mem_gb=2,
+            n_procs=config.nipype.omp_nthreads,
+        )
+        workflow.connect([
+            (inputnode, warp_t1w_to_t2w, [
+                ('t1w', 'input_image'),
+                ('t1w_to_t2w_xfm', 'transforms'),
+                ('t2w', 'reference_image'),
+            ]),
+            (warp_t1w_to_t2w, anat_buffer, [('output_image', 't1w')]),
+        ])  # fmt:skip
+    elif subj_data['t2w_to_t1w_xfm'] is not None and t1w_available and t2w_available:
+        workflow.connect([(inputnode, anat_buffer, [('t1w', 't1w')])])
+
+        # Warp T2w to T1w
+        warp_t2w_to_t1w = pe.Node(
+            ApplyTransforms(
+                interpolation='LanczosWindowedSinc',
+                input_image_type=3,
+                dimension=3,
+                num_threads=config.nipype.omp_nthreads,
+            ),
+            name='warp_t2w_to_t1w',
+            mem_gb=2,
+            n_procs=config.nipype.omp_nthreads,
+        )
+        workflow.connect([
+            (inputnode, warp_t2w_to_t1w, [
+                ('t2w', 'input_image'),
+                ('t2w_to_t1w_xfm', 'transforms'),
+                ('t1w', 'reference_image'),
+            ]),
+            (warp_t2w_to_t1w, anat_buffer, [('output_image', 't2w')]),
+        ])  # fmt:skip
+    else:
+        workflow.connect([
+            (inputnode, anat_buffer, [
+                ('t1w', 't1w'),
+                ('t2w', 't2w'),
+            ]),
+        ])  # fmt:skip
 
     postprocess_anat_wf = init_postprocess_anat_wf(
         t1w_available=t1w_available,
@@ -288,10 +349,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     workflow.connect([
         (inputnode, postprocess_anat_wf, [
-            ('t1w', 'inputnode.t1w'),
-            ('t2w', 'inputnode.t2w'),
+            ('t1w_to_t2w_xfm', 'inputnode.t1w_to_t2w_xfm'),
+            ('t2w_to_t1w_xfm', 'inputnode.t2w_to_t1w_xfm'),
             ('anat_to_template_xfm', 'inputnode.anat_to_template_xfm'),
             ('anat_brainmask', 'inputnode.anat_brainmask'),
+        ]),
+        (anat_buffer, postprocess_anat_wf, [
+            ('t1w', 'inputnode.t1w'),
+            ('t2w', 'inputnode.t2w'),
         ]),
     ])  # fmt:skip
 
@@ -340,9 +405,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])  # fmt:skip
 
         else:
+            # Warp T1w to T2w or T2w to T1w if necessary
             # Use native-space structurals
             workflow.connect([
-                (inputnode, postprocess_surfaces_wf, [
+                (anat_buffer, postprocess_surfaces_wf, [
                     ('t1w', 'inputnode.t1w'),
                     ('t2w', 'inputnode.t2w'),
                 ]),
