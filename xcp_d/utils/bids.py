@@ -297,16 +297,53 @@ def collect_data(
                     )
                 )
                 if not t2w_to_template_found:
-                    # XXX: At this point we should look for a T2w-to-T1w transform.
-                    LOGGER.warning('T2w-to-template transform not found. Processing T1w only.')
+                    t2w_to_t1w_found = bool(
+                        layout.get(
+                            return_type='file',
+                            subject=participant_label,
+                            **queries['t2w_to_t1w_xfm'],
+                        ),
+                    )
+                    if t2w_to_t1w_found:
+                        # Prepare for T2w --> T1w --> template chain
+                        LOGGER.info(
+                            'T2w-to-template transform not found, but T2w-to-T1w transform found. '
+                            'Processing both T1w and T2w.'
+                        )
+                        queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                    else:
+                        LOGGER.info('T2w-to-template transform found. Processing T2w only.')
+                        queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
                     queries['t1w']['space'] = [None, 'T1w']
                     queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
                     queries['template_to_anat_xfm']['to'] = 'T1w'
                     queries['anat_to_template_xfm']['from'] = 'T1w'
                 else:
-                    # XXX: At this point we should look for a T1w-to-T2w transform.
-                    LOGGER.info('T2w-to-template transform found. Processing T2w only.')
-                    queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
+                    t1w_to_t2w_found = bool(
+                        layout.get(
+                            return_type='file',
+                            subject=participant_label,
+                            **queries['t1w_to_t2w_xfm'],
+                        ),
+                    )
+                    if t1w_to_t2w_found:
+                        # Prepare for T1w --> T2w --> template chain
+                        LOGGER.info(
+                            'T2w-to-template and T1w-to-T2w transforms found. '
+                            'Processing both T1w and T2w.'
+                        )
+                        queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                    else:
+                        LOGGER.info('T2w-to-template transform found. Processing T2w only.')
+                        queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
                     queries['t2w']['space'] = [None, 'T2w']
                     queries['template_to_anat_xfm']['to'] = 'T2w'
                     queries['anat_to_template_xfm']['from'] = 'T2w'
@@ -337,7 +374,7 @@ def collect_data(
     for field, filenames in subj_data.items():
         # All fields except the BOLD data should have a single file
         if field != 'bold' and isinstance(filenames, list):
-            if field not in ('t1w', 't2w') and not filenames:
+            if field not in ('t1w', 't2w', 't1w_to_t2w_xfm', 't2w_to_t1w_xfm') and not filenames:
                 raise FileNotFoundError(f'No {field} found with query: {queries[field]}')
 
             if len(filenames) == 1:
