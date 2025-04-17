@@ -324,7 +324,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         '--min-time=20',
         '--dummy-scans=1',
         '--abcc-qc',
-        '--report-output-level=subject',
+        '--report-output-level=session',  # will revert to subject
     ]
 
     _run_and_generate(
