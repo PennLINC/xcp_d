@@ -212,11 +212,13 @@ def test_collect_data_nibabies_t2w_to_t1w(tmp_path_factory, caplog):
         file_format='cifti',
     )
     assert subj_data['t1w'] is not None
-    assert subj_data['t2w'] is None
+    assert subj_data['t2w'] is not None
+    assert subj_data['t1w_to_t2w_xfm'] is None
+    assert subj_data['t2w_to_t1w_xfm'] is not None
     assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
     assert 'No T1w-space T2w found. Checking for T2w-space T1w.' in caplog.text
     assert 'No T2w-space T1w found. Attempting T2w-primary processing.' in caplog.text
-    # assert 'Neither T2w-to-template, nor T2w-to-T1w, transform found.' in caplog.text
+    assert 'T2w-to-template transform not found, but T2w-to-T1w transform found.' in caplog.text
 
 
 def test_collect_data_nibabies_ignore_t1w(tmp_path_factory, caplog):
@@ -275,12 +277,14 @@ def test_collect_data_nibabies_t1w_to_t2w(tmp_path_factory, caplog):
         bids_filters=None,
         file_format='cifti',
     )
-    assert subj_data['t1w'] is None
+    assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is not None
+    assert subj_data['t1w_to_t2w_xfm'] is not None
+    assert subj_data['t2w_to_t1w_xfm'] is None
     assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
     assert 'No T1w-space T2w found. Checking for T2w-space T1w.' in caplog.text
     assert 'No T2w-space T1w found. Attempting T2w-primary processing.' in caplog.text
-    # assert 'T2w-to-template transform found, but no T1w-to-T2w transform found.' in caplog.text
+    assert 'T2w-to-template and T1w-to-T2w transforms found.' in caplog.text
 
 
 def test_collect_data_nibabies_t1wspace_t2w(tmp_path_factory, caplog):
