@@ -124,6 +124,15 @@ def generate_reports(
             if report_error is not None:
                 errors.append(report_error)
 
+            if abcc_qc:
+                exsumm = ExecutiveSummary(
+                    xcpd_path=output_dir,
+                    subject_id=subject_label,
+                    session_id=session_label,
+                )
+                exsumm.collect_inputs()
+                exsumm.generate_report()
+
         # Someday, when we have anatomical reports, add a section here that
         # finds sessions and makes the reports.
 
@@ -136,32 +145,6 @@ def generate_reports(
             'data from participants: %s. Check the HTML reports for details.',
             error_list,
         )
-    elif abcc_qc:
-        config.loggers.cli.info('Generating executive summary.')
-
-        for subject_label in subject_list:
-            if sessions is None:
-                all_filters = config.execution.bids_filters or {}
-                filters = all_filters.get('bold', {})
-                session_list = config.execution.layout.get_sessions(
-                    subject=subject_label,
-                    **filters,
-                )
-
-            # Drop ses- prefixes
-            session_list = [ses for ses in session_list if isinstance(ses, str)]  # drop Queries
-            session_list = [ses[4:] if ses.startswith('ses-') else ses for ses in session_list]
-            if not session_list:
-                session_list = [None]
-
-            for session_label in session_list:
-                exsumm = ExecutiveSummary(
-                    xcpd_path=output_dir,
-                    subject_id=subject_label,
-                    session_id=session_label,
-                )
-                exsumm.collect_inputs()
-                exsumm.generate_report()
 
     config.loggers.cli.info('Reports generated successfully')
 
