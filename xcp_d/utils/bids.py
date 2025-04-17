@@ -272,22 +272,22 @@ def collect_data(
     elif t1w_files and t2w_files:
         LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
         queries['t2w']['space'] = 'T1w'
-        t2w_found = bool(
+        t1wspace_t2w_found = bool(
             layout.get(return_type='file', subject=participant_label, **queries['t2w'])
         )
-        if not t2w_found:
+        if not t1wspace_t2w_found:
             LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
             queries['t1w']['space'] = 'T2w'
             queries['t2w']['space'] = None  # we want T2w without space entity
-            t1w_found = bool(
+            t2wspace_t1w_found = bool(
                 layout.get(
                     return_type='file',
                     subject=participant_label,
                     **queries['t1w'],
                 )
             )
-            if not t1w_found:
-                LOGGER.warning('No T2w-space T1w found. Attempting T2w-only processing.')
+            if not t2wspace_t1w_found:
+                LOGGER.warning('No T2w-space T1w found. Attempting T2w-primary processing.')
                 queries['anat_to_template_xfm']['from'] = 'T2w'
                 t2w_to_template_found = bool(
                     layout.get(
@@ -313,7 +313,10 @@ def collect_data(
                         queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
                         queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
                     else:
-                        LOGGER.info('T2w-to-template transform found. Processing T2w only.')
+                        LOGGER.info(
+                            'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
+                            'Processing T1w only.'
+                        )
                         queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
                         queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
                         queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
@@ -339,7 +342,10 @@ def collect_data(
                         queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
                         queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
                     else:
-                        LOGGER.info('T2w-to-template transform found. Processing T2w only.')
+                        LOGGER.info(
+                            'T2w-to-template transform found, but no T1w-to-T2w transform found. '
+                            'Processing T2w only.'
+                        )
                         queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
                         queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
                         queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
@@ -349,14 +355,26 @@ def collect_data(
                     queries['anat_to_template_xfm']['from'] = 'T2w'
             else:
                 LOGGER.warning('T2w-space T1w found. Processing anatomical images in T2w space.')
+                queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
         else:
             LOGGER.warning('T1w-space T2w found. Processing anatomical images in T1w space.')
             queries['t1w']['space'] = [None, 'T1w']
             queries['t2w']['space'] = 'T1w'
+            queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+            queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
     elif t2w_files and not t1w_files:
         LOGGER.warning('T2w found, but no T1w. Enabling T2w-only processing.')
         queries['template_to_anat_xfm']['to'] = 'T2w'
         queries['anat_to_template_xfm']['from'] = 'T2w'
+        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
+    elif t1w_files and not t2w_files:
+        LOGGER.info('T1w found, but no T2w. Enabling T1w-only processing.')
+        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
 
     # Search for the files.
     subj_data = {

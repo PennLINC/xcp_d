@@ -37,10 +37,22 @@
       extension: .h5
     - run: 1
       from: T1w
+      to: T2w
+      mode: image
+      suffix: xfm
+      extension: .h5
+    - run: 1
+      from: T1w
       to: fsnative
       mode: image
       suffix: xfm
       extension: .txt
+    - run: 1
+      from: T2w
+      to: T1w
+      mode: image
+      suffix: xfm
+      extension: .h5
     - run: 1
       from: fsnative
       to: T1w
