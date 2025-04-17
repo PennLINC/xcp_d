@@ -93,19 +93,13 @@ def generate_reports(
         if not sessions:
             sessions = [Query.NONE]
 
-        for session_label in sessions:
-            if session_label == Query.NONE:
-                html_report = html_report = f'sub-{subject_label}.html'
-                session_label = None
-            else:
-                html_report = html_report = f'sub-{subject_label}_ses-{session_label}.html'
+        if output_level != 'session' and len(sessions) <= config.execution.aggr_ses_reports:
+            html_report = f'sub-{subject_label}.html'
 
             if output_level == 'root':
                 report_dir = output_dir
             elif output_level == 'subject':
                 report_dir = Path(output_dir) / f'sub-{subject_label}'
-            elif output_level == 'session':
-                report_dir = Path(output_dir) / f'sub-{subject_label}' / f'ses-{session_label}'
 
             report_error = run_reports(
                 report_dir,
@@ -115,27 +109,66 @@ def generate_reports(
                 out_filename=html_report,
                 reportlets_dir=output_dir,
                 errorname=f'report-{run_uuid}-{subject_label}.err',
-                metadata={
-                    'session_str': f", session '{session_label}'" if session_label else '',
-                },
                 subject=subject_label,
-                session=session_label,
+                session=sessions,
             )
             # If the report generation failed, append the subject label for which it failed
             if report_error is not None:
                 errors.append(report_error)
 
             if abcc_qc:
-                exsumm = ExecutiveSummary(
-                    xcpd_path=output_dir,
-                    subject_id=subject_label,
-                    session_id=session_label,
-                )
-                exsumm.collect_inputs()
-                exsumm.generate_report()
+                for session in sessions:
+                    exsumm = ExecutiveSummary(
+                        xcpd_path=output_dir,
+                        subject_id=subject_label,
+                        session_id=session,
+                    )
+                    exsumm.collect_inputs()
+                    exsumm.generate_report()
+        else:
+            for session_label in sessions:
+                if session_label == Query.NONE:
+                    html_report = f'sub-{subject_label}.html'
+                    session_label = None
+                else:
+                    html_report = f'sub-{subject_label}_ses-{session_label}.html'
 
-        # Someday, when we have anatomical reports, add a section here that
-        # finds sessions and makes the reports.
+                if output_level == 'root':
+                    report_dir = output_dir
+                elif output_level == 'subject':
+                    report_dir = Path(output_dir) / f'sub-{subject_label}'
+                elif output_level == 'session':
+                    report_dir = Path(output_dir) / f'sub-{subject_label}' / f'ses-{session_label}'
+
+                report_error = run_reports(
+                    report_dir,
+                    subject_label,
+                    run_uuid,
+                    bootstrap_file=bootstrap_file,
+                    out_filename=html_report,
+                    reportlets_dir=output_dir,
+                    errorname=f'report-{run_uuid}-{subject_label}.err',
+                    metadata={
+                        'session_str': f", session '{session_label}'" if session_label else '',
+                    },
+                    subject=subject_label,
+                    session=session_label,
+                )
+                # If the report generation failed, append the subject label for which it failed
+                if report_error is not None:
+                    errors.append(report_error)
+
+                if abcc_qc:
+                    exsumm = ExecutiveSummary(
+                        xcpd_path=output_dir,
+                        subject_id=subject_label,
+                        session_id=session_label,
+                    )
+                    exsumm.collect_inputs()
+                    exsumm.generate_report()
+
+            # Someday, when we have anatomical reports, add a section here that
+            # finds sessions and makes the reports.
 
     if errors:
         error_list = ', '.join(
