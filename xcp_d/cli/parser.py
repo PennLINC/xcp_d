@@ -622,17 +622,6 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
 
     g_other = parser.add_argument_group('Other options')
     g_other.add_argument(
-        '--aggregate-session-reports',
-        dest='aggr_ses_reports',
-        action='store',
-        type=PositiveInt,
-        default=4,
-        help=(
-            "Maximum number of sessions aggregated in one subject's visual report. "
-            'If exceeded, visual reports are split by session.'
-        ),
-    )
-    g_other.add_argument(
         '-w',
         '--work-dir',
         '--work_dir',
