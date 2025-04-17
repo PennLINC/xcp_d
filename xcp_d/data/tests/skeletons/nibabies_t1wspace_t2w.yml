@@ -1,8 +1,20 @@
 # Skeleton based on Nibabies derivatives
-# There are no anatomical images, so it should raise an error.
+# There are both T1w and T2w anatomical images, but no T2w-space T1w or T1w-space T2w,
+# and the transforms are T2w-based, so it should only collect T2w files.
+# We may collect the T1w-to-T2w transform at some point, but it's not currently used.
 "01":
   - session: V03
     anat:
+    - run: 1
+      desc: preproc
+      suffix: T1w
+    - run: 1
+      desc: preproc
+      suffix: T2w
+    - run: 1
+      space: T1w
+      desc: preproc
+      suffix: T2w
     - run: 1
       from: MNI152NLin6Asym
       to: T2w
@@ -313,18 +325,18 @@
     - task: rest
       dir: PA
       run: 1
-      space: T1w
+      space: T2w
       desc: preproc
       suffix: bold
     - task: rest
       dir: PA
       run: 1
-      space: T1w
+      space: T2w
       suffix: boldref
     - task: rest
       dir: PA
       run: 1
-      space: T1w
+      space: T2w
       desc: brain
       suffix: mask
     - task: rest
@@ -347,7 +359,7 @@
       dir: PA
       run: 1
       from: boldref
-      to: T1w
+      to: T2w
       mode: image
       suffix: xfm
       extension: .txt

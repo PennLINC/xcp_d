@@ -276,14 +276,12 @@ def collect_data(
         temp_t2w_files = layout.get(return_type='file', subject=participant_label, **temp_query)
         if not temp_t2w_files:
             LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
-            temp_query = queries['t1w'].copy()
-            temp_query['space'] = 'T2w'
+            queries['t1w']['space'] = 'T2w'
             temp_t1w_files = layout.get(
                 return_type='file',
                 subject=participant_label,
-                **temp_query,
+                **queries['t1w'],
             )
-            queries['t1w']['space'] = 'T2w'
             if not temp_t1w_files:
                 LOGGER.warning('No T2w-space T1w found. Attempting T2w-only processing.')
                 temp_query = queries['anat_to_template_xfm'].copy()
@@ -295,14 +293,16 @@ def collect_data(
                 )
                 if not temp_xfm_files:
                     LOGGER.warning(
-                        'T2w-to-template transform not found. Attempting T1w-only processing.'
+                        'T2w-to-template transform not found. Performing T1w-only processing.'
                     )
                     queries['t1w']['space'] = ['T1w', None]
                     queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
                     queries['template_to_anat_xfm']['to'] = 'T1w'
                     queries['anat_to_template_xfm']['from'] = 'T1w'
                 else:
-                    LOGGER.info('Performing T2w-only processing.')
+                    LOGGER.info(
+                        'T2w-to-template transform found. Performing T2w-only processing.'
+                    )
                     queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
                     queries['template_to_anat_xfm']['to'] = 'T2w'
                     queries['anat_to_template_xfm']['from'] = 'T2w'
