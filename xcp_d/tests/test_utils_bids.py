@@ -270,6 +270,7 @@ def test_collect_data_nibabies_t1wspace_t2w(tmp_path_factory, caplog):
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is not None
+    assert 'space-T1w' in subj_data['t2w']
     assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
     assert 'T1w-space T2w found. Processing anatomical images in T1w space.' in caplog.text
 
@@ -297,6 +298,7 @@ def test_collect_data_nibabies_t2wspace_t1w(tmp_path_factory, caplog):
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is not None
+    assert 'space-T2w' in subj_data['t1w']
     assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
     assert 'No T1w-space T2w found. Checking for T2w-space T1w.' in caplog.text
     assert 'T2w-space T1w found. Processing anatomical images in T2w space.' in caplog.text

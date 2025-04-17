@@ -279,20 +279,23 @@ def collect_data(
             LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
             queries['t1w']['space'] = 'T2w'
             queries['t2w']['space'] = None  # we want T2w without space entity
-            t1w_found = bool(layout.get(
-                return_type='file',
-                subject=participant_label,
-                **queries['t1w'],
-            ))
-            if not t1w_found:
-                LOGGER.warning('No T2w-space T1w found. Attempting T2w-only processing.')
-                temp_query = queries['anat_to_template_xfm'].copy()
-                temp_query['from'] = 'T2w'
-                t2w_to_template_found = bool(layout.get(
+            t1w_found = bool(
+                layout.get(
                     return_type='file',
                     subject=participant_label,
-                    **temp_query,
-                ))
+                    **queries['t1w'],
+                )
+            )
+            if not t1w_found:
+                LOGGER.warning('No T2w-space T1w found. Attempting T2w-only processing.')
+                queries['anat_to_template_xfm']['from'] = 'T2w'
+                t2w_to_template_found = bool(
+                    layout.get(
+                        return_type='file',
+                        subject=participant_label,
+                        **queries['anat_to_template_xfm'],
+                    )
+                )
                 if not t2w_to_template_found:
                     # XXX: At this point we should look for a T2w-to-T1w transform.
                     LOGGER.warning('T2w-to-template transform not found. Processing T1w only.')
