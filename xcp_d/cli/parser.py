@@ -737,6 +737,17 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
             'aggregation, not reportlet generation for specific nodes.'
         ),
     )
+    g_other.add_argument(
+        '--report-output-level',
+        action='store',
+        choices=['root', 'subject', 'session'],
+        default='root',
+        help=(
+            'Where should the html reports be written? By default root will write '
+            'them to the --output-dir. Other options will write them into their '
+            'subject or session directory.'
+        ),
+    )
 
     g_experimental = parser.add_argument_group('Experimental options')
 
