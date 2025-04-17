@@ -34,7 +34,6 @@ def _build_parser():
     )
     PathExists = partial(parser_utils._path_exists, parser=parser)
     IsFile = partial(parser_utils._is_file, parser=parser)
-    PositiveInt = partial(parser_utils._min_one, parser=parser)
     BIDSFilter = partial(parser_utils._bids_filter, parser=parser)
 
     # important parameters required
