@@ -317,12 +317,11 @@ def collect_data(
                             'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
                             'Processing T1w only.'
                         )
-                        queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
+                        queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
                         queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
                         queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
 
                     queries['t1w']['space'] = [None, 'T1w']
-                    queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
                     queries['template_to_anat_xfm']['to'] = 'T1w'
                     queries['anat_to_template_xfm']['from'] = 'T1w'
                 else:
