@@ -73,12 +73,13 @@ def generate_reports(
     subject_list = config.execution.participant_label
     subject_list = [sub[4:] if sub.startswith('sub-') else sub for sub in subject_list]
     for subject_label in subject_list:
+        filters = bids_filters.get('bold', {})
+        filters['session'] = config.execution.session_id or Query.OPTIONAL
         # Extract session IDs from the processed DWIs
         sessions = config.execution.layout.get_sessions(
             subject=subject_label,
-            session=config.execution.session_id or Query.OPTIONAL,
             suffix='bold',
-            **bids_filters.get('bold', {}),
+            **filters,
         )
         if output_level == 'session' and not sessions:
             report_dir = output_dir
