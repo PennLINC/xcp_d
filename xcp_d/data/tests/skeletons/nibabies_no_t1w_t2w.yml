@@ -1,5 +1,5 @@
 # Skeleton based on Nibabies derivatives
-# There is only a T1w anatomical image, so it should only collect T1w files.
+# There are no anatomical images, so it should raise an error.
 "01":
   - session: V03
     fmap:
