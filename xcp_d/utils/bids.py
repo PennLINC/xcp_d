@@ -292,15 +292,15 @@ def collect_data(
                     **temp_query,
                 )
                 if not temp_xfm_files:
-                    LOGGER.warning(
-                        'T2w-to-template transform not found. Performing T1w-only processing.'
-                    )
+                    # XXX: At this point we should look for a T2w-to-T1w transform.
+                    LOGGER.warning('T2w-to-template transform not found. Processing T1w only.')
                     queries['t1w']['space'] = ['T1w', None]
                     queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
                     queries['template_to_anat_xfm']['to'] = 'T1w'
                     queries['anat_to_template_xfm']['from'] = 'T1w'
                 else:
-                    LOGGER.info('T2w-to-template transform found. Performing T2w-only processing.')
+                    # XXX: At this point we should look for a T1w-to-T2w transform.
+                    LOGGER.info('T2w-to-template transform found. Processing T2w only.')
                     queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
                     queries['template_to_anat_xfm']['to'] = 'T2w'
                     queries['anat_to_template_xfm']['from'] = 'T2w'

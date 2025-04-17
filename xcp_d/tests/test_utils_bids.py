@@ -149,7 +149,7 @@ def test_collect_data_nibabies_ignore_t2w(tmp_path_factory, caplog):
     assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
     assert 'No T1w-space T2w found. Checking for T2w-space T1w.' in caplog.text
     assert 'No T2w-space T1w found. Attempting T2w-only processing.' in caplog.text
-    assert 'T2w-to-template transform not found. Performing T1w-only processing.' in caplog.text
+    assert 'T2w-to-template transform not found. Processing T1w only.' in caplog.text
 
 
 def test_collect_data_nibabies_ignore_t1w(tmp_path_factory, caplog):
@@ -178,7 +178,7 @@ def test_collect_data_nibabies_ignore_t1w(tmp_path_factory, caplog):
     assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
     assert 'No T1w-space T2w found. Checking for T2w-space T1w.' in caplog.text
     assert 'No T2w-space T1w found. Attempting T2w-only processing.' in caplog.text
-    assert 'T2w-to-template transform found. Performing T2w-only processing.' in caplog.text
+    assert 'T2w-to-template transform found. Processing T2w only.' in caplog.text
 
 
 def test_collect_data_nibabies_t1w_only(tmp_path_factory):
