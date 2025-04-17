@@ -34,6 +34,7 @@ def _build_parser():
     )
     PathExists = partial(parser_utils._path_exists, parser=parser)
     IsFile = partial(parser_utils._is_file, parser=parser)
+    PositiveInt = partial(parser_utils._min_one, parser=parser)
     BIDSFilter = partial(parser_utils._bids_filter, parser=parser)
 
     # important parameters required
@@ -629,6 +630,17 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
             'Where should the html reports be written? '
             'By default root will write them to the --output-dir. '
             'Other options will write them into their subject or session directory.'
+        ),
+    )
+    g_other.add_argument(
+        '--aggregate-session-reports',
+        dest='aggr_ses_reports',
+        action='store',
+        type=PositiveInt,
+        default=4,
+        help=(
+            "Maximum number of sessions aggregated in one subject's visual report. "
+            'If exceeded, visual reports are split by session.'
         ),
     )
     g_other.add_argument(
