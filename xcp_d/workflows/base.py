@@ -349,8 +349,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     workflow.connect([
         (inputnode, postprocess_anat_wf, [
-            ('t1w_to_t2w_xfm', 'inputnode.t1w_to_t2w_xfm'),
-            ('t2w_to_t1w_xfm', 'inputnode.t2w_to_t1w_xfm'),
             ('anat_to_template_xfm', 'inputnode.anat_to_template_xfm'),
             ('anat_brainmask', 'inputnode.anat_brainmask'),
         ]),
