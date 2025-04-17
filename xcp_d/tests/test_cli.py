@@ -72,6 +72,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--file-format=nifti',
         '--input-type=fmriprep',
         '--warp-surfaces-native2std=n',
+        '--report-output-level=root',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -121,6 +122,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         '4S356Parcels',
         '4S456Parcels',
         '--linc-qc',
+        '--report-output-level=subject',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -158,6 +160,7 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         '--min-coverage=0.1',
         '--random-seed=8675309',
         '--min-time=100',
+        '--report-output-level=root',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -216,6 +219,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         '480',
         'all',
         '--linc-qc=n',
+        '--report-output-level=session',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -270,6 +274,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         '--disable-bandpass-filter',
         '--create-matrices=all',
         '--linc-qc=n',
+        '--report-output-level=root',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -319,6 +324,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         '--min-time=20',
         '--dummy-scans=1',
         '--abcc-qc',
+        '--report-output-level=subject',
     ]
 
     _run_and_generate(
@@ -371,6 +377,7 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
         '--min-time=20',
         '--dummy-scans=1',
         '--abcc-qc',
+        '--report-output-level=subject',
     ]
 
     _run_and_generate(
@@ -412,6 +419,7 @@ def test_nibabies(data_dir, output_dir, working_dir):
         '--create-matrices=all',
         '--motion-filter-type=none',
         '--linc-qc=n',
+        '--report-output-level=subject',
     ]
     _run_and_generate(
         test_name=test_name,
