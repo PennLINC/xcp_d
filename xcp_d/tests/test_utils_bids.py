@@ -123,7 +123,7 @@ def test_collect_data_nibabies(datasets):
         )
 
 
-def test_collect_data_nibabies_ignore_t2w(tmp_path_factory):
+def test_collect_data_nibabies_ignore_t2w(tmp_path_factory, caplog):
     """Test that nibabies does not collect T2w when T1w is present and no T1w-space T2w."""
     skeleton = load_data('tests/skeletons/nibabies_t1w_t2w.yml')
     bids_dir = tmp_path_factory.mktemp('test_collect_data_nibabies_ignore_t2w') / 'bids'
@@ -143,6 +143,10 @@ def test_collect_data_nibabies_ignore_t2w(tmp_path_factory):
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is None
+    assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
+    assert 'No T1w-space T2w found. Checking for T2w-space T1w.' in caplog.text
+    assert 'No T2w-space T1w found. Attempting T2w-only processing.' in caplog.text
+    assert 'T2w-to-template transform not found. Attempting T1w-only processing.' in caplog.text
 
 
 def test_collect_data_nibabies_t1w_only(tmp_path_factory):
@@ -167,7 +171,7 @@ def test_collect_data_nibabies_t1w_only(tmp_path_factory):
     assert subj_data['t2w'] is None
 
 
-def test_collect_data_nibabies_t2w_only(tmp_path_factory):
+def test_collect_data_nibabies_t2w_only(tmp_path_factory, caplog):
     """Test that nibabies collects T2w when T1w is absent and T2w is present."""
     skeleton = load_data('tests/skeletons/nibabies_t2w_only.yml')
     bids_dir = tmp_path_factory.mktemp('test_collect_data_nibabies_t2w_only') / 'bids'
@@ -187,6 +191,28 @@ def test_collect_data_nibabies_t2w_only(tmp_path_factory):
     )
     assert subj_data['t1w'] is None
     assert subj_data['t2w'] is not None
+    assert 'T2w found, but no T1w. Enabling T2w-only processing.' in caplog.text
+
+
+def test_collect_data_nibabies_no_t1w_t2w(tmp_path_factory, caplog):
+    """Test that nibabies raises an error when T1w and T2w are absent."""
+    skeleton = load_data('tests/skeletons/nibabies_no_t1w_t2w.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_data_nibabies_no_t1w_t2w') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    with pytest.raises(FileNotFoundError, match='No T1w or T2w files found'):
+        xbids.collect_data(
+            layout=layout,
+            input_type='nibabies',
+            participant_label='01',
+            bids_filters=None,
+            file_format='cifti',
+        )
 
 
 def test_collect_mesh_data(datasets, tmp_path_factory):
