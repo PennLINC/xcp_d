@@ -117,15 +117,14 @@ def generate_reports(
                 errors.append(report_error)
 
             if abcc_qc:
-                for session in sessions:
-                    session_id = session
-                    if not session_id:
-                        session_id = None
+                for session_label in sessions:
+                    if session_label == Query.NONE:
+                        session_label = None
 
                     exsumm = ExecutiveSummary(
                         xcpd_path=output_dir,
                         subject_id=subject_label,
-                        session_id=session_id,
+                        session_id=session_label,
                     )
                     exsumm.collect_inputs()
                     exsumm.generate_report()
