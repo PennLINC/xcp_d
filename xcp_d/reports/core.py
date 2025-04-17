@@ -118,10 +118,14 @@ def generate_reports(
 
             if abcc_qc:
                 for session in sessions:
+                    session_id = session
+                    if not session_id:
+                        session_id = None
+
                     exsumm = ExecutiveSummary(
                         xcpd_path=output_dir,
                         subject_id=subject_label,
-                        session_id=session,
+                        session_id=session_id,
                     )
                     exsumm.collect_inputs()
                     exsumm.generate_report()
