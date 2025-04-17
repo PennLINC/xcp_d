@@ -133,7 +133,7 @@ def init_single_subject_wf(subject_id: str):
     )
     t1w_available = subj_data['t1w'] is not None
     t2w_available = subj_data['t2w'] is not None
-    anat_mod = get_entity(subj_data['anat_to_template_xfm'], 'from')
+    anat_mod = get_entity(subj_data['anat_to_template_xfm'], 'from').lower()
 
     mesh_available, standard_space_mesh, software, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
