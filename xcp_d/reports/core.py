@@ -110,7 +110,7 @@ def generate_reports(
                 run_uuid=run_uuid,
                 bootstrap_file=bootstrap_file,
                 out_filename=html_report,
-                reportlets_dir=dataset_dir,
+                dataset_dir=dataset_dir,
                 errorname=f'report-{run_uuid}-{subject_label}.err',
                 subject=subject_label,
                 session=None,
@@ -155,7 +155,7 @@ def generate_reports(
                     run_uuid=run_uuid,
                     bootstrap_file=bootstrap_file,
                     out_filename=html_report,
-                    reportlets_dir=dataset_dir,
+                    dataset_dir=dataset_dir,
                     errorname=f'report-{run_uuid}-{subject_label}.err',
                     metadata={
                         'session_str': f", session '{session_label}'" if session_label else '',
