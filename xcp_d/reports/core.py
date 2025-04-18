@@ -105,9 +105,9 @@ def generate_reports(
                 report_dir = Path(dataset_dir) / f'sub-{subject_label}'
 
             report_error = run_reports(
-                report_dir,
-                subject_label,
-                run_uuid,
+                out_dir=report_dir,
+                subject_label=subject_label,
+                run_uuid=run_uuid,
                 bootstrap_file=bootstrap_file,
                 out_filename=html_report,
                 reportlets_dir=dataset_dir,
@@ -150,9 +150,9 @@ def generate_reports(
                     )
 
                 report_error = run_reports(
-                    report_dir,
-                    subject_label,
-                    run_uuid,
+                    out_dir=report_dir,
+                    subject_label=subject_label,
+                    run_uuid=run_uuid,
                     bootstrap_file=bootstrap_file,
                     out_filename=html_report,
                     reportlets_dir=dataset_dir,
