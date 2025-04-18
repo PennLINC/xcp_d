@@ -35,7 +35,8 @@ class ExecutiveSummary:
     ----------
     xcpd_path : :obj:`str`
         Path to the XCP-D derivatives.
-    output_file : :obj:
+    output_dir : :obj:`str`
+        Folder where the executive summary will be written out.
     subject_id : :obj:`str`
         Subject ID.
     session_id : None or :obj:`str`, optional
