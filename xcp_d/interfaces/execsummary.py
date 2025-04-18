@@ -35,14 +35,17 @@ class ExecutiveSummary:
     ----------
     xcpd_path : :obj:`str`
         Path to the XCP-D derivatives.
+    output_dir : :obj:`str`
+        Folder where the executive summary will be written out.
     subject_id : :obj:`str`
         Subject ID.
     session_id : None or :obj:`str`, optional
         Session ID.
     """
 
-    def __init__(self, xcpd_path, subject_id, session_id=None):
+    def __init__(self, xcpd_path, output_dir, subject_id, session_id=None):
         self.xcpd_path = xcpd_path
+        self.output_dir = output_dir
         self.subject_id = subject_id
         if session_id:
             self.session_id = session_id
@@ -57,14 +60,14 @@ class ExecutiveSummary:
         Parameters
         ----------
         document : :obj:`str`
-            html document.
+            HTML contents to write to file.
         filename : :obj:`str`
-            name of html file.
+            Name of HTML file to write.
         """
         soup = BeautifulSoup(document, features='lxml')
         html = soup.prettify()  # prettify the html
 
-        filepath = os.path.join(self.xcpd_path, filename)
+        filepath = os.path.join(self.output_dir, filename)
         with open(filepath, 'w') as fo:
             fo.write(html)
 
@@ -72,7 +75,7 @@ class ExecutiveSummary:
         files = self.layout.get(**query)
         if len(files) == 1:
             found_file = files[0].path
-            found_file = os.path.relpath(found_file, self.xcpd_path)
+            found_file = os.path.relpath(found_file, self.output_dir)
         else:
             found_file = 'None'
 
@@ -302,7 +305,7 @@ class ExecutiveSummary:
             else:
                 out_file = f'sub-{self.subject_id}_executive_summary.html'
 
-            out_file = os.path.join(self.xcpd_path, out_file)
+            out_file = os.path.join(self.output_dir, out_file)
 
         boilerplate = []
         boiler_idx = 0
