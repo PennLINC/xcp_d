@@ -15,23 +15,23 @@ from xcp_d.interfaces.execsummary import ExecutiveSummary
 
 
 def run_reports(
-    dataset_dir,
+    out_dir,
     subject_label,
     run_uuid,
     bootstrap_file=None,
     out_filename='report.html',
-    reportlets_dir=None,
+    dataset_dir=None,
     errorname='report.err',
     metadata=None,
     **entities,
 ):
     """Run the reports."""
     robj = Report(
-        dataset_dir,
+        out_dir,
         run_uuid,
         bootstrap_file=bootstrap_file,
         out_filename=out_filename,
-        reportlets_dir=reportlets_dir,
+        reportlets_dir=dataset_dir,
         plugins=None,
         plugin_meta=None,
         metadata=metadata,
@@ -48,7 +48,7 @@ def run_reports(
         # Store the list of subjects for which report generation failed
         traceback.print_exception(
             *sys.exc_info(),
-            file=str(Path(dataset_dir) / 'logs' / errorname),
+            file=str(Path(out_dir) / 'logs' / errorname),
         )
         return subject_label
 
