@@ -145,7 +145,9 @@ def generate_reports(
                 elif output_level == 'subject':
                     report_dir = Path(dataset_dir) / f'sub-{subject_label}'
                 elif output_level == 'session':
-                    report_dir = Path(dataset_dir) / f'sub-{subject_label}' / f'ses-{session_label}'
+                    report_dir = (
+                        Path(dataset_dir) / f'sub-{subject_label}' / f'ses-{session_label}'
+                    )
 
                 report_error = run_reports(
                     report_dir,
