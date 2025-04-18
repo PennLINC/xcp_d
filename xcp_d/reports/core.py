@@ -15,7 +15,7 @@ from xcp_d.interfaces.execsummary import ExecutiveSummary
 
 
 def run_reports(
-    output_dir,
+    dataset_dir,
     subject_label,
     run_uuid,
     bootstrap_file=None,
@@ -27,7 +27,7 @@ def run_reports(
 ):
     """Run the reports."""
     robj = Report(
-        output_dir,
+        dataset_dir,
         run_uuid,
         bootstrap_file=bootstrap_file,
         out_filename=out_filename,
@@ -46,7 +46,10 @@ def run_reports(
         import traceback
 
         # Store the list of subjects for which report generation failed
-        traceback.print_exception(*sys.exc_info(), file=str(Path(output_dir) / 'logs' / errorname))
+        traceback.print_exception(
+            *sys.exc_info(),
+            file=str(Path(dataset_dir) / 'logs' / errorname),
+        )
         return subject_label
 
     return None
@@ -54,7 +57,7 @@ def run_reports(
 
 def generate_reports(
     output_level,
-    output_dir,
+    dataset_dir,
     abcc_qc,
     run_uuid,
     bootstrap_file=None,
@@ -82,7 +85,7 @@ def generate_reports(
             **filters,
         )
         if output_level == 'session' and not sessions:
-            report_dir = output_dir
+            report_dir = dataset_dir
             output_level = 'subject'
             config.loggers.workflow.warning(
                 'Session-level reports were requested, '
@@ -97,9 +100,9 @@ def generate_reports(
             html_report = f'sub-{subject_label}.html'
 
             if output_level == 'root':
-                report_dir = output_dir
+                report_dir = dataset_dir
             elif output_level == 'subject':
-                report_dir = Path(output_dir) / f'sub-{subject_label}'
+                report_dir = Path(dataset_dir) / f'sub-{subject_label}'
 
             report_error = run_reports(
                 report_dir,
@@ -107,7 +110,7 @@ def generate_reports(
                 run_uuid,
                 bootstrap_file=bootstrap_file,
                 out_filename=html_report,
-                reportlets_dir=output_dir,
+                reportlets_dir=dataset_dir,
                 errorname=f'report-{run_uuid}-{subject_label}.err',
                 subject=subject_label,
                 session=None,
@@ -122,7 +125,8 @@ def generate_reports(
                         session_label = None
 
                     exsumm = ExecutiveSummary(
-                        xcpd_path=output_dir,
+                        xcpd_path=dataset_dir,
+                        output_dir=report_dir,
                         subject_id=subject_label,
                         session_id=session_label,
                     )
@@ -137,11 +141,11 @@ def generate_reports(
                     html_report = f'sub-{subject_label}_ses-{session_label}.html'
 
                 if output_level == 'root':
-                    report_dir = output_dir
+                    report_dir = dataset_dir
                 elif output_level == 'subject':
-                    report_dir = Path(output_dir) / f'sub-{subject_label}'
+                    report_dir = Path(dataset_dir) / f'sub-{subject_label}'
                 elif output_level == 'session':
-                    report_dir = Path(output_dir) / f'sub-{subject_label}' / f'ses-{session_label}'
+                    report_dir = Path(dataset_dir) / f'sub-{subject_label}' / f'ses-{session_label}'
 
                 report_error = run_reports(
                     report_dir,
@@ -149,7 +153,7 @@ def generate_reports(
                     run_uuid,
                     bootstrap_file=bootstrap_file,
                     out_filename=html_report,
-                    reportlets_dir=output_dir,
+                    reportlets_dir=dataset_dir,
                     errorname=f'report-{run_uuid}-{subject_label}.err',
                     metadata={
                         'session_str': f", session '{session_label}'" if session_label else '',
@@ -163,7 +167,8 @@ def generate_reports(
 
                 if abcc_qc:
                     exsumm = ExecutiveSummary(
-                        xcpd_path=output_dir,
+                        xcpd_path=dataset_dir,
+                        output_dir=report_dir,
                         subject_id=subject_label,
                         session_id=session_label,
                     )
