@@ -124,6 +124,10 @@ def init_single_subject_wf(subject_id: str):
     """
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+    # Collect anatomical data
+    # If session is in the anatomical files, loop over sessions and collect functional data
+    # separately for each session.
+    # Otherwise, collect functional data for all sessions at once.
     subj_data = collect_data(
         layout=config.execution.layout,
         participant_label=subject_id,
