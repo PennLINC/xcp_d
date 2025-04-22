@@ -7,6 +7,7 @@ This is adapted from fMRIPost-AROMA.
 
 from pathlib import Path
 
+from bids.layout import Query
 from nireports.assembler.report import Report
 
 from xcp_d import config, data
@@ -66,6 +67,7 @@ def generate_reports(
     errors = []
     for subject_label, _, func_sessions in processing_list:
         subject_id = subject_label[4:] if subject_label.startswith('sub-') else subject_label
+        func_sessions = [ses or Query.NONE for ses in func_sessions]
 
         # The number of sessions is intentionally not based on session_list but
         # on the total number of sessions, because I want the final derivatives

@@ -459,17 +459,11 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
             write_atlas_dataset_description(config.execution.output_dir / 'atlases')
 
         build_boilerplate(str(config_file), xcpd_wf)
-        session_list = (
-            config.execution.bids_filters.get('bold', {}).get('session')
-            if config.execution.bids_filters
-            else None
-        )
         generate_reports(
             processing_list=config.execution.processing_list,
             output_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
-            session_list=session_list,
         )
 
     output_list_file = os.path.join(get_test_data_path(), f'{test_name}_outputs.txt')
