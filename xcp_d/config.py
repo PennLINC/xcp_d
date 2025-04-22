@@ -241,7 +241,13 @@ class _Config:
                 if k == 'processing_list':
                     new_v = []
                     for el in v:
-                        sub, anat_ses, func_ses = el.split(':')
+                        parts = el.split(':')
+                        if len(parts) != 3:
+                            raise ValueError(
+                                f"Malformed element in processing_list: '{el}'. "
+                                "Each element must contain exactly two colons."
+                            )
+                        sub, anat_ses, func_ses = parts
                         new_v.append((sub, anat_ses, list(func_ses.split(','))))
                     setattr(cls, k, new_v)
                 else:
