@@ -51,11 +51,10 @@ def run_reports(
 
 
 def generate_reports(
-    subject_list,
+    processing_list,
     output_dir,
     abcc_qc,
     run_uuid,
-    session_list=None,
     bootstrap_file=None,
     work_dir=None,
 ):
@@ -64,15 +63,14 @@ def generate_reports(
     if work_dir is not None:
         reportlets_dir = Path(work_dir) / 'reportlets'
 
-    if isinstance(subject_list, str):
-        subject_list = [subject_list]
-
     errors = []
-    for subject_label in subject_list:
+    for subject_label, _, func_sessions in processing_list:
+        subject_id = subject_label[4:] if subject_label.startswith('sub-') else subject_label
+
         # The number of sessions is intentionally not based on session_list but
         # on the total number of sessions, because I want the final derivatives
         # folder to be the same whether sessions were run one at a time or all-together.
-        n_ses = len(config.execution.layout.get_sessions(subject=subject_label))
+        n_ses = len(func_sessions)
 
         if bootstrap_file is not None:
             # If a config file is precised, we do not override it
@@ -85,7 +83,7 @@ def generate_reports(
         else:
             # Beyond a threshold, we separate the anatomical report from the functional.
             bootstrap_file = data.load('reports-spec-anat.yml')
-            html_report = f'sub-{subject_label.lstrip("sub-")}_anat.html'
+            html_report = f'sub-{subject_id}_anat.html'
 
         report_error = run_reports(
             output_dir,
@@ -101,23 +99,15 @@ def generate_reports(
         if report_error is not None:
             errors.append(report_error)
 
+        session_list = func_sessions[:]
         if n_ses > config.execution.aggr_ses_reports:
-            # Beyond a certain number of sessions per subject,
-            # we separate the functional reports per session
-            if session_list is None:
-                all_filters = config.execution.bids_filters or {}
-                filters = all_filters.get('bold', {})
-                session_list = config.execution.layout.get_sessions(
-                    subject=subject_label, **filters
-                )
-
             # Drop ses- prefixes
             session_list = [ses for ses in session_list if isinstance(ses, str)]  # drop Queries
             session_list = [ses[4:] if ses.startswith('ses-') else ses for ses in session_list]
 
             for session_label in session_list:
                 bootstrap_file = data.load('reports-spec-func.yml')
-                html_report = f'sub-{subject_label.lstrip("sub-")}_ses-{session_label}_func.html'
+                html_report = f'sub-{subject_id}_ses-{session_label}_func.html'
 
                 report_error = run_reports(
                     output_dir,
@@ -126,8 +116,8 @@ def generate_reports(
                     bootstrap_file=bootstrap_file,
                     out_filename=html_report,
                     reportlets_dir=reportlets_dir,
-                    errorname=f'report-{run_uuid}-{subject_label}-func.err',
-                    subject=subject_label,
+                    errorname=f'report-{run_uuid}-{subject_id}-func.err',
+                    subject=subject_id,
                     session=session_label,
                 )
                 # If the report generation failed, append the subject label for which it failed
@@ -136,7 +126,7 @@ def generate_reports(
 
     if errors:
         error_list = ', '.join(
-            f'{subid} ({err})' for subid, err in zip(subject_list, errors, strict=False) if err
+            f'{subid} ({err})' for subid, err in zip(processing_list, errors, strict=False) if err
         )
         config.loggers.cli.error(
             'Processing did not finish successfully. Errors occurred while processing '
@@ -145,11 +135,6 @@ def generate_reports(
         )
     elif abcc_qc:
         config.loggers.cli.info('Generating executive summary.')
-
-        if session_list is None:
-            all_filters = config.execution.bids_filters or {}
-            filters = all_filters.get('bold', {})
-            session_list = config.execution.layout.get_sessions(subject=subject_label, **filters)
 
         # Drop ses- prefixes
         session_list = [ses for ses in session_list if isinstance(ses, str)]  # drop Queries
@@ -160,7 +145,7 @@ def generate_reports(
         for session_label in session_list:
             exsumm = ExecutiveSummary(
                 xcpd_path=output_dir,
-                subject_id=subject_label,
+                subject_id=subject_id,
                 session_id=session_label,
             )
             exsumm.collect_inputs()

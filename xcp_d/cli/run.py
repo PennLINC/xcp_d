@@ -175,7 +175,7 @@ def main():
 
         # Generate reports phase
         failed_reports = generate_reports(
-            subject_list=config.execution.participant_label,
+            processing_list=config.execution.processing_list,
             output_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
