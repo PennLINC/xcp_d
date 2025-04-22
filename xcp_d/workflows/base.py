@@ -136,7 +136,7 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
     # Otherwise, collect functional data for all sessions at once.
     # Patch the sessions into the bids_filters
     anat_session = anat_session or Query.NONE
-    func_sessions = func_sessions or [Query.NONE]
+    func_sessions = [ses or Query.NONE for ses in func_sessions]
     bids_filters = config.execution.bids_filters or {}
     bids_filters['bold'] = bids_filters.get('bold', {})
     bids_filters['bold']['session'] = func_sessions
