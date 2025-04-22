@@ -99,7 +99,7 @@ def init_xcpd_wf():
 
 
 @fill_doc
-def init_single_subject_wf(subject_id: str):
+def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: list[str]):
     """Organize the postprocessing pipeline for a single subject.
 
     It collects and reports information about the subject, and prepares
@@ -115,31 +115,39 @@ def init_single_subject_wf(subject_id: str):
             from xcp_d.workflows.base import init_single_subject_wf
 
             with mock_config():
-                wf = init_single_subject_wf("01")
+                wf = init_single_subject_wf("01", "01", ["01"])
 
     Parameters
     ----------
     subject_id : :obj:`str`
         Subject label for this single-subject workflow.
+    anat_session : :obj:`str`
+        Anatomical session label for this single-subject workflow.
+        If "", then the anatomical data is at the subject level (e.g., fMRIPrep's default).
+    func_sessions : :obj:`list` of :obj:`str`
+        Functional session labels for this single-subject workflow.
     """
+    from bids.layout import Query
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     # Collect anatomical data
-    # XCP-D expects either a one-to-one mapping between anatomical sessions
-    # and functional sessions, or a one-to-all mapping.
-    anat_sessions = config.execution.layout.get_sessions(
-        suffix=['T1w', 'T2w'],
-        extension='.nii.gz',
-    )
-    func_sessions = config.execution.layout.get_sessions(suffix=['bold'], extension='.nii.gz')
-    raise Exception(f'{anat_sessions}\n\n{func_sessions}')
     # If session is in the anatomical files, loop over sessions and collect functional data
     # separately for each session.
     # Otherwise, collect functional data for all sessions at once.
+    # Patch the sessions into the bids_filters
+    anat_session = anat_session or Query.NONE
+    func_sessions = func_sessions or [Query.NONE]
+    bids_filters = config.execution.bids_filters or {}
+    bids_filters['bold'] = bids_filters.get('bold', {})
+    bids_filters['bold']['session'] = func_sessions
+    bids_filters['T1w'] = bids_filters.get('T1w', {})
+    bids_filters['T1w']['session'] = anat_session
+    bids_filters['T2w'] = bids_filters.get('T2w', {})
+    bids_filters['T2w']['session'] = anat_session
     subj_data = collect_data(
         layout=config.execution.layout,
         participant_label=subject_id,
-        bids_filters=config.execution.bids_filters,
+        bids_filters=bids_filters,
         input_type=config.workflow.input_type,
         file_format=config.workflow.file_format,
     )
