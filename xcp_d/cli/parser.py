@@ -941,7 +941,7 @@ def parse_args(args=None, namespace=None):
 
         # If there are no sessions, there is only one option:
         if not func_sessions:
-            processing_groups.append([subject_id, Query.NONE, [Query.NONE]])
+            processing_groups.append([subject_id, '', []])
         else:
             anat_sessions = config.execution.layout.get_sessions(
                 subject=subject_id,
@@ -950,7 +950,7 @@ def parse_args(args=None, namespace=None):
                 extension=['.nii.gz', '.nii'],
             )
             if not anat_sessions:
-                processing_groups.append([subject_id, Query.NONE, func_sessions])
+                processing_groups.append([subject_id, '', func_sessions])
             else:
                 func_only = sorted(set(func_sessions) - set(anat_sessions))
                 if len(func_only) > 0:
