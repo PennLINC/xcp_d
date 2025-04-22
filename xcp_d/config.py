@@ -244,8 +244,8 @@ class _Config:
                         parts = el.split(':')
                         if len(parts) != 3:
                             raise ValueError(
-                                f"Malformed element in processing_list: '{el}'. "
-                                "Each element must contain exactly two colons."
+                                f'Malformed element in processing_list: "{el}". '
+                                'Each element must contain exactly two colons.'
                             )
                         sub, anat_ses, func_ses = parts
                         new_v.append((sub, anat_ses, list(func_ses.split(','))))
