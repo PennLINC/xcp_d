@@ -238,7 +238,14 @@ class _Config:
                 else:
                     setattr(cls, k, Path(v).absolute())
             elif hasattr(cls, k):
-                setattr(cls, k, v)
+                if k == 'processing_list':
+                    new_v = []
+                    for el in v:
+                        sub, anat_ses, func_ses = el.split(':')
+                        new_v.append((sub, list(anat_ses.split(',')), list(func_ses.split(','))))
+                    setattr(cls, k, new_v)
+                else:
+                    setattr(cls, k, v)
 
         if init:
             try:
@@ -427,6 +434,8 @@ class execution(_Config):
     """Select a particular session from all available in the dataset."""
     task_id = None
     """Select a particular task from all available in the dataset."""
+    processing_list = []
+    """List of (subject_id, [anat_session_id, ...], [func_session_id, ...]) to be postprocessed."""
     templateflow_home = _templateflow_home
     """The root folder of the TemplateFlow client."""
     work_dir = Path('work').absolute()
@@ -750,6 +759,12 @@ def get(flat=False):
         'nipype': nipype.get(),
         'seeds': seeds.get(),
     }
+    if 'processing_list' in settings['execution']:
+        settings['execution']['processing_list'] = [
+            f'{el[0]}:{",".join(el[1])}:{",".join(el[2])}'
+            for el in settings['execution']['processing_list']
+        ]
+
     if not flat:
         return settings
 
