@@ -789,6 +789,8 @@ def parse_args(args=None, namespace=None):
     """Parse args and run further checks on the command line."""
     import logging
 
+    from bids.layout import Query
+
     parser = _build_parser()
     opts = parser.parse_args(args, namespace)
     if opts.config_file:
@@ -915,7 +917,75 @@ def parse_args(args=None, namespace=None):
             f'{", ".join(missing_subjects)}.'
         )
 
+    # Determine which sessions to process and group them
+    processing_groups = []
+
+    # Determine any session filters
+    session_filters = config.execution.session_id or []
+    # if config.execution.bids_filters is not None:
+    #     for _, filters in config.execution.bids_filters:
+    #         ses_filter = filters.get("session")
+    #         if isinstance(ses_filter, str):
+    #             session_filters.append(ses_filter)
+    #         elif isinstance(ses_filter, list):
+    #             session_filters.extend(ses_filter)
+
+    # Examine the available sessions for each participant
+    for subject_id in participant_label:
+        # Find sessions with fMRI data
+        func_sessions = config.execution.layout.get_sessions(
+            subject=subject_id,
+            session=session_filters or Query.OPTIONAL,
+            suffix=['bold'],
+        )
+
+        # If there are no sessions, there is only one option:
+        if not func_sessions:
+            processing_groups.append([subject_id, [Query.NONE], [Query.NONE]])
+        else:
+            anat_sessions = config.execution.layout.get_sessions(
+                subject=subject_id,
+                session=session_filters or Query.OPTIONAL,
+                suffix=['T1w', 'T2w'],
+                extension=['.nii.gz', '.nii'],
+            )
+            if not anat_sessions:
+                processing_groups.append([subject_id, [Query.NONE], func_sessions])
+            else:
+                func_only = sorted(set(func_sessions) - set(anat_sessions))
+                if len(func_only) > 0:
+                    raise ValueError(
+                        'XCP-D expects a one-to-one mapping between anatomical sessions '
+                        'and functional sessions, or a one-to-all mapping. '
+                        f'Found {len(func_only)} functional sessions that do not have '
+                        f'anatomical data: {", ".join(func_only)}'
+                    )
+                else:
+                    for func_session in func_sessions:
+                        processing_groups.append([subject_id, [func_session], [func_session]])
+
+    # Make a nicely formatted message showing what we will process
+    def pretty_group(group_num, processing_group):
+        participant_label, anat_labels, func_labels = processing_group
+        if anat_labels:
+            anat_txt = ', '.join(map(str, anat_labels))
+        else:
+            anat_txt = 'No anatomical session'
+
+        if func_labels:
+            func_txt = ', '.join(map(str, func_labels))
+        else:
+            func_txt = 'No functional session'
+
+        return f'{group_num}\t{participant_label}\t{anat_txt}\t{func_txt}'
+
+    processing_msg = '\nGroup\tSubject\tAnatomical Sessions\tFunctional Sessions\n' + '\n'.join(
+        [pretty_group(gnum, group) for gnum, group in enumerate(processing_groups)]
+    )
+    config.loggers.workflow.info(processing_msg)
+
     config.execution.participant_label = sorted(participant_label)
+    config.execution.processing_list = processing_groups
 
 
 def _validate_parameters(opts, build_log, parser):
