@@ -761,8 +761,7 @@ def get(flat=False):
     }
     if 'processing_list' in settings['execution']:
         settings['execution']['processing_list'] = [
-            f'{el[0]}:{el[1]}:{",".join(el[2])}'
-            for el in settings['execution']['processing_list']
+            f'{el[0]}:{el[1]}:{",".join(el[2])}' for el in settings['execution']['processing_list']
         ]
 
     if not flat:
