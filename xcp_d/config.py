@@ -242,7 +242,7 @@ class _Config:
                     new_v = []
                     for el in v:
                         sub, anat_ses, func_ses = el.split(':')
-                        new_v.append((sub, list(anat_ses.split(',')), list(func_ses.split(','))))
+                        new_v.append((sub, anat_ses, list(func_ses.split(','))))
                     setattr(cls, k, new_v)
                 else:
                     setattr(cls, k, v)
@@ -435,7 +435,7 @@ class execution(_Config):
     task_id = None
     """Select a particular task from all available in the dataset."""
     processing_list = []
-    """List of (subject_id, [anat_session_id, ...], [func_session_id, ...]) to be postprocessed."""
+    """List of (subject_id, anat_session_id, [func_session_id, ...]) to be postprocessed."""
     templateflow_home = _templateflow_home
     """The root folder of the TemplateFlow client."""
     work_dir = Path('work').absolute()
@@ -761,7 +761,7 @@ def get(flat=False):
     }
     if 'processing_list' in settings['execution']:
         settings['execution']['processing_list'] = [
-            f'{el[0]}:{",".join(el[1])}:{",".join(el[2])}'
+            f'{el[0]}:{el[1]}:{",".join(el[2])}'
             for el in settings['execution']['processing_list']
         ]
 

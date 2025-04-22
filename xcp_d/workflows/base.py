@@ -77,8 +77,8 @@ def init_xcpd_wf():
     xcpd_wf = Workflow(name=f'xcp_d_{ver.major}_{ver.minor}_wf')
     xcpd_wf.base_dir = config.execution.work_dir
 
-    for subject_id in config.execution.participant_label:
-        single_subject_wf = init_single_subject_wf(subject_id)
+    for subject_id, anat_session, func_sessions in config.execution.processing_list:
+        single_subject_wf = init_single_subject_wf(subject_id, anat_session, func_sessions)
 
         single_subject_wf.config['execution']['crashdump_dir'] = str(
             config.execution.output_dir / f'sub-{subject_id}' / 'log' / config.execution.run_uuid

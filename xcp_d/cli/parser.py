@@ -941,7 +941,7 @@ def parse_args(args=None, namespace=None):
 
         # If there are no sessions, there is only one option:
         if not func_sessions:
-            processing_groups.append([subject_id, [Query.NONE], [Query.NONE]])
+            processing_groups.append([subject_id, Query.NONE, [Query.NONE]])
         else:
             anat_sessions = config.execution.layout.get_sessions(
                 subject=subject_id,
@@ -950,7 +950,7 @@ def parse_args(args=None, namespace=None):
                 extension=['.nii.gz', '.nii'],
             )
             if not anat_sessions:
-                processing_groups.append([subject_id, [Query.NONE], func_sessions])
+                processing_groups.append([subject_id, Query.NONE, func_sessions])
             else:
                 func_only = sorted(set(func_sessions) - set(anat_sessions))
                 if len(func_only) > 0:
@@ -962,13 +962,13 @@ def parse_args(args=None, namespace=None):
                     )
                 else:
                     for func_session in func_sessions:
-                        processing_groups.append([subject_id, [func_session], [func_session]])
+                        processing_groups.append([subject_id, func_session, [func_session]])
 
     # Make a nicely formatted message showing what we will process
     def pretty_group(group_num, processing_group):
-        participant_label, anat_labels, func_labels = processing_group
-        if anat_labels:
-            anat_txt = ', '.join(map(str, anat_labels))
+        participant_label, anat_label, func_labels = processing_group
+        if anat_label:
+            anat_txt = anat_label
         else:
             anat_txt = 'No anatomical session'
 
@@ -979,7 +979,7 @@ def parse_args(args=None, namespace=None):
 
         return f'{group_num}\t{participant_label}\t{anat_txt}\t{func_txt}'
 
-    processing_msg = '\nGroup\tSubject\tAnatomical Sessions\tFunctional Sessions\n' + '\n'.join(
+    processing_msg = '\nGroup\tSubject\tAnatomical Session\tFunctional Sessions\n' + '\n'.join(
         [pretty_group(gnum, group) for gnum, group in enumerate(processing_groups)]
     )
     config.loggers.workflow.info(processing_msg)
