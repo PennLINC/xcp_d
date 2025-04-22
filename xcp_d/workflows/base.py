@@ -125,6 +125,14 @@ def init_single_subject_wf(subject_id: str):
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
     # Collect anatomical data
+    # XCP-D expects either a one-to-one mapping between anatomical sessions
+    # and functional sessions, or a one-to-all mapping.
+    anat_sessions = config.execution.layout.get_sessions(
+        suffix=['T1w', 'T2w'],
+        extension='.nii.gz',
+    )
+    func_sessions = config.execution.layout.get_sessions(suffix=['bold'], extension='.nii.gz')
+    raise Exception(f'{anat_sessions}\n\n{func_sessions}')
     # If session is in the anatomical files, loop over sessions and collect functional data
     # separately for each session.
     # Otherwise, collect functional data for all sessions at once.
