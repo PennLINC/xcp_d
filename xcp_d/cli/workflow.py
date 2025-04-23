@@ -62,18 +62,11 @@ def build_workflow(config_file, retval):
     # Called with reports only
     if config.execution.reports_only:
         build_log.log(25, 'Running --reports-only on participants %s', ', '.join(subject_list))
-        session_list = (
-            config.execution.bids_filters.get('bold', {}).get('session')
-            if config.execution.bids_filters
-            else None
-        )
-
         failed_reports = generate_reports(
-            subject_list=config.execution.participant_label,
-            output_dir=config.execution.output_dir,
+            output_level=config.execution.report_output_level,
+            dataset_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
-            session_list=session_list,
         )
         if failed_reports:
             config.loggers.cli.error(
