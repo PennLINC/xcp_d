@@ -15,25 +15,26 @@ from xcp_d.interfaces.execsummary import ExecutiveSummary
 
 
 def run_reports(
-    output_dir,
+    out_dir,
     subject_label,
     run_uuid,
     bootstrap_file=None,
     out_filename='report.html',
-    reportlets_dir=None,
+    dataset_dir=None,
     errorname='report.err',
+    metadata=None,
     **entities,
 ):
     """Run the reports."""
     robj = Report(
-        output_dir,
+        out_dir,
         run_uuid,
         bootstrap_file=bootstrap_file,
         out_filename=out_filename,
-        reportlets_dir=reportlets_dir,
+        reportlets_dir=dataset_dir,
         plugins=None,
         plugin_meta=None,
-        metadata=None,
+        metadata=metadata,
         **entities,
     )
 
@@ -45,7 +46,10 @@ def run_reports(
         import traceback
 
         # Store the list of subjects for which report generation failed
-        traceback.print_exception(*sys.exc_info(), file=str(Path(output_dir) / 'logs' / errorname))
+        traceback.print_exception(
+            *sys.exc_info(),
+            file=str(Path(out_dir) / 'logs' / errorname),
+        )
         return subject_label
 
     return None
@@ -53,17 +57,19 @@ def run_reports(
 
 def generate_reports(
     processing_list,
-    output_dir,
+    output_level,
+    dataset_dir,
     abcc_qc,
     run_uuid,
     bootstrap_file=None,
     work_dir=None,
 ):
-    """Generate reports for a list of subjects."""
-    reportlets_dir = None
-    if work_dir is not None:
-        reportlets_dir = Path(work_dir) / 'reportlets'
+    """Generate reports for a list of subjects.
 
+    Parameters
+    ----------
+    output_level : {'root', 'subject', 'session'}
+    """
     errors = []
     for subject_label, _, func_sessions in processing_list:
         subject_id = subject_label[4:] if subject_label.startswith('sub-') else subject_label
@@ -96,35 +102,104 @@ def generate_reports(
             reportlets_dir=reportlets_dir,
             errorname=f'report-{run_uuid}-{subject_label}.err',
             subject=subject_label,
+            suffix='bold',
+            **filters,
         )
-        # If the report generation failed, append the subject label for which it failed
-        if report_error is not None:
-            errors.append(report_error)
+        if output_level == 'session' and not sessions:
+            report_dir = dataset_dir
+            output_level = 'subject'
+            config.loggers.workflow.warning(
+                'Session-level reports were requested, '
+                'but data was found without a session level. '
+                'Writing out reports to subject level.'
+            )
 
-        session_list = func_sessions[:]
-        if n_ses > config.execution.aggr_ses_reports:
-            # Drop ses- prefixes
-            session_list = [ses for ses in session_list if isinstance(ses, str)]  # drop Queries
-            session_list = [ses[4:] if ses.startswith('ses-') else ses for ses in session_list]
+        if not sessions:
+            sessions = [Query.NONE]
 
-            for session_label in session_list:
-                bootstrap_file = data.load('reports-spec-func.yml')
-                html_report = f'sub-{subject_id}_ses-{session_label}_func.html'
+        if output_level != 'session' and len(sessions) <= config.execution.aggr_ses_reports:
+            html_report = f'sub-{subject_label}.html'
+
+            if output_level == 'root':
+                report_dir = dataset_dir
+            elif output_level == 'subject':
+                report_dir = Path(dataset_dir) / f'sub-{subject_label}'
+
+            report_error = run_reports(
+                out_dir=report_dir,
+                subject_label=subject_label,
+                run_uuid=run_uuid,
+                bootstrap_file=bootstrap_file,
+                out_filename=html_report,
+                dataset_dir=dataset_dir,
+                errorname=f'report-{run_uuid}-{subject_label}.err',
+                subject=subject_label,
+                session=None,
+            )
+            # If the report generation failed, append the subject label for which it failed
+            if report_error is not None:
+                errors.append(report_error)
+
+            if abcc_qc:
+                for session_label in sessions:
+                    if session_label == Query.NONE:
+                        session_label = None
+
+                    exsumm = ExecutiveSummary(
+                        xcpd_path=dataset_dir,
+                        output_dir=report_dir,
+                        subject_id=subject_label,
+                        session_id=session_label,
+                    )
+                    exsumm.collect_inputs()
+                    exsumm.generate_report()
+        else:
+            for session_label in sessions:
+                if session_label == Query.NONE:
+                    html_report = f'sub-{subject_label}.html'
+                    session_label = None
+                else:
+                    html_report = f'sub-{subject_label}_ses-{session_label}.html'
+
+                if output_level == 'root':
+                    report_dir = dataset_dir
+                elif output_level == 'subject':
+                    report_dir = Path(dataset_dir) / f'sub-{subject_label}'
+                elif output_level == 'session':
+                    report_dir = (
+                        Path(dataset_dir) / f'sub-{subject_label}' / f'ses-{session_label}'
+                    )
 
                 report_error = run_reports(
-                    output_dir,
-                    subject_label,
-                    run_uuid,
+                    out_dir=report_dir,
+                    subject_label=subject_label,
+                    run_uuid=run_uuid,
                     bootstrap_file=bootstrap_file,
                     out_filename=html_report,
-                    reportlets_dir=reportlets_dir,
-                    errorname=f'report-{run_uuid}-{subject_id}-func.err',
+                    dataset_dir=dataset_dir,
+                    errorname=f'report-{run_uuid}-{subject_id}.err',
+                    metadata={
+                        'session_str': f", session '{session_label}'" if session_label else '',
+                    },
                     subject=subject_id,
                     session=session_label,
                 )
                 # If the report generation failed, append the subject label for which it failed
                 if report_error is not None:
                     errors.append(report_error)
+
+                if abcc_qc:
+                    exsumm = ExecutiveSummary(
+                        xcpd_path=dataset_dir,
+                        output_dir=report_dir,
+                        subject_id=subject_label,
+                        session_id=session_label,
+                    )
+                    exsumm.collect_inputs()
+                    exsumm.generate_report()
+
+            # Someday, when we have anatomical reports, add a section here that
+            # finds sessions and makes the reports.
 
     if errors:
         error_list = ', '.join(
@@ -135,24 +210,7 @@ def generate_reports(
             'data from participants: %s. Check the HTML reports for details.',
             error_list,
         )
-    elif abcc_qc:
-        config.loggers.cli.info('Generating executive summary.')
 
-        # Drop ses- prefixes
-        session_list = [ses for ses in session_list if isinstance(ses, str)]  # drop Queries
-        session_list = [ses[4:] if ses.startswith('ses-') else ses for ses in session_list]
-        if not session_list:
-            session_list = [None]
-
-        for session_label in session_list:
-            exsumm = ExecutiveSummary(
-                xcpd_path=output_dir,
-                subject_id=subject_id,
-                session_id=session_label,
-            )
-            exsumm.collect_inputs()
-            exsumm.generate_report()
-
-        config.loggers.cli.info('Reports generated successfully')
+    config.loggers.cli.info('Reports generated successfully')
 
     return errors

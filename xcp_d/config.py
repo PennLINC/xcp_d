@@ -426,6 +426,8 @@ class execution(_Config):
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
     notrack = None
     """Do not collect telemetry information for *XCP-D*."""
+    report_output_level = None
+    """Directory level at which the html reports should be written."""
     reports_only = None
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None

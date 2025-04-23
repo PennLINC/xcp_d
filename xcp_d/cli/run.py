@@ -171,7 +171,8 @@ def main():
         # Generate reports phase
         failed_reports = generate_reports(
             processing_list=config.execution.processing_list,
-            output_dir=config.execution.output_dir,
+            output_level=config.execution.report_output_level,
+            dataset_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
         )
