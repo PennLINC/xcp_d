@@ -70,7 +70,7 @@ def generate_reports(
     output_level : {'root', 'subject', 'session'}
     """
     errors = []
-    bootstrap_file = data.load('reports-spec.yml') if bootstrap_file is None else bootstrap_file
+    bootstrap_file = bootstrap_file or data.load('reports-spec.yml')
 
     bids_filters = config.execution.bids_filters or {}
     subject_list = config.execution.participant_label
