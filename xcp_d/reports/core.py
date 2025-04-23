@@ -76,8 +76,9 @@ def generate_reports(
     all_func_sessions = config.execution.layout.get_sessions(suffix='bold')
     n_ses = len(all_func_sessions)
 
+    bootstrap_file = bootstrap_file or data.load('reports-spec.yml')
+
     errors = []
-    bids_filters = config.execution.bids_filters or {}
     for subject_label, _, sessions in processing_list:
         subject_label = subject_label[4:] if subject_label.startswith('sub-') else subject_label
         # Drop ses- prefixes
