@@ -379,6 +379,7 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
     assert opts.smoothing == 0
     assert opts.report_output_level == 'root'
 
+
 def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     """Test parser._validate_parameters with none mode."""
     opts = deepcopy(base_opts)
