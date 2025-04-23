@@ -625,11 +625,14 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         '--report-output-level',
         action='store',
         choices=['root', 'subject', 'session'],
-        default='root',
+        default='auto',
         help=(
             'Where should the html reports be written? '
-            'By default root will write them to the --output-dir. '
-            'Other options will write them into their subject or session directory.'
+            '"root" will write them to the --output-dir. '
+            '"subject" will write them into each subject\'s directory. '
+            '"session" will write them into each session\'s directory. '
+            'The default is "auto", which will default to "root" for "none" mode, '
+            '"session" for "abcd" and "hbcd" modes, and "root" for "linc" and "nichart" modes.'
         ),
     )
     g_other.add_argument(
@@ -1007,6 +1010,9 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
         opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.report_output_level = (
+            'session' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'hbcd':
         opts.abcc_qc = True if (opts.abcc_qc == 'auto') else opts.abcc_qc
@@ -1027,6 +1033,9 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
         opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.report_output_level = (
+            'session' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'linc':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
@@ -1046,6 +1055,9 @@ def _validate_parameters(opts, build_log, parser):
             )
         opts.output_type = 'censored'
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.report_output_level = (
+            'root' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
         if opts.correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
@@ -1066,6 +1078,9 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
         opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.report_output_level = (
+            'root' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
         opts.smoothing = 0 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'none':
         if opts.abcc_qc == 'auto':
@@ -1108,6 +1123,11 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(
                 "'--warp-surfaces-native2std' (y or n) is required for 'none' mode."
             )
+
+        # Default to root for none mode, since that was the previous behavior
+        opts.report_output_level = (
+            'root' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
 
         if opts.smoothing == 'auto':
             error_messages.append("'--smoothing' is required for 'none' mode.")
