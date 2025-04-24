@@ -64,7 +64,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
         layout,
         '1648798153',
         bids_filters={},
-        anat_session=Query.NONE,
+        anat_session='PNC1',
     )
     assert mesh_available is True
     assert standard_space_mesh is False
@@ -94,7 +94,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
         layout,
         '1648798153',
         bids_filters={},
-        anat_session=Query.NONE,
+        anat_session='PNC1',
     )
     assert mesh_available is True
     assert standard_space_mesh is True
@@ -126,7 +126,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     with pytest.raises(ValueError, match='More than one surface found'):
-        xbids.collect_mesh_data(layout, '1648798153', bids_filters={}, anat_session=Query.NONE)
+        xbids.collect_mesh_data(layout, '1648798153', bids_filters={}, anat_session='PNC1')
 
     # If we include BIDS filters, we should be able to ignore the existing files
     layout = BIDSLayout(datasets['pnc'], validate=False)
@@ -141,7 +141,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
             'lh_subject_sphere': {'acquisition': 'test'},
             'rh_subject_sphere': {'acquisition': 'test'},
         },
-        anat_session=Query.NONE,
+        anat_session='PNC1',
     )
     assert mesh_available is False
     assert standard_space_mesh is False
