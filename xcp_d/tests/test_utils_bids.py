@@ -165,7 +165,7 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
         layout,
         '1648798153',
         bids_filters={},
-        anat_session=Query.NONE,
+        anat_session='PNC1',
     )
     assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
 
@@ -193,7 +193,7 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
             layout,
             '1648798153',
             bids_filters={},
-            anat_session=Query.NONE,
+            anat_session='PNC1',
         )
 
     # If we include BIDS filters, we should be able to ignore the existing files
@@ -206,7 +206,7 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
             'sulcal_curv': {'acquisition': 'test'},
             'sulcal_depth': {'acquisition': 'test'},
         },
-        anat_session=Query.NONE,
+        anat_session='PNC1',
     )
     assert morph_file_types == []
 
@@ -447,7 +447,7 @@ def test_collect_mesh_data_crosssectional(tmp_path_factory, caplog):
     )
     assert mesh_available is True
     assert standard_space_mesh is True
-    assert software == 'Freesurfer'
+    assert software == 'FreeSurfer'
 
 
 def test_collect_mesh_data_longitudinal_one_to_all(tmp_path_factory, caplog):
@@ -469,7 +469,7 @@ def test_collect_mesh_data_longitudinal_one_to_all(tmp_path_factory, caplog):
     )
     assert mesh_available is True
     assert standard_space_mesh is True
-    assert software == 'Freesurfer'
+    assert software == 'FreeSurfer'
 
 
 def test_collect_mesh_data_longitudinal_one_to_one(tmp_path_factory, caplog):
@@ -491,7 +491,7 @@ def test_collect_mesh_data_longitudinal_one_to_one(tmp_path_factory, caplog):
     )
     assert mesh_available is True
     assert standard_space_mesh is True
-    assert software == 'Freesurfer'
+    assert software == 'FreeSurfer'
 
 
 def test_collect_morphometry_data_crosssectional(tmp_path_factory, caplog):
