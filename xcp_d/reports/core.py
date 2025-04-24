@@ -56,6 +56,7 @@ def run_reports(
 
 
 def generate_reports(
+    processing_list,
     output_level,
     dataset_dir,
     abcc_qc,
@@ -69,21 +70,22 @@ def generate_reports(
     ----------
     output_level : {'root', 'subject', 'session'}
     """
-    errors = []
+    # The number of sessions is intentionally not based on session_list but
+    # on the total number of sessions, because I want the final derivatives
+    # folder to be the same whether sessions were run one at a time or all-together.
+    all_func_sessions = config.execution.layout.get_sessions(suffix='bold')
+    n_ses = len(all_func_sessions)
+
     bootstrap_file = bootstrap_file or data.load('reports-spec.yml')
 
-    bids_filters = config.execution.bids_filters or {}
-    subject_list = config.execution.participant_label
-    subject_list = [sub[4:] if sub.startswith('sub-') else sub for sub in subject_list]
-    for subject_label in subject_list:
-        filters = bids_filters.get('bold', {})
-        filters['session'] = config.execution.session_id or Query.OPTIONAL
-        # Extract session IDs from the processed DWIs
-        sessions = config.execution.layout.get_sessions(
-            subject=subject_label,
-            suffix='bold',
-            **filters,
-        )
+    errors = []
+    for subject_label, _, sessions in processing_list:
+        subject_label = subject_label[4:] if subject_label.startswith('sub-') else subject_label
+        # Drop ses- prefixes
+        sessions = [ses or Query.NONE for ses in sessions]  # replace "" with Query.NONE
+        sessions = [ses for ses in sessions if isinstance(ses, str)]  # drop Queries
+        sessions = [ses[4:] if ses.startswith('ses-') else ses for ses in sessions]
+
         if output_level == 'session' and not sessions:
             report_dir = dataset_dir
             output_level = 'subject'
@@ -93,10 +95,7 @@ def generate_reports(
                 'Writing out reports to subject level.'
             )
 
-        if not sessions:
-            sessions = [Query.NONE]
-
-        if output_level != 'session' and len(sessions) <= config.execution.aggr_ses_reports:
+        if output_level != 'session' and n_ses <= config.execution.aggr_ses_reports:
             html_report = f'sub-{subject_label}.html'
 
             if output_level == 'root':
@@ -120,10 +119,11 @@ def generate_reports(
                 errors.append(report_error)
 
             if abcc_qc:
-                for session_label in sessions:
-                    if session_label == Query.NONE:
-                        session_label = None
+                # Executive summaries should always be split by session, when sessions exist.
+                if not sessions:
+                    sessions = [None]
 
+                for session_label in sessions:
                     exsumm = ExecutiveSummary(
                         xcpd_path=dataset_dir,
                         output_dir=report_dir,
@@ -133,10 +133,12 @@ def generate_reports(
                     exsumm.collect_inputs()
                     exsumm.generate_report()
         else:
+            if not sessions:
+                sessions = [None]
+
             for session_label in sessions:
-                if session_label == Query.NONE:
+                if session_label is None:
                     html_report = f'sub-{subject_label}.html'
-                    session_label = None
                 else:
                     html_report = f'sub-{subject_label}_ses-{session_label}.html'
 
@@ -156,7 +158,7 @@ def generate_reports(
                     bootstrap_file=bootstrap_file,
                     out_filename=html_report,
                     dataset_dir=dataset_dir,
-                    errorname=f'report-{run_uuid}-{subject_label}.err',
+                    errorname=f'report-{run_uuid}-{subject_label}-{session_label}.err',
                     metadata={
                         'session_str': f", session '{session_label}'" if session_label else '',
                     },
@@ -177,10 +179,9 @@ def generate_reports(
                     exsumm.collect_inputs()
                     exsumm.generate_report()
 
-            # Someday, when we have anatomical reports, add a section here that
-            # finds sessions and makes the reports.
-
     if errors:
+        # Suboptimal to just report the subject IDs (with potential duplicates)
+        subject_list = [sl[0] for sl in processing_list]
         error_list = ', '.join(
             f'{subid} ({err})' for subid, err in zip(subject_list, errors, strict=False) if err
         )

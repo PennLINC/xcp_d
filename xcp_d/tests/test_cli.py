@@ -468,6 +468,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
 
         build_boilerplate(str(config_file), xcpd_wf)
         generate_reports(
+            processing_list=config.execution.processing_list,
             output_level=config.execution.report_output_level,
             dataset_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
