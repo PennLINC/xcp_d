@@ -154,6 +154,8 @@ def collect_data(
     participant_label,
     bids_filters,
     file_format,
+    anat_session,
+    func_sessions,
 ):
     """Collect data from a BIDS dataset.
 
@@ -164,6 +166,8 @@ def collect_data(
     participant_label
     bids_filters
     file_format
+    anat_session
+    func_sessions
 
     Returns
     -------
@@ -185,6 +189,13 @@ def collect_data(
     for acq in queries.keys():
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
+
+    # Add sessions to queries
+    for acq, query in queries.items():
+        if query['datatype'] == 'anat':
+            queries[acq].update({'session': anat_session})
+        elif query['datatype'] == 'func':
+            queries[acq].update({'session': func_sessions})
 
     # Select the best available space.
     if 'space' in queries['bold']:
@@ -271,49 +282,109 @@ def collect_data(
         raise FileNotFoundError('No T1w or T2w files found.')
     elif t1w_files and t2w_files:
         LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
-        temp_query = queries['t2w'].copy()
-        temp_query['space'] = 'T1w'
-        temp_t2w_files = layout.get(return_type='file', subject=participant_label, **temp_query)
-        if not temp_t2w_files:
+        queries['t2w']['space'] = 'T1w'
+        t1wspace_t2w_found = bool(
+            layout.get(return_type='file', subject=participant_label, **queries['t2w'])
+        )
+        if not t1wspace_t2w_found:
             LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
-            temp_query = queries['t1w'].copy()
-            temp_query['space'] = 'T2w'
-            temp_t1w_files = layout.get(
-                return_type='file',
-                subject=participant_label,
-                **temp_query,
-            )
             queries['t1w']['space'] = 'T2w'
-            if not temp_t1w_files:
-                LOGGER.warning('No T2w-space T1w found. Attempting T2w-only processing.')
-                temp_query = queries['anat_to_template_xfm'].copy()
-                temp_query['from'] = 'T2w'
-                temp_xfm_files = layout.get(
+            queries['t2w']['space'] = None  # we want T2w without space entity
+            t2wspace_t1w_found = bool(
+                layout.get(
                     return_type='file',
                     subject=participant_label,
-                    **temp_query,
+                    **queries['t1w'],
                 )
-                if not temp_xfm_files:
-                    LOGGER.warning(
-                        'T2w-to-template transform not found. Attempting T1w-only processing.'
+            )
+            if not t2wspace_t1w_found:
+                LOGGER.warning('No T2w-space T1w found. Attempting T2w-primary processing.')
+                queries['anat_to_template_xfm']['from'] = 'T2w'
+                t2w_to_template_found = bool(
+                    layout.get(
+                        return_type='file',
+                        subject=participant_label,
+                        **queries['anat_to_template_xfm'],
                     )
-                    queries['t1w']['space'] = ['T1w', None]
+                )
+                if not t2w_to_template_found:
+                    t2w_to_t1w_found = bool(
+                        layout.get(
+                            return_type='file',
+                            subject=participant_label,
+                            **queries['t2w_to_t1w_xfm'],
+                        ),
+                    )
+                    if t2w_to_t1w_found:
+                        # Prepare for T2w --> T1w --> template chain
+                        LOGGER.info(
+                            'T2w-to-template transform not found, but T2w-to-T1w transform found. '
+                            'Processing both T1w and T2w.'
+                        )
+                        queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                    else:
+                        LOGGER.info(
+                            'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
+                            'Processing T1w only.'
+                        )
+                        queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
+                    queries['t1w']['space'] = [None, 'T1w']
                     queries['template_to_anat_xfm']['to'] = 'T1w'
                     queries['anat_to_template_xfm']['from'] = 'T1w'
                 else:
-                    LOGGER.info('Performing T2w-only processing.')
+                    t1w_to_t2w_found = bool(
+                        layout.get(
+                            return_type='file',
+                            subject=participant_label,
+                            **queries['t1w_to_t2w_xfm'],
+                        ),
+                    )
+                    if t1w_to_t2w_found:
+                        # Prepare for T1w --> T2w --> template chain
+                        LOGGER.info(
+                            'T2w-to-template and T1w-to-T2w transforms found. '
+                            'Processing both T1w and T2w.'
+                        )
+                        queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                    else:
+                        LOGGER.info(
+                            'T2w-to-template transform found, but no T1w-to-T2w transform found. '
+                            'Processing T2w only.'
+                        )
+                        queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
+                    queries['t2w']['space'] = [None, 'T2w']
                     queries['template_to_anat_xfm']['to'] = 'T2w'
                     queries['anat_to_template_xfm']['from'] = 'T2w'
             else:
                 LOGGER.warning('T2w-space T1w found. Processing anatomical images in T2w space.')
+                queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
         else:
             LOGGER.warning('T1w-space T2w found. Processing anatomical images in T1w space.')
+            queries['t1w']['space'] = [None, 'T1w']
             queries['t2w']['space'] = 'T1w'
-            queries['t1w']['space'] = ['T1w', None]
+            queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+            queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
     elif t2w_files and not t1w_files:
         LOGGER.warning('T2w found, but no T1w. Enabling T2w-only processing.')
         queries['template_to_anat_xfm']['to'] = 'T2w'
         queries['anat_to_template_xfm']['from'] = 'T2w'
+        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
+    elif t1w_files and not t2w_files:
+        LOGGER.info('T1w found, but no T2w. Enabling T1w-only processing.')
+        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
 
     # Search for the files.
     subj_data = {
@@ -331,7 +402,7 @@ def collect_data(
     for field, filenames in subj_data.items():
         # All fields except the BOLD data should have a single file
         if field != 'bold' and isinstance(filenames, list):
-            if field not in ('t1w', 't2w') and not filenames:
+            if field not in ('t1w', 't2w', 't1w_to_t2w_xfm', 't2w_to_t1w_xfm') and not filenames:
                 raise FileNotFoundError(f'No {field} found with query: {queries[field]}')
 
             if len(filenames) == 1:
