@@ -151,11 +151,13 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
         layout=config.execution.layout,
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
+        anat_session=anat_session or Query.NONE,
     )
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
+        anat_session=anat_session or Query.NONE,
     )
 
     # determine the appropriate post-processing workflow

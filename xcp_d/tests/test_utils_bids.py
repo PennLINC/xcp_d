@@ -5,7 +5,7 @@ import os
 import shutil
 
 import pytest
-from bids.layout import BIDSLayout
+from bids.layout import BIDSLayout, Query
 
 import xcp_d.utils.bids as xbids
 
@@ -48,7 +48,10 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     # Dataset without mesh files
     layout = BIDSLayout(datasets['fmriprep_without_freesurfer'], validate=False)
     mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
-        layout, '1648798153', bids_filters={}
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session=Query.NONE,
     )
     assert mesh_available is False
     assert standard_space_mesh is False
@@ -56,7 +59,10 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     # Dataset with native-space mesh files (one file matching each query)
     layout = BIDSLayout(datasets['pnc'], validate=False)
     mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
-        layout, '1648798153', bids_filters={}
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session=Query.NONE,
     )
     assert mesh_available is True
     assert standard_space_mesh is False
@@ -83,7 +89,10 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     mesh_available, standard_space_mesh, _, mesh_files = xbids.collect_mesh_data(
-        layout, '1648798153', bids_filters={}
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session=Query.NONE,
     )
     assert mesh_available is True
     assert standard_space_mesh is True
@@ -115,7 +124,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     with pytest.raises(ValueError, match='More than one surface found'):
-        xbids.collect_mesh_data(layout, '1648798153', bids_filters={})
+        xbids.collect_mesh_data(layout, '1648798153', bids_filters={}, anat_session=Query.NONE)
 
     # If we include BIDS filters, we should be able to ignore the existing files
     layout = BIDSLayout(datasets['pnc'], validate=False)
@@ -130,6 +139,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
             'lh_subject_sphere': {'acquisition': 'test'},
             'rh_subject_sphere': {'acquisition': 'test'},
         },
+        anat_session=Query.NONE,
     )
     assert mesh_available is False
     assert standard_space_mesh is False
@@ -139,12 +149,22 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
     """Test collect_morphometry_data."""
     # Dataset without morphometry files
     layout = BIDSLayout(datasets['fmriprep_without_freesurfer'], validate=False)
-    morph_file_types, _ = xbids.collect_morphometry_data(layout, '1648798153', bids_filters={})
+    morph_file_types, _ = xbids.collect_morphometry_data(
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session=Query.NONE,
+    )
     assert morph_file_types == []
 
     # Dataset with morphometry files (one file matching each query)
     layout = BIDSLayout(datasets['pnc'], validate=False)
-    morph_file_types, _ = xbids.collect_morphometry_data(layout, '1648798153', bids_filters={})
+    morph_file_types, _ = xbids.collect_morphometry_data(
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session=Query.NONE,
+    )
     assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
 
     # Dataset with multiple files matching each query (raises an error)
@@ -167,7 +187,12 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(bad_morph_dir, validate=False)
     with pytest.raises(ValueError, match='More than one .* found'):
-        xbids.collect_morphometry_data(layout, '1648798153', bids_filters={})
+        xbids.collect_morphometry_data(
+            layout,
+            '1648798153',
+            bids_filters={},
+            anat_session=Query.NONE,
+        )
 
     # If we include BIDS filters, we should be able to ignore the existing files
     layout = BIDSLayout(datasets['pnc'], validate=False)
@@ -179,6 +204,7 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
             'sulcal_curv': {'acquisition': 'test'},
             'sulcal_depth': {'acquisition': 'test'},
         },
+        anat_session=Query.NONE,
     )
     assert morph_file_types == []
 

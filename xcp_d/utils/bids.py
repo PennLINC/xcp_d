@@ -423,7 +423,7 @@ def collect_data(
 
 
 @fill_doc
-def collect_mesh_data(layout, participant_label, bids_filters):
+def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
@@ -435,6 +435,7 @@ def collect_mesh_data(layout, participant_label, bids_filters):
     %(layout)s
     participant_label : :obj:`str`
         Subject ID.
+    anat_session : :obj:`str` or Query.NONE
 
     Returns
     -------
@@ -459,6 +460,8 @@ def collect_mesh_data(layout, participant_label, bids_filters):
     for acq in queries.keys():
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
+
+        queries[acq].update({'session': anat_session})
 
     # First, try to grab the first base surface file in standard (fsLR) space.
     # If it's not available, switch to native fsnative-space data.
@@ -549,7 +552,7 @@ def collect_mesh_data(layout, participant_label, bids_filters):
 
 
 @fill_doc
-def collect_morphometry_data(layout, participant_label, bids_filters):
+def collect_morphometry_data(layout, participant_label, bids_filters, anat_session):
     """Collect morphometry surface files from preprocessed derivatives.
 
     This function will look for fsLR-space, 91k-resolution morphometry CIFTI files.
@@ -559,6 +562,7 @@ def collect_morphometry_data(layout, participant_label, bids_filters):
     %(layout)s
     participant_label : :obj:`str`
         Subject ID.
+    anat_session : :obj:`str` or Query.NONE
 
     Returns
     -------
@@ -578,6 +582,8 @@ def collect_morphometry_data(layout, participant_label, bids_filters):
     for acq in queries.keys():
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
+
+        queries[acq].update({'session': anat_session})
 
     morphometry_files = {}
     for name, query in queries.items():
