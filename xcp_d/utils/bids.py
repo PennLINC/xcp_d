@@ -154,6 +154,8 @@ def collect_data(
     participant_label,
     bids_filters,
     file_format,
+    anat_session,
+    func_sessions,
 ):
     """Collect data from a BIDS dataset.
 
@@ -164,6 +166,8 @@ def collect_data(
     participant_label
     bids_filters
     file_format
+    anat_session
+    func_sessions
 
     Returns
     -------
@@ -185,6 +189,13 @@ def collect_data(
     for acq in queries.keys():
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
+
+    # Add sessions to queries
+    for acq, query in queries.items():
+        if query['datatype'] == 'anat':
+            queries[acq].update({'session': anat_session})
+        elif query['datatype'] == 'func':
+            queries[acq].update({'session': func_sessions})
 
     # Select the best available space.
     if 'space' in queries['bold']:

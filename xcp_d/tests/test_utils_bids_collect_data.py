@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from bids.layout import BIDSLayout
+from bids.layout import BIDSLayout, Query
 from niworkflows.utils.testing import generate_bids_skeleton
 
 import xcp_d.utils.bids as xbids
@@ -22,6 +22,8 @@ def test_collect_data_ds001419(datasets):
         participant_label='01',
         bids_filters=None,
         file_format='nifti',
+        anat_session=Query.NONE,
+        func_sessions=[Query.NONE],
     )
 
     assert len(subj_data['bold']) == 4
@@ -38,6 +40,8 @@ def test_collect_data_ds001419(datasets):
         participant_label='01',
         bids_filters={'bold': {'task': 'rest'}},
         file_format='cifti',
+        anat_session=Query.NONE,
+        func_sessions=[Query.NONE],
     )
 
     assert len(subj_data['bold']) == 1
@@ -67,6 +71,8 @@ def test_collect_data_nibabies(datasets):
         participant_label='01',
         bids_filters=None,
         file_format='nifti',
+        anat_session='1mo',
+        func_sessions=['1mo'],
     )
 
     assert len(subj_data['bold']) == 1
@@ -85,6 +91,8 @@ def test_collect_data_nibabies(datasets):
             participant_label='01',
             bids_filters=None,
             file_format='cifti',
+            anat_session='1mo',
+            func_sessions=['1mo'],
         )
 
 
@@ -105,6 +113,8 @@ def test_collect_data_nibabies_t1w_only(tmp_path_factory, caplog):
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is None
@@ -128,6 +138,8 @@ def test_collect_data_nibabies_t2w_only(tmp_path_factory, caplog):
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
     )
     assert subj_data['t1w'] is None
     assert subj_data['t2w'] is not None
@@ -152,6 +164,8 @@ def test_collect_data_nibabies_no_t1w_t2w(tmp_path_factory, caplog):
             participant_label='01',
             bids_filters=None,
             file_format='cifti',
+            anat_session='V03',
+            func_sessions=['V03'],
         )
 
 
@@ -178,6 +192,8 @@ def test_collect_data_nibabies_ignore_t2w(tmp_path_factory, caplog):
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is None
@@ -210,6 +226,8 @@ def test_collect_data_nibabies_t2w_to_t1w(tmp_path_factory, caplog):
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is not None
@@ -244,6 +262,8 @@ def test_collect_data_nibabies_ignore_t1w(tmp_path_factory, caplog):
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
     )
     assert subj_data['t1w'] is None
     assert subj_data['t2w'] is not None
@@ -276,6 +296,8 @@ def test_collect_data_nibabies_t1w_to_t2w(tmp_path_factory, caplog):
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is not None
@@ -307,6 +329,8 @@ def test_collect_data_nibabies_t1wspace_t2w(tmp_path_factory, caplog):
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is not None
@@ -335,6 +359,8 @@ def test_collect_data_nibabies_t2wspace_t1w(tmp_path_factory, caplog):
         participant_label='01',
         bids_filters=None,
         file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
     )
     assert subj_data['t1w'] is not None
     assert subj_data['t2w'] is not None
@@ -342,3 +368,78 @@ def test_collect_data_nibabies_t2wspace_t1w(tmp_path_factory, caplog):
     assert 'Both T1w and T2w found. Checking for T1w-space T2w.' in caplog.text
     assert 'No T1w-space T2w found. Checking for T2w-space T1w.' in caplog.text
     assert 'T2w-space T1w found. Processing anatomical images in T2w space.' in caplog.text
+
+
+def test_collect_data_crosssectional(tmp_path_factory, caplog):
+    """Test that XCP-D works on a cross-sectional dataset."""
+    skeleton = load_data('tests/skeletons/nibabies_crosssectional.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_data_crosssectional') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    subj_data = xbids.collect_data(
+        layout=layout,
+        input_type='nibabies',
+        participant_label='01',
+        bids_filters=None,
+        file_format='cifti',
+        anat_session=Query.NONE,
+        func_sessions=[Query.NONE],
+    )
+    assert subj_data['t1w'] is not None
+    assert subj_data['t2w'] is None
+    assert 'T1w found, but no T2w. Enabling T1w-only processing.' in caplog.text
+
+
+def test_collect_data_longitudinal_one_to_all(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for all sessions."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_data_longitudinal_one_to_one') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    subj_data = xbids.collect_data(
+        layout=layout,
+        input_type='nibabies',
+        participant_label='01',
+        bids_filters=None,
+        file_format='cifti',
+        anat_session=Query.NONE,
+        func_sessions=['V02', 'V03', 'V04'],
+    )
+    assert subj_data['t1w'] is not None
+    assert subj_data['t2w'] is None
+    assert 'T1w found, but no T2w. Enabling T1w-only processing.' in caplog.text
+
+
+def test_collect_data_longitudinal_one_to_one(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for each session."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_data_longitudinal_one_to_one') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    subj_data = xbids.collect_data(
+        layout=layout,
+        input_type='nibabies',
+        participant_label='01',
+        bids_filters=None,
+        file_format='cifti',
+        anat_session='V03',
+        func_sessions=['V03'],
+    )
+    assert subj_data['t1w'] is not None
+    assert subj_data['t2w'] is None
+    assert 'T1w found, but no T2w. Enabling T1w-only processing.' in caplog.text

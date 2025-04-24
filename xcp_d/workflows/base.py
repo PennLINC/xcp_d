@@ -134,22 +134,14 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
     # If session is in the anatomical files, loop over sessions and collect functional data
     # separately for each session.
     # Otherwise, collect functional data for all sessions at once.
-    # Patch the sessions into the bids_filters
-    anat_session = anat_session or Query.NONE
-    func_sessions = [ses or Query.NONE for ses in func_sessions]
-    bids_filters = config.execution.bids_filters or {}
-    bids_filters['bold'] = bids_filters.get('bold', {})
-    bids_filters['bold']['session'] = func_sessions
-    bids_filters['T1w'] = bids_filters.get('T1w', {})
-    bids_filters['T1w']['session'] = anat_session
-    bids_filters['T2w'] = bids_filters.get('T2w', {})
-    bids_filters['T2w']['session'] = anat_session
     subj_data = collect_data(
         layout=config.execution.layout,
         participant_label=subject_id,
-        bids_filters=bids_filters,
+        bids_filters=config.execution.bids_filters or {},
         input_type=config.workflow.input_type,
         file_format=config.workflow.file_format,
+        anat_session=anat_session or Query.NONE,
+        func_sessions=[ses or Query.NONE for ses in func_sessions],
     )
     t1w_available = subj_data['t1w'] is not None
     t2w_available = subj_data['t2w'] is not None
