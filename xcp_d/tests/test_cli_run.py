@@ -33,6 +33,7 @@ def base_opts():
         'mode': 'linc',
         'file_format': 'auto',
         'input_type': 'auto',
+        'report_output_level': 'auto',
         'confounds_config': 'auto',
         'high_pass': 0.01,
         'low_pass': 0.1,
@@ -281,6 +282,7 @@ def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
     assert opts.min_coverage == 0.5
     assert opts.smoothing == 6.0
     assert opts.correlation_lengths == ['all']
+    assert opts.report_output_level == 'root'
 
     # --create-matrices is not supported
     opts.correlation_lengths = ['300']
@@ -312,7 +314,7 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     assert opts.min_coverage == 0.5
     assert opts.process_surfaces is True
     assert opts.smoothing == 6.0
-
+    assert opts.report_output_level == 'session'
     opts.correlation_lengths = ['300', 'all']
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert opts.correlation_lengths == ['300', 'all']
@@ -346,6 +348,7 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     assert opts.linc_qc is True
     assert opts.min_coverage == 0.5
     assert opts.process_surfaces is True
+    assert opts.report_output_level == 'session'
     assert opts.smoothing == 6.0
 
     opts.correlation_lengths = ['300', 'all']
@@ -374,6 +377,7 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
     assert opts.file_format == 'nifti'
     assert opts.min_coverage == 0.4
     assert opts.smoothing == 0
+    assert opts.report_output_level == 'root'
 
 
 def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
@@ -414,6 +418,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     opts.process_surfaces = False
     opts.smoothing = 0
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+    assert opts.report_output_level == 'root'
 
 
 def test_validate_parameters_other_mode(base_opts, base_parser, capsys):

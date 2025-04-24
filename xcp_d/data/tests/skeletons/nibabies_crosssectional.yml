@@ -1,16 +1,10 @@
 # Skeleton based on Nibabies derivatives
-# There are both T1w and T2w anatomical images, but no T2w-space T1w or T1w-space T2w,
-# so it should only collect T1w files.
-# We may collect the T2w-to-T1w transform at some point, but it's not currently used.
+# There is only a T1w anatomical image, so it should only collect T1w files.
 "01":
-  - session: V03
-    anat:
+  - anat:
     - run: 1
       desc: preproc
       suffix: T1w
-    - run: 1
-      desc: preproc
-      suffix: T2w
     - run: 1
       from: MNI152NLin6Asym
       to: T1w

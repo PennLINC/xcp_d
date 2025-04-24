@@ -24,12 +24,6 @@
       suffix: xfm
       extension: .h5
     - run: 1
-      from: T1w
-      to: T2w
-      mode: image
-      suffix: xfm
-      extension: .h5
-    - run: 1
       from: T2w
       to: MNI152NLin6Asym
       mode: image
@@ -38,12 +32,6 @@
     - run: 1
       from: T2w
       to: MNIInfant+2
-      mode: image
-      suffix: xfm
-      extension: .h5
-    - run: 1
-      from: T2w
-      to: T1w
       mode: image
       suffix: xfm
       extension: .h5
