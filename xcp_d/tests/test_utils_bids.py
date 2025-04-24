@@ -6,8 +6,10 @@ import shutil
 
 import pytest
 from bids.layout import BIDSLayout, Query
+from niworkflows.utils.testing import generate_bids_skeleton
 
 import xcp_d.utils.bids as xbids
+from xcp_d.data import load as load_data
 
 
 def test_collect_participants(datasets):
@@ -424,3 +426,132 @@ def test_group_across_runs():
         '/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz',
         '/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz',
     ]
+
+
+def test_collect_mesh_data_crosssectional(tmp_path_factory, caplog):
+    """Test that XCP-D works on a cross-sectional dataset."""
+    skeleton = load_data('tests/skeletons/nibabies_crosssectional.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_mesh_data_crosssectional') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    mesh_available, standard_space_mesh, software, _ = xbids.collect_mesh_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session=Query.NONE,
+    )
+    assert mesh_available is True
+    assert standard_space_mesh is True
+    assert software == 'Freesurfer'
+
+
+def test_collect_mesh_data_longitudinal_one_to_all(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for all sessions."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_mesh_data_longitudinal_one_to_all') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    mesh_available, standard_space_mesh, software, _ = xbids.collect_mesh_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session=Query.NONE,
+    )
+    assert mesh_available is True
+    assert standard_space_mesh is True
+    assert software == 'Freesurfer'
+
+
+def test_collect_mesh_data_longitudinal_one_to_one(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for each session."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_mesh_data_longitudinal_one_to_one') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    mesh_available, standard_space_mesh, software, _ = xbids.collect_mesh_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session='V03',
+    )
+    assert mesh_available is True
+    assert standard_space_mesh is True
+    assert software == 'Freesurfer'
+
+
+def test_collect_morphometry_data_crosssectional(tmp_path_factory, caplog):
+    """Test that XCP-D works on a cross-sectional dataset."""
+    skeleton = load_data('tests/skeletons/nibabies_crosssectional.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_morphometry_data_crosssectional') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    morph_file_types, morphometry_files = xbids.collect_morphometry_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session=Query.NONE,
+    )
+    assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
+    assert morphometry_files is not None
+
+
+def test_collect_morphometry_data_longitudinal_one_to_all(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for all sessions."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_morph_data_longitudinal_one_to_all') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    morph_file_types, morphometry_files = xbids.collect_morphometry_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session=Query.NONE,
+    )
+    assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
+    assert morphometry_files is not None
+
+
+def test_collect_morphometry_data_longitudinal_one_to_one(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for each session."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_morph_data_longitudinal_one_to_one') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    morph_file_types, morphometry_files = xbids.collect_morphometry_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session='V03',
+    )
+    assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
+    assert morphometry_files is not None
