@@ -71,7 +71,7 @@ def test_collect_data_nibabies(datasets):
         participant_label='01',
         bids_filters=None,
         file_format='nifti',
-        anat_session='1m0',
+        anat_session='1mo',
         func_sessions=['1mo'],
     )
 
@@ -91,7 +91,7 @@ def test_collect_data_nibabies(datasets):
             participant_label='01',
             bids_filters=None,
             file_format='cifti',
-            anat_session='1m0',
+            anat_session='1mo',
             func_sessions=['1mo'],
         )
 
