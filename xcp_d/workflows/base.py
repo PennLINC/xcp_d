@@ -151,11 +151,13 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
         layout=config.execution.layout,
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
+        anat_session=anat_session or Query.NONE,
     )
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
+        anat_session=anat_session or Query.NONE,
     )
 
     # determine the appropriate post-processing workflow
@@ -218,7 +220,9 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
     inputnode.inputs.myelin = morphometry_files['myelin']
     inputnode.inputs.myelin_smoothed = morphometry_files['myelin_smoothed']
 
-    workflow = Workflow(name=f'sub_{subject_id}_wf')
+    workflow = Workflow(
+        name=f'sub_{subject_id}_ses_{anat_session}_ses_{"".join(func_sessions)}_wf'
+    )
 
     info_dict = get_preproc_pipeline_info(
         input_type=config.workflow.input_type,
