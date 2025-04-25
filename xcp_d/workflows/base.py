@@ -220,7 +220,9 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
     inputnode.inputs.myelin = morphometry_files['myelin']
     inputnode.inputs.myelin_smoothed = morphometry_files['myelin_smoothed']
 
-    workflow = Workflow(name=f'sub_{subject_id}_wf')
+    workflow = Workflow(
+        name=f'sub_{subject_id}_ses_{anat_session}_ses_{"".join(func_sessions)}_wf'
+    )
 
     info_dict = get_preproc_pipeline_info(
         input_type=config.workflow.input_type,
