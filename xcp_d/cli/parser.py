@@ -185,12 +185,12 @@ def _build_parser():
         help='Maximum number of threads per process.',
     )
     g_perfm.add_argument(
-        '--mem-gb',
-        '--mem_gb',
-        dest='memory_gb',
+        '--mem-mb',
+        '--mem_mb',
+        dest='memory_mb',
         action='store',
-        type=int,
-        help='Upper bound memory limit, in gigabytes, for XCP-D processes.',
+        type=parser_utils._to_gb,
+        help='Upper bound memory limit, in megabytes, for XCP-D processes.',
     )
     g_perfm.add_argument(
         '--low-mem',
