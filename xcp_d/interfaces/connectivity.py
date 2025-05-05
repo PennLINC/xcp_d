@@ -460,7 +460,11 @@ class ConnectPlot(SimpleInterface):
             dseg_file = self.inputs.atlas_tsvs[atlas_idx]
 
             column_name = COMMUNITY_LOOKUP.get(atlas, 'network_label')
-            dseg_df = pd.read_table(dseg_file)
+            dseg_df = pd.read_table(dseg_file, index_col='index')
+            # Remove background label
+            if 0 in dseg_df.index:
+                dseg_df = dseg_df.drop(index=[0])
+
             corrs_df = pd.read_table(atlas_file, index_col='Node')
 
             if atlas.startswith('4S'):

@@ -169,17 +169,12 @@ def main():
             write_atlas_dataset_description(config.execution.output_dir / 'atlases')
 
         # Generate reports phase
-        session_list = (
-            config.execution.get().get('bids_filters', {}).get('bold', {}).get('session')
-        )
-
-        # Generate reports phase
         failed_reports = generate_reports(
-            subject_list=config.execution.participant_label,
-            output_dir=config.execution.output_dir,
+            processing_list=config.execution.processing_list,
+            output_level=config.execution.report_output_level,
+            dataset_dir=config.execution.output_dir,
             abcc_qc=config.workflow.abcc_qc,
             run_uuid=config.execution.run_uuid,
-            session_list=session_list,
         )
 
         if failed_reports:

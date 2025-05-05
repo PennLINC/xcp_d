@@ -39,6 +39,22 @@ queries:
             - null
             - T1w
             suffix: T2w
+        # transform from T1w to T2w space
+        t1w_to_t2w_xfm:
+            datatype: anat
+            suffix: xfm
+            from:
+            - T1w
+            to:
+            - T2w
+        # transform from T2w to T1w space
+        t2w_to_t1w_xfm:
+            datatype: anat
+            suffix: xfm
+            from:
+            - T2w
+            to:
+            - T1w
         # transform from standard space to anatomical (T1w or T2w) space
         # "from" entity will be set later
         template_to_anat_xfm:

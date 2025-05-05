@@ -1,5 +1,25 @@
 # What's New
 
+
+## 0.10.7
+
+### 🎉 Exciting New Features
+
+* Use masked functional and anatomical images for executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1425
+
+### 🐛 Bug Fixes
+
+* Warp fsLR surfaces to NLin6 for brainsprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1419
+* Warp anat mask to anat space for coreg QC by @tsalo in https://github.com/PennLINC/xcp_d/pull/1423
+* Remove background label in ConnectPlot by @tsalo in https://github.com/PennLINC/xcp_d/pull/1424
+
+### Other Changes
+
+* Run vertex normalization on output surfaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1420
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.6...0.10.7
+
+
 ## 0.10.6
 
 ### 🎉 Exciting New Features

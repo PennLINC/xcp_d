@@ -39,6 +39,9 @@ session.
 The executive summary is based on the DCAN lab's
 `ExecutiveSummary tool <https://github.com/DCAN-Labs/ExecutiveSummary>`_.
 
+The report output level can be set to ``root`` (shown below), ``subject``, or ``session`` using the
+``--report-output-level`` parameter.
+
 .. code-block::
 
    xcp_d/
