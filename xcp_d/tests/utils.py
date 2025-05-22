@@ -203,7 +203,11 @@ def check_affines(data_dir, out_dir, input_type):
     img2 = nb.load(denoised_file)
 
     if input_type == 'cifti':
-        assert img1._nifti_header.get_intent() == img2._nifti_header.get_intent()
+        if img1._nifti_header.get_intent() != img2._nifti_header.get_intent():
+            raise ValueError(
+                f'Intent {img1._nifti_header.get_intent()} does not match '
+                f'{img2._nifti_header.get_intent()}'
+            )
         np.testing.assert_array_equal(img1.nifti_header.get_zooms(), img2.nifti_header.get_zooms())
     else:
         np.testing.assert_array_equal(img1.affine, img2.affine)
