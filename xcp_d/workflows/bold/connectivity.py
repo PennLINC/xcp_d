@@ -102,8 +102,13 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             fields=[
                 'coverage',
                 'timeseries',
-                'correlations',
-                'correlations_exact',
+                'correlations_r',
+                'correlations_z',
+                'correlations_var_r',
+                'correlations_var_z',
+                'correlations_r_exact',
+                'correlations_z_exact',
+                'correlations_var_r_exact',
                 'parcellated_alff',
                 'parcellated_reho',
             ],
@@ -130,7 +135,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ]),
     ])  # fmt:skip
 
-    if 'all' in config.workflow.correlation_lengths:
+    if config.workflow.correlation_measures:
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
@@ -141,8 +146,20 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (inputnode, functional_connectivity, [('temporal_mask', 'temporal_mask')]),
             (parcellate_data, functional_connectivity, [('timeseries', 'timeseries')]),
             (functional_connectivity, outputnode, [
-                ('correlations', 'correlations'),
-                ('correlations_exact', 'correlations_exact'),
+                ('r_exact', 'correlations_r_exact'),
+                ('z_exact', 'correlations_z_exact'),
+                ('var_r_exact', 'correlations_var_r_exact'),
+                ('var_z_exact', 'correlations_var_z_exact'),
+            ]),
+        ])  # fmt:skip
+
+    if 'all' in config.workflow.correlation_lengths:
+        workflow.connect([
+            (functional_connectivity, outputnode, [
+                ('r', 'correlations_r'),
+                ('z', 'correlations_z'),
+                ('var_r', 'correlations_var_r'),
+                ('var_z', 'correlations_var_z'),
             ]),
         ])  # fmt:skip
 
@@ -316,8 +333,14 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'correlation_ciftis_exact',
                 'coverage',
                 'timeseries',
-                'correlations',
-                'correlations_exact',
+                'correlations_r',
+                'correlations_z',
+                'correlations_var_r',
+                'correlations_var_z',
+                'correlations_r_exact',
+                'correlations_z_exact',
+                'correlations_var_r_exact',
+                'correlations_var_z_exact',
                 'parcellated_alff',
                 'parcellated_reho',
             ],
@@ -406,7 +429,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    if 'all' in config.workflow.correlation_lengths:
+    if config.workflow.correlation_lengths:
         # Correlate the parcellated data
         correlate_bold = pe.MapNode(
             CiftiCorrelation(
@@ -430,9 +453,15 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         workflow.connect([
             (inputnode, dconn_to_tsv, [('atlas_labels_files', 'atlas_labels')]),
             (correlate_bold, dconn_to_tsv, [('out_file', 'in_file')]),
-            (dconn_to_tsv, outputnode, [('out_file', 'correlations')]),
+            (dconn_to_tsv, outputnode, [
+                ('r', 'correlations_r'),
+                ('z', 'correlations_z'),
+                ('var_r', 'correlations_var_r'),
+                ('var_z', 'correlations_var_z'),
+            ]),
         ])  # fmt:skip
 
+    if 'all' in config.workflow.correlation_lengths:
         # Plot up to four connectivity matrices
         connectivity_plot = pe.Node(
             ConnectPlot(),

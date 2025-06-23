@@ -221,40 +221,38 @@ class _TSVConnectInputSpec(BaseInterfaceInputSpec):
 
 
 class _TSVConnectOutputSpec(TraitedSpec):
-    correlations = File(exists=True, desc='Correlation matrix file.')
-    correlations_exact = traits.Either(
+    r = File(exists=True, desc='Correlation matrix file.')
+    z = File(exists=True, desc='Z-transformed correlation matrix file.')
+    var_r = traits.Either(
+        None,
+        File(exists=True),
+        desc='Variance of correlation matrix file.',
+    )
+    var_z = traits.Either(
+        None,
+        File(exists=True),
+        desc='Variance of Z-transformed correlation matrix file.',
+    )
+    r_exact = traits.Either(
         None,
         traits.List(File(exists=True)),
         desc='Correlation matrix files limited to an exact number of volumes.',
     )
-
-
-def correlate_timeseries(timeseries, temporal_mask):
-    """Correlate timeseries stored in a TSV file."""
-    timeseries_df = pd.read_table(timeseries)
-    correlations_exact = {}
-    if isdefined(temporal_mask):
-        censoring_df = pd.read_table(temporal_mask)
-
-        # Determine if the time series is censored
-        if censoring_df.shape[0] == timeseries_df.shape[0]:
-            # The time series is not censored
-            timeseries_df = timeseries_df.loc[censoring_df['framewise_displacement'] == 0]
-            timeseries_df.reset_index(drop=True, inplace=True)
-
-        # Now create correlation matrices limited to exact scan numbers
-        censored_censoring_df = censoring_df.loc[censoring_df['framewise_displacement'] == 0]
-        censored_censoring_df.reset_index(drop=True, inplace=True)
-        exact_columns = [c for c in censoring_df.columns if c.startswith('exact_')]
-        for exact_column in exact_columns:
-            exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
-            exact_correlations_df = exact_timeseries_df.corr()
-            correlations_exact[exact_column] = exact_correlations_df
-
-    # Create correlation matrix from low-motion volumes only
-    correlations_df = timeseries_df.corr()
-
-    return correlations_df, correlations_exact
+    z_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc='Z-transformed correlation matrix files limited to an exact number of volumes.',
+    )
+    var_r_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc='Variance of correlation matrix files limited to an exact number of volumes.',
+    )
+    var_z_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc='Variance of Z-transformed correlation matrices from an exact number of volumes.',
+    )
 
 
 class TSVConnect(SimpleInterface):
@@ -269,43 +267,98 @@ class TSVConnect(SimpleInterface):
     output_spec = _TSVConnectOutputSpec
 
     def _run_interface(self, runtime):
-        correlations_df, correlations_exact = correlate_timeseries(
-            self.inputs.timeseries,
-            temporal_mask=self.inputs.temporal_mask,
-        )
+        from xcp_d.utils.utils import correlate_timeseries
 
-        self._results['correlations'] = fname_presuffix(
-            'correlations.tsv',
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        correlations_df.to_csv(
-            self._results['correlations'],
-            sep='\t',
-            na_rep='n/a',
-            index_label='Node',
-        )
-        del correlations_df
-        gc.collect()
+        timeseries_df = pd.read_table(self.inputs.timeseries)
 
-        if not self.inputs.temporal_mask:
-            self._results['correlations_exact'] = None
-            return runtime
+        if not isdefined(self.inputs.temporal_mask):
+            # With concatenation, we have a concatenated, censored time series instead of
+            # the full time series and a temporal mask.
+            # Therefore, we can't calculate variance.
+            r_df = timeseries_df.corr()
+            z_df = np.arctanh(r_df)
 
-        self._results['correlations_exact'] = []
-        for exact_column, exact_correlations_df in correlations_exact.items():
-            exact_correlations_file = fname_presuffix(
-                f'correlations_{exact_column}.tsv',
+            self._results['r'] = fname_presuffix(
+                'r.tsv',
                 newpath=runtime.cwd,
                 use_ext=True,
             )
-            exact_correlations_df.to_csv(
-                exact_correlations_file,
+            r_df.to_csv(
+                self._results['r'],
                 sep='\t',
                 na_rep='n/a',
                 index_label='Node',
             )
-            self._results['correlations_exact'].append(exact_correlations_file)
+            self._results['z'] = fname_presuffix(
+                'z.tsv',
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            z_df.to_csv(
+                self._results['z'],
+                sep='\t',
+                na_rep='n/a',
+                index_label='Node',
+            )
+            self._results['var_r'] = None
+            self._results['var_z'] = None
+            self._results['r_exact'] = None
+            self._results['z_exact'] = None
+            self._results['var_r_exact'] = None
+            self._results['var_z_exact'] = None
+            return runtime
+
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+
+        correlations_dict = correlate_timeseries(
+            self.inputs.timeseries,
+            temporal_mask=censoring_df['framewise_displacement'].astype(bool),
+        )
+
+        measures = ['r', 'z', 'var_r', 'var_z']
+        for measure in measures:
+            self._results[measure] = fname_presuffix(
+                f'{measure}.tsv',
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            correlations_dict[measure].to_csv(
+                self._results[measure],
+                sep='\t',
+                na_rep='n/a',
+                index_label='Node',
+            )
+
+        del correlations_dict
+        gc.collect()
+
+        for measure in measures:
+            self._results[f'{measure}_exact'] = []
+
+        exact_columns = [c for c in censoring_df.columns if c.startswith('exact_')]
+        for exact_column in exact_columns:
+            temporal_mask = (
+                censoring_df['framewise_displacement'] + censoring_df[exact_column]
+            ).astype(bool)
+            correlations_dict = correlate_timeseries(
+                self.inputs.timeseries,
+                temporal_mask=temporal_mask,
+            )
+            for measure in measures:
+                self._results[f'{measure}_exact'].append(fname_presuffix(
+                    f'{measure}_{exact_column}.tsv',
+                    newpath=runtime.cwd,
+                    use_ext=True,
+                ))
+                correlations_dict[measure][exact_column].to_csv(
+                    self._results[f'{measure}_exact'][-1],
+                    sep='\t',
+                    na_rep='n/a',
+                    index_label='Node',
+                )
+
+            del correlations_dict
+            gc.collect()
 
         return runtime
 

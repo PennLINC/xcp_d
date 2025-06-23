@@ -360,25 +360,51 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             )
             workflow.connect([(ds_timeseries, make_correlations_dict, [('out_file', 'in1')])])
 
-            ds_correlations = pe.MapNode(
-                DerivativesDataSink(
-                    # Be explicit with entities because the source file is the timeseries
-                    dismiss_entities=['desc'],
-                    statistic='pearsoncorrelation',
-                    suffix='relmat',
-                    extension='.tsv',
-                ),
-                name='ds_correlations',
-                run_without_submitting=True,
-                mem_gb=1,
-                iterfield=['source_file', 'in_file', 'meta_dict'],
-            )
+            if 'r' in config.workflow.correlation_measures:
+                ds_correlations_r = pe.MapNode(
+                    DerivativesDataSink(
+                        # Be explicit with entities because the source file is the timeseries
+                        dismiss_entities=['desc'],
+                        statistic='pearsoncorrelation',
+                        suffix='relmat',
+                        extension='.tsv',
+                    ),
+                    name='ds_correlations_r',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['source_file', 'in_file', 'meta_dict'],
+                )
 
-            workflow.connect([
-                (filter_runs, ds_correlations, [(('timeseries', _combine_name), 'source_file')]),
-                (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
-                (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
-            ])  # fmt:skip
+                workflow.connect([
+                    (filter_runs, ds_correlations_r, [
+                        (('timeseries', _combine_name), 'source_file'),
+                    ]),
+                    (correlate_timeseries, ds_correlations_r, [('r', 'in_file')]),
+                    (make_correlations_dict, ds_correlations_r, [('metadata', 'meta_dict')]),
+                ])  # fmt:skip
+
+            if 'z' in config.workflow.correlation_measures:
+                ds_correlations_z = pe.MapNode(
+                    DerivativesDataSink(
+                        # Be explicit with entities because the source file is the timeseries
+                        dismiss_entities=['desc'],
+                        statistic='fisherz',
+                        suffix='relmat',
+                        extension='.tsv',
+                    ),
+                    name='ds_correlations_z',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['source_file', 'in_file', 'meta_dict'],
+                )
+
+                workflow.connect([
+                    (filter_runs, ds_correlations_z, [
+                        (('timeseries', _combine_name), 'source_file'),
+                    ]),
+                    (correlate_timeseries, ds_correlations_z, [('z', 'in_file')]),
+                    (make_correlations_dict, ds_correlations_z, [('metadata', 'meta_dict')]),
+                ])  # fmt:skip
 
         if file_format == 'cifti':
             cifti_ts_src = pe.MapNode(
