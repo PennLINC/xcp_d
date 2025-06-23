@@ -75,9 +75,9 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
     return
 
 
-def test_smoothing_cifti(ds001419_data, tmp_path_factory, sigma_lx=None):
+def test_smoothing_cifti(ds001419_data, tmp_path_factory):
     """Test CIFTI smoothing."""
-    sigma_lx = fwhm2sigma(6) if sigma_lx is None else sigma_lx
+    sigma_lx = fwhm2sigma(6)
 
     tmpdir = tmp_path_factory.mktemp('test_smoothing_cifti')
     in_file = ds001419_data['cifti_file']

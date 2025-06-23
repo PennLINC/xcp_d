@@ -2,7 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting HCP-YA-format data to fMRIPrep format.
 
-These functions are specifically designed to work with HCP-YA data downloaded around Feb 2023.
+These functions are specifically designed to work with HCP-YA data from the release available in
+February 2023.
 Because HCP-YA doesn't really version their processing pipeline and derivatives,
 we have to pin to download periods.
 """
