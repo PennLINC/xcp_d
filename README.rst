@@ -60,7 +60,13 @@ parcellated time series, functional connectivity matrices, and quality assessmen
 data-releases>`_,
 and `UK Biobank <https://doi.org/10.1016/j.neuroimage.2017.10.034>`_ data.
 
-*Please note that XCP is only compatible with HCP-YA versions downloaded c.a. Feb 2023 at the moment.*
+.. important::
+
+   Please note that *XCP-D* is only compatible with HCP-YA data released around February 2023.
+   This is because the HCP-YA data was not versioned at the time of release,
+   and we have to pin to a specific release date.
+   We cannot guarantee that *XCP-D* will work with other versions of the HCP-YA data,
+   or with data from other HCP projects.
 
 .. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/xcp_figure_1.png
 
