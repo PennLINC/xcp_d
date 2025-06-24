@@ -837,3 +837,120 @@ class CiftiVertexMask(SimpleInterface):
         write_ndata(vertex_weights_arr, template=data_file, filename=self._results['mask_file'])
 
         return runtime
+
+
+class _TSVToPconnInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc='TSV file to convert to a pconn CIFTI file.',
+    )
+    source_cifti = File(
+        exists=True,
+        mandatory=True,
+        desc='source CIFTI file. The second axis of this file will be used as the nodes.',
+    )
+    atlas_labels = File(exists=True, mandatory=True, desc='atlas labels file')
+
+
+class _TSVToPconnOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc='pconn CIFTI file.')
+
+
+class TSVToPconn(SimpleInterface):
+    """Convert a TSV file to a pconn CIFTI file."""
+
+    input_spec = _TSVToPconnInputSpec
+    output_spec = _TSVToPconnOutputSpec
+
+    def _run_interface(self, runtime):
+        in_file = self.inputs.in_file
+        source_cifti = self.inputs.source_cifti
+        atlas_labels = self.inputs.atlas_labels
+
+        df = pd.read_table(in_file, index_col='Node')
+        source_img = nb.load(source_cifti)
+        # The second axis is a ParcelsAxis. We will set both axes of the output image to this.
+        ax = source_img.header.get_axis(1)
+        new_header = nb.Cifti2Header.from_axes((ax, ax))
+
+        # Create dictionary mapping TSV node names to CIFTI node names.
+        node_labels_df = pd.read_table(atlas_labels, index_col='index')
+        node_labels_df.sort_index(inplace=True)  # ensure index is in order
+
+        # Explicitly remove label corresponding to background (index=0), if present.
+        if 0 in node_labels_df.index:
+            LOGGER.warning(
+                'Index value of 0 found in atlas labels file. '
+                'Will assume this describes the background and ignore it.'
+            )
+            node_labels_df = node_labels_df.drop(index=[0])
+
+        if 'cifti_label' in node_labels_df.columns:
+            parcel_label_mapper = dict(
+                zip(node_labels_df['label'], node_labels_df['cifti_label'], strict=False)
+            )
+        elif 'label_7network' in node_labels_df.columns:
+            node_labels_df['cifti_label'] = node_labels_df['label_7network'].fillna(
+                node_labels_df['label']
+            )
+            parcel_label_mapper = dict(
+                zip(node_labels_df['label'], node_labels_df['cifti_label'], strict=False)
+            )
+        else:
+            LOGGER.warning(
+                "No 'cifti_label' column found in atlas labels file. "
+                'Assuming labels in TSV exactly match node names in CIFTI atlas.'
+            )
+            parcel_label_mapper = dict(
+                zip(node_labels_df['label'], node_labels_df['label'], strict=False)
+            )
+
+        # Check that all node labels in the TSV are present in the CIFTI, and vice versa.
+        # Replace values in index, which should match the keys in the parcel_label_mapper
+        # dictionary, with the corresponding values in the dictionary.
+        # If any index values are not in the dictionary, raise an error with a list of the
+        # missing index values.
+        # If any dictionary keys are not in the index, raise an error with a list of the
+        # missing dictionary keys.
+        missing_cifti_names = []
+        missing_tsv_names = []
+        for parcel_name in ax.name:
+            if parcel_name not in parcel_label_mapper:
+                missing_cifti_names.append(parcel_name)
+
+            for expected_parcel_name in parcel_label_mapper.keys():
+                if expected_parcel_name not in ax.name:
+                    missing_tsv_names.append(expected_parcel_name)
+
+            if missing_cifti_names:
+                raise ValueError(
+                    f'Missing CIFTI labels in TSV labels DataFrame: {missing_cifti_names}'
+                )
+
+            if missing_tsv_names:
+                raise ValueError(f'Missing TSV labels in CIFTI file: {missing_tsv_names}')
+
+        # Replace the TSV node names with the corresponding CIFTI node names.
+        df.index = [parcel_label_mapper[i] for i in df.index]
+        # Sort the TSV by the CIFTI node names
+        df = df.loc[ax.name]
+
+        # Replace the column names with the corresponding CIFTI node names.
+        df.columns = [parcel_label_mapper[i] for i in df.columns]
+        df = df[ax.name]
+
+        out_img = nb.Cifti2Image(
+            data=df.values,
+            header=new_header,
+        )
+
+        # Save out the CIFTI
+        self._results['out_file'] = fname_presuffix(
+            'extracted.pconn.nii',
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        out_img.to_filename(self._results['out_file'])
+
+        return runtime
