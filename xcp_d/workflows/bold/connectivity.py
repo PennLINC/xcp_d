@@ -463,7 +463,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         for file_to_pconn in files_to_pconn:
             convert_tsv_to_pconn = pe.MapNode(
                 TSVToPconn(),
-                name='convert_tsv_to_pconn',
+                name=f'convert_tsv_to_pconn_{file_to_pconn}',
                 iterfield=['in_file', 'source_cifti'],
             )
             workflow.connect([
