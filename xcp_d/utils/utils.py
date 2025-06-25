@@ -668,3 +668,383 @@ def is_number(s):
         return True
     except ValueError:
         return False
+
+
+def correlate_timeseries(timeseries, temporal_mask):
+    """Correlate timeseries stored in a TSV file."""
+    import pandas as pd
+
+    timeseries_df = pd.read_table(timeseries)
+    node_names = timeseries_df.columns.values
+    correlations_dict = correlate_timeseries_xdf(
+        arr=timeseries_df.values.T,
+        temporal_mask=temporal_mask,
+    )
+    output_to_check = ['r', 'z', 'var_r', 'var_z']
+    for output in output_to_check:
+        if output in correlations_dict.keys():
+            correlations_dict[output] = pd.DataFrame(
+                correlations_dict[output],
+                index=node_names,
+                columns=node_names,
+            )
+
+    return correlations_dict
+
+
+def correlate_timeseries_xdf(
+    arr,
+    temporal_mask,
+    method='truncate',
+    methodparam='adaptive',
+    limit_variance=True,
+):
+    """Correlate timeseries and calculate variance and dof measures using the xDF method.
+
+    Parameters
+    ----------
+    arr : :obj:`numpy.ndarray` of shape (V, T)
+        Time series array to correlate with xDF.
+        V = number of features/regions/voxels
+        T = number of samples/data points/volumes
+    temporal_mask : :obj:`numpy.ndarray` of shape (T,)
+        Temporal mask to apply to the time series.
+        Outliers are set to 1, non-outliers are set to 0.
+        T = number of samples/data points/volumes
+    method : {"tukey", "truncate"}, optional
+        The method for estimating autocorrelation.
+        Default = "truncate".
+    methodparam : :obj:`str`, :obj:`int`, or :obj:`float`, optional
+        If ``method`` is "truncate", ``methodparam`` must be "adaptive" or an integer.
+        If ``method`` is "tukey", ``methodparam`` must be an empty string ("") or a number.
+        Default = "adaptive".
+    limit_variance : :obj:`bool`, optional
+        If an estimate is lower than the theoretical variance of a white noise then it increases
+        the estimate up to ``(1-rho^2)^2/n_cols``.
+        To disable this "curbing", set limit_variance to False.
+        Default = True.
+
+    Returns
+    -------
+    out : :obj:`dict`
+        A dictionary containing the following keys:
+        -   "r": IxI array of correlation coefficients.
+        -   "z": IxI array of z-transformed correlation coefficients.
+        -   "r_var": IxI array of variance of correlation coefficient between corresponding
+            elements, with the diagonal set to 0.
+        -   "z_var": IxI array of variance of z-transformed correlation coefficient between
+            corresponding elements, with the diagonal set to 0.
+        -   "varlimit": Theoretical variance under x & y are i.i.d; (1-rho^2)^2.
+        -   "varlimit_idx": Index of (i,j) edges of which their variance exceeded the theoretical
+            variance.
+
+    Notes
+    -----
+    Per :footcite:t:`afyouni2019effective`, method="truncate" + methodparam="adaptive" works best.
+    """
+    from itertools import combinations
+
+    import scipy.signal as ss
+    from scipy.linalg import toeplitz
+
+    n_features, n_samples = arr.shape
+    time_idx = np.arange(temporal_mask.size)
+    scrubbed_frames = time_idx[temporal_mask == 0]
+    n_retained_samples = n_samples - scrubbed_frames.size
+
+    arr = arr - np.nanmean(arr, axis=1)[:, None]
+    norms = np.nanmean(arr**2, axis=1)[:, None]
+
+    # Mask NaNs with 0s for summation
+    if n_retained_samples < n_samples:
+        arr[:, scrubbed_frames] = 0
+
+    # Calculate denominator according to acf in R
+    list_pairs = list(combinations(np.setdiff1d(np.arange(n_samples), scrubbed_frames), 2))
+    n_pairs = [n_retained_samples] + list(
+        np.bincount([y - x for (x, y) in list_pairs], minlength=n_samples)[1:]
+    )
+    n_denom = n_pairs + np.arange(n_samples)
+
+    # Calculate autocorrelation
+    ac = (
+        np.concatenate(
+            [
+                ss.correlate(arr[i, :], arr[i, :], method='fft')[None, -n_samples:] / n_denom
+                for i in np.arange(n_features)
+            ],
+            axis=0,
+        )
+        / norms
+    )
+
+    # Calculate cross-correlation
+    xc = np.zeros((n_features, n_features, 2 * n_samples - 1))
+    triu_idx_x = np.triu_indices(n_features, 1)[0]
+    triu_idx_y = np.triu_indices(n_features, 1)[1]
+
+    for i, j in zip(triu_idx_x, triu_idx_y, strict=False):
+        xc[i, j, :] = ss.correlate(arr[i, :], arr[j, :], method='fft') / (
+            np.sqrt(norms[i] * norms[j])
+            * np.concatenate((np.flip(np.delete(n_denom, 0)), n_denom))
+        )
+
+    xc = xc + np.transpose(xc, (1, 0, 2))
+
+    # Extract positive and negative cross-correlations
+    xc_p = xc[:, :, : (n_samples - 1)]
+    xc_p = np.flip(xc_p, axis=2)
+    xc_n = xc[:, :, -(n_samples - 1) :]
+
+    # Extract lag-0 correlations
+    rho = np.eye(n_features) + xc[:, :, n_samples - 1]
+
+    # Regularize!
+    if method.lower() == 'tukey':
+        if methodparam == '':
+            M = np.sqrt(n_samples)
+        else:
+            M = methodparam
+
+        LOGGER.info(f'AC regularization: Tukey tapering of M = {int(np.round(M))}')
+
+        ac = tukeytaperme(ac, n_samples - 1, M)
+        xc_p = tukeytaperme(xc_p, n_samples - 1, M)
+        xc_n = tukeytaperme(xc_n, n_samples - 1, M)
+
+    elif method.lower() == 'truncate':
+        if isinstance(methodparam, str):  # Adaptive truncation
+            if methodparam.lower() != 'adaptive':
+                raise ValueError('methodparam for truncation must be "adaptive" or an integer')
+
+            LOGGER.info('AC regularization: adaptive truncation')
+
+            ac, bp = shrinkme(ac, n_samples)
+
+            for i in np.arange(n_features):
+                for j in np.arange(n_features):
+                    maxBP = np.max([bp[i], bp[j]])
+                    xc_p[i, j, :] = curbtaperme(ac=xc_p[i, j, :], M=maxBP)
+                    xc_n[i, j, :] = curbtaperme(ac=xc_n[i, j, :], M=maxBP)
+
+        elif isinstance(methodparam, int):  # Non-adaptive truncation
+            LOGGER.info(f'AC regularization: non-adaptive truncation on M = {methodparam}')
+            ac = curbtaperme(ac=ac, M=methodparam)
+            xc_p = curbtaperme(ac=xc_p, M=methodparam)
+            xc_n = curbtaperme(ac=xc_n, M=methodparam)
+
+        else:
+            raise ValueError('methodparam for truncation method should be either str or int')
+    else:
+        raise ValueError('Method parameter must be either "tukey" or "truncate".')
+
+    # Estimate variance (big formula)
+    var_hat_rho = np.zeros((n_features, n_features))
+
+    for i, j in zip(triu_idx_x, triu_idx_y, strict=False):
+        r = rho[i, j]
+
+        Sigx = toeplitz(ac[i, :])
+        Sigy = toeplitz(ac[j, :])
+
+        Sigx = np.delete(Sigx, scrubbed_frames, axis=0)
+        Sigx = np.delete(Sigx, scrubbed_frames, axis=1)
+        Sigy = np.delete(Sigy, scrubbed_frames, axis=0)
+        Sigy = np.delete(Sigy, scrubbed_frames, axis=1)
+
+        Sigxy = np.triu(toeplitz(np.insert(xc_p[i, j, :], 0, r)), k=1) + np.tril(
+            toeplitz(np.insert(xc_n[i, j, :], 0, r))
+        )
+        Sigxy = np.delete(Sigxy, scrubbed_frames, axis=0)
+        Sigxy = np.delete(Sigxy, scrubbed_frames, axis=1)
+        Sigyx = np.transpose(Sigxy)
+
+        var_hat_rho[i, j] = (
+            (r**2 / 2) * np.trace(Sigx @ Sigx)
+            + (r**2 / 2) * np.trace(Sigy @ Sigy)
+            + r**2 * np.trace(Sigyx @ Sigxy)
+            + np.trace(Sigxy @ Sigxy)
+            + np.trace(Sigx @ Sigy)
+            - 2 * r * np.trace(Sigx @ Sigxy)
+            - 2 * r * np.trace(Sigy @ Sigyx)
+        ) / n_retained_samples**2
+
+    var_hat_rho = var_hat_rho + np.transpose(var_hat_rho)
+
+    # Truncate to theoretical variance
+    varlimit = (1 - rho**2) ** 2 / n_retained_samples
+
+    varlimit_idx = np.where(var_hat_rho < varlimit)
+    n_var_outliers = varlimit_idx[1].size / 2
+    if n_var_outliers > 0 and limit_variance:
+        LOGGER.info('Variance truncation is ON.')
+
+        # Assuming that the variance can *only* get larger in presence of autocorrelation.
+        var_hat_rho[varlimit_idx] = varlimit[varlimit_idx]
+
+        FGE = (n_features * (n_features - 1)) / 2
+        LOGGER.info(
+            f'{n_var_outliers} ({str(round((n_var_outliers / FGE) * 100, 3))}%) '
+            'edges had variance smaller than the textbook variance!'
+        )
+    else:
+        LOGGER.info('NO truncation to the theoretical variance.')
+
+    # Our turf--------------------------------
+    rf = np.arctanh(rho)
+    var_z = var_hat_rho / ((1 - rho**2) ** 2)
+
+    # Set diagonal to 0. I guess variance is not meaningful here?
+    np.fill_diagonal(var_hat_rho, 0)
+    np.fill_diagonal(var_z, 0)
+
+    out = {
+        'r': rho,
+        'z': rf,
+        'var_r': var_hat_rho,
+        'var_z': var_z,
+        'varlimit': varlimit,
+        'varlimit_idx': varlimit_idx,
+    }
+
+    return out
+
+
+def tukeytaperme(ac, T, M):
+    """Perform single Tukey tapering for given length of window, M, and initial value, intv.
+
+    Parameters
+    ----------
+    ac
+    T
+    M
+
+    Returns
+    -------
+    tt_ts
+
+    Notes
+    -----
+    intv should only be used on crosscorrelation matrices.
+
+    SA, Ox, 2018
+    """
+    if T not in ac.shape:
+        raise ValueError('There is something wrong, mate!')
+
+    ac = ac.copy()
+
+    M = int(np.round(M))
+
+    tukeymultiplier = (1 + np.cos(np.arange(1, M) * np.pi / M)) / 2
+    tt_ts = np.zeros(ac.shape)
+
+    if ac.ndim == 2:
+        LOGGER.debug('The input is 2D.')
+        if ac.shape[1] != T:
+            ac = ac.T
+
+        n_rows = ac.shape[0]
+        tt_ts[:, : M - 1] = np.tile(tukeymultiplier, [n_rows, 1]) * ac[:, : M - 1]
+
+    elif ac.ndim == 3:
+        LOGGER.debug('The input is 3D.')
+
+        n_rows = ac.shape[0]
+        tt_ts[:, :, : M - 1] = (
+            np.tile(
+                tukeymultiplier,
+                [n_rows, n_rows, 1],
+            )
+            * ac[:, :, : M - 1]
+        )
+
+    elif ac.ndim == 1:
+        LOGGER.debug('The input is 1D.')
+
+        tt_ts[: M - 1] = tukeymultiplier * ac[: M - 1]
+
+    return tt_ts
+
+
+def curbtaperme(ac, M):
+    """Curb the autocorrelations, according to Anderson 1984.
+
+    Parameters
+    ----------
+    ac
+    M
+
+    Returns
+    -------
+    ct_ts
+
+    Notes
+    -----
+    multi-dimensional, and therefore is fine!
+    SA, Ox, 2018
+    """
+    ac = ac.copy()
+    M = int(round(M))
+    msk = np.zeros(np.shape(ac))
+    if ac.ndim == 2:
+        LOGGER.debug('The input is 2D.')
+        msk[:, :M] = 1
+
+    elif ac.ndim == 3:
+        LOGGER.debug('The input is 3D.')
+        msk[:, :, :M] = 1
+
+    elif ac.ndim == 1:
+        LOGGER.debug('The input is 1D.')
+        msk[:M] = 1
+
+    ct_ts = msk * ac
+
+    return ct_ts
+
+
+def shrinkme(ac, T):
+    """Shrink the *early* bunches of autocorr coefficients beyond the CI.
+
+    Parameters
+    ----------
+    ac
+    T
+
+    Returns
+    -------
+    masked_ac
+    BreakPoint
+
+    Notes
+    -----
+    Yo! this should be transformed to the matrix form, those fors at the top are bleak!
+
+    SA, Ox, 2018
+    """
+    ac = ac.copy()
+
+    if np.shape(ac)[1] != T:
+        ac = ac.T
+
+    bnd = (np.sqrt(2) * 1.3859) / np.sqrt(T)
+    # assumes normality for AC
+
+    n_rows = np.shape(ac)[0]
+    msk = np.zeros(np.shape(ac))
+    BreakPoint = np.zeros(n_rows)
+    for i in np.arange(n_rows):
+        # finds the break point -- intercept
+        TheFirstFalse = np.where(np.abs(ac[i, :]) < bnd)
+
+        # if you couldn't find a break point, then continue = the row will remain zero
+        if np.size(TheFirstFalse) == 0:
+            continue
+        else:
+            BreakPoint_tmp = TheFirstFalse[0][0]
+
+        msk[i, :BreakPoint_tmp] = 1
+        BreakPoint[i] = BreakPoint_tmp
+
+    return ac * msk, BreakPoint
