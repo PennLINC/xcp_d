@@ -560,7 +560,7 @@ def init_postproc_derivatives_wf(
                 workflow.connect([
                     (inputnode, ds_correlations, [
                         ('atlas_names', 'segmentation'),
-                        ('correlations', 'in_file'),
+                        (f'correlations_{output}', 'in_file'),
                     ]),
                     (make_corrs_meta_dict2, ds_correlations, [('metadata', 'meta_dict')]),
                 ])  # fmt:skip
