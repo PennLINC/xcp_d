@@ -360,7 +360,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             )
             workflow.connect([(ds_timeseries, make_correlations_dict, [('out_file', 'in1')])])
 
-            if 'r' in config.workflow.correlation_measures:
+            if 'r' in config.workflow.correlation_outputs:
                 ds_correlations_r = pe.MapNode(
                     DerivativesDataSink(
                         # Be explicit with entities because the source file is the timeseries
@@ -383,7 +383,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                     (make_correlations_dict, ds_correlations_r, [('metadata', 'meta_dict')]),
                 ])  # fmt:skip
 
-            if 'z' in config.workflow.correlation_measures:
+            if 'z' in config.workflow.correlation_outputs:
                 ds_correlations_z = pe.MapNode(
                     DerivativesDataSink(
                         # Be explicit with entities because the source file is the timeseries

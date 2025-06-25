@@ -135,7 +135,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ]),
     ])  # fmt:skip
 
-    if config.workflow.correlation_measures:
+    if config.workflow.correlation_outputs:
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
