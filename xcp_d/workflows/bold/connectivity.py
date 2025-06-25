@@ -109,6 +109,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'correlations_r_exact',
                 'correlations_z_exact',
                 'correlations_var_r_exact',
+                'correlations_var_z_exact',
                 'parcellated_alff',
                 'parcellated_reho',
             ],
