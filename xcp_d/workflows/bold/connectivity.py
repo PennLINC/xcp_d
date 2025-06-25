@@ -168,7 +168,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 ('atlases', 'atlases'),
                 ('atlas_labels_files', 'atlas_tsvs'),
             ]),
-            (functional_connectivity, connectivity_plot, [('correlations', 'correlations_tsv')]),
+            (functional_connectivity, connectivity_plot, [('r', 'correlations_tsv')]),
         ])  # fmt:skip
 
         ds_report_connectivity_plot = pe.Node(
@@ -457,7 +457,8 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
         # Convert the parcellated tsv files to pconn ciftis
         files_to_pconn = ['r', 'z', 'var_r', 'var_z']
-        if len([cl for cl in config.workflow.correlation_lengths if cl != 'all']):
+        if exact_scans:
+            # Only include exact-time correlations if requested
             files_to_pconn += ['r_exact', 'z_exact', 'var_r_exact', 'var_z_exact']
 
         for file_to_pconn in files_to_pconn:
