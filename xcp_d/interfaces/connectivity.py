@@ -352,7 +352,7 @@ class TSVConnect(SimpleInterface):
                         use_ext=True,
                     ),
                 )
-                correlations_dict[measure][exact_column].to_csv(
+                correlations_dict[measure].to_csv(
                     self._results[f'{measure}_exact'][-1],
                     sep='\t',
                     na_rep='n/a',
