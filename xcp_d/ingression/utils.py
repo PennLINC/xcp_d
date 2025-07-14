@@ -21,8 +21,10 @@ def collect_anatomical_files(anat_dir_orig, anat_dir_bids, base_anatomical_ents)
     ANAT_DICT = {
         # XXX: Why have T1w here and T1w_restore for HCP?
         'T1w.nii.gz': 'desc-preproc_T1w.nii.gz',
-        'brainmask_fs.nii.gz': 'desc-brain_mask.nii.gz',
         'ribbon.nii.gz': 'desc-ribbon_T1w.nii.gz',
+        # Use either brainmask_fs or brainmask_fs.2.0, depending on which is available.
+        'brainmask_fs.nii.gz': 'desc-brain_mask.nii.gz',
+        'brainmask_fs.2.0.nii.gz': 'desc-brain_mask.nii.gz',
     }
     copy_dictionary = {}
 
