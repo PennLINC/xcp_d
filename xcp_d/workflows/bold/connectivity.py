@@ -436,7 +436,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
-            iterfield=['timeseries', 'atlas_labels'],
+            iterfield=['timeseries'],
             mem_gb=mem_gb['timeseries'],
         )
         workflow.connect([
@@ -466,7 +466,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             convert_tsv_to_pconn = pe.MapNode(
                 TSVToPconn(),
                 name=f'convert_tsv_to_pconn_{file_to_pconn}',
-                iterfield=['in_file', 'source_cifti'],
+                iterfield=['in_file', 'source_cifti', 'atlas_labels'],
             )
             workflow.connect([
                 (inputnode, convert_tsv_to_pconn, [('atlas_labels_files', 'atlas_labels')]),
