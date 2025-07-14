@@ -931,7 +931,9 @@ class TSVToPconn(SimpleInterface):
                 )
 
             if missing_tsv_names:
-                raise ValueError(f'Missing TSV labels in CIFTI file: {missing_tsv_names}')
+                raise ValueError(
+                    f'Missing TSV labels in CIFTI file: {missing_tsv_names}\n\n{node_labels_df}'
+                )
 
         # Replace the TSV node names with the corresponding CIFTI node names.
         df.index = [parcel_label_mapper[i] for i in df.index]
