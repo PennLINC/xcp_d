@@ -675,6 +675,15 @@ def correlate_timeseries(timeseries, temporal_mask):
     import pandas as pd
 
     timeseries_df = pd.read_table(timeseries)
+
+    if temporal_mask.ndim != 1:
+        raise ValueError('temporal_mask must be 1D.')
+    elif temporal_mask.shape[0] != timeseries_df.shape[0]:
+        raise ValueError(
+            f'temporal_mask ({temporal_mask.shape[0]}) must have the same number of rows as '
+            f'timeseries ({timeseries_df.shape[0]}).'
+        )
+
     node_names = timeseries_df.columns.values
     correlations_dict = correlate_timeseries_xdf(
         arr=timeseries_df.values.T,
