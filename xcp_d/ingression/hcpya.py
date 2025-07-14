@@ -290,6 +290,16 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
+        bold_mask_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.0.nii.gz')
+        if not os.path.isfile(bold_mask_orig):
+            bold_mask_orig = os.path.join(task_dir_orig, 'brainmask_fs.nii.gz')
+
+        bold_mask_fmriprep = os.path.join(
+            func_dir_bids,
+            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-brain_mask.nii.gz',
+        )
+        copy_dictionary[bold_mask_orig] = [bold_mask_fmriprep]
+
         # Extract metadata for JSON files
         bold_metadata = {
             'RepetitionTime': float(nb.load(bold_nifti_orig).header.get_zooms()[-1]),

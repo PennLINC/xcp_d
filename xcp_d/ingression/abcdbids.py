@@ -269,10 +269,9 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             )
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
-            # Use anatomical brain mask as bold mask
-            bold_mask_orig = os.path.join(anat_dir_orig, 'brainmask_fs.2.0.nii.gz')
+            bold_mask_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.0.nii.gz')
             if not os.path.isfile(bold_mask_orig):
-                bold_mask_orig = os.path.join(anat_dir_orig, 'brainmask_fs.nii.gz')
+                bold_mask_orig = os.path.join(task_dir_orig, 'brainmask_fs.nii.gz')
 
             bold_mask_fmriprep = os.path.join(
                 func_dir_bids,
