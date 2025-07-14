@@ -570,24 +570,26 @@ def _combine_concat_name(in_files):
     """
     import os
 
+    # List of files
     if isinstance(in_files[0], str):
         directory = os.path.dirname(in_files[0])
         filenames = [os.path.basename(f) for f in in_files]
         filename_parts = [f.split('_') for f in filenames]
         to_remove = []
         for part in filename_parts[0]:
+            if part.startswith('run-') or part.startswith('dir-'):
+                to_remove.append(part)
+                continue
+
             for next_filename_part in filename_parts[1:]:
-                if (
-                    part not in next_filename_part
-                    or part.startswith('run-')
-                    or part.startswith('dir-')
-                ):
+                if part not in next_filename_part:
                     to_remove.append(part)
 
         new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
         new_filename = '_'.join(new_filename_parts)
         return os.path.join(directory, new_filename)
 
+    # List of lists of files
     names = []
     for atlas_files in in_files:
         directory = os.path.dirname(atlas_files[0])
@@ -595,12 +597,12 @@ def _combine_concat_name(in_files):
         filename_parts = [f.split('_') for f in filenames]
         to_remove = []
         for part in filename_parts[0]:
+            if part.startswith('run-') or part.startswith('dir-'):
+                to_remove.append(part)
+                continue
+
             for next_filename_part in filename_parts[1:]:
-                if (
-                    part not in next_filename_part
-                    or part.startswith('run-')
-                    or part.startswith('dir-')
-                ):
+                if part not in next_filename_part:
                     to_remove.append(part)
 
         new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
