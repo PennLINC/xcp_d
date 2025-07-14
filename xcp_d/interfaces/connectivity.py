@@ -943,8 +943,9 @@ class TSVToPconn(SimpleInterface):
         df = df[ax.name]
 
         out_img = nb.Cifti2Image(
-            data=df.values,
+            df.values,
             header=new_header,
+            nifti_header=source_img.nifti_header,
         )
 
         # Save out the CIFTI
