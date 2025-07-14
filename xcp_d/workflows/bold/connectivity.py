@@ -440,10 +440,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             mem_gb=mem_gb['timeseries'],
         )
         workflow.connect([
-            (inputnode, functional_connectivity, [
-                ('temporal_mask', 'temporal_mask'),
-                ('atlas_labels_files', 'atlas_labels'),
-            ]),
+            (inputnode, functional_connectivity, [('temporal_mask', 'temporal_mask')]),
             (parcellate_bold_wf, functional_connectivity, [
                 ('outputnode.parcellated_tsv', 'timeseries'),
             ]),
@@ -472,6 +469,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 iterfield=['in_file', 'source_cifti'],
             )
             workflow.connect([
+                (inputnode, convert_tsv_to_pconn, [('atlas_labels_files', 'atlas_labels')]),
                 (parcellate_bold_wf, convert_tsv_to_pconn, [
                     ('outputnode.parcellated_cifti', 'source_cifti'),
                 ]),
