@@ -436,11 +436,14 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
-            iterfield=['timeseries'],
+            iterfield=['timeseries', 'atlas_labels'],
             mem_gb=mem_gb['timeseries'],
         )
         workflow.connect([
-            (inputnode, functional_connectivity, [('temporal_mask', 'temporal_mask')]),
+            (inputnode, functional_connectivity, [
+                ('temporal_mask', 'temporal_mask'),
+                ('atlas_labels_files', 'atlas_labels'),
+            ]),
             (parcellate_bold_wf, functional_connectivity, [
                 ('outputnode.parcellated_tsv', 'timeseries'),
             ]),
