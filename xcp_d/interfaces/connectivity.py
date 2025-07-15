@@ -943,12 +943,13 @@ class TSVToPconn(SimpleInterface):
             )
 
         # Replace the TSV node names with the corresponding CIFTI node names.
-        df.index = [parcel_label_mapper[i] for i in df.index]
+        parcel_label_mapper_inv = {v: k for k, v in parcel_label_mapper.items()}
+        df.index = [parcel_label_mapper_inv[i] for i in df.index]
         # Sort the TSV by the CIFTI node names
         df = df.loc[ax.name]
 
         # Replace the column names with the corresponding CIFTI node names.
-        df.columns = [parcel_label_mapper[i] for i in df.columns]
+        df.columns = [parcel_label_mapper_inv[i] for i in df.columns]
         df = df[ax.name]
 
         out_img = nb.Cifti2Image(
