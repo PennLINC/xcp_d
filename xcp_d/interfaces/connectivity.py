@@ -928,6 +928,7 @@ class TSVToPconn(SimpleInterface):
             if missing_cifti_names:
                 raise ValueError(
                     f'Missing CIFTI labels in TSV labels DataFrame: {missing_cifti_names}'
+                    f'\n\n{node_labels_df}'
                 )
 
             if missing_tsv_names:
