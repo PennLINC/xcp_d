@@ -891,14 +891,14 @@ class TSVToPconn(SimpleInterface):
         # Map from CIFTI node name to TSV node name.
         if 'cifti_label' in node_labels_df.columns:
             parcel_label_mapper = dict(
-                zip(node_labels_df['label'], node_labels_df['cifti_label'], strict=False)
+                zip(node_labels_df['cifti_label'], node_labels_df['label'], strict=False)
             )
         elif 'label_7network' in node_labels_df.columns:
             node_labels_df['cifti_label'] = node_labels_df['label_7network'].fillna(
                 node_labels_df['label']
             )
             parcel_label_mapper = dict(
-                zip(node_labels_df['label'], node_labels_df['cifti_label'], strict=False)
+                zip(node_labels_df['cifti_label'], node_labels_df['label'], strict=False)
             )
         else:
             LOGGER.warning(
@@ -919,6 +919,7 @@ class TSVToPconn(SimpleInterface):
         missing_cifti_nodes = []
         missing_tsv_nodes = []
         for cifti_name in ax.name:
+            cifti_name = str(cifti_name)
             # If the CIFTI node name is not in the TSV, add it to the list of missing CIFTI nodes.
             if cifti_name not in parcel_label_mapper.keys():
                 missing_cifti_nodes.append(cifti_name)
