@@ -685,13 +685,13 @@ class CiftiToTSV(SimpleInterface):
                     if dict_value not in df.index:
                         missing_dict_values.append(dict_value)
 
-                if missing_index_values:
-                    raise ValueError(
-                        f'Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}'
-                    )
+            if missing_index_values:
+                raise ValueError(
+                    f'Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}'
+                )
 
-                if missing_dict_values:
-                    raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
+            if missing_dict_values:
+                raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
 
             # Replace the index values with the corresponding dictionary values.
             df.index = [parcel_label_mapper[i] for i in df.index]
@@ -708,13 +708,13 @@ class CiftiToTSV(SimpleInterface):
                     if dict_value not in df.columns:
                         missing_dict_values.append(dict_value)
 
-                if missing_columns:
-                    raise ValueError(
-                        f'Missing CIFTI labels in atlas labels DataFrame: {missing_columns}'
-                    )
+            if missing_columns:
+                raise ValueError(
+                    f'Missing CIFTI labels in atlas labels DataFrame: {missing_columns}'
+                )
 
-                if missing_dict_values:
-                    raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
+            if missing_dict_values:
+                raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
 
             # Replace the column names with the corresponding dictionary values.
             df.columns = [parcel_label_mapper[i] for i in df.columns]
@@ -888,6 +888,7 @@ class TSVToPconn(SimpleInterface):
             )
             node_labels_df = node_labels_df.drop(index=[0])
 
+        # Map from CIFTI node name to TSV node name.
         if 'cifti_label' in node_labels_df.columns:
             parcel_label_mapper = dict(
                 zip(node_labels_df['label'], node_labels_df['cifti_label'], strict=False)
@@ -915,26 +916,30 @@ class TSVToPconn(SimpleInterface):
         # missing index values.
         # If any dictionary keys are not in the index, raise an error with a list of the
         # missing dictionary keys.
-        missing_cifti_names = []
-        missing_tsv_names = []
-        for parcel_name in ax.name:
-            if parcel_name not in parcel_label_mapper:
-                missing_cifti_names.append(parcel_name)
+        missing_cifti_nodes = []
+        missing_tsv_nodes = []
+        for cifti_name in ax.name:
+            # If the CIFTI node name is not in the TSV, add it to the list of missing CIFTI nodes.
+            if cifti_name not in parcel_label_mapper.keys():
+                missing_cifti_nodes.append(cifti_name)
 
-            for expected_parcel_name in parcel_label_mapper.keys():
-                if expected_parcel_name not in ax.name:
-                    missing_tsv_names.append(expected_parcel_name)
+        for expected_cifti_name in parcel_label_mapper.keys():
+            # If the TSV node name is not in the CIFTI, add it to the list of missing TSV nodes.
+            if expected_cifti_name not in ax.name:
+                missing_tsv_nodes.append(expected_cifti_name)
 
-            if missing_cifti_names:
-                raise ValueError(
-                    f'Missing CIFTI labels in TSV labels DataFrame: {missing_cifti_names}'
-                    f'\n\n{node_labels_df}'
-                )
+        if missing_cifti_nodes:
+            raise ValueError(
+                f'Missing CIFTI labels in TSV labels DataFrame: {missing_cifti_nodes}'
+                f'\n\n{node_labels_df}'
+            )
 
-            if missing_tsv_names:
-                raise ValueError(
-                    f'Missing TSV labels in CIFTI file: {missing_tsv_names}\n\n{node_labels_df}'
-                )
+        if missing_tsv_nodes:
+            # CIFTIs can have empty nodes, so we expect a full match between the TSV and CIFTI,
+            # even if the CIFTI (due to resampling) doesn't have vertices for all nodes.
+            raise ValueError(
+                f'Missing TSV labels in CIFTI file: {missing_tsv_nodes}\n\n{node_labels_df}'
+            )
 
         # Replace the TSV node names with the corresponding CIFTI node names.
         df.index = [parcel_label_mapper[i] for i in df.index]
