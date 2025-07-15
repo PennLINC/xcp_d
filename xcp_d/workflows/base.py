@@ -473,8 +473,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         # Assuming TR is constant across runs for a given combination of entities.
         TR = _get_tr(nb.load(task_files[0]))
 
+        # We only "concatenate" if scans are named with a run or direction entity.
+        multirun_entity = get_entity(task_files[0], 'run') is not None
+        multidir_entity = get_entity(task_files[0], 'dir') is not None
+        multiscans = multirun_entity or multidir_entity
+
         n_task_runs = len(task_files)
-        if config.workflow.combine_runs and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_task_runs > 0) and multiscans:
             merge_elements = [
                 'name_source',
                 'preprocessed_bold',
@@ -594,13 +599,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-            if config.workflow.combine_runs and (n_task_runs > 1):
+            if config.workflow.combine_runs and (n_task_runs > 0) and multiscans:
                 for io_name, node in merge_dict.items():
                     workflow.connect([
                         (postprocess_bold_wf, node, [(f'outputnode.{io_name}', f'in{j_run + 1}')]),
                     ])  # fmt:skip
 
-        if config.workflow.combine_runs and (n_processed_task_runs > 1):
+        if config.workflow.combine_runs and (n_processed_task_runs > 0) and multiscans:
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,
