@@ -345,19 +345,18 @@ class TSVConnect(SimpleInterface):
                 temporal_mask=temporal_mask,
             )
             for measure in measures:
-                self._results[f'{measure}_exact'].append(
-                    fname_presuffix(
-                        f'{measure}_{exact_column}.tsv',
-                        newpath=runtime.cwd,
-                        use_ext=True,
-                    ),
+                fname = fname_presuffix(
+                    f'{measure}_{exact_column}.tsv',
+                    newpath=runtime.cwd,
+                    use_ext=True,
                 )
                 correlations_dict[measure].to_csv(
-                    self._results[f'{measure}_exact'][-1],
+                    fname,
                     sep='\t',
                     na_rep='n/a',
                     index_label='Node',
                 )
+                self._results[f'{measure}_exact'].append(fname)
 
             del correlations_dict
             gc.collect()
