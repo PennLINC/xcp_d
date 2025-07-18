@@ -625,6 +625,8 @@ class workflow(_Config):
     """Order of the band-pass filter."""
     min_coverage = None
     """Coverage threshold to apply to parcels in each atlas."""
+    correlation_outputs = None
+    """Correlation measures to output."""
     correlation_lengths = None
     """Produce correlation matrices limited to each requested amount of time.
     If this list includes 'all' then correlations from the full (censored) time series will
