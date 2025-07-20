@@ -231,25 +231,7 @@ class _QCPlotsOutputSpec(TraitedSpec):
 
 
 class QCPlots(SimpleInterface):
-    """Generate pre- and post-processing quality control (QC) figures.
-
-    Examples
-    --------
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    qcplots = QCPlots()
-    qcplots.inputs.cleaned_file = datafile
-    qcplots.inputs.bold_file = rawbold
-    qcplots.inputs.TR = TR
-    qcplots.inputs.temporal_mask = temporalmask
-    qcplots.inputs.mask_file = mask
-    qcplots.run()
-    .. testcleanup::
-    >>> tmpdir.cleanup()
-    """
+    """Generate pre- and post-processing quality control (QC) figures."""
 
     input_spec = _QCPlotsInputSpec
     output_spec = _QCPlotsOutputSpec
@@ -1109,13 +1091,20 @@ class PlotNifti(SimpleInterface):
     def _run_interface(self, runtime):
         from bids.layout import parse_file_entities
 
+        from xcp_d.data import load as load_data
+
+        xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+
         ENTITIES_TO_USE = ['cohort', 'den', 'res']
 
         # templateflow uses the full entity names in its BIDSLayout config,
         # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
         ENTITY_NAMES_MAPPER = {'den': 'density', 'res': 'resolution'}
         space = parse_file_entities(self.inputs.name_source)['space']
-        file_entities = parse_file_entities(self.inputs.name_source)
+        file_entities = parse_file_entities(
+            self.inputs.name_source,
+            config=['bids', 'derivatives', xcp_d_config],
+        )
         entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
         entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in entities_to_use.items()}
 
