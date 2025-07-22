@@ -200,7 +200,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         mem_gb=1,
     )
     workflow.connect([
-        (filter_runs, ds_motion_file, [(('motion_file', _combine_concat_name), 'source_file')]),
+        (filter_runs, ds_motion_file, [(('motion_file', _combine_name), 'source_file')]),
         (concatenate_inputs, ds_motion_file, [('motion_file', 'in_file')]),
         (motion_src, ds_motion_file, [('out', 'Sources')]),
     ])  # fmt:skip
@@ -225,7 +225,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
         workflow.connect([
             (filter_runs, ds_temporal_mask, [
-                (('temporal_mask', _combine_concat_name), 'source_file'),
+                (('temporal_mask', _combine_name), 'source_file'),
             ]),
             (concatenate_inputs, ds_temporal_mask, [('temporal_mask', 'in_file')]),
             (temporal_mask_src, ds_temporal_mask, [('out', 'Sources')]),
@@ -276,7 +276,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     workflow.connect([
         (filter_runs, ds_denoised_bold, [
-            (('denoised_bold', _combine_concat_name), 'source_file'),
+            (('denoised_bold', _combine_name), 'source_file'),
         ]),
         (concatenate_inputs, ds_denoised_bold, [('denoised_bold', 'in_file')]),
         (denoised_bold_src, ds_denoised_bold, [('out', 'Sources')]),
@@ -295,7 +295,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         workflow.connect([
             (filter_runs, smoothed_src, [('smoothed_denoised_bold', 'in1')]),
             (filter_runs, ds_smoothed_denoised_bold, [
-                (('smoothed_denoised_bold', _combine_concat_name), 'source_file'),
+                (('smoothed_denoised_bold', _combine_name), 'source_file'),
             ]),
             (concatenate_inputs, ds_smoothed_denoised_bold, [
                 ('smoothed_denoised_bold', 'in_file'),
@@ -331,7 +331,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         )
 
         workflow.connect([
-            (filter_runs, ds_timeseries, [(('timeseries', _combine_concat_name), 'source_file')]),
+            (filter_runs, ds_timeseries, [(('timeseries', _combine_name), 'source_file')]),
             (concatenate_inputs, ds_timeseries, [('timeseries', 'in_file')]),
             (make_timeseries_dict, ds_timeseries, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
@@ -380,7 +380,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
             workflow.connect([
                 (filter_runs, ds_correlations, [
-                    (('timeseries', _combine_concat_name), 'source_file'),
+                    (('timeseries', _combine_name), 'source_file'),
                 ]),
                 (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
                 (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
@@ -413,7 +413,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
             workflow.connect([
                 (filter_runs, ds_cifti_ts, [(
-                    ('timeseries_ciftis', _combine_concat_name), 'source_file'),
+                    ('timeseries_ciftis', _combine_name), 'source_file'),
                 ]),
                 (concatenate_inputs, ds_cifti_ts, [('timeseries_ciftis', 'in_file')]),
                 (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
@@ -423,93 +423,6 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
 
 def _combine_name(in_files):
-    """Remove unmatched entities from a list of files to produce a single name.
-
-    Parameters
-    ----------
-    in_files : :obj:`list` of :obj:`list` of :obj:`str` or :obj:`list` of :obj:`str`
-        List of lists of file paths. Each sublist contains files for a single atlas.
-
-    Returns
-    -------
-    names : :obj:`list` of :obj:`str` or :obj:`str`
-        Combined names, containing only the entities that are present in all files in a sublist.
-
-    Examples
-    --------
-    >>> _combine_name([
-    ...     ['/path/to/sub-01_task-rest_run-1_bold.nii.gz',
-    ...      '/path/to/sub-01_task-rest_run-2_bold.nii.gz'],
-    ... ])
-    ['/path/to/sub-01_task-rest_bold.nii.gz']
-
-    >>> _combine_name([
-    ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
-    ...      '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz'],
-    ... ])
-    ['/path/to/sub-01_task-rest_bold.nii.gz']
-
-    >>> _combine_name([
-    ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
-    ...      '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz'],
-    ... ])
-    ['/path/to/sub-01_task-rest_dir-AP_bold.nii.gz']
-
-    >>> _combine_name([
-    ...     '/path/to/sub-01_task-rest_run-1_bold.nii.gz',
-    ...     '/path/to/sub-01_task-rest_run-2_bold.nii.gz',
-    ... ])
-    '/path/to/sub-01_task-rest_bold.nii.gz'
-
-    >>> _combine_name([
-    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
-    ...     '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz',
-    ... ])
-    '/path/to/sub-01_task-rest_bold.nii.gz'
-
-    >>> _combine_name([
-    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
-    ...     '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz',
-    ... ])
-    '/path/to/sub-01_task-rest_dir-AP_bold.nii.gz'
-
-    """
-    import os
-
-    if isinstance(in_files[0], str):
-        directory = os.path.dirname(in_files[0])
-        filenames = [os.path.basename(f) for f in in_files]
-        filename_parts = [f.split('_') for f in filenames]
-        to_remove = []
-        for part in filename_parts[0]:
-            for next_filename_part in filename_parts[1:]:
-                if part not in next_filename_part:
-                    to_remove.append(part)
-
-        new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
-        new_filename = '_'.join(new_filename_parts)
-        return os.path.join(directory, new_filename)
-
-    names = []
-    for atlas_files in in_files:
-        directory = os.path.dirname(atlas_files[0])
-        filenames = [os.path.basename(f) for f in atlas_files]
-        filename_parts = [f.split('_') for f in filenames]
-        to_remove = []
-        for part in filename_parts[0]:
-            for next_filename_part in filename_parts[1:]:
-                if part not in next_filename_part:
-                    to_remove.append(part)
-
-        new_filename_parts = [p for p in filename_parts[0] if p not in to_remove]
-        new_filename = '_'.join(new_filename_parts)
-        new_file = os.path.join(directory, new_filename)
-        names.append(new_file)
-
-    return names
-
-
-def _combine_concat_name(in_files):
     """Remove unmatched entities from a list of files to produce a single name, plus dir and run.
 
     Parameters
@@ -525,43 +438,43 @@ def _combine_concat_name(in_files):
 
     Examples
     --------
-    >>> _combine_concat_name([
+    >>> _combine_name([
     ...     ['/path/to/sub-01_task-rest_run-1_bold.nii.gz',
     ...      '/path/to/sub-01_task-rest_run-2_bold.nii.gz'],
     ... ])
     ['/path/to/sub-01_task-rest_bold.nii.gz']
 
-    >>> _combine_concat_name([
+    >>> _combine_name([
     ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
     ...      '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz'],
     ... ])
     ['/path/to/sub-01_task-rest_bold.nii.gz']
 
-    >>> _combine_concat_name([
+    >>> _combine_name([
     ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
     ...      '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz'],
     ... ])
     ['/path/to/sub-01_task-rest_bold.nii.gz']
 
-    >>> _combine_concat_name([
+    >>> _combine_name([
     ...     '/path/to/sub-01_task-rest_run-1_bold.nii.gz',
     ...     '/path/to/sub-01_task-rest_run-2_bold.nii.gz',
     ... ])
     '/path/to/sub-01_task-rest_bold.nii.gz'
 
-    >>> _combine_concat_name([
+    >>> _combine_name([
     ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
     ...     '/path/to/sub-01_task-rest_dir-PA_run-2_bold.nii.gz',
     ... ])
     '/path/to/sub-01_task-rest_bold.nii.gz'
 
-    >>> _combine_concat_name([
+    >>> _combine_name([
     ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
     ...     '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz',
     ... ])
     '/path/to/sub-01_task-rest_bold.nii.gz'
 
-    >>> _combine_concat_name([
+    >>> _combine_name([
     ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
     ...     '/path/to/sub-01_task-rest_dir-PA_run-1_bold.nii.gz',
     ... ])
