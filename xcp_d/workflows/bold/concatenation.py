@@ -224,9 +224,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             mem_gb=1,
         )
         workflow.connect([
-            (filter_runs, ds_temporal_mask, [
-                (('temporal_mask', _combine_name), 'source_file'),
-            ]),
+            (filter_runs, ds_temporal_mask, [(('temporal_mask', _combine_name), 'source_file')]),
             (concatenate_inputs, ds_temporal_mask, [('temporal_mask', 'in_file')]),
             (temporal_mask_src, ds_temporal_mask, [('out', 'Sources')]),
         ])  # fmt:skip
@@ -275,9 +273,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([(filter_runs, denoised_bold_src, [('denoised_bold', 'in1')])])
 
     workflow.connect([
-        (filter_runs, ds_denoised_bold, [
-            (('denoised_bold', _combine_name), 'source_file'),
-        ]),
+        (filter_runs, ds_denoised_bold, [(('denoised_bold', _combine_name), 'source_file')]),
         (concatenate_inputs, ds_denoised_bold, [('denoised_bold', 'in_file')]),
         (denoised_bold_src, ds_denoised_bold, [('out', 'Sources')]),
     ])  # fmt:skip
@@ -379,9 +375,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             )
 
             workflow.connect([
-                (filter_runs, ds_correlations, [
-                    (('timeseries', _combine_name), 'source_file'),
-                ]),
+                (filter_runs, ds_correlations, [(('timeseries', _combine_name), 'source_file')]),
                 (correlate_timeseries, ds_correlations, [('correlations', 'in_file')]),
                 (make_correlations_dict, ds_correlations, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
