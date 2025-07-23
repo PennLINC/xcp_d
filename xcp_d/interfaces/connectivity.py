@@ -64,7 +64,7 @@ class NiftiParcellate(SimpleInterface):
         atlas_img = nb.load(self.inputs.atlas)
         min_coverage = self.inputs.min_coverage
 
-        node_labels_df = pd.read_table(self.inputs.atlas_labels, index_col='index')
+        node_labels_df = pd.read_table(self.inputs.atlas_labels)
         node_labels_df['name'] = node_labels_df['label']
 
         # Before anything, we need to measure coverage
