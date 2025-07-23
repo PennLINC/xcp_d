@@ -65,8 +65,9 @@ class NiftiParcellate(SimpleInterface):
         min_coverage = self.inputs.min_coverage
 
         node_labels_df = pd.read_table(self.inputs.atlas_labels)
+        # One requirement for later is that the index values are sorted in ascending order.
+        node_labels_df = node_labels_df.sort_values(by='index').reset_index(drop=True)
         node_labels_df['name'] = node_labels_df['label']
-        node_labels_dict = node_labels_df.set_index('label')['index'].to_dict()
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(
@@ -146,7 +147,7 @@ class NiftiParcellate(SimpleInterface):
         # Use nilearn to parcellate the file
         timeseries_arr = masker.fit_transform(self.inputs.filtered_file)
         assert timeseries_arr.shape[1] == n_found_nodes
-        masker_regions_dict = masker.region_names_
+        masker_regions_dict = {v: k for k, v in masker.region_names_.items()}
         del masker
         gc.collect()
 
@@ -154,16 +155,19 @@ class NiftiParcellate(SimpleInterface):
         timeseries_arr[:, coverage_thresholded] = np.nan
 
         if n_found_nodes != n_nodes:  # parcels lost by warping/downsampling atlas
-            raise ValueError('Parcels lost by warping/downsampling atlas')
+            raise ValueError(masker_regions_dict)
             # Fill in any missing nodes in the timeseries array with NaNs.
             new_timeseries_arr = np.full(
                 (timeseries_arr.shape[0], n_nodes),
                 fill_value=np.nan,
                 dtype=timeseries_arr.dtype,
             )
-            for i_node in range(timeseries_arr.shape[1]):
-                atlas_idx = node_labels_dict[masker_regions_dict[i_node]]
-                new_timeseries_arr[:, atlas_idx] = timeseries_arr[:, i_node]
+            for i_node in range(n_nodes):
+                # Get the node's name. We don't need the index in the atlas file, because
+                # the masker will return sequential indices.
+                label = node_labels_df.loc[i_node, 'label']
+                masker_idx = masker_regions_dict[label]
+                new_timeseries_arr[:, i_node] = timeseries_arr[:, masker_idx]
 
             timeseries_arr = new_timeseries_arr
             del new_timeseries_arr
@@ -172,8 +176,9 @@ class NiftiParcellate(SimpleInterface):
             # Fill in any missing nodes in the coverage array with zero.
             new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
             for i_node in range(parcel_coverage.shape[0]):
-                label_row = seq_mapper[masker_regions_dict[i_node]]
-                new_parcel_coverage[label_row] = parcel_coverage[i_node]
+                label = node_labels_df.loc[i_node, 'label']
+                masker_idx = masker_regions_dict[label]
+                new_parcel_coverage[i_node] = parcel_coverage[masker_idx]
 
             parcel_coverage = new_parcel_coverage
             del new_parcel_coverage
