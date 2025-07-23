@@ -61,17 +61,11 @@ class NiftiParcellate(SimpleInterface):
 
     def _run_interface(self, runtime):
         mask = self.inputs.mask
-        atlas = self.inputs.atlas
+        atlas_img = nb.load(self.inputs.atlas)
         min_coverage = self.inputs.min_coverage
 
         node_labels_df = pd.read_table(self.inputs.atlas_labels, index_col='index')
-
-        # Fix any nonsequential values or mismatch between atlas and DataFrame.
-        atlas_img, node_labels_df = _sanitize_nifti_atlas(atlas, node_labels_df)
-        node_labels = node_labels_df['label'].tolist()
-        # prepend "background" to node labels to satisfy NiftiLabelsMasker
-        # The background "label" won't be present in the output timeseries.
-        masker_labels = ['background'] + node_labels
+        node_labels_df['name'] = node_labels_df['label']
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(
@@ -82,7 +76,7 @@ class NiftiParcellate(SimpleInterface):
 
         sum_masker_masked = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=masker_labels,
+            lut=node_labels_df,
             background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
@@ -92,7 +86,7 @@ class NiftiParcellate(SimpleInterface):
         )
         sum_masker_unmasked = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=masker_labels,
+            lut=node_labels_df,
             background_label=0,
             smoothing_fwhm=None,
             standardize=False,
@@ -106,7 +100,7 @@ class NiftiParcellate(SimpleInterface):
         del sum_masker_masked, sum_masker_unmasked, n_voxels_in_masked_parcels, n_voxels_in_parcels
         gc.collect()
 
-        n_nodes = len(node_labels)
+        n_nodes = node_labels_df.shape[0]
         n_found_nodes = coverage_thresholded.size
         n_bad_nodes = np.sum(parcel_coverage == 0)
         n_poor_parcels = np.sum(
@@ -140,7 +134,7 @@ class NiftiParcellate(SimpleInterface):
 
         masker = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=masker_labels,
+            lut=node_labels_df,
             background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
@@ -151,8 +145,8 @@ class NiftiParcellate(SimpleInterface):
         # Use nilearn to parcellate the file
         timeseries_arr = masker.fit_transform(self.inputs.filtered_file)
         assert timeseries_arr.shape[1] == n_found_nodes
-        masker_labels = masker.labels_[:]
-        raise Exception(masker_labels)
+        masker_region_labels = mask.region_names_
+        raise ValueError(masker_region_labels)
         del masker
         gc.collect()
 
