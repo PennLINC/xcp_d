@@ -152,6 +152,7 @@ class NiftiParcellate(SimpleInterface):
         timeseries_arr = masker.fit_transform(self.inputs.filtered_file)
         assert timeseries_arr.shape[1] == n_found_nodes
         masker_labels = masker.labels_[:]
+        raise Exception(masker_labels)
         del masker
         gc.collect()
 
