@@ -66,6 +66,7 @@ class NiftiParcellate(SimpleInterface):
 
         node_labels_df = pd.read_table(self.inputs.atlas_labels)
         node_labels_df['name'] = node_labels_df['label']
+        node_labels_dict = node_labels_df.set_index('label')['index'].to_dict()
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(
@@ -145,27 +146,24 @@ class NiftiParcellate(SimpleInterface):
         # Use nilearn to parcellate the file
         timeseries_arr = masker.fit_transform(self.inputs.filtered_file)
         assert timeseries_arr.shape[1] == n_found_nodes
-        masker_region_labels = masker.region_names_
-        raise ValueError(masker_region_labels)
+        masker_regions_dict = masker.region_names_
         del masker
         gc.collect()
 
         # Apply the coverage mask
         timeseries_arr[:, coverage_thresholded] = np.nan
 
-        # Region indices in the atlas may not be sequential, so we map them to sequential ints.
-        seq_mapper = {idx: i for i, idx in enumerate(node_labels_df['sanitized_index'].tolist())}
-
         if n_found_nodes != n_nodes:  # parcels lost by warping/downsampling atlas
+            raise ValueError('Parcels lost by warping/downsampling atlas')
             # Fill in any missing nodes in the timeseries array with NaNs.
             new_timeseries_arr = np.full(
                 (timeseries_arr.shape[0], n_nodes),
                 fill_value=np.nan,
                 dtype=timeseries_arr.dtype,
             )
-            for col in range(timeseries_arr.shape[1]):
-                label_col = seq_mapper[masker_labels[col]]
-                new_timeseries_arr[:, label_col] = timeseries_arr[:, col]
+            for i_node in range(timeseries_arr.shape[1]):
+                atlas_idx = node_labels_dict[masker_regions_dict[i_node]]
+                new_timeseries_arr[:, atlas_idx] = timeseries_arr[:, i_node]
 
             timeseries_arr = new_timeseries_arr
             del new_timeseries_arr
@@ -173,9 +171,9 @@ class NiftiParcellate(SimpleInterface):
 
             # Fill in any missing nodes in the coverage array with zero.
             new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
-            for row in range(parcel_coverage.shape[0]):
-                label_row = seq_mapper[masker_labels[row]]
-                new_parcel_coverage[label_row] = parcel_coverage[row]
+            for i_node in range(parcel_coverage.shape[0]):
+                label_row = seq_mapper[masker_regions_dict[i_node]]
+                new_parcel_coverage[label_row] = parcel_coverage[i_node]
 
             parcel_coverage = new_parcel_coverage
             del new_parcel_coverage
