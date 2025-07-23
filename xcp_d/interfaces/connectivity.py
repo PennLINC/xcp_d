@@ -162,8 +162,8 @@ class NiftiParcellate(SimpleInterface):
                 fill_value=np.nan,
                 dtype=timeseries_arr.dtype,
             )
-            for i_node in masker_regions_dict.keys():
-                new_timeseries_arr[:, i_node] = timeseries_arr[:, i_node]
+            for i_node, node_idx in enumerate(masker_regions_dict.keys()):
+                new_timeseries_arr[:, node_idx] = timeseries_arr[:, i_node]
 
             timeseries_arr = new_timeseries_arr
             del new_timeseries_arr
@@ -171,8 +171,8 @@ class NiftiParcellate(SimpleInterface):
 
             # Fill in any missing nodes in the coverage array with zero.
             new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
-            for i_node in masker_regions_dict.keys():
-                new_parcel_coverage[i_node] = parcel_coverage[i_node]
+            for i_node, node_idx in enumerate(masker_regions_dict.keys()):
+                new_parcel_coverage[node_idx] = parcel_coverage[i_node]
 
             parcel_coverage = new_parcel_coverage
             del new_parcel_coverage
