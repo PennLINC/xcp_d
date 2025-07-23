@@ -145,7 +145,7 @@ class NiftiParcellate(SimpleInterface):
         # Use nilearn to parcellate the file
         timeseries_arr = masker.fit_transform(self.inputs.filtered_file)
         assert timeseries_arr.shape[1] == n_found_nodes
-        masker_region_labels = mask.region_names_
+        masker_region_labels = masker.region_names_
         raise ValueError(masker_region_labels)
         del masker
         gc.collect()
