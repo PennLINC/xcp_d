@@ -84,7 +84,10 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
 
 
 def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
-    """Test the nifti workflow."""
+    """Test the nifti workflow.
+
+    TODO: Improve this test by constructing an atlas with missing and poorly covered parcels.
+    """
     tmpdir = tmp_path_factory.mktemp('test_init_functional_connectivity_nifti_wf')
 
     bold_file = ds001419_data['nifti_file']
@@ -205,34 +208,40 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         correlations_arr = pd.read_table(correlations, index_col='Node').to_numpy()
         assert correlations_arr.shape == (n_parcels, n_parcels)
 
+        # Parcels with <50% coverage should have NaNs
+        assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
+
         # Now to get ground truth correlations
         labels_df = pd.read_table(atlas_labels_file, index_col='index')
-        atlas_img, _ = _sanitize_nifti_atlas(atlas_file, labels_df)
+        atlas_img, labels_df = _sanitize_nifti_atlas(atlas_file, labels_df)
+        labels_df['name'] = labels_df['label']
+        labels_df['index'] = labels_df.index
         masker = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=['background'] + coverage_df.index.tolist(),
+            lut=labels_df,
             smoothing_fwhm=None,
             standardize=False,
         )
         masker.fit(fake_bold_file)
         signals = masker.transform(fake_bold_file)
 
-        # Parcels with <50% coverage should have NaNs
-        assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
+        found_idx = np.array(list(masker.region_names_.keys()), dtype=int)
+        atlas_idx = np.arange(labels_df.shape[0], dtype=int)
 
-        atlas_idx = np.arange(len(coverage_df.index.tolist()), dtype=int)
-        idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
-        idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
         n_partial_parcels = np.where(coverage_df['coverage'] >= 0.5)[0].size
 
+        idx_not_in_atlas = np.setdiff1d(found_idx, atlas_idx)
+        idx_not_in_masker = np.setdiff1d(atlas_idx, found_idx)
+
         # Drop missing parcels
-        correlations_arr = correlations_arr[idx_in_atlas, :]
-        correlations_arr = correlations_arr[:, idx_in_atlas]
+        correlations_arr = correlations_arr[atlas_idx, :]
+        correlations_arr = correlations_arr[:, atlas_idx]
         assert correlations_arr.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
 
         # The masker.labels_ attribute only contains the labels that were found
         assert idx_not_in_atlas.size == 0
-        assert idx_in_atlas.size == n_parcels_in_atlas
+        assert atlas_idx.size == n_parcels_in_atlas
+        assert (idx_not_in_masker.size + atlas_idx.size) == n_parcels
 
         # The "ground truth" matrix
         calculated_correlations = np.corrcoef(signals.T)
