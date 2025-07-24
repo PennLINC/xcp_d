@@ -1,6 +1,5 @@
 """Tests for xcp_d.interfaces.utils module."""
 
-import json
 import os
 
 import nibabel as nb
