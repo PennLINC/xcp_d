@@ -71,8 +71,8 @@ class NiftiParcellate(SimpleInterface):
         node_labels_df = node_labels_df.sort_values(by='index').reset_index(drop=True)
         node_labels_df['name'] = node_labels_df['label']
         node_labels = node_labels_df['name'].tolist()
-        # Create a dictionary mapping df.index to df['index']
-        full_parcel_mapper = dict(enumerate(node_labels_df['index'].tolist()))
+        # Create a dictionary mapping df['index'] to df.index
+        full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(

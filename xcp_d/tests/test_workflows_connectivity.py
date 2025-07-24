@@ -234,8 +234,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         # Drop missing parcels
         full_parcel_mapper = dict(enumerate(labels_df['index'].tolist()))
-        full_parcel_mapper_inv = {v: k for k, v in full_parcel_mapper.items()}
-        keep_idx = np.array([full_parcel_mapper_inv[i] for i in atlas_idx])
+        keep_idx = np.array([full_parcel_mapper[i] for i in atlas_idx])
         correlations_arr = correlations_arr[keep_idx, :]
         correlations_arr = correlations_arr[:, keep_idx]
         assert correlations_arr.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
