@@ -45,11 +45,11 @@ def test_nifti_parcellate(tmp_path_factory):
     timeseries = results.outputs.timeseries
     assert os.path.isfile(coverage)
     assert os.path.isfile(timeseries)
-    coverage_df = pd.read_table(coverage)
+    coverage_df = pd.read_table(coverage, index_col='Node')
     timeseries_df = pd.read_table(timeseries)
-    assert coverage_df.shape == (5,), coverage_df
+    assert coverage_df.shape == (5, 1)
     assert timeseries_df.shape == (1, 5)
-    assert np.array_equal(coverage_df.to_numpy(), np.array([0, 0, 1, 1, 1]))
+    assert np.array_equal(coverage_df['coverage'].to_numpy(), np.array([0, 0, 1, 1, 1]))
     assert np.array_equal(timeseries_df.to_numpy(), np.array([[np.nan, np.nan, 3, 4, 5]]))
 
     # Now let's mask out some voxels
@@ -71,9 +71,9 @@ def test_nifti_parcellate(tmp_path_factory):
     timeseries = results.outputs.timeseries
     assert os.path.isfile(coverage)
     assert os.path.isfile(timeseries)
-    coverage_df = pd.read_table(coverage)
+    coverage_df = pd.read_table(coverage, index_col='Node')
     timeseries_df = pd.read_table(timeseries)
-    assert coverage_df.shape == (5,)
+    assert coverage_df.shape == (5, 1)
     assert timeseries_df.shape == (1, 5)
-    assert np.array_equal(coverage_df.to_numpy(), np.array([0, 0, 0.75, 0.5, 0.25]))
+    assert np.array_equal(coverage_df['coverage'].to_numpy(), np.array([0, 0, 0.75, 0.5, 0.25]))
     assert np.array_equal(timeseries_df.to_numpy(), np.array([[np.nan, np.nan, 3, 4, np.nan]]))
