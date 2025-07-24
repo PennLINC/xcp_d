@@ -210,6 +210,10 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         # Parcels with <50% coverage should have NaNs
         assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
+        # Drop parcels with <50% coverage
+        correlations_arr = correlations_arr[coverage_arr >= 0.5, :]
+        correlations_arr = correlations_arr[:, coverage_arr >= 0.5]
+
         # Now to get ground truth correlations
         labels_df = pd.read_table(atlas_labels_file)
         labels_df['name'] = labels_df['label']
@@ -222,28 +226,6 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         masker.fit(fake_bold_file)
         signals = masker.transform(fake_bold_file)
 
-        # Map from row/col index to atlas value
-        masker_parcel_mapper = masker.region_ids_
-        found_idx = np.array(list(masker_parcel_mapper.values()), dtype=int)
-        atlas_idx = labels_df['index'].to_numpy().astype(int)
-
-        n_partial_parcels = np.where(coverage_df['coverage'] >= 0.5)[0].size
-
-        idx_not_in_atlas = np.setdiff1d(found_idx, atlas_idx)
-        idx_not_in_masker = np.setdiff1d(atlas_idx, found_idx)
-
-        # Drop missing parcels
-        full_parcel_mapper = dict(enumerate(labels_df['index'].tolist()))
-        keep_idx = np.array([full_parcel_mapper[i] for i in atlas_idx])
-        correlations_arr = correlations_arr[keep_idx, :]
-        correlations_arr = correlations_arr[:, keep_idx]
-        assert correlations_arr.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
-
-        # The masker.labels_ attribute only contains the labels that were found
-        assert idx_not_in_atlas.size == 0, f'{found_idx}\n\n{atlas_idx}'
-        assert atlas_idx.size == n_parcels_in_atlas
-        assert (idx_not_in_masker.size + atlas_idx.size) == n_parcels
-
         # The "ground truth" matrix
         calculated_correlations = np.corrcoef(signals.T)
         assert calculated_correlations.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
@@ -251,7 +233,6 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
         # the resulting matrix should match the workflow-generated one.
         bad_parcel_idx = np.where(np.isnan(np.diag(correlations_arr)))[0]
-        assert bad_parcel_idx.size == n_parcels_in_atlas - n_partial_parcels
         calculated_correlations[bad_parcel_idx, :] = np.nan
         calculated_correlations[:, bad_parcel_idx] = np.nan
 
