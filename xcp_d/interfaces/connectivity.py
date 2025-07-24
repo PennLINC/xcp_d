@@ -69,10 +69,15 @@ class NiftiParcellate(SimpleInterface):
         # The 'index' column tells us what that parcel's value in the atlas image is.
         # One requirement for later is that the index values are sorted in ascending order.
         node_labels_df = node_labels_df.sort_values(by='index').reset_index(drop=True)
-        node_labels_df['name'] = node_labels_df['label']
-        node_labels = node_labels_df['name'].tolist()
+        node_labels = node_labels_df['label'].tolist()
         # Create a dictionary mapping df['index'] to df.index
         full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
+        masker_lut = node_labels_df.copy()
+        masker_lut['name'] = masker_lut['label']
+        atlas_values = np.unique(atlas_img.get_fdata())
+        atlas_values = atlas_values[atlas_values != 0]
+        atlas_values = atlas_values.astype(int)
+        masker_lut = masker_lut.loc[masker_lut['index'].isin(atlas_values)].reset_index(drop=True)
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(
@@ -83,7 +88,7 @@ class NiftiParcellate(SimpleInterface):
 
         sum_masker_masked = NiftiLabelsMasker(
             labels_img=atlas_img,
-            lut=node_labels_df,
+            lut=masker_lut,
             background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
@@ -93,7 +98,7 @@ class NiftiParcellate(SimpleInterface):
         )
         sum_masker_unmasked = NiftiLabelsMasker(
             labels_img=atlas_img,
-            lut=node_labels_df,
+            lut=masker_lut,
             background_label=0,
             smoothing_fwhm=None,
             standardize=False,
@@ -141,7 +146,7 @@ class NiftiParcellate(SimpleInterface):
 
         masker = NiftiLabelsMasker(
             labels_img=atlas_img,
-            lut=node_labels_df,
+            lut=masker_lut,
             background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
