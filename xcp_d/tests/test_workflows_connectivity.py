@@ -202,7 +202,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         # Read that into a df
         coverage_df = pd.read_table(coverage, index_col='Node')
-        coverage_arr = coverage_df.to_numpy()
+        coverage_arr = np.squeeze(coverage_df.to_numpy())
         assert coverage_arr.shape[0] == n_parcels
         correlations_arr = pd.read_table(correlations, index_col='Node').to_numpy()
         assert correlations_arr.shape == (n_parcels, n_parcels)

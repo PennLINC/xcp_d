@@ -13,7 +13,7 @@ def test_nifti_parcellate(tmp_path_factory):
     """Convert nifti files to 32-bit."""
     tmpdir = tmp_path_factory.mktemp('test_nifti_parcellate')
 
-    arr = np.zeros((3, 3, 3))
+    arr = np.zeros((4, 4, 4))
     arr[0, 0, :] = 3
     arr[0, 1, :] = 4
     arr[0, 2, :] = 5
