@@ -210,10 +210,6 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         # Parcels with <50% coverage should have NaNs
         assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
-        # Drop parcels with <50% coverage
-        correlations_arr = correlations_arr[coverage_arr >= 0.5, :]
-        correlations_arr = correlations_arr[:, coverage_arr >= 0.5]
-
         # Now to get ground truth correlations
         labels_df = pd.read_table(atlas_labels_file)
         labels_df['name'] = labels_df['label']
