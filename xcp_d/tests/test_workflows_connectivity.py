@@ -239,7 +239,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         assert correlations_arr.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
 
         # The masker.labels_ attribute only contains the labels that were found
-        assert idx_not_in_atlas.size == 0
+        assert idx_not_in_atlas.size == 0, f'{found_idx}\n\n{atlas_idx}'
         assert atlas_idx.size == n_parcels_in_atlas
         assert (idx_not_in_masker.size + atlas_idx.size) == n_parcels
 
