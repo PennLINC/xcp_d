@@ -226,7 +226,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         signals = masker.transform(fake_bold_file)
 
         found_idx = np.array(list(masker.region_names_.keys()), dtype=int)
-        atlas_idx = np.arange(labels_df.shape[0], dtype=int)
+        atlas_idx = labels_df['index'].to_numpy().astype(int)
 
         n_partial_parcels = np.where(coverage_df['coverage'] >= 0.5)[0].size
 
