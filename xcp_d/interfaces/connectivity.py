@@ -152,7 +152,8 @@ class NiftiParcellate(SimpleInterface):
             timeseries_arr = timeseries_arr[None, :]
 
         assert timeseries_arr.shape[1] == n_found_nodes
-        masker_regions_dict = masker.region_names_
+        # Map from atlas value to region name for parcels found in the atlas image
+        masker_regions_dict = {v: masker.region_names_[k] for k, v in masker.region_ids_.items()}
         del masker
         gc.collect()
 
