@@ -212,12 +212,10 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
         # Now to get ground truth correlations
-        labels_df = pd.read_table(atlas_labels_file, index_col='index')
-        atlas_img, labels_df = _sanitize_nifti_atlas(atlas_file, labels_df)
+        labels_df = pd.read_table(atlas_labels_file)
         labels_df['name'] = labels_df['label']
-        labels_df['index'] = labels_df.index
         masker = NiftiLabelsMasker(
-            labels_img=atlas_img,
+            labels_img=atlas_file,
             lut=labels_df,
             smoothing_fwhm=None,
             standardize=False,
@@ -225,9 +223,9 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         masker.fit(fake_bold_file)
         signals = masker.transform(fake_bold_file)
 
-        # Map from atlas value to region name
-        masker_region_ids = {v: masker.region_names_[k] for k, v in masker.region_ids_.items()}
-        found_idx = np.array(list(masker_region_ids.keys()), dtype=int)
+        # Map from row/col index to atlas value
+        masker_parcel_mapper = masker.region_ids_
+        found_idx = np.array(list(masker_parcel_mapper.values()), dtype=int)
         atlas_idx = labels_df['index'].to_numpy().astype(int)
 
         n_partial_parcels = np.where(coverage_df['coverage'] >= 0.5)[0].size
@@ -236,8 +234,11 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         idx_not_in_masker = np.setdiff1d(atlas_idx, found_idx)
 
         # Drop missing parcels
-        correlations_arr = correlations_arr[atlas_idx, :]
-        correlations_arr = correlations_arr[:, atlas_idx]
+        full_parcel_mapper = dict(enumerate(labels_df['index'].tolist()))
+        full_parcel_mapper_inv = {v: k for k, v in full_parcel_mapper.items()}
+        keep_idx = np.array([full_parcel_mapper_inv[i] for i in atlas_idx])
+        correlations_arr = correlations_arr[keep_idx, :]
+        correlations_arr = correlations_arr[:, keep_idx]
         assert correlations_arr.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
 
         # The masker.labels_ attribute only contains the labels that were found

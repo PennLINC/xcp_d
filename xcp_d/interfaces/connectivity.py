@@ -65,10 +65,14 @@ class NiftiParcellate(SimpleInterface):
         min_coverage = self.inputs.min_coverage
 
         node_labels_df = pd.read_table(self.inputs.atlas_labels)
+        # The index tells us which row/column in the matrix the parcel is associated with.
+        # The 'index' column tells us what that parcel's value in the atlas image is.
         # One requirement for later is that the index values are sorted in ascending order.
         node_labels_df = node_labels_df.sort_values(by='index').reset_index(drop=True)
         node_labels_df['name'] = node_labels_df['label']
         node_labels = node_labels_df['name'].tolist()
+        # Create a dictionary mapping df.index to df['index']
+        full_parcel_mapper = dict(enumerate(node_labels_df['index'].tolist()))
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(
@@ -152,8 +156,9 @@ class NiftiParcellate(SimpleInterface):
             timeseries_arr = timeseries_arr[None, :]
 
         assert timeseries_arr.shape[1] == n_found_nodes
-        # Map from atlas value to region name for parcels found in the atlas image
-        masker_regions_dict = {v: masker.region_names_[k] for k, v in masker.region_ids_.items()}
+        # Map from atlas value to column index for parcels found in the atlas image
+        # Keys are cols/rows in the matrix, values are atlas values
+        masker_parcel_mapper = masker.region_ids_
         del masker
         gc.collect()
 
@@ -167,8 +172,9 @@ class NiftiParcellate(SimpleInterface):
                 fill_value=np.nan,
                 dtype=timeseries_arr.dtype,
             )
-            for i_node, node_idx in enumerate(masker_regions_dict.keys()):
-                new_timeseries_arr[:, node_idx] = timeseries_arr[:, i_node]
+            for col_num, node_value in masker_parcel_mapper.items():
+                full_col_num = full_parcel_mapper[node_value]
+                new_timeseries_arr[:, full_col_num] = timeseries_arr[:, col_num]
 
             timeseries_arr = new_timeseries_arr
             del new_timeseries_arr
@@ -176,8 +182,9 @@ class NiftiParcellate(SimpleInterface):
 
             # Fill in any missing nodes in the coverage array with zero.
             new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
-            for i_node, node_idx in enumerate(masker_regions_dict.keys()):
-                new_parcel_coverage[node_idx] = parcel_coverage[i_node]
+            for col_num, node_value in masker_parcel_mapper.items():
+                full_col_num = full_parcel_mapper[node_value]
+                new_parcel_coverage[full_col_num] = parcel_coverage[col_num]
 
             parcel_coverage = new_parcel_coverage
             del new_parcel_coverage
