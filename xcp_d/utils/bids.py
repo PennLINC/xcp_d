@@ -820,8 +820,12 @@ def collect_confounds(
                     config=['bids', 'derivatives', xcp_d_config],
                     indexer=_indexer,
                 )
-                if layout.get_dataset_description().get('DatasetType') != 'derivatives':
-                    print(f'Dataset {k} is not a derivatives dataset. Skipping.')
+                desc = layout.get_dataset_description()
+                # Check for derivative or derivatives. The latter is a typo, but one that I've
+                # used in other places, and I don't want to have to update all of my test datasets.
+                if desc.get('DatasetType') not in ['derivative', 'derivatives']:
+                    print(f'Dataset {k} is not a derivative dataset. Skipping.')
+                    continue
 
                 layout_dict[k] = layout
             else:
