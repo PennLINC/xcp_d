@@ -50,7 +50,11 @@ def test_nifti_parcellate(tmp_path_factory):
     assert coverage_df.shape == (5, 1)
     assert timeseries_df.shape == (1, 5)
     assert np.array_equal(coverage_df['coverage'].to_numpy(), np.array([0, 0, 1, 1, 1]))
-    assert np.array_equal(timeseries_df.to_numpy(), np.array([[np.nan, np.nan, 3, 4, 5]])), timeseries_df
+    assert np.array_equal(
+        timeseries_df.to_numpy(),
+        np.array([[np.nan, np.nan, 3, 4, 5]]),
+        equal_nan=True,
+    )
 
     # Now let's mask out some voxels
     mask[0, 0, 0] = 0  # 1/4 of the third parcel
@@ -76,4 +80,8 @@ def test_nifti_parcellate(tmp_path_factory):
     assert coverage_df.shape == (5, 1)
     assert timeseries_df.shape == (1, 5)
     assert np.array_equal(coverage_df['coverage'].to_numpy(), np.array([0, 0, 0.75, 0.5, 0.25]))
-    assert np.array_equal(timeseries_df.to_numpy(), np.array([[np.nan, np.nan, 3, 4, np.nan]])), timeseries_df
+    assert np.array_equal(
+        timeseries_df.to_numpy(),
+        np.array([[np.nan, np.nan, 3, 4, np.nan]]),
+        equal_nan=True,
+    )
