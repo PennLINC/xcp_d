@@ -112,7 +112,6 @@ def generate_reports(
                 dataset_dir=dataset_dir,
                 errorname=f'report-{run_uuid}-{subject_label}.err',
                 subject=subject_label,
-                session=None,
             )
             # If the report generation failed, append the subject label for which it failed
             if report_error is not None:
