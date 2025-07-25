@@ -1,5 +1,19 @@
 # What's New
 
+## 0.11.1
+
+### 🐛 Bug Fixes
+
+* Fix figure collection for longitudinal, but not session-wise, reports by @tsalo in https://github.com/PennLINC/xcp_d/pull/1482
+
+### Other Changes
+
+* Drop dir and run entities from single-run tasks by @tsalo in https://github.com/PennLINC/xcp_d/pull/1472
+* Check DatasetType for "derivative" or "derivatives" by @tsalo in https://github.com/PennLINC/xcp_d/pull/1481
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.11.0...0.11.1
+
+
 ## 0.11.0
 
 ### 🛠 Breaking Changes
