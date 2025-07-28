@@ -158,31 +158,31 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    if 'all' in config.workflow.correlation_lengths:
-        connectivity_plot = pe.Node(
-            ConnectPlot(),
-            name='connectivity_plot',
-            mem_gb=mem_gb['resampled'],
-        )
-        workflow.connect([
-            (inputnode, connectivity_plot, [
-                ('atlases', 'atlases'),
-                ('atlas_labels_files', 'atlas_tsvs'),
-            ]),
-            (functional_connectivity, connectivity_plot, [('r', 'correlations_tsv')]),
-        ])  # fmt:skip
+        if 'all' in config.workflow.correlation_lengths:
+            connectivity_plot = pe.Node(
+                ConnectPlot(),
+                name='connectivity_plot',
+                mem_gb=mem_gb['resampled'],
+            )
+            workflow.connect([
+                (inputnode, connectivity_plot, [
+                    ('atlases', 'atlases'),
+                    ('atlas_labels_files', 'atlas_tsvs'),
+                ]),
+                (functional_connectivity, connectivity_plot, [('r', 'correlations_tsv')]),
+            ])  # fmt:skip
 
-        ds_report_connectivity_plot = pe.Node(
-            DerivativesDataSink(
-                desc='connectivityplot',
-            ),
-            name='ds_report_connectivity_plot',
-            run_without_submitting=True,
-        )
-        workflow.connect([
-            (inputnode, ds_report_connectivity_plot, [('name_source', 'source_file')]),
-            (connectivity_plot, ds_report_connectivity_plot, [('connectplot', 'in_file')]),
-        ])  # fmt:skip
+            ds_report_connectivity_plot = pe.Node(
+                DerivativesDataSink(
+                    desc='connectivityplot',
+                ),
+                name='ds_report_connectivity_plot',
+                run_without_submitting=True,
+            )
+            workflow.connect([
+                (inputnode, ds_report_connectivity_plot, [('name_source', 'source_file')]),
+                (connectivity_plot, ds_report_connectivity_plot, [('connectplot', 'in_file')]),
+            ])  # fmt:skip
 
     parcellate_reho = pe.MapNode(
         NiftiParcellate(min_coverage=min_coverage),
