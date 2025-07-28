@@ -841,10 +841,11 @@ class CiftiVertexMask(SimpleInterface):
 
 
 class _TSVToPconnInputSpec(BaseInterfaceInputSpec):
-    in_file = File(
-        exists=True,
+    in_file = traits.Either(
+        File(exists=True),
+        traits.List(File(exists=True)),
         mandatory=True,
-        desc='TSV file to convert to a pconn CIFTI file.',
+        desc='TSV file(s) to convert to pconn CIFTI file(s).',
     )
     source_cifti = File(
         exists=True,
@@ -855,7 +856,11 @@ class _TSVToPconnInputSpec(BaseInterfaceInputSpec):
 
 
 class _TSVToPconnOutputSpec(TraitedSpec):
-    out_file = File(exists=True, desc='pconn CIFTI file.')
+    out_file = traits.Either(
+        File(exists=True),
+        traits.List(File(exists=True)),
+        desc='pconn CIFTI file(s).',
+    )
 
 
 class TSVToPconn(SimpleInterface):
@@ -865,11 +870,15 @@ class TSVToPconn(SimpleInterface):
     output_spec = _TSVToPconnOutputSpec
 
     def _run_interface(self, runtime):
-        in_file = self.inputs.in_file
+        in_files = self.inputs.in_file
+        delistify = False
+        if not isinstance(in_files, list):
+            in_files = [in_files]
+            delistify = True
+
         source_cifti = self.inputs.source_cifti
         atlas_labels = self.inputs.atlas_labels
 
-        df = pd.read_table(in_file, index_col='Node')
         source_img = nb.load(source_cifti)
         # The second axis is a ParcelsAxis. We will set both axes of the output image to this.
         ax = source_img.header.get_axis(1)
@@ -943,26 +952,36 @@ class TSVToPconn(SimpleInterface):
 
         # Replace the TSV node names with the corresponding CIFTI node names.
         parcel_label_mapper_inv = {v: k for k, v in parcel_label_mapper.items()}
-        df.index = [parcel_label_mapper_inv[i] for i in df.index]
-        # Sort the TSV by the CIFTI node names
-        df = df.loc[ax.name]
 
-        # Replace the column names with the corresponding CIFTI node names.
-        df.columns = [parcel_label_mapper_inv[i] for i in df.columns]
-        df = df[ax.name]
+        out_files = []
+        for in_file in in_files:
+            df = pd.read_table(in_file, index_col='Node')
 
-        out_img = nb.Cifti2Image(
-            df.values,
-            header=new_header,
-            nifti_header=source_img.nifti_header,
-        )
+            df.index = [parcel_label_mapper_inv[i] for i in df.index]
+            # Sort the TSV by the CIFTI node names
+            df = df.loc[ax.name]
 
-        # Save out the CIFTI
-        self._results['out_file'] = fname_presuffix(
-            'extracted.pconn.nii',
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        out_img.to_filename(self._results['out_file'])
+            # Replace the column names with the corresponding CIFTI node names.
+            df.columns = [parcel_label_mapper_inv[i] for i in df.columns]
+            df = df[ax.name]
+
+            out_img = nb.Cifti2Image(
+                df.values,
+                header=new_header,
+                nifti_header=source_img.nifti_header,
+            )
+            out_file = fname_presuffix(
+                in_file,
+                suffix='.pconn.nii',
+                newpath=runtime.cwd,
+                use_ext=False,
+            )
+            out_files.append(out_file)
+            out_img.to_filename(out_file)
+
+        if delistify:
+            out_files = out_files[0]
+
+        self._results['out_file'] = out_files
 
         return runtime
