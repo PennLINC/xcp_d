@@ -441,7 +441,7 @@ class execution(_Config):
     session_id = None
     """Select a particular session from all available in the dataset."""
     task_id = None
-    """Select a particular task from all available in the dataset."""
+    """Select particular tasks from all available in the dataset."""
     processing_list = []
     """List of (subject_id, anat_session_id, [func_session_id, ...]) to be postprocessed."""
     templateflow_home = _templateflow_home
@@ -555,6 +555,11 @@ class execution(_Config):
             for acq, filters in cls.bids_filters.items():
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
+
+        if cls.task_id:
+            cls.bids_filters = cls.bids_filters or {}
+            cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
+            cls.bids_filters['bold']['task'] = listify(cls.task_id)
 
         dataset_links = {
             'preprocessed': cls.fmri_dir,
