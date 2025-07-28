@@ -92,7 +92,7 @@ def process_crashfile(crashfile):
                 scope.set_extra(k, strv[0])
             else:
                 for i, chunk in enumerate(strv):
-                    scope.set_extra(f'{k}_{i:02d}', chunk)  # noqa:FS001
+                    scope.set_extra(f'{k}_{i:02d}', chunk)
 
         fingerprint = ''
         issue_title = f'{node_name}: {gist}'
@@ -124,7 +124,7 @@ def process_crashfile(crashfile):
         sentry_sdk.capture_message(message, 'fatal')
 
 
-def before_send(event, hints):  # noqa:U100
+def before_send(event, hints):
     """Filter log messages about crashed nodes."""
     if 'logentry' in event and 'message' in event['logentry']:
         msg = event['logentry']['message']

@@ -39,6 +39,7 @@ def test_filteroutfailedruns(ds001419_data):
     denoised_bold = [Undefined, nifti_file, Undefined, Undefined, nifti_file]
     n_runs = len(denoised_bold)
     n_good_runs = 2
+    n_atlases = 3
     preprocessed_bold = [nifti_file] * n_runs
     motion_file = [tsv_file] * n_runs
     temporal_mask = [nifti_file] * n_runs
@@ -51,8 +52,8 @@ def test_filteroutfailedruns(ds001419_data):
     boldref = Undefined
 
     # Now the lists of lists
-    timeseries = [[tsv_file, tsv_file, tsv_file]] * n_runs
-    timeseries_ciftis = [[nifti_file, nifti_file, nifti_file]] * n_runs
+    timeseries = [[tsv_file] * n_atlases] * n_runs
+    timeseries_ciftis = [[nifti_file] * n_atlases] * n_runs
 
     interface = concatenation.FilterOutFailedRuns(
         denoised_bold=denoised_bold,
@@ -78,8 +79,12 @@ def test_filteroutfailedruns(ds001419_data):
     assert len(out.smoothed_denoised_bold) == n_good_runs
     assert len(out.bold_mask) == n_good_runs
     assert len(out.boldref) == n_good_runs
-    assert len(out.timeseries) == n_good_runs
-    assert len(out.timeseries_ciftis) == n_good_runs
+    # Atlas-wise files are organized in a list of lists like this:
+    # [['run-1_atlas-a', 'run-2_atlas-a'], ['run-1_atlas-b', 'run-2_atlas-b']]
+    assert len(out.timeseries) == n_atlases
+    assert len(out.timeseries_ciftis) == n_atlases
+    assert len(out.timeseries[0]) == n_good_runs
+    assert len(out.timeseries_ciftis[0]) == n_good_runs
 
 
 def test_concatenateinputs(ds001419_data, tmp_path_factory):
@@ -103,8 +108,10 @@ def test_concatenateinputs(ds001419_data, tmp_path_factory):
     smoothed_denoised_bold = [Undefined] * n_runs
 
     # Now the lists of lists
-    timeseries = [[tsv_file] * n_atlases] * n_runs
-    timeseries_ciftis = [[cifti_file] * n_atlases] * n_runs
+    # Atlas-wise files are organized in a list of lists like this:
+    # [['run-1_atlas-a', 'run-2_atlas-a'], ['run-1_atlas-b', 'run-2_atlas-b']]
+    timeseries = [[tsv_file] * n_runs] * n_atlases
+    timeseries_ciftis = [[cifti_file] * n_runs] * n_atlases
 
     interface = concatenation.ConcatenateInputs(
         preprocessed_bold=preprocessed_bold,

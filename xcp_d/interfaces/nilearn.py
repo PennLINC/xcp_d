@@ -187,6 +187,56 @@ class BinaryMath(NilearnBaseInterface, SimpleInterface):
         return runtime
 
 
+class _ApplyMaskInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        mandatory=True,
+        desc='An image to do math on.',
+    )
+    mask = File(
+        exists=True,
+        mandatory=True,
+        desc='A mask image.',
+    )
+    out_file = File(
+        'out_img.nii.gz',
+        usedefault=True,
+        exists=False,
+        desc='The name of the mathified file to write out. out_img.nii.gz by default.',
+    )
+
+
+class _ApplyMaskOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc='Masked output file.',
+    )
+
+
+class ApplyMask(NilearnBaseInterface, SimpleInterface):
+    """Apply a mask to an image."""
+
+    input_spec = _ApplyMaskInputSpec
+    output_spec = _ApplyMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        from nilearn import image, masking
+
+        resampled_mask = image.resample_to_img(
+            source_img=self.inputs.mask,
+            target_img=self.inputs.in_file,
+            interpolation='nearest',
+        )
+        img_masked = masking.unmask(
+            masking.apply_mask(self.inputs.in_file, resampled_mask),
+            resampled_mask,
+        )
+        self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
+        img_masked.to_filename(self._results['out_file'])
+
+        return runtime
+
+
 class _ResampleToImageInputSpec(BaseInterfaceInputSpec):
     in_file = File(
         exists=True,
@@ -264,6 +314,7 @@ class _DenoiseImageInputSpec(BaseInterfaceInputSpec):
     low_pass = traits.Float(mandatory=True, desc='Lowpass filter in Hz')
     high_pass = traits.Float(mandatory=True, desc='Highpass filter in Hz')
     filter_order = traits.Int(mandatory=True, desc='Filter order')
+    num_threads = traits.Int(1, usedefault=True, desc='denoise on this many cpus')
 
 
 class _DenoiseImageOutputSpec(TraitedSpec):
@@ -335,6 +386,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             high_pass=high_pass,
             filter_order=self.inputs.filter_order,
             TR=self.inputs.TR,
+            num_threads=self.inputs.num_threads,
         )
 
         # Transpose from TxS (nilearn order) to SxT (xcpd order)
@@ -421,6 +473,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             high_pass=high_pass,
             filter_order=self.inputs.filter_order,
             TR=self.inputs.TR,
+            num_threads=self.inputs.num_threads,
         )
 
         self._results['denoised_interpolated_bold'] = os.path.join(

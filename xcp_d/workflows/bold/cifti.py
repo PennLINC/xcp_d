@@ -119,7 +119,6 @@ def init_postprocess_cifti_wf(
     %(smoothed_denoised_bold)s
     %(boldref)s
     bold_mask
-        This will not be defined.
     %(timeseries)s
     %(timeseries_ciftis)s
 
@@ -154,6 +153,11 @@ def init_postprocess_cifti_wf(
                 # for plotting, if the anatomical workflow was used
                 'lh_midthickness',
                 'rh_midthickness',
+                # NIfTI stuff
+                'anat_brainmask',
+                'bold_mask',
+                'template_to_anat_xfm',
+                'anat_native',
             ],
         ),
         name='inputnode',
@@ -165,6 +169,7 @@ def init_postprocess_cifti_wf(
     inputnode.inputs.motion_json = run_data['motion_json']
     inputnode.inputs.confounds_files = run_data['confounds']
     inputnode.inputs.dummy_scans = dummy_scans
+    inputnode.inputs.bold_mask = run_data['boldmask']
 
     workflow.__desc__ = f"""
 
@@ -187,7 +192,7 @@ the following post-processing was performed.
                 'censored_denoised_bold',
                 'smoothed_denoised_bold',
                 'boldref',
-                'bold_mask',  # will not be defined
+                'bold_mask',  # used for plotting
                 # if parcellation is performed
                 'timeseries',
                 'timeseries_ciftis',
@@ -407,14 +412,13 @@ the following post-processing was performed.
             t2w_available=t2w_available,
             mem_gb=mem_gbx,
         )
-
         workflow.connect([
-            # Use inputnode for executive summary instead of downcast_data because T1w is name
-            # source.
             (inputnode, execsummary_functional_plots_wf, [
                 ('boldref', 'inputnode.boldref'),
                 ('t1w', 'inputnode.t1w'),
                 ('t2w', 'inputnode.t2w'),
+                ('anat_brainmask', 'inputnode.anat_brainmask'),
+                ('bold_mask', 'inputnode.bold_mask'),
             ]),
         ])  # fmt:skip
 

@@ -295,7 +295,7 @@ jobs:
     <<: *dockersetup
     resource_class: xlarge
     environment:
-      CIRCLE_CPUS: 4
+      CIRCLE_CPUS: 8
     steps:
       - checkout
       - run:

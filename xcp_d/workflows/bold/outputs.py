@@ -218,7 +218,6 @@ def init_postproc_derivatives_wf(
             out_dir=str(output_dir),
         ),
         name='merge_dense_src',
-        run_without_submitting=True,
         mem_gb=1,
     )
     workflow.connect([(bold_sources, merge_dense_src, [('out', 'in1')])])
@@ -284,7 +283,7 @@ def init_postproc_derivatives_wf(
                 extension='.tsv',
             ),
             name='ds_confounds',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_confounds, [('confounds_tsv', 'in_file')]),

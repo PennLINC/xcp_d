@@ -34,7 +34,11 @@ command-line structure, for example:
 
 .. code-block:: bash
 
-   xcp_d <fmriprep_dir> <output_dir> --file-format cifti --despike --head_radius 40 -w /wkdir --smoothing 6
+   xcp_d /path/to/fmriprep_dir \
+      /path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
 
 However, we strongly recommend using :ref:`installation_container_technologies`.
 Here, the command-line will be composed of a preamble to configure the container execution,
@@ -304,6 +308,42 @@ In this example file, we only run *XCP-D* on resting-state preprocessed BOLD run
 Running *XCP-D* via containers
 ******************************
 
+.. _run_apptainer:
+
+Apptainer
+=========
+
+If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using
+Apptainer.
+See :ref:`installation_container_technologies` for installation instructions.
+
+Once a user specifies the container options and the image to be run,
+the command line options are the same as the *bare-metal* installation.
+
+.. code-block:: bash
+
+   apptainer run --cleanenv xcp_d-<version>.simg \ # container args
+      /path/to/fmriprep_dir \ #xcpd args
+      /path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
+
+
+By default, Apptainer will mount (make accessible) your current working directory inside the container.
+If you need to access files from other locations on your system, you'll need to explicitly bind those
+directories using the ``-B`` flag. For example:
+
+.. code-block:: bash
+
+   apptainer run -B /home/user/data \ # Mount data directory
+      --cleanenv xcp_d-<version>.simg \
+      /home/user/data/fmriprep \
+      /home/user/data/xcpd_output \
+      participant \
+      --mode <mode>
+
+
 .. _run_docker:
 
 Docker
@@ -321,57 +361,16 @@ A Docker container can be created using the following command:
 
 .. code-block:: bash
 
-   docker run --rm -it \
-      -v /dset/derivatives/fmriprep:/fmriprep:ro \
-      -v /tmp/wkdir:/work:rw \
-      -v /dset/derivatives/xcp_d:/out:rw \
-      pennlinc/xcp_d:latest \
-      /fmriprep /out participant \
-      --file-format cifti --despike --head_radius 40 -w /work --smoothing 6
-
-.. _run_apptainer:
-
-Apptainer
-=========
-
-If you are computing on an :abbr:`HPC (High-Performance Computing)`, we recommend using
-Apptainer.
-See :ref:`installation_container_technologies` for installation instructions.
-
-If the data to be preprocessed is also on the HPC or a personal computer, you are ready to run
-*XCP-D*.
-
-.. code-block:: bash
-
-    apptainer run --cleanenv xcp_d.sif \
-        /dset/derivatives/fmriprep  \
-        /dset/derivatives/xcp_d \
-        --participant-label label
-
-
-Relevant aspects of the ``$HOME`` directory within the container
-================================================================
-
-By default, Apptainer will bind the user's ``$HOME`` directory on the host
-into the ``/home/$USER`` directory (or equivalent) in the container.
-Most of the time, it will also redefine the ``$HOME`` environment variable and
-update it to point to the corresponding mount point in ``/home/$USER``.
-However, these defaults can be overwritten in your system.
-It is recommended that you check your settings with your system's administrator.
-If your Apptainer installation allows it, you can work around the ``$HOME``
-specification, combining the bind mounts argument (``-B``) with the home overwrite
-argument (``--home``) as follows:
-
-.. code-block:: bash
-
-    apptainer run -B $HOME:/home/xcp \
-        --home /home/xcp \
-        --cleanenv xcp_d.simg \
-        <xcp_d arguments>
-
-Therefore, once a user specifies the container options and the image to be run,
-the command line options are the same as the *bare-metal* installation.
-
+   docker run --rm -it \ # docker args
+      -v /home/user/data/fmriprep \
+      -v /home/user/data/wkdir \
+      -v /home/user/data/xcpd_output \
+      pennlinc/xcp_d:<version> \
+      /home/user/data/fmriprep \ #xcpd args
+      /home/user/data/xcpd_output \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
 
 ****************
 Custom Confounds
@@ -535,13 +534,15 @@ Last, run *XCP-D* with your custom configuration file and the path to the custom
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /my/project/directory:/mnt xcpd_latest.sif \
-      /mnt/input/fmriprep \
-      /mnt/output/directory \
-      participant \
-      --participant_label X \
-      --datasets custom=/mnt/custom_confounds \
-      --nuisance-regressors /mnt/custom_config.yaml
+   apptainer run -B /home/user/data \
+      --cleanenv xcpd_<version>.simg \
+      /home/user/data/path/to/fmriprep_dir \
+      /home/user/data/path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --participant-label <label> # optional
+      --datasets custom=/home/user/data/path/to/custom_confounds \
+      --nuisance-regressors /home/user/data/path/to/custom_config.yaml
 
 
 ****************
@@ -611,12 +612,13 @@ Here's what the *XCP-D* call might look like:
 
 .. code-block:: bash
 
-   apptainer run --cleanenv -B /data:/data xcpd_latest.sif \
-      /data/dataset/derivatives/fmriprep \
-      /data/dataset/derivatives/xcp_d \
-      participant \
-      --mode linc \
-      --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
+   apptainer run -B /home/user/data \
+      --cleanenv xcpd_<version>.simg \
+      /home/user/data/path/to/fmriprep_dir \
+      /home/user/data/path/to/output_dir \
+      participant \ # analysis_level
+      --mode <mode> \ # required
+      --datasets schaefer=/home/user/data/path/to/schaefer_atlas aal==/home/user/data/path/to/aal_atlas \
       --atlases Schaefer100 AAL 4S156Parcels
 
 *XCP-D* will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the
