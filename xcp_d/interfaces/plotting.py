@@ -1091,22 +1091,20 @@ class PlotNifti(SimpleInterface):
     def _run_interface(self, runtime):
         from bids.layout import parse_file_entities
 
-        from xcp_d.data import load as load_data
-
-        xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+        from xcp_d.utils.bids import get_entity
 
         ENTITIES_TO_USE = ['cohort', 'den', 'res']
 
         # templateflow uses the full entity names in its BIDSLayout config,
         # so we need to map the abbreviated names used by xcpd and pybids to the full ones.
         ENTITY_NAMES_MAPPER = {'den': 'density', 'res': 'resolution'}
-        space = parse_file_entities(self.inputs.name_source)['space']
-        file_entities = parse_file_entities(
-            self.inputs.name_source,
-            config=['bids', 'derivatives', xcp_d_config],
-        )
+        file_entities = parse_file_entities(self.inputs.name_source)
+        space = file_entities['space']
         entities_to_use = {f: file_entities[f] for f in file_entities if f in ENTITIES_TO_USE}
         entities_to_use = {ENTITY_NAMES_MAPPER.get(k, k): v for k, v in entities_to_use.items()}
+        # Determine cohort (if there is one) in the original data
+        cohort = get_entity(self.inputs.name_source, 'cohort')
+        entities_to_use['cohort'] = cohort
 
         template_file = get_template(template=space, **entities_to_use, suffix='T1w', desc=None)
         if isinstance(template_file, list):

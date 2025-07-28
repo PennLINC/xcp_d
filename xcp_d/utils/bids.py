@@ -154,6 +154,8 @@ def collect_data(
     participant_label,
     bids_filters,
     file_format,
+    anat_session,
+    func_sessions,
 ):
     """Collect data from a BIDS dataset.
 
@@ -164,6 +166,8 @@ def collect_data(
     participant_label
     bids_filters
     file_format
+    anat_session
+    func_sessions
 
     Returns
     -------
@@ -185,6 +189,13 @@ def collect_data(
     for acq in queries.keys():
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
+
+    # Add sessions to queries
+    for acq, query in queries.items():
+        if query['datatype'] == 'anat':
+            queries[acq].update({'session': anat_session})
+        elif query['datatype'] == 'func':
+            queries[acq].update({'session': func_sessions})
 
     # Select the best available space.
     if 'space' in queries['bold']:
@@ -213,6 +224,13 @@ def collect_data(
             f'Query: {queries["bold"]}\n\n'
             f'Found files:\n\n{filenames}'
         )
+
+    cohorts = [bold_file.entities.get('cohort') for bold_file in bold_data]
+    cohorts = [c for c in cohorts if c is not None]
+    if len(cohorts) > 1:
+        raise ValueError(f'Multiple cohorts found: {", ".join(cohorts)}')
+
+    cohort = cohorts[0] if cohorts else None
 
     if file_format == 'cifti':
         # Select the appropriate volumetric space for the CIFTI template.
@@ -243,13 +261,19 @@ def collect_data(
                 f'No BOLD NIfTI or transforms found to allowed space ({volspace})'
             )
 
-        queries['anat_to_template_xfm']['to'] = volspace
-        queries['template_to_anat_xfm']['from'] = volspace
+        volspace_cohort = volspace
+        if cohort:
+            volspace_cohort += f'+{cohort}'
+        queries['anat_to_template_xfm']['to'] = volspace_cohort
+        queries['template_to_anat_xfm']['from'] = volspace_cohort
         queries['anat_brainmask']['space'] = volspace
     else:
+        volspace_cohort = queries['bold']['space']
+        if cohort:
+            volspace_cohort += f'+{cohort}'
         # use the BOLD file's space if the BOLD file is a nifti.
-        queries['anat_to_template_xfm']['to'] = queries['bold']['space']
-        queries['template_to_anat_xfm']['from'] = queries['bold']['space']
+        queries['anat_to_template_xfm']['to'] = volspace_cohort
+        queries['template_to_anat_xfm']['from'] = volspace_cohort
         queries['anat_brainmask']['space'] = queries['bold']['space']
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
@@ -271,49 +295,109 @@ def collect_data(
         raise FileNotFoundError('No T1w or T2w files found.')
     elif t1w_files and t2w_files:
         LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
-        temp_query = queries['t2w'].copy()
-        temp_query['space'] = 'T1w'
-        temp_t2w_files = layout.get(return_type='file', subject=participant_label, **temp_query)
-        if not temp_t2w_files:
+        queries['t2w']['space'] = 'T1w'
+        t1wspace_t2w_found = bool(
+            layout.get(return_type='file', subject=participant_label, **queries['t2w'])
+        )
+        if not t1wspace_t2w_found:
             LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
-            temp_query = queries['t1w'].copy()
-            temp_query['space'] = 'T2w'
-            temp_t1w_files = layout.get(
-                return_type='file',
-                subject=participant_label,
-                **temp_query,
-            )
             queries['t1w']['space'] = 'T2w'
-            if not temp_t1w_files:
-                LOGGER.warning('No T2w-space T1w found. Attempting T2w-only processing.')
-                temp_query = queries['anat_to_template_xfm'].copy()
-                temp_query['from'] = 'T2w'
-                temp_xfm_files = layout.get(
+            queries['t2w']['space'] = None  # we want T2w without space entity
+            t2wspace_t1w_found = bool(
+                layout.get(
                     return_type='file',
                     subject=participant_label,
-                    **temp_query,
+                    **queries['t1w'],
                 )
-                if not temp_xfm_files:
-                    LOGGER.warning(
-                        'T2w-to-template transform not found. Attempting T1w-only processing.'
+            )
+            if not t2wspace_t1w_found:
+                LOGGER.warning('No T2w-space T1w found. Attempting T2w-primary processing.')
+                queries['anat_to_template_xfm']['from'] = 'T2w'
+                t2w_to_template_found = bool(
+                    layout.get(
+                        return_type='file',
+                        subject=participant_label,
+                        **queries['anat_to_template_xfm'],
                     )
-                    queries['t1w']['space'] = ['T1w', None]
+                )
+                if not t2w_to_template_found:
+                    t2w_to_t1w_found = bool(
+                        layout.get(
+                            return_type='file',
+                            subject=participant_label,
+                            **queries['t2w_to_t1w_xfm'],
+                        ),
+                    )
+                    if t2w_to_t1w_found:
+                        # Prepare for T2w --> T1w --> template chain
+                        LOGGER.info(
+                            'T2w-to-template transform not found, but T2w-to-T1w transform found. '
+                            'Processing both T1w and T2w.'
+                        )
+                        queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                    else:
+                        LOGGER.info(
+                            'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
+                            'Processing T1w only.'
+                        )
+                        queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
+                    queries['t1w']['space'] = [None, 'T1w']
                     queries['template_to_anat_xfm']['to'] = 'T1w'
                     queries['anat_to_template_xfm']['from'] = 'T1w'
                 else:
-                    LOGGER.info('Performing T2w-only processing.')
+                    t1w_to_t2w_found = bool(
+                        layout.get(
+                            return_type='file',
+                            subject=participant_label,
+                            **queries['t1w_to_t2w_xfm'],
+                        ),
+                    )
+                    if t1w_to_t2w_found:
+                        # Prepare for T1w --> T2w --> template chain
+                        LOGGER.info(
+                            'T2w-to-template and T1w-to-T2w transforms found. '
+                            'Processing both T1w and T2w.'
+                        )
+                        queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                    else:
+                        LOGGER.info(
+                            'T2w-to-template transform found, but no T1w-to-T2w transform found. '
+                            'Processing T2w only.'
+                        )
+                        queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
+                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
+                    queries['t2w']['space'] = [None, 'T2w']
                     queries['template_to_anat_xfm']['to'] = 'T2w'
                     queries['anat_to_template_xfm']['from'] = 'T2w'
             else:
                 LOGGER.warning('T2w-space T1w found. Processing anatomical images in T2w space.')
+                queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+                queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
         else:
             LOGGER.warning('T1w-space T2w found. Processing anatomical images in T1w space.')
+            queries['t1w']['space'] = [None, 'T1w']
             queries['t2w']['space'] = 'T1w'
-            queries['t1w']['space'] = ['T1w', None]
+            queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+            queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
     elif t2w_files and not t1w_files:
         LOGGER.warning('T2w found, but no T1w. Enabling T2w-only processing.')
         queries['template_to_anat_xfm']['to'] = 'T2w'
         queries['anat_to_template_xfm']['from'] = 'T2w'
+        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+
+    elif t1w_files and not t2w_files:
+        LOGGER.info('T1w found, but no T2w. Enabling T1w-only processing.')
+        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
 
     # Search for the files.
     subj_data = {
@@ -331,7 +415,7 @@ def collect_data(
     for field, filenames in subj_data.items():
         # All fields except the BOLD data should have a single file
         if field != 'bold' and isinstance(filenames, list):
-            if field not in ('t1w', 't2w') and not filenames:
+            if field not in ('t1w', 't2w', 't1w_to_t2w_xfm', 't2w_to_t1w_xfm') and not filenames:
                 raise FileNotFoundError(f'No {field} found with query: {queries[field]}')
 
             if len(filenames) == 1:
@@ -352,7 +436,7 @@ def collect_data(
 
 
 @fill_doc
-def collect_mesh_data(layout, participant_label, bids_filters):
+def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
@@ -364,6 +448,7 @@ def collect_mesh_data(layout, participant_label, bids_filters):
     %(layout)s
     participant_label : :obj:`str`
         Subject ID.
+    anat_session : :obj:`str` or Query.NONE
 
     Returns
     -------
@@ -388,6 +473,8 @@ def collect_mesh_data(layout, participant_label, bids_filters):
     for acq in queries.keys():
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
+
+        queries[acq].update({'session': anat_session})
 
     # First, try to grab the first base surface file in standard (fsLR) space.
     # If it's not available, switch to native fsnative-space data.
@@ -478,7 +565,7 @@ def collect_mesh_data(layout, participant_label, bids_filters):
 
 
 @fill_doc
-def collect_morphometry_data(layout, participant_label, bids_filters):
+def collect_morphometry_data(layout, participant_label, bids_filters, anat_session):
     """Collect morphometry surface files from preprocessed derivatives.
 
     This function will look for fsLR-space, 91k-resolution morphometry CIFTI files.
@@ -488,6 +575,7 @@ def collect_morphometry_data(layout, participant_label, bids_filters):
     %(layout)s
     participant_label : :obj:`str`
         Subject ID.
+    anat_session : :obj:`str` or Query.NONE
 
     Returns
     -------
@@ -507,6 +595,8 @@ def collect_morphometry_data(layout, participant_label, bids_filters):
     for acq in queries.keys():
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
+
+        queries[acq].update({'session': anat_session})
 
     morphometry_files = {}
     for name, query in queries.items():
@@ -619,6 +709,25 @@ def collect_run_data(layout, bold_file, file_format, target_space):
             extension=['.nii', '.nii.gz'],
             invalid_filters='allow',
         )
+        run_data['boldmask'] = layout.get_nearest(
+            bids_file.path,
+            strict=True,
+            ignore_strict_entities=[
+                'cohort',
+                'space',
+                'res',
+                'den',
+                'desc',
+                'suffix',
+                'extension',
+            ],
+            space=target_space,
+            cohort=cohort,
+            desc='brain',
+            suffix='mask',
+            extension=['.nii', '.nii.gz'],
+            invalid_filters='allow',
+        )
         run_data['nifti_file'] = layout.get_nearest(
             bids_file.path,
             strict=True,
@@ -711,8 +820,12 @@ def collect_confounds(
                     config=['bids', 'derivatives', xcp_d_config],
                     indexer=_indexer,
                 )
-                if layout.get_dataset_description().get('DatasetType') != 'derivatives':
-                    print(f'Dataset {k} is not a derivatives dataset. Skipping.')
+                desc = layout.get_dataset_description()
+                # Check for derivative or derivatives. The latter is a typo, but one that I've
+                # used in other places, and I don't want to have to update all of my test datasets.
+                if desc.get('DatasetType') not in ['derivative', 'derivatives']:
+                    print(f'Dataset {k} is not a derivative dataset. Skipping.')
+                    continue
 
                 layout_dict[k] = layout
             else:

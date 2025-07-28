@@ -1,5 +1,67 @@
 # What's New
 
+## 0.11.1
+
+### 🐛 Bug Fixes
+
+* Fix figure collection for longitudinal, but not session-wise, reports by @tsalo in https://github.com/PennLINC/xcp_d/pull/1482
+
+### Other Changes
+
+* Drop dir and run entities from single-run tasks by @tsalo in https://github.com/PennLINC/xcp_d/pull/1472
+* Check DatasetType for "derivative" or "derivatives" by @tsalo in https://github.com/PennLINC/xcp_d/pull/1481
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.11.0...0.11.1
+
+
+## 0.11.0
+
+### 🛠 Breaking Changes
+
+* Use `mem_mb` instead of `mem_gb` by @smeisler in https://github.com/PennLINC/xcp_d/pull/1417
+
+### 🎉 Exciting New Features
+
+* Add `--report-output-level` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1436
+* Collect and apply transforms between native anatomical spaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1437
+
+### 🐛 Bug Fixes
+
+* Ensure T1w-only processing does not collect T2w by @tsalo in https://github.com/PennLINC/xcp_d/pull/1433
+* Support session-wise anatomical processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1438
+* Fix session-wise collection by @tsalo in https://github.com/PennLINC/xcp_d/pull/1439
+* Fix session-wise collection of surface files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1440
+* Make workflow name unique for session-wise processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1441
+* Add nifti brain mask to hcpya ingression by @smeisler in https://github.com/PennLINC/xcp_d/pull/1411
+* Write out filtered motion parameters when dummy-scans is not zero by @tsalo in https://github.com/PennLINC/xcp_d/pull/1446
+* Ingress BOLD brain mask in ABCD-BIDS and HCP processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1473
+
+### Other Changes
+
+* Update note about HCP compatibility by @tsalo in https://github.com/PennLINC/xcp_d/pull/1465
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.7...0.11.0
+
+
+## 0.10.7
+
+### 🎉 Exciting New Features
+
+* Use masked functional and anatomical images for executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1425
+
+### 🐛 Bug Fixes
+
+* Warp fsLR surfaces to NLin6 for brainsprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1419
+* Warp anat mask to anat space for coreg QC by @tsalo in https://github.com/PennLINC/xcp_d/pull/1423
+* Remove background label in ConnectPlot by @tsalo in https://github.com/PennLINC/xcp_d/pull/1424
+
+### Other Changes
+
+* Run vertex normalization on output surfaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1420
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.6...0.10.7
+
+
 ## 0.10.6
 
 ### 🎉 Exciting New Features

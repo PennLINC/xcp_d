@@ -137,10 +137,17 @@ def _min_one(value, parser):
     return value
 
 
+def _to_gb(value):
+    scale = {'G': 1, 'T': 10**3, 'M': 1e-3, 'K': 1e-6, 'B': 1e-9}
+    digits = ''.join([c for c in value if c.isdigit()])
+    units = value[len(digits) :] or 'M'
+    return int(digits) * scale[units[0]]
+
+
 class YesNoAction(Action):
     """A custom argparse "store" action to handle "y", "n", None, "auto" values."""
 
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+    def __call__(self, parser, namespace, values, option_string=None):
         """Call the argument."""
         lookup = {'y': True, 'n': False, None: True, 'auto': 'auto'}
         if values not in lookup:
@@ -152,7 +159,7 @@ class YesNoAction(Action):
 class ToDict(Action):
     """A custom argparse "store" action to handle a list of key=value pairs."""
 
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+    def __call__(self, parser, namespace, values, option_string=None):
         """Call the argument."""
         d = {}
         for spec in values:
@@ -175,7 +182,7 @@ class ToDict(Action):
 class ConfoundsAction(Action):
     """A custom argparse "store" action to handle a path or ."""
 
-    def __call__(self, parser, namespace, values, option_string=None):  # noqa: U100
+    def __call__(self, parser, namespace, values, option_string=None):
         """Call the argument."""
         builtins = [
             'auto',

@@ -417,7 +417,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
 
 def _combine_name(in_files):
-    """Remove unmatched entities from a list of files to produce a single name.
+    """Remove unmatched entities from a list of files to produce a single name, plus dir and run.
 
     Parameters
     ----------
@@ -428,6 +428,7 @@ def _combine_name(in_files):
     -------
     names : :obj:`list` of :obj:`str` or :obj:`str`
         Combined names, containing only the entities that are present in all files in a sublist.
+        Also drops dir and run entities.
 
     Examples
     --------
@@ -447,7 +448,7 @@ def _combine_name(in_files):
     ...     ['/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
     ...      '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz'],
     ... ])
-    ['/path/to/sub-01_task-rest_dir-AP_bold.nii.gz']
+    ['/path/to/sub-01_task-rest_bold.nii.gz']
 
     >>> _combine_name([
     ...     '/path/to/sub-01_task-rest_run-1_bold.nii.gz',
@@ -465,17 +466,28 @@ def _combine_name(in_files):
     ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
     ...     '/path/to/sub-01_task-rest_dir-AP_run-2_bold.nii.gz',
     ... ])
-    '/path/to/sub-01_task-rest_dir-AP_bold.nii.gz'
+    '/path/to/sub-01_task-rest_bold.nii.gz'
+
+    >>> _combine_name([
+    ...     '/path/to/sub-01_task-rest_dir-AP_run-1_bold.nii.gz',
+    ...     '/path/to/sub-01_task-rest_dir-PA_run-1_bold.nii.gz',
+    ... ])
+    '/path/to/sub-01_task-rest_bold.nii.gz'
 
     """
     import os
 
+    # List of files
     if isinstance(in_files[0], str):
         directory = os.path.dirname(in_files[0])
         filenames = [os.path.basename(f) for f in in_files]
         filename_parts = [f.split('_') for f in filenames]
         to_remove = []
         for part in filename_parts[0]:
+            if part.startswith('run-') or part.startswith('dir-'):
+                to_remove.append(part)
+                continue
+
             for next_filename_part in filename_parts[1:]:
                 if part not in next_filename_part:
                     to_remove.append(part)
@@ -484,6 +496,7 @@ def _combine_name(in_files):
         new_filename = '_'.join(new_filename_parts)
         return os.path.join(directory, new_filename)
 
+    # List of lists of files
     names = []
     for atlas_files in in_files:
         directory = os.path.dirname(atlas_files[0])
@@ -491,6 +504,10 @@ def _combine_name(in_files):
         filename_parts = [f.split('_') for f in filenames]
         to_remove = []
         for part in filename_parts[0]:
+            if part.startswith('run-') or part.startswith('dir-'):
+                to_remove.append(part)
+                continue
+
             for next_filename_part in filename_parts[1:]:
                 if part not in next_filename_part:
                     to_remove.append(part)
