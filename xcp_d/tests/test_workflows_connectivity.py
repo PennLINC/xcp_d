@@ -170,6 +170,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         config.nipype.omp_nthreads = 2
         config.execution.atlases = atlas_names
         config.workflow.correlation_lengths = ['all']
+        config.workflow.correlation_outputs = ['r', 'var_r', 'z', 'var_z']
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
