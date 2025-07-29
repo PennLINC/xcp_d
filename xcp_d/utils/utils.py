@@ -671,22 +671,46 @@ def is_number(s):
 
 
 def correlate_timeseries(timeseries, temporal_mask):
-    """Correlate timeseries stored in a TSV file."""
+    """Correlate timeseries stored in a TSV file.
+    
+    Parameters
+    ----------
+    timeseries : :obj:`str`
+        Path to the TSV file containing the timeseries.
+        The time series may be censored or not.
+    temporal_mask : :obj:`numpy.ndarray` of shape (T,)
+        Temporal mask to apply to the time series.
+        Outliers are set to 1, non-outliers are set to 0.
+        T = number of samples/data points/volumes
+    """
     import pandas as pd
 
     timeseries_df = pd.read_table(timeseries)
+    n_nodes = timeseries_df.shape[1]
+    n_data_vols = timeseries_df.shape[0]
+    n_mask_vols = temporal_mask.shape[0]
+    n_outliers = temporal_mask.sum()
+    n_uncensored_vols = n_mask_vols - n_outliers
 
     if temporal_mask.ndim != 1:
         raise ValueError('temporal_mask must be 1D.')
-    elif temporal_mask.shape[0] != timeseries_df.shape[0]:
+    elif n_data_vols not in (n_uncensored_vols, n_mask_vols):
         raise ValueError(
-            f'temporal_mask ({temporal_mask.shape[0]}) must have the same number of rows as '
-            f'timeseries ({timeseries_df.shape[0]}).'
+            f'Time series ({n_data_vols}) must have the same number of rows ({n_mask_vols}) or '
+            f'uncensored volumes ({n_uncensored_vols}) as mask.'
         )
+    elif n_data_vols == n_mask_vols:
+        # The time series is not censored.
+        arr = timeseries_df.values.T
+        arr[:, ~temporal_mask.astype(bool)] = np.nan
+    else:
+        # The time series is censored.
+        arr = np.full((n_nodes, n_mask_vols), np.nan)
+        arr[:, temporal_mask.astype(bool)] = timeseries_df.values.T
 
     node_names = timeseries_df.columns.values
     correlations_dict = correlate_timeseries_xdf(
-        arr=timeseries_df.values.T,
+        arr=arr,
         temporal_mask=temporal_mask,
     )
     output_to_check = ['r', 'z', 'var_r', 'var_z']
@@ -713,7 +737,8 @@ def correlate_timeseries_xdf(
     Parameters
     ----------
     arr : :obj:`numpy.ndarray` of shape (V, T)
-        Time series array to correlate with xDF.
+        Uncensored time series array to correlate with xDF.
+        Censored volumes are set to NaN.
         V = number of features/regions/voxels
         T = number of samples/data points/volumes
     temporal_mask : :obj:`numpy.ndarray` of shape (T,)

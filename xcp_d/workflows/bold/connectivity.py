@@ -47,7 +47,7 @@ def init_functional_connectivity_nifti_wf(mem_gb, name='connectivity_wf'):
     ------
     %(name_source)s
     denoised_bold
-        clean bold after filtered out nuisscance and filtering
+        clean bold after regressing out nuisance variables and filtering
     %(temporal_mask)s
     alff
     reho
