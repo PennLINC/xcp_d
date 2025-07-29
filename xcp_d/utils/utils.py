@@ -672,7 +672,7 @@ def is_number(s):
 
 def correlate_timeseries(timeseries, temporal_mask):
     """Correlate timeseries stored in a TSV file.
-    
+
     Parameters
     ----------
     timeseries : :obj:`str`
@@ -702,11 +702,13 @@ def correlate_timeseries(timeseries, temporal_mask):
     elif n_data_vols == n_mask_vols:
         # The time series is not censored.
         arr = timeseries_df.values.T
-        arr[:, ~temporal_mask.astype(bool)] = np.nan
+        # Fill outliers (1s in the temporal mask) with NaNs
+        arr[:, temporal_mask.astype(bool)] = np.nan
     else:
         # The time series is censored.
         arr = np.full((n_nodes, n_mask_vols), np.nan)
-        arr[:, temporal_mask.astype(bool)] = timeseries_df.values.T
+        # Fill non-outliers (0s in the temporal mask) with the time series
+        arr[:, ~temporal_mask.astype(bool)] = timeseries_df.values.T
 
     node_names = timeseries_df.columns.values
     correlations_dict = correlate_timeseries_xdf(
