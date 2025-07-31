@@ -363,11 +363,13 @@ class ConnectPlot(SimpleInterface):
         """Plot matrix in subplot Axes."""
         if corr_mat.shape[0] != len(network_labels):
             raise ValueError(
-                f'Correlation matrix shape {corr_mat.shape[0]} does not match number of network labels {len(network_labels)}'
+                f'Correlation matrix shape {corr_mat.shape[0]} does not match number of network '
+                f'labels {len(network_labels)}'
             )
         if corr_mat.shape[1] != len(network_labels):
             raise ValueError(
-                f'Correlation matrix shape {corr_mat.shape[1]} does not match number of network labels {len(network_labels)}'
+                f'Correlation matrix shape {corr_mat.shape[1]} does not match number of network '
+                f'labels {len(network_labels)}'
             )
 
         # Determine order of nodes while retaining original order of networks

@@ -131,15 +131,15 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
                 └── T1_brain_to_MNI.nii.gz
     """
     if not isinstance(in_dir, str):
-        raise ValueError("in_dir must be a string")
+        raise ValueError('in_dir must be a string')
     if not os.path.isdir(in_dir):
         raise ValueError(f'Folder does not exist: {in_dir}')
     if not isinstance(out_dir, str):
-        raise ValueError("out_dir must be a string")
+        raise ValueError('out_dir must be a string')
     if not isinstance(sub_id, str):
-        raise ValueError("sub_id must be a string")
+        raise ValueError('sub_id must be a string')
     if not isinstance(ses_id, str):
-        raise ValueError("ses_id must be a string")
+        raise ValueError('ses_id must be a string')
     subses_ents = f'sub-{sub_id}_ses-{ses_id}'
 
     task_dir_orig = os.path.join(in_dir, 'fMRI', 'rfMRI.ica')
