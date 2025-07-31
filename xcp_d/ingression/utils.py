@@ -21,8 +21,10 @@ def collect_anatomical_files(anat_dir_orig, anat_dir_bids, base_anatomical_ents)
     ANAT_DICT = {
         # XXX: Why have T1w here and T1w_restore for HCP?
         'T1w.nii.gz': 'desc-preproc_T1w.nii.gz',
-        'brainmask_fs.nii.gz': 'desc-brain_mask.nii.gz',
         'ribbon.nii.gz': 'desc-ribbon_T1w.nii.gz',
+        # Use either brainmask_fs or brainmask_fs.2.0, depending on which is available.
+        'brainmask_fs.nii.gz': 'desc-brain_mask.nii.gz',
+        'brainmask_fs.2.0.nii.gz': 'desc-brain_mask.nii.gz',
     }
     copy_dictionary = {}
 
@@ -325,7 +327,7 @@ def extract_mean_signal(mask, nifti, work_dir):
         raise ValueError(f'File does not exist: {nifti}')
     masker = maskers.NiftiMasker(mask_img=mask, memory=work_dir, memory_level=5)
     signals = masker.fit_transform(nifti)
-    return np.mean(signals, axis=1)
+    return np.nanmean(signals, axis=1)
 
 
 def plot_bbreg(fixed_image, moving_image, contour, out_file='report.svg'):

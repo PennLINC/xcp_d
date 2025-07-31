@@ -34,6 +34,11 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
             'calculated in an earlier workflow from dummy_scans.'
         ),
     )
+    dummy_scan_source = File(
+        exists=True,
+        mandatory=False,
+        desc='Source file for dummy scans (i.e., the fMRIPrep confounds file).',
+    )
     confounds_tsv = traits.Either(
         File(exists=True),
         None,
@@ -101,7 +106,7 @@ class RemoveDummyVolumes(SimpleInterface):
     def _run_interface(self, runtime):
         dummy_scans = _infer_dummy_scans(
             dummy_scans=self.inputs.dummy_scans,
-            confounds_file=self.inputs.motion_file,
+            confounds_file=self.inputs.dummy_scan_source,
         )
 
         self._results['dummy_scans'] = dummy_scans

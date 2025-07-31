@@ -236,7 +236,17 @@ class FilterOutFailedRuns(SimpleInterface):
                 )
                 input_list = [Undefined for _ in range(n_runs)]
 
-            self._results[input_name] = [input_list[i] for i in successful_runs]
+            # Filter out undefined values
+            input_list = [input_list[i] for i in successful_runs]
+
+            if isinstance(input_list[0], list):
+                # Transpose lists of lists from
+                # [['run-1_atlas-a', 'run-1_atlas-b'], ['run-2_atlas-a', 'run-2_atlas-b']]
+                # to
+                # [['run-1_atlas-a', 'run-2_atlas-a'], ['run-1_atlas-b', 'run-2_atlas-b']]
+                input_list = list(map(list, itertools.zip_longest(*input_list, fillvalue=None)))
+
+            self._results[input_name] = input_list
 
         return runtime
 
@@ -388,12 +398,10 @@ class ConcatenateInputs(SimpleInterface):
                 continue
 
             if isinstance(run_files[0], list):
-                # Files are organized in a list of lists, like parcellated time series.
-                transposed_run_files = list(
-                    map(list, itertools.zip_longest(*run_files, fillvalue=None))
-                )
+                # Files are organized in a list of lists, like parcellated time series, in order
+                # [['run-1_atlas-a', 'run-2_atlas-a'], ['run-1_atlas-b', 'run-2_atlas-b']]
                 out_files = []
-                for i_atlas, parc_files in enumerate(transposed_run_files):
+                for i_atlas, parc_files in enumerate(run_files):
                     extension = '.'.join(os.path.basename(parc_files[0]).split('.')[1:])
                     out_file = os.path.join(runtime.cwd, f'{name}_{i_atlas}.{extension}')
                     if out_file.endswith('.tsv'):

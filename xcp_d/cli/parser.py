@@ -185,12 +185,12 @@ def _build_parser():
         help='Maximum number of threads per process.',
     )
     g_perfm.add_argument(
-        '--mem-gb',
-        '--mem_gb',
-        dest='memory_gb',
+        '--mem-mb',
+        '--mem_mb',
+        dest='memory_mb',
         action='store',
-        type=int,
-        help='Upper bound memory limit, in gigabytes, for XCP-D processes.',
+        type=parser_utils._to_gb,
+        help='Upper bound memory limit, in megabytes, for XCP-D processes.',
     )
     g_perfm.add_argument(
         '--low-mem',
@@ -622,6 +622,20 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
 
     g_other = parser.add_argument_group('Other options')
     g_other.add_argument(
+        '--report-output-level',
+        action='store',
+        choices=['root', 'subject', 'session'],
+        default='auto',
+        help=(
+            'Where should the html reports be written? '
+            '"root" will write them to the --output-dir. '
+            '"subject" will write them into each subject\'s directory. '
+            '"session" will write them into each session\'s directory. '
+            'The default is "auto", which will default to "root" for "none" mode, '
+            '"session" for "abcd" and "hbcd" modes, and "root" for "linc" and "nichart" modes.'
+        ),
+    )
+    g_other.add_argument(
         '--aggregate-session-reports',
         dest='aggr_ses_reports',
         action='store',
@@ -789,6 +803,8 @@ def parse_args(args=None, namespace=None):
     """Parse args and run further checks on the command line."""
     import logging
 
+    from bids.layout import Query
+
     parser = _build_parser()
     opts = parser.parse_args(args, namespace)
     if opts.config_file:
@@ -915,7 +931,75 @@ def parse_args(args=None, namespace=None):
             f'{", ".join(missing_subjects)}.'
         )
 
+    # Determine which sessions to process and group them
+    processing_groups = []
+
+    # Determine any session filters
+    session_filters = config.execution.session_id or []
+    # if config.execution.bids_filters is not None:
+    #     for _, filters in config.execution.bids_filters:
+    #         ses_filter = filters.get("session")
+    #         if isinstance(ses_filter, str):
+    #             session_filters.append(ses_filter)
+    #         elif isinstance(ses_filter, list):
+    #             session_filters.extend(ses_filter)
+
+    # Examine the available sessions for each participant
+    for subject_id in participant_label:
+        # Find sessions with fMRI data
+        func_sessions = config.execution.layout.get_sessions(
+            subject=subject_id,
+            session=session_filters or Query.OPTIONAL,
+            suffix=['bold'],
+        )
+
+        # If there are no sessions, there is only one option:
+        if not func_sessions:
+            processing_groups.append([subject_id, '', []])
+        else:
+            anat_sessions = config.execution.layout.get_sessions(
+                subject=subject_id,
+                session=session_filters or Query.OPTIONAL,
+                suffix=['T1w', 'T2w'],
+                extension=['.nii.gz', '.nii'],
+            )
+            if not anat_sessions:
+                processing_groups.append([subject_id, '', func_sessions])
+            else:
+                func_only = sorted(set(func_sessions) - set(anat_sessions))
+                if len(func_only) > 0:
+                    raise ValueError(
+                        'XCP-D expects a one-to-one mapping between anatomical sessions '
+                        'and functional sessions, or a one-to-all mapping. '
+                        f'Found {len(func_only)} functional sessions that do not have '
+                        f'anatomical data: {", ".join(func_only)}'
+                    )
+                else:
+                    for func_session in func_sessions:
+                        processing_groups.append([subject_id, func_session, [func_session]])
+
+    # Make a nicely formatted message showing what we will process
+    def pretty_group(group_num, processing_group):
+        participant_label, anat_label, func_labels = processing_group
+        if anat_label:
+            anat_txt = anat_label
+        else:
+            anat_txt = 'No anatomical session'
+
+        if func_labels:
+            func_txt = ', '.join(map(str, func_labels))
+        else:
+            func_txt = 'No functional session'
+
+        return f'{group_num}\t{participant_label}\t{anat_txt}\t{func_txt}'
+
+    processing_msg = '\nGroup\tSubject\tAnatomical Session\tFunctional Sessions\n' + '\n'.join(
+        [pretty_group(gnum, group) for gnum, group in enumerate(processing_groups)]
+    )
+    config.loggers.workflow.info(processing_msg)
+
     config.execution.participant_label = sorted(participant_label)
+    config.execution.processing_list = processing_groups
 
 
 def _validate_parameters(opts, build_log, parser):
@@ -996,6 +1080,9 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
         opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.report_output_level = (
+            'session' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'hbcd':
         opts.abcc_qc = True if (opts.abcc_qc == 'auto') else opts.abcc_qc
@@ -1016,6 +1103,9 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
         opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.report_output_level = (
+            'session' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'linc':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
@@ -1035,6 +1125,9 @@ def _validate_parameters(opts, build_log, parser):
             )
         opts.output_type = 'censored'
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.report_output_level = (
+            'root' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
         if opts.correlation_lengths is not None:
             error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
@@ -1055,6 +1148,9 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
         opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
+        opts.report_output_level = (
+            'root' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
         opts.smoothing = 0 if opts.smoothing == 'auto' else opts.smoothing
     elif opts.mode == 'none':
         if opts.abcc_qc == 'auto':
@@ -1097,6 +1193,11 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(
                 "'--warp-surfaces-native2std' (y or n) is required for 'none' mode."
             )
+
+        # Default to root for none mode, since that was the previous behavior
+        opts.report_output_level = (
+            'root' if opts.report_output_level == 'auto' else opts.report_output_level
+        )
 
         if opts.smoothing == 'auto':
             error_messages.append("'--smoothing' is required for 'none' mode.")

@@ -2,7 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Functions for converting HCP-YA-format data to fMRIPrep format.
 
-These functions are specifically designed to work with HCP-YA data downloaded around Feb 2023.
+These functions are specifically designed to work with HCP-YA data from the release available in
+February 2023.
 Because HCP-YA doesn't really version their processing pipeline and derivatives,
 we have to pin to download periods.
 """
@@ -276,6 +277,13 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         )
         copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
+        boldmask_nifti_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.nii.gz')
+        boldmask_nifti_fmriprep = os.path.join(
+            func_dir_bids,
+            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-brain_mask.nii.gz',
+        )
+        copy_dictionary[boldmask_nifti_orig] = [boldmask_nifti_fmriprep]
+
         bold_cifti_orig = os.path.join(
             task_dir_orig,
             f'{base_task_name}_Atlas_MSMAll.dtseries.nii',
@@ -285,6 +293,16 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             f'{func_prefix}_space-fsLR_den-91k_bold.dtseries.nii',
         )
         copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
+
+        bold_mask_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.0.nii.gz')
+        if not os.path.isfile(bold_mask_orig):
+            bold_mask_orig = os.path.join(task_dir_orig, 'brainmask_fs.nii.gz')
+
+        bold_mask_fmriprep = os.path.join(
+            func_dir_bids,
+            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-brain_mask.nii.gz',
+        )
+        copy_dictionary[bold_mask_orig] = [bold_mask_fmriprep]
 
         # Extract metadata for JSON files
         bold_metadata = {

@@ -340,7 +340,7 @@ def plot_global_signal_es(time_series, ax, run_index=None):
         color='#497DB3',
     )
 
-    std_mean = np.mean(time_series['Std'])
+    std_mean = np.nanmean(time_series['Std'])
     ax_right.set_ylim(
         (1.5 * np.min(time_series['Std'] - std_mean)) + std_mean,
         (1.5 * np.max(time_series['Std'] - std_mean)) + std_mean,
@@ -359,7 +359,7 @@ def plot_global_signal_es(time_series, ax, run_index=None):
 
     ax.set_xlim((0, ntsteps - 1))
 
-    mean_mean = np.mean(time_series['Mean'])
+    mean_mean = np.nanmean(time_series['Mean'])
     ax.set_ylim(
         (1.5 * np.min(time_series['Mean'] - mean_mean)) + mean_mean,
         (1.5 * np.max(time_series['Mean'] - mean_mean)) + mean_mean,

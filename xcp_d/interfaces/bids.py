@@ -4,6 +4,7 @@ import os
 import shutil
 from json import dump, loads
 
+import filelock
 import nibabel as nb
 import numpy as np
 from bids.layout import Config
@@ -289,18 +290,22 @@ class CopyAtlas(SimpleInterface):
         # Don't copy the file if it exists, to prevent any race conditions between parallel
         # processes.
         if not os.path.isfile(out_file):
-            shutil.copyfile(in_file, out_file)
+            lock_file = os.path.join(atlas_out_dir, f'{out_basename}{extension}.lock')
+            with filelock.SoftFileLock(lock_file, timeout=60):
+                shutil.copyfile(in_file, out_file)
 
         # Only write out a sidecar if metadata are provided
         if meta_dict or Sources:
             meta_file = os.path.join(atlas_out_dir, f'{out_basename}.json')
+            lock_meta = os.path.join(atlas_out_dir, f'{out_basename}.json.lock')
             meta_dict = meta_dict or {}
             meta_dict = meta_dict.copy()
             if Sources:
                 meta_dict['Sources'] = meta_dict.get('Sources', []) + Sources
 
-            with open(meta_file, 'w') as fo:
-                dump(meta_dict, fo, sort_keys=True, indent=4)
+            with filelock.SoftFileLock(lock_meta, timeout=60):
+                with open(meta_file, 'w') as fo:
+                    dump(meta_dict, fo, sort_keys=True, indent=4)
 
         self._results['out_file'] = out_file
 

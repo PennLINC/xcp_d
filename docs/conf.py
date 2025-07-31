@@ -369,9 +369,7 @@ texinfo_documents = [
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve(
     'xcp_d',
-    (
-        'https://github.com/pennlinc/xcp_d/blob/{revision}/{package}/{path}#L{lineno}'  # noqa: FS003
-    ),
+    'https://github.com/pennlinc/xcp_d/blob/{revision}/{package}/{path}#L{lineno}',
 )
 
 # -----------------------------------------------------------------------------

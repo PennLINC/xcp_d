@@ -61,17 +61,23 @@ class NiftiParcellate(SimpleInterface):
 
     def _run_interface(self, runtime):
         mask = self.inputs.mask
-        atlas = self.inputs.atlas
+        atlas_img = nb.load(self.inputs.atlas)
         min_coverage = self.inputs.min_coverage
 
-        node_labels_df = pd.read_table(self.inputs.atlas_labels, index_col='index')
-
-        # Fix any nonsequential values or mismatch between atlas and DataFrame.
-        atlas_img, node_labels_df = _sanitize_nifti_atlas(atlas, node_labels_df)
+        node_labels_df = pd.read_table(self.inputs.atlas_labels)
+        # The index tells us which row/column in the matrix the parcel is associated with.
+        # The 'index' column tells us what that parcel's value in the atlas image is.
+        # One requirement for later is that the index values are sorted in ascending order.
+        node_labels_df = node_labels_df.sort_values(by='index').reset_index(drop=True)
         node_labels = node_labels_df['label'].tolist()
-        # prepend "background" to node labels to satisfy NiftiLabelsMasker
-        # The background "label" won't be present in the output timeseries.
-        masker_labels = ['background'] + node_labels
+        # Create a dictionary mapping df['index'] to df.index
+        full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
+        masker_lut = node_labels_df.copy()
+        masker_lut['name'] = masker_lut['label']
+        atlas_values = np.unique(atlas_img.get_fdata())
+        atlas_values = atlas_values[atlas_values != 0]
+        atlas_values = atlas_values.astype(int)
+        masker_lut = masker_lut.loc[masker_lut['index'].isin(atlas_values)].reset_index(drop=True)
 
         # Before anything, we need to measure coverage
         atlas_img_bin = nb.Nifti1Image(
@@ -82,7 +88,7 @@ class NiftiParcellate(SimpleInterface):
 
         sum_masker_masked = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=masker_labels,
+            lut=masker_lut,
             background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
@@ -92,7 +98,7 @@ class NiftiParcellate(SimpleInterface):
         )
         sum_masker_unmasked = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=masker_labels,
+            lut=masker_lut,
             background_label=0,
             smoothing_fwhm=None,
             standardize=False,
@@ -106,7 +112,7 @@ class NiftiParcellate(SimpleInterface):
         del sum_masker_masked, sum_masker_unmasked, n_voxels_in_masked_parcels, n_voxels_in_parcels
         gc.collect()
 
-        n_nodes = len(node_labels)
+        n_nodes = node_labels_df.shape[0]
         n_found_nodes = coverage_thresholded.size
         n_bad_nodes = np.sum(parcel_coverage == 0)
         n_poor_parcels = np.sum(
@@ -140,7 +146,7 @@ class NiftiParcellate(SimpleInterface):
 
         masker = NiftiLabelsMasker(
             labels_img=atlas_img,
-            labels=masker_labels,
+            lut=masker_lut,
             background_label=0,
             mask_img=mask,
             smoothing_fwhm=None,
@@ -150,20 +156,19 @@ class NiftiParcellate(SimpleInterface):
 
         # Use nilearn to parcellate the file
         timeseries_arr = masker.fit_transform(self.inputs.filtered_file)
-        # Check that timeseries array has correct shape
-        if timeseries_arr.shape[1] != n_found_nodes:
-            raise ValueError(
-                f'Timeseries array shape {timeseries_arr.shape[1]} does not match number of found nodes {n_found_nodes}'
-            )
-        masker_labels = masker.labels_[:]
+        if timeseries_arr.ndim == 1:
+            # Add singleton first dimension representing time.
+            timeseries_arr = timeseries_arr[None, :]
+
+        assert timeseries_arr.shape[1] == n_found_nodes
+        # Map from atlas value to column index for parcels found in the atlas image
+        # Keys are cols/rows in the matrix, values are atlas values
+        masker_parcel_mapper = masker.region_ids_
         del masker
         gc.collect()
 
         # Apply the coverage mask
         timeseries_arr[:, coverage_thresholded] = np.nan
-
-        # Region indices in the atlas may not be sequential, so we map them to sequential ints.
-        seq_mapper = {idx: i for i, idx in enumerate(node_labels_df['sanitized_index'].tolist())}
 
         if n_found_nodes != n_nodes:  # parcels lost by warping/downsampling atlas
             # Fill in any missing nodes in the timeseries array with NaNs.
@@ -172,9 +177,9 @@ class NiftiParcellate(SimpleInterface):
                 fill_value=np.nan,
                 dtype=timeseries_arr.dtype,
             )
-            for col in range(timeseries_arr.shape[1]):
-                label_col = seq_mapper[masker_labels[col]]
-                new_timeseries_arr[:, label_col] = timeseries_arr[:, col]
+            for col_num, node_value in masker_parcel_mapper.items():
+                full_col_num = full_parcel_mapper[node_value]
+                new_timeseries_arr[:, full_col_num] = timeseries_arr[:, col_num]
 
             timeseries_arr = new_timeseries_arr
             del new_timeseries_arr
@@ -182,9 +187,9 @@ class NiftiParcellate(SimpleInterface):
 
             # Fill in any missing nodes in the coverage array with zero.
             new_parcel_coverage = np.zeros(n_nodes, dtype=parcel_coverage.dtype)
-            for row in range(parcel_coverage.shape[0]):
-                label_row = seq_mapper[masker_labels[row]]
-                new_parcel_coverage[label_row] = parcel_coverage[row]
+            for col_num, node_value in masker_parcel_mapper.items():
+                full_col_num = full_parcel_mapper[node_value]
+                new_parcel_coverage[full_col_num] = parcel_coverage[col_num]
 
             parcel_coverage = new_parcel_coverage
             del new_parcel_coverage
@@ -388,7 +393,7 @@ class ConnectPlot(SimpleInterface):
         for label in unique_labels:
             start_idx = np.where(labels == label)[0][0]
             if end_idx:
-                break_idx.append(np.mean([start_idx, end_idx]))
+                break_idx.append(np.nanmean([start_idx, end_idx]))
 
             end_idx = np.where(labels == label)[0][-1]
 
@@ -396,12 +401,12 @@ class ConnectPlot(SimpleInterface):
         break_idx = np.array(break_idx)
 
         # Find the locations for the labels in the middles of the communities
-        label_idx = np.mean(np.vstack((break_idx[1:], break_idx[:-1])), axis=0)
+        label_idx = np.nanmean(np.vstack((break_idx[1:], break_idx[:-1])), axis=0)
 
         np.fill_diagonal(corr_mat, 0)
 
         # Plot the correlation matrix
-        ax.imshow(corr_mat, vmin=-1, vmax=1, cmap='seismic')
+        im = ax.imshow(corr_mat, vmin=-1, vmax=1, cmap='seismic')
 
         # Add lines separating networks
         for idx in break_idx[1:-1]:
@@ -414,9 +419,11 @@ class ConnectPlot(SimpleInterface):
         ax.axes.set_yticklabels(unique_labels)
         ax.axes.set_xticklabels(unique_labels, rotation=90)
 
-        return ax
+        return im, ax
 
     def _run_interface(self, runtime):
+        from matplotlib.gridspec import GridSpec
+
         priority_list = [
             'MIDB',
             'MyersLabonte',
@@ -452,24 +459,27 @@ class ConnectPlot(SimpleInterface):
         }
 
         if len(selected_atlases) == 4:
-            nrows, ncols, figsize, ax_idx = 2, 2, (20, 20), [(0, 0), (0, 1), (1, 0), (1, 1)]
+            nrows, ncols, figsize = 2, 2, (20, 20)
         else:
             nrows, ncols, figsize = 1, len(selected_atlases), (10 * len(selected_atlases), 10)
-            ax_idx = list(range(ncols))
 
-        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
-        if isinstance(axes, plt.Axes):
-            axes = np.array([axes])
+        fig = plt.figure(figsize=figsize)
+        gs = GridSpec(nrows, ncols + 1, width_ratios=[*[1] * ncols, 0.05])
 
+        # Create axes for each matrix
         for i_ax, atlas in enumerate(selected_atlases):
+            i_row, i_col = divmod(i_ax, ncols)
+            ax = fig.add_subplot(gs[i_row, i_col])
             atlas_idx = self.inputs.atlases.index(atlas)
             atlas_file = self.inputs.correlations_tsv[atlas_idx]
             dseg_file = self.inputs.atlas_tsvs[atlas_idx]
 
-            sel_ax_idx = ax_idx[i_ax]
-
             column_name = COMMUNITY_LOOKUP.get(atlas, 'network_label')
-            dseg_df = pd.read_table(dseg_file)
+            dseg_df = pd.read_table(dseg_file, index_col='index')
+            # Remove background label
+            if 0 in dseg_df.index:
+                dseg_df = dseg_df.drop(index=[0])
+
             corrs_df = pd.read_table(atlas_file, index_col='Node')
 
             if atlas.startswith('4S'):
@@ -485,8 +495,7 @@ class ConnectPlot(SimpleInterface):
             else:
                 network_labels = ['None'] * dseg_df.shape[0]
 
-            ax = axes[sel_ax_idx]
-            ax = self.plot_matrix(
+            im, ax = self.plot_matrix(
                 corr_mat=corrs_df.to_numpy(),
                 network_labels=network_labels,
                 ax=ax,
@@ -496,6 +505,10 @@ class ConnectPlot(SimpleInterface):
                 fontdict={'weight': 'normal', 'size': 20},
             )
 
+        # Add colorbar in the reserved space
+        cbar_ax = fig.add_subplot(gs[0, -1])
+        plt.colorbar(im, cax=cbar_ax)
+        cbar_ax.set_yticks([-1, 0, 1])
         fig.tight_layout()
 
         # Write the results out
@@ -510,37 +523,6 @@ class ConnectPlot(SimpleInterface):
         plt.close(fig)
 
         return runtime
-
-
-def _sanitize_nifti_atlas(atlas, df):
-    atlas_img = nb.load(atlas)
-    atlas_data = atlas_img.get_fdata()
-    atlas_data = atlas_data.astype(np.int16)
-
-    # Check that all labels in the DataFrame are present in the NIfTI file, and vice versa.
-    if 0 in df.index:
-        df = df.drop(index=[0])
-
-    df.sort_index(inplace=True)  # ensure index is in order
-    expected_values = df.index.values
-
-    found_values = np.unique(atlas_data)
-    found_values = found_values[found_values != 0]  # drop the background value
-    if not np.all(np.isin(found_values, expected_values)):
-        raise ValueError('Atlas file contains values that are not present in the DataFrame.')
-
-    # Map the labels in the DataFrame to sequential values.
-    label_mapper = {value: i + 1 for i, value in enumerate(expected_values)}
-    df['sanitized_index'] = [label_mapper[i] for i in df.index.values]
-
-    # Map the values in the atlas image to sequential values.
-    new_atlas_data = np.zeros(atlas_data.shape, dtype=np.int16)
-    for old_value, new_value in label_mapper.items():
-        new_atlas_data[atlas_data == old_value] = new_value
-
-    new_atlas_img = nb.Nifti1Image(new_atlas_data, atlas_img.affine, atlas_img.header)
-
-    return new_atlas_img, df
 
 
 class _CiftiToTSVInputSpec(BaseInterfaceInputSpec):

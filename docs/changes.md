@@ -1,5 +1,104 @@
 # What's New
 
+## 0.11.1
+
+### 🐛 Bug Fixes
+
+* Fix figure collection for longitudinal, but not session-wise, reports by @tsalo in https://github.com/PennLINC/xcp_d/pull/1482
+
+### Other Changes
+
+* Drop dir and run entities from single-run tasks by @tsalo in https://github.com/PennLINC/xcp_d/pull/1472
+* Check DatasetType for "derivative" or "derivatives" by @tsalo in https://github.com/PennLINC/xcp_d/pull/1481
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.11.0...0.11.1
+
+
+## 0.11.0
+
+### 🛠 Breaking Changes
+
+* Use `mem_mb` instead of `mem_gb` by @smeisler in https://github.com/PennLINC/xcp_d/pull/1417
+
+### 🎉 Exciting New Features
+
+* Add `--report-output-level` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1436
+* Collect and apply transforms between native anatomical spaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1437
+
+### 🐛 Bug Fixes
+
+* Ensure T1w-only processing does not collect T2w by @tsalo in https://github.com/PennLINC/xcp_d/pull/1433
+* Support session-wise anatomical processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1438
+* Fix session-wise collection by @tsalo in https://github.com/PennLINC/xcp_d/pull/1439
+* Fix session-wise collection of surface files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1440
+* Make workflow name unique for session-wise processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1441
+* Add nifti brain mask to hcpya ingression by @smeisler in https://github.com/PennLINC/xcp_d/pull/1411
+* Write out filtered motion parameters when dummy-scans is not zero by @tsalo in https://github.com/PennLINC/xcp_d/pull/1446
+* Ingress BOLD brain mask in ABCD-BIDS and HCP processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1473
+
+### Other Changes
+
+* Update note about HCP compatibility by @tsalo in https://github.com/PennLINC/xcp_d/pull/1465
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.7...0.11.0
+
+
+## 0.10.7
+
+### 🎉 Exciting New Features
+
+* Use masked functional and anatomical images for executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1425
+
+### 🐛 Bug Fixes
+
+* Warp fsLR surfaces to NLin6 for brainsprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1419
+* Warp anat mask to anat space for coreg QC by @tsalo in https://github.com/PennLINC/xcp_d/pull/1423
+* Remove background label in ConnectPlot by @tsalo in https://github.com/PennLINC/xcp_d/pull/1424
+
+### Other Changes
+
+* Run vertex normalization on output surfaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1420
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.6...0.10.7
+
+
+## 0.10.6
+
+### 🎉 Exciting New Features
+
+* Add session-id parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1379
+* Add colorbar to correlation matrix plot by @tsalo in https://github.com/PennLINC/xcp_d/pull/1401
+
+### 🐛 Bug Fixes
+
+* Support `--abcc-qc` with `--file-format nifti` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1388
+* Do not attempt to concatenate runs when no runs in entity set are processed by @tsalo in https://github.com/PennLINC/xcp_d/pull/1398
+* Make calculations robust to NaNs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1399
+* Fix atlas names in concatenated parcellated output files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1407
+
+### Other Changes
+
+* Only estimate head radius if necessary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1381
+* Simplify the brainsprite workflow setup by @tsalo in https://github.com/PennLINC/xcp_d/pull/1384
+* Parallelize image denoising by @mattcieslak in https://github.com/PennLINC/xcp_d/pull/1387
+* Apply consistency across XCP-D quick-start instructions by @singlesp in https://github.com/PennLINC/xcp_d/pull/1382
+* Test PlotSlicesForBrainSprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1393
+* Update mode documentation by @B-Sevchik in https://github.com/PennLINC/xcp_d/pull/1392
+* Add comments and debug logging to init_denoise_bold_wf by @tientong98 in https://github.com/PennLINC/xcp_d/pull/1391
+* Add more OMP by @mattcieslak in https://github.com/PennLINC/xcp_d/pull/1386
+* Note that automatic head radius estimation gives higher values than 50 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1397
+* Add file lock to avoid concurrent edits by @tientong98 in https://github.com/PennLINC/xcp_d/pull/1403
+* Clarify mounting in apptainer instructions by @singlesp in https://github.com/PennLINC/xcp_d/pull/1394
+
+### New Contributors
+
+* @singlesp made their first contribution in https://github.com/PennLINC/xcp_d/pull/1382
+* @B-Sevchik made their first contribution in https://github.com/PennLINC/xcp_d/pull/1392
+* @tientong98 made their first contribution in https://github.com/PennLINC/xcp_d/pull/1391
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.5...0.10.6
+
+
 ## 0.10.5
 
 ### 🎉 Exciting New Features
