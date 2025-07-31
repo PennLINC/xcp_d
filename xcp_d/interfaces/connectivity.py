@@ -160,7 +160,12 @@ class NiftiParcellate(SimpleInterface):
             # Add singleton first dimension representing time.
             timeseries_arr = timeseries_arr[None, :]
 
-        assert timeseries_arr.shape[1] == n_found_nodes
+        if timeseries_arr.shape[1] != n_found_nodes:
+            raise ValueError(
+                f'Number of parcels in timeseries array {timeseries_arr.shape[1]} does not '
+                f'match number of parcels in atlas file {n_found_nodes}.'
+            )
+
         # Map from atlas value to column index for parcels found in the atlas image
         # Keys are cols/rows in the matrix, values are atlas values
         masker_parcel_mapper = masker.region_ids_
