@@ -516,6 +516,15 @@ def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
         }
         if 'subject_sphere' not in name:
             queries[name].update(query_extras)
+        else:
+            # Check if msmsulc sphere is available.
+            msmsulc_query = queries[name].copy()
+            msmsulc_query['desc'] = 'msmsulc'
+            msmsulc_file = layout.get(return_type='file', **msmsulc_query)
+            if len(msmsulc_file) == 1:
+                queries[name] = msmsulc_query
+            else:
+                LOGGER.warning('No msmsulc sphere found. Using original query.')
 
         initial_mesh_files[name] = layout.get(return_type='file', **queries[name])
 
