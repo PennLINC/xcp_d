@@ -66,8 +66,9 @@ class _CollectRegistrationFilesInputSpec(BaseInterfaceInputSpec):
         required=True,
         desc='The hemisphere being used.',
     )
-    msmsulc_sphere = File(
-        exists=True,
+    msmsulc_sphere = traits.Either(
+        File(exists=True),
+        None,
         desc='The msmsulc sphere file.',
         mandatory=False,
     )
@@ -127,7 +128,7 @@ class CollectRegistrationFiles(SimpleInterface):
             )
 
             # FreeSurfer: tpl-fsLR_hemi-?_den-32k_sphere.surf.gii
-            if isdefined(self.inputs.msmsulc_sphere):
+            if isdefined(self.inputs.msmsulc_sphere) and self.inputs.msmsulc_sphere:
                 self._results['target_sphere'] = self.inputs.msmsulc_sphere
             else:
                 self._results['target_sphere'] = str(
