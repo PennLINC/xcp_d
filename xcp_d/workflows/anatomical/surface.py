@@ -396,7 +396,9 @@ def init_fsnative_to_fsLR_wf(
             n_procs=1,
         )
         workflow.connect([
-            (inputnode, collect_spheres, [(f'{hemi_label}_subject_sphere_msmsulc', 'in_file')]),
+            (inputnode, collect_spheres, [
+                (f'{hemi_label}_subject_sphere_msmsulc', 'msmsulc_sphere'),
+            ]),
         ])  # fmt:skip
 
         # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
