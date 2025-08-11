@@ -528,7 +528,7 @@ def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
         elif len(surface_files_) == 0:
             mesh_files[dtype] = None
             # We don't need subject spheres if we have standard-space meshes already
-            if not ('subject_sphere' in dtype and standard_space_mesh):
+            if not (dtype.endswith('subject_sphere') and standard_space_mesh):
                 mesh_available = False
 
         else:
