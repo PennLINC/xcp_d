@@ -29,6 +29,7 @@ LOGGER = logging.getLogger('nipype.workflow')
 def init_postprocess_surfaces_wf(
     mesh_available,
     standard_space_mesh,
+    reg_sphere_available,
     morphometry_files,
     t1w_available,
     t2w_available,
@@ -70,6 +71,7 @@ def init_postprocess_surfaces_wf(
                 wf = init_postprocess_surfaces_wf(
                     mesh_available=True,
                     standard_space_mesh=False,
+                    reg_sphere_available=False,
                     morphometry_files=[],
                     t1w_available=True,
                     t2w_available=True,
@@ -81,6 +83,8 @@ def init_postprocess_surfaces_wf(
     ----------
     mesh_available : bool
     standard_space_mesh : bool
+    reg_sphere_available : bool
+        True if the registration sphere is available in the input dataset.
     morphometry_files : list of str
     t1w_available : bool
         True if a T1w image is available.
@@ -101,7 +105,7 @@ def init_postprocess_surfaces_wf(
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
     lh_subject_sphere, rh_subject_sphere
-    lh_subject_sphere_msmsulc, rh_subject_sphere_msmsulc
+    lh_reg_sphere, rh_reg_sphere
     sulcal_depth
     sulcal_curv
     cortical_thickness
@@ -126,8 +130,8 @@ def init_postprocess_surfaces_wf(
                 # Spheres to use for warping mesh files to fsLR space
                 'lh_subject_sphere',
                 'rh_subject_sphere',
-                'lh_subject_sphere_msmsulc',
-                'rh_subject_sphere_msmsulc',
+                'lh_reg_sphere',
+                'rh_reg_sphere',
                 # Mesh files, either in fsnative or fsLR space
                 'lh_pial_surf',
                 'rh_pial_surf',
@@ -234,6 +238,7 @@ def init_postprocess_surfaces_wf(
         workflow.__desc__ += ' The fsnative-space surfaces were then warped to fsLR space.'
         # Mesh files are in fsnative and must be warped to fsLR.
         fsnative_to_fsLR_wf = init_fsnative_to_fsLR_wf(
+            reg_sphere_available=reg_sphere_available,
             software=software,
             omp_nthreads=omp_nthreads,
             name='fsnative_to_fsLR_wf',
@@ -242,8 +247,8 @@ def init_postprocess_surfaces_wf(
             (inputnode, fsnative_to_fsLR_wf, [
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
-                ('lh_subject_sphere_msmsulc', 'inputnode.lh_subject_sphere_msmsulc'),
-                ('rh_subject_sphere_msmsulc', 'inputnode.rh_subject_sphere_msmsulc'),
+                ('lh_reg_sphere', 'inputnode.lh_reg_sphere'),
+                ('rh_reg_sphere', 'inputnode.rh_reg_sphere'),
                 ('lh_pial_surf', 'inputnode.lh_pial_surf'),
                 ('rh_pial_surf', 'inputnode.rh_pial_surf'),
                 ('lh_wm_surf', 'inputnode.lh_wm_surf'),
@@ -305,6 +310,7 @@ def init_postprocess_surfaces_wf(
 
 @fill_doc
 def init_fsnative_to_fsLR_wf(
+    reg_sphere_available,
     software,
     omp_nthreads,
     name='fsnative_to_fsLR_wf',
@@ -319,6 +325,7 @@ def init_fsnative_to_fsLR_wf(
             from xcp_d.workflows.anatomical.surface import init_fsnative_to_fsLR_wf
 
             wf = init_fsnative_to_fsLR_wf(
+                reg_sphere_available=True,
                 software="FreeSurfer",
                 omp_nthreads=1,
                 name="fsnative_to_fsLR_wf",
@@ -326,6 +333,8 @@ def init_fsnative_to_fsLR_wf(
 
     Parameters
     ----------
+    reg_sphere_available : bool
+        True if the registration sphere is available in the input dataset.
     software : {"MCRIBS", "FreeSurfer"}
         The software used to generate the surfaces.
     %(omp_nthreads)s
@@ -336,7 +345,7 @@ def init_fsnative_to_fsLR_wf(
     ------
     lh_subject_sphere, rh_subject_sphere : :obj:`str`
         Left- and right-hemisphere sphere registration files.
-    lh_subject_sphere_msmsulc, rh_subject_sphere_msmsulc : :obj:`str`
+    lh_reg_sphere, rh_reg_sphere : :obj:`str`
         Left- and right-hemisphere sphere registration files for msmsulc.
     lh_pial_surf, rh_pial_surf : :obj:`str`
         Left- and right-hemisphere pial surface files in fsnative space.
@@ -358,8 +367,8 @@ def init_fsnative_to_fsLR_wf(
                 # spheres to use for warping mesh files to fsLR space
                 'lh_subject_sphere',
                 'rh_subject_sphere',
-                'lh_subject_sphere_msmsulc',
-                'rh_subject_sphere_msmsulc',
+                'lh_reg_sphere',
+                'rh_reg_sphere',
                 # fsnative mesh files to warp
                 'lh_pial_surf',
                 'rh_pial_surf',
@@ -395,29 +404,36 @@ def init_fsnative_to_fsLR_wf(
             mem_gb=0.1,
             n_procs=1,
         )
-        workflow.connect([
-            (inputnode, collect_spheres, [
-                (f'{hemi_label}_subject_sphere_msmsulc', 'msmsulc_sphere'),
-            ]),
-        ])  # fmt:skip
 
-        # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
-        # fsLR/dhcpAsym-in-fsaverage
-        # (fsLR or dhcpAsym vertices with coordinates on the fsaverage sphere) sphere?
-        # So what's the result? The fsLR or dhcpAsym vertices with coordinates on the fsnative
-        # sphere?
-        project_unproject = pe.Node(
-            SurfaceSphereProjectUnproject(num_threads=omp_nthreads),
-            name=f'project_unproject_{hemi}',
-            n_procs=omp_nthreads,
+        reg_sphere_buffer = pe.Node(
+            niu.IdentityInterface(fields=['sphere']),
+            name=f'reg_sphere_buffer_{hemi}',
         )
-        workflow.connect([
-            (inputnode, project_unproject, [(f'{hemi_label}_subject_sphere', 'in_file')]),
-            (collect_spheres, project_unproject, [
-                ('source_sphere', 'sphere_project_to'),
-                ('sphere_to_sphere', 'sphere_unproject_from'),
-            ]),
-        ])  # fmt:skip
+        if reg_sphere_available:
+            # In fMRIPrep >= 23.2.0, the registration sphere is available in the derivatives.
+            workflow.connect([
+                (inputnode, reg_sphere_buffer, [(f'{hemi_label}_reg_sphere', 'sphere')]),
+            ])  # fmt:skip
+        else:
+            # Only needed for fMRIPrep < 23.2.0.
+            # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
+            # fsLR/dhcpAsym-in-fsaverage
+            # (fsLR or dhcpAsym vertices with coordinates on the fsaverage sphere) sphere?
+            # So what's the result? The fsLR or dhcpAsym vertices with coordinates on the fsnative
+            # sphere?
+            project_unproject = pe.Node(
+                SurfaceSphereProjectUnproject(num_threads=omp_nthreads),
+                name=f'project_unproject_{hemi}',
+                n_procs=omp_nthreads,
+            )
+            workflow.connect([
+                (inputnode, project_unproject, [(f'{hemi_label}_subject_sphere', 'in_file')]),
+                (collect_spheres, project_unproject, [
+                    ('source_sphere', 'sphere_project_to'),
+                    ('sphere_to_sphere', 'sphere_unproject_from'),
+                ]),
+                (project_unproject, reg_sphere_buffer, [('out_file', 'sphere')]),
+            ])  # fmt:skip
 
         # Resample the pial and white matter surfaces from fsnative to fsLR-32k or dhcpAsym-32k
         for surf_type in ['pial', 'wm']:
@@ -432,7 +448,7 @@ def init_fsnative_to_fsLR_wf(
             workflow.connect([
                 (inputnode, resample_to_fsLR32k, [(surf_label, 'in_file')]),
                 (collect_spheres, resample_to_fsLR32k, [('target_sphere', 'new_sphere')]),
-                (project_unproject, resample_to_fsLR32k, [('out_file', 'current_sphere')]),
+                (reg_sphere_buffer, resample_to_fsLR32k, [('sphere', 'current_sphere')]),
                 (resample_to_fsLR32k, outputnode, [('out_file', surf_label)]),
             ])  # fmt:skip
 

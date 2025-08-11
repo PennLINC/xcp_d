@@ -82,9 +82,9 @@ queries:
             - fsaverage
             suffix: sphere
         # Subject's surface sphere to be used to warp fsaverage meshes to fsLR space
-        lh_subject_sphere_msmsulc:
+        lh_reg_sphere:
             datatype: anat
-            desc: msmsulc
+            desc: reg
             extension: .surf.gii
             hemi: L
             space: fsLR
@@ -116,9 +116,9 @@ queries:
             - fsaverage
             suffix: sphere
         # Subject's surface sphere to be used to warp fsaverage meshes to fsLR space
-        rh_subject_sphere_msmsulc:
+        rh_reg_sphere:
             datatype: anat
-            desc: msmsulc
+            desc: reg
             extension: .surf.gii
             hemi: R
             space: fsLR

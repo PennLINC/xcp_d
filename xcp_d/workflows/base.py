@@ -153,6 +153,9 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
         bids_filters=config.execution.bids_filters,
         anat_session=anat_session or Query.NONE,
     )
+    reg_sphere_available = (
+        mesh_files['lh_reg_sphere'] is not None and mesh_files['rh_reg_sphere'] is not None
+    )
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
@@ -185,8 +188,8 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
                 'rh_wm_surf',
                 'lh_subject_sphere',
                 'rh_subject_sphere',
-                'lh_subject_sphere_msmsulc',
-                'rh_subject_sphere_msmsulc',
+                'lh_reg_sphere',
+                'rh_reg_sphere',
                 # morphometry files
                 'sulcal_depth',
                 'sulcal_curv',
@@ -213,8 +216,8 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
     inputnode.inputs.rh_wm_surf = mesh_files['rh_wm_surf']
     inputnode.inputs.lh_subject_sphere = mesh_files['lh_subject_sphere']
     inputnode.inputs.rh_subject_sphere = mesh_files['rh_subject_sphere']
-    inputnode.inputs.lh_subject_sphere_msmsulc = mesh_files['lh_subject_sphere_msmsulc']
-    inputnode.inputs.rh_subject_sphere_msmsulc = mesh_files['rh_subject_sphere_msmsulc']
+    inputnode.inputs.lh_reg_sphere = mesh_files['lh_reg_sphere']
+    inputnode.inputs.rh_reg_sphere = mesh_files['rh_reg_sphere']
 
     # optional surface shape files (used by surface-warping workflow)
     inputnode.inputs.sulcal_depth = morphometry_files['sulcal_depth']
@@ -390,6 +393,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
+            reg_sphere_available=reg_sphere_available,
             morphometry_files=morph_file_types,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
