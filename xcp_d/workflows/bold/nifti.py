@@ -418,7 +418,6 @@ the following post-processing was performed.
             t2w_available=t2w_available,
             mem_gb=mem_gbx,
         )
-
         workflow.connect([
             # Use inputnode for executive summary instead of downcast_data
             # because T1w is used as name source.
@@ -426,6 +425,8 @@ the following post-processing was performed.
                 ('boldref', 'inputnode.boldref'),
                 ('t1w', 'inputnode.t1w'),
                 ('t2w', 'inputnode.t2w'),
+                ('anat_brainmask', 'inputnode.anat_brainmask'),
+                ('bold_mask', 'inputnode.bold_mask'),
             ]),
         ])  # fmt:skip
 

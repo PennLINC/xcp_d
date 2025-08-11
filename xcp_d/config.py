@@ -91,6 +91,9 @@ The :py:mod:`config` is responsible for other conveniency actions.
 import os
 from multiprocessing import set_start_method
 
+import yaml
+from bids.layout import Query
+from bids.utils import listify
 from templateflow.conf import TF_LAYOUT
 
 # Disable NiPype etelemetry always
@@ -235,7 +238,20 @@ class _Config:
                 else:
                     setattr(cls, k, Path(v).absolute())
             elif hasattr(cls, k):
-                setattr(cls, k, v)
+                if k == 'processing_list':
+                    new_v = []
+                    for el in v:
+                        parts = el.split(':')
+                        if len(parts) != 3:
+                            raise ValueError(
+                                f'Malformed element in processing_list: "{el}". '
+                                'Each element must contain exactly two colons.'
+                            )
+                        sub, anat_ses, func_ses = parts
+                        new_v.append((sub, anat_ses, list(func_ses.split(','))))
+                    setattr(cls, k, new_v)
+                else:
+                    setattr(cls, k, v)
 
         if init:
             try:
@@ -410,6 +426,8 @@ class execution(_Config):
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
     notrack = None
     """Do not collect telemetry information for *XCP-D*."""
+    report_output_level = None
+    """Directory level at which the html reports should be written."""
     reports_only = None
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
@@ -420,8 +438,12 @@ class execution(_Config):
     """Unique identifier of this particular run."""
     participant_label = None
     """List of participant identifiers that are to be preprocessed."""
+    session_id = None
+    """Select a particular session from all available in the dataset."""
     task_id = None
     """Select a particular task from all available in the dataset."""
+    processing_list = []
+    """List of (subject_id, anat_session_id, [func_session_id, ...]) to be postprocessed."""
     templateflow_home = _templateflow_home
     """The root folder of the TemplateFlow client."""
     work_dir = Path('work').absolute()
@@ -495,8 +517,28 @@ class execution(_Config):
 
         cls.layout = cls._layout
 
+        if cls.task_id:
+            cls.bids_filters = cls.bids_filters or {}
+            cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
+            cls.bids_filters['bold']['task'] = cls.task_id
+
+        if cls.session_id:
+            # Patch session ID into all of the filters
+            session_id = listify(cls.session_id) + [Query.NONE]  # allow none (esp. for anats)
+
+            cls.bids_filters = cls.bids_filters or {}
+
+            # Load the io_spec to get the filter fields
+            _spec = yaml.safe_load(load_data.readable('io_spec.yaml').read_text())
+            filter_fields = []
+            for subspec in _spec['queries'].values():
+                filter_fields += list(subspec.keys())
+
+            for field in filter_fields:
+                cls.bids_filters[field] = cls.bids_filters.get(field, {})
+                cls.bids_filters[field]['session'] = session_id
+
         if cls.bids_filters:
-            from bids.layout import Query
 
             def _process_value(value):
                 """Convert string with "Query" in it to Query object."""
@@ -513,11 +555,6 @@ class execution(_Config):
             for acq, filters in cls.bids_filters.items():
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
-
-        if cls.task_id:
-            cls.bids_filters = cls.bids_filters or {}
-            cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
-            cls.bids_filters['bold']['task'] = cls.task_id
 
         dataset_links = {
             'preprocessed': cls.fmri_dir,
@@ -730,6 +767,11 @@ def get(flat=False):
         'nipype': nipype.get(),
         'seeds': seeds.get(),
     }
+    if 'processing_list' in settings['execution']:
+        settings['execution']['processing_list'] = [
+            f'{el[0]}:{el[1]}:{",".join(el[2])}' for el in settings['execution']['processing_list']
+        ]
+
     if not flat:
         return settings
 

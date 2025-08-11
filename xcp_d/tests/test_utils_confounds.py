@@ -133,7 +133,7 @@ def test_motion_filtering_notch():
 
     lowcut, highcut = band_stop_min / 60, band_stop_max / 60
     stopband_hz_adjusted = [lowcut, highcut]
-    freq_to_remove = np.mean(stopband_hz_adjusted)
+    freq_to_remove = np.nanmean(stopband_hz_adjusted)
     bandwidth = np.abs(np.diff(stopband_hz_adjusted))
 
     # Create filter coefficients.

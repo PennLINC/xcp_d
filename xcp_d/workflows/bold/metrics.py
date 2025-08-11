@@ -165,7 +165,7 @@ series to retain the original scaling.
             source_file=name_source,
         ),
         name='ds_report_alff',
-        run_without_submitting=False,
+        run_without_submitting=True,
     )
 
     if file_format == 'cifti':
@@ -397,7 +397,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             source_file=name_source,
         ),
         name='ds_report_reho',
-        run_without_submitting=False,
+        run_without_submitting=True,
     )
 
     # Write out results
@@ -496,7 +496,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
             desc='rehoVolumetricPlot',
         ),
         name='ds_report_reho',
-        run_without_submitting=False,
+        run_without_submitting=True,
     )
 
     # Write the results out
