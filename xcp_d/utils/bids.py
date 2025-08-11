@@ -527,8 +527,12 @@ def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
 
         elif len(surface_files_) == 0:
             mesh_files[dtype] = None
-            # We don't need subject spheres if we have standard-space meshes already
-            if not (dtype.endswith('subject_sphere') and standard_space_mesh):
+            # We don't need subject spheres if we have standard-space meshes already.
+            # We never *require* msmsulc spheres, but we can use them if they're available.
+            if (
+                dtype.endswith('subject_sphere_msmsulc')
+                or not (dtype.endswith('subject_sphere') and standard_space_mesh)
+            ):
                 mesh_available = False
 
         else:
