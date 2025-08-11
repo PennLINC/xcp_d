@@ -481,7 +481,7 @@ def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
     standard_space_mesh = True
     for name, query in queries.items():
         # Don't look for fsLR-space versions of the subject spheres.
-        if 'subject_sphere' in name:
+        if 'sphere' in name:
             continue
 
         temp_files = layout.get(
