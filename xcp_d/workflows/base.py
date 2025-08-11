@@ -185,6 +185,8 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
                 'rh_wm_surf',
                 'lh_subject_sphere',
                 'rh_subject_sphere',
+                'lh_subject_sphere_msmsulc',
+                'rh_subject_sphere_msmsulc',
                 # morphometry files
                 'sulcal_depth',
                 'sulcal_curv',
@@ -211,6 +213,8 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
     inputnode.inputs.rh_wm_surf = mesh_files['rh_wm_surf']
     inputnode.inputs.lh_subject_sphere = mesh_files['lh_subject_sphere']
     inputnode.inputs.rh_subject_sphere = mesh_files['rh_subject_sphere']
+    inputnode.inputs.lh_subject_sphere_msmsulc = mesh_files['lh_subject_sphere_msmsulc']
+    inputnode.inputs.rh_subject_sphere_msmsulc = mesh_files['rh_subject_sphere_msmsulc']
 
     # optional surface shape files (used by surface-warping workflow)
     inputnode.inputs.sulcal_depth = morphometry_files['sulcal_depth']
@@ -400,6 +404,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ('rh_wm_surf', 'inputnode.rh_wm_surf'),
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
+                ('lh_subject_sphere_msmsulc', 'inputnode.lh_subject_sphere_msmsulc'),
+                ('rh_subject_sphere_msmsulc', 'inputnode.rh_subject_sphere_msmsulc'),
                 ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
             ]),
         ])  # fmt:skip

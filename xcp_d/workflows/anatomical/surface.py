@@ -101,6 +101,7 @@ def init_postprocess_surfaces_wf(
     lh_pial_surf, rh_pial_surf
     lh_wm_surf, rh_wm_surf
     lh_subject_sphere, rh_subject_sphere
+    lh_subject_sphere_msmsulc, rh_subject_sphere_msmsulc
     sulcal_depth
     sulcal_curv
     cortical_thickness
@@ -125,6 +126,8 @@ def init_postprocess_surfaces_wf(
                 # Spheres to use for warping mesh files to fsLR space
                 'lh_subject_sphere',
                 'rh_subject_sphere',
+                'lh_subject_sphere_msmsulc',
+                'rh_subject_sphere_msmsulc',
                 # Mesh files, either in fsnative or fsLR space
                 'lh_pial_surf',
                 'rh_pial_surf',
@@ -239,6 +242,8 @@ def init_postprocess_surfaces_wf(
             (inputnode, fsnative_to_fsLR_wf, [
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
+                ('lh_subject_sphere_msmsulc', 'inputnode.lh_subject_sphere_msmsulc'),
+                ('rh_subject_sphere_msmsulc', 'inputnode.rh_subject_sphere_msmsulc'),
                 ('lh_pial_surf', 'inputnode.lh_pial_surf'),
                 ('rh_pial_surf', 'inputnode.rh_pial_surf'),
                 ('lh_wm_surf', 'inputnode.lh_wm_surf'),
@@ -331,6 +336,8 @@ def init_fsnative_to_fsLR_wf(
     ------
     lh_subject_sphere, rh_subject_sphere : :obj:`str`
         Left- and right-hemisphere sphere registration files.
+    lh_subject_sphere_msmsulc, rh_subject_sphere_msmsulc : :obj:`str`
+        Left- and right-hemisphere sphere registration files for msmsulc.
     lh_pial_surf, rh_pial_surf : :obj:`str`
         Left- and right-hemisphere pial surface files in fsnative space.
     lh_wm_surf, rh_wm_surf : :obj:`str`
@@ -351,6 +358,8 @@ def init_fsnative_to_fsLR_wf(
                 # spheres to use for warping mesh files to fsLR space
                 'lh_subject_sphere',
                 'rh_subject_sphere',
+                'lh_subject_sphere_msmsulc',
+                'rh_subject_sphere_msmsulc',
                 # fsnative mesh files to warp
                 'lh_pial_surf',
                 'rh_pial_surf',
@@ -386,6 +395,9 @@ def init_fsnative_to_fsLR_wf(
             mem_gb=0.1,
             n_procs=1,
         )
+        workflow.connect([
+            (inputnode, collect_spheres, [(f'{hemi_label}_subject_sphere_msmsulc', 'in_file')]),
+        ])  # fmt:skip
 
         # Project the subject's sphere (fsnative) to the source-sphere (fsaverage) using the
         # fsLR/dhcpAsym-in-fsaverage

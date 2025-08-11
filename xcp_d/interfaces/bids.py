@@ -16,6 +16,7 @@ from nipype.interfaces.base import (
     File,
     SimpleInterface,
     TraitedSpec,
+    isdefined,
     traits,
 )
 from nipype.interfaces.io import add_traits
@@ -64,6 +65,11 @@ class _CollectRegistrationFilesInputSpec(BaseInterfaceInputSpec):
         'R',
         required=True,
         desc='The hemisphere being used.',
+    )
+    msmsulc_sphere = File(
+        exists=True,
+        desc='The msmsulc sphere file.',
+        mandatory=False,
     )
 
 
@@ -121,16 +127,19 @@ class CollectRegistrationFiles(SimpleInterface):
             )
 
             # FreeSurfer: tpl-fsLR_hemi-?_den-32k_sphere.surf.gii
-            self._results['target_sphere'] = str(
-                get_template(
-                    template='fsLR',
-                    space=None,
-                    hemi=hemisphere,
-                    density='32k',
-                    desc=None,
-                    suffix='sphere',
+            if isdefined(self.inputs.msmsulc_sphere):
+                self._results['target_sphere'] = self.inputs.msmsulc_sphere
+            else:
+                self._results['target_sphere'] = str(
+                    get_template(
+                        template='fsLR',
+                        space=None,
+                        hemi=hemisphere,
+                        density='32k',
+                        desc=None,
+                        suffix='sphere',
+                    )
                 )
-            )
 
         elif self.inputs.software == 'MCRIBS':
             self._results['source_sphere'] = str(
