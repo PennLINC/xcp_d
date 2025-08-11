@@ -408,8 +408,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ('rh_wm_surf', 'inputnode.rh_wm_surf'),
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
-                ('lh_subject_sphere_msmsulc', 'inputnode.lh_subject_sphere_msmsulc'),
-                ('rh_subject_sphere_msmsulc', 'inputnode.rh_subject_sphere_msmsulc'),
+                ('lh_reg_sphere', 'inputnode.lh_reg_sphere'),
+                ('rh_reg_sphere', 'inputnode.rh_reg_sphere'),
                 ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
             ]),
         ])  # fmt:skip
