@@ -63,6 +63,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, 'space')
+    bold_cohort = get_entity(bold_file, 'cohort')
 
     if bold_space in ('native', 'T1w'):
         base_std_space = get_entity(template_to_anat_xfm, 'from')
@@ -70,6 +71,11 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     elif f'from-{bold_space}' not in template_to_anat_xfm:
         raise ValueError(
             f'Transform does not match BOLD space: {bold_space} != {template_to_anat_xfm}'
+        )
+    elif bold_space == 'MNIInfant' and bold_cohort is None:
+        raise ValueError(
+            f"BOLD cohort is not specified for {bold_file}. "
+            "Please specify the cohort using the 'cohort' entity."
         )
 
     # Pull out the correct transforms based on bold_file name and string them together.
@@ -96,13 +102,17 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
 
     elif bold_space == 'MNIInfant':
         # MNIInfant --> MNI152NLin2009cAsym
-        MNIInfant_to_MNI152NLin2009cAsym = str(
-            load_data(
-                'transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5',
-            )
+        MNIInfant_to_MNI152NLin6Asym = str(
+            get_template(
+                template='MNI152NLin6Asym',
+                mode='image',
+                suffix='xfm',
+                extension='.h5',
+                **{'from': f'MNIInfant+{bold_cohort}'},
+            ),
         )
-        xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
-        xforms_to_MNI_invert = [False]
+        xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym, MNIInfant_to_MNI152NLin6Asym]
+        xforms_to_MNI_invert = [False, False]
 
     elif bold_space == 'T1w':
         # T1w --> ?? (extract from template_to_anat_xfm) --> MNI152NLin2009cAsym
@@ -172,11 +182,13 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, 'space')
+    bold_cohort = get_entity(bold_file, 'cohort')
 
     if source_space is None:
         # If a source space is not provided, extract the space of the source file
         # First try tpl because that won't raise an error
         source_space = get_entity(source_file, 'tpl')
+        source_cohort = get_entity(source_file, 'cohort')
         if source_space is None:
             # If tpl isn't available, try space.
             # get_entity will raise an error if space isn't there.
@@ -207,16 +219,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             **{'from': 'MNI152NLin2009cAsym'},
         ),
     )
-    MNIInfant_to_MNI152NLin2009cAsym = str(
-        load_data(
-            'transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5',
-        )
-    )
-    MNI152NLin2009cAsym_to_MNIInfant = str(
-        load_data(
-            'transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5',
-        )
-    )
 
     if bold_space == source_space:
         transforms = ['identity']
@@ -225,25 +227,62 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
         if source_space == 'MNI152NLin2009cAsym':
             transforms = [MNI152NLin2009cAsym_to_MNI152NLin6Asym]
         elif source_space == 'MNIInfant':
-            transforms = [
-                MNI152NLin2009cAsym_to_MNI152NLin6Asym,
-                MNIInfant_to_MNI152NLin2009cAsym,
-            ]
+            if source_cohort is None:
+                raise ValueError(
+                    f"Source cohort is not specified for {source_file}. "
+                    "Please specify the cohort using the 'cohort' entity."
+                )
+            MNIInfant_to_MNI152NLin6Asym = str(
+                get_template(
+                    template='MNI152NLin6Asym',
+                    mode='image',
+                    suffix='xfm',
+                    extension='.h5',
+                    **{'from': f'MNIInfant+{source_cohort}'},
+                ),
+            )
+            transforms = [MNIInfant_to_MNI152NLin6Asym]
 
     elif bold_space == 'MNI152NLin2009cAsym':
         if source_space == 'MNI152NLin6Asym':
             transforms = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
         elif source_space == 'MNIInfant':
-            transforms = [MNIInfant_to_MNI152NLin2009cAsym]
+            if source_cohort is None:
+                raise ValueError(
+                    f"Source cohort is not specified for {source_file}. "
+                    "Please specify the cohort using the 'cohort' entity."
+                )
+            MNIInfant_to_MNI152NLin6Asym = str(
+                get_template(
+                    template='MNI152NLin6Asym',
+                    mode='image',
+                    suffix='xfm',
+                    extension='.h5',
+                    **{'from': f'MNIInfant+{source_cohort}'},
+                ),
+            )
+            transforms = [MNI152NLin6Asym_to_MNI152NLin2009cAsym, MNIInfant_to_MNI152NLin6Asym]
 
     elif bold_space == 'MNIInfant':
+        if bold_cohort is None:
+            raise ValueError(
+                f"BOLD cohort is not specified for {bold_file}. "
+                "Please specify the cohort using the 'cohort' entity."
+            )
+        MNI152NLin6Asym_to_MNIInfant = str(
+            get_template(
+                template='MNIInfant',
+                cohort=bold_cohort,
+                mode='image',
+                suffix='xfm',
+                extension='.h5',
+                **{'from': 'MNI152NLin6Asym'},
+            ),
+        )
         if source_space == 'MNI152NLin6Asym':
-            transforms = [
-                MNI152NLin2009cAsym_to_MNIInfant,
-                MNI152NLin6Asym_to_MNI152NLin2009cAsym,
-            ]
+            transforms = [MNI152NLin6Asym_to_MNIInfant]
         elif source_space == 'MNI152NLin2009cAsym':
-            transforms = [MNI152NLin2009cAsym_to_MNIInfant]
+            transforms = [MNI152NLin6Asym_to_MNIInfant, MNI152NLin2009cAsym_to_MNI152NLin6Asym]
 
     return transforms
 
