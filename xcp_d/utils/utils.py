@@ -66,16 +66,26 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
 
     if bold_space in ('native', 'T1w'):
         base_std_space = get_entity(template_to_anat_xfm, 'from')
-        raise ValueError(f"BOLD space '{bold_space}' not supported.")
+        raise ValueError(f'BOLD space "{bold_space}" not supported.')
     elif f'from-{bold_space}' not in template_to_anat_xfm:
         raise ValueError(
             f'Transform does not match BOLD space: {bold_space} != {template_to_anat_xfm}'
         )
     elif bold_space == 'MNIInfant' and bold_cohort is None:
         raise ValueError(
-            f"BOLD cohort is not specified for {bold_file}. "
-            "Please specify the cohort using the 'cohort' entity."
+            f'BOLD cohort is not specified for {bold_file}. '
+            'Please specify the cohort using the "cohort" entity.'
         )
+
+    MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
+        get_template(
+            template='MNI152NLin2009cAsym',
+            mode='image',
+            suffix='xfm',
+            extension='.h5',
+            **{'from': 'MNI152NLin6Asym'},
+        ),
+    )
 
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [template_to_anat_xfm]  # used for all spaces except T1w and native
@@ -87,15 +97,6 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
 
     elif bold_space == 'MNI152NLin6Asym':
         # MNI152NLin6Asym --> MNI152NLin2009cAsym
-        MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
-            get_template(
-                template='MNI152NLin2009cAsym',
-                mode='image',
-                suffix='xfm',
-                extension='.h5',
-                **{'from': 'MNI152NLin6Asym'},
-            ),
-        )
         xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
         xforms_to_MNI_invert = [False]
 
@@ -193,10 +194,10 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             source_space = get_entity(source_file, 'space')
 
     if source_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
-        raise ValueError(f"Source space '{source_space}' not supported.")
+        raise ValueError(f'Source space "{source_space}" not supported.')
 
     if bold_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
-        raise ValueError(f"BOLD space '{bold_space}' not supported.")
+        raise ValueError(f'BOLD space "{bold_space}" not supported.')
 
     # Load useful inter-template transforms from templateflow and package data
     MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
@@ -227,8 +228,8 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
         elif source_space == 'MNIInfant':
             if source_cohort is None:
                 raise ValueError(
-                    f"Source cohort is not specified for {source_file}. "
-                    "Please specify the cohort using the 'cohort' entity."
+                    f'Source cohort is not specified for {source_file}. '
+                    'Please specify the cohort using the "cohort" entity.'
                 )
             MNIInfant_to_MNI152NLin6Asym = str(
                 get_template(
@@ -247,8 +248,8 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
         elif source_space == 'MNIInfant':
             if source_cohort is None:
                 raise ValueError(
-                    f"Source cohort is not specified for {source_file}. "
-                    "Please specify the cohort using the 'cohort' entity."
+                    f'Source cohort is not specified for {source_file}. '
+                    'Please specify the cohort using the "cohort" entity.'
                 )
             MNIInfant_to_MNI152NLin6Asym = str(
                 get_template(
@@ -264,8 +265,8 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     elif bold_space == 'MNIInfant':
         if bold_cohort is None:
             raise ValueError(
-                f"BOLD cohort is not specified for {bold_file}. "
-                "Please specify the cohort using the 'cohort' entity."
+                f'BOLD cohort is not specified for {bold_file}. '
+                'Please specify the cohort using the "cohort" entity.'
             )
         MNI152NLin6Asym_to_MNIInfant = str(
             get_template(
