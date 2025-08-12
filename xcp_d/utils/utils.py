@@ -105,7 +105,6 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
         MNIInfant_to_MNI152NLin6Asym = str(
             get_template(
                 template='MNI152NLin6Asym',
-                mode='image',
                 suffix='xfm',
                 extension='.h5',
                 **{'from': f'MNIInfant+{bold_cohort}'},
@@ -234,7 +233,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             MNIInfant_to_MNI152NLin6Asym = str(
                 get_template(
                     template='MNI152NLin6Asym',
-                    mode='image',
                     suffix='xfm',
                     extension='.h5',
                     **{'from': f'MNIInfant+{source_cohort}'},
@@ -254,7 +252,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             MNIInfant_to_MNI152NLin6Asym = str(
                 get_template(
                     template='MNI152NLin6Asym',
-                    mode='image',
                     suffix='xfm',
                     extension='.h5',
                     **{'from': f'MNIInfant+{source_cohort}'},
@@ -272,7 +269,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             get_template(
                 template='MNIInfant',
                 cohort=bold_cohort,
-                mode='image',
                 suffix='xfm',
                 extension='.h5',
                 **{'from': 'MNI152NLin6Asym'},
