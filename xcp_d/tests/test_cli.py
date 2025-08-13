@@ -438,7 +438,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
     parameters.append('--notrack')
     parameters.append('-vv')
 
-    templateflow.conf.setup_home(force=True)
+    templateflow.conf.update(local=False, overwrite=True, silent=True)
 
     # Add concurrency options if they're not already specified
     parameters = update_resources(parameters)
