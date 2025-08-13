@@ -15,16 +15,12 @@ def main():
     from os import EX_SOFTWARE
     from pathlib import Path
 
-    import templateflow
-
     from xcp_d.cli.parser import parse_args
     from xcp_d.cli.workflow import build_workflow
     from xcp_d.utils.bids import (
         write_atlas_dataset_description,
         write_derivative_description,
     )
-
-    templateflow.conf.setup_home(force=False)
 
     parse_args(args=sys.argv[1:])
 
