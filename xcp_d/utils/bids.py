@@ -481,7 +481,7 @@ def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
     standard_space_mesh = True
     for name, query in queries.items():
         # Don't look for fsLR-space versions of the subject spheres.
-        if 'subject_sphere' in name:
+        if 'sphere' in name:
             continue
 
         temp_files = layout.get(
@@ -514,8 +514,17 @@ def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
             'subject': participant_label,
             **query,
         }
-        if 'subject_sphere' not in name:
+        if 'sphere' not in name:
             queries[name].update(query_extras)
+        elif 'reg_sphere' in name:
+            # Check if msmsulc sphere is available.
+            msmsulc_query = queries[name].copy()
+            msmsulc_query['desc'] = 'msmsulc'
+            msmsulc_file = layout.get(return_type='file', **msmsulc_query)
+            if len(msmsulc_file) == 1:
+                queries[name] = msmsulc_query
+            else:
+                LOGGER.warning('No msmsulc sphere found. Using original query.')
 
         initial_mesh_files[name] = layout.get(return_type='file', **queries[name])
 
@@ -527,8 +536,11 @@ def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
 
         elif len(surface_files_) == 0:
             mesh_files[dtype] = None
-            # We don't need subject spheres if we have standard-space meshes already
-            if not ('subject_sphere' in dtype and standard_space_mesh):
+            # We don't need subject spheres if we have standard-space meshes already.
+            # We never *require* msmsulc spheres, but we can use them if they're available.
+            if (not dtype.endswith('reg_sphere')) and not (
+                dtype.endswith('subject_sphere') and standard_space_mesh
+            ):
                 mesh_available = False
 
         else:
