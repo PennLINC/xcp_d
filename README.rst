@@ -50,7 +50,7 @@ Thus, with the development of *XCP-D*, data can be automatically preprocessed an
 format, using NiPrep-style containerized code, all the way from the scanner to functional
 connectivity matrices.
 
-*XCP-D* picks up right where `fMRIprep <https://fmriprep.org>`_ ends, directly consuming the outputs
+*XCP-D* picks up right where `fMRIPrep <https://fmriprep.org>`_ ends, directly consuming the outputs
 of fMRIPrep.
 *XCP-D* leverages the BIDS and NiPreps frameworks to automatically generate denoised BOLD images,
 parcellated time series, functional connectivity matrices, and quality assessment reports.
