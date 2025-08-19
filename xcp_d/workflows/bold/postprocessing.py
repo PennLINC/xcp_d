@@ -10,6 +10,7 @@ from num2words import num2words
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
@@ -368,7 +369,7 @@ def init_prepare_confounds_wf(
 
         ds_report_design_matrix = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['space', 'res', 'den', 'desc'],
+                dismiss_entities=dismiss_hash(['space', 'res', 'den', 'desc']),
                 suffix='design',
                 extension='.svg',
             ),
@@ -401,6 +402,7 @@ def init_prepare_confounds_wf(
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             desc='censoring',
             suffix='motion',
             extension='.svg',

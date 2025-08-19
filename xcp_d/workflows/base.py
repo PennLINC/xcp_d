@@ -23,6 +23,7 @@ from packaging.version import Version
 
 from xcp_d import config
 from xcp_d.__about__ import __version__
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
@@ -290,6 +291,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_summary = pe.Node(
         DerivativesDataSink(
             source_file=preproc_files[0],
+            dismiss_entities=dismiss_hash(),
             desc='summary',
         ),
         name='ds_report_summary',
@@ -298,6 +300,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_about = pe.Node(
         DerivativesDataSink(
             source_file=preproc_files[0],
+            dismiss_entities=dismiss_hash(),
             desc='about',
         ),
         name='ds_report_about',
@@ -654,6 +657,9 @@ def clean_datasinks(workflow):
         if node_name.startswith('ds_'):
             workflow.get_node(node).interface.out_path_base = ''
             workflow.get_node(node).interface.inputs.base_directory = config.execution.output_dir
+
+            if config.execution.output_layout != 'multiverse':
+                workflow.get_node(node).interface.inputs.hash = config.execution.hash
 
         if node_name.startswith('ds_report_'):
             workflow.get_node(node).interface.inputs.datatype = 'figures'

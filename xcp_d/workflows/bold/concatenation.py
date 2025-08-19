@@ -5,6 +5,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import BIDSURI, DerivativesDataSink
 from xcp_d.interfaces.concatenation import (
     CleanNameSource,
@@ -194,7 +195,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     workflow.connect([(filter_runs, motion_src, [('motion_file', 'in1')])])
 
     ds_motion_file = pe.Node(
-        DerivativesDataSink(extension='.tsv'),
+        DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
+            extension='.tsv',
+        ),
         name='ds_motion_file',
         run_without_submitting=True,
         mem_gb=1,
@@ -218,7 +222,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
         workflow.connect([(filter_runs, temporal_mask_src, [('temporal_mask', 'in1')])])
 
         ds_temporal_mask = pe.Node(
-            DerivativesDataSink(extension='.tsv'),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                extension='.tsv',
+            ),
             name='ds_temporal_mask',
             run_without_submitting=True,
             mem_gb=1,
@@ -231,7 +238,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     if file_format == 'cifti':
         ds_denoised_bold = pe.Node(
-            DerivativesDataSink(extension='.dtseries.nii'),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                extension='.dtseries.nii',
+            ),
             name='ds_denoised_bold',
             run_without_submitting=True,
             mem_gb=2,
@@ -239,7 +249,10 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
-                DerivativesDataSink(extension='.dtseries.nii'),
+                DerivativesDataSink(
+                    dismiss_entities=dismiss_hash(),
+                    extension='.dtseries.nii',
+                ),
                 name='ds_smoothed_denoised_bold',
                 run_without_submitting=True,
                 mem_gb=2,
@@ -247,7 +260,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
     else:
         ds_denoised_bold = pe.Node(
-            DerivativesDataSink(extension='.nii.gz', compression=True),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                extension='.nii.gz',
+                compression=True,
+            ),
             name='ds_denoised_bold',
             run_without_submitting=True,
             mem_gb=2,
@@ -255,7 +272,11 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         if smoothing:
             ds_smoothed_denoised_bold = pe.Node(
-                DerivativesDataSink(extension='.nii.gz', compression=True),
+                DerivativesDataSink(
+                    dismiss_entities=dismiss_hash(),
+                    extension='.nii.gz',
+                    compression=True,
+                ),
                 name='ds_smoothed_denoised_bold',
                 run_without_submitting=True,
                 mem_gb=2,
@@ -316,6 +337,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
         ds_timeseries = pe.MapNode(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 extension='.tsv',
                 # Metadata
                 SamplingFrequency='TR',
@@ -363,7 +385,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             ds_correlations = pe.MapNode(
                 DerivativesDataSink(
                     # Be explicit with entities because the source file is the timeseries
-                    dismiss_entities=['desc'],
+                    dismiss_entities=dismiss_hash(['desc']),
                     statistic='pearsoncorrelation',
                     suffix='relmat',
                     extension='.tsv',
@@ -396,6 +418,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
 
             ds_cifti_ts = pe.MapNode(
                 DerivativesDataSink(
+                    dismiss_entities=dismiss_hash(),
                     check_hdr=False,
                     extension='.ptseries.nii',
                 ),

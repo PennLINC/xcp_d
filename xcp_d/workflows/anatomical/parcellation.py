@@ -6,6 +6,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.utils.atlas import select_atlases
 from xcp_d.utils.doc import fill_doc
@@ -155,7 +156,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
         # Write out the parcellated files
         ds_parcellated_surface = pe.MapNode(
             DerivativesDataSink(
-                dismiss_entities=['hemi', 'desc', 'den', 'res'],
+                dismiss_entities=dismiss_hash(['hemi', 'desc', 'den', 'res']),
                 desc=SURF_DESCS[file_to_parcellate],
                 statistic='mean',
                 suffix='morph',

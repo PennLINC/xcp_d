@@ -10,6 +10,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from niworkflows.interfaces.surf import CSVToGifti, GiftiToCSV
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.data import load as load_data
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.execsummary import PlotSlicesForBrainSprite
@@ -166,7 +167,7 @@ def init_brainsprite_figures_wf(
 
         ds_report_mosaic_file = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['desc'],
+                dismiss_entities=dismiss_hash(['desc']),
                 desc='mosaic',
                 suffix=f'{image_type}w',
             ),
@@ -231,7 +232,7 @@ def init_brainsprite_figures_wf(
 
         ds_report_scenewise_pngs = pe.MapNode(
             DerivativesDataSink(
-                dismiss_entities=['desc'],
+                dismiss_entities=dismiss_hash(['desc']),
                 suffix=f'{image_type}w',
             ),
             name=f'ds_report_scenewise_pngs_{image_type}',

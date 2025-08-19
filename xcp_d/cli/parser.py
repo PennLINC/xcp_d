@@ -647,6 +647,17 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         ),
     )
     g_other.add_argument(
+        '--output-layout',
+        dest='output_layout',
+        action='store',
+        choices=['bids', 'multiverse'],
+        default='auto',
+        help=(
+            'Output layout for the BOLD data. '
+            'If "auto", the output layout will be inferred from the processing mode.'
+        ),
+    )
+    g_other.add_argument(
         '-w',
         '--work-dir',
         '--work_dir',
