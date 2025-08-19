@@ -191,7 +191,9 @@ def init_postproc_derivatives_wf(
     ds_motion = pe.Node(
         DerivativesDataSink(
             source_file=name_source,
-            dismiss_entities=dismiss_hash(['segmentation', 'den', 'res', 'space', 'cohort', 'desc']),
+            dismiss_entities=dismiss_hash(
+                ['segmentation', 'den', 'res', 'space', 'cohort', 'desc']
+            ),
             suffix='motion',
             extension='.tsv',
         ),
@@ -236,7 +238,9 @@ def init_postproc_derivatives_wf(
 
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=dismiss_hash(['segmentation', 'den', 'res', 'space', 'cohort', 'desc']),
+                dismiss_entities=dismiss_hash(
+                    ['segmentation', 'den', 'res', 'space', 'cohort', 'desc']
+                ),
                 suffix='outliers',
                 extension='.tsv',
                 source_file=name_source,
