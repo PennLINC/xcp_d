@@ -816,6 +816,7 @@ DEFAULT_CONFIG_HASH_FIELDS = {
         'bids_filters',
         'confounds_config',
         'atlases',
+        'output_layout',
     ],
     'workflow': [
         'mode',

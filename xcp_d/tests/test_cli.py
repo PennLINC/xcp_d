@@ -275,12 +275,13 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         '--create-matrices=all',
         '--linc-qc=n',
         '--report-output-level=root',
+        '--output-layout=multiverse',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
         input_type='cifti',
-        test_main=False,
+        test_main=True,
     )
 
 
