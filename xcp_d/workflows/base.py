@@ -658,7 +658,7 @@ def clean_datasinks(workflow):
             workflow.get_node(node).interface.out_path_base = ''
             workflow.get_node(node).interface.inputs.base_directory = config.execution.output_dir
 
-            if config.execution.output_layout != 'multiverse':
+            if config.execution.output_layout == 'multiverse':
                 workflow.get_node(node).interface.inputs.hash = config.execution.parameters_hash
 
         if node_name.startswith('ds_report_'):
