@@ -868,7 +868,9 @@ def hash_config(
     dset_desc_path = Path(conf['execution']['fmri_dir']) / 'dataset_description.json'
     prefix = ''
     if dset_desc_path.exists():
-        desc = json.load(dset_desc_path.read_text())
+        with open(dset_desc_path) as fobj:
+            desc = json.load(fobj)
+
         if 'ConfigurationHash' in desc:
             prefix = desc['ConfigurationHash'] + '+'
 
