@@ -221,6 +221,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
         xbids.write_derivative_description(
             tmpdir,
             tmpdir,
+            parameters_hash='1234567890',
             atlases=None,
             dataset_links={},
         )
@@ -231,6 +232,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         fmri_dir,
         tmpdir,
+        hash='1234567890',
         atlases=['Gordon'],
         dataset_links={'preprocessed': '/fake/path1', 'confounds': '/fake/path4'},
     )
@@ -245,6 +247,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         tmpdir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=['Gordon'],
         dataset_links={'preprocessed': '/fake/path2', 'confounds': '/fake/path5'},
     )
@@ -260,6 +263,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         fmri_dir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=None,
         dataset_links={},
     )
@@ -274,6 +278,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         tmpdir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=None,
         dataset_links={},
     )
@@ -288,6 +293,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
         xbids.write_derivative_description(
             tmpdir,
             tmpdir,
+            parameters_hash='1234567890',
             atlases=None,
             dataset_links={},
         )

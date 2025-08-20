@@ -5,6 +5,7 @@ XCP-D postprocessing workflow
 """
 
 from xcp_d import config
+from xcp_d.config import hash_config
 
 
 def main():
@@ -38,6 +39,8 @@ def main():
 
         sentry_setup()
 
+    config.execution.parameters_hash = hash_config(config.dumps())
+
     # CRITICAL Save the config to a file. This is necessary because the execution graph
     # is built as a separate process to keep the memory footprint low. The most
     # straightforward way to communicate with the child process is via the filesystem.
@@ -69,6 +72,9 @@ def main():
     # function executed constrained in a process may change the config (and thus the global
     # state of XCP-D).
     config.load(config_file)
+
+    # TODO: Compare the config hash against the hash in the existing dataset description.
+    # If they don't match, raise an error.
 
     if config.execution.reports_only:
         sys.exit(int(exitcode > 0))
@@ -161,6 +167,7 @@ def main():
         write_derivative_description(
             config.execution.fmri_dir,
             config.execution.output_dir,
+            parameters_hash=config.execution.parameters_hash,
             atlases=config.execution.atlases,
             dataset_links=config.execution.dataset_links,
         )

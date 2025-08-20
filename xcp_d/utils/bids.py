@@ -873,6 +873,7 @@ def collect_confounds(
 def write_derivative_description(
     fmri_dir,
     output_dir,
+    parameters_hash,
     atlases=None,
     dataset_links=None,
 ):
@@ -884,6 +885,8 @@ def write_derivative_description(
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
         Path to the output XCP-D dataset.
+    hash : :obj:`str`
+        Hash of the parameters used to generate the derivatives.
     atlases : :obj:`list` of :obj:`str`, optional
         Names of requested XCP-D atlases.
     dataset_links : :obj:`dict`, optional
@@ -903,6 +906,9 @@ def write_derivative_description(
     # Base the new dataset description on the preprocessing pipeline's dataset description
     with open(orig_dset_description) as fo:
         desc = json.load(fo)
+
+    # Add the hash to the dataset description
+    desc['ConfigurationHash'] = parameters_hash
 
     # Check if the dataset type is derivative
     if 'DatasetType' not in desc.keys():

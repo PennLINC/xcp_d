@@ -415,8 +415,6 @@ class execution(_Config):
     """Debug mode(s)."""
     fs_license_file = _fs_license
     """An existing file containing a FreeSurfer license."""
-    hash = None
-    """Unique identifier for this set of configurable parameters."""
     layout = None
     """A :py:class:`~bids.layout.BIDSLayout` object, see :py:func:`init`."""
     log_dir = None
@@ -431,6 +429,8 @@ class execution(_Config):
     """Do not collect telemetry information for *XCP-D*."""
     output_layout = None
     """Output layout for the derivatives."""
+    parameters_hash = None
+    """Unique identifier for this set of configurable parameters."""
     report_output_level = None
     """Directory level at which the html reports should be written."""
     reports_only = None

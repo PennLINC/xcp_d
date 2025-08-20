@@ -461,6 +461,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         write_derivative_description(
             config.execution.fmri_dir,
             config.execution.output_dir,
+            parameters_hash=config.execution.parameters_hash,
             dataset_links=config.execution.dataset_links,
         )
         if config.execution.atlases:
