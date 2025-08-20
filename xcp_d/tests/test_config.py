@@ -38,14 +38,14 @@ def _reset_config():
 
 def test_reset_config():
     execution = config.execution
-    execution.bids_dir = 'TESTING'
-    assert config.execution.bids_dir == 'TESTING'
+    execution.fmri_dir = 'TESTING'
+    assert config.execution.fmri_dir == 'TESTING'
     _reset_config()
-    assert config.execution.bids_dir is None
+    assert config.execution.fmri_dir is None
     # Even though the config module was reset,
     # previous references to config classes
     # have not been touched.
-    assert execution.bids_dir == 'TESTING'
+    assert execution.fmri_dir == 'TESTING'
 
 
 def test_hash_config():

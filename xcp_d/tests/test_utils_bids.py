@@ -232,7 +232,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         fmri_dir,
         tmpdir,
-        hash='1234567890',
+        parameters_hash='1234567890',
         atlases=['Gordon'],
         dataset_links={'preprocessed': '/fake/path1', 'confounds': '/fake/path4'},
     )
