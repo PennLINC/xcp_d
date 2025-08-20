@@ -16,6 +16,8 @@ def main():
     from os import EX_SOFTWARE
     from pathlib import Path
 
+    import tomllib
+
     from xcp_d.cli.parser import parse_args
     from xcp_d.cli.workflow import build_workflow
     from xcp_d.utils.bids import (
@@ -39,7 +41,7 @@ def main():
 
         sentry_setup()
 
-    config.execution.parameters_hash = hash_config(config.dumps())
+    config.execution.parameters_hash = hash_config(tomllib.loads(config.dumps()))
 
     # CRITICAL Save the config to a file. This is necessary because the execution graph
     # is built as a separate process to keep the memory footprint low. The most
