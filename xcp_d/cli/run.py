@@ -42,7 +42,7 @@ def main():
         sentry_setup()
 
     config.execution.parameters_hash = hash_config(toml.loads(config.dumps()))
-    if config.workflow.output_layout == 'multiverse':
+    if config.execution.output_layout == 'multiverse':
         config.execution.output_dir = (
             config.execution.output_dir / f'xcp_d-{config.execution.parameters_hash}'
         )
