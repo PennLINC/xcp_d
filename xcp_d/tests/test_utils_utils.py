@@ -432,7 +432,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # T1w --> MNI152NLin2009cAsym/T1w
     bold_file_t1w = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-T1w_')
-    with pytest.raises(ValueError, match="BOLD space 'T1w' not supported."):
+    with pytest.raises(ValueError, match='BOLD space "T1w" not supported.'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_t1w,
             nlin6asym_to_anat_xfm,
@@ -440,7 +440,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # T1w --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     bold_file_t1w = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-T1w_')
-    with pytest.raises(ValueError, match="BOLD space 'T1w' not supported."):
+    with pytest.raises(ValueError, match='BOLD space "T1w" not supported.'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_t1w,
             nlin6asym_to_anat_xfm,
@@ -448,7 +448,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # native --> MNI152NLin2009cAsym/T1w
     bold_file_native = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', '')
-    with pytest.raises(ValueError, match="BOLD space 'native' not supported."):
+    with pytest.raises(ValueError, match='BOLD space "native" not supported.'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_native,
             nlin6asym_to_anat_xfm,
@@ -456,7 +456,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # native --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     bold_file_native = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', '')
-    with pytest.raises(ValueError, match="BOLD space 'native' not supported."):
+    with pytest.raises(ValueError, match='BOLD space "native" not supported.'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_native,
             nlin6asym_to_anat_xfm,
@@ -471,7 +471,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         )
 
     tofail_to_anat_xfm = nlin6asym_to_anat_xfm.replace('from-MNI152NLin6Asym_', 'from-tofail_')
-    with pytest.raises(ValueError, match="Space 'tofail'"):
+    with pytest.raises(ValueError, match='Space "tofail"'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_tofail,
             tofail_to_anat_xfm,
@@ -504,13 +504,13 @@ def test_get_std2bold_xfms(ds001419_data):
     SPACES = [
         ('MNI152NLin6Asym', 'MNI152NLin6Asym', 1),
         ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 1),
-        ('MNI152NLin6Asym', 'MNIInfant+1', 2),
+        ('MNI152NLin6Asym', 'MNIInfant+1', 1),
         ('MNI152NLin2009cAsym', 'MNI152NLin2009cAsym', 1),
         ('MNI152NLin2009cAsym', 'MNI152NLin6Asym', 1),
-        ('MNI152NLin2009cAsym', 'MNIInfant+1', 1),
+        ('MNI152NLin2009cAsym', 'MNIInfant+1', 2),
         ('MNIInfant_cohort-1', 'MNIInfant+1', 1),
-        ('MNIInfant_cohort-1', 'MNI152NLin2009cAsym', 1),
-        ('MNIInfant_cohort-1', 'MNI152NLin6Asym', 2),
+        ('MNIInfant_cohort-1', 'MNI152NLin2009cAsym', 2),
+        ('MNIInfant_cohort-1', 'MNI152NLin6Asym', 1),
     ]
     for space_check in SPACES:
         target_space, source_space, n_xforms = space_check
@@ -532,11 +532,11 @@ def test_get_std2bold_xfms(ds001419_data):
 
     # MNI152NLin6Asym --> tofail
     bold_file_tofail = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-tofail_')
-    with pytest.raises(ValueError, match="BOLD space 'tofail' not supported"):
+    with pytest.raises(ValueError, match='BOLD space "tofail" not supported'):
         utils.get_std2bold_xfms(bold_file_tofail, source_file=None, source_space='MNI152NLin6Asym')
 
     # tofail --> MNI152NLin6Asym
-    with pytest.raises(ValueError, match="Source space 'tofail' not supported"):
+    with pytest.raises(ValueError, match='Source space "tofail" not supported'):
         utils.get_std2bold_xfms(bold_file_nlin6asym, source_file=None, source_space='tofail')
 
 
