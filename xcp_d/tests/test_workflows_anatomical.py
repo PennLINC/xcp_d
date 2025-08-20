@@ -76,6 +76,7 @@ def test_fsnative_to_fsLR_wf(
         config.execution.output_dir = tmpdir
 
         wf = anatomical.surface.init_fsnative_to_fsLR_wf(
+            reg_sphere_available=False,
             software='FreeSurfer',
             omp_nthreads=1,
         )

@@ -21,7 +21,7 @@ dependencies = [
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
     "bids-validator <= 1.14.7.post0",
     "h5py <= 3.14.0",  # for DCAN motion file
-    "indexed_gzip ~= 1.9.1",  # for loading imgs in nibabel
+    "indexed_gzip ~= 1.10.1",  # for loading imgs in nibabel
     "jinja2 ~= 3.1.2",  # for executive summary
     "joblib <= 1.5.1",
     "matplotlib ~= 3.10.0",
@@ -42,7 +42,7 @@ dependencies = [
     "scikit-learn <= 1.7.1",
     "scipy >= 1.14.0,<= 1.15.3",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.34.1",  # for usage reports
+    "sentry-sdk ~= 2.35.0",  # for usage reports
     "templateflow ~= 25.0.3",
     "toml",
     "trimesh",
