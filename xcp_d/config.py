@@ -813,35 +813,35 @@ DEFAULT_DISMISS_ENTITIES = dismiss_hash()
 
 DEFAULT_CONFIG_HASH_FIELDS = {
     'execution': [
-        'sloppy',
-        'echo_idx',
-        'reference_anat',
+        'bids_filters',
+        'confounds_config',
+        'atlases',
     ],
     'workflow': [
-        'surface_recon_method',
-        'bold2anat_dof',
-        'bold2anat_init',
+        'mode',
+        'file_format',
         'dummy_scans',
-        'fd_radius',
-        'fmap_bspline',
-        'fmap_demean',
-        'force_syn',
-        'hmc_bold_frame',
-        'longitudinal',
-        'medial_surface_nan',
-        'multi_step_reg',
-        'norm_csf',
-        'project_goodvoxels',
-        'regressors_dvars_th',
-        'regressors_fd_th',
-        'skull_strip_fixed_seed',
-        'skull_strip_template',
-        'skull_strip_anat',
-        'slice_time_ref',
-        'surface_recon_method',
-        'use_bbr',
-        'use_syn_sdc',
-        'me_t2s_fit_method',
+        'input_type',
+        'despike',
+        'smoothing',
+        'output_interpolated',
+        'combine_runs',
+        'motion_filter_type',
+        'band_stop_min',
+        'band_stop_max',
+        'motion_filter_order',
+        'head_radius',
+        'fd_thresh',
+        'min_time',
+        'bandpass_filter',
+        'high_pass',
+        'low_pass',
+        'bpf_order',
+        'min_coverage',
+        'correlation_lengths',
+        'process_surfaces',
+        'abcc_qc',
+        'linc_qc',
     ],
 }
 
@@ -863,10 +863,18 @@ def hash_config(
     if version is None:
         from xcp_d import __version__ as version
 
+    # Load the preprocessing derivatives dataset description
+    dset_desc_path = Path(conf['execution']['fmri_dir']) / 'dataset_description.json'
+    prefix = ''
+    if dset_desc_path.exists():
+        desc = json.load(dset_desc_path.read_text())
+        if 'ConfigurationHash' in desc:
+            prefix = desc['ConfigurationHash'] + '+'
+
     data = {}
     for level, fields in fields_required.items():
         for f in fields:
             data[f] = conf[level].get(f, None)
 
     datab = json.dumps(data, sort_keys=True).encode()
-    return blake2b(datab, digest_size=digest_size).hexdigest()
+    return prefix + blake2b(datab, digest_size=digest_size).hexdigest()
