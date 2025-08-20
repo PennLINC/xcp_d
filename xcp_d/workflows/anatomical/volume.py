@@ -110,7 +110,6 @@ def init_postprocess_anat_wf(
         resolution=1,
         desc='brain',
         suffix='T1w',
-        raise_empty=True,
     )
     if not template_file:
         # Otherwise, use unstripped template
