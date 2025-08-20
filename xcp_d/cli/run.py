@@ -12,10 +12,11 @@ def main():
     """Entry point."""
     import gc
     import sys
-    import toml
     from multiprocessing import Manager, Process
     from os import EX_SOFTWARE
     from pathlib import Path
+
+    import toml
 
     from xcp_d.cli.parser import parse_args
     from xcp_d.cli.workflow import build_workflow
