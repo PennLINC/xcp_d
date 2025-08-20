@@ -123,6 +123,7 @@ def init_qc_report_wf(
             desc='brain',
             suffix='mask',
             extension=['.nii', '.nii.gz'],
+            raise_empty=True,
         )
     )
 
@@ -233,6 +234,7 @@ def init_qc_report_wf(
                 desc='carpet',
                 suffix='dseg',
                 extension=['.nii', '.nii.gz'],
+                raise_empty=True,
             )
         )
 

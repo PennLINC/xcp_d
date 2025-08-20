@@ -83,6 +83,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
             mode='image',
             suffix='xfm',
             extension='.h5',
+            raise_empty=True,
             **{'from': 'MNI152NLin6Asym'},
         ),
     )
@@ -106,6 +107,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
             template='MNI152NLin6Asym',
             suffix='xfm',
             extension='.h5',
+            raise_empty=True,
             **{'from': f'MNIInfant+{bold_cohort}'},
         )
         if isinstance(MNIInfant_to_MNI152NLin6Asym, list):
@@ -128,6 +130,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
                     mode='image',
                     suffix='xfm',
                     extension='.h5',
+                    raise_empty=True,
                     **{'from': base_std_space},
                 ),
             )
@@ -210,6 +213,7 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             mode='image',
             suffix='xfm',
             extension='.h5',
+            raise_empty=True,
             **{'from': 'MNI152NLin6Asym'},
         ),
     )
@@ -219,6 +223,7 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             mode='image',
             suffix='xfm',
             extension='.h5',
+            raise_empty=True,
             **{'from': 'MNI152NLin2009cAsym'},
         ),
     )
@@ -239,6 +244,7 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
                 template='MNI152NLin6Asym',
                 suffix='xfm',
                 extension='.h5',
+                raise_empty=True,
                 **{'from': f'MNIInfant+{source_cohort}'},
             )
             if isinstance(MNIInfant_to_MNI152NLin6Asym, list):
@@ -262,6 +268,7 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
                 template='MNI152NLin6Asym',
                 suffix='xfm',
                 extension='.h5',
+                raise_empty=True,
                 **{'from': f'MNIInfant+{source_cohort}'},
             )
             if isinstance(MNIInfant_to_MNI152NLin6Asym, list):
@@ -286,6 +293,7 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             cohort=bold_cohort,
             suffix='xfm',
             extension='.h5',
+            raise_empty=True,
             **{'from': 'MNI152NLin6Asym'},
         )
         if isinstance(MNI152NLin6Asym_to_MNIInfant, list):

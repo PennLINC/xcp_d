@@ -202,7 +202,14 @@ def write_gii(datat, template, filename, hemi):
     """
     datax = np.array(datat, dtype='float32')
     template = str(
-        get_template('fsLR', hemi=hemi, suffix='midthickness', density='32k', desc='vaavg')
+        get_template(
+            'fsLR',
+            hemi=hemi,
+            suffix='midthickness',
+            density='32k',
+            desc='vaavg',
+            raise_empty=True,
+        )
     )
     template = nb.load(template)
     dataimg = nb.gifti.GiftiImage(

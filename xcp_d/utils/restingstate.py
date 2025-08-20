@@ -80,7 +80,16 @@ def mesh_adjacency(hemi):
     -----
     Modified by Taylor Salo to loop over all vertices in faces.
     """
-    surf = str(get_template('fsLR', space=None, hemi=hemi, suffix='sphere', density='32k'))
+    surf = str(
+        get_template(
+            'fsLR',
+            space=None,
+            hemi=hemi,
+            suffix='sphere',
+            density='32k',
+            raise_empty=True,
+        )
+    )
     surf = nb.load(surf)  # load via nibabel
 
     # Aggregate GIFTI data arrays into an ndarray or tuple of ndarray select the arrays in a
