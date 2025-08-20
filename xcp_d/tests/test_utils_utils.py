@@ -407,7 +407,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     assert len(xforms_to_t1w) == 1
     assert len(xforms_to_t1w_invert) == 1
 
-    # MNIInfant --> MNI152NLin2009cAsym/T1w
+    # MNIInfant --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     bold_file_infant = bold_file_nlin6asym.replace(
         'space-MNI152NLin6Asym_',
         'space-MNIInfant_cohort-1_',
@@ -425,8 +425,8 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         bold_file_infant,
         infant_to_anat_xfm,
     )
-    assert len(xforms_to_mni) == 1
-    assert len(xforms_to_mni_invert) == 1
+    assert len(xforms_to_mni) == 2
+    assert len(xforms_to_mni_invert) == 2
     assert len(xforms_to_t1w) == 1
     assert len(xforms_to_t1w_invert) == 1
 
@@ -504,13 +504,13 @@ def test_get_std2bold_xfms(ds001419_data):
     SPACES = [
         ('MNI152NLin6Asym', 'MNI152NLin6Asym', 1),
         ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 1),
-        ('MNI152NLin6Asym', 'MNIInfant', 2),
+        ('MNI152NLin6Asym', 'MNIInfant+1', 2),
         ('MNI152NLin2009cAsym', 'MNI152NLin2009cAsym', 1),
         ('MNI152NLin2009cAsym', 'MNI152NLin6Asym', 1),
-        ('MNI152NLin2009cAsym', 'MNIInfant', 1),
-        ('MNIInfant', 'MNIInfant', 1),
-        ('MNIInfant', 'MNI152NLin2009cAsym', 1),
-        ('MNIInfant', 'MNI152NLin6Asym', 2),
+        ('MNI152NLin2009cAsym', 'MNIInfant+1', 1),
+        ('MNIInfant_cohort-1', 'MNIInfant+1', 1),
+        ('MNIInfant_cohort-1', 'MNI152NLin2009cAsym', 1),
+        ('MNIInfant_cohort-1', 'MNI152NLin6Asym', 2),
     ]
     for space_check in SPACES:
         target_space, source_space, n_xforms = space_check

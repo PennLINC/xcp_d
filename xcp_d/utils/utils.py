@@ -190,6 +190,7 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     bold_space = get_entity(bold_file, 'space')
     bold_cohort = get_entity(bold_file, 'cohort')
 
+    source_cohort = None
     if source_space is None:
         # If a source space is not provided, extract the space of the source file
         # First try tpl because that won't raise an error
@@ -199,6 +200,8 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             # If tpl isn't available, try space.
             # get_entity will raise an error if space isn't there.
             source_space = get_entity(source_file, 'space')
+    elif '+' in source_space:
+        source_space, source_cohort = source_space.split('+')
 
     if source_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
         raise ValueError(f'Source space "{source_space}" not supported.')
