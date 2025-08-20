@@ -144,7 +144,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
         xforms_to_T1w_invert = [False]
 
     else:
-        raise ValueError(f"Space '{bold_space}' in {bold_file} not supported.")
+        raise ValueError(f'Space "{bold_space}" in {bold_file} not supported.')
 
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
