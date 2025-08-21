@@ -409,7 +409,7 @@ class AddHashToTSV(SimpleInterface):
 
     def _run_interface(self, runtime):
         import pandas as pd
-        from nipype.utils.misc import isdefined
+        from nipype.interfaces.base import isdefined
 
         if not isdefined(self.inputs.parameters_hash):
             self._results['out_file'] = self.inputs.in_file
