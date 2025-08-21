@@ -418,30 +418,36 @@ class AddHashToTSV(SimpleInterface):
 
         # Read the TSV file
         df = pd.read_table(self.inputs.in_file)
-
+        index_col = df.columns[0]
         if self.inputs.add_to_rows:
-            df.index = [
+            df[index_col] = [
                 f'{idx}_hash-{self.inputs.parameters_hash}' if '_hash-' not in idx else idx
-                for idx in df.index
+                for idx in df[index_col]
             ]
 
         if self.inputs.add_to_columns:
+            columns_to_rename = df.columns.tolist()
+            if self.inputs.add_to_rows:
+                # Don't rename the first column (specific to correlation matrices)
+                columns_to_rename = columns_to_rename[1:]
+
+            columns_to_rename = [c for c in columns_to_rename if '_hash-' not in c]
+
             if isdefined(self.inputs.metadata):
                 metadata = self.inputs.metadata.copy()
-                for col in df.columns:
+                for col in columns_to_rename:
                     if col in self.inputs.metadata:
                         # Rename the key to include the hash
-                        if '_hash-' not in col:
-                            metadata[f'{col}_{self.inputs.parameters_hash}'] = metadata.pop(col)
+                        metadata[f'{col}_{self.inputs.parameters_hash}'] = metadata.pop(col)
 
-            df.columns = [
-                f'{col}_{self.inputs.parameters_hash}' if '_hash-' not in col else col
-                for col in df.columns
-            ]
+            df.rename(
+                columns={col: f'{col}_{self.inputs.parameters_hash}' for col in columns_to_rename},
+                inplace=True,
+            )
 
         # Write the updated TSV file
         out_file = os.path.abspath(os.path.basename(self.inputs.in_file))
-        df.to_csv(out_file, sep='\t', index=True)
+        df.to_csv(out_file, sep='\t', index=False, na_rep='n/a')
 
         # Update the metadata dictionary
         metadata = self.inputs.metadata or {}
