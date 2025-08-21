@@ -70,9 +70,6 @@ def main():
     # state of XCP-D).
     config.load(config_file)
 
-    # TODO: Compare the config hash against the hash in the existing dataset description.
-    # If they don't match, raise an error.
-
     if config.execution.reports_only:
         sys.exit(int(exitcode > 0))
 

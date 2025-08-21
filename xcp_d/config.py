@@ -860,13 +860,11 @@ def hash_config(
     """
     import json
     from hashlib import blake2b
-    from pprint import pprint
 
     if version is None:
         from xcp_d import __version__ as version
 
     # Load the preprocessing derivatives dataset description
-    pprint(conf)
     dset_desc_path = Path(conf['execution']['fmri_dir']) / 'dataset_description.json'
     prefix = ''
     if dset_desc_path.exists():
