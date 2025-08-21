@@ -416,6 +416,8 @@ class AddHashToTSV(SimpleInterface):
             self._results['metadata'] = self.inputs.metadata
             return runtime
 
+        metadata = self.inputs.metadata or {}
+
         # Read the TSV file
         df = pd.read_table(self.inputs.in_file)
         index_col = df.columns[0]
@@ -451,7 +453,6 @@ class AddHashToTSV(SimpleInterface):
         self._results['out_file'] = out_file
 
         # Update the metadata dictionary
-        metadata = self.inputs.metadata or {}
         metadata['ConfigurationHash'] = self.inputs.parameters_hash
         self._results['metadata'] = metadata
 
