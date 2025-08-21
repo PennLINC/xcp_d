@@ -569,7 +569,7 @@ def test_get_std2bold_xfms(ds001419_data):
     )
     with pytest.raises(ValueError, match='Source cohort is not specified'):
         utils.get_std2bold_xfms(
-            bold_file_nlin6asym,
+            bold_file_target_space,
             source_file=None,
             source_space='MNIInfant',
         )
