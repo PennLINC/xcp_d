@@ -730,6 +730,7 @@ class PlotCiftiParcellation(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
             lh = str(
@@ -739,6 +740,7 @@ class PlotCiftiParcellation(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
         else:
@@ -948,6 +950,7 @@ class PlotDenseCifti(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
             lh = str(
@@ -957,6 +960,7 @@ class PlotDenseCifti(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
         else:
@@ -1124,7 +1128,13 @@ class PlotNifti(SimpleInterface):
         cohort = get_entity(self.inputs.name_source, 'cohort')
         entities_to_use['cohort'] = cohort
 
-        template_file = get_template(template=space, **entities_to_use, suffix='T1w', desc=None)
+        template_file = get_template(
+            template=space,
+            **entities_to_use,
+            suffix='T1w',
+            desc=None,
+            raise_empty=True,
+        )
         if isinstance(template_file, list):
             template_file = template_file[0]
 
