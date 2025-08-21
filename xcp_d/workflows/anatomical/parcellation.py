@@ -153,16 +153,16 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
             ]),
         ])  # fmt:skip
 
-        hash_parcellated_surface = pe.MapNode(
+        add_hash_parcellated_surface = pe.MapNode(
             AddHashToTSV(
                 add_to_columns=True,
                 add_to_rows=False,
             ),
-            name='hash_parcellated_surface',
+            name=f'add_hash_parcellated_{file_to_parcellate}',
             iterfield=['in_file'],
         )
         workflow.connect([
-            (parcellate_surface_wf, hash_parcellated_surface, [
+            (parcellate_surface_wf, add_hash_parcellated_surface, [
                 ('outputnode.parcellated_tsv', 'in_file'),
             ]),
         ])  # fmt:skip
@@ -186,7 +186,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
                 (file_to_parcellate, 'source_file'),
                 ('atlas_names', 'segmentation'),
             ]),
-            (hash_parcellated_surface, ds_parcellated_surface, [('out_file', 'in_file')]),
+            (add_hash_parcellated_surface, ds_parcellated_surface, [('out_file', 'in_file')]),
         ])  # fmt:skip
 
     return workflow
