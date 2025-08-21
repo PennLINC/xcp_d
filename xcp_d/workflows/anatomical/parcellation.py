@@ -7,7 +7,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
 from xcp_d.config import dismiss_hash
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.interfaces.bids import AddHashToTSV, DerivativesDataSink
 from xcp_d.utils.atlas import select_atlases
 from xcp_d.utils.doc import fill_doc
 from xcp_d.workflows.parcellation import init_parcellate_cifti_wf
@@ -153,6 +153,20 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
             ]),
         ])  # fmt:skip
 
+        hash_parcellated_surface = pe.MapNode(
+            AddHashToTSV(
+                add_to_columns=True,
+                add_to_rows=False,
+            ),
+            name='hash_parcellated_surface',
+            iterfield=['in_file'],
+        )
+        workflow.connect([
+            (parcellate_surface_wf, hash_parcellated_surface, [
+                ('outputnode.parcellated_tsv', 'in_file'),
+            ]),
+        ])  # fmt:skip
+
         # Write out the parcellated files
         ds_parcellated_surface = pe.MapNode(
             DerivativesDataSink(
@@ -172,9 +186,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
                 (file_to_parcellate, 'source_file'),
                 ('atlas_names', 'segmentation'),
             ]),
-            (parcellate_surface_wf, ds_parcellated_surface, [
-                ('outputnode.parcellated_tsv', 'in_file'),
-            ]),
+            (hash_parcellated_surface, ds_parcellated_surface, [('out_file', 'in_file')]),
         ])  # fmt:skip
 
     return workflow

@@ -363,3 +363,89 @@ class BIDSURI(SimpleInterface):
         self._results['metadata'] = metadata
 
         return runtime
+
+
+class _AddHashToTSVInputSpec(BaseInterfaceInputSpec):
+    in_file = File(
+        exists=True,
+        desc='The TSV file to add the hash to.',
+        mandatory=True,
+    )
+    parameters_hash = traits.Str(
+        desc='The hash to add to the TSV file.',
+        mandatory=False,
+    )
+    add_to_columns = traits.Bool(
+        False,
+        usedefault=True,
+        desc='Whether to add the hash to the columns of the TSV file.',
+    )
+    add_to_rows = traits.Bool(
+        False,
+        usedefault=True,
+        desc='Whether to add the hash to the rows of the TSV file.',
+    )
+    metadata = traits.Dict(
+        desc='The metadata dictionary.',
+        mandatory=False,
+    )
+
+
+class _AddHashToTSVOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc='The TSV file with the hash added.',
+    )
+    metadata = traits.Dict(
+        desc='The metadata dictionary.',
+    )
+
+
+class AddHashToTSV(SimpleInterface):
+    """Add a hash to columns and/or rows of a TSV file."""
+
+    input_spec = _AddHashToTSVInputSpec
+    output_spec = _AddHashToTSVOutputSpec
+
+    def _run_interface(self, runtime):
+        import pandas as pd
+        from nipype.utils.misc import isdefined
+
+        if not isdefined(self.inputs.parameters_hash):
+            self._results['out_file'] = self.inputs.in_file
+            self._results['metadata'] = self.inputs.metadata
+            return runtime
+
+        # Read the TSV file
+        df = pd.read_table(self.inputs.in_file)
+
+        if self.inputs.add_to_rows:
+            df.index = [
+                f'{idx}_hash-{self.inputs.parameters_hash}' if '_hash-' not in idx else idx
+                for idx in df.index
+            ]
+
+        if self.inputs.add_to_columns:
+            if isdefined(self.inputs.metadata):
+                metadata = self.inputs.metadata.copy()
+                for col in df.columns:
+                    if col in self.inputs.metadata:
+                        # Rename the key to include the hash
+                        if '_hash-' not in col:
+                            metadata[f'{col}_{self.inputs.parameters_hash}'] = metadata.pop(col)
+
+            df.columns = [
+                f'{col}_{self.inputs.parameters_hash}' if '_hash-' not in col else col
+                for col in df.columns
+            ]
+
+        # Write the updated TSV file
+        out_file = os.path.abspath(os.path.basename(self.inputs.in_file))
+        df.to_csv(out_file, sep='\t', index=True)
+
+        # Update the metadata dictionary
+        metadata = self.inputs.metadata or {}
+        metadata['ConfigurationHash'] = self.inputs.parameters_hash
+        self._results['metadata'] = metadata
+
+        return runtime
