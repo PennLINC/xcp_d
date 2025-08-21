@@ -268,11 +268,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             ]
 
     elif bold_space == 'MNIInfant':
-        if bold_cohort is None:
-            raise ValueError(
-                f'BOLD cohort is not specified for {bold_file}. '
-                'Please specify the cohort using the "cohort" entity.'
-            )
         MNI152NLin6Asym_to_MNIInfant = get_template(
             template='MNIInfant',
             cohort=bold_cohort,
@@ -281,12 +276,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
             raise_empty=True,
             **{'from': 'MNI152NLin6Asym'},
         )
-        if isinstance(MNI152NLin6Asym_to_MNIInfant, list):
-            raise ValueError(
-                f'MNIInfant transform for cohort {bold_cohort} not found. '
-                'Please check that the cohort is specified correctly. '
-                f'Found files: {", ".join(MNI152NLin6Asym_to_MNIInfant)}'
-            )
 
         if source_space == 'MNI152NLin6Asym':
             transforms = [str(MNI152NLin6Asym_to_MNIInfant)]
