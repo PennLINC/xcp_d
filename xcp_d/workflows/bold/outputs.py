@@ -761,7 +761,7 @@ def init_postproc_derivatives_wf(
                     add_to_columns=True,
                     add_to_rows=True,
                 ),
-                name='add_hash_correlations_exact',
+                name=f'add_hash_correlations_exact_{i_exact_scan}',
                 iterfield=['in_file'],
             )
             workflow.connect([
