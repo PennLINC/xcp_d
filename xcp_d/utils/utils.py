@@ -110,12 +110,6 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
             raise_empty=True,
             **{'from': f'MNIInfant+{bold_cohort}'},
         )
-        if isinstance(MNIInfant_to_MNI152NLin6Asym, list):
-            raise ValueError(
-                f'MNIInfant transform for cohort {bold_cohort} not found. '
-                'Please check that the cohort is specified correctly. '
-                f'Found files: {", ".join(MNIInfant_to_MNI152NLin6Asym)}'
-            )
 
         xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym, str(MNIInfant_to_MNI152NLin6Asym)]
         xforms_to_MNI_invert = [False, False]
@@ -250,12 +244,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
                 raise_empty=True,
                 **{'from': f'MNIInfant+{source_cohort}'},
             )
-            if isinstance(MNIInfant_to_MNI152NLin6Asym, list):
-                raise ValueError(
-                    f'MNIInfant transform for cohort {bold_cohort} not found. '
-                    'Please check that the cohort is specified correctly. '
-                    f'Found files: {", ".join(MNIInfant_to_MNI152NLin6Asym)}'
-                )
             transforms = [str(MNIInfant_to_MNI152NLin6Asym)]
 
     elif bold_space == 'MNI152NLin2009cAsym':
@@ -274,12 +262,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
                 raise_empty=True,
                 **{'from': f'MNIInfant+{source_cohort}'},
             )
-            if isinstance(MNIInfant_to_MNI152NLin6Asym, list):
-                raise ValueError(
-                    f'MNIInfant transform for cohort {bold_cohort} not found. '
-                    'Please check that the cohort is specified correctly. '
-                    f'Found files: {", ".join(MNIInfant_to_MNI152NLin6Asym)}'
-                )
             transforms = [
                 MNI152NLin6Asym_to_MNI152NLin2009cAsym,
                 str(MNIInfant_to_MNI152NLin6Asym),

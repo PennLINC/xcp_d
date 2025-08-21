@@ -407,7 +407,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
     assert len(xforms_to_t1w) == 1
     assert len(xforms_to_t1w_invert) == 1
 
-    # MNIInfant --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
+    # MNIInfant cohort-1 --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     bold_file_infant = bold_file_nlin6asym.replace(
         'space-MNI152NLin6Asym_',
         'space-MNIInfant_cohort-1_',
@@ -477,6 +477,21 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
             tofail_to_anat_xfm,
         )
 
+    # MNIInfant without cohort --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w (fails)
+    bold_file_infant = bold_file_nlin6asym.replace(
+        'space-MNI152NLin6Asym_',
+        'space-MNIInfant_',
+    )
+    infant_to_anat_xfm = nlin6asym_to_anat_xfm.replace(
+        'from-MNI152NLin6Asym_',
+        'from-MNIInfant+1_',
+    )
+    with pytest.raises(ValueError, match='BOLD cohort is not specified'):
+        utils.get_bold2std_and_t1w_xfms(
+            bold_file_infant,
+            infant_to_anat_xfm,
+        )
+
 
 def test_get_std2bold_xfms(ds001419_data):
     """Test get_std2bold_xfms.
@@ -538,6 +553,26 @@ def test_get_std2bold_xfms(ds001419_data):
     # tofail --> MNI152NLin6Asym
     with pytest.raises(ValueError, match='Source space "tofail" not supported'):
         utils.get_std2bold_xfms(bold_file_nlin6asym, source_file=None, source_space='tofail')
+
+    # MNIInfant without cohort --> MNI152NLin6Asym/T1w (fails)
+    with pytest.raises(ValueError, match='Source cohort is not specified'):
+        utils.get_std2bold_xfms(
+            bold_file_nlin6asym,
+            source_file=None,
+            source_space='MNIInfant',
+        )
+
+    # MNIInfant without cohort --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w (fails)
+    bold_file_target_space = bold_file_nlin6asym.replace(
+        'space-MNI152NLin6Asym_',
+        'space-MNI152NLin2009cAsym_',
+    )
+    with pytest.raises(ValueError, match='Source cohort is not specified'):
+        utils.get_std2bold_xfms(
+            bold_file_nlin6asym,
+            source_file=None,
+            source_space='MNIInfant',
+        )
 
 
 def test_fwhm2sigma():
