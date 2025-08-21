@@ -429,16 +429,12 @@ def test_nibabies(data_dir, output_dir, working_dir):
 
 
 def _run_and_generate(test_name, parameters, input_type, test_main=False):
-    import templateflow
-
     from xcp_d import config
 
     parameters.append('--clean-workdir')
     parameters.append('--stop-on-first-crash')
     parameters.append('--notrack')
     parameters.append('-vv')
-
-    templateflow.conf.update(local=False, overwrite=True, silent=True)
 
     # Add concurrency options if they're not already specified
     parameters = update_resources(parameters)
