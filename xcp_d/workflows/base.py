@@ -666,8 +666,8 @@ def clean_datasinks(workflow):
 
         if node_name.startswith('add_hash_'):
             if config.execution.output_layout == 'multiverse':
-                workflow.get_node(node).interface.inputs.parameters_hash = (
-                    config.execution.parameters_hash
-                )
+                workflow.get_node(
+                    node
+                ).interface.inputs.parameters_hash = config.execution.parameters_hash
 
     return workflow
