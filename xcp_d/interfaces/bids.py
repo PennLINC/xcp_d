@@ -422,7 +422,7 @@ class AddHashToTSV(SimpleInterface):
         if self.inputs.add_to_rows:
             df[index_col] = [
                 f'{idx}_hash-{self.inputs.parameters_hash}' if '_hash-' not in idx else idx
-                for idx in df[index_col]
+                for idx in df[index_col].tolist()
             ]
 
         if self.inputs.add_to_columns:

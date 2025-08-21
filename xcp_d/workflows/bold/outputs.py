@@ -252,8 +252,8 @@ def init_postproc_derivatives_wf(
 
         add_hash_temporal_mask = pe.Node(
             AddHashToTSV(
-                add_to_columns=False,
-                add_to_rows=True,
+                add_to_columns=True,
+                add_to_rows=False,
             ),
             name='add_hash_temporal_mask',
         )
