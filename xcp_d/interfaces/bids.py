@@ -417,33 +417,34 @@ class AddHashToTSV(SimpleInterface):
             return runtime
 
         metadata = self.inputs.metadata or {}
+        hash_ = self.inputs.parameters_hash
 
         # Read the TSV file
         df = pd.read_table(self.inputs.in_file)
         index_col = df.columns[0]
         if self.inputs.add_to_rows:
             df[index_col] = [
-                f'{idx}_hash-{self.inputs.parameters_hash}' if '_hash-' not in idx else idx
+                f'{idx}_hash-{hash_}' if '_hash-' not in idx else idx
                 for idx in df[index_col].tolist()
             ]
 
         if self.inputs.add_to_columns:
-            columns_to_rename = df.columns.tolist()
+            cols_to_rename = df.columns.tolist()
             if self.inputs.add_to_rows:
                 # Don't rename the first column (specific to correlation matrices)
-                columns_to_rename = columns_to_rename[1:]
+                cols_to_rename = cols_to_rename[1:]
 
-            columns_to_rename = [c for c in columns_to_rename if '_hash-' not in c]
+            cols_to_rename = [c for c in cols_to_rename if '_hash-' not in c]
 
             if isdefined(self.inputs.metadata):
                 metadata = self.inputs.metadata.copy()
-                for col in columns_to_rename:
+                for col in cols_to_rename:
                     if col in self.inputs.metadata:
                         # Rename the key to include the hash
-                        metadata[f'{col}_{self.inputs.parameters_hash}'] = metadata.pop(col)
+                        metadata[f'{col}_hash-{hash_}'] = metadata.pop(col)
 
             df.rename(
-                columns={col: f'{col}_{self.inputs.parameters_hash}' for col in columns_to_rename},
+                columns={col: f'{col}_hash-{hash_}' for col in cols_to_rename},
                 inplace=True,
             )
 
@@ -453,7 +454,7 @@ class AddHashToTSV(SimpleInterface):
         self._results['out_file'] = out_file
 
         # Update the metadata dictionary
-        metadata['ConfigurationHash'] = self.inputs.parameters_hash
+        metadata['ConfigurationHash'] = hash_
         self._results['metadata'] = metadata
 
         return runtime
