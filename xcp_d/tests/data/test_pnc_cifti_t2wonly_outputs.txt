@@ -15,7 +15,7 @@ logs/CITATION.html
 logs/CITATION.md
 logs/CITATION.tex
 sub-1648798153
-sub-1648798153.html
+sub-1648798153_hash-b12de07f.html
 sub-1648798153/ses-PNC1
 sub-1648798153/ses-PNC1/anat
 sub-1648798153/ses-PNC1/anat/sub-1648798153_ses-PNC1_hash-b12de07f_acq-refaced_hemi-L_space-fsLR_den-32k_desc-hcp_inflated.surf.gii
@@ -78,4 +78,4 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-b12de07f_task-idemo_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-b12de07f_task-idemo_space-fsLR_seg-MIDB_stat-pearsoncorrelation_relmat.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-b12de07f_task-idemo_space-fsLR_seg-MIDB_stat-reho_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-b12de07f_task-idemo_space-fsLR_seg-MIDB_stat-reho_bold.tsv
-sub-1648798153_ses-PNC1_executive_summary.html
+sub-1648798153_ses-PNC1_hash-b12de07f_executive_summary.html
