@@ -448,6 +448,7 @@ class AddHashToTSV(SimpleInterface):
         # Write the updated TSV file
         out_file = os.path.abspath(os.path.basename(self.inputs.in_file))
         df.to_csv(out_file, sep='\t', index=False, na_rep='n/a')
+        self._results['out_file'] = out_file
 
         # Update the metadata dictionary
         metadata = self.inputs.metadata or {}
