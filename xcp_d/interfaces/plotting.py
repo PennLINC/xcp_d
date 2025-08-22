@@ -32,6 +32,7 @@ from templateflow.api import get as get_template
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
 from xcp_d.utils.qcmetrics import compute_dvars
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -69,7 +70,7 @@ class CensoringPlot(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        preproc_fd_timeseries = motion_df['framewise_displacement'].values
+        preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement').values
 
         # Load temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
@@ -162,7 +163,7 @@ class CensoringPlot(SimpleInterface):
             vline_ymax = vline_ymin
 
         # Plot motion-censored volumes as vertical lines
-        tmask_arr = censoring_df['framewise_displacement'].values
+        tmask_arr = get_col(censoring_df, 'framewise_displacement').values
         assert preproc_fd_timeseries.size == tmask_arr.size
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
@@ -257,10 +258,10 @@ class QCPlots(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        if 'framewise_displacement_filtered' in motion_df.columns:
-            preproc_fd_timeseries = motion_df['framewise_displacement_filtered'].values
+        if any(col.startswith('framewise_displacement_filtered') for col in motion_df.columns):
+            preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement_filtered').values
         else:
-            preproc_fd_timeseries = motion_df['framewise_displacement'].values
+            preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement').values
 
         # Determine number of dummy volumes and load temporal mask
         if isdefined(self.inputs.temporal_mask):

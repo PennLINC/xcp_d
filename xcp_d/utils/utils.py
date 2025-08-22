@@ -668,3 +668,44 @@ def is_number(s):
         return True
     except ValueError:
         return False
+
+
+def get_col(df, col):
+    """Get a column from a dataframe, with support for `_hash-<hash>` suffixes.
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+        The dataframe to get the column from.
+    col : :obj:`str`
+        The column name to get. The actual column name in the DataFrame may have a `_hash-<hash>`
+        suffix.
+
+    Returns
+    -------
+    :obj:`pandas.Series`
+        The column from the dataframe.
+    """
+    import re
+
+    # Pattern to match the base name with optional hash suffix
+    # The hash can contain alphanumeric characters and plus signs
+    pattern = f'^{re.escape(col)}(_hash-[0-9a-zA-Z+]+)?$'
+
+    # Find columns that match the pattern
+    matching_cols = [c for c in df.columns if re.match(pattern, c)]
+
+    if not matching_cols:
+        raise ValueError(
+            f'No column found matching pattern "{pattern}" in DataFrame. '
+            f'Available columns: {list(df.columns)}'
+        )
+
+    # If multiple columns match, prefer the one without hash suffix
+    # (exact match first, then hash variants)
+    exact_match = [c for c in matching_cols if c == col]
+    if exact_match:
+        return df[exact_match[0]]
+    else:
+        # If no exact match, use the first hash variant
+        return df[matching_cols[0]]
