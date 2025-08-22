@@ -466,7 +466,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # Perform exact-time correlations
     if exact_scans:
         collect_exact_ciftis = pe.Node(
-            niu.Merge(len(exact_scans)),
+            niu.Merge(len(exact_scans), no_flatten=True),
             name='collect_exact_ciftis',
         )
         workflow.connect([
@@ -474,7 +474,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ])  # fmt:skip
 
         collect_exact_tsvs = pe.Node(
-            niu.Merge(len(exact_scans)),
+            niu.Merge(len(exact_scans), no_flatten=True),
             name='collect_exact_tsvs',
         )
         workflow.connect([(collect_exact_tsvs, outputnode, [('out', 'correlations_exact')])])
