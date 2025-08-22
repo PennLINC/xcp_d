@@ -588,12 +588,14 @@ def test_transpose_lol():
 def test_get_col():
     """Test get_col function with hash suffix support."""
     # Test dataframe with columns that may have hash suffixes
-    test_df = pd.DataFrame({
-        'motion': [1, 2, 3],
-        'motion_hash-abc123': [4, 5, 6],
-        'outliers_hash-def456': [7, 8, 9],
-        'other_col': [10, 11, 12]
-    })
+    test_df = pd.DataFrame(
+        {
+            'motion': [1, 2, 3],
+            'motion_hash-abc123': [4, 5, 6],
+            'outliers_hash-def456': [7, 8, 9],
+            'other_col': [10, 11, 12],
+        }
+    )
 
     # Test exact match (should prefer non-hash version)
     result = utils.get_col(test_df, 'motion')
@@ -612,11 +614,13 @@ def test_get_col():
         utils.get_col(test_df, 'nonexistent')
 
     # Test with different hash formats
-    hash_df = pd.DataFrame({
-        'signal_hash-123abc': [1, 2, 3],
-        'signal_hash-456def+': [4, 5, 6],
-        'signal_hash-789ghi': [7, 8, 9]
-    })
+    hash_df = pd.DataFrame(
+        {
+            'signal_hash-123abc': [1, 2, 3],
+            'signal_hash-456def+': [4, 5, 6],
+            'signal_hash-789ghi': [7, 8, 9],
+        }
+    )
 
     # Should return the first hash variant when no exact match
     result = utils.get_col(hash_df, 'signal')
