@@ -18,7 +18,6 @@ from nilearn.signal import clean
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.qcmetrics import compute_dvars
-from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
@@ -528,6 +527,8 @@ def plot_fmri_es(
         An index indicating splits between runs, for concatenated data.
         If not None, this should be an array/list of integers, indicating the volumes.
     """
+    from xcp_d.utils.utils import get_col
+
     # Compute dvars correctly if not already done
     preprocessed_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     denoised_interpolated_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
@@ -1118,6 +1119,8 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
     import numpy as np
     import pandas as pd
     from nilearn import plotting
+
+    from xcp_d.utils.utils import get_col
 
     design_matrix_df = pd.read_table(design_matrix)
     if temporal_mask:
