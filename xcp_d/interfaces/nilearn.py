@@ -361,7 +361,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             )
 
         # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-        sample_mask = ~censoring_df['framewise_displacement'].to_numpy().astype(bool)
+        sample_mask = ~get_col(censoring_df, 'framewise_displacement').to_numpy().astype(bool)
 
         confounds_df = None
         if self.inputs.confounds_tsv:
