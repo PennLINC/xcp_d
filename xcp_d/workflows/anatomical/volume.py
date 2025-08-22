@@ -120,6 +120,7 @@ def init_postprocess_anat_wf(
             resolution=1,
             desc=None,
             suffix='T1w',
+            raise_empty=True,
         )
         mask_file = get_template(
             template=target_space,
@@ -127,6 +128,7 @@ def init_postprocess_anat_wf(
             resolution=1,
             desc='brain',
             suffix='mask',
+            raise_empty=True,
         )
         if mask_file:
             apply_template_mask = True

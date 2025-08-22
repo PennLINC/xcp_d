@@ -106,6 +106,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='164k',
                     desc=None,
                     suffix='sphere',
+                    raise_empty=True,
                 )
             )
 
@@ -129,6 +130,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='32k',
                     desc=None,
                     suffix='sphere',
+                    raise_empty=True,
                 )
             )
 
@@ -141,6 +143,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='41k',
                     desc=None,
                     suffix='sphere',
+                    raise_empty=True,
                 ),
             )
 
@@ -153,6 +156,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='41k',
                     desc='reg',
                     suffix='sphere',
+                    raise_empty=True,
                 ),
             )
 
@@ -165,6 +169,7 @@ class CollectRegistrationFiles(SimpleInterface):
                     density='32k',
                     desc=None,
                     suffix='sphere',
+                    raise_empty=True,
                 ),
             )
 

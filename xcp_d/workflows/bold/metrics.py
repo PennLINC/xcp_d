@@ -220,10 +220,10 @@ series to retain the original scaling.
             sigma_lx = fwhm2sigma(smoothing)  # Convert fwhm to standard deviation
             # Get templates for each hemisphere
             lh_midthickness = str(
-                get_template('fsLR', hemi='L', suffix='sphere', density='32k')[0]
+                get_template('fsLR', hemi='L', suffix='sphere', density='32k', raise_empty=True)[0]
             )
             rh_midthickness = str(
-                get_template('fsLR', hemi='R', suffix='sphere', density='32k')[0]
+                get_template('fsLR', hemi='R', suffix='sphere', density='32k', raise_empty=True)[0]
             )
             smooth_data = pe.Node(
                 CiftiSmooth(

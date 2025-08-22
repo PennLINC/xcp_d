@@ -226,6 +226,7 @@ class ApplyMask(NilearnBaseInterface, SimpleInterface):
             source_img=self.inputs.mask,
             target_img=self.inputs.in_file,
             interpolation='nearest',
+            copy_header=True,
         )
         img_masked = masking.unmask(
             masking.apply_mask(self.inputs.in_file, resampled_mask),
@@ -279,6 +280,7 @@ class ResampleToImage(NilearnBaseInterface, SimpleInterface):
             source_img=self.inputs.in_file,
             target_img=self.inputs.target_file,
             interpolation='continuous',
+            copy_header=True,
         )
         self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
         resampled_img.to_filename(self._results['out_file'])

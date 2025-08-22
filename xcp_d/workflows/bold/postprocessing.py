@@ -831,6 +831,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                         density='32k',
                         desc=None,
                         suffix='sphere',
+                        raise_empty=True,
                     )
                 ),
                 left_surf=str(
@@ -841,6 +842,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                         density='32k',
                         desc=None,
                         suffix='sphere',
+                        raise_empty=True,
                     )
                 ),
                 num_threads=config.nipype.omp_nthreads,
