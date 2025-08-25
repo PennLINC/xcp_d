@@ -8,6 +8,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.plotting import PlotDenseCifti, PlotNifti
@@ -162,6 +163,7 @@ series to retain the original scaling.
     # Plot the ALFF map
     ds_report_alff = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             source_file=name_source,
         ),
         name='ds_report_alff',
@@ -394,6 +396,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     ds_report_reho = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             source_file=name_source,
         ),
         name='ds_report_reho',
@@ -492,6 +495,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
 
     ds_report_reho = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             source_file=name_source,
             desc='rehoVolumetricPlot',
         ),
