@@ -231,25 +231,7 @@ class _QCPlotsOutputSpec(TraitedSpec):
 
 
 class QCPlots(SimpleInterface):
-    """Generate pre- and post-processing quality control (QC) figures.
-
-    Examples
-    --------
-    .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
-    .. doctest::
-    qcplots = QCPlots()
-    qcplots.inputs.cleaned_file = datafile
-    qcplots.inputs.bold_file = rawbold
-    qcplots.inputs.TR = TR
-    qcplots.inputs.temporal_mask = temporalmask
-    qcplots.inputs.mask_file = mask
-    qcplots.run()
-    .. testcleanup::
-    >>> tmpdir.cleanup()
-    """
+    """Generate pre- and post-processing quality control (QC) figures."""
 
     input_spec = _QCPlotsInputSpec
     output_spec = _QCPlotsOutputSpec
