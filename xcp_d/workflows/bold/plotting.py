@@ -10,6 +10,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import ApplyMask, BinaryMath, ResampleToImage
@@ -289,7 +290,7 @@ def init_qc_report_wf(
 
         ds_qc_metadata = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=list(DerivativesDataSink._allowed_entities),
+                dismiss_entities=dismiss_hash(list(DerivativesDataSink._allowed_entities)),
                 allowed_entities=['desc'],
                 desc='linc',
                 suffix='qc',
@@ -326,7 +327,10 @@ def init_qc_report_wf(
             make_qc_plots_nipreps.inputs.mask_file = None
 
         ds_report_preproc_qc_nipreps = pe.Node(
-            DerivativesDataSink(desc='preprocessing'),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                desc='preprocessing',
+            ),
             name='ds_report_preproc_qc_nipreps',
             run_without_submitting=True,
         )
@@ -336,7 +340,10 @@ def init_qc_report_wf(
         ])  # fmt:skip
 
         ds_report_postproc_qc_nipreps = pe.Node(
-            DerivativesDataSink(desc='postprocessing'),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                desc='postprocessing',
+            ),
             name='ds_report_postproc_qc_nipreps',
             run_without_submitting=True,
         )
@@ -356,7 +363,10 @@ def init_qc_report_wf(
         ])  # fmt:skip
 
         ds_report_qualitycontrol = pe.Node(
-            DerivativesDataSink(desc='qualitycontrol'),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                desc='qualitycontrol',
+            ),
             name='ds_report_qualitycontrol',
             run_without_submitting=True,
         )
@@ -378,6 +388,7 @@ def init_qc_report_wf(
 
         ds_abcc_qc = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 datatype='func',
                 desc='abcc',
                 suffix='qc',
@@ -415,7 +426,7 @@ def init_qc_report_wf(
 
         ds_report_preproc_qc_es = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['den'],
+                dismiss_entities=dismiss_hash(['den']),
                 desc='preprocESQC',
             ),
             name='ds_report_preproc_qc_es',
@@ -428,7 +439,7 @@ def init_qc_report_wf(
 
         ds_report_postproc_qc_es = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['den'],
+                dismiss_entities=dismiss_hash(['den']),
                 desc='postprocESQC',
             ),
             name='ds_report_postproc_qc_es',
@@ -555,7 +566,7 @@ def init_execsummary_functional_plots_wf(
             DerivativesDataSink(
                 source_file=preproc_nifti,
                 in_file=bold_t1w_registration_file,
-                dismiss_entities=['den'],
+                dismiss_entities=dismiss_hash(['den']),
                 desc='bbregister',
             ),
             name='ds_report_registration',
@@ -605,7 +616,7 @@ def init_execsummary_functional_plots_wf(
     ds_report_meanbold = pe.Node(
         DerivativesDataSink(
             source_file=preproc_nifti,
-            dismiss_entities=['den'],
+            dismiss_entities=dismiss_hash(['den']),
             desc='mean',
         ),
         name='ds_report_meanbold',
@@ -622,7 +633,7 @@ def init_execsummary_functional_plots_wf(
     ds_report_boldref = pe.Node(
         DerivativesDataSink(
             source_file=preproc_nifti,
-            dismiss_entities=['den'],
+            dismiss_entities=dismiss_hash(['den']),
             desc='boldref',
         ),
         name='ds_report_boldref',

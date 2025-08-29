@@ -8,6 +8,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import CollectRegistrationFiles, DerivativesDataSink
 from xcp_d.interfaces.workbench import (
     CiftiSurfaceResample,
@@ -292,6 +293,7 @@ def init_postprocess_surfaces_wf(
 
         ds_fslr_surf = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 space='fsLR',
                 den='32k',
                 extension='.surf.gii',  # the extension is taken from the in_file by default
@@ -520,6 +522,7 @@ def init_generate_hcp_surfaces_wf(name='generate_hcp_surfaces_wf'):
     ds_midthickness = pe.Node(
         DerivativesDataSink(
             check_hdr=False,
+            dismiss_entities=dismiss_hash(),
             space='fsLR',
             den='32k',
             desc='hcp',
@@ -552,6 +555,7 @@ def init_generate_hcp_surfaces_wf(name='generate_hcp_surfaces_wf'):
     ds_inflated = pe.Node(
         DerivativesDataSink(
             check_hdr=False,
+            dismiss_entities=dismiss_hash(),
             space='fsLR',
             den='32k',
             desc='hcp',
@@ -570,6 +574,7 @@ def init_generate_hcp_surfaces_wf(name='generate_hcp_surfaces_wf'):
     ds_vinflated = pe.Node(
         DerivativesDataSink(
             check_hdr=False,
+            dismiss_entities=dismiss_hash(),
             space='fsLR',
             den='32k',
             desc='hcp',
