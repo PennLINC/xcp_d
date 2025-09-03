@@ -419,7 +419,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, postprocess_surfaces_wf, [(morph_file, f'inputnode.{morph_file}')]),
             ])  # fmt:skip
 
-        if config.workflow.process_surfaces or standard_space_mesh:
+        if config.workflow.process_surfaces:
             # Use standard-space structurals
             workflow.connect([
                 (postprocess_anat_wf, postprocess_surfaces_wf, [
