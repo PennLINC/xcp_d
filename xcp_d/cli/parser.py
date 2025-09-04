@@ -7,7 +7,10 @@ XCP-D preprocessing workflow
 import os
 import sys
 
+import toml
+
 from xcp_d import config
+from xcp_d.config import hash_config
 from xcp_d.data import load as load_data
 
 
@@ -647,6 +650,17 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         ),
     )
     g_other.add_argument(
+        '--output-layout',
+        dest='output_layout',
+        action='store',
+        choices=['bids', 'multiverse'],
+        default='auto',
+        help=(
+            'Output layout for the BOLD data. '
+            'If "auto", the output layout will be inferred from the processing mode.'
+        ),
+    )
+    g_other.add_argument(
         '-w',
         '--work-dir',
         '--work_dir',
@@ -890,11 +904,44 @@ def parse_args(args=None, namespace=None):
     work_dir = config.execution.work_dir
     version = config.environment.version
 
+    # Check fmri_dir's dataset_description.json for a hash
+    fmri_dir_desc = os.path.join(fmri_dir, 'dataset_description.json')
+    if os.path.isfile(fmri_dir_desc):
+        import json
+
+        with open(fmri_dir_desc) as fobj:
+            desc = json.load(fobj)
+
+        preproc_hash = desc.get('ConfigurationHash', None)
+
     # Update the config with an empty dict to trigger initialization of all config
     # sections (we used `init=False` above).
     # This must be done after cleaning the work directory, or we could delete an
     # open SQLite database
     config.from_dict({})
+
+    postproc_hash = hash_config(toml.loads(config.dumps()))
+    if preproc_hash is not None:
+        postproc_hash = f'{preproc_hash}+{postproc_hash}'
+    config.execution.parameters_hash = postproc_hash
+    if config.execution.output_layout == 'multiverse':
+        config.execution.output_dir = (
+            config.execution.output_dir / f'xcp_d-{config.execution.parameters_hash}'
+        )
+
+    if (config.execution.output_dir / 'dataset_description.json').exists():
+        import json
+
+        with open(config.execution.output_dir / 'dataset_description.json') as fobj:
+            desc = json.load(fobj)
+
+        if 'ConfigurationHash' in desc:
+            if desc['ConfigurationHash'] != config.execution.parameters_hash:
+                raise ValueError(
+                    'The configuration hash in the dataset description '
+                    f'({desc["ConfigurationHash"]}) does not match the hash in the config '
+                    f'({config.execution.parameters_hash}).'
+                )
 
     # Ensure input and output folders are not the same
     if output_dir == fmri_dir:

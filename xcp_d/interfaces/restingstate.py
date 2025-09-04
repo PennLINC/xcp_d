@@ -25,6 +25,7 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.restingstate import compute_2d_reho, mesh_adjacency
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_gii, read_ndata, write_gii, write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -164,7 +165,7 @@ class ComputeALFF(SimpleInterface):
         if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
-            sample_mask = ~censoring_df['framewise_displacement'].values.astype(bool)
+            sample_mask = ~get_col(censoring_df, 'framewise_displacement').values.astype(bool)
             assert sample_mask.size == n_volumes, f'{sample_mask.size} != {n_volumes}'
 
         alff_mat = np.zeros(n_voxels)
