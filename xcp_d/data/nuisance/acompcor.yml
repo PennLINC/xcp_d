@@ -33,6 +33,6 @@ confounds:
         - rot_y_derivative1
         - rot_z
         - rot_z_derivative1
-        - ^w_comp_cor_0[1-5]$
-        - ^c_comp_cor_0[1-5]$
+        - ^w_comp_cor_0[0-4]$
+        - ^c_comp_cor_0[0-4]$
         - ^cosine\d+$
