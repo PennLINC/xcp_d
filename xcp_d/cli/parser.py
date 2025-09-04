@@ -904,13 +904,26 @@ def parse_args(args=None, namespace=None):
     work_dir = config.execution.work_dir
     version = config.environment.version
 
+    # Check fmri_dir's dataset_description.json for a hash
+    fmri_dir_desc = os.path.join(fmri_dir, 'dataset_description.json')
+    if os.path.isfile(fmri_dir_desc):
+        import json
+
+        with open(fmri_dir_desc) as fobj:
+            desc = json.load(fobj)
+
+        preproc_hash = desc.get('ConfigurationHash', None)
+
     # Update the config with an empty dict to trigger initialization of all config
     # sections (we used `init=False` above).
     # This must be done after cleaning the work directory, or we could delete an
     # open SQLite database
     config.from_dict({})
 
-    config.execution.parameters_hash = hash_config(toml.loads(config.dumps()))
+    postproc_hash = hash_config(toml.loads(config.dumps()))
+    if preproc_hash is not None:
+        postproc_hash = f'{preproc_hash}+{postproc_hash}'
+    config.execution.parameters_hash = postproc_hash
     if config.execution.output_layout == 'multiverse':
         config.execution.output_dir = (
             config.execution.output_dir / f'xcp_d-{config.execution.parameters_hash}'
