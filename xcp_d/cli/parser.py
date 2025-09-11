@@ -912,7 +912,7 @@ def parse_args(args=None, namespace=None):
         with open(fmri_dir_desc) as fobj:
             desc = json.load(fobj)
 
-        preproc_hash = desc.get('ConfigurationHash', None)
+        preproc_hash = desc.get('GeneratedBy', [{}])[0].get('ConfigurationHash', None)
 
     # Update the config with an empty dict to trigger initialization of all config
     # sections (we used `init=False` above).
@@ -935,11 +935,12 @@ def parse_args(args=None, namespace=None):
         with open(config.execution.output_dir / 'dataset_description.json') as fobj:
             desc = json.load(fobj)
 
-        if 'ConfigurationHash' in desc:
-            if desc['ConfigurationHash'] != config.execution.parameters_hash:
+        generated_by = desc.get('GeneratedBy', [{}])[0]
+        if 'ConfigurationHash' in generated_by:
+            if generated_by['ConfigurationHash'] != config.execution.parameters_hash:
                 raise ValueError(
                     'The configuration hash in the dataset description '
-                    f'({desc["ConfigurationHash"]}) does not match the hash in the config '
+                    f'({generated_by["ConfigurationHash"]}) does not match the hash in the config '
                     f'({config.execution.parameters_hash}).'
                 )
 

@@ -871,8 +871,8 @@ def hash_config(
         with open(dset_desc_path) as fobj:
             desc = json.load(fobj)
 
-        if 'ConfigurationHash' in desc:
-            prefix = desc['ConfigurationHash'] + '+'
+        if 'ConfigurationHash' in desc.get('GeneratedBy', [{}])[0]:
+            prefix = desc.get('GeneratedBy', [{}])[0]['ConfigurationHash'] + '+'
 
     data = {}
     for level, fields in fields_required.items():

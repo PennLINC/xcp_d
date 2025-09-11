@@ -907,9 +907,6 @@ def write_derivative_description(
     with open(orig_dset_description) as fo:
         desc = json.load(fo)
 
-    # Add the hash to the dataset description
-    desc['ConfigurationHash'] = parameters_hash
-
     # Check if the dataset type is derivative
     if 'DatasetType' not in desc.keys():
         LOGGER.warning(f"DatasetType key not in {orig_dset_description}. Assuming 'derivative'.")
@@ -931,6 +928,7 @@ def write_derivative_description(
             'Name': 'xcp_d',
             'Version': __version__,
             'CodeURL': DOWNLOAD_URL,
+            'ConfigurationHash': parameters_hash,
         },
     )
     desc['GeneratedBy'] = generated_by
