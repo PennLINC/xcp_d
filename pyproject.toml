@@ -155,7 +155,6 @@ extend-select = [
   "Q",
 ]
 ignore = [
-  "S101",  # Ignore use of assert for now
   "S105",
   "S311",  # We are not using random for cryptographic purposes
   "ISC001",
