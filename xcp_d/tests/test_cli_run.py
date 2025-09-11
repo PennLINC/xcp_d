@@ -47,6 +47,7 @@ def base_opts():
         'process_surfaces': 'auto',
         'atlases': ['Glasser'],
         'min_coverage': 'auto',
+        'correlation_outputs': ['auto'],
         'correlation_lengths': None,
         'despike': 'auto',
         'abcc_qc': 'auto',

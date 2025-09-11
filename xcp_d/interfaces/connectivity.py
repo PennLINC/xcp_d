@@ -230,40 +230,38 @@ class _TSVConnectInputSpec(BaseInterfaceInputSpec):
 
 
 class _TSVConnectOutputSpec(TraitedSpec):
-    correlations = File(exists=True, desc='Correlation matrix file.')
-    correlations_exact = traits.Either(
+    r = File(exists=True, desc='Correlation matrix file.')
+    z = File(exists=True, desc='Z-transformed correlation matrix file.')
+    var_r = traits.Either(
+        None,
+        File(exists=True),
+        desc='Variance of correlation matrix file.',
+    )
+    var_z = traits.Either(
+        None,
+        File(exists=True),
+        desc='Variance of Z-transformed correlation matrix file.',
+    )
+    r_exact = traits.Either(
         None,
         traits.List(File(exists=True)),
         desc='Correlation matrix files limited to an exact number of volumes.',
     )
-
-
-def correlate_timeseries(timeseries, temporal_mask):
-    """Correlate timeseries stored in a TSV file."""
-    timeseries_df = pd.read_table(timeseries)
-    correlations_exact = {}
-    if isdefined(temporal_mask):
-        censoring_df = pd.read_table(temporal_mask)
-
-        # Determine if the time series is censored
-        if censoring_df.shape[0] == timeseries_df.shape[0]:
-            # The time series is not censored
-            timeseries_df = timeseries_df.loc[censoring_df['framewise_displacement'] == 0]
-            timeseries_df.reset_index(drop=True, inplace=True)
-
-        # Now create correlation matrices limited to exact scan numbers
-        censored_censoring_df = censoring_df.loc[censoring_df['framewise_displacement'] == 0]
-        censored_censoring_df.reset_index(drop=True, inplace=True)
-        exact_columns = [c for c in censoring_df.columns if c.startswith('exact_')]
-        for exact_column in exact_columns:
-            exact_timeseries_df = timeseries_df.loc[censored_censoring_df[exact_column] == 0]
-            exact_correlations_df = exact_timeseries_df.corr()
-            correlations_exact[exact_column] = exact_correlations_df
-
-    # Create correlation matrix from low-motion volumes only
-    correlations_df = timeseries_df.corr()
-
-    return correlations_df, correlations_exact
+    z_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc='Z-transformed correlation matrix files limited to an exact number of volumes.',
+    )
+    var_r_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc='Variance of correlation matrix files limited to an exact number of volumes.',
+    )
+    var_z_exact = traits.Either(
+        None,
+        traits.List(File(exists=True)),
+        desc='Variance of Z-transformed correlation matrices from an exact number of volumes.',
+    )
 
 
 class TSVConnect(SimpleInterface):
@@ -278,43 +276,99 @@ class TSVConnect(SimpleInterface):
     output_spec = _TSVConnectOutputSpec
 
     def _run_interface(self, runtime):
-        correlations_df, correlations_exact = correlate_timeseries(
-            self.inputs.timeseries,
-            temporal_mask=self.inputs.temporal_mask,
-        )
+        from xcp_d.utils.utils import correlate_timeseries
 
-        self._results['correlations'] = fname_presuffix(
-            'correlations.tsv',
-            newpath=runtime.cwd,
-            use_ext=True,
-        )
-        correlations_df.to_csv(
-            self._results['correlations'],
-            sep='\t',
-            na_rep='n/a',
-            index_label='Node',
-        )
-        del correlations_df
-        gc.collect()
+        timeseries_df = pd.read_table(self.inputs.timeseries)
 
-        if not self.inputs.temporal_mask:
-            self._results['correlations_exact'] = None
-            return runtime
+        if not isdefined(self.inputs.temporal_mask):
+            # With concatenation, we have a concatenated, censored time series instead of
+            # the full time series and a temporal mask.
+            # Therefore, we can't calculate variance.
+            r_df = timeseries_df.corr()
+            z_df = np.arctanh(r_df)
 
-        self._results['correlations_exact'] = []
-        for exact_column, exact_correlations_df in correlations_exact.items():
-            exact_correlations_file = fname_presuffix(
-                f'correlations_{exact_column}.tsv',
+            self._results['r'] = fname_presuffix(
+                'r.tsv',
                 newpath=runtime.cwd,
                 use_ext=True,
             )
-            exact_correlations_df.to_csv(
-                exact_correlations_file,
+            r_df.to_csv(
+                self._results['r'],
                 sep='\t',
                 na_rep='n/a',
                 index_label='Node',
             )
-            self._results['correlations_exact'].append(exact_correlations_file)
+            self._results['z'] = fname_presuffix(
+                'z.tsv',
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            z_df.to_csv(
+                self._results['z'],
+                sep='\t',
+                na_rep='n/a',
+                index_label='Node',
+            )
+            self._results['var_r'] = None
+            self._results['var_z'] = None
+            self._results['r_exact'] = None
+            self._results['z_exact'] = None
+            self._results['var_r_exact'] = None
+            self._results['var_z_exact'] = None
+            return runtime
+
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+
+        correlations_dict = correlate_timeseries(
+            self.inputs.timeseries,
+            temporal_mask=censoring_df['framewise_displacement'].astype(bool),
+        )
+
+        measures = ['r', 'z', 'var_r', 'var_z']
+        for measure in measures:
+            self._results[measure] = fname_presuffix(
+                f'{measure}.tsv',
+                newpath=runtime.cwd,
+                use_ext=True,
+            )
+            correlations_dict[measure].to_csv(
+                self._results[measure],
+                sep='\t',
+                na_rep='n/a',
+                index_label='Node',
+            )
+
+        del correlations_dict
+        gc.collect()
+
+        for measure in measures:
+            self._results[f'{measure}_exact'] = []
+
+        exact_columns = [c for c in censoring_df.columns if c.startswith('exact_')]
+        for exact_column in exact_columns:
+            temporal_mask = (
+                censoring_df['framewise_displacement'] + censoring_df[exact_column]
+            ).astype(bool)
+            correlations_dict = correlate_timeseries(
+                self.inputs.timeseries,
+                temporal_mask=temporal_mask,
+            )
+            for measure in measures:
+                fname = fname_presuffix(
+                    f'{measure}_{exact_column}.tsv',
+                    newpath=runtime.cwd,
+                    use_ext=True,
+                )
+                correlations_dict[measure].to_csv(
+                    fname,
+                    sep='\t',
+                    na_rep='n/a',
+                    index_label='Node',
+                )
+                self._results[f'{measure}_exact'].append(fname)
+
+            del correlations_dict
+            gc.collect()
 
         return runtime
 
@@ -608,13 +662,13 @@ class CiftiToTSV(SimpleInterface):
                     if dict_value not in df.index:
                         missing_dict_values.append(dict_value)
 
-                if missing_index_values:
-                    raise ValueError(
-                        f'Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}'
-                    )
+            if missing_index_values:
+                raise ValueError(
+                    f'Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}'
+                )
 
-                if missing_dict_values:
-                    raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
+            if missing_dict_values:
+                raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
 
             # Replace the index values with the corresponding dictionary values.
             df.index = [parcel_label_mapper[i] for i in df.index]
@@ -631,13 +685,13 @@ class CiftiToTSV(SimpleInterface):
                     if dict_value not in df.columns:
                         missing_dict_values.append(dict_value)
 
-                if missing_columns:
-                    raise ValueError(
-                        f'Missing CIFTI labels in atlas labels DataFrame: {missing_columns}'
-                    )
+            if missing_columns:
+                raise ValueError(
+                    f'Missing CIFTI labels in atlas labels DataFrame: {missing_columns}'
+                )
 
-                if missing_dict_values:
-                    raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
+            if missing_dict_values:
+                raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
 
             # Replace the column names with the corresponding dictionary values.
             df.columns = [parcel_label_mapper[i] for i in df.columns]
@@ -760,5 +814,152 @@ class CiftiVertexMask(SimpleInterface):
             use_ext=False,
         )
         write_ndata(vertex_weights_arr, template=data_file, filename=self._results['mask_file'])
+
+        return runtime
+
+
+class _TSVToPconnInputSpec(BaseInterfaceInputSpec):
+    in_file = traits.Either(
+        File(exists=True),
+        traits.List(File(exists=True)),
+        mandatory=True,
+        desc='TSV file(s) to convert to pconn CIFTI file(s).',
+    )
+    source_cifti = File(
+        exists=True,
+        mandatory=True,
+        desc='source CIFTI file. The second axis of this file will be used as the nodes.',
+    )
+    atlas_labels = File(exists=True, mandatory=True, desc='atlas labels file')
+
+
+class _TSVToPconnOutputSpec(TraitedSpec):
+    out_file = traits.Either(
+        File(exists=True),
+        traits.List(File(exists=True)),
+        desc='pconn CIFTI file(s).',
+    )
+
+
+class TSVToPconn(SimpleInterface):
+    """Convert a TSV file to a pconn CIFTI file."""
+
+    input_spec = _TSVToPconnInputSpec
+    output_spec = _TSVToPconnOutputSpec
+
+    def _run_interface(self, runtime):
+        in_files = self.inputs.in_file
+        delistify = False
+        if not isinstance(in_files, list):
+            in_files = [in_files]
+            delistify = True
+
+        source_cifti = self.inputs.source_cifti
+        atlas_labels = self.inputs.atlas_labels
+
+        source_img = nb.load(source_cifti)
+        # The second axis is a ParcelsAxis. We will set both axes of the output image to this.
+        ax = source_img.header.get_axis(1)
+        new_header = nb.Cifti2Header.from_axes((ax, ax))
+
+        # Create dictionary mapping TSV node names to CIFTI node names.
+        node_labels_df = pd.read_table(atlas_labels, index_col='index')
+        node_labels_df.sort_index(inplace=True)  # ensure index is in order
+
+        # Explicitly remove label corresponding to background (index=0), if present.
+        if 0 in node_labels_df.index:
+            LOGGER.warning(
+                'Index value of 0 found in atlas labels file. '
+                'Will assume this describes the background and ignore it.'
+            )
+            node_labels_df = node_labels_df.drop(index=[0])
+
+        # Map from CIFTI node name to TSV node name.
+        if 'cifti_label' in node_labels_df.columns:
+            parcel_label_mapper = dict(
+                zip(node_labels_df['cifti_label'], node_labels_df['label'], strict=False)
+            )
+        elif 'label_7network' in node_labels_df.columns:
+            node_labels_df['cifti_label'] = node_labels_df['label_7network'].fillna(
+                node_labels_df['label']
+            )
+            parcel_label_mapper = dict(
+                zip(node_labels_df['cifti_label'], node_labels_df['label'], strict=False)
+            )
+        else:
+            LOGGER.warning(
+                "No 'cifti_label' column found in atlas labels file. "
+                'Assuming labels in TSV exactly match node names in CIFTI atlas.'
+            )
+            parcel_label_mapper = dict(
+                zip(node_labels_df['label'], node_labels_df['label'], strict=False)
+            )
+
+        # Check that all node labels in the TSV are present in the CIFTI, and vice versa.
+        # Replace values in index, which should match the keys in the parcel_label_mapper
+        # dictionary, with the corresponding values in the dictionary.
+        # If any index values are not in the dictionary, raise an error with a list of the
+        # missing index values.
+        # If any dictionary keys are not in the index, raise an error with a list of the
+        # missing dictionary keys.
+        missing_cifti_nodes = []
+        missing_tsv_nodes = []
+        for cifti_name in ax.name:
+            cifti_name = str(cifti_name)
+            # If the CIFTI node name is not in the TSV, add it to the list of missing CIFTI nodes.
+            if cifti_name not in parcel_label_mapper.keys():
+                missing_cifti_nodes.append(cifti_name)
+
+        for expected_cifti_name in parcel_label_mapper.keys():
+            # If the TSV node name is not in the CIFTI, add it to the list of missing TSV nodes.
+            if expected_cifti_name not in ax.name:
+                missing_tsv_nodes.append(expected_cifti_name)
+
+        if missing_cifti_nodes:
+            raise ValueError(
+                f'Missing CIFTI labels in TSV labels DataFrame: {missing_cifti_nodes}'
+                f'\n\n{node_labels_df}'
+            )
+
+        if missing_tsv_nodes:
+            # CIFTIs can have empty nodes, so we expect a full match between the TSV and CIFTI,
+            # even if the CIFTI (due to resampling) doesn't have vertices for all nodes.
+            raise ValueError(
+                f'Missing TSV labels in CIFTI file: {missing_tsv_nodes}\n\n{node_labels_df}'
+            )
+
+        # Replace the TSV node names with the corresponding CIFTI node names.
+        parcel_label_mapper_inv = {v: k for k, v in parcel_label_mapper.items()}
+
+        out_files = []
+        for in_file in in_files:
+            df = pd.read_table(in_file, index_col='Node')
+
+            df.index = [parcel_label_mapper_inv[i] for i in df.index]
+            # Sort the TSV by the CIFTI node names
+            df = df.loc[ax.name]
+
+            # Replace the column names with the corresponding CIFTI node names.
+            df.columns = [parcel_label_mapper_inv[i] for i in df.columns]
+            df = df[ax.name]
+
+            out_img = nb.Cifti2Image(
+                df.values,
+                header=new_header,
+                nifti_header=source_img.nifti_header,
+            )
+            out_file = fname_presuffix(
+                in_file,
+                suffix='.pconn.nii',
+                newpath=runtime.cwd,
+                use_ext=False,
+            )
+            out_files.append(out_file)
+            out_img.to_filename(out_file)
+
+        if delistify:
+            out_files = out_files[0]
+
+        self._results['out_file'] = out_files
 
         return runtime

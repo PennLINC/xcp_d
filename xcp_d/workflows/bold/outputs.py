@@ -86,6 +86,41 @@ def init_postproc_derivatives_wf(
     file_format = config.workflow.file_format
     output_dir = config.execution.output_dir
 
+    measure_lookup = {
+        'r': {
+            'statistic': 'pearsoncorrelation',
+            'RelationshipMeasure': 'Pearson correlation coefficient',
+            'Weighted': True,
+            'Directed': False,
+            'ValidDiagonal': False,
+            'StorageFormat': 'Full',
+        },
+        'z': {
+            'statistic': 'fisherz',
+            'RelationshipMeasure': 'Fisher z',
+            'Weighted': True,
+            'Directed': False,
+            'ValidDiagonal': False,
+            'StorageFormat': 'Full',
+        },
+        'var_r': {
+            'statistic': 'pearsonvariance',
+            'RelationshipMeasure': 'Variance of Pearson correlation coefficient',
+            'Weighted': True,
+            'Directed': False,
+            'ValidDiagonal': False,
+            'StorageFormat': 'Full',
+        },
+        'var_z': {
+            'statistic': 'fisherzvariance',
+            'RelationshipMeasure': 'Variance of Fisher z',
+            'Weighted': True,
+            'Directed': False,
+            'ValidDiagonal': False,
+            'StorageFormat': 'Full',
+        },
+    }
+
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -97,8 +132,14 @@ def init_postproc_derivatives_wf(
                 'confounds_metadata',
                 'coverage',
                 'timeseries',
-                'correlations',
-                'correlations_exact',
+                'correlations_r',
+                'correlations_z',
+                'correlations_var_r',
+                'correlations_var_z',
+                'correlations_r_exact',
+                'correlations_z_exact',
+                'correlations_var_r_exact',
+                'correlations_var_z_exact',
                 'qc_file',
                 'denoised_bold',
                 'smoothed_denoised_bold',
@@ -115,8 +156,14 @@ def init_postproc_derivatives_wf(
                 # cifti-only inputs
                 'coverage_ciftis',
                 'timeseries_ciftis',
-                'correlation_ciftis',
-                'correlation_ciftis_exact',
+                'correlations_r_cifti',
+                'correlations_z_cifti',
+                'correlations_var_r_cifti',
+                'correlations_var_z_cifti',
+                'correlations_r_exact_cifti',
+                'correlations_z_exact_cifti',
+                'correlations_var_r_exact_cifti',
+                'correlations_var_z_exact_cifti',
                 # info for filenames
                 'atlas_names',
             ],
@@ -495,33 +542,28 @@ def init_postproc_derivatives_wf(
                 (make_corrs_meta_dict1, make_corrs_meta_dict2, [('metadata', 'metadata')]),
             ])  # fmt:skip
 
-            ds_correlations = pe.MapNode(
-                DerivativesDataSink(
-                    source_file=name_source,
-                    dismiss_entities=['desc', 'den', 'res'],
-                    cohort=cohort,
-                    statistic='pearsoncorrelation',
-                    suffix='relmat',
-                    extension='.tsv',
-                    # Metadata
-                    RelationshipMeasure='Pearson correlation coefficient',
-                    Weighted=True,
-                    Directed=False,
-                    ValidDiagonal=False,
-                    StorageFormat='Full',
-                ),
-                name='ds_correlations',
-                run_without_submitting=True,
-                mem_gb=1,
-                iterfield=['segmentation', 'in_file', 'meta_dict'],
-            )
-            workflow.connect([
-                (inputnode, ds_correlations, [
-                    ('atlas_names', 'segmentation'),
-                    ('correlations', 'in_file'),
-                ]),
-                (make_corrs_meta_dict2, ds_correlations, [('metadata', 'meta_dict')]),
-            ])  # fmt:skip
+            for output in config.workflow.correlation_outputs:
+                ds_correlations = pe.MapNode(
+                    DerivativesDataSink(
+                        source_file=name_source,
+                        dismiss_entities=['desc', 'den', 'res'],
+                        cohort=cohort,
+                        suffix='relmat',
+                        extension='.tsv',
+                        **measure_lookup[output],
+                    ),
+                    name=f'ds_correlations_{output}',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['segmentation', 'in_file', 'meta_dict'],
+                )
+                workflow.connect([
+                    (inputnode, ds_correlations, [
+                        ('atlas_names', 'segmentation'),
+                        (f'correlations_{output}', 'in_file'),
+                    ]),
+                    (make_corrs_meta_dict2, ds_correlations, [('metadata', 'meta_dict')]),
+                ])  # fmt:skip
 
         if file_format == 'cifti':
             ds_coverage_ciftis = pe.MapNode(
@@ -621,65 +663,65 @@ def init_postproc_derivatives_wf(
                     (make_ccorrs_meta_dict1, make_ccorrs_meta_dict2, [('metadata', 'metadata')]),
                 ])  # fmt:skip
 
-                ds_correlation_ciftis = pe.MapNode(
-                    DerivativesDataSink(
-                        source_file=name_source,
-                        check_hdr=False,
-                        dismiss_entities=['desc', 'den'],
-                        cohort=cohort,
-                        den='91k' if file_format == 'cifti' else None,
-                        statistic='pearsoncorrelation',
-                        suffix='boldmap',
-                        extension='.pconn.nii',
-                        # Metadata
-                        RelationshipMeasure='Pearson correlation coefficient',
-                        Weighted=True,
-                        Directed=False,
-                        ValidDiagonal=False,
-                        StorageFormat='Full',
-                    ),
-                    name='ds_correlation_ciftis',
-                    run_without_submitting=True,
-                    mem_gb=1,
-                    iterfield=['segmentation', 'in_file', 'meta_dict'],
-                )
-                workflow.connect([
-                    (inputnode, ds_correlation_ciftis, [
-                        ('atlas_names', 'segmentation'),
-                        ('correlation_ciftis', 'in_file'),
-                    ]),
-                    (make_ccorrs_meta_dict2, ds_correlation_ciftis, [('metadata', 'meta_dict')]),
-                ])  # fmt:skip
+                for output in config.workflow.correlation_outputs:
+                    ds_correlation_ciftis = pe.MapNode(
+                        DerivativesDataSink(
+                            source_file=name_source,
+                            check_hdr=False,
+                            dismiss_entities=['desc', 'den'],
+                            cohort=cohort,
+                            den='91k' if file_format == 'cifti' else None,
+                            suffix='boldmap',
+                            extension='.pconn.nii',
+                            **measure_lookup[output],
+                        ),
+                        name=f'ds_correlation_ciftis_{output}',
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        iterfield=['segmentation', 'in_file', 'meta_dict'],
+                    )
+                    workflow.connect([
+                        (inputnode, ds_correlation_ciftis, [
+                            ('atlas_names', 'segmentation'),
+                            (f'correlations_{output}_cifti', 'in_file'),
+                        ]),
+                        (make_ccorrs_meta_dict2, ds_correlation_ciftis, [
+                            ('metadata', 'meta_dict'),
+                        ]),
+                    ])  # fmt:skip
 
         for i_exact_scan, exact_scan in enumerate(exact_scans):
-            select_exact_scan_files = pe.MapNode(
-                niu.Select(index=i_exact_scan),
-                name=f'select_exact_scan_files_{i_exact_scan}',
-                iterfield=['inlist'],
-            )
-            workflow.connect([
-                (inputnode, select_exact_scan_files, [('correlations_exact', 'inlist')]),
-            ])  # fmt:skip
+            for output in config.workflow.correlation_outputs:
+                select_exact_scan_files = pe.MapNode(
+                    niu.Select(index=i_exact_scan),
+                    name=f'select_exact_scan_files_{i_exact_scan}_{output}',
+                    iterfield=['inlist'],
+                )
+                workflow.connect([
+                    (inputnode, select_exact_scan_files, [
+                        (f'correlations_{output}_exact', 'inlist'),
+                    ]),
+                ])  # fmt:skip
 
-            ds_correlations_exact = pe.MapNode(
-                DerivativesDataSink(
-                    source_file=name_source,
-                    dismiss_entities=['desc', 'den', 'res'],
-                    cohort=cohort,
-                    statistic='pearsoncorrelation',
-                    desc=f'{exact_scan}volumes',
-                    suffix='relmat',
-                    extension='.tsv',
-                ),
-                name=f'ds_correlations_exact_{i_exact_scan}',
-                run_without_submitting=True,
-                mem_gb=1,
-                iterfield=['segmentation', 'in_file'],
-            )
-            workflow.connect([
-                (inputnode, ds_correlations_exact, [('atlas_names', 'segmentation')]),
-                (select_exact_scan_files, ds_correlations_exact, [('out', 'in_file')]),
-            ])  # fmt:skip
+                ds_correlations_exact = pe.MapNode(
+                    DerivativesDataSink(
+                        source_file=name_source,
+                        dismiss_entities=['desc', 'den', 'res'],
+                        cohort=cohort,
+                        desc=f'{exact_scan}volumes',
+                        suffix='relmat',
+                        extension='.tsv',
+                        **measure_lookup[output],
+                    ),
+                    name=f'ds_correlations_exact_{i_exact_scan}_{output}',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['segmentation', 'in_file'],
+                )
+                workflow.connect([
+                    (inputnode, ds_correlations_exact, [('atlas_names', 'segmentation')]),
+                    (select_exact_scan_files, ds_correlations_exact, [('out', 'in_file')]),
+                ])  # fmt:skip
 
     # Resting state metric outputs
     denoised_src = pe.Node(
