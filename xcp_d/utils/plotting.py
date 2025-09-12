@@ -527,6 +527,8 @@ def plot_fmri_es(
         An index indicating splits between runs, for concatenated data.
         If not None, this should be an array/list of integers, indicating the volumes.
     """
+    from xcp_d.utils.utils import get_col
+
     # Compute dvars correctly if not already done
     preprocessed_arr = read_ndata(datafile=preprocessed_bold, maskfile=mask)
     denoised_interpolated_arr = read_ndata(datafile=denoised_interpolated_bold, maskfile=mask)
@@ -550,13 +552,14 @@ def plot_fmri_es(
     )
 
     motion_df = pd.read_table(motion_file)
-    if 'framewise_displacement_filtered' in motion_df.columns:
-        fd_regressor = motion_df['framewise_displacement_filtered'].values
+    if any(col.startswith('framewise_displacement_filtered') for col in motion_df.columns):
+        fd_regressor = get_col(motion_df, 'framewise_displacement_filtered').values
     else:
-        fd_regressor = motion_df['framewise_displacement'].values
+        fd_regressor = get_col(motion_df, 'framewise_displacement').values
 
     if temporal_mask:
-        tmask_arr = pd.read_table(temporal_mask)['framewise_displacement'].values.astype(bool)
+        tmask_df = pd.read_table(temporal_mask)
+        tmask_arr = get_col(tmask_df, 'framewise_displacement').values.astype(bool)
     else:
         tmask_arr = np.zeros(fd_regressor.shape, dtype=bool)
 
@@ -1117,15 +1120,17 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
     import pandas as pd
     from nilearn import plotting
 
+    from xcp_d.utils.utils import get_col
+
     design_matrix_df = pd.read_table(design_matrix)
     if temporal_mask:
         censoring_df = pd.read_table(temporal_mask)
-        n_motion_outliers = censoring_df['framewise_displacement'].sum()
+        n_motion_outliers = get_col(censoring_df, 'framewise_displacement').sum()
         motion_outliers_df = pd.DataFrame(
             data=np.zeros((censoring_df.shape[0], n_motion_outliers), dtype=np.int16),
             columns=[f'outlier{i}' for i in range(1, n_motion_outliers + 1)],
         )
-        motion_outlier_idx = np.where(censoring_df['framewise_displacement'])[0]
+        motion_outlier_idx = np.where(get_col(censoring_df, 'framewise_displacement'))[0]
         for i_outlier, outlier_col in enumerate(motion_outliers_df.columns):
             outlier_row = motion_outlier_idx[i_outlier]
             motion_outliers_df.loc[outlier_row, outlier_col] = 1

@@ -1,14 +1,13 @@
 """ANTS interfaces."""
 
 import logging
+import os
 
 from nipype.interfaces.base import isdefined, traits
 from niworkflows.interfaces.fixes import (
     FixHeaderApplyTransforms,
     _FixTraitApplyTransformsInputSpec,
 )
-
-from xcp_d.utils.filemanip import fname_presuffix
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -45,11 +44,9 @@ class ApplyTransforms(FixHeaderApplyTransforms):
 
     def _run_interface(self, runtime):
         if not isdefined(self.inputs.output_image):
-            self.inputs.output_image = fname_presuffix(
-                self.inputs.input_image,
-                suffix='_trans.nii.gz',
-                newpath=runtime.cwd,
-                use_ext=False,
+            self.inputs.output_image = os.path.join(
+                runtime.cwd,
+                os.path.basename(self.inputs.input_image),
             )
 
         runtime = super()._run_interface(runtime)

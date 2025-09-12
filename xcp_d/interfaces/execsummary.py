@@ -296,14 +296,18 @@ class ExecutiveSummary:
 
         self.task_files_ = task_files
 
-    def generate_report(self, out_file=None):
+    def generate_report(self, out_file=None, parameters_hash=None):
         """Generate the report."""
         logs_path = Path(self.xcpd_path) / 'logs'
         if out_file is None:
+            prefix = f'sub-{self.subject_id}'
             if self.session_id:
-                out_file = f'sub-{self.subject_id}_ses-{self.session_id}_executive_summary.html'
-            else:
-                out_file = f'sub-{self.subject_id}_executive_summary.html'
+                prefix = f'{prefix}_ses-{self.session_id}'
+
+            if parameters_hash:
+                prefix = f'{prefix}_hash-{parameters_hash}'
+
+            out_file = f'{prefix}_executive_summary.html'
 
             out_file = os.path.join(self.output_dir, out_file)
 
