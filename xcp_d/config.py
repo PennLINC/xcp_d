@@ -893,7 +893,7 @@ def hash_config(
         if 'ConfigurationHash' in desc.get('GeneratedBy', [{}])[0]:
             prefix = desc.get('GeneratedBy', [{}])[0]['ConfigurationHash'] + '+'
 
-    data = {'version': version}
+    data = {}
     for level, fields in fields_required.items():
         for f in fields:
             data[f] = conf[level].get(f, None)
