@@ -857,6 +857,25 @@ def hash_config(
     """
     Generate a unique BLAKE2b hash of configuration attributes.
     By default, uses a preselected list of workflow-altering parameters.
+
+    This will also grab the configuration hash from the fmri_dir's dataset_description.json if it
+    exists. If it does, it will be prefixed to the hash.
+
+    Parameters
+    ----------
+    conf : dict
+        Configuration dictionary.
+    fields_required : dict
+        Dictionary of required fields for each level.
+    version : str
+        Version of the configuration.
+    digest_size : int
+        Size of the digest in bytes.
+
+    Returns
+    -------
+    str
+        A unique BLAKE2b hash of the configuration.
     """
     import json
     from hashlib import blake2b
@@ -874,7 +893,7 @@ def hash_config(
         if 'ConfigurationHash' in desc.get('GeneratedBy', [{}])[0]:
             prefix = desc.get('GeneratedBy', [{}])[0]['ConfigurationHash'] + '+'
 
-    data = {}
+    data = {'version': version}
     for level, fields in fields_required.items():
         for f in fields:
             data[f] = conf[level].get(f, None)
