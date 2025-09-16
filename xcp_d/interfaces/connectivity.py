@@ -165,6 +165,8 @@ class NiftiParcellate(SimpleInterface):
         # Map from atlas value to column index for parcels found in the atlas image
         # Keys are cols/rows in the matrix, values are atlas values
         masker_parcel_mapper = masker.region_ids_
+        # Remove 'background' label
+        masker_parcel_mapper = {k: v for k, v in masker_parcel_mapper.items() if k != 'background'}
         del masker
         gc.collect()
 
@@ -172,10 +174,6 @@ class NiftiParcellate(SimpleInterface):
         timeseries_arr[:, coverage_thresholded] = np.nan
 
         if n_found_nodes != n_nodes:  # parcels lost by warping/downsampling atlas
-            raise Exception(
-                f'masker_parcel_mapper: {masker_parcel_mapper}\n'
-                f'full_parcel_mapper: {full_parcel_mapper}'
-            )
             # Fill in any missing nodes in the timeseries array with NaNs.
             new_timeseries_arr = np.full(
                 (timeseries_arr.shape[0], n_nodes),
