@@ -75,6 +75,7 @@ class NiftiParcellate(SimpleInterface):
         full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
         masker_lut = node_labels_df.copy()
         masker_lut['name'] = masker_lut['label']
+        masker_lut = masker_lut[['index', 'name']]
         atlas_values = np.unique(atlas_img.get_fdata())
         atlas_values = atlas_values[atlas_values != 0]
         atlas_values = atlas_values.astype(int)
@@ -165,6 +166,8 @@ class NiftiParcellate(SimpleInterface):
         # Map from atlas value to column index for parcels found in the atlas image
         # Keys are cols/rows in the matrix, values are atlas values
         masker_parcel_mapper = masker.region_ids_
+        # Remove 'background' label
+        masker_parcel_mapper = {k: v for k, v in masker_parcel_mapper.items() if k != 'background'}
         del masker
         gc.collect()
 

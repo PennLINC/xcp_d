@@ -213,6 +213,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         # Now to get ground truth correlations
         labels_df = pd.read_table(atlas_labels_file)
         labels_df['name'] = labels_df['label']
+        labels_df = labels_df[['index', 'name']]
         masker = NiftiLabelsMasker(
             labels_img=atlas_file,
             lut=labels_df,
