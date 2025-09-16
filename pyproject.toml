@@ -72,7 +72,7 @@ doc = [
     "sphinx_design",
 ]
 dev = [
-    "ruff ~= 0.12.0",
+    "ruff ~= 0.13.0",
     "pre-commit",
 ]
 tests = [
