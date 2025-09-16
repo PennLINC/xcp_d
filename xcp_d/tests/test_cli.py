@@ -60,7 +60,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--head_radius=40',
         '--motion-filter-type=lp',
         '--band-stop-min=6',
-        '--atlases=Glasser',
+        '--skip-parcellation',
         '--min-coverage=0.4',
         '--min-time=100',
         '--smoothing=6',
