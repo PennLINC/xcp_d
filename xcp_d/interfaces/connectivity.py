@@ -74,6 +74,7 @@ class NiftiParcellate(SimpleInterface):
         full_parcel_mapper = {v: k for k, v in enumerate(node_labels_df['index'].tolist())}
         masker_lut = node_labels_df.copy()
         masker_lut['name'] = masker_lut['label']
+        masker_lut = masker_lut[['index', 'name']]
         atlas_values = np.unique(atlas_img.get_fdata())
         atlas_values = atlas_values[atlas_values != 0]
         atlas_values = atlas_values.astype(int)
