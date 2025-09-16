@@ -283,7 +283,7 @@ jobs:
             mkdir /src/coverage
             mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_nifti
             # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
+            # find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
       - persist_to_workspace:
           root: /src/coverage/
           paths:
