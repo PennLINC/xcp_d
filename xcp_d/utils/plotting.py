@@ -11,8 +11,8 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import gridspec as mgs
 from matplotlib.colors import ListedColormap
-from nilearn._utils import check_niimg_4d
 from nilearn._utils.niimg import safe_get_data
+from nilearn._utils.niimg_conversions import check_niimg_4d
 from nilearn.signal import clean
 
 from xcp_d.utils.bids import _get_tr
