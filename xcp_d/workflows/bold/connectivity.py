@@ -8,6 +8,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.utils.atlas import select_atlases
 from xcp_d.utils.doc import fill_doc
@@ -161,6 +162,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
         ds_report_connectivity_plot = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 desc='connectivityplot',
             ),
             name='ds_report_connectivity_plot',
@@ -368,7 +370,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ])  # fmt:skip
 
         ds_report_coverage = pe.Node(
-            DerivativesDataSink(),
+            DerivativesDataSink(dismiss_entities=dismiss_hash()),
             name='ds_report_coverage',
             run_without_submitting=True,
         )
@@ -449,6 +451,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
         ds_report_connectivity = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 desc='connectivityplot',
             ),
             name='ds_report_connectivity',
@@ -463,7 +466,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
     # Perform exact-time correlations
     if exact_scans:
         collect_exact_ciftis = pe.Node(
-            niu.Merge(len(exact_scans)),
+            niu.Merge(len(exact_scans), no_flatten=True, axis='hstack'),
             name='collect_exact_ciftis',
         )
         workflow.connect([
@@ -471,7 +474,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ])  # fmt:skip
 
         collect_exact_tsvs = pe.Node(
-            niu.Merge(len(exact_scans)),
+            niu.Merge(len(exact_scans), no_flatten=True, axis='hstack'),
             name='collect_exact_tsvs',
         )
         workflow.connect([(collect_exact_tsvs, outputnode, [('out', 'correlations_exact')])])
@@ -552,7 +555,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ])  # fmt:skip
 
         ds_report_reho = pe.Node(
-            DerivativesDataSink(),
+            DerivativesDataSink(dismiss_entities=dismiss_hash()),
             name='ds_report_reho',
             run_without_submitting=True,
         )
@@ -603,7 +606,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ])  # fmt:skip
 
             ds_report_alff = pe.Node(
-                DerivativesDataSink(),
+                DerivativesDataSink(dismiss_entities=dismiss_hash()),
                 name='ds_report_alff',
                 run_without_submitting=True,
             )

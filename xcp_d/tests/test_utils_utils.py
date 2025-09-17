@@ -618,3 +618,45 @@ def test_transpose_lol():
     for i, input_ in enumerate(inputs):
         expected_output = outputs[i]
         assert utils._transpose_lol(input_) == expected_output
+
+
+def test_get_col():
+    """Test get_col function with hash suffix support."""
+    # Test dataframe with columns that may have hash suffixes
+    test_df = pd.DataFrame(
+        {
+            'motion': [1, 2, 3],
+            'motion_hash-abc123': [4, 5, 6],
+            'outliers_hash-def456': [7, 8, 9],
+            'other_col': [10, 11, 12],
+        }
+    )
+
+    # Test exact match (should prefer non-hash version)
+    result = utils.get_col(test_df, 'motion')
+    assert result.tolist() == [1, 2, 3]
+
+    # Test hash-only match
+    result = utils.get_col(test_df, 'outliers')
+    assert result.tolist() == [7, 8, 9]
+
+    # Test regular column without hash
+    result = utils.get_col(test_df, 'other_col')
+    assert result.tolist() == [10, 11, 12]
+
+    # Test no match (should raise error)
+    with pytest.raises(ValueError, match='No column found matching pattern'):
+        utils.get_col(test_df, 'nonexistent')
+
+    # Test with different hash formats
+    hash_df = pd.DataFrame(
+        {
+            'signal_hash-123abc': [1, 2, 3],
+            'signal_hash-456def+': [4, 5, 6],
+            'signal_hash-789ghi': [7, 8, 9],
+        }
+    )
+
+    # Should return the first hash variant when no exact match
+    result = utils.get_col(hash_df, 'signal')
+    assert result.tolist() == [1, 2, 3]

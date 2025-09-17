@@ -89,6 +89,7 @@ The :py:mod:`config` is responsible for other conveniency actions.
 """
 
 import os
+import typing as ty
 from multiprocessing import set_start_method
 
 import yaml
@@ -426,6 +427,10 @@ class execution(_Config):
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
     notrack = None
     """Do not collect telemetry information for *XCP-D*."""
+    output_layout = None
+    """Output layout for the derivatives."""
+    parameters_hash = None
+    """Unique identifier for this set of configurable parameters."""
     report_output_level = None
     """Directory level at which the html reports should be written."""
     reports_only = None
@@ -793,3 +798,105 @@ def to_filename(filename):
     """Write settings to file."""
     filename = Path(filename)
     filename.write_text(dumps())
+
+
+def dismiss_hash(entities: list | None = None):
+    """Set entities to dismiss in a DerivativesDataSink."""
+    entities = entities or []
+    output_layout = execution.output_layout
+    if output_layout != 'multiverse':
+        entities.append('hash')
+    return entities
+
+
+DEFAULT_DISMISS_ENTITIES = dismiss_hash()
+
+DEFAULT_CONFIG_HASH_FIELDS = {
+    'execution': [
+        'bids_filters',
+        'confounds_config',
+        'atlases',
+        'output_layout',
+    ],
+    'workflow': [
+        'mode',
+        'file_format',
+        'dummy_scans',
+        'input_type',
+        'despike',
+        'smoothing',
+        'output_interpolated',
+        'combine_runs',
+        'motion_filter_type',
+        'band_stop_min',
+        'band_stop_max',
+        'motion_filter_order',
+        'head_radius',
+        'fd_thresh',
+        'min_time',
+        'bandpass_filter',
+        'high_pass',
+        'low_pass',
+        'bpf_order',
+        'min_coverage',
+        'correlation_lengths',
+        'process_surfaces',
+        'abcc_qc',
+        'linc_qc',
+    ],
+}
+
+
+def hash_config(
+    conf: dict[str, ty.Any],
+    *,
+    fields_required: dict[str, list[str]] = DEFAULT_CONFIG_HASH_FIELDS,
+    version: str = None,
+    digest_size: int = 4,
+) -> str:
+    """
+    Generate a unique BLAKE2b hash of configuration attributes.
+    By default, uses a preselected list of workflow-altering parameters.
+
+    This will also grab the configuration hash from the fmri_dir's dataset_description.json if it
+    exists. If it does, it will be prefixed to the hash.
+
+    Parameters
+    ----------
+    conf : dict
+        Configuration dictionary.
+    fields_required : dict
+        Dictionary of required fields for each level.
+    version : str
+        Version of the configuration.
+    digest_size : int
+        Size of the digest in bytes.
+
+    Returns
+    -------
+    str
+        A unique BLAKE2b hash of the configuration.
+    """
+    import json
+    from hashlib import blake2b
+
+    if version is None:
+        from xcp_d import __version__ as version
+
+    # Load the preprocessing derivatives dataset description
+    dset_desc_path = Path(conf['execution']['fmri_dir']) / 'dataset_description.json'
+    prefix = ''
+    if dset_desc_path.exists():
+        with open(dset_desc_path) as fobj:
+            desc = json.load(fobj)
+
+        if 'ConfigurationHash' in desc.get('GeneratedBy', [{}])[0]:
+            prefix = desc.get('GeneratedBy', [{}])[0]['ConfigurationHash'] + '+'
+
+    data = {}
+    for level, fields in fields_required.items():
+        for f in fields:
+            data[f] = conf[level].get(f, None)
+
+    datab = json.dumps(data, sort_keys=True).encode()
+    return prefix + blake2b(datab, digest_size=digest_size).hexdigest()

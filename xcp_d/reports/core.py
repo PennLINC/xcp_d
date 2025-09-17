@@ -78,6 +78,13 @@ def generate_reports(
 
     bootstrap_file = bootstrap_file or data.load('reports-spec.yml')
 
+    # Check if the parameters hash should be used
+    parameters_hash = None
+    hash_str = ''
+    if config.execution.output_layout == 'multiverse':
+        parameters_hash = config.execution.parameters_hash
+        hash_str = f'_hash-{parameters_hash}'
+
     errors = []
     for subject_label, _, sessions in processing_list:
         subject_label = subject_label[4:] if subject_label.startswith('sub-') else subject_label
@@ -96,7 +103,7 @@ def generate_reports(
             )
 
         if output_level != 'session' and n_ses <= config.execution.aggr_ses_reports:
-            html_report = f'sub-{subject_label}.html'
+            html_report = f'sub-{subject_label}{hash_str}.html'
 
             if output_level == 'root':
                 report_dir = dataset_dir
@@ -130,16 +137,16 @@ def generate_reports(
                         session_id=session_label,
                     )
                     exsumm.collect_inputs()
-                    exsumm.generate_report()
+                    exsumm.generate_report(parameters_hash=parameters_hash)
         else:
             if not sessions:
                 sessions = [None]
 
             for session_label in sessions:
                 if session_label is None:
-                    html_report = f'sub-{subject_label}.html'
+                    html_report = f'sub-{subject_label}{hash_str}.html'
                 else:
-                    html_report = f'sub-{subject_label}_ses-{session_label}.html'
+                    html_report = f'sub-{subject_label}_ses-{session_label}{hash_str}.html'
 
                 if output_level == 'root':
                     report_dir = dataset_dir
@@ -176,7 +183,7 @@ def generate_reports(
                         session_id=session_label,
                     )
                     exsumm.collect_inputs()
-                    exsumm.generate_report()
+                    exsumm.generate_report(parameters_hash=parameters_hash)
 
     if errors:
         # Suboptimal to just report the subject IDs (with potential duplicates)

@@ -7,6 +7,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.utils.doc import fill_doc
@@ -140,6 +141,7 @@ def init_postprocess_anat_wf(
     if t1w_available:
         ds_t1w_std = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 space=target_space,
                 cohort=cohort,
                 extension='.nii.gz',
@@ -155,6 +157,7 @@ def init_postprocess_anat_wf(
     if t2w_available:
         ds_t2w_std = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 space=target_space,
                 cohort=cohort,
                 extension='.nii.gz',

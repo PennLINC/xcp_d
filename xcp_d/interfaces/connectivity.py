@@ -21,6 +21,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import write_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -251,11 +252,13 @@ def correlate_timeseries(timeseries, temporal_mask):
         # Determine if the time series is censored
         if censoring_df.shape[0] == timeseries_df.shape[0]:
             # The time series is not censored
-            timeseries_df = timeseries_df.loc[censoring_df['framewise_displacement'] == 0]
+            timeseries_df = timeseries_df.loc[get_col(censoring_df, 'framewise_displacement') == 0]
             timeseries_df.reset_index(drop=True, inplace=True)
 
         # Now create correlation matrices limited to exact scan numbers
-        censored_censoring_df = censoring_df.loc[censoring_df['framewise_displacement'] == 0]
+        censored_censoring_df = censoring_df.loc[
+            get_col(censoring_df, 'framewise_displacement') == 0
+        ]
         censored_censoring_df.reset_index(drop=True, inplace=True)
         exact_columns = [c for c in censoring_df.columns if c.startswith('exact_')]
         for exact_column in exact_columns:

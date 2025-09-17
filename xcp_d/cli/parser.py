@@ -7,7 +7,10 @@ XCP-D preprocessing workflow
 import os
 import sys
 
+import toml
+
 from xcp_d import config
+from xcp_d.config import hash_config
 from xcp_d.data import load as load_data
 
 
@@ -647,6 +650,17 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         ),
     )
     g_other.add_argument(
+        '--output-layout',
+        dest='output_layout',
+        action='store',
+        choices=['bids', 'multiverse'],
+        default='auto',
+        help=(
+            'Output layout for the BOLD data. '
+            'If "auto", the output layout will be inferred from the processing mode.'
+        ),
+    )
+    g_other.add_argument(
         '-w',
         '--work-dir',
         '--work_dir',
@@ -895,6 +909,27 @@ def parse_args(args=None, namespace=None):
     # This must be done after cleaning the work directory, or we could delete an
     # open SQLite database
     config.from_dict({})
+
+    config.execution.parameters_hash = hash_config(toml.loads(config.dumps()))
+    if config.execution.output_layout == 'multiverse':
+        config.execution.output_dir = (
+            config.execution.output_dir / f'xcp_d-{config.execution.parameters_hash}'
+        )
+
+    if (config.execution.output_dir / 'dataset_description.json').exists():
+        import json
+
+        with open(config.execution.output_dir / 'dataset_description.json') as fobj:
+            desc = json.load(fobj)
+
+        generated_by = desc.get('GeneratedBy', [{}])[0]
+        if 'ConfigurationHash' in generated_by:
+            if generated_by['ConfigurationHash'] != config.execution.parameters_hash:
+                raise ValueError(
+                    'The configuration hash in the dataset description '
+                    f'({generated_by["ConfigurationHash"]}) does not match the hash in the config '
+                    f'({config.execution.parameters_hash}).'
+                )
 
     # Ensure input and output folders are not the same
     if output_dir == fmri_dir:

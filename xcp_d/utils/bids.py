@@ -873,6 +873,7 @@ def collect_confounds(
 def write_derivative_description(
     fmri_dir,
     output_dir,
+    parameters_hash,
     atlases=None,
     dataset_links=None,
 ):
@@ -884,6 +885,8 @@ def write_derivative_description(
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
         Path to the output XCP-D dataset.
+    hash : :obj:`str`
+        Hash of the parameters used to generate the derivatives.
     atlases : :obj:`list` of :obj:`str`, optional
         Names of requested XCP-D atlases.
     dataset_links : :obj:`dict`, optional
@@ -925,6 +928,7 @@ def write_derivative_description(
             'Name': 'xcp_d',
             'Version': __version__,
             'CodeURL': DOWNLOAD_URL,
+            'ConfigurationHash': parameters_hash,
         },
     )
     desc['GeneratedBy'] = generated_by
