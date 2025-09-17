@@ -1,5 +1,30 @@
 # What's New
 
+## 0.12.0
+
+### 🎉 Exciting New Features
+
+* Use MNIInfant transforms from templateflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/1487
+
+### 🐛 Bug Fixes
+
+* Change memory argument destination to `memory_gb` by @j1c in https://github.com/PennLINC/xcp_d/pull/1490
+* Fix WM and CSF component selection in acompcor and acompcor_gsr by @roeysc in https://github.com/PennLINC/xcp_d/pull/1498
+* Fix brainsprite when `--warp-surfaces-native2std` is disabled by @tsalo in https://github.com/PennLINC/xcp_d/pull/1501
+
+### Other Changes
+
+* Use fsLR-registered spheres when available by @tsalo in https://github.com/PennLINC/xcp_d/pull/1486
+* Add hash entity to outputs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1496
+
+## New Contributors
+
+* @j1c made their first contribution in https://github.com/PennLINC/xcp_d/pull/1490
+* @roeysc made their first contribution in https://github.com/PennLINC/xcp_d/pull/1498
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.11.1...0.12.0
+
+
 ## 0.11.1
 
 ### 🐛 Bug Fixes
