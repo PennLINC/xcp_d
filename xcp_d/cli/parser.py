@@ -190,6 +190,7 @@ def _build_parser():
     g_perfm.add_argument(
         '--mem-mb',
         '--mem_mb',
+        metavar='MEMORY_MB',
         dest='memory_gb',
         action='store',
         type=parser_utils._to_gb,
