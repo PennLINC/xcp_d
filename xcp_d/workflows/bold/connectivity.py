@@ -34,7 +34,7 @@ def init_functional_connectivity_nifti_wf(mem_gb, name='connectivity_wf'):
                 config.execution.atlases = ["Glasser", "Gordon"]
 
                 wf = init_functional_connectivity_nifti_wf(
-                    mem_gb={"resampled": 0.1, "timeseries": 1.0},
+                    mem_gb={"volume": 0.1, "bold": 1.0},
                 )
 
     Parameters
@@ -116,7 +116,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name='parcellate_data',
         iterfield=['atlas', 'atlas_labels'],
-        mem_gb=mem_gb['timeseries'],
+        mem_gb=mem_gb['bold'],
     )
     workflow.connect([
         (inputnode, parcellate_data, [
@@ -136,7 +136,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             TSVConnect(),
             name='functional_connectivity',
             iterfield=['timeseries'],
-            mem_gb=mem_gb['timeseries'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, functional_connectivity, [('temporal_mask', 'temporal_mask')]),
@@ -150,7 +150,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         connectivity_plot = pe.Node(
             ConnectPlot(),
             name='connectivity_plot',
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, connectivity_plot, [
@@ -177,7 +177,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name='parcellate_reho',
         iterfield=['atlas', 'atlas_labels'],
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
     workflow.connect([
         (inputnode, parcellate_reho, [
@@ -194,7 +194,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             NiftiParcellate(min_coverage=min_coverage),
             name='parcellate_alff',
             iterfield=['atlas', 'atlas_labels'],
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, parcellate_alff, [
@@ -230,7 +230,7 @@ def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name='connectivit
                 config.execution.atlases = ["Glasser", "Gordon"]
 
                 wf = init_functional_connectivity_cifti_wf(
-                    mem_gb={"resampled": 0.1, "timeseries": 1.0},
+                    mem_gb={"volume": 0.1, "bold": 1.0},
                     exact_scans=[30, 40],
                 )
 
@@ -439,7 +439,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         connectivity_plot = pe.Node(
             ConnectPlot(),
             name='connectivity_plot',
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, connectivity_plot, [

@@ -214,7 +214,7 @@ the following post-processing was performed.
     downcast_data = pe.Node(
         ConvertTo32(),
         name='downcast_data',
-        mem_gb=mem_gbx['timeseries'],
+        mem_gb=mem_gbx['bold'],
     )
 
     workflow.connect([
@@ -308,6 +308,7 @@ the following post-processing was performed.
     qc_report_wf = init_qc_report_wf(
         TR=TR,
         head_radius=head_radius,
+        mem_gb=mem_gbx,
         name='qc_report_wf',
     )
 

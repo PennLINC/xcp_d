@@ -681,22 +681,22 @@ def _transpose_lol(lol):
 
 
 def _create_mem_gb(bold_fname):
-    import os
+    # Load only the header to get shape and data type information
+    bold_img = nb.load(bold_fname)
 
-    bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    bold_tlen = nb.load(bold_fname).shape[-1]
+    # Calculate uncompressed memory size from header information
+    # This accounts for compression (e.g., .nii.gz files)
+    n_voxels = np.prod(bold_img.shape)
+    dtype_size = bold_img.get_data_dtype().itemsize
+    uncompressed_size_gb = (n_voxels * dtype_size) / (1024**3)
+
+    n_volumes = bold_img.shape[-1]
+
+    # Estimate memory usage based on uncompressed size
     mem_gbz = {
-        'derivative': bold_size_gb,
-        'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        'bold': uncompressed_size_gb,
+        'volume': uncompressed_size_gb / n_volumes,
     }
-
-    if mem_gbz['timeseries'] < 4.0:
-        mem_gbz['timeseries'] = 6.0
-        mem_gbz['resampled'] = 2
-    elif mem_gbz['timeseries'] > 8.0:
-        mem_gbz['timeseries'] = 8.0
-        mem_gbz['resampled'] = 3
 
     return mem_gbz
 
