@@ -147,7 +147,7 @@ series to retain the original scaling.
             high_pass=high_pass,
             n_threads=config.nipype.omp_nthreads,
         ),
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         name='alff_compt',
         n_procs=config.nipype.omp_nthreads,
     )
@@ -235,7 +235,7 @@ series to retain the original scaling.
                     num_threads=config.nipype.omp_nthreads,
                 ),
                 name='ciftismoothing',
-                mem_gb=mem_gb['resampled'],
+                mem_gb=mem_gb['bold'],
                 n_procs=config.nipype.omp_nthreads,
             )
 
@@ -243,7 +243,7 @@ series to retain the original scaling.
             fix_cifti_intent = pe.Node(
                 FixCiftiIntent(),
                 name='fix_cifti_intent',
-                mem_gb=mem_gb['resampled'],
+                mem_gb=mem_gb['bold'],
             )
             workflow.connect([
                 (alff_compt, smooth_data, [('alff', 'in_file')]),
@@ -332,7 +332,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             num_threads=config.nipype.omp_nthreads,
         ),
         name='separate_lh',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     rh_surf = pe.Node(
@@ -342,7 +342,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             num_threads=config.nipype.omp_nthreads,
         ),
         name='separate_rh',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     subcortical_nifti = pe.Node(
@@ -351,7 +351,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             num_threads=config.nipype.omp_nthreads,
         ),
         name='separate_subcortical',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
 
@@ -359,17 +359,17 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     lh_reho = pe.Node(
         SurfaceReHo(surf_hemi='L'),
         name='reho_lh',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
     rh_reho = pe.Node(
         SurfaceReHo(surf_hemi='R'),
         name='reho_rh',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
     subcortical_reho = pe.Node(
         ReHoNamePatch(neighborhood='vertices'),
         name='reho_subcortical',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
 
     # Merge the surfaces and subcortical structures back into a CIFTI
@@ -380,7 +380,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             num_threads=config.nipype.omp_nthreads,
         ),
         name='merge_cifti',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     reho_plot = pe.Node(
@@ -484,7 +484,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
     compute_reho = pe.Node(
         ReHoNamePatch(neighborhood='vertices'),
         name='reho_3d',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=1,
     )
     # Get the svg

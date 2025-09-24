@@ -686,7 +686,7 @@ approach.
             num_threads=config.nipype.omp_nthreads,
         ),
         name='regress_and_filter_bold',
-        mem_gb=mem_gb['timeseries'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')
@@ -715,7 +715,7 @@ approach.
     censor_interpolated_data = pe.Node(
         Censor(column='framewise_displacement'),
         name='censor_interpolated_data',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
     config.loggers.workflow.debug('Created censor node for high-motion volumes.')
 
@@ -848,7 +848,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='cifti_smoothing',
-            mem_gb=mem_gb['timeseries'],
+            mem_gb=mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
 
@@ -871,7 +871,7 @@ The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str
         smooth_data = pe.Node(
             Smooth(fwhm=smoothing),  # FWHM = kernel size
             name='nifti_smoothing',
-            mem_gb=mem_gb['timeseries'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([(smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
 

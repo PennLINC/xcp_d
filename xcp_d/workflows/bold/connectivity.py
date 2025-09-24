@@ -116,7 +116,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name='parcellate_data',
         iterfield=['atlas', 'atlas_labels'],
-        mem_gb=mem_gb['timeseries'],
+        mem_gb=mem_gb['bold'],
     )
     workflow.connect([
         (inputnode, parcellate_data, [
@@ -136,7 +136,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             TSVConnect(),
             name='functional_connectivity',
             iterfield=['timeseries'],
-            mem_gb=mem_gb['timeseries'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, functional_connectivity, [('temporal_mask', 'temporal_mask')]),
@@ -150,7 +150,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         connectivity_plot = pe.Node(
             ConnectPlot(),
             name='connectivity_plot',
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, connectivity_plot, [
@@ -177,7 +177,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name='parcellate_reho',
         iterfield=['atlas', 'atlas_labels'],
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
     workflow.connect([
         (inputnode, parcellate_reho, [
@@ -194,7 +194,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             NiftiParcellate(min_coverage=min_coverage),
             name='parcellate_alff',
             iterfield=['atlas', 'atlas_labels'],
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, parcellate_alff, [
@@ -439,7 +439,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         connectivity_plot = pe.Node(
             ConnectPlot(),
             name='connectivity_plot',
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, connectivity_plot, [

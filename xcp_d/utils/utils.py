@@ -681,22 +681,12 @@ def _transpose_lol(lol):
 
 
 def _create_mem_gb(bold_fname):
-    import os
-
-    bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    bold_tlen = nb.load(bold_fname).shape[-1]
+    bold_img = nb.load(bold_fname)
+    bold_size_gb = bold_img.get_fdata().nbytes / (1024**3)
     mem_gbz = {
-        'derivative': bold_size_gb,
-        'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        'bold': bold_size_gb,
+        'volume': bold_size_gb / bold_img.shape[-1]
     }
-
-    if mem_gbz['timeseries'] < 4.0:
-        mem_gbz['timeseries'] = 6.0
-        mem_gbz['resampled'] = 2
-    elif mem_gbz['timeseries'] > 8.0:
-        mem_gbz['timeseries'] = 8.0
-        mem_gbz['resampled'] = 3
 
     return mem_gbz
 

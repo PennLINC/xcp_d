@@ -80,6 +80,9 @@ def init_concatenate_data_wf(TR, head_radius, name='concatenate_data_wf'):
     fd_thresh = config.workflow.fd_thresh
     atlases = config.execution.atlases
 
+    # Guess memory needs since they can't be estimated from the inputs
+    mem_gb = {'bold': 6.0, 'volume': 1.0}
+
     workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.
 """
@@ -137,6 +140,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     concatenate_inputs = pe.Node(
         ConcatenateInputs(),
         name='concatenate_inputs',
+        mem_gb=mem_gb['bold'],
     )
 
     workflow.connect([
@@ -157,6 +161,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
     qc_report_wf = init_qc_report_wf(
         TR=TR,
         head_radius=head_radius,
+        mem_gb=mem_gb,
         name='concat_qc_report_wf',
     )
     qc_report_wf.inputs.inputnode.dummy_scans = 0

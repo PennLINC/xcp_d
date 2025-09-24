@@ -28,6 +28,7 @@ LOGGER = logging.getLogger('nipype.workflow')
 def init_qc_report_wf(
     TR,
     head_radius,
+    mem_gb,
     name='qc_report_wf',
 ):
     """Generate quality control figures and a QC file.
@@ -45,6 +46,7 @@ def init_qc_report_wf(
                 wf = init_qc_report_wf(
                     TR=0.5,
                     head_radius=50,
+                    mem_gb=mem_gb,
                     name="qc_report_wf",
                 )
 
@@ -52,6 +54,8 @@ def init_qc_report_wf(
     ----------
     %(TR)s
     %(head_radius)s
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "qc_report_wf".
 
@@ -159,7 +163,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_boldmask_to_t1w',
-            mem_gb=1,
+            mem_gb=mem_gb['volume'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -181,7 +185,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_boldmask_to_mni',
-            mem_gb=1,
+            mem_gb=mem_gb['volume'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -200,7 +204,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_anatmask_to_t1w',
-            mem_gb=1,
+            mem_gb=mem_gb['volume'] * 2,
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -248,7 +252,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_dseg_to_bold',
-            mem_gb=3,
+            mem_gb=mem_gb['volume'] * 2,
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -264,7 +268,7 @@ def init_qc_report_wf(
                 template_mask=nlin2009casym_brain_mask,
             ),
             name='make_linc_qc',
-            mem_gb=2,
+            mem_gb=mem_gb['volume'],
         )
         workflow.connect([
             (inputnode, make_linc_qc, [
@@ -307,7 +311,7 @@ def init_qc_report_wf(
         make_qc_plots_nipreps = pe.Node(
             QCPlots(TR=TR, head_radius=head_radius),
             name='make_qc_plots_nipreps',
-            mem_gb=2,
+            mem_gb=mem_gb['bold'] * 2,
         )
         workflow.connect([
             (inputnode, make_qc_plots_nipreps, [
@@ -406,7 +410,7 @@ def init_qc_report_wf(
         make_qc_plots_es = pe.Node(
             QCPlotsES(TR=TR, standardize=config.execution.confounds_config is None),
             name='make_qc_plots_es',
-            mem_gb=2,
+            mem_gb=mem_gb['bold'] * 2,
         )
         workflow.connect([
             (inputnode, make_qc_plots_es, [
@@ -483,7 +487,7 @@ def init_execsummary_functional_plots_wf(
                     preproc_nifti=None,
                     t1w_available=True,
                     t2w_available=True,
-                    mem_gb={"resampled": 1},
+                    mem_gb={"bold": 1},
                     name="execsummary_functional_plots_wf",
                 )
 
@@ -602,7 +606,7 @@ def init_execsummary_functional_plots_wf(
     calculate_mean_bold = pe.Node(
         BinaryMath(expression='np.mean(img, axis=3)'),
         name='calculate_mean_bold',
-        mem_gb=mem_gb['timeseries'],
+        mem_gb=mem_gb['bold'],
     )
     workflow.connect([
         (mask_preproc_nifti, calculate_mean_bold, [('out_file', 'in_file')]),
@@ -650,7 +654,7 @@ def init_execsummary_functional_plots_wf(
         resample_bold_to_anat = pe.Node(
             ResampleToImage(),
             name=f'resample_bold_to_{anat}',
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, resample_bold_to_anat, [(anat, 'target_file')]),
