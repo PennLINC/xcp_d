@@ -139,7 +139,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
         ])  # fmt:skip
 
         parcellate_surface_wf = init_parcellate_cifti_wf(
-            mem_gb={'resampled': 2},
+            mem_gb={'bold': 2},
             compute_mask=True,
             name=f'parcellate_{file_to_parcellate}_wf',
         )

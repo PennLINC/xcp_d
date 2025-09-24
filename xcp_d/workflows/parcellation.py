@@ -246,7 +246,7 @@ def init_parcellate_cifti_wf(
             from xcp_d.workflows.connectivity import init_parcellate_cifti_wf
 
             with mock_config():
-                wf = init_parcellate_cifti_wf(mem_gb={"resampled": 2})
+                wf = init_parcellate_cifti_wf(mem_gb={"bold": 2})
 
     Parameters
     ----------
