@@ -46,7 +46,7 @@ def init_alff_wf(
                 wf = init_alff_wf(
                     name_source="/path/to/file.nii.gz",
                     TR=2.,
-                    mem_gb={"volume": 0.1},
+                    mem_gb={"bold": 0.1},
                     name="alff_wf",
                 )
 
