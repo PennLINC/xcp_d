@@ -685,7 +685,7 @@ def _create_mem_gb(bold_fname):
     bold_size_gb = bold_img.get_fdata().nbytes / (1024**3)
     mem_gbz = {
         'bold': bold_size_gb,
-        'volume': bold_size_gb / bold_img.shape[-1]
+        'volume': bold_size_gb / bold_img.shape[-1],
     }
 
     return mem_gbz
