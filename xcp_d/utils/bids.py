@@ -293,6 +293,10 @@ def collect_data(
     t2w_files = layout.get(return_type='file', subject=participant_label, **queries['t2w'])
     if not t1w_files and not t2w_files:
         raise FileNotFoundError('No T1w or T2w files found.')
+    elif t1w_files and t2w_files and (input_type == 'fmriprep'):
+        LOGGER.info('Assuming T2w is in T1w space.')
+        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
     elif t1w_files and t2w_files:
         LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
         queries['t2w']['space'] = 'T1w'
