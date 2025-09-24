@@ -681,11 +681,21 @@ def _transpose_lol(lol):
 
 
 def _create_mem_gb(bold_fname):
+    # Load only the header to get shape and data type information
     bold_img = nb.load(bold_fname)
-    bold_size_gb = bold_img.get_fdata().nbytes / (1024**3)
+
+    # Calculate uncompressed memory size from header information
+    # This accounts for compression (e.g., .nii.gz files)
+    n_voxels = np.prod(bold_img.shape)
+    dtype_size = bold_img.get_data_dtype().itemsize
+    uncompressed_size_gb = (n_voxels * dtype_size) / (1024**3)
+
+    n_volumes = bold_img.shape[-1]
+
+    # Estimate memory usage based on uncompressed size
     mem_gbz = {
-        'bold': bold_size_gb,
-        'volume': bold_size_gb / bold_img.shape[-1],
+        'bold': uncompressed_size_gb,
+        'volume': uncompressed_size_gb / n_volumes,
     }
 
     return mem_gbz
