@@ -30,7 +30,7 @@ dependencies = [
     "nilearn == 0.12.1",  # 0.10.2 raises error with compcor from fMRIPrep 23
     "nipype ~= 1.10.0",
     "nireports ~= 25.3.0",
-    "niworkflows == 1.14.1",
+    "niworkflows == 1.14.2",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
     "numpy ~= 2.0",
