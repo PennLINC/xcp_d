@@ -182,7 +182,7 @@ def describe_atlases(atlases):
         'HCP': 'the HCP CIFTI subcortical atlas [@glasser2013minimal]',
         'MIDB': (
             'the MIDB precision brain atlas derived from ABCD data and thresholded at 75% '
-            'probability [@hermosillo2022precision]'
+            'probability [@hermosillo2024precision]'
         ),
         'MyersLabonte': (
             'the Myers-Labonte infant atlas thresholded at 50% probability [@myers2023functional]'

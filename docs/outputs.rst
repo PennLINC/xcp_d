@@ -64,7 +64,7 @@ CIFTI subcortical parcellation :footcite:p:`glasser2013minimal`.
 The cortical atlases are the Glasser :footcite:p:`Glasser_2016`, the
 Gordon :footcite:p:`Gordon_2014`,
 the MIDB precision brain atlas derived from ABCD data and thresholded at 75% probability
-:footcite:p:`hermosillo2022precision`,
+:footcite:p:`hermosillo2024precision`,
 and the Myers-Labonte infant atlas thresholded at 50% probability :footcite:`myers2023functional`.
 The combined cortical/subcortical atlases are 10 different resolutions of the
 4S (Schaefer Supplemented with Subcortical Structures) atlas.
