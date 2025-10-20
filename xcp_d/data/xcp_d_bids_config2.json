@@ -3,20 +3,20 @@
   "entities": [
     {
       "name": "cohort",
-      "pattern": "(?:^|_)cohort-([0-9]+)",
+      "pattern": "[_/\\\\]+cohort-([0-9]+)",
       "dtype": "int"
     },
     {
       "name": "statistic",
-      "pattern": "(?:^|_)stat-([a-zA-Z0-9]+)"
+      "pattern": "[_/\\\\]+stat-([a-zA-Z0-9+]+)"
     },
     {
       "name": "segmentation",
-      "pattern": "seg-([a-zA-Z0-9]+)"
+      "pattern": "[_/\\\\]+seg-([a-zA-Z0-9+]+)"
     },
     {
       "name": "hash",
-      "pattern": "hash-([a-zA-Z0-9+]+)"
+      "pattern": "[_/\\\\]+hash-([a-zA-Z0-9+]+)"
     }
   ],
   "default_path_patterns": [
