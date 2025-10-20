@@ -15,10 +15,6 @@
       "pattern": "[_/\\\\]+stat-([a-zA-Z0-9+]+)"
     },
     {
-      "name": "segmentation",
-      "pattern": "[_/\\\\]+seg-([a-zA-Z0-9+]+)"
-    },
-    {
       "name": "hash",
       "pattern": "[_/\\\\]+hash-([a-zA-Z0-9+]+)"
     }
