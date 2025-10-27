@@ -528,6 +528,8 @@ def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
         annotate=False,
         vmin=vmin,
         vmax=vmax,
+        colorbar=False,
+        black_bg=True,
     )
 
     # Load the surface mesh (GIFTI format)
