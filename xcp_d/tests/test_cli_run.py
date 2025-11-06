@@ -719,8 +719,6 @@ def test_build_parser_06(tmp_path_factory, mode, file_format, expectation):
 
 def test_parse_args_01(tmp_path_factory):
     """Test parser._build_parser with nibabies input type and one-to-all mapping."""
-    from pprint import pformat
-
     skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
     tmpdir = tmp_path_factory.mktemp('test_parse_args_01')
     bids_dir = tmpdir / 'bids'
@@ -746,7 +744,7 @@ def test_parse_args_01(tmp_path_factory):
 
     assert config.execution.fmri_dir == bids_dir
     assert config.execution.output_dir == out_dir
-    assert config.execution.processing_list == [['01',  '', ['V02', 'V03', 'V04']]]
+    assert config.execution.processing_list == [['01', '', ['V02', 'V03', 'V04']]]
     _reset_config()
 
 
