@@ -1006,8 +1006,7 @@ def parse_args(args=None, namespace=None):
                 if len(set(anat_sessions)) == 1:
                     # Fairly uncommon scenario where only one session has anatomical data
                     # but there are multiple functional sessions.
-                    for func_session in func_sessions:
-                        processing_groups.append([subject_id, anat_sessions[0], [func_session]])
+                    processing_groups.append([subject_id, anat_sessions[0], func_sessions])
                 elif len(func_only) == 0:
                     # Anatomical data for each functional session
                     for func_session in func_sessions:

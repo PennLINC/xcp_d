@@ -8,8 +8,10 @@ from pathlib import Path
 import pytest
 from niworkflows.utils.testing import generate_bids_skeleton
 
+from xcp_d import config
 from xcp_d.cli import parser
 from xcp_d.data import load as load_data
+from xcp_d.tests.test_config import _reset_config
 from xcp_d.tests.utils import modified_environ
 
 build_log = logging.getLogger()
@@ -715,14 +717,12 @@ def test_build_parser_06(tmp_path_factory, mode, file_format, expectation):
     assert opts.file_format == expectation
 
 
-def test_build_parser_07(tmp_path_factory):
+def test_parse_args_01(tmp_path_factory):
     """Test parser._build_parser with nibabies input type and one-to-all mapping."""
-    from xcp_d import config
-
-    config.from_dict({})
+    from pprint import pformat
 
     skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
-    tmpdir = tmp_path_factory.mktemp('test_build_parser_07')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_01')
     bids_dir = tmpdir / 'bids'
     generate_bids_skeleton(str(bids_dir), str(skeleton))
     out_dir = tmpdir / 'out'
@@ -742,21 +742,18 @@ def test_build_parser_07(tmp_path_factory):
         '--input-type',
         'nibabies',
     ]
-    parser_obj = parser._build_parser()
-    opts = parser_obj.parse_args(args=base_args, namespace=None)
-    assert opts.fmri_dir == bids_dir
-    assert opts.output_dir == out_dir
-    assert config.execution.processing_list == [('01', '', ['V02', 'V04', 'V06'])]
+    parser.parse_args(args=base_args, namespace=None)
+
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [['01',  '', ['V02', 'V03', 'V04']]]
+    _reset_config()
 
 
-def test_build_parser_08(tmp_path_factory):
+def test_parse_args_02(tmp_path_factory):
     """Test parser._build_parser with nibabies input type and one-to-one mapping."""
-    from xcp_d import config
-
-    config.from_dict({})
-
     skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
-    tmpdir = tmp_path_factory.mktemp('test_build_parser_08')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_02')
     bids_dir = tmpdir / 'bids'
     generate_bids_skeleton(str(bids_dir), str(skeleton))
     out_dir = tmpdir / 'out'
@@ -776,25 +773,21 @@ def test_build_parser_08(tmp_path_factory):
         '--input-type',
         'nibabies',
     ]
-    parser_obj = parser._build_parser()
-    opts = parser_obj.parse_args(args=base_args, namespace=None)
-    assert opts.fmri_dir == bids_dir
-    assert opts.output_dir == out_dir
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
     assert config.execution.processing_list == [
-        ('01', 'V02', ['V02']),
-        ('01', 'V04', ['V04']),
-        ('01', 'V06', ['V06']),
+        ['01', 'V02', ['V02']],
+        ['01', 'V03', ['V03']],
+        ['01', 'V04', ['V04']],
     ]
+    _reset_config()
 
 
-def test_build_parser_09(tmp_path_factory):
+def test_parse_args_03(tmp_path_factory):
     """Test parser._build_parser with nibabies input type and one-anat-session mapping."""
-    from xcp_d import config
-
-    config.from_dict({})
-
     skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_anat_session.yml')
-    tmpdir = tmp_path_factory.mktemp('test_build_parser_09')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_03')
     bids_dir = tmpdir / 'bids'
     generate_bids_skeleton(str(bids_dir), str(skeleton))
     out_dir = tmpdir / 'out'
@@ -814,8 +807,8 @@ def test_build_parser_09(tmp_path_factory):
         '--input-type',
         'nibabies',
     ]
-    parser_obj = parser._build_parser()
-    opts = parser_obj.parse_args(args=base_args, namespace=None)
-    assert opts.fmri_dir == bids_dir
-    assert opts.output_dir == out_dir
-    assert config.execution.processing_list == [('01', 'V02', ['V02', 'V04', 'V06'])]
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [['01', 'V02', ['V02', 'V03', 'V04']]]
+    _reset_config()
