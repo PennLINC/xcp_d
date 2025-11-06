@@ -719,6 +719,8 @@ def test_build_parser_07(tmp_path_factory):
     """Test parser._build_parser with nibabies input type and one-to-all mapping."""
     from xcp_d import config
 
+    config.from_dict({})
+
     skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
     tmpdir = tmp_path_factory.mktemp('test_build_parser_07')
     bids_dir = tmpdir / 'bids'
@@ -750,6 +752,8 @@ def test_build_parser_07(tmp_path_factory):
 def test_build_parser_08(tmp_path_factory):
     """Test parser._build_parser with nibabies input type and one-to-one mapping."""
     from xcp_d import config
+
+    config.from_dict({})
 
     skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
     tmpdir = tmp_path_factory.mktemp('test_build_parser_08')
@@ -786,6 +790,8 @@ def test_build_parser_08(tmp_path_factory):
 def test_build_parser_09(tmp_path_factory):
     """Test parser._build_parser with nibabies input type and one-anat-session mapping."""
     from xcp_d import config
+
+    config.from_dict({})
 
     skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_anat_session.yml')
     tmpdir = tmp_path_factory.mktemp('test_build_parser_09')
