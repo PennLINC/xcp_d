@@ -728,8 +728,8 @@ def test_build_parser_07(tmp_path_factory):
 
     # Parameters for nibabies input type
     base_args = [
-        bids_dir,
-        out_dir,
+        str(bids_dir),
+        str(out_dir),
         'participant',
         '--mode',
         'hbcd',
@@ -760,8 +760,8 @@ def test_build_parser_08(tmp_path_factory):
 
     # Parameters for nibabies input type
     base_args = [
-        bids_dir,
-        out_dir,
+        str(bids_dir),
+        str(out_dir),
         'participant',
         '--mode',
         'hbcd',
@@ -796,8 +796,8 @@ def test_build_parser_09(tmp_path_factory):
 
     # Parameters for nibabies input type
     base_args = [
-        bids_dir,
-        out_dir,
+        str(bids_dir),
+        str(out_dir),
         'participant',
         '--mode',
         'hbcd',
