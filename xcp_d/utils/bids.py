@@ -334,14 +334,14 @@ def collect_data(
                     )
                     if t2w_to_t1w_found:
                         # Prepare for T2w --> T1w --> template chain
-                        LOGGER.info(
+                        LOGGER.warning(
                             'T2w-to-template transform not found, but T2w-to-T1w transform found. '
                             'Processing both T1w and T2w.'
                         )
                         queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
                         queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
                     else:
-                        LOGGER.info(
+                        LOGGER.warning(
                             'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
                             'Processing T1w only.'
                         )
@@ -369,7 +369,7 @@ def collect_data(
                         queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
                         queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
                     else:
-                        LOGGER.info(
+                        LOGGER.warning(
                             'T2w-to-template transform found, but no T1w-to-T2w transform found. '
                             'Processing T2w only.'
                         )
@@ -399,7 +399,7 @@ def collect_data(
         queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
 
     elif t1w_files and not t2w_files:
-        LOGGER.info('T1w found, but no T2w. Enabling T1w-only processing.')
+        LOGGER.warning('T1w found, but no T2w. Enabling T1w-only processing.')
         queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
         queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
 
