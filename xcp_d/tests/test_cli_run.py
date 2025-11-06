@@ -6,8 +6,10 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from niworkflows.utils.testing import generate_bids_skeleton
 
 from xcp_d.cli import parser
+from xcp_d.data import load as load_data
 from xcp_d.tests.utils import modified_environ
 
 build_log = logging.getLogger()
@@ -711,3 +713,103 @@ def test_build_parser_06(tmp_path_factory, mode, file_format, expectation):
     opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
     assert opts.file_format == expectation
+
+
+def test_build_parser_07(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-to-all mapping."""
+    from xcp_d import config
+
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_07')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        bids_dir,
+        out_dir,
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+    ]
+    parser_obj = parser._build_parser()
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    assert opts.fmri_dir == bids_dir
+    assert opts.output_dir == out_dir
+    assert config.execution.processing_list == [('01', '', ['V02', 'V04', 'V06'])]
+
+
+def test_build_parser_08(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-to-one mapping."""
+    from xcp_d import config
+
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_08')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        bids_dir,
+        out_dir,
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+    ]
+    parser_obj = parser._build_parser()
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    assert opts.fmri_dir == bids_dir
+    assert opts.output_dir == out_dir
+    assert config.execution.processing_list == [
+        ('01', 'V02', ['V02']),
+        ('01', 'V04', ['V04']),
+        ('01', 'V06', ['V06']),
+    ]
+
+
+def test_build_parser_09(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-anat-session mapping."""
+    from xcp_d import config
+
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_anat_session.yml')
+    tmpdir = tmp_path_factory.mktemp('test_build_parser_09')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        bids_dir,
+        out_dir,
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+    ]
+    parser_obj = parser._build_parser()
+    opts = parser_obj.parse_args(args=base_args, namespace=None)
+    assert opts.fmri_dir == bids_dir
+    assert opts.output_dir == out_dir
+    assert config.execution.processing_list == [('01', 'V02', ['V02', 'V04', 'V06'])]
