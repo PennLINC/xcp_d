@@ -1,5 +1,26 @@
 # What's New
 
+
+## 0.13.0 (November 11, 2025)
+
+### 🎉 Exciting New Features
+
+* Assume T1w and T2w are in same space if using fMRIPrep derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/1514
+
+### 🐛 Bug Fixes
+
+* Estimate memory requirements more accurately by @tsalo in https://github.com/PennLINC/xcp_d/pull/1513
+* Remove colorbar from brainsprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1529
+* Account for longitudinal studies with a single anatomical session by @tsalo in https://github.com/PennLINC/xcp_d/pull/1534
+
+### Other Changes
+
+* Change metavar for `--mem-mb` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1510
+* Update citation for MIDB atlas by @tsalo in https://github.com/PennLINC/xcp_d/pull/1523
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.12.0...0.13.0
+
+
 ## 0.12.0
 
 ### 🎉 Exciting New Features
