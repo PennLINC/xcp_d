@@ -97,6 +97,7 @@ def test_skip_reho(skip_opts, base_parser):
 
 def test_skip_parcellation(skip_opts, base_parser, caplog):
     """Test skipping parcellation - should set atlases to empty list and also skip connectivity."""
+    caplog.set_level(logging.INFO)
     opts = deepcopy(skip_opts)
     opts.skip_outputs = ['parcellation']
     opts.atlases = ['Glasser', 'Gordon']
@@ -112,6 +113,7 @@ def test_skip_parcellation(skip_opts, base_parser, caplog):
 
 def test_skip_connectivity(skip_opts, base_parser, caplog):
     """Test skipping connectivity - should set correlation_lengths to empty but keep atlases."""
+    caplog.set_level(logging.INFO)
     opts = deepcopy(skip_opts)
     opts.skip_outputs = ['connectivity']
     opts.atlases = ['Glasser']
@@ -187,6 +189,7 @@ def test_skip_parcellation_with_empty_atlases(skip_opts, base_parser, caplog):
 
 def test_skip_connectivity_with_empty_atlases(skip_opts, base_parser, caplog):
     """Test skipping connectivity when atlases is already empty."""
+    caplog.set_level(logging.INFO)
     caplog.clear()
     opts = deepcopy(skip_opts)
     opts.skip_outputs = ['connectivity']
@@ -324,6 +327,7 @@ def test_skip_connectivity_with_correlation_lengths_mixed(skip_opts, base_parser
 
 def test_skip_parcellation_and_connectivity(skip_opts, base_parser, caplog):
     """Test skipping both parcellation and connectivity explicitly."""
+    caplog.set_level(logging.INFO)
     opts = deepcopy(skip_opts)
     opts.skip_outputs = ['parcellation', 'connectivity']
     opts.atlases = ['Glasser', 'Gordon']
