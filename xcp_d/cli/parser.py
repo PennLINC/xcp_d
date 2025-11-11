@@ -1202,7 +1202,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else 'all'
+        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else ['all']
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format

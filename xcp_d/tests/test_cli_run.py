@@ -383,6 +383,7 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
     assert opts.min_coverage == 0.4
     assert opts.smoothing == 0
     assert opts.report_output_level == 'root'
+    assert opts.correlation_lengths == ['all']  # Should be a list, not a string
 
 
 def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
