@@ -854,8 +854,9 @@ def test_validate_parameters_skip_connectivity(base_opts, base_parser, caplog):
 
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
-    assert opts.atlases == []
-    assert 'Skipping connectivity (and parcellation) as requested' in caplog.text
+    assert opts.atlases == ['Glasser']  # Atlases preserved for time series extraction
+    assert opts.correlation_lengths == []  # correlation_lengths set to empty
+    assert 'Skipping connectivity as requested' in caplog.text
 
 
 def test_validate_parameters_skip_multiple(base_opts, base_parser):
@@ -869,7 +870,8 @@ def test_validate_parameters_skip_multiple(base_opts, base_parser):
     assert 'alff' in opts.skip_outputs
     assert 'reho' in opts.skip_outputs
     assert 'connectivity' in opts.skip_outputs
-    assert opts.atlases == []
+    assert opts.atlases == ['Glasser']  # Atlases preserved for time series extraction
+    assert opts.correlation_lengths == []  # correlation_lengths set to empty
 
 
 def test_validate_parameters_skip_alff_no_bandpass(base_opts, base_parser, caplog):
