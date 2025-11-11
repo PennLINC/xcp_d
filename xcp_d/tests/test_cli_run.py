@@ -836,6 +836,7 @@ def test_validate_parameters_skip_reho(base_opts, base_parser):
 
 def test_validate_parameters_skip_parcellation(base_opts, base_parser, caplog):
     """Test parser._validate_parameters with --skip parcellation option."""
+    caplog.set_level(logging.INFO)
     opts = deepcopy(base_opts)
     opts.skip_outputs = ['parcellation']
     opts.atlases = ['Glasser', 'Gordon']
@@ -848,6 +849,7 @@ def test_validate_parameters_skip_parcellation(base_opts, base_parser, caplog):
 
 def test_validate_parameters_skip_connectivity(base_opts, base_parser, caplog):
     """Test parser._validate_parameters with --skip connectivity option."""
+    caplog.set_level(logging.INFO)
     opts = deepcopy(base_opts)
     opts.skip_outputs = ['connectivity']
     opts.atlases = ['Glasser']
