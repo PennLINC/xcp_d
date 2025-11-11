@@ -339,10 +339,10 @@ def _build_parser():
             "'reho' (skip ReHo calculation), "
             "'parcellation' (skip parcellation and time series extraction), "
             "'connectivity' (skip functional connectivity calculations). "
-            "Multiple options can be specified. "
+            'Multiple options can be specified. '
             "Note: Skipping 'parcellation' will also skip 'connectivity'. "
             "Skipping 'connectivity' alone will still perform parcellation "
-            "to extract time series, but will not compute correlation matrices. "
+            'to extract time series, but will not compute correlation matrices. '
             "Skipping 'alff' is only relevant when bandpass filtering is enabled."
         ),
     )
@@ -1381,9 +1381,7 @@ def _validate_parameters(opts, build_log, parser):
 
         # Warn if ALFF is skipped but bandpass filter is disabled
         if 'alff' in opts.skip_outputs and not opts.bandpass_filter:
-            build_log.warning(
-                'Skipping ALFF has no effect when bandpass filtering is disabled.'
-            )
+            build_log.warning('Skipping ALFF has no effect when bandpass filtering is disabled.')
 
     # Some parameters are automatically set depending on the input type.
     if opts.input_type == 'ukb':
