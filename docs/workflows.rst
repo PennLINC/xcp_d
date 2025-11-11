@@ -402,9 +402,13 @@ The ``--skip`` parameter accepts the following options:
 -  ``parcellation``: Skip parcellation and time series extraction.
    This is functionally equivalent to setting ``--atlases`` to an empty list or using
    the ``--skip-parcellation`` flag.
+   **Note that skipping parcellation will automatically skip connectivity as well,
+   since connectivity requires parcellated data.**
 
--  ``connectivity``: Skip functional connectivity calculations.
-   Note that this will also skip parcellation, as connectivity requires parcellated data.
+-  ``connectivity``: Skip functional connectivity matrix calculations.
+   Parcellation will still be performed to extract parcellated time series,
+   but correlation matrices will not be computed.
+   This is useful when you need time series but not connectivity matrices.
 
 Multiple options can be specified simultaneously.
 For example, ``--skip alff reho`` will skip both ALFF and ReHo calculations.
@@ -413,9 +417,10 @@ For example, ``--skip alff reho`` will skip both ALFF and ReHo calculations.
 
    Skipping certain steps can significantly reduce processing time and disk usage,
    especially for large datasets.
-   For instance, if you only need dense time series without parcellation or connectivity matrices,
-   using ``--skip parcellation`` will avoid the computational overhead of atlas-based
-   parcellation and connectivity matrix generation.
+
+   - Use ``--skip connectivity`` if you need parcellated time series but not correlation matrices.
+   - Use ``--skip parcellation`` if you don't need either parcellated time series or connectivity
+     matrices (this automatically skips connectivity too).
 
 .. tip::
 

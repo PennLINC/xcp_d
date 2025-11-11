@@ -153,8 +153,10 @@ Command-Line Arguments
       -  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
       -  ``parcellation``: Skip parcellation and time series extraction.
          This is equivalent to using ``--atlases`` with an empty list.
-      -  ``connectivity``: Skip functional connectivity calculations.
-         This will also skip parcellation, as connectivity requires parcellated data.
+         **This will automatically skip connectivity as well, since connectivity requires parcellated data.**
+      -  ``connectivity``: Skip functional connectivity matrix calculations.
+         Parcellation will still be performed to extract time series,
+         but correlation matrices will not be computed.
 
       You can specify multiple options to skip several steps at once.
 
@@ -163,17 +165,17 @@ Command-Line Arguments
          # Skip ALFF and ReHo calculations
          xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip alff reho
 
-         # Skip only ReHo
-         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip reho
+         # Skip only connectivity (parcellation still runs to extract time series)
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip connectivity
 
-         # Skip parcellation and connectivity
+         # Skip parcellation (this automatically skips connectivity too)
          xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip parcellation
 
       .. tip::
 
          Use ``--skip`` to optimize processing time when you only need specific outputs.
-         For example, if you only need dense time series without any parcellation or connectivity
-         matrices, use ``--skip parcellation`` to avoid unnecessary computations.
+         For example, if you need parcellated time series but not connectivity matrices,
+         use ``--skip connectivity``. If you don't need either, use ``--skip parcellation``.
 
 
 **************
