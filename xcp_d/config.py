@@ -106,8 +106,8 @@ CONFIG_FILENAME = 'xcp_d.toml'
 
 try:
     set_start_method('forkserver')
-except RuntimeError:
-    pass  # context has been already set
+except (RuntimeError, ValueError):
+    pass  # context has been already set or not available (e.g., Windows)
 finally:
     # Defer all custom import for after initializing the forkserver and
     # ignoring the most annoying warnings
