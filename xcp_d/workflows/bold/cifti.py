@@ -406,7 +406,6 @@ the following post-processing was performed.
                 ('outputnode.timeseries', 'inputnode.timeseries'),
                 ('outputnode.correlations', 'inputnode.correlations'),
                 ('outputnode.correlations_exact', 'inputnode.correlations_exact'),
-                ('outputnode.parcellated_reho', 'inputnode.parcellated_reho'),
             ]),
         ])  # fmt:skip
 
@@ -414,6 +413,9 @@ the following post-processing was performed.
         if not skip_reho:
             workflow.connect([
                 (reho_wf, connectivity_wf, [('outputnode.reho', 'inputnode.reho')]),
+                (connectivity_wf, postproc_derivatives_wf, [
+                    ('outputnode.parcellated_reho', 'inputnode.parcellated_reho'),
+                ]),
             ])  # fmt:skip
 
         # Connect ALFF to connectivity workflow if not skipped
