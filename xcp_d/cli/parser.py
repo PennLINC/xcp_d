@@ -341,6 +341,8 @@ def _build_parser():
             "'connectivity' (skip functional connectivity calculations). "
             "Multiple options can be specified. "
             "Note: Skipping 'parcellation' will also skip 'connectivity'. "
+            "Skipping 'connectivity' alone will still perform parcellation "
+            "to extract time series, but will not compute correlation matrices. "
             "Skipping 'alff' is only relevant when bandpass filtering is enabled."
         ),
     )
@@ -1349,21 +1351,33 @@ def _validate_parameters(opts, build_log, parser):
     # Handle --skip parameter
     if opts.skip_outputs:
         # Handle 'parcellation' skip option
+        # If parcellation is skipped, connectivity must also be skipped
         if 'parcellation' in opts.skip_outputs:
             if opts.atlases:
                 build_log.info(
                     'Skipping parcellation as requested. Setting atlases to empty list.'
                 )
                 opts.atlases = []
-
-        # Handle 'connectivity' skip option (also skips parcellation)
-        if 'connectivity' in opts.skip_outputs:
-            if opts.atlases:
+            # Automatically skip connectivity when parcellation is skipped
+            if 'connectivity' not in opts.skip_outputs:
                 build_log.info(
-                    'Skipping connectivity (and parcellation) as requested. '
-                    'Setting atlases to empty list.'
+                    'Automatically skipping connectivity because parcellation is skipped.'
                 )
-                opts.atlases = []
+                opts.skip_outputs.append('connectivity')
+
+        # Handle 'connectivity' skip option independently
+        # When connectivity is skipped but parcellation is not,
+        # parcellation will still run to extract time series,
+        # but no correlation matrices will be computed
+        if 'connectivity' in opts.skip_outputs and 'parcellation' not in opts.skip_outputs:
+            build_log.info(
+                'Skipping connectivity as requested. '
+                'Parcellation will still be performed to extract time series, '
+                'but no correlation matrices will be computed.'
+            )
+            # Set correlation_lengths to empty to skip connectivity calculations
+            # while still performing parcellation
+            opts.correlation_lengths = []
 
         # Warn if ALFF is skipped but bandpass filter is disabled
         if 'alff' in opts.skip_outputs and not opts.bandpass_filter:

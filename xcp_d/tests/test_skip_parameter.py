@@ -96,7 +96,7 @@ def test_skip_reho(skip_opts, base_parser):
 
 
 def test_skip_parcellation(skip_opts, base_parser, caplog):
-    """Test skipping parcellation - should set atlases to empty list."""
+    """Test skipping parcellation - should set atlases to empty list and also skip connectivity."""
     opts = deepcopy(skip_opts)
     opts.skip_outputs = ['parcellation']
     opts.atlases = ['Glasser', 'Gordon']
@@ -104,12 +104,14 @@ def test_skip_parcellation(skip_opts, base_parser, caplog):
     validated_opts = parser._validate_parameters(opts, build_log, parser=base_parser)
 
     assert 'parcellation' in validated_opts.skip_outputs
+    assert 'connectivity' in validated_opts.skip_outputs  # automatically added
     assert validated_opts.atlases == []
     assert 'Skipping parcellation as requested' in caplog.text
+    assert 'Automatically skipping connectivity because parcellation is skipped' in caplog.text
 
 
 def test_skip_connectivity(skip_opts, base_parser, caplog):
-    """Test skipping connectivity - should set atlases to empty list."""
+    """Test skipping connectivity - should set correlation_lengths to empty but keep atlases."""
     opts = deepcopy(skip_opts)
     opts.skip_outputs = ['connectivity']
     opts.atlases = ['Glasser']
@@ -117,8 +119,12 @@ def test_skip_connectivity(skip_opts, base_parser, caplog):
     validated_opts = parser._validate_parameters(opts, build_log, parser=base_parser)
 
     assert 'connectivity' in validated_opts.skip_outputs
-    assert validated_opts.atlases == []
-    assert 'Skipping connectivity (and parcellation) as requested' in caplog.text
+    # Atlases should be preserved for parcellation (time series extraction)
+    assert validated_opts.atlases == ['Glasser']
+    # correlation_lengths should be set to empty to skip connectivity calculations
+    assert validated_opts.correlation_lengths == []
+    assert 'Skipping connectivity as requested' in caplog.text
+    assert 'Parcellation will still be performed to extract time series' in caplog.text
 
 
 def test_skip_multiple_outputs(skip_opts, base_parser):
@@ -133,7 +139,10 @@ def test_skip_multiple_outputs(skip_opts, base_parser):
     assert 'alff' in validated_opts.skip_outputs
     assert 'reho' in validated_opts.skip_outputs
     assert 'connectivity' in validated_opts.skip_outputs
-    assert validated_opts.atlases == []
+    # When connectivity is skipped, atlases should be preserved for parcellation
+    assert validated_opts.atlases == ['Glasser', 'Gordon']
+    # correlation_lengths should be set to empty
+    assert validated_opts.correlation_lengths == []
 
 
 def test_skip_all_outputs(skip_opts, base_parser):
@@ -186,9 +195,12 @@ def test_skip_connectivity_with_empty_atlases(skip_opts, base_parser, caplog):
     validated_opts = parser._validate_parameters(opts, build_log, parser=base_parser)
 
     assert 'connectivity' in validated_opts.skip_outputs
+    # Atlases should remain empty
     assert validated_opts.atlases == []
-    # Should not log the message since atlases is already empty
-    assert 'Skipping connectivity (and parcellation) as requested' not in caplog.text
+    # correlation_lengths should still be set to empty
+    assert validated_opts.correlation_lengths == []
+    # Should still log the connectivity skip message
+    assert 'Skipping connectivity as requested' in caplog.text
 
 
 def test_skip_alff_and_reho_only(skip_opts, base_parser):
@@ -255,3 +267,71 @@ def test_skip_parameter_help_text():
     assert 'reho' in skip_action.help
     assert 'parcellation' in skip_action.help
     assert 'connectivity' in skip_action.help
+
+
+def test_skip_connectivity_with_correlation_lengths_all(skip_opts, base_parser):
+    """Test skipping connectivity when correlation_lengths is ['all']."""
+    opts = deepcopy(skip_opts)
+    opts.mode = 'linc'  # linc mode sets correlation_lengths to ['all']
+    opts.skip_outputs = ['connectivity']
+    opts.atlases = ['Glasser']
+
+    validated_opts = parser._validate_parameters(opts, build_log, parser=base_parser)
+
+    assert 'connectivity' in validated_opts.skip_outputs
+    assert validated_opts.atlases == ['Glasser']
+    # correlation_lengths should be set to empty, regardless of initial value
+    assert validated_opts.correlation_lengths == []
+
+
+def test_skip_connectivity_with_correlation_lengths_numbers(skip_opts, base_parser):
+    """Test skipping connectivity when correlation_lengths contains numeric values."""
+    opts = deepcopy(skip_opts)
+    opts.mode = 'abcd'
+    opts.skip_outputs = ['connectivity']
+    opts.atlases = ['Glasser']
+    opts.motion_filter_type = 'lp'
+    opts.band_stop_min = 10
+    # Simulate user setting --create-matrices 300 480
+    opts.correlation_lengths = ['300', '480']
+
+    validated_opts = parser._validate_parameters(opts, build_log, parser=base_parser)
+
+    assert 'connectivity' in validated_opts.skip_outputs
+    assert validated_opts.atlases == ['Glasser']
+    # correlation_lengths should be set to empty, overriding user's values
+    assert validated_opts.correlation_lengths == []
+
+
+def test_skip_connectivity_with_correlation_lengths_mixed(skip_opts, base_parser):
+    """Test skipping connectivity when correlation_lengths contains mixed values."""
+    opts = deepcopy(skip_opts)
+    opts.mode = 'abcd'
+    opts.skip_outputs = ['connectivity']
+    opts.atlases = ['Glasser']
+    opts.motion_filter_type = 'lp'
+    opts.band_stop_min = 10
+    # Simulate user setting --create-matrices 300 all
+    opts.correlation_lengths = ['300', 'all']
+
+    validated_opts = parser._validate_parameters(opts, build_log, parser=base_parser)
+
+    assert 'connectivity' in validated_opts.skip_outputs
+    assert validated_opts.atlases == ['Glasser']
+    # correlation_lengths should be set to empty
+    assert validated_opts.correlation_lengths == []
+
+
+def test_skip_parcellation_and_connectivity(skip_opts, base_parser, caplog):
+    """Test skipping both parcellation and connectivity explicitly."""
+    opts = deepcopy(skip_opts)
+    opts.skip_outputs = ['parcellation', 'connectivity']
+    opts.atlases = ['Glasser', 'Gordon']
+
+    validated_opts = parser._validate_parameters(opts, build_log, parser=base_parser)
+
+    assert 'parcellation' in validated_opts.skip_outputs
+    assert 'connectivity' in validated_opts.skip_outputs
+    assert validated_opts.atlases == []
+    # Should log parcellation skip but not auto-add connectivity (already there)
+    assert 'Skipping parcellation as requested' in caplog.text
