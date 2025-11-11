@@ -383,6 +383,47 @@ or using other methods, such as xDF :footcite:p:`afyouni2019effective`,
 to account for the effect of motion on functional connectivity estimates (or their variance).
 
 
+**********************
+Skipping Output Steps
+**********************
+
+*XCP-D* includes a ``--skip`` parameter that allows users to
+selectively skip certain postprocessing steps to optimize processing time.
+This is particularly useful when you only need a subset of the outputs.
+
+The ``--skip`` parameter accepts the following options:
+
+-  ``alff``: Skip ALFF (Amplitude of Low-Frequency Fluctuation) calculation.
+   ALFF is only calculated when bandpass filtering is enabled,
+   so this option only has an effect when ``--bandpass-filter`` is used.
+
+-  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
+
+-  ``parcellation``: Skip parcellation and time series extraction.
+   This is functionally equivalent to setting ``--atlases`` to an empty list or using
+   the ``--skip-parcellation`` flag.
+
+-  ``connectivity``: Skip functional connectivity calculations.
+   Note that this will also skip parcellation, as connectivity requires parcellated data.
+
+Multiple options can be specified simultaneously.
+For example, ``--skip alff reho`` will skip both ALFF and ReHo calculations.
+
+.. note::
+
+   Skipping certain steps can significantly reduce processing time and disk usage,
+   especially for large datasets.
+   For instance, if you only need dense time series without parcellation or connectivity matrices,
+   using ``--skip parcellation`` will avoid the computational overhead of atlas-based
+   parcellation and connectivity matrix generation.
+
+.. tip::
+
+   The ``--skip`` parameter is compatible with all processing modes (``linc``, ``abcd``, ``hbcd``,
+   etc.) and will not affect other outputs.
+   For example, skipping ALFF will not affect ReHo or connectivity calculations.
+
+
 ****************
 Processing Steps
 ****************

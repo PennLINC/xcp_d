@@ -86,7 +86,11 @@ For more information about the 4S atlas, please see https://github.com/PennLINC/
    parameter.
 
    Alternatively, if you want to skip the parcellation step completely,
-   you can use the ``--skip-parcellation`` parameter.
+   you can use either the ``--skip parcellation`` parameter or the ``--skip-parcellation`` parameter
+   (both have the same effect).
+
+   You can also skip other postprocessing steps using the ``--skip`` parameter.
+   See :ref:`usage_cli` for more information about the ``--skip`` parameter.
 
 Atlases are written out to the ``atlases`` subfolder, following BEP038.
 
