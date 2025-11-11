@@ -1352,7 +1352,7 @@ def _validate_parameters(opts, build_log, parser):
         if 'parcellation' in opts.skip_outputs:
             if opts.atlases:
                 build_log.info(
-                    "Skipping parcellation as requested. Setting atlases to empty list."
+                    'Skipping parcellation as requested. Setting atlases to empty list.'
                 )
                 opts.atlases = []
 
@@ -1360,15 +1360,15 @@ def _validate_parameters(opts, build_log, parser):
         if 'connectivity' in opts.skip_outputs:
             if opts.atlases:
                 build_log.info(
-                    "Skipping connectivity (and parcellation) as requested. "
-                    "Setting atlases to empty list."
+                    'Skipping connectivity (and parcellation) as requested. '
+                    'Setting atlases to empty list.'
                 )
                 opts.atlases = []
 
         # Warn if ALFF is skipped but bandpass filter is disabled
         if 'alff' in opts.skip_outputs and not opts.bandpass_filter:
             build_log.warning(
-                "Skipping ALFF has no effect when bandpass filtering is disabled."
+                'Skipping ALFF has no effect when bandpass filtering is disabled.'
             )
 
     # Some parameters are automatically set depending on the input type.

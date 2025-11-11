@@ -6,9 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from xcp_d import config
 from xcp_d.cli import parser
-from xcp_d.tests.test_config import _reset_config
 
 build_log = logging.getLogger()
 build_log.setLevel(10)
@@ -233,7 +231,7 @@ def test_skip_parameter_choices():
             skip_action = action
             break
 
-    assert skip_action is not None, "skip_outputs argument not found"
+    assert skip_action is not None, 'skip_outputs argument not found'
     assert skip_action.choices == ['alff', 'reho', 'parcellation', 'connectivity']
     assert skip_action.default == []
 
@@ -251,7 +249,7 @@ def test_skip_parameter_help_text():
             skip_action = action
             break
 
-    assert skip_action is not None, "skip_outputs argument not found"
+    assert skip_action is not None, 'skip_outputs argument not found'
     assert 'Skip specific outputs during postprocessing' in skip_action.help
     assert 'alff' in skip_action.help
     assert 'reho' in skip_action.help
