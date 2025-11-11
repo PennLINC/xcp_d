@@ -325,6 +325,25 @@ def _build_parser():
         action=parser_utils.YesNoAction,
         help='After denoising, concatenate each derivative from each task across runs.',
     )
+    g_param.add_argument(
+        '--skip',
+        dest='skip_outputs',
+        action='store',
+        nargs='+',
+        default=[],
+        choices=['alff', 'reho', 'parcellation', 'connectivity'],
+        help=(
+            'Skip specific outputs during postprocessing. '
+            'Options include: '
+            "'alff' (skip ALFF calculation), "
+            "'reho' (skip ReHo calculation), "
+            "'parcellation' (skip parcellation and time series extraction), "
+            "'connectivity' (skip functional connectivity calculations). "
+            "Multiple options can be specified. "
+            "Note: Skipping 'parcellation' will also skip 'connectivity'. "
+            "Skipping 'alff' is only relevant when bandpass filtering is enabled."
+        ),
+    )
 
     g_motion_filter = parser.add_argument_group(
         title='Motion filtering parameters',
@@ -1326,6 +1345,31 @@ def _validate_parameters(opts, build_log, parser):
             'When no atlases are selected or parcellation is explicitly skipped '
             "('--skip-parcellation'), '--min-coverage' will have no effect."
         )
+
+    # Handle --skip parameter
+    if opts.skip_outputs:
+        # Handle 'parcellation' skip option
+        if 'parcellation' in opts.skip_outputs:
+            if opts.atlases:
+                build_log.info(
+                    "Skipping parcellation as requested. Setting atlases to empty list."
+                )
+                opts.atlases = []
+
+        # Handle 'connectivity' skip option (also skips parcellation)
+        if 'connectivity' in opts.skip_outputs:
+            if opts.atlases:
+                build_log.info(
+                    "Skipping connectivity (and parcellation) as requested. "
+                    "Setting atlases to empty list."
+                )
+                opts.atlases = []
+
+        # Warn if ALFF is skipped but bandpass filter is disabled
+        if 'alff' in opts.skip_outputs and not opts.bandpass_filter:
+            build_log.warning(
+                "Skipping ALFF has no effect when bandpass filtering is disabled."
+            )
 
     # Some parameters are automatically set depending on the input type.
     if opts.input_type == 'ukb':

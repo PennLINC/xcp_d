@@ -640,6 +640,8 @@ class workflow(_Config):
     """Run DCAN QC."""
     linc_qc = None
     """Run LINC QC."""
+    skip_outputs = []
+    """List of outputs to skip during postprocessing (e.g., 'alff', 'reho', 'parcellation', 'connectivity')."""
 
     @classmethod
     def init(cls):
