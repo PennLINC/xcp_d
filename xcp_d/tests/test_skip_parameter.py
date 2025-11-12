@@ -1,10 +1,16 @@
 """Tests for the --skip parameter functionality."""
 
 import logging
+import os
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
+
+# Ensure HOME environment variable is set for cross-platform compatibility
+# This is needed before importing xcp_d modules that reference config.py
+if not os.getenv('HOME'):
+    os.environ['HOME'] = os.path.expanduser('~')
 
 from xcp_d.cli import parser
 
