@@ -468,3 +468,71 @@ def test_skip_connectivity_cifti(data_dir, output_dir, working_dir):
     for pattern in connectivity_patterns:
         found.extend(glob.glob(os.path.join(out_dir, '**', pattern), recursive=True))
     assert len(found) == 0, f'Connectivity files should not be generated: {found}'
+
+
+@pytest.mark.integration
+@pytest.mark.ds001419_cifti
+def test_no_bandpass_filter_skips_alff_cifti(data_dir, output_dir, working_dir):
+    """Test that ALFF is automatically skipped when bandpass filter is disabled."""
+    test_name = 'test_no_bandpass_filter_skips_alff_cifti'
+
+    dataset_dir = download_test_data('ds001419', data_dir)
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
+
+    test_data_dir = get_test_data_path()
+    filter_file = os.path.join(test_data_dir, 'ds001419_cifti_filter.json')
+
+    from xcp_d.cli.parser import parse_args
+    from xcp_d.cli.workflow import build_workflow
+
+    # Normalize paths
+    dataset_dir = _posix_path(dataset_dir)
+    out_dir = _posix_path(out_dir)
+    work_dir = _posix_path(work_dir)
+    filter_file = _posix_path(filter_file)
+
+    parameters = [
+        dataset_dir,
+        out_dir,
+        'participant',
+        '--participant-label=01',
+        '--mode=linc',
+        f'-w={work_dir}',
+        '--dummy-scans=0',
+        '--min-time=0',
+        '--despike=n',
+        '--file-format=cifti',
+        '--input-type=fmriprep',
+        '--nuisance-regressors=acompcor_gsr',
+        '--combine-runs=n',
+        '--linc-qc=n',
+        '--abcc-qc=n',
+        '--min-coverage=0.4',
+        '--motion-filter-type=lp',
+        '--fd-thresh=5',
+        '--band-stop-min=6',
+        '--smoothing=6',
+        '--output-type=censored',
+        '--warp-surfaces-native2std=n',
+        '--atlases=Glasser',
+        f'--bids-filter-file={filter_file}',
+        '--disable-bandpass-filter',  # This should automatically skip ALFF
+    ]
+
+    with _windows_toml_loads_patch():
+        parse_args(parameters)
+
+        from xcp_d import config as _config
+
+        config_file = _config.execution.work_dir / f'config-{_config.execution.run_uuid}.toml'
+        _config.to_filename(config_file)
+        build_workflow(str(config_file), retval={})
+
+    # Check that ALFF files were NOT generated (automatically skipped due to no bandpass filter)
+    import glob
+
+    alff_files = glob.glob(os.path.join(out_dir, '**', '*alff*'), recursive=True)
+    assert len(alff_files) == 0, (
+        f'ALFF files should not be generated when bandpass filter is disabled: {alff_files}'
+    )
