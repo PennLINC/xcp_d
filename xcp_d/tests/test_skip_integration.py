@@ -45,7 +45,7 @@ def _windows_toml_loads_patch():
 
     import toml as _toml
 
-    is_windows = (_sys.platform.startswith('win') or os.name == 'nt')
+    is_windows = _sys.platform.startswith('win') or os.name == 'nt'
     if not is_windows:
         yield
         return
@@ -133,6 +133,7 @@ def _run_xcp_d_with_skip(
 
         # Persist and then build workflow using a real config file path (dict would error)
         from xcp_d import config as _config
+
         config_file = _config.execution.work_dir / f'config-{_config.execution.run_uuid}.toml'
         _config.to_filename(config_file)
         build_workflow(str(config_file), retval={})
@@ -253,6 +254,7 @@ def test_skip_parcellation_nifti(data_dir, output_dir, working_dir):
 
     # Parcellation outputs typically include atlas timeseries (ptseries/tsv) or matrix files.
     import glob
+
     parcellation_patterns = [
         '*ptseries*',
         '*pscalar*',
@@ -289,6 +291,7 @@ def test_skip_connectivity_nifti(data_dir, output_dir, working_dir):
     )
 
     import glob
+
     # Connectivity outputs may include correlation matrices, connectivity cifti/tsv.
     connectivity_patterns = [
         '*correlation*',
@@ -416,6 +419,7 @@ def test_skip_parcellation_cifti(data_dir, output_dir, working_dir):
     )
 
     import glob
+
     parcellation_patterns = [
         '*ptseries*',
         '*pscalar*',
@@ -452,6 +456,7 @@ def test_skip_connectivity_cifti(data_dir, output_dir, working_dir):
     )
 
     import glob
+
     connectivity_patterns = [
         '*correlation*',
         '*connectivity*',
