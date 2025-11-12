@@ -42,7 +42,8 @@ def _windows_toml_loads_patch():
     will be applied only on Windows and automatically restored afterward.
     """
     import sys as _sys
-    import toml as _toml  # noqa: WPS433
+
+    import toml as _toml
 
     is_windows = (_sys.platform.startswith('win') or os.name == 'nt')
     if not is_windows:
