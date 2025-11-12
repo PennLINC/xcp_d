@@ -123,9 +123,10 @@ def _run_xcp_d_with_skip(
     if filter_file:
         parameters.append(f'--bids-filter-file={filter_file}')
 
-    # Add skip parameters
-    for skip_output in skip_outputs:
-        parameters.append(f'--skip={skip_output}')
+    # Add skip parameters as a single argument with space-separated values
+    if skip_outputs:
+        parameters.append('--skip')
+        parameters.extend(skip_outputs)
 
     # Apply Windows-only TOML patch across parsing and workflow build, then restore.
     with _windows_toml_loads_patch():

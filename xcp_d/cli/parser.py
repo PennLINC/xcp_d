@@ -1192,8 +1192,12 @@ def _validate_parameters(opts, build_log, parser):
             'root' if opts.report_output_level == 'auto' else opts.report_output_level
         )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
+        # Check --create-matrices compatibility, but allow if connectivity is skipped
         if opts.correlation_lengths is not None:
-            error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
+            if not opts.skip_outputs or 'connectivity' not in opts.skip_outputs:
+                error_messages.append(
+                    f"'--create-matrices' is not supported for '{opts.mode}' mode."
+                )
         # Patch 'all' into the list of correlation lengths
         opts.correlation_lengths = ['all']
     elif opts.mode == 'nichart':
