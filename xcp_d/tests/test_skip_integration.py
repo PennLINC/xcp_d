@@ -16,52 +16,10 @@ They are excluded from the default test run (see pyproject.toml pytest.ini_optio
 """
 
 import os
-from contextlib import contextmanager
 
 import pytest
 
-# Ensure HOME environment variable is set for cross-platform compatibility
-# This is needed before importing xcp_d modules that reference config.py
-if not os.getenv('HOME'):
-    os.environ['HOME'] = os.path.expanduser('~')
-
 from xcp_d.tests.utils import download_test_data, get_test_data_path
-
-
-def _posix_path(path_like):
-    """Return a POSIX-style string path, safe for TOML on Windows."""
-    return str(path_like).replace('\\', '/')
-
-
-@contextmanager
-def _windows_toml_loads_patch():
-    """Temporarily patch toml.loads on Windows to avoid backslash escapes.
-
-    This is a test-local workaround to prevent "Reserved escape sequence" errors
-    when computing configuration hashes or re-loading the emitted TOML config. It
-    will be applied only on Windows and automatically restored afterward.
-    """
-    import sys as _sys
-
-    import toml as _toml
-
-    is_windows = _sys.platform.startswith('win') or os.name == 'nt'
-    if not is_windows:
-        yield
-        return
-
-    original_loads = _toml.loads
-
-    def _safe_loads(s, _dict=dict, decoder=None):  # noqa: D401
-        if isinstance(s, str):
-            s = s.replace('\\', '/')
-        return original_loads(s, _dict=_dict, decoder=decoder)
-
-    _toml.loads = _safe_loads
-    try:
-        yield
-    finally:
-        _toml.loads = original_loads
 
 
 def _run_xcp_d_with_skip(
@@ -75,13 +33,6 @@ def _run_xcp_d_with_skip(
     """Helper to run xcp_d with skip parameters."""
     from xcp_d.cli.parser import parse_args
     from xcp_d.cli.workflow import build_workflow
-
-    # Normalize paths to POSIX style (must operate on string values).
-    dataset_dir = _posix_path(dataset_dir)
-    out_dir = _posix_path(out_dir)
-    work_dir = _posix_path(work_dir)
-    if filter_file:
-        filter_file = _posix_path(filter_file)
 
     parameters = [
         dataset_dir,
@@ -128,16 +79,14 @@ def _run_xcp_d_with_skip(
         parameters.append('--skip')
         parameters.extend(skip_outputs)
 
-    # Apply Windows-only TOML patch across parsing and workflow build, then restore.
-    with _windows_toml_loads_patch():
-        parse_args(parameters)
+    parse_args(parameters)
 
-        # Persist and then build workflow using a real config file path (dict would error)
-        from xcp_d import config as _config
+    # Persist and then build workflow using a real config file path (dict would error)
+    from xcp_d import config as _config
 
-        config_file = _config.execution.work_dir / f'config-{_config.execution.run_uuid}.toml'
-        _config.to_filename(config_file)
-        build_workflow(str(config_file), retval={})
+    config_file = _config.execution.work_dir / f'config-{_config.execution.run_uuid}.toml'
+    _config.to_filename(config_file)
+    build_workflow(str(config_file), retval={})
 
 
 # NIfTI first: alff → reho → alff+reho → parcellation → connectivity
@@ -486,12 +435,6 @@ def test_no_bandpass_filter_skips_alff_cifti(data_dir, output_dir, working_dir):
     from xcp_d.cli.parser import parse_args
     from xcp_d.cli.workflow import build_workflow
 
-    # Normalize paths
-    dataset_dir = _posix_path(dataset_dir)
-    out_dir = _posix_path(out_dir)
-    work_dir = _posix_path(work_dir)
-    filter_file = _posix_path(filter_file)
-
     parameters = [
         dataset_dir,
         out_dir,
@@ -520,14 +463,13 @@ def test_no_bandpass_filter_skips_alff_cifti(data_dir, output_dir, working_dir):
         '--disable-bandpass-filter',  # This should automatically skip ALFF
     ]
 
-    with _windows_toml_loads_patch():
-        parse_args(parameters)
+    parse_args(parameters)
 
-        from xcp_d import config as _config
+    from xcp_d import config as _config
 
-        config_file = _config.execution.work_dir / f'config-{_config.execution.run_uuid}.toml'
-        _config.to_filename(config_file)
-        build_workflow(str(config_file), retval={})
+    config_file = _config.execution.work_dir / f'config-{_config.execution.run_uuid}.toml'
+    _config.to_filename(config_file)
+    build_workflow(str(config_file), retval={})
 
     # Check that ALFF files were NOT generated (automatically skipped due to no bandpass filter)
     import glob
