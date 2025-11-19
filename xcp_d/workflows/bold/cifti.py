@@ -380,6 +380,8 @@ the following post-processing was performed.
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,
             exact_scans=exact_scans,
+            skip_reho=skip_reho,
+            skip_alff=skip_alff,
         )
 
         workflow.connect([

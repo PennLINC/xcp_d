@@ -391,7 +391,11 @@ the following post-processing was performed.
         ])  # fmt:skip
 
     if config.execution.atlases:
-        connectivity_wf = init_functional_connectivity_nifti_wf(mem_gb=mem_gbx)
+        connectivity_wf = init_functional_connectivity_nifti_wf(
+            mem_gb=mem_gbx,
+            skip_reho=skip_reho,
+            skip_alff=skip_alff,
+        )
 
         workflow.connect([
             (inputnode, connectivity_wf, [
