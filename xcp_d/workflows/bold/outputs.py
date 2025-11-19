@@ -801,30 +801,32 @@ def init_postproc_derivatives_wf(
     )
     workflow.connect([(ds_denoised_bold, denoised_src, [('out_file', 'in1')])])
 
-    ds_reho = pe.Node(
-        DerivativesDataSink(
-            source_file=name_source,
-            check_hdr=False,
-            dismiss_entities=dismiss_hash(['desc', 'den']),
-            cohort=cohort,
-            den='91k' if file_format == 'cifti' else None,
-            statistic='reho',
-            suffix='boldmap',
-            extension='.dscalar.nii' if file_format == 'cifti' else '.nii.gz',
-            # Metadata
-            SoftwareFilters=software_filters,
-            Neighborhood='vertices',
-        ),
-        name='ds_reho',
-        run_without_submitting=True,
-        mem_gb=1,
-    )
-    workflow.connect([
-        (inputnode, ds_reho, [('reho', 'in_file')]),
-        (denoised_src, ds_reho, [('out', 'Sources')]),
-    ])  # fmt:skip
+    # ReHo outputs: only create sinks if ReHo is not explicitly skipped
+    if 'reho' not in config.workflow.skip_outputs:
+        ds_reho = pe.Node(
+            DerivativesDataSink(
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=dismiss_hash(['desc', 'den']),
+                cohort=cohort,
+                den='91k' if file_format == 'cifti' else None,
+                statistic='reho',
+                suffix='boldmap',
+                extension='.dscalar.nii' if file_format == 'cifti' else '.nii.gz',
+                # Metadata
+                SoftwareFilters=software_filters,
+                Neighborhood='vertices',
+            ),
+            name='ds_reho',
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        workflow.connect([
+            (inputnode, ds_reho, [('reho', 'in_file')]),
+            (denoised_src, ds_reho, [('out', 'Sources')]),
+        ])  # fmt:skip
 
-    if config.execution.atlases:
+    if config.execution.atlases and ('reho' not in config.workflow.skip_outputs):
         add_reho_to_src = pe.MapNode(
             BIDSURI(
                 numinputs=1,
@@ -879,7 +881,7 @@ def init_postproc_derivatives_wf(
             ]),
         ])  # fmt:skip
 
-    if bandpass_filter:
+    if bandpass_filter and ('alff' not in config.workflow.skip_outputs):
         ds_alff = pe.Node(
             DerivativesDataSink(
                 source_file=name_source,
