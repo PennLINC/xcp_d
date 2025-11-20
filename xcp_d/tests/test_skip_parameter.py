@@ -117,6 +117,23 @@ def test_skip_parcellation(skip_opts, base_parser, caplog):
     assert 'Automatically skipping connectivity because parcellation is skipped' in caplog.text
 
 
+def test_deprecated_skip_parcellation_flag(skip_opts, base_parser, caplog):
+    """Using the deprecated --skip-parcellation flag should warn and map to --skip parcellation."""
+    caplog.set_level(logging.WARNING)
+    opts = deepcopy(skip_opts)
+    # Simulate legacy flag being set
+    opts.skip_parcellation_flag = True
+    opts.skip_outputs = []
+    opts.atlases = ['Glasser', 'Gordon']
+
+    validated_opts = parser._validate_parameters(opts, build_log, parser=base_parser)
+
+    assert 'parcellation' in validated_opts.skip_outputs
+    assert validated_opts.atlases == []
+    # Ensure deprecation warning emitted
+    assert "The '--skip-parcellation' flag is deprecated" in caplog.text
+
+
 def test_skip_connectivity(skip_opts, base_parser, caplog):
     """Test skipping connectivity - should set correlation_lengths to empty but keep atlases."""
     caplog.set_level(logging.INFO)
