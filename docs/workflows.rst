@@ -400,8 +400,13 @@ The ``--skip`` parameter accepts the following options:
 -  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
 
 -  ``parcellation``: Skip parcellation and time series extraction.
-   This is functionally equivalent to setting ``--atlases`` to an empty list or using
-   the ``--skip-parcellation`` flag.
+   This is functionally equivalent to setting ``--atlases`` to an empty list.
+
+   .. admonition:: Deprecated option
+
+      Historically, users could pass the legacy ``--skip-parcellation`` flag to
+      achieve this behavior. That flag is now deprecated — use
+      ``--skip parcellation`` instead.
    **Note that skipping parcellation will automatically skip connectivity as well,
    since connectivity requires parcellated data.**
 
@@ -1043,7 +1048,13 @@ These atlases are documented in :doc:`outputs`.
 
 Users can control which atlases are used with the ``--atlases`` parameter
 (by default, all atlases are used),
-or can skip this step entirely with ``--skip-parcellation``.
+or can skip this step entirely with the unified ``--skip parcellation`` option.
+
+.. admonition:: Deprecated option
+
+   The legacy ``--skip-parcellation`` flag is deprecated and will be removed in a
+   future release. It is still accepted for backward compatibility, but please
+   migrate to ``--skip parcellation``.
 
 The resulting parcellated time series for each atlas is then used to generate static functional
 connectivity matrices, as measured with Pearson correlation coefficients.

@@ -561,10 +561,12 @@ The default is 240 (4 minutes).
     g_atlases.add_argument(
         '--skip-parcellation',
         '--skip_parcellation',
-        action='store_const',
-        const=[],
-        dest='atlases',
-        help='Skip parcellation and correlation steps.',
+        dest='skip_parcellation_flag',
+        action='store_true',
+        help=(
+            '(Deprecated) Skip parcellation and correlation steps. '
+            "Use the new '--skip parcellation' option instead."
+        ),
     )
 
     g_parcellation.add_argument(
@@ -1115,6 +1117,17 @@ def _validate_parameters(opts, build_log, parser):
 
     # Add internal atlas datasets to the list of datasets
     opts.datasets = opts.datasets or {}
+    # Backwards compatibility: map deprecated --skip-parcellation to new --skip behavior
+    if getattr(opts, 'skip_parcellation_flag', False):
+        build_log.warning(
+            "The '--skip-parcellation' flag is deprecated and will be removed in a future "
+            "release. Use '--skip parcellation' instead."
+        )
+        # Ensure atlases list is empty (same behavior as previous flag)
+        opts.atlases = []
+        # Add 'parcellation' to skip_outputs if not already present
+        if 'parcellation' not in opts.skip_outputs:
+            opts.skip_outputs.append('parcellation')
     if opts.atlases:
         if 'xcpdatlases' not in opts.datasets:
             opts.datasets['xcpdatlases'] = load_data('atlases')
