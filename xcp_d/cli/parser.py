@@ -1383,6 +1383,16 @@ def _validate_parameters(opts, build_log, parser):
                     'Automatically skipping connectivity because parcellation is skipped.'
                 )
                 opts.skip_outputs.append('connectivity')
+            # Clear correlation_lengths when parcellation is skipped. This
+            # prevents an inconsistent state where correlation_lengths
+            # suggests connectivity will run even though connectivity is
+            # automatically skipped when parcellation is skipped.
+            if getattr(opts, 'correlation_lengths', None):
+                build_log.info(
+                    'Parcellation is skipped; clearing correlation_lengths to disable '
+                    'connectivity calculations.'
+                )
+                opts.correlation_lengths = []
 
         # Handle 'connectivity' skip option independently
         # When connectivity is skipped but parcellation is not,
