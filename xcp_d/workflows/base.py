@@ -202,6 +202,7 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
         ),
         name='inputnode',
     )
+    # TODO: Replace with BIDSDataGrabber interface
     inputnode.inputs.t1w = subj_data['t1w']
     inputnode.inputs.t2w = subj_data['t2w']
     inputnode.inputs.anat_brainmask = subj_data['anat_brainmask']
@@ -630,6 +631,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ('anat_brainmask', 'inputnode.anat_brainmask'),
                     ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
                     (anat_mod, 'inputnode.anat_native'),
+                ]),
+                (load_atlases_wf, concatenate_data_wf, [
+                    ('outputnode.atlas_labels_files', 'inputnode.atlas_labels_files'),
                 ]),
             ])  # fmt:skip
 

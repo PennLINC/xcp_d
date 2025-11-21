@@ -12,7 +12,8 @@ from xcp_d.interfaces.concatenation import (
     ConcatenateInputs,
     FilterOutFailedRuns,
 )
-from xcp_d.interfaces.connectivity import TSVConnect
+from xcp_d.interfaces.connectivity import CiftiToTSV, TSVConnect
+from xcp_d.interfaces.workbench import CiftiCorrelation
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.utils import _select_first
 from xcp_d.workflows.bold.plotting import init_qc_report_wf
@@ -60,6 +61,8 @@ def init_concatenate_data_wf(TR, head_radius, name='concatenate_data_wf'):
         One list entry for each run.
     %(censored_denoised_bold)s
         One list entry for each run.
+    %(atlas_labels_files)s
+        One list entry for each run.
     bold_mask : :obj:`list` of :obj:`str` or :obj:`~nipype.interfaces.base.Undefined`
         Brain mask files for each of the BOLD runs.
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
@@ -98,6 +101,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 'denoised_interpolated_bold',
                 'censored_denoised_bold',
                 'smoothed_denoised_bold',
+                'atlas_labels_files',
                 'bold_mask',  # only for niftis, from postproc workflows
                 'boldref',  # only for niftis, from postproc workflows
                 'anat_native',  # only for niftis, from data collection
@@ -359,7 +363,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
             (make_timeseries_dict, ds_timeseries, [('metadata', 'meta_dict')]),
         ])  # fmt:skip
 
-        if 'all' in config.workflow.correlation_lengths:
+        if 'all' in config.workflow.correlation_lengths and file_format == 'nifti':
             correlate_timeseries = pe.MapNode(
                 TSVConnect(),
                 run_without_submitting=True,
@@ -440,6 +444,103 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 (concatenate_inputs, ds_cifti_ts, [('timeseries_ciftis', 'in_file')]),
                 (cifti_ts_src, ds_cifti_ts, [('metadata', 'meta_dict')]),
             ])  # fmt:skip
+
+            if 'all' in config.workflow.correlation_lengths:
+                correlate_cifti_ts_src = pe.MapNode(
+                    BIDSURI(
+                        numinputs=1,
+                        dataset_links=config.execution.dataset_links,
+                        out_dir=str(output_dir),
+                    ),
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    name='correlate_cifti_ts_src',
+                    iterfield=['in1'],
+                )
+                workflow.connect([(ds_cifti_ts, correlate_cifti_ts_src, [('out_file', 'in1')])])
+
+                # Correlate the parcellated data
+                correlate_cifti_ts = pe.MapNode(
+                    CiftiCorrelation(
+                        num_threads=config.nipype.omp_nthreads,
+                    ),
+                    name='correlate_cifti_ts',
+                    iterfield=['in_file'],
+                    n_procs=config.nipype.omp_nthreads,
+                )
+                workflow.connect([
+                    (ds_cifti_ts, correlate_cifti_ts, [('out_file', 'in_file')]),
+                ])  # fmt:skip
+
+                ds_cifti_correlations = pe.MapNode(
+                    DerivativesDataSink(
+                        dismiss_entities=dismiss_hash(),
+                        extension='.tsv',
+                    ),
+                    name='ds_cifti_correlations',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                )
+                workflow.connect([
+                    (filter_runs, ds_cifti_correlations, [
+                        (('timeseries_ciftis', _combine_name), 'source_file'),
+                    ]),
+                    (correlate_cifti_ts, ds_cifti_correlations, [('out_file', 'in_file')]),
+                    (correlate_cifti_ts_src, ds_cifti_correlations, [('metadata', 'meta_dict')]),
+                ])  # fmt:skip
+
+                # Convert correlation pconn file to TSV
+                cifti_correlations_to_tsv = pe.MapNode(
+                    CiftiToTSV(),
+                    name='cifti_correlations_to_tsv',
+                    iterfield=['in_file', 'atlas_labels'],
+                )
+                workflow.connect([
+                    (inputnode, cifti_correlations_to_tsv, [
+                        ('atlas_labels_files', 'atlas_labels'),
+                    ]),
+                    (correlate_cifti_ts, cifti_correlations_to_tsv, [('out_file', 'in_file')]),
+                ])  # fmt:skip
+
+                cifti_correlations_tsv_src = pe.MapNode(
+                    BIDSURI(
+                        numinputs=1,
+                        dataset_links=config.execution.dataset_links,
+                        out_dir=str(output_dir),
+                    ),
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    name='cifti_correlations_tsv_src',
+                    iterfield=['in1'],
+                )
+                workflow.connect([
+                    (ds_cifti_correlations, cifti_correlations_tsv_src, [('out_file', 'in1')]),
+                ])  # fmt:skip
+
+                ds_cifti_correlations_tsv = pe.MapNode(
+                    DerivativesDataSink(
+                        # Be explicit with entities because the source file is the timeseries
+                        dismiss_entities=dismiss_hash(['desc']),
+                        statistic='pearsoncorrelation',
+                        suffix='relmat',
+                        extension='.tsv',
+                    ),
+                    name='ds_cifti_correlations_tsv',
+                    run_without_submitting=True,
+                    mem_gb=1,
+                    iterfield=['source_file', 'in_file', 'meta_dict'],
+                )
+                workflow.connect([
+                    (filter_runs, ds_correlations, [
+                        (('timeseries', _combine_name), 'source_file'),
+                    ]),
+                    (cifti_correlations_to_tsv, ds_cifti_correlations_tsv, [
+                        ('out_file', 'in_file'),
+                    ]),
+                    (cifti_correlations_tsv_src, ds_cifti_correlations_tsv, [
+                        ('metadata', 'meta_dict'),
+                    ]),
+                ])  # fmt:skip
 
     return workflow
 
