@@ -480,6 +480,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                     name='ds_cifti_correlations',
                     run_without_submitting=True,
                     mem_gb=1,
+                    iterfield=['source_file', 'in_file', 'meta_dict'],
                 )
                 workflow.connect([
                     (filter_runs, ds_cifti_correlations, [
