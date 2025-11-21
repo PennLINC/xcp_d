@@ -546,7 +546,10 @@ def init_postproc_derivatives_wf(
             (ds_timeseries, outputnode, [('out_file', 'timeseries')]),
         ])  # fmt:skip
 
-        if 'all' in config.workflow.correlation_lengths:
+        if (
+            'all' in config.workflow.correlation_lengths
+            and config.workflow.output_run_wise_correlations
+        ):
             make_corrs_meta_dict1 = pe.MapNode(
                 BIDSURI(
                     numinputs=1,
@@ -683,7 +686,10 @@ def init_postproc_derivatives_wf(
                 (ds_timeseries_ciftis, outputnode, [('out_file', 'timeseries_ciftis')]),
             ])  # fmt:skip
 
-            if 'all' in config.workflow.correlation_lengths:
+            if (
+                'all' in config.workflow.correlation_lengths
+                and config.workflow.output_run_wise_correlations
+            ):
                 make_ccorrs_meta_dict1 = pe.MapNode(
                     BIDSURI(
                         numinputs=1,

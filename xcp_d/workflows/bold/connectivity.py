@@ -408,7 +408,10 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    if 'all' in config.workflow.correlation_lengths:
+    if (
+        'all' in config.workflow.correlation_lengths
+        and config.workflow.output_run_wise_correlations
+    ):
         # Correlate the parcellated data
         correlate_bold = pe.MapNode(
             CiftiCorrelation(
