@@ -574,7 +574,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t1w_available=t1w_available,
                 t2w_available=t2w_available,
                 n_runs=n_runs,
-                will_concatenate=multiscans,
+                has_multiple_runs=multiscans,
                 exact_scans=exact_scans,
                 name=f'postprocess_{run_counter}_wf',
             )

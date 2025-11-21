@@ -843,6 +843,7 @@ DEFAULT_CONFIG_HASH_FIELDS = {
         'min_coverage',
         'correlation_lengths',
         'process_surfaces',
+        'output_run_wise_correlations',
         'abcc_qc',
         'linc_qc',
     ],
