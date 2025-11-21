@@ -87,7 +87,6 @@ def _build_parser():
             'The mode sets several parameters, with values specific to different pipelines. '
             'For more information, see the documentation at '
             'https://xcp-d.readthedocs.io/en/latest/workflows.html#modes. '
-            'If you are unsure which mode to use, we recommend using "none" mode and specifying '
             'the parameters manually.'
         ),
     )
