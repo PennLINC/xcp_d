@@ -720,9 +720,8 @@ def init_postproc_derivatives_wf(
                     DerivativesDataSink(
                         source_file=name_source,
                         check_hdr=False,
-                        dismiss_entities=dismiss_hash(['desc', 'den']),
+                        dismiss_entities=dismiss_hash(['desc']),
                         cohort=cohort,
-                        den='91k' if file_format == 'cifti' else None,
                         statistic='pearsoncorrelation',
                         suffix='boldmap',
                         extension='.pconn.nii',

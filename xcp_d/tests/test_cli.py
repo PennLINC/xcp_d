@@ -116,6 +116,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         '--create-matrices',
         '80',
         '200',
+        'all',
         '--atlases',
         '4S156Parcels',
         '4S256Parcels',
