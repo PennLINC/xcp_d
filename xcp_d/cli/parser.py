@@ -679,13 +679,12 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         dest='output_layout',
         action='store',
         choices=['bids', 'multiverse'],
-        default='auto',
+        default='bids',
         help=(
             'Output layout for the BOLD data. '
             'If "bids", the output will be in BIDS format, similar to fMRIPrep output. '
             'If "multiverse", "xcp_d" will be appended to output_dir, with a hash built from '
-            'the configuration. '
-            'If "auto", the output layout will be inferred from the processing mode.'
+            'the configuration.'
         ),
     )
     g_other.add_argument(
@@ -1116,7 +1115,7 @@ def _validate_parameters(opts, build_log, parser):
         'nichart',
         'none',
     ), f'Unsupported mode "{opts.mode}".'
-    assert opts.output_layout in ('bids', 'multiverse', 'auto')
+    assert opts.output_layout in ('bids', 'multiverse')
     assert opts.output_type in ('censored', 'interpolated', 'auto')
     assert opts.process_surfaces in (True, False, 'auto')
 
@@ -1146,7 +1145,6 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
-        opts.output_layout = 'multiverse' if opts.output_layout == 'auto' else opts.output_layout
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
@@ -1172,7 +1170,6 @@ def _validate_parameters(opts, build_log, parser):
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
-        opts.output_layout = 'multiverse' if opts.output_layout == 'auto' else opts.output_layout
         opts.output_type = 'interpolated'
         opts.process_surfaces = True if opts.process_surfaces == 'auto' else opts.process_surfaces
         opts.report_output_level = (
@@ -1191,7 +1188,6 @@ def _validate_parameters(opts, build_log, parser):
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
-        opts.output_layout = 'bids' if opts.output_layout == 'auto' else opts.output_layout
         if opts.output_type == 'interpolated':
             error_messages.append(
                 f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
@@ -1219,7 +1215,6 @@ def _validate_parameters(opts, build_log, parser):
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
         opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
-        opts.output_layout = 'bids' if opts.output_layout == 'auto' else opts.output_layout
         opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
         opts.report_output_level = (
@@ -1260,7 +1255,6 @@ def _validate_parameters(opts, build_log, parser):
         if opts.motion_filter_type is None:
             error_messages.append("'--motion-filter-type' is required for 'none' mode.")
 
-        opts.output_layout = 'bids' if opts.output_layout == 'auto' else opts.output_layout
         if opts.output_type == 'auto':
             error_messages.append("'--output-type' is required for 'none' mode.")
 
