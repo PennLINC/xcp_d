@@ -326,6 +326,7 @@ the following post-processing was performed.
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         name_source=bold_file,
         source_metadata=run_data['bold_metadata'],
+        will_concatenate=will_concatenate,
         exact_scans=exact_scans,
     )
 

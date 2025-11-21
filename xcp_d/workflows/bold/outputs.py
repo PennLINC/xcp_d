@@ -17,6 +17,7 @@ from xcp_d.utils.doc import fill_doc
 def init_postproc_derivatives_wf(
     name_source,
     source_metadata,
+    will_concatenate,
     exact_scans,
     name='postproc_derivatives_wf',
 ):
@@ -688,7 +689,7 @@ def init_postproc_derivatives_wf(
 
             if (
                 'all' in config.workflow.correlation_lengths
-                and config.workflow.output_run_wise_correlations
+                and (config.workflow.output_run_wise_correlations or not will_concatenate)
             ):
                 make_ccorrs_meta_dict1 = pe.MapNode(
                     BIDSURI(
