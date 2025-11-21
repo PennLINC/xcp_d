@@ -36,6 +36,7 @@ def init_postprocess_nifti_wf(
     t1w_available,
     t2w_available,
     n_runs,
+    will_concatenate,
     exact_scans,
     name='bold_postprocess_wf',
 ):
@@ -76,6 +77,7 @@ def init_postprocess_nifti_wf(
                     t1w_available=True,
                     t2w_available=True,
                     n_runs=1,
+                    will_concatenate=False,
                     exact_scans=[],
                     name="nifti_postprocess_wf",
                 )
@@ -90,6 +92,9 @@ def init_postprocess_nifti_wf(
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
+    will_concatenate
+        Whether there are multiple runs for this task or not.
+        Interacts with the output_run_wise_correlations parameter.
     %(exact_scans)s
     %(name)s
         Default is "nifti_postprocess_wf".
@@ -377,7 +382,10 @@ the following post-processing was performed.
         ])  # fmt:skip
 
     if config.execution.atlases:
-        connectivity_wf = init_functional_connectivity_nifti_wf(mem_gb=mem_gbx)
+        connectivity_wf = init_functional_connectivity_nifti_wf(
+            will_concatenate=will_concatenate,
+            mem_gb=mem_gbx,
+        )
 
         workflow.connect([
             (inputnode, connectivity_wf, [

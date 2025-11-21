@@ -18,7 +18,7 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 
 @fill_doc
-def init_functional_connectivity_nifti_wf(mem_gb, name='connectivity_wf'):
+def init_functional_connectivity_nifti_wf(mem_gb, will_concatenate, name='connectivity_wf'):
     """Extract BOLD time series and compute functional connectivity.
 
     Workflow Graph
@@ -131,7 +131,9 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ]),
     ])  # fmt:skip
 
-    if 'all' in config.workflow.correlation_lengths:
+    if 'all' in config.workflow.correlation_lengths and (
+        config.workflow.output_run_wise_correlations or not will_concatenate
+    ):
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
@@ -210,7 +212,12 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
 
 @fill_doc
-def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name='connectivity_wf'):
+def init_functional_connectivity_cifti_wf(
+    mem_gb,
+    will_concatenate,
+    exact_scans,
+    name='connectivity_wf',
+):
     """Extract CIFTI time series.
 
     This will parcellate the CIFTI file using the selected atlases and compute functional
@@ -408,9 +415,8 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    if (
-        'all' in config.workflow.correlation_lengths
-        and config.workflow.output_run_wise_correlations
+    if 'all' in config.workflow.correlation_lengths and (
+        config.workflow.output_run_wise_correlations or not will_concatenate
     ):
         # Correlate the parcellated data
         correlate_bold = pe.MapNode(
