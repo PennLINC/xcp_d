@@ -634,6 +634,8 @@ class workflow(_Config):
     """Produce correlation matrices limited to each requested amount of time.
     If this list includes 'all' then correlations from the full (censored) time series will
     be produced."""
+    output_run_wise_correlations = None
+    """Output run-wise correlations."""
     process_surfaces = None
     """Warp fsnative-space surfaces to the MNI space."""
     abcc_qc = None
