@@ -56,8 +56,15 @@ def _build_parser():
         type=Path,
         help=(
             'The output path for XCP-D derivatives. '
-            "For example, '/path/to/dset/derivatives/xcp_d'. "
-            "As of version 0.7.0, 'xcp_d' will not be appended to the output directory."
+            'If the output layout is "multiverse", "xcp_d" will be appended to output_dir, '
+            'with a hash built from the configuration. '
+            'For example, setting output_dir to "/path/to/dset/derivatives" and '
+            'output_layout to "multiverse" will result in the output directory being '
+            '"/path/to/dset/derivatives/xcp_d-<hash>".'
+            'If the output layout is "bids", "xcp_d" will not be appended to output_dir. '
+            'For example, setting output_dir to "/path/to/dset/derivatives/xcp_d" and '
+            'output_layout to "bids" will result in the output directory being '
+            '"/path/to/dset/derivatives/xcp_d".'
         ),
     )
     parser.add_argument(
@@ -79,7 +86,8 @@ def _build_parser():
             'The mode of operation for XCP-D. '
             'The mode sets several parameters, with values specific to different pipelines. '
             'For more information, see the documentation at '
-            'https://xcp-d.readthedocs.io/en/latest/workflows.html#modes'
+            'https://xcp-d.readthedocs.io/en/latest/workflows.html#modes. '
+            'the parameters manually.'
         ),
     )
 
@@ -200,7 +208,10 @@ def _build_parser():
         '--low-mem',
         dest='low_mem',
         action='store_true',
-        help='Attempt to reduce memory usage (will increase disk usage in working directory).',
+        help=(
+            'Attempt to reduce memory usage (will increase disk usage in working directory). '
+            'IMPORTANT: At the moment, this option has no effect.'
+        ),
     )
     g_perfm.add_argument(
         '--use-plugin',
@@ -278,9 +289,9 @@ def _build_parser():
         action=parser_utils.YesNoAction,
         help=(
             'Despike the BOLD data before postprocessing. '
-            "If not defined, the despike option will be inferred from the 'mode'. "
-            'If defined without an argument, despiking will be enabled. '
-            'If defined with an argument (y or n), the value of the argument will be used. '
+            "If not provided, the despike option will be inferred from the 'mode'. "
+            'If provided without an argument, despiking will be enabled. '
+            'If provided with an argument (y or n), the value of the argument will be used. '
             "'y' enables despiking. 'n' disables despiking."
         ),
     )
@@ -308,9 +319,11 @@ def _build_parser():
         type=parser_utils._float_or_auto,
         metavar='{{auto,FLOAT}}',
         help=(
-            'FWHM, in millimeters, of the Gaussian smoothing kernel to apply to the denoised BOLD '
-            'data. '
-            'Set to 0 to disable smoothing.'
+            'Full-width at half maximum (FWHM), in millimeters, of the Gaussian smoothing kernel '
+            'to apply to the denoised BOLD data. '
+            'Set to 0 to disable smoothing. '
+            'The default value is "auto", which uses the default smoothing value for the '
+            'processing mode.'
         ),
     )
     g_param.add_argument(
@@ -323,7 +336,14 @@ def _build_parser():
         default='auto',
         choices=['y', 'n'],
         action=parser_utils.YesNoAction,
-        help='After denoising, concatenate each derivative from each task across runs.',
+        help=(
+            'After denoising, concatenate each derivative from each task across runs. '
+            'If not provided, the combine_runs option will be inferred from the '
+            'processing mode. '
+            'If provided without an argument, concatenation will be enabled. '
+            'If provided with an argument (y or n), the value of the argument will be used. '
+            "'y' enables concatenation. 'n' disables concatenation."
+        ),
     )
 
     g_motion_filter = parser.add_argument_group(
@@ -427,10 +447,12 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         default='auto',
         type=parser_utils._float_or_auto,
         help=(
-            'Framewise displacement threshold for censoring. '
+            'Framewise displacement (FD) threshold for censoring, in mm. '
             'Any volumes with an FD value greater than the threshold will be removed from the '
             'denoised BOLD data. '
-            'A threshold of <=0 will disable censoring completely.'
+            'A threshold of <=0 will disable censoring completely. '
+            'The default value is "auto", which uses the default FD threshold for the '
+            'processing mode.'
         ),
     )
     g_censor.add_argument(
@@ -463,7 +485,8 @@ The default is 240 (4 minutes).
             "If 'censored', the BOLD outputs (dense and parcellated time series) will be "
             'censored. '
             "If 'interpolated', the BOLD outputs (dense and parcellated time series) will be "
-            'interpolated.'
+            'interpolated. '
+            'This parameter has no effect on correlation matrix outputs.'
         ),
     )
 
@@ -646,8 +669,8 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
             '"root" will write them to the --output-dir. '
             '"subject" will write them into each subject\'s directory. '
             '"session" will write them into each session\'s directory. '
-            'The default is "auto", which will default to "root" for "none" mode, '
-            '"session" for "abcd" and "hbcd" modes, and "root" for "linc" and "nichart" modes.'
+            'The default is "auto", which will default to "root" for "none", "linc", and '
+            '"nichart" modes, and "session" for "abcd" and "hbcd" modes.'
         ),
     )
     g_other.add_argument(
@@ -666,10 +689,12 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         dest='output_layout',
         action='store',
         choices=['bids', 'multiverse'],
-        default='auto',
+        default='bids',
         help=(
             'Output layout for the BOLD data. '
-            'If "auto", the output layout will be inferred from the processing mode.'
+            'If "bids", the output will be in BIDS format, similar to fMRIPrep output. '
+            'If "multiverse", "xcp_d" will be appended to output_dir, with a hash built from '
+            'the configuration.'
         ),
     )
     g_other.add_argument(
@@ -1100,6 +1125,7 @@ def _validate_parameters(opts, build_log, parser):
         'nichart',
         'none',
     ), f'Unsupported mode "{opts.mode}".'
+    assert opts.output_layout in ('bids', 'multiverse')
     assert opts.output_run_wise_correlations in (True, False, 'auto')
     assert opts.output_type in ('censored', 'interpolated', 'auto')
     assert opts.process_surfaces in (True, False, 'auto')

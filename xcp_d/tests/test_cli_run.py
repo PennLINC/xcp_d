@@ -58,6 +58,7 @@ def base_opts():
         'smoothing': 'auto',
         'combine_runs': 'auto',
         'output_type': 'auto',
+        'output_layout': 'bids',
         'output_run_wise_correlations': 'auto',
         'fs_license_file': None,
     }
