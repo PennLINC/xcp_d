@@ -58,6 +58,7 @@ def base_opts():
         'smoothing': 'auto',
         'combine_runs': 'auto',
         'output_type': 'auto',
+        'output_layout': 'bids',
         'fs_license_file': None,
     }
     opts = FakeOptions(**opts_dict)
