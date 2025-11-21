@@ -61,8 +61,8 @@ def init_concatenate_data_wf(TR, head_radius, name='concatenate_data_wf'):
         One list entry for each run.
     %(censored_denoised_bold)s
         One list entry for each run.
-    %(atlas_labels_files)s
-        One list entry for each run.
+    atlas_labels_files
+        Atlas labels files for each of the runs and each of the atlases.
     bold_mask : :obj:`list` of :obj:`str` or :obj:`~nipype.interfaces.base.Undefined`
         Brain mask files for each of the BOLD runs.
         This will be a list of paths for NIFTI inputs, or a list of Undefineds for CIFTI ones.
@@ -534,7 +534,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                     iterfield=['source_file', 'in_file', 'meta_dict'],
                 )
                 workflow.connect([
-                    (filter_runs, ds_correlations, [
+                    (filter_runs, ds_cifti_correlations_tsv, [
                         (('timeseries', _combine_name), 'source_file'),
                     ]),
                     (cifti_correlations_to_tsv, ds_cifti_correlations_tsv, [

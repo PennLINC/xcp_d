@@ -632,10 +632,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
                     (anat_mod, 'inputnode.anat_native'),
                 ]),
-                (load_atlases_wf, concatenate_data_wf, [
-                    ('outputnode.atlas_labels_files', 'inputnode.atlas_labels_files'),
-                ]),
             ])  # fmt:skip
+            if config.execution.atlases:
+                workflow.connect([
+                    (load_atlases_wf, concatenate_data_wf, [
+                        ('outputnode.atlas_labels_files', 'inputnode.atlas_labels_files'),
+                    ]),
+                ])  # fmt:skip
 
             for io_name, node in merge_dict.items():
                 workflow.connect([(node, concatenate_data_wf, [('out', f'inputnode.{io_name}')])])
