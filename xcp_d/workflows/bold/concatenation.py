@@ -475,7 +475,7 @@ Postprocessing derivatives from multi-run tasks were then concatenated across ru
                 ds_cifti_correlations = pe.MapNode(
                     DerivativesDataSink(
                         dismiss_entities=dismiss_hash(),
-                        extension='.tsv',
+                        extension='.pconn.nii',
                     ),
                     name='ds_cifti_correlations',
                     run_without_submitting=True,
