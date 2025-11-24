@@ -142,6 +142,41 @@ Command-Line Arguments
                This is derived from the HCP midthickness file.
                This file is only created if the input type is "fmriprep" or "nibabies".
 
+   --skip : @after
+      The ``--skip`` parameter allows you to selectively skip certain postprocessing steps,
+      which can significantly reduce processing time when you don't need all outputs.
+
+      Available options:
+
+      -  ``alff``: Skip ALFF (Amplitude of Low-Frequency Fluctuation) calculation.
+         Note that ALFF is only calculated when bandpass filtering is enabled (``--bandpass-filter``).
+      -  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
+      -  ``parcellation``: Skip parcellation and time series extraction.
+         This is equivalent to using ``--atlases`` with an empty list.
+         **This will automatically skip connectivity as well, since connectivity requires parcellated data.**
+      -  ``connectivity``: Skip functional connectivity matrix calculations.
+         Parcellation will still be performed to extract time series,
+         but correlation matrices will not be computed.
+
+      You can specify multiple options to skip several steps at once.
+
+      .. code-block:: bash
+
+         # Skip ALFF and ReHo calculations
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip alff reho
+
+         # Skip only connectivity (parcellation still runs to extract time series)
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip connectivity
+
+         # Skip parcellation (this automatically skips connectivity too)
+         xcp_d /path/to/fmriprep /path/to/output participant --mode linc --skip parcellation
+
+      .. tip::
+
+         Use ``--skip`` to optimize processing time when you only need specific outputs.
+         For example, if you need parcellated time series but not connectivity matrices,
+         use ``--skip connectivity``. If you don't need either, use ``--skip parcellation``.
+
 
 **************
 Minimal Inputs

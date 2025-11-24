@@ -328,6 +328,57 @@ which may be overridden by the user:
 -  ``--smoothing 0``: Smoothing is disabled by default.
 
 
+**********************
+Skipping Output Steps
+**********************
+
+*XCP-D* includes a ``--skip`` parameter that allows users to
+selectively skip certain postprocessing steps to optimize processing time.
+This is particularly useful when you only need a subset of the outputs.
+
+The ``--skip`` parameter accepts the following options:
+
+-  ``alff``: Skip ALFF (Amplitude of Low-Frequency Fluctuation) calculation.
+   ALFF is only calculated when bandpass filtering is enabled,
+   so this option only has an effect when ``--bandpass-filter`` is used.
+
+-  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
+
+-  ``parcellation``: Skip parcellation and time series extraction.
+   This is functionally equivalent to setting ``--atlases`` to an empty list.
+
+   .. admonition:: Deprecated option
+
+      Historically, users could pass the legacy ``--skip-parcellation`` flag to
+      achieve this behavior. That flag is now deprecated — use
+      ``--skip parcellation`` instead.
+   **Note that skipping parcellation will automatically skip connectivity as well,
+   since connectivity requires parcellated data.**
+
+-  ``connectivity``: Skip functional connectivity matrix calculations.
+   Parcellation will still be performed to extract parcellated time series,
+   but correlation matrices will not be computed.
+   This is useful when you need time series but not connectivity matrices.
+
+Multiple options can be specified simultaneously.
+For example, ``--skip alff reho`` will skip both ALFF and ReHo calculations.
+
+.. note::
+
+   Skipping certain steps can significantly reduce processing time and disk usage,
+   especially for large datasets.
+
+   - Use ``--skip connectivity`` if you need parcellated time series but not correlation matrices.
+   - Use ``--skip parcellation`` if you don't need either parcellated time series or connectivity
+     matrices (this automatically skips connectivity too).
+
+.. tip::
+
+   The ``--skip`` parameter is compatible with all processing modes (``linc``, ``abcd``, ``hbcd``,
+   etc.) and will not affect other outputs.
+   For example, skipping ALFF will not affect ReHo or connectivity calculations.
+
+
 ****************
 Processing Steps
 ****************
@@ -942,7 +993,13 @@ These atlases are documented in :doc:`outputs`.
 
 Users can control which atlases are used with the ``--atlases`` parameter
 (by default, all atlases are used),
-or can skip this step entirely with ``--skip-parcellation``.
+or can skip this step entirely with the unified ``--skip parcellation`` option.
+
+.. admonition:: Deprecated option
+
+   The legacy ``--skip-parcellation`` flag is deprecated and will be removed in a
+   future release. It is still accepted for backward compatibility, but please
+   migrate to ``--skip parcellation``.
 
 The resulting parcellated time series for each atlas is then used to generate static functional
 connectivity matrices, as measured with Pearson correlation coefficients.

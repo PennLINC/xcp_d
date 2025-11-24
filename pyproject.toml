@@ -187,9 +187,9 @@ markers = [
     "fmriprep_without_freesurfer_with_main: mark integration test for fMRIPrep derivatives without FreeSurfer using main function",
     "nibabies: mark integration test for nibabies derivatives",
 ]
-env = [
-    "RUNNING_PYTEST = 1",
-]
+
+[tool.pytest_env]
+RUNNING_PYTEST = "1"
 
 [tool.coverage.run]
 branch = true

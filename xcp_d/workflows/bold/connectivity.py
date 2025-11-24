@@ -18,7 +18,12 @@ LOGGER = logging.getLogger('nipype.workflow')
 
 
 @fill_doc
-def init_functional_connectivity_nifti_wf(mem_gb, name='connectivity_wf'):
+def init_functional_connectivity_nifti_wf(
+    mem_gb,
+    name='connectivity_wf',
+    skip_reho=False,
+    skip_alff=False,
+):
     """Extract BOLD time series and compute functional connectivity.
 
     Workflow Graph
@@ -173,23 +178,24 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (connectivity_plot, ds_report_connectivity_plot, [('connectplot', 'in_file')]),
         ])  # fmt:skip
 
-    parcellate_reho = pe.MapNode(
-        NiftiParcellate(min_coverage=min_coverage),
-        name='parcellate_reho',
-        iterfield=['atlas', 'atlas_labels'],
-        mem_gb=mem_gb['bold'],
-    )
-    workflow.connect([
-        (inputnode, parcellate_reho, [
-            ('reho', 'filtered_file'),
-            ('bold_mask', 'mask'),
-            ('atlas_files', 'atlas'),
-            ('atlas_labels_files', 'atlas_labels'),
-        ]),
-        (parcellate_reho, outputnode, [('timeseries', 'parcellated_reho')]),
-    ])  # fmt:skip
+    if not skip_reho:
+        parcellate_reho = pe.MapNode(
+            NiftiParcellate(min_coverage=min_coverage),
+            name='parcellate_reho',
+            iterfield=['atlas', 'atlas_labels'],
+            mem_gb=mem_gb['bold'],
+        )
+        workflow.connect([
+            (inputnode, parcellate_reho, [
+                ('reho', 'filtered_file'),
+                ('bold_mask', 'mask'),
+                ('atlas_files', 'atlas'),
+                ('atlas_labels_files', 'atlas_labels'),
+            ]),
+            (parcellate_reho, outputnode, [('timeseries', 'parcellated_reho')]),
+        ])  # fmt:skip
 
-    if bandpass_filter:
+    if bandpass_filter and not skip_alff:
         parcellate_alff = pe.MapNode(
             NiftiParcellate(min_coverage=min_coverage),
             name='parcellate_alff',
@@ -210,7 +216,13 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 
 
 @fill_doc
-def init_functional_connectivity_cifti_wf(mem_gb, exact_scans, name='connectivity_wf'):
+def init_functional_connectivity_cifti_wf(
+    mem_gb,
+    exact_scans,
+    name='connectivity_wf',
+    skip_reho=False,
+    skip_alff=False,
+):
     """Extract CIFTI time series.
 
     This will parcellate the CIFTI file using the selected atlases and compute functional
@@ -517,25 +529,26 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 (exact_dconn_to_tsv, collect_exact_tsvs, [('out_file', f'in{i_exact_scan + 1}')]),
             ])  # fmt:skip
 
-    parcellate_reho_wf = init_parcellate_cifti_wf(
-        mem_gb=mem_gb,
-        compute_mask=False,
-        name='parcellate_reho_wf',
-    )
-    workflow.connect([
-        (inputnode, parcellate_reho_wf, [
-            ('reho', 'inputnode.in_file'),
-            ('atlas_files', 'inputnode.atlas_files'),
-            ('atlas_labels_files', 'inputnode.atlas_labels_files'),
-        ]),
-        (parcellate_bold_wf, parcellate_reho_wf, [
-            ('outputnode.vertexwise_coverage', 'inputnode.vertexwise_coverage'),
-            ('outputnode.coverage_cifti', 'inputnode.coverage_cifti'),
-        ]),
-        (parcellate_reho_wf, outputnode, [('outputnode.parcellated_tsv', 'parcellated_reho')]),
-    ])  # fmt:skip
+    if not skip_reho:
+        parcellate_reho_wf = init_parcellate_cifti_wf(
+            mem_gb=mem_gb,
+            compute_mask=False,
+            name='parcellate_reho_wf',
+        )
+        workflow.connect([
+            (inputnode, parcellate_reho_wf, [
+                ('reho', 'inputnode.in_file'),
+                ('atlas_files', 'inputnode.atlas_files'),
+                ('atlas_labels_files', 'inputnode.atlas_labels_files'),
+            ]),
+            (parcellate_bold_wf, parcellate_reho_wf, [
+                ('outputnode.vertexwise_coverage', 'inputnode.vertexwise_coverage'),
+                ('outputnode.coverage_cifti', 'inputnode.coverage_cifti'),
+            ]),
+            (parcellate_reho_wf, outputnode, [('outputnode.parcellated_tsv', 'parcellated_reho')]),
+        ])  # fmt:skip
 
-    if cortical_atlases:
+    if cortical_atlases and not skip_reho:
         plot_parcellated_reho = pe.Node(
             PlotCiftiParcellation(
                 base_desc='reho',
@@ -567,7 +580,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    if bandpass_filter:
+    if bandpass_filter and not skip_alff:
         parcellate_alff_wf = init_parcellate_cifti_wf(
             mem_gb=mem_gb,
             compute_mask=False,
