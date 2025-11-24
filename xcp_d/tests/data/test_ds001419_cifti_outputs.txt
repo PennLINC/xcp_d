@@ -66,8 +66,6 @@ sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_den-91k_stat-
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_den-91k_stat-coverage_boldmap.pscalar.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_den-91k_stat-mean_timeseries.ptseries.nii
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_stat-alff_bold.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_stat-alff_bold.tsv
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S156Parcels_stat-coverage_bold.json
@@ -83,8 +81,6 @@ sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_den-91k_stat-
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_den-91k_stat-coverage_boldmap.pscalar.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_den-91k_stat-mean_timeseries.ptseries.nii
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_stat-alff_bold.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_stat-alff_bold.tsv
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S256Parcels_stat-coverage_bold.json
@@ -100,8 +96,6 @@ sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_den-91k_stat-
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_den-91k_stat-coverage_boldmap.pscalar.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_den-91k_stat-mean_timeseries.ptseries.nii
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_stat-alff_bold.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_stat-alff_bold.tsv
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S356Parcels_stat-coverage_bold.json
@@ -117,8 +111,6 @@ sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_den-91k_stat-
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_den-91k_stat-coverage_boldmap.pscalar.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_den-91k_stat-mean_timeseries.ptseries.nii
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
-sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_stat-alff_bold.json
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_stat-alff_bold.tsv
 sub-01/func/sub-01_task-imagery_run-01_space-fsLR_seg-4S456Parcels_stat-coverage_bold.json
@@ -152,8 +144,6 @@ sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_den-91k_stat-
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_den-91k_stat-coverage_boldmap.pscalar.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_den-91k_stat-mean_timeseries.ptseries.nii
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_stat-alff_bold.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_stat-alff_bold.tsv
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S156Parcels_stat-coverage_bold.json
@@ -169,8 +159,6 @@ sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_den-91k_stat-
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_den-91k_stat-coverage_boldmap.pscalar.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_den-91k_stat-mean_timeseries.ptseries.nii
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_stat-alff_bold.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_stat-alff_bold.tsv
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S256Parcels_stat-coverage_bold.json
@@ -186,8 +174,6 @@ sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_den-91k_stat-
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_den-91k_stat-coverage_boldmap.pscalar.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_den-91k_stat-mean_timeseries.ptseries.nii
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_stat-alff_bold.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_stat-alff_bold.tsv
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S356Parcels_stat-coverage_bold.json
@@ -203,8 +189,6 @@ sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_den-91k_stat-
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_den-91k_stat-coverage_boldmap.pscalar.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_den-91k_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_den-91k_stat-mean_timeseries.ptseries.nii
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_den-91k_stat-pearsoncorrelation_boldmap.json
-sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_stat-alff_bold.json
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_stat-alff_bold.tsv
 sub-01/func/sub-01_task-imagery_run-02_space-fsLR_seg-4S456Parcels_stat-coverage_bold.json

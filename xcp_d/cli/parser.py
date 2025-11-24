@@ -588,7 +588,6 @@ The default is 240 (4 minutes).
         '--output_run_wise_correlations',
         dest='output_run_wise_correlations',
         nargs='?',
-        const=None,
         default='auto',
         choices=['y', 'n'],
         action=parser_utils.YesNoAction,
