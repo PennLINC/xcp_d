@@ -173,6 +173,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
+            has_multiple_runs=False,
             name='connectivity_wf',
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
@@ -300,6 +301,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,
+            has_multiple_runs=False,
             exact_scans=[],
             name='connectivity_wf',
         )

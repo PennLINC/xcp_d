@@ -59,6 +59,7 @@ def base_opts():
         'combine_runs': 'auto',
         'output_type': 'auto',
         'output_layout': 'bids',
+        'output_run_wise_correlations': 'auto',
         'fs_license_file': None,
     }
     opts = FakeOptions(**opts_dict)
@@ -404,6 +405,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     assert "'--min-coverage' is required for 'none' mode." in stderr
     assert "'--motion-filter-type' is required for 'none' mode." in stderr
     assert "'--nuisance-regressors' is required for 'none' mode." in stderr
+    assert "'--output-run-wise-correlations' (y or n) is required for 'none' mode." in stderr
     assert "'--output-type' is required for 'none' mode." in stderr
     assert "'--smoothing' is required for 'none' mode." in stderr
     assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
@@ -418,6 +420,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     opts.linc_qc = False
     opts.min_coverage = 0.5
     opts.motion_filter_type = 'none'
+    opts.output_run_wise_correlations = False
     opts.output_type = 'censored'
     opts.params = '36P'
     opts.process_surfaces = False
