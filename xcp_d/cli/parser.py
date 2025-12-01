@@ -583,6 +583,16 @@ The default is 240 (4 minutes).
             'Must be a value between zero and one, indicating proportion of the parcel.'
         ),
     )
+    g_parcellation.add_argument(
+        '--output-run-wise-correlations',
+        '--output_run_wise_correlations',
+        dest='output_run_wise_correlations',
+        nargs='?',
+        default='auto',
+        choices=['y', 'n'],
+        action=parser_utils.YesNoAction,
+        help='Output run-wise correlation matrices.',
+    )
 
     g_dcan = parser.add_argument_group('abcd/hbcd mode options')
     g_dcan.add_argument(
@@ -1115,6 +1125,7 @@ def _validate_parameters(opts, build_log, parser):
         'none',
     ), f'Unsupported mode "{opts.mode}".'
     assert opts.output_layout in ('bids', 'multiverse')
+    assert opts.output_run_wise_correlations in (True, False, 'auto')
     assert opts.output_type in ('censored', 'interpolated', 'auto')
     assert opts.process_surfaces in (True, False, 'auto')
 
@@ -1144,6 +1155,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
+        opts.output_run_wise_correlations = (
+            False
+            if (opts.output_run_wise_correlations == 'auto')
+            else opts.output_run_wise_correlations
+        )
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
@@ -1167,6 +1183,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
         if opts.motion_filter_type is None:
             error_messages.append(f"'--motion-filter-type' is required for '{opts.mode}' mode.")
+        opts.output_run_wise_correlations = (
+            False
+            if (opts.output_run_wise_correlations == 'auto')
+            else opts.output_run_wise_correlations
+        )
         if opts.output_type == 'censored':
             error_messages.append(f"'--output-type' cannot be 'censored' for '{opts.mode}' mode.")
         opts.output_type = 'interpolated'
@@ -1187,6 +1208,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
         opts.min_coverage = 0.5 if opts.min_coverage == 'auto' else opts.min_coverage
+        opts.output_run_wise_correlations = (
+            True
+            if (opts.output_run_wise_correlations == 'auto')
+            else opts.output_run_wise_correlations
+        )
         if opts.output_type == 'interpolated':
             error_messages.append(
                 f"'--output-type' cannot be 'interpolated' for '{opts.mode}' mode."
@@ -1214,6 +1240,11 @@ def _validate_parameters(opts, build_log, parser):
         opts.input_type = 'fmriprep' if opts.input_type == 'auto' else opts.input_type
         opts.linc_qc = True if (opts.linc_qc == 'auto') else opts.linc_qc
         opts.min_coverage = 0.4 if opts.min_coverage == 'auto' else opts.min_coverage
+        opts.output_run_wise_correlations = (
+            True
+            if (opts.output_run_wise_correlations == 'auto')
+            else opts.output_run_wise_correlations
+        )
         opts.output_type = 'censored' if opts.output_type == 'auto' else opts.output_type
         opts.process_surfaces = False if opts.process_surfaces == 'auto' else opts.process_surfaces
         opts.report_output_level = (
@@ -1253,6 +1284,11 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.motion_filter_type is None:
             error_messages.append("'--motion-filter-type' is required for 'none' mode.")
+
+        if opts.output_run_wise_correlations == 'auto':
+            error_messages.append(
+                "'--output-run-wise-correlations' (y or n) is required for 'none' mode."
+            )
 
         if opts.output_type == 'auto':
             error_messages.append("'--output-type' is required for 'none' mode.")
