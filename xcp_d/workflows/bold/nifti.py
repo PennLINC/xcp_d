@@ -283,10 +283,7 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    if bandpass_filter:
-        # Skip ALFF calculation if requested
-        skip_alff = 'alff' in config.workflow.skip_outputs
-        if not skip_alff:
+    if bandpass_filter and 'alff' not in config.workflow.skip_outputs:
             alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
 
             workflow.connect([

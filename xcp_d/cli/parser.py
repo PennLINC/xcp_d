@@ -1408,10 +1408,6 @@ def _validate_parameters(opts, build_log, parser):
             # while still performing parcellation
             opts.correlation_lengths = []
 
-        # Warn if ALFF is skipped but bandpass filter is disabled
-        if 'alff' in opts.skip_outputs and not opts.bandpass_filter:
-            build_log.warning('Skipping ALFF has no effect when bandpass filtering is disabled.')
-
     # Some parameters are automatically set depending on the input type.
     if opts.input_type == 'ukb':
         if opts.file_format == 'cifti':

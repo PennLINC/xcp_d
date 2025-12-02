@@ -580,7 +580,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    if bandpass_filter and not skip_alff:
+    if not skip_alff:
         parcellate_alff_wf = init_parcellate_cifti_wf(
             mem_gb=mem_gb,
             compute_mask=False,
