@@ -345,6 +345,27 @@ def _build_parser():
             "'y' enables concatenation. 'n' disables concatenation."
         ),
     )
+    g_param.add_argument(
+        '--skip',
+        dest='skip_outputs',
+        action='store',
+        nargs='+',
+        default=[],
+        choices=['alff', 'reho', 'parcellation', 'connectivity'],
+        help=(
+            'Skip specific outputs during postprocessing. '
+            'Options include: '
+            "'alff' (skip ALFF calculation), "
+            "'reho' (skip ReHo calculation), "
+            "'parcellation' (skip parcellation and time series extraction), "
+            "'connectivity' (skip functional connectivity calculations). "
+            'Multiple options can be specified. '
+            "Note: Skipping 'parcellation' will also skip 'connectivity'. "
+            "Skipping 'connectivity' alone will still perform parcellation "
+            'to extract time series, but will not compute correlation matrices. '
+            "Skipping 'alff' is only relevant when bandpass filtering is enabled."
+        ),
+    )
 
     g_motion_filter = parser.add_argument_group(
         title='Motion filtering parameters',
@@ -563,10 +584,12 @@ The default is 240 (4 minutes).
     g_atlases.add_argument(
         '--skip-parcellation',
         '--skip_parcellation',
-        action='store_const',
-        const=[],
-        dest='atlases',
-        help='Skip parcellation and correlation steps.',
+        dest='skip_parcellation_flag',
+        action='store_true',
+        help=(
+            '(Deprecated) Skip parcellation and correlation steps. '
+            "Use the new '--skip parcellation' option instead."
+        ),
     )
 
     g_parcellation.add_argument(
@@ -1131,6 +1154,17 @@ def _validate_parameters(opts, build_log, parser):
 
     # Add internal atlas datasets to the list of datasets
     opts.datasets = opts.datasets or {}
+    # Backwards compatibility: map deprecated --skip-parcellation to new --skip behavior
+    if getattr(opts, 'skip_parcellation_flag', False):
+        build_log.warning(
+            "The '--skip-parcellation' flag is deprecated and will be removed in a future "
+            "release. Use '--skip parcellation' instead."
+        )
+        # Ensure atlases list is empty (same behavior as previous flag)
+        opts.atlases = []
+        # Add 'parcellation' to skip_outputs if not already present
+        if 'parcellation' not in opts.skip_outputs:
+            opts.skip_outputs.append('parcellation')
     if opts.atlases:
         if 'xcpdatlases' not in opts.datasets:
             opts.datasets['xcpdatlases'] = load_data('atlases')
@@ -1223,8 +1257,12 @@ def _validate_parameters(opts, build_log, parser):
             'root' if opts.report_output_level == 'auto' else opts.report_output_level
         )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
+        # Check --create-matrices compatibility, but allow if connectivity is skipped
         if opts.correlation_lengths is not None:
-            error_messages.append(f"'--create-matrices' is not supported for '{opts.mode}' mode.")
+            if not opts.skip_outputs or 'connectivity' not in opts.skip_outputs:
+                error_messages.append(
+                    f"'--create-matrices' is not supported for '{opts.mode}' mode."
+                )
         # Patch 'all' into the list of correlation lengths
         opts.correlation_lengths = ['all']
     elif opts.mode == 'nichart':
@@ -1233,7 +1271,9 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else 'all'
+        opts.correlation_lengths = (
+            opts.correlation_lengths if opts.correlation_lengths else ['all']
+        )
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1388,6 +1428,47 @@ def _validate_parameters(opts, build_log, parser):
             'When no atlases are selected or parcellation is explicitly skipped '
             "('--skip-parcellation'), '--min-coverage' will have no effect."
         )
+
+    # Handle --skip parameter
+    if opts.skip_outputs:
+        # Handle 'parcellation' skip option
+        # If parcellation is skipped, connectivity must also be skipped
+        if 'parcellation' in opts.skip_outputs:
+            if opts.atlases:
+                build_log.info(
+                    'Skipping parcellation as requested. Setting atlases to empty list.'
+                )
+                opts.atlases = []
+            # Automatically skip connectivity when parcellation is skipped
+            if 'connectivity' not in opts.skip_outputs:
+                build_log.info(
+                    'Automatically skipping connectivity because parcellation is skipped.'
+                )
+                opts.skip_outputs.append('connectivity')
+            # Clear correlation_lengths when parcellation is skipped. This
+            # prevents an inconsistent state where correlation_lengths
+            # suggests connectivity will run even though connectivity is
+            # automatically skipped when parcellation is skipped.
+            if getattr(opts, 'correlation_lengths', None):
+                build_log.info(
+                    'Parcellation is skipped; clearing correlation_lengths to disable '
+                    'connectivity calculations.'
+                )
+                opts.correlation_lengths = []
+
+        # Handle 'connectivity' skip option independently
+        # When connectivity is skipped but parcellation is not,
+        # parcellation will still run to extract time series,
+        # but no correlation matrices will be computed
+        if 'connectivity' in opts.skip_outputs and 'parcellation' not in opts.skip_outputs:
+            build_log.info(
+                'Skipping connectivity as requested. '
+                'Parcellation will still be performed to extract time series, '
+                'but no correlation matrices will be computed.'
+            )
+            # Set correlation_lengths to empty to skip connectivity calculations
+            # while still performing parcellation
+            opts.correlation_lengths = []
 
     # Some parameters are automatically set depending on the input type.
     if opts.input_type == 'ukb':
