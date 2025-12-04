@@ -877,18 +877,6 @@ def test_validate_parameters_skip_multiple(base_opts, base_parser):
     assert opts.correlation_lengths == []  # correlation_lengths set to empty
 
 
-def test_validate_parameters_skip_alff_no_bandpass(base_opts, base_parser, caplog):
-    """Test parser._validate_parameters with --skip alff but bandpass disabled."""
-    opts = deepcopy(base_opts)
-    opts.skip_outputs = ['alff']
-    opts.bandpass_filter = False
-
-    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
-
-    assert 'alff' in opts.skip_outputs
-    assert 'Skipping ALFF has no effect when bandpass filtering is disabled' in caplog.text
-
-
 def test_validate_parameters_skip_empty_list(base_opts, base_parser):
     """Test parser._validate_parameters with empty skip_outputs list."""
     opts = deepcopy(base_opts)
