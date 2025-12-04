@@ -202,6 +202,7 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
         ),
         name='inputnode',
     )
+    # TODO: Replace with BIDSDataGrabber interface
     inputnode.inputs.t1w = subj_data['t1w']
     inputnode.inputs.t2w = subj_data['t2w']
     inputnode.inputs.anat_brainmask = subj_data['anat_brainmask']
@@ -574,6 +575,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t1w_available=t1w_available,
                 t2w_available=t2w_available,
                 n_runs=n_runs,
+                has_multiple_runs=multiscans,
                 exact_scans=exact_scans,
                 name=f'postprocess_{run_counter}_wf',
             )
@@ -632,6 +634,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     (anat_mod, 'inputnode.anat_native'),
                 ]),
             ])  # fmt:skip
+            if config.execution.atlases:
+                workflow.connect([
+                    (load_atlases_wf, concatenate_data_wf, [
+                        ('outputnode.atlas_labels_files', 'inputnode.atlas_labels_files'),
+                    ]),
+                ])  # fmt:skip
 
             for io_name, node in merge_dict.items():
                 workflow.connect([(node, concatenate_data_wf, [('out', f'inputnode.{io_name}')])])

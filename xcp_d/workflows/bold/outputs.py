@@ -17,6 +17,7 @@ from xcp_d.utils.doc import fill_doc
 def init_postproc_derivatives_wf(
     name_source,
     source_metadata,
+    has_multiple_runs,
     exact_scans,
     name='postproc_derivatives_wf',
 ):
@@ -546,7 +547,9 @@ def init_postproc_derivatives_wf(
             (ds_timeseries, outputnode, [('out_file', 'timeseries')]),
         ])  # fmt:skip
 
-        if 'all' in config.workflow.correlation_lengths:
+        if 'all' in config.workflow.correlation_lengths and (
+            config.workflow.output_run_wise_correlations or not has_multiple_runs
+        ):
             make_corrs_meta_dict1 = pe.MapNode(
                 BIDSURI(
                     numinputs=1,
@@ -683,7 +686,9 @@ def init_postproc_derivatives_wf(
                 (ds_timeseries_ciftis, outputnode, [('out_file', 'timeseries_ciftis')]),
             ])  # fmt:skip
 
-            if 'all' in config.workflow.correlation_lengths:
+            if 'all' in config.workflow.correlation_lengths and (
+                config.workflow.output_run_wise_correlations or not has_multiple_runs
+            ):
                 make_ccorrs_meta_dict1 = pe.MapNode(
                     BIDSURI(
                         numinputs=1,
@@ -720,9 +725,8 @@ def init_postproc_derivatives_wf(
                     DerivativesDataSink(
                         source_file=name_source,
                         check_hdr=False,
-                        dismiss_entities=dismiss_hash(['desc', 'den']),
+                        dismiss_entities=dismiss_hash(['desc']),
                         cohort=cohort,
-                        den='91k' if file_format == 'cifti' else None,
                         statistic='pearsoncorrelation',
                         suffix='boldmap',
                         extension='.pconn.nii',
