@@ -174,6 +174,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
             name='connectivity_wf',
+            skip_alff=True, # bandpass_filter=False so skip ALFF
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
@@ -302,6 +303,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
             mem_gb=mem_gbx,
             exact_scans=[],
             name='connectivity_wf',
+            skip_alff=True, # bandpass_filter=False so skip ALFF
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
