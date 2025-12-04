@@ -269,23 +269,26 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    if bandpass_filter and 'alff' not in config.workflow.skip_outputs:
-            alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
+    # Determine whether ALFF should be skipped. ALFF is only meaningful when
+    # bandpass filtering is enabled; users may also explicitly request it be
+    # skipped via the --skip parameter.
+    skip_alff = (not bandpass_filter) or ('alff' in config.workflow.skip_outputs)
 
-            workflow.connect([
-                (inputnode, alff_wf, [
-                    ('lh_midthickness', 'inputnode.lh_midthickness'),
-                    ('rh_midthickness', 'inputnode.rh_midthickness'),
-                ]),
-                (prepare_confounds_wf, alff_wf, [
-                    ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
-                ]),
-                (denoise_bold_wf, alff_wf, [
-                    ('outputnode.denoised_interpolated_bold', 'inputnode.denoised_bold'),
-                ]),
-            ])  # fmt:skip
-    else:
-        skip_alff = True  # ALFF is not calculated without bandpass filter
+    if not skip_alff:
+        alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
+
+        workflow.connect([
+            (inputnode, alff_wf, [
+                ('lh_midthickness', 'inputnode.lh_midthickness'),
+                ('rh_midthickness', 'inputnode.rh_midthickness'),
+            ]),
+            (prepare_confounds_wf, alff_wf, [
+                ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
+            ]),
+            (denoise_bold_wf, alff_wf, [
+                ('outputnode.denoised_interpolated_bold', 'inputnode.denoised_bold'),
+            ]),
+        ])  # fmt:skip
 
     # Skip ReHo calculation if requested
     skip_reho = 'reho' in config.workflow.skip_outputs
