@@ -195,7 +195,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (parcellate_reho, outputnode, [('timeseries', 'parcellated_reho')]),
         ])  # fmt:skip
 
-    if bandpass_filter and not skip_alff:
+    if not skip_alff:
         parcellate_alff = pe.MapNode(
             NiftiParcellate(min_coverage=min_coverage),
             name='parcellate_alff',
