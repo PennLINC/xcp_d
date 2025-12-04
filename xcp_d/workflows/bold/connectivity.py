@@ -75,7 +75,6 @@ def init_functional_connectivity_nifti_wf(
 
     workflow = Workflow(name=name)
 
-    bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
     workflow.__desc__ = f"""
@@ -293,7 +292,6 @@ def init_functional_connectivity_cifti_wf(
 
     workflow = Workflow(name=name)
 
-    bandpass_filter = config.workflow.bandpass_filter
     min_coverage = config.workflow.min_coverage
 
     workflow.__desc__ = f"""
