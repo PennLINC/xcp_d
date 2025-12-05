@@ -521,8 +521,9 @@ class _SlicesDirInputSpec(FSLCommandInputSpec):
         desc='output every second axial slice rather than just 9 ortho slices',
     )
 
+    # Copy in_files from the original location to the runtime.cwd
     in_files = InputMultiPath(
-        File(exists=True),
+        File(exists=True, copyfile=False),
         argstr='%s',
         mandatory=True,
         position=-1,
