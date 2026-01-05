@@ -515,13 +515,13 @@ def _denoise_with_nilearn(
     if detrend_and_denoise:
         # Detrend the interpolated data and confounds.
         # This also mean-centers the data and confounds.
-        preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=False)
+        preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=None)
         if have_confounds:
-            confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
+            confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=None)
 
         if have_voxelwise_confounds:
             voxelwise_confounds = [
-                standardize_signal(arr, detrend=True, standardize=False)
+                standardize_signal(arr, detrend=True, standardize=None)
                 for arr in voxelwise_confounds
             ]
 
