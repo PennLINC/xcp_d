@@ -97,6 +97,7 @@ class NiftiParcellate(SimpleInterface):
             standardize=False,
             strategy='sum',
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
         sum_masker_unmasked = NiftiLabelsMasker(
             labels_img=atlas_img,
@@ -106,6 +107,7 @@ class NiftiParcellate(SimpleInterface):
             standardize=False,
             strategy='sum',
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
         n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
         n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
@@ -154,6 +156,7 @@ class NiftiParcellate(SimpleInterface):
             smoothing_fwhm=None,
             standardize=False,
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
 
         # Use nilearn to parcellate the file
