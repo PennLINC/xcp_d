@@ -1,5 +1,24 @@
 # What's New
 
+## 0.14.0 (January 6, 2026)
+
+### 🎉 Exciting New Features
+
+* Generate pconn.niis from concatenated CIFTI time series by @tsalo in https://github.com/PennLINC/xcp_d/pull/1541
+* Add parameter to control run-wise correlations by @tsalo in https://github.com/PennLINC/xcp_d/pull/1544
+* Add --skip parameter to skip outputs during postprocessing by @psychelzh in https://github.com/PennLINC/xcp_d/pull/1535
+
+### Other Changes
+
+* Remove information on differences between modes by @tsalo in https://github.com/PennLINC/xcp_d/pull/1542
+* Support BIDS proc-<label> entity in xcp_d path patterns by @magicbrainresearch in https://github.com/PennLINC/xcp_d/pull/1546
+
+## New Contributors
+
+* @magicbrainresearch made their first contribution in https://github.com/PennLINC/xcp_d/pull/1546
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.13.0...0.14.0
+
 
 ## 0.13.0 (November 11, 2025)
 
