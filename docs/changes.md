@@ -13,7 +13,7 @@
 * Remove information on differences between modes by @tsalo in https://github.com/PennLINC/xcp_d/pull/1542
 * Support BIDS proc-<label> entity in xcp_d path patterns by @magicbrainresearch in https://github.com/PennLINC/xcp_d/pull/1546
 
-## New Contributors
+### New Contributors
 
 * @magicbrainresearch made their first contribution in https://github.com/PennLINC/xcp_d/pull/1546
 
@@ -57,7 +57,7 @@
 * Use fsLR-registered spheres when available by @tsalo in https://github.com/PennLINC/xcp_d/pull/1486
 * Add hash entity to outputs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1496
 
-## New Contributors
+### New Contributors
 
 * @j1c made their first contribution in https://github.com/PennLINC/xcp_d/pull/1490
 * @roeysc made their first contribution in https://github.com/PennLINC/xcp_d/pull/1498
@@ -190,10 +190,7 @@ This release makes the brainsprite work with composite transforms from Nibabies.
 
 ## 0.10.3
 
-<!-- Release notes generated using configuration in .github/release.yml at main -->
 This release fixes a testing bug that prevented 0.10.2 from deploying.
-
-## What's Changed
 
 ### 🐛 Bug Fixes
 
