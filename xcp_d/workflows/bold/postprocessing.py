@@ -830,7 +830,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                         hemi='R',
                         density='32k',
                         desc=None,
-                        suffix='sphere',
+                        suffix='midthickness',
                         raise_empty=True,
                     )
                 ),
@@ -841,7 +841,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                         hemi='L',
                         density='32k',
                         desc=None,
-                        suffix='sphere',
+                        suffix='midthickness',
                         raise_empty=True,
                     )
                 ),
