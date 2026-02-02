@@ -1,5 +1,18 @@
 # What's New
 
+## 0.14.1 (February 2, 2026)
+
+### 🐛 Bug Fixes
+
+* Change smoothing surf from 'sphere' to 'midthickness' by @joey-scanga in https://github.com/PennLINC/xcp_d/pull/1565
+
+## New Contributors
+
+* @joey-scanga made their first contribution in https://github.com/PennLINC/xcp_d/pull/1565
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.14.0...0.14.1
+
+
 ## 0.14.0 (January 6, 2026)
 
 ### 🎉 Exciting New Features
