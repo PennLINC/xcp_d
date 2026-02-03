@@ -142,7 +142,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
                     │   │   ├── *_<TASK_ID><RUN_ID>_<DIR_ID>_Atlas_MSMAll.dtseries.nii
                     │   │   ├── Movement_Regressors.txt
                     │   │   ├── Movement_AbsoluteRMS.txt
-                    │   │   └── brainmask_fs.2.0.nii.gz
+                    │   │   └── brainmask_fs.2[.0].nii.gz
                     ├── fsaverage_LR32k
                     │   ├── L.pial.32k_fs_LR.surf.gii
                     │   ├── R.pial.32k_fs_LR.surf.gii
@@ -274,6 +274,10 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
         boldmask_nifti_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.nii.gz')
+        # Sometimes it's named brainmask_fs.2.0.nii.gz instead.
+        if not os.path.isfile(boldmask_nifti_orig):
+            boldmask_nifti_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.0.nii.gz')
+
         boldmask_nifti_fmriprep = os.path.join(
             func_dir_bids,
             f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-brain_mask.nii.gz',
@@ -333,7 +337,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             prefix=func_prefix,
             work_dir=work_dir,
             bold_file=bold_nifti_orig,
-            brainmask_file=os.path.join(task_dir_orig, 'brainmask_fs.2.nii.gz'),
+            brainmask_file=boldmask_nifti_orig,
             csf_mask_file=csf_mask,
             wm_mask_file=wm_mask,
         )
