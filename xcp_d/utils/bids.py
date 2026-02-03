@@ -13,7 +13,7 @@ from pathlib import Path
 import filelock
 import nibabel as nb
 import yaml
-from bids.layout import BIDSLayout
+from bids.layout import BIDSLayout, Query
 from bids.utils import listify
 from nipype import logging
 from nipype.interfaces.base import isdefined
@@ -860,6 +860,20 @@ def collect_confounds(
         bold_file_entities = bold_file.get_entities()
         query = {**bold_file_entities, **confound_def['query']}
         confound_file = layout.get(**query)
+        if len(confound_file) > 1:
+            # Find all entities present in any of the found confound files that are not in the
+            # query, set them to Query.NONE in an updated query, and search again.
+            entities_in_confound_files = set()
+            for f in confound_file:
+                entities_in_confound_files.update(f.get_entities().keys())
+            entities_not_in_query = entities_in_confound_files - set(query.keys())
+            if entities_not_in_query:
+                query = {
+                    **query,
+                    **dict.fromkeys(entities_not_in_query, Query.NONE),
+                }
+                confound_file = layout.get(**query)
+
         if not confound_file:
             raise FileNotFoundError(
                 f'Could not find confound file for {confound_name} with query {query}'
