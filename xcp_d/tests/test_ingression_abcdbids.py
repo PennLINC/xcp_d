@@ -16,11 +16,16 @@ _SHAPE_3D = (5, 5, 5)
 _SHAPE_4D = (5, 5, 5, 4)
 
 
-def _write_minimal_nifti(path, shape, zooms=None, dtype=np.float32):
-    """Write a minimal NIfTI with optional zooms (for TR in 4D)."""
+def _write_minimal_nifti(path, shape, zooms=None, dtype=np.float32, mask=False):
+    """Write a minimal NIfTI with optional zooms (for TR in 4D).
+
+    If mask is True, at least one voxel is set to 1 so nilearn accepts it as a valid mask.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     arr = np.zeros(shape, dtype=dtype)
+    if mask:
+        arr.flat[0] = 1
     if zooms is None:
         zooms = (2.0,) * len(shape)
     aff = np.diag([float(z) for z in zooms] + [1.0])[:4, :4]
@@ -45,9 +50,9 @@ def _make_dcan_skeleton(tmp_path, sub_id='01', ses_id='01'):
 
     _write_minimal_nifti(mni / 'T1w.nii.gz', _SHAPE_3D)
     _write_minimal_nifti(mni / 'ribbon.nii.gz', _SHAPE_3D)
-    _write_minimal_nifti(mni / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D)
-    _write_minimal_nifti(mni / f'vent_2mm_{sub_id}_mask_eroded.nii.gz', _SHAPE_3D)
-    _write_minimal_nifti(mni / f'wm_2mm_{sub_id}_mask_eroded.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(mni / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
+    _write_minimal_nifti(mni / f'vent_2mm_{sub_id}_mask_eroded.nii.gz', _SHAPE_3D, mask=True)
+    _write_minimal_nifti(mni / f'wm_2mm_{sub_id}_mask_eroded.nii.gz', _SHAPE_3D, mask=True)
 
     for hemi, surf in [('L', 'pial'), ('R', 'pial'), ('L', 'white'), ('R', 'white')]:
         (fsaverage / f'{sub_id}.{hemi}.{surf}.32k_fs_LR.surf.gii').write_bytes(b'')
@@ -58,7 +63,7 @@ def _make_dcan_skeleton(tmp_path, sub_id='01', ses_id='01'):
         _SHAPE_4D,
         zooms=(2.0, 2.0, 2.0, 2.0),
     )
-    _write_minimal_nifti(task_dir / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(task_dir / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
 
     n_vols = _SHAPE_4D[-1]
     mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'

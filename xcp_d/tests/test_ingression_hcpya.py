@@ -1,5 +1,6 @@
 """Tests for xcp_d.ingression.hcpya."""
 
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,11 +17,16 @@ _SHAPE_4D = (5, 5, 5, 4)
 _AFFINE = np.eye(4)
 
 
-def _write_minimal_nifti(path, shape, zooms=None, dtype=np.float32):
-    """Write a minimal NIfTI with optional zooms (for TR in 4D)."""
+def _write_minimal_nifti(path, shape, zooms=None, dtype=np.float32, mask=False):
+    """Write a minimal NIfTI with optional zooms (for TR in 4D).
+
+    If mask is True, at least one voxel is set to 1 so nilearn accepts it as a valid mask.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     arr = np.zeros(shape, dtype=dtype)
+    if mask:
+        arr.flat[0] = 1
     if zooms is None:
         zooms = (2.0,) * len(shape)
     aff = np.diag([float(z) for z in zooms] + [1.0])[:4, :4]
@@ -43,7 +49,7 @@ def _make_hcp_skeleton(tmp_path, sub_id='01'):
 
     _write_minimal_nifti(mni / 'T1w.nii.gz', _SHAPE_3D)
     _write_minimal_nifti(mni / 'ribbon.nii.gz', _SHAPE_3D)
-    _write_minimal_nifti(mni / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(mni / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
 
     for hemi, surf in [('L', 'pial'), ('R', 'pial'), ('L', 'white'), ('R', 'white')]:
         (fsaverage / f'{sub_id}.{hemi}.{surf}.32k_fs_LR.surf.gii').write_bytes(b'')
@@ -54,8 +60,8 @@ def _make_hcp_skeleton(tmp_path, sub_id='01'):
         _SHAPE_4D,
         zooms=(2.0, 2.0, 2.0, 2.0),
     )
-    _write_minimal_nifti(task_dir / 'brainmask_fs.2.nii.gz', _SHAPE_3D)
-    _write_minimal_nifti(task_dir / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(task_dir / 'brainmask_fs.2.nii.gz', _SHAPE_3D, mask=True)
+    _write_minimal_nifti(task_dir / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
 
     n_vols = _SHAPE_4D[-1]
     mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
@@ -185,8 +191,8 @@ def test_convert_hcp_to_bids_single_subject_full_run(tmp_path):
     masks_dir.mkdir()
     csf_path = masks_dir / 'space-MNI152NLin6Asym_res-2_label-CSF_mask.nii.gz'
     wm_path = masks_dir / 'space-MNI152NLin6Asym_res-2_label-WM_mask.nii.gz'
-    _write_minimal_nifti(csf_path, _SHAPE_3D)
-    _write_minimal_nifti(wm_path, _SHAPE_3D)
+    _write_minimal_nifti(csf_path, _SHAPE_3D, mask=True)
+    _write_minimal_nifti(wm_path, _SHAPE_3D, mask=True)
 
     def fake_load_data(name):
         if 'label-CSF_mask' in name:
@@ -208,7 +214,7 @@ def test_convert_hcp_to_bids_single_subject_full_run(tmp_path):
 
     assert (out_dir / 'dataset_description.json').exists()
     with open(out_dir / 'dataset_description.json') as f:
-        desc = __import__('json').json.load(f)
+        desc = json.load(f)
     assert desc.get('Name') == 'HCP'
     assert desc.get('DatasetType') == 'derivative'
 
