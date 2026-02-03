@@ -1,10 +1,78 @@
 """Tests for xcp_d.ingression.hcpya."""
 
+import json
+from pathlib import Path
 from unittest.mock import patch
 
+import nibabel as nb
+import numpy as np
+import pandas as pd
 import pytest
 
 from xcp_d.ingression import hcpya
+
+# Small imaging grid: 5x5x5 = 125 voxels; 5x5x5x4 = 500 voxels (under limit)
+_SHAPE_3D = (5, 5, 5)
+_SHAPE_4D = (5, 5, 5, 4)
+_AFFINE = np.eye(4)
+
+
+def _write_minimal_nifti(path, shape, zooms=None, dtype=np.float32, mask=False):
+    """Write a minimal NIfTI with optional zooms (for TR in 4D).
+
+    If mask is True, at least one voxel is set to 1 so nilearn accepts it as a valid mask.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    arr = np.zeros(shape, dtype=dtype)
+    if mask:
+        arr.flat[0] = 1
+    if zooms is None:
+        zooms = (2.0,) * len(shape)
+    aff = np.diag([float(z) for z in zooms] + [1.0])[:4, :4]
+    img = nb.Nifti1Image(arr, aff)
+    img.to_filename(str(path))
+
+
+def _make_hcp_skeleton(tmp_path, sub_id='01'):
+    """Build minimal HCP-like directory tree with small NIFTIs."""
+    in_dir = tmp_path / 'hcp_in'
+    in_dir.mkdir()
+    mni = in_dir / sub_id / 'MNINonLinear'
+    mni.mkdir(parents=True)
+    fsaverage = mni / 'fsaverage_LR32k'
+    fsaverage.mkdir()
+    results = mni / 'Results'
+    results.mkdir()
+    task_dir = results / 'tfMRI_REST1_RL'
+    task_dir.mkdir()
+
+    _write_minimal_nifti(mni / 'T1w.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(mni / 'ribbon.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(mni / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
+
+    for hemi, surf in [('L', 'pial'), ('R', 'pial'), ('L', 'white'), ('R', 'white')]:
+        (fsaverage / f'{sub_id}.{hemi}.{surf}.32k_fs_LR.surf.gii').write_bytes(b'')
+
+    _write_minimal_nifti(task_dir / 'SBRef_dc.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(
+        task_dir / 'tfMRI_REST1_RL.nii.gz',
+        _SHAPE_4D,
+        zooms=(2.0, 2.0, 2.0, 2.0),
+    )
+    _write_minimal_nifti(task_dir / 'brainmask_fs.2.nii.gz', _SHAPE_3D, mask=True)
+    _write_minimal_nifti(task_dir / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
+
+    n_vols = _SHAPE_4D[-1]
+    mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
+    (task_dir / 'Movement_Regressors.txt').write_text(mvreg)
+    (task_dir / 'Movement_AbsoluteRMS.txt').write_text(
+        '\n'.join('0.5' for _ in range(n_vols)) + '\n'
+    )
+
+    (task_dir / 'tfMRI_REST1_RL_Atlas_MSMAll.dtseries.nii').write_bytes(b'')
+
+    return in_dir
 
 
 def test_convert_hcp2bids_no_subjects_raises(tmp_path):
@@ -108,3 +176,62 @@ def test_convert_hcp_to_bids_single_subject_skips_when_dataset_description_exist
     mock_anat.assert_not_called()
     mock_mesh.assert_not_called()
     mock_morph.assert_not_called()
+
+
+def test_convert_hcp_to_bids_single_subject_full_run(tmp_path):
+    """convert_hcp_to_bids_single_subject runs with minimal HCP tree and small NIFTIs."""
+    from xcp_d.data import load as real_load
+
+    in_dir = _make_hcp_skeleton(tmp_path, sub_id='01')
+    out_dir = tmp_path / 'out'
+    out_dir.mkdir()
+
+    # Small CSF/WM masks in same space as BOLD so extract_mean_signal works
+    masks_dir = tmp_path / 'masks'
+    masks_dir.mkdir()
+    csf_path = masks_dir / 'space-MNI152NLin6Asym_res-2_label-CSF_mask.nii.gz'
+    wm_path = masks_dir / 'space-MNI152NLin6Asym_res-2_label-WM_mask.nii.gz'
+    _write_minimal_nifti(csf_path, _SHAPE_3D, mask=True)
+    _write_minimal_nifti(wm_path, _SHAPE_3D, mask=True)
+
+    def fake_load_data(name):
+        if 'label-CSF_mask' in name:
+            return str(csf_path)
+        if 'label-WM_mask' in name:
+            return str(wm_path)
+        return str(real_load.readable(name))
+
+    with patch.object(hcpya, 'load_data', side_effect=fake_load_data):
+        hcpya.convert_hcp_to_bids_single_subject(
+            in_dir=str(in_dir),
+            out_dir=str(out_dir),
+            sub_ent='sub-01',
+        )
+
+    sub_dir = out_dir / 'sub-01'
+    anat_dir = sub_dir / 'anat'
+    func_dir = sub_dir / 'func'
+
+    assert (out_dir / 'dataset_description.json').exists()
+    with open(out_dir / 'dataset_description.json') as f:
+        desc = json.load(f)
+    assert desc.get('Name') == 'HCP'
+    assert desc.get('DatasetType') == 'derivative'
+
+    assert (sub_dir / 'sub-01_scans.tsv').exists()
+    scans_df = pd.read_csv(sub_dir / 'sub-01_scans.tsv', sep='\t')
+    assert 'filename' in scans_df.columns
+    assert 'source_file' in scans_df.columns
+    assert len(scans_df) >= 1
+
+    assert (anat_dir / 'sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.txt').exists()
+    assert (anat_dir / 'sub-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.txt').exists()
+
+    prefix = 'sub-01_task-rest_dir-RL_run-1'
+    assert (func_dir / f'{prefix}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz').exists()
+    assert (func_dir / f'{prefix}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.json').exists()
+    assert (func_dir / f'{prefix}_desc-confounds_timeseries.tsv').exists()
+    assert (func_dir / f'{prefix}_desc-confounds_timeseries.json').exists()
+
+    figures_dir = sub_dir / 'figures'
+    assert (figures_dir / f'{prefix}_desc-bbregister_bold.svg').exists()
