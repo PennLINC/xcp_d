@@ -2,7 +2,6 @@
 
 import json
 import os
-from pathlib import Path
 from unittest.mock import patch
 
 import nibabel as nb
@@ -97,9 +96,7 @@ def test_collect_anatomical_files_none_present(tmp_path):
     anat_bids = tmp_path / 'anat_bids'
     anat_bids.mkdir()
     base = 'sub-01_space-MNI152NLin6Asym_res-2'
-    out = ingress_utils.collect_anatomical_files(
-        str(anat_orig), str(anat_bids), base
-    )
+    out = ingress_utils.collect_anatomical_files(str(anat_orig), str(anat_bids), base)
     assert out == {}
 
 
@@ -114,18 +111,12 @@ def test_collect_anatomical_files_some_present(tmp_path):
     t1w.write_bytes(b'')
     ribbon.write_bytes(b'')
     base = 'sub-01_space-MNI152NLin6Asym_res-2'
-    out = ingress_utils.collect_anatomical_files(
-        str(anat_orig), str(anat_bids), base
-    )
+    out = ingress_utils.collect_anatomical_files(str(anat_orig), str(anat_bids), base)
     assert len(out) == 2
     assert str(t1w) in out
-    assert out[str(t1w)] == [
-        os.path.join(anat_bids, f'{base}_desc-preproc_T1w.nii.gz')
-    ]
+    assert out[str(t1w)] == [os.path.join(anat_bids, f'{base}_desc-preproc_T1w.nii.gz')]
     assert str(ribbon) in out
-    assert out[str(ribbon)] == [
-        os.path.join(anat_bids, f'{base}_desc-ribbon_T1w.nii.gz')
-    ]
+    assert out[str(ribbon)] == [os.path.join(anat_bids, f'{base}_desc-ribbon_T1w.nii.gz')]
 
 
 def test_collect_anatomical_files_brainmask_variants(tmp_path):
@@ -136,9 +127,7 @@ def test_collect_anatomical_files_brainmask_variants(tmp_path):
     anat_bids.mkdir()
     (anat_orig / 'brainmask_fs.2.0.nii.gz').write_bytes(b'')
     base = 'sub-01_space-MNI152NLin6Asym_res-2'
-    out = ingress_utils.collect_anatomical_files(
-        str(anat_orig), str(anat_bids), base
-    )
+    out = ingress_utils.collect_anatomical_files(str(anat_orig), str(anat_bids), base)
     assert len(out) == 1
     assert list(out.values())[0][0].endswith('_desc-brain_mask.nii.gz')
 
@@ -150,9 +139,7 @@ def test_collect_meshes_none_present(tmp_path):
     anat_orig.mkdir()
     (anat_orig / 'fsaverage_LR32k').mkdir()
     anat_bids.mkdir()
-    out = ingress_utils.collect_meshes(
-        str(anat_orig), str(anat_bids), 'subid', 'sub-01'
-    )
+    out = ingress_utils.collect_meshes(str(anat_orig), str(anat_bids), 'subid', 'sub-01')
     assert out == {}
 
 
@@ -167,9 +154,7 @@ def test_collect_meshes_some_present(tmp_path):
     (fsaverage / 'subid.R.pial.32k_fs_LR.surf.gii').write_bytes(b'')
     (fsaverage / 'subid.L.white.32k_fs_LR.surf.gii').write_bytes(b'')
     (fsaverage / 'subid.R.white.32k_fs_LR.surf.gii').write_bytes(b'')
-    out = ingress_utils.collect_meshes(
-        str(anat_orig), str(anat_bids), 'subid', 'sub-01'
-    )
+    out = ingress_utils.collect_meshes(str(anat_orig), str(anat_bids), 'subid', 'sub-01')
     assert len(out) == 4
     out_paths = [p for v in out.values() for p in v]
     assert any('hemi-L_pial' in p for p in out_paths)
@@ -188,9 +173,7 @@ def test_collect_morphs_skips_when_files_missing(tmp_path):
     (fsaverage / 'subid.L.thickness.32k_fs_LR.shape.gii').write_bytes(b'')
     # No R file
     with patch.object(ingress_utils, 'CiftiCreateDenseScalar') as mock_wb:
-        out = ingress_utils.collect_morphs(
-            str(anat_orig), str(anat_bids), 'subid', 'sub-01'
-        )
+        out = ingress_utils.collect_morphs(str(anat_orig), str(anat_bids), 'subid', 'sub-01')
     assert out == {}
     mock_wb.assert_not_called()
 
@@ -211,9 +194,7 @@ def test_collect_morphs_calls_interface_when_both_hemis_present(tmp_path):
     with patch.object(ingress_utils, 'CiftiCreateDenseScalar') as MockWB:
         mock_run = MockWB.return_value.run
         mock_run.return_value.outputs = type('R', (), {'out_file': None})()
-        out = ingress_utils.collect_morphs(
-            str(anat_orig), str(anat_bids), 'subid', 'sub-01'
-        )
+        out = ingress_utils.collect_morphs(str(anat_orig), str(anat_bids), 'subid', 'sub-01')
     assert MockWB.called
     assert str(lh) in out
     assert str(rh) in out
@@ -233,12 +214,8 @@ def test_extract_mean_signal(tmp_path):
     mask_img = nb.load(str(mask_path))
     mask_data = np.asarray(mask_img.dataobj)
     mask_data[0, 0, 0] = 1
-    nb.Nifti1Image(mask_data.astype(np.float32), mask_img.affine).to_filename(
-        str(mask_path)
-    )
-    result = ingress_utils.extract_mean_signal(
-        str(mask_path), str(bold_path), str(work_dir)
-    )
+    nb.Nifti1Image(mask_data.astype(np.float32), mask_img.affine).to_filename(str(mask_path))
+    result = ingress_utils.extract_mean_signal(str(mask_path), str(bold_path), str(work_dir))
     assert result.ndim == 1
     assert result.shape[0] == 6
 

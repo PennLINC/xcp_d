@@ -1,7 +1,5 @@
 """Tests for xcp_d.ingression.ukbiobank."""
 
-import os
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

@@ -1,7 +1,5 @@
 """Tests for xcp_d.ingression.abcdbids."""
 
-import os
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -40,13 +38,9 @@ def test_convert_dcan2bids_with_participant_ids(tmp_path):
     out_dir = tmp_path / 'out'
     out_dir.mkdir()
     with patch.object(abcdbids, 'convert_dcan_to_bids_single_subject') as mock_single:
-        result = abcdbids.convert_dcan2bids(
-            str(in_dir), str(out_dir), participant_ids=['sub-01']
-        )
+        result = abcdbids.convert_dcan2bids(str(in_dir), str(out_dir), participant_ids=['sub-01'])
     assert result == ['sub-01']
-    mock_single.assert_called_once_with(
-        in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='sub-01'
-    )
+    mock_single.assert_called_once_with(in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='sub-01')
 
 
 def test_convert_dcan2bids_passes_participant_ids_through(tmp_path):
@@ -56,13 +50,9 @@ def test_convert_dcan2bids_passes_participant_ids_through(tmp_path):
     out_dir = tmp_path / 'out'
     out_dir.mkdir()
     with patch.object(abcdbids, 'convert_dcan_to_bids_single_subject') as mock_single:
-        result = abcdbids.convert_dcan2bids(
-            str(in_dir), str(out_dir), participant_ids=['01']
-        )
+        result = abcdbids.convert_dcan2bids(str(in_dir), str(out_dir), participant_ids=['01'])
     assert result == ['01']
-    mock_single.assert_called_once_with(
-        in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='01'
-    )
+    mock_single.assert_called_once_with(in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='01')
 
 
 def test_convert_dcan_to_bids_single_subject_asserts_inputs():

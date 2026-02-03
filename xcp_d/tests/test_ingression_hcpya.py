@@ -1,7 +1,5 @@
 """Tests for xcp_d.ingression.hcpya."""
 
-import os
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -31,12 +29,8 @@ def test_convert_hcp2bids_with_participant_ids_calls_single_subject(tmp_path):
         )
     assert result == ['sub-01', 'sub-02']
     assert mock_single.call_count == 2
-    mock_single.assert_any_call(
-        in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='sub-01'
-    )
-    mock_single.assert_any_call(
-        in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='sub-02'
-    )
+    mock_single.assert_any_call(in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='sub-01')
+    mock_single.assert_any_call(in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='sub-02')
 
 
 def test_convert_hcp2bids_passes_participant_ids_through(tmp_path):
@@ -46,13 +40,9 @@ def test_convert_hcp2bids_passes_participant_ids_through(tmp_path):
     out_dir = tmp_path / 'out'
     out_dir.mkdir()
     with patch.object(hcpya, 'convert_hcp_to_bids_single_subject') as mock_single:
-        result = hcpya.convert_hcp2bids(
-            str(in_dir), str(out_dir), participant_ids=['01']
-        )
+        result = hcpya.convert_hcp2bids(str(in_dir), str(out_dir), participant_ids=['01'])
     assert result == ['01']
-    mock_single.assert_called_once_with(
-        in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='01'
-    )
+    mock_single.assert_called_once_with(in_dir=str(in_dir), out_dir=str(out_dir), sub_ent='01')
 
 
 def test_convert_hcp_to_bids_single_subject_asserts_inputs():
