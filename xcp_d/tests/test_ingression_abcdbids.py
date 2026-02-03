@@ -11,7 +11,6 @@ import pytest
 
 from xcp_d.ingression import abcdbids
 
-
 # Small imaging grid: 5x5x5 = 125 voxels; 5x5x5x4 = 500 voxels (under limit)
 _SHAPE_3D = (5, 5, 5)
 _SHAPE_4D = (5, 5, 5, 4)
@@ -226,20 +225,15 @@ def test_convert_dcan_to_bids_single_subject_full_run(tmp_path):
 
     assert (sub_dir / 'sub-01_ses-01_scans.tsv').exists()
     scans_df = pd.read_csv(sub_dir / 'sub-01_ses-01_scans.tsv', sep='\t')
-    assert 'filename' in scans_df.columns and 'source_file' in scans_df.columns
+    assert 'filename' in scans_df.columns
+    assert 'source_file' in scans_df.columns
     assert len(scans_df) >= 1
 
-    assert (
-        anat_dir / 'sub-01_ses-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.txt'
-    ).exists()
-    assert (
-        anat_dir / 'sub-01_ses-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.txt'
-    ).exists()
+    assert (anat_dir / 'sub-01_ses-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.txt').exists()
+    assert (anat_dir / 'sub-01_ses-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.txt').exists()
 
     prefix = 'sub-01_ses-01_task-rest_run-1'
-    assert (
-        func_dir / f'{prefix}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
-    ).exists()
+    assert (func_dir / f'{prefix}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz').exists()
     assert (func_dir / f'{prefix}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.json').exists()
     assert (func_dir / f'{prefix}_desc-confounds_timeseries.tsv').exists()
     assert (func_dir / f'{prefix}_desc-confounds_timeseries.json').exists()

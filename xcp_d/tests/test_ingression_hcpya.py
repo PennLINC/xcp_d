@@ -10,7 +10,6 @@ import pytest
 
 from xcp_d.ingression import hcpya
 
-
 # Small imaging grid: 5x5x5 = 125 voxels; 5x5x5x4 = 500 voxels (under limit)
 _SHAPE_3D = (5, 5, 5)
 _SHAPE_4D = (5, 5, 5, 4)
@@ -61,7 +60,9 @@ def _make_hcp_skeleton(tmp_path, sub_id='01'):
     n_vols = _SHAPE_4D[-1]
     mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
     (task_dir / 'Movement_Regressors.txt').write_text(mvreg)
-    (task_dir / 'Movement_AbsoluteRMS.txt').write_text('\n'.join('0.5' for _ in range(n_vols)) + '\n')
+    (task_dir / 'Movement_AbsoluteRMS.txt').write_text(
+        '\n'.join('0.5' for _ in range(n_vols)) + '\n'
+    )
 
     (task_dir / 'tfMRI_REST1_RL_Atlas_MSMAll.dtseries.nii').write_bytes(b'')
 
@@ -213,7 +214,8 @@ def test_convert_hcp_to_bids_single_subject_full_run(tmp_path):
 
     assert (sub_dir / 'sub-01_scans.tsv').exists()
     scans_df = pd.read_csv(sub_dir / 'sub-01_scans.tsv', sep='\t')
-    assert 'filename' in scans_df.columns and 'source_file' in scans_df.columns
+    assert 'filename' in scans_df.columns
+    assert 'source_file' in scans_df.columns
     assert len(scans_df) >= 1
 
     assert (anat_dir / 'sub-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.txt').exists()
