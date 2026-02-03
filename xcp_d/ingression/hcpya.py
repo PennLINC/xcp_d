@@ -142,7 +142,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
                     │   │   ├── *_<TASK_ID><RUN_ID>_<DIR_ID>_Atlas_MSMAll.dtseries.nii
                     │   │   ├── Movement_Regressors.txt
                     │   │   ├── Movement_AbsoluteRMS.txt
-                    │   │   └── brainmask_fs.2.0.nii.gz
+                    │   │   └── brainmask_fs.2[.0].nii.gz
                     ├── fsaverage_LR32k
                     │   ├── L.pial.32k_fs_LR.surf.gii
                     │   ├── R.pial.32k_fs_LR.surf.gii
