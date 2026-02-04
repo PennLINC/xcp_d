@@ -1,6 +1,5 @@
 """Tests for xcp_d.ingression.hcpya."""
 
-import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -75,6 +74,97 @@ def _make_hcp_skeleton(tmp_path, sub_id='01'):
     return in_dir
 
 
+def _add_hcp_subject(in_dir, sub_id):
+    """Add a second HCP subject to an existing in_dir (same layout as _make_hcp_skeleton)."""
+    in_dir = Path(in_dir)
+    mni = in_dir / sub_id / 'MNINonLinear'
+    mni.mkdir(parents=True)
+    fsaverage = mni / 'fsaverage_LR32k'
+    fsaverage.mkdir()
+    results = mni / 'Results'
+    results.mkdir()
+    task_dir = results / 'tfMRI_REST1_RL'
+    task_dir.mkdir()
+
+    _write_minimal_nifti(mni / 'T1w.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(mni / 'ribbon.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(mni / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
+
+    for hemi, surf in [('L', 'pial'), ('R', 'pial'), ('L', 'white'), ('R', 'white')]:
+        (fsaverage / f'{sub_id}.{hemi}.{surf}.32k_fs_LR.surf.gii').write_bytes(b'')
+
+    _write_minimal_nifti(task_dir / 'SBRef_dc.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(
+        task_dir / 'tfMRI_REST1_RL.nii.gz',
+        _SHAPE_4D,
+        zooms=(2.0, 2.0, 2.0, 2.0),
+    )
+    _write_minimal_nifti(task_dir / 'brainmask_fs.2.nii.gz', _SHAPE_3D, mask=True)
+    _write_minimal_nifti(task_dir / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
+
+    n_vols = _SHAPE_4D[-1]
+    mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
+    (task_dir / 'Movement_Regressors.txt').write_text(mvreg)
+    (task_dir / 'Movement_AbsoluteRMS.txt').write_text(
+        '\n'.join('0.5' for _ in range(n_vols)) + '\n'
+    )
+    (task_dir / 'tfMRI_REST1_RL_Atlas_MSMAll.dtseries.nii').write_bytes(b'')
+
+
+def test_convert_hcp2bids_two_subjects_both_converted_reproduces_issue_1471(tmp_path):
+    """convert_hcp2bids converts all subjects; second subject not skipped (Issue #1471).
+
+    When dataset_description.json is written at the end of the first subject's
+    conversion, the second subject's conversion must not be skipped. Otherwise
+    only one subject is converted (see https://github.com/PennLINC/xcp_d/issues/1471).
+    """
+    from xcp_d.data import load as real_load
+
+    in_dir = _make_hcp_skeleton(tmp_path, sub_id='01')
+    _add_hcp_subject(in_dir, '02')
+
+    out_dir = tmp_path / 'out'
+    out_dir.mkdir()
+
+    masks_dir = tmp_path / 'masks'
+    masks_dir.mkdir()
+    csf_path = masks_dir / 'space-MNI152NLin6Asym_res-2_label-CSF_mask.nii.gz'
+    wm_path = masks_dir / 'space-MNI152NLin6Asym_res-2_label-WM_mask.nii.gz'
+    _write_minimal_nifti(csf_path, _SHAPE_3D, mask=True)
+    _write_minimal_nifti(wm_path, _SHAPE_3D, mask=True)
+
+    def fake_load_data(name):
+        if 'label-CSF_mask' in name:
+            return str(csf_path)
+        if 'label-WM_mask' in name:
+            return str(wm_path)
+        return str(real_load.readable(name))
+
+    with patch.object(hcpya, 'load_data', side_effect=fake_load_data):
+        result = hcpya.convert_hcp2bids(
+            str(in_dir), str(out_dir), participant_ids=['sub-01', 'sub-02']
+        )
+
+    assert result == ['sub-01', 'sub-02']
+
+    # Both subjects must have been converted (bug: only first was when dataset_description
+    # was written inside single-subject and checked at start of next).
+    sub01_dir = out_dir / 'sub-01'
+    sub02_dir = out_dir / 'sub-02'
+    assert sub01_dir.is_dir(), 'sub-01 output dir should exist'
+    assert sub02_dir.is_dir(), 'sub-02 output dir should exist'
+
+    for sub_ent, sub_dir in [('sub-01', sub01_dir), ('sub-02', sub02_dir)]:
+        anat_dir = sub_dir / 'anat'
+        func_dir = sub_dir / 'func'
+        assert (anat_dir / f'{sub_ent}_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.txt').exists()
+        assert (anat_dir / f'{sub_ent}_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.txt').exists()
+        prefix = f'{sub_ent}_task-rest_dir-RL_run-1'
+        bold_path = func_dir / f'{prefix}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
+        assert bold_path.exists()
+        assert (func_dir / f'{prefix}_desc-confounds_timeseries.tsv').exists()
+
+
 def test_convert_hcp2bids_no_subjects_raises(tmp_path):
     """convert_hcp2bids raises ValueError when no subjects found."""
     in_dir = tmp_path / 'hcp_in'
@@ -123,10 +213,14 @@ def test_convert_hcp_to_bids_single_subject_asserts_inputs():
         )
 
 
-def test_convert_hcp_to_bids_single_subject_skips_when_dataset_description_exists(
+def test_convert_hcp_to_bids_single_subject_runs_even_when_dataset_description_exists(
     tmp_path,
 ):
-    """convert_hcp_to_bids_single_subject skips when dataset_description.json exists."""
+    """convert_hcp_to_bids_single_subject runs conversion even if dataset_description.json exists.
+
+    Dataset description is written by the batch converter after all subjects; the
+    single-subject function must not skip when that file is already present.
+    """
     in_dir = tmp_path / 'in'
     in_dir.mkdir()
     sub_id = '01'
@@ -173,9 +267,9 @@ def test_convert_hcp_to_bids_single_subject_skips_when_dataset_description_exist
                                     out_dir=str(out_dir),
                                     sub_ent='sub-01',
                                 )
-    mock_anat.assert_not_called()
-    mock_mesh.assert_not_called()
-    mock_morph.assert_not_called()
+    mock_anat.assert_called_once()
+    mock_mesh.assert_called_once()
+    mock_morph.assert_called_once()
 
 
 def test_convert_hcp_to_bids_single_subject_full_run(tmp_path):
@@ -212,12 +306,7 @@ def test_convert_hcp_to_bids_single_subject_full_run(tmp_path):
     anat_dir = sub_dir / 'anat'
     func_dir = sub_dir / 'func'
 
-    assert (out_dir / 'dataset_description.json').exists()
-    with open(out_dir / 'dataset_description.json') as f:
-        desc = json.load(f)
-    assert desc.get('Name') == 'HCP'
-    assert desc.get('DatasetType') == 'derivative'
-
+    # dataset_description.json is written by convert_hcp2bids after all subjects
     assert (sub_dir / 'sub-01_scans.tsv').exists()
     scans_df = pd.read_csv(sub_dir / 'sub-01_scans.tsv', sep='\t')
     assert 'filename' in scans_df.columns

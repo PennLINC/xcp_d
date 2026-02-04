@@ -86,6 +86,25 @@ def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters=None):
                 ses_id=session_id,
             )
 
+    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
+    if not os.path.isfile(dataset_description_fmriprep):
+        LOGGER.info(f'Writing dataset description to {dataset_description_fmriprep}')
+        write_json(
+            {
+                'Name': 'UK Biobank',
+                'BIDSVersion': BIDS_VERSION,
+                'DatasetType': 'derivative',
+                'GeneratedBy': [
+                    {
+                        'Name': 'UK Biobank',
+                        'Version': 'unknown',
+                        'CodeURL': 'https://github.com/ucam-department-of-psychiatry/UKB',
+                    },
+                ],
+            },
+            dataset_description_fmriprep,
+        )
+
     return participant_ids
 
 
@@ -166,12 +185,6 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         bold_file=bold_file,
         brainmask_file=brainmask_file,
     )
-
-    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
-
-    if os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info('Converted dataset already exists. Skipping conversion.')
-        return
 
     # Warp BOLD, boldref, and brainmask to template space.
     # We use FSL's MNI152NLin6Asym 2 mm3 template instead of TemplateFlow's version,
@@ -265,23 +278,6 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     LOGGER.info('Copying files')
     copy_files_in_dict(copy_dictionary)
     LOGGER.info('Finished copying files')
-
-    dataset_description_dict = {
-        'Name': 'UK Biobank',
-        'BIDSVersion': BIDS_VERSION,
-        'DatasetType': 'derivative',
-        'GeneratedBy': [
-            {
-                'Name': 'UK Biobank',
-                'Version': 'unknown',
-                'CodeURL': 'https://github.com/ucam-department-of-psychiatry/UKB',
-            },
-        ],
-    }
-
-    if not os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info(f'Writing dataset description to {dataset_description_fmriprep}')
-        write_json(dataset_description_dict, dataset_description_fmriprep)
 
     write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents)
     LOGGER.info('Conversion completed')
