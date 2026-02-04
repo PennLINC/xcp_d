@@ -4,15 +4,18 @@ import glob
 import json
 import os
 
-import pandas as pd
 from nipype import logging
 from nipype.interfaces.fsl.preprocess import ApplyWarp
 
 from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
+    BIDS_VERSION,
+    TEMPLATE_SPACE,
     collect_ukbiobank_confounds,
     copy_files_in_dict,
+    get_identity_transform_destinations,
     write_json,
+    write_scans_tsv,
 )
 from xcp_d.utils.filemanip import ensure_list
 
@@ -58,12 +61,7 @@ def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters=None):
         participant_ids = [
             os.path.basename(subject_folder).split('_')[0] for subject_folder in subject_folders
         ]
-        all_subject_ids = []
-        for subject_id in participant_ids:
-            if subject_id not in all_subject_ids:
-                all_subject_ids.append(subject_id)
-
-        participant_ids = all_subject_ids
+        participant_ids = list(dict.fromkeys(participant_ids))
 
         if len(participant_ids) == 0:
             raise ValueError(f'No subject found in {in_dir}')
@@ -82,7 +80,7 @@ def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters=None):
         for subject_dir in subject_dirs:
             session_id = os.path.basename(subject_dir).split('_')[1]
             convert_ukb_to_bids_single_subject(
-                in_dir=subject_dirs[0],
+                in_dir=subject_dir,
                 out_dir=out_dir,
                 sub_id=subject_id,
                 ses_id=session_id,
@@ -175,9 +173,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         LOGGER.info('Converted dataset already exists. Skipping conversion.')
         return
 
-    VOLSPACE = 'MNI152NLin6Asym'
-
-    # Warp BOLD, T1w, and brainmask to MNI152NLin6Asym
+    # Warp BOLD, boldref, and brainmask to template space.
     # We use FSL's MNI152NLin6Asym 2 mm3 template instead of TemplateFlow's version,
     # because FSL uses LAS+ orientation, while TemplateFlow uses RAS+.
     template_file = str(load_data('MNI152_T1_2mm.nii.gz'))
@@ -195,7 +191,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     warp_bold_to_std_results = warp_bold_to_std.run(cwd=work_dir)
     bold_nifti_fmriprep = os.path.join(
         func_dir_bids,
-        f'{func_prefix}_space-{VOLSPACE}_desc-preproc_bold.nii.gz',
+        f'{func_prefix}_space-{TEMPLATE_SPACE}_desc-preproc_bold.nii.gz',
     )
     copy_dictionary[warp_bold_to_std_results.outputs.out_file] = [bold_nifti_fmriprep]
 
@@ -229,16 +225,13 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     copy_dictionary[warp_brainmask_to_std_results.outputs.out_file] = [
         os.path.join(
             func_dir_bids,
-            f'{func_prefix}_space-{VOLSPACE}_desc-brain_mask.nii.gz',
-        )
-    ]
-    # Use the brain mask as the anatomical brain mask too.
-    copy_dictionary[warp_brainmask_to_std_results.outputs.out_file].append(
+            f'{func_prefix}_space-{TEMPLATE_SPACE}_desc-brain_mask.nii.gz',
+        ),
         os.path.join(
             anat_dir_bids,
-            f'{subses_ents}_space-{VOLSPACE}_desc-brain_mask.nii.gz',
-        )
-    )
+            f'{subses_ents}_space-{TEMPLATE_SPACE}_desc-brain_mask.nii.gz',
+        ),
+    ]
 
     # Warp the reference file to MNI space.
     warp_boldref_to_std = ApplyWarp(
@@ -251,30 +244,20 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     warp_boldref_to_std_results = warp_boldref_to_std.run(cwd=work_dir)
     boldref_nifti_fmriprep = os.path.join(
         func_dir_bids,
-        f'{func_prefix}_space-{VOLSPACE}_boldref.nii.gz',
+        f'{func_prefix}_space-{TEMPLATE_SPACE}_boldref.nii.gz',
     )
     copy_dictionary[warp_boldref_to_std_results.outputs.out_file] = [boldref_nifti_fmriprep]
 
-    # The MNI-space anatomical image.
     copy_dictionary[t1w] = [
-        os.path.join(anat_dir_bids, f'{subses_ents}_space-{VOLSPACE}_desc-preproc_T1w.nii.gz')
+        os.path.join(
+            anat_dir_bids, f'{subses_ents}_space-{TEMPLATE_SPACE}_desc-preproc_T1w.nii.gz'
+        )
     ]
 
-    # The identity xform is used in place of any actual ones.
     identity_xfm = str(load_data('transform/itkIdentityTransform.txt'))
-    copy_dictionary[identity_xfm] = []
-
-    t1w_to_template_fmriprep = os.path.join(
-        anat_dir_bids,
-        f'{subses_ents}_from-T1w_to-{VOLSPACE}_mode-image_xfm.txt',
+    copy_dictionary[identity_xfm] = get_identity_transform_destinations(
+        anat_dir_bids, subses_ents, TEMPLATE_SPACE
     )
-    copy_dictionary[identity_xfm].append(t1w_to_template_fmriprep)
-
-    template_to_t1w_fmriprep = os.path.join(
-        anat_dir_bids,
-        f'{subses_ents}_from-{VOLSPACE}_to-T1w_mode-image_xfm.txt',
-    )
-    copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
     LOGGER.info('Finished collecting functional files')
 
@@ -283,10 +266,9 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     copy_files_in_dict(copy_dictionary)
     LOGGER.info('Finished copying files')
 
-    # Write the dataset description out last
     dataset_description_dict = {
         'Name': 'UK Biobank',
-        'BIDSVersion': '1.9.0',
+        'BIDSVersion': BIDS_VERSION,
         'DatasetType': 'derivative',
         'GeneratedBy': [
             {
@@ -301,14 +283,5 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         LOGGER.info(f'Writing dataset description to {dataset_description_fmriprep}')
         write_json(dataset_description_dict, dataset_description_fmriprep)
 
-    # Write out the mapping from UK Biobank to fMRIPrep
-    scans_dict = {}
-    for key, values in copy_dictionary.items():
-        for item in values:
-            scans_dict[item] = key
-
-    scans_tuple = tuple(scans_dict.items())
-    scans_df = pd.DataFrame(scans_tuple, columns=['filename', 'source_file'])
-    scans_tsv = os.path.join(subject_dir_bids, f'{subses_ents}_scans.tsv')
-    scans_df.to_csv(scans_tsv, sep='\t', index=False)
+    write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents)
     LOGGER.info('Conversion completed')
