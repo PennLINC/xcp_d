@@ -76,6 +76,83 @@ def _make_dcan_skeleton(tmp_path, sub_id='01', ses_id='01'):
     return in_dir
 
 
+def _add_dcan_subject(in_dir, sub_id, ses_id='01'):
+    """Add a second DCAN subject to an existing in_dir (same layout as _make_dcan_skeleton)."""
+    session_dir = in_dir / f'sub-{sub_id}' / f'ses-{ses_id}'
+    mni = session_dir / 'files' / 'MNINonLinear'
+    mni.mkdir(parents=True)
+    fsaverage = mni / 'fsaverage_LR32k'
+    fsaverage.mkdir()
+    results = mni / 'Results'
+    results.mkdir()
+    task_name = f'ses-{ses_id}_task-rest_run-1'
+    task_dir = results / task_name
+    task_dir.mkdir()
+
+    _write_minimal_nifti(mni / 'T1w.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(mni / 'ribbon.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(mni / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
+    _write_minimal_nifti(mni / f'vent_2mm_{sub_id}_mask_eroded.nii.gz', _SHAPE_3D, mask=True)
+    _write_minimal_nifti(mni / f'wm_2mm_{sub_id}_mask_eroded.nii.gz', _SHAPE_3D, mask=True)
+
+    for hemi, surf in [('L', 'pial'), ('R', 'pial'), ('L', 'white'), ('R', 'white')]:
+        (fsaverage / f'{sub_id}.{hemi}.{surf}.32k_fs_LR.surf.gii').write_bytes(b'')
+
+    _write_minimal_nifti(task_dir / f'{task_name}_SBRef.nii.gz', _SHAPE_3D)
+    _write_minimal_nifti(
+        task_dir / f'{task_name}.nii.gz',
+        _SHAPE_4D,
+        zooms=(2.0, 2.0, 2.0, 2.0),
+    )
+    _write_minimal_nifti(task_dir / 'brainmask_fs.2.0.nii.gz', _SHAPE_3D, mask=True)
+
+    n_vols = _SHAPE_4D[-1]
+    mvreg = '\n'.join('0 0 0 0 0 0' for _ in range(n_vols)) + '\n'
+    (task_dir / 'Movement_Regressors.txt').write_text(mvreg)
+    (task_dir / 'Movement_AbsoluteRMS.txt').write_text(
+        '\n'.join('0.5' for _ in range(n_vols)) + '\n'
+    )
+    (task_dir / f'{task_name}_Atlas.dtseries.nii').write_bytes(b'')
+
+
+def test_convert_dcan2bids_two_subjects_both_converted_reproduces_issue_1471(tmp_path):
+    """convert_dcan2bids converts all subjects; second subject not skipped (Issue #1471).
+
+    When dataset_description.json is written at the end of the first subject's
+    conversion, the second subject's conversion must not be skipped. Otherwise
+    only one subject is converted (same bug as https://github.com/PennLINC/xcp_d/issues/1471).
+    """
+    in_dir = _make_dcan_skeleton(tmp_path, sub_id='01', ses_id='01')
+    _add_dcan_subject(in_dir, '02', ses_id='01')
+
+    out_dir = tmp_path / 'out'
+    out_dir.mkdir()
+
+    result = abcdbids.convert_dcan2bids(
+        str(in_dir), str(out_dir), participant_ids=['sub-01', 'sub-02']
+    )
+
+    assert result == ['sub-01', 'sub-02']
+
+    sub01_dir = out_dir / 'sub-01'
+    sub02_dir = out_dir / 'sub-02'
+    assert sub01_dir.is_dir(), 'sub-01 output dir should exist'
+    assert sub02_dir.is_dir(), 'sub-02 output dir should exist'
+
+    for sub_ent, sub_dir in [('sub-01', sub01_dir), ('sub-02', sub02_dir)]:
+        ses_dir = sub_dir / 'ses-01'
+        anat_dir = ses_dir / 'anat'
+        func_dir = ses_dir / 'func'
+        xfm1 = anat_dir / f'{sub_ent}_ses-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.txt'
+        xfm2 = anat_dir / f'{sub_ent}_ses-01_from-MNI152NLin6Asym_to-T1w_mode-image_xfm.txt'
+        assert xfm1.exists()
+        assert xfm2.exists()
+        prefix = f'{sub_ent}_ses-01_task-rest_run-1'
+        bold_path = func_dir / f'{prefix}_space-MNI152NLin6Asym_res-2_desc-preproc_bold.nii.gz'
+        assert bold_path.exists()
+        assert (func_dir / f'{prefix}_desc-confounds_timeseries.tsv').exists()
+
+
 def test_convert_dcan2bids_no_subjects_raises(tmp_path):
     """convert_dcan2bids raises ValueError when no subjects found."""
     in_dir = tmp_path / 'dcan_in'
