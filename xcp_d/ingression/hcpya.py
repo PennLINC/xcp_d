@@ -116,6 +116,24 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
             sub_ent=subject_id,
         )
 
+    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
+    if not os.path.isfile(dataset_description_fmriprep):
+        write_json(
+            {
+                'Name': 'HCP',
+                'BIDSVersion': BIDS_VERSION,
+                'DatasetType': 'derivative',
+                'GeneratedBy': [
+                    {
+                        'Name': 'HCP',
+                        'Version': 'unknown',
+                        'CodeURL': 'https://github.com/Washington-University/HCPpipelines',
+                    },
+                ],
+            },
+            dataset_description_fmriprep,
+        )
+
     return participant_ids
 
 
@@ -190,12 +208,6 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     anat_dir_bids = os.path.join(subject_dir_bids, 'anat')
     func_dir_bids = os.path.join(subject_dir_bids, 'func')
     work_dir = os.path.join(subject_dir_bids, 'work')
-
-    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
-
-    if os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info('Converted dataset already exists. Skipping conversion.')
-        return
 
     os.makedirs(anat_dir_bids, exist_ok=True)
     os.makedirs(func_dir_bids, exist_ok=True)
@@ -357,22 +369,6 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     LOGGER.info('Copying files')
     copy_files_in_dict(copy_dictionary)
     LOGGER.info('Finished copying files')
-
-    dataset_description_dict = {
-        'Name': 'HCP',
-        'BIDSVersion': BIDS_VERSION,
-        'DatasetType': 'derivative',
-        'GeneratedBy': [
-            {
-                'Name': 'HCP',
-                'Version': 'unknown',
-                'CodeURL': 'https://github.com/Washington-University/HCPpipelines',
-            },
-        ],
-    }
-
-    if not os.path.isfile(dataset_description_fmriprep):
-        write_json(dataset_description_dict, dataset_description_fmriprep)
 
     copy_dictionary = {**copy_dictionary, **morphometry_dict}
     write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents)

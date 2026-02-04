@@ -22,8 +22,13 @@ def _make_ukb_skeleton(tmp_path, sub_id, ses_id='01'):
     (ica / 'filtered_func_data_clean.nii.gz').write_bytes(b'')
     (ica / 'mask.nii.gz').write_bytes(b'')
     (ica / 'example_func.nii.gz').write_bytes(b'')
-    (ica / 'mc' / 'prefiltered_func_data_mcf.par').write_text('0 0 0 0 0 0\n')
-    (ica / 'mc' / 'prefiltered_func_data_mcf_abs.rms').write_text('0\n')
+    # One row per volume (NormalizeMotionParams expects 2D); use 4 rows for a minimal run.
+    (ica / 'mc' / 'prefiltered_func_data_mcf.par').write_text(
+        '\n'.join('0 0 0 0 0 0' for _ in range(4)) + '\n'
+    )
+    (ica / 'mc' / 'prefiltered_func_data_mcf_abs.rms').write_text(
+        '\n'.join('0' for _ in range(4)) + '\n'
+    )
     (ica / 'reg' / 'example_func2standard_warp.nii.gz').write_bytes(b'')
 
     (in_dir / 'fMRI' / 'rfMRI.json').write_text(json.dumps({'RepetitionTime': 1.0}))

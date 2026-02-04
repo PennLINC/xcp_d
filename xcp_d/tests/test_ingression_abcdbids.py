@@ -1,6 +1,5 @@
 """Tests for xcp_d.ingression.abcdbids."""
 
-import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -224,10 +223,14 @@ def test_convert_dcan_to_bids_single_subject_raises_when_no_sessions(tmp_path):
         )
 
 
-def test_convert_dcan_to_bids_single_subject_skips_when_dataset_description_exists(
+def test_convert_dcan_to_bids_single_subject_runs_even_when_dataset_description_exists(
     tmp_path,
 ):
-    """convert_dcan_to_bids_single_subject skips when dataset_description.json exists."""
+    """convert_dcan_to_bids_single_subject runs conversion even if dataset_description.json exists.
+
+    Dataset description is written by the batch converter after all subjects; the
+    single-subject function must not skip when that file is already present.
+    """
     in_dir = tmp_path / 'in'
     in_dir.mkdir()
     sub_dir = in_dir / 'sub-01'
@@ -277,9 +280,9 @@ def test_convert_dcan_to_bids_single_subject_skips_when_dataset_description_exis
                                     out_dir=str(out_dir),
                                     sub_ent='sub-01',
                                 )
-    mock_anat.assert_not_called()
-    mock_mesh.assert_not_called()
-    mock_morph.assert_not_called()
+    mock_anat.assert_called_once()
+    mock_mesh.assert_called_once()
+    mock_morph.assert_called_once()
 
 
 def test_convert_dcan_to_bids_single_subject_full_run(tmp_path):
@@ -299,12 +302,7 @@ def test_convert_dcan_to_bids_single_subject_full_run(tmp_path):
     anat_dir = ses_dir / 'anat'
     func_dir = ses_dir / 'func'
 
-    assert (out_dir / 'dataset_description.json').exists()
-    with open(out_dir / 'dataset_description.json') as f:
-        desc = json.load(f)
-    assert desc.get('Name') == 'ABCD-DCAN'
-    assert desc.get('DatasetType') == 'derivative'
-
+    # dataset_description.json is written by convert_dcan2bids after all subjects
     assert (sub_dir / 'sub-01_ses-01_scans.tsv').exists()
     scans_df = pd.read_csv(sub_dir / 'sub-01_ses-01_scans.tsv', sep='\t')
     assert 'filename' in scans_df.columns

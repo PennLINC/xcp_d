@@ -80,6 +80,24 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
             sub_ent=subject_id,
         )
 
+    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
+    if not os.path.isfile(dataset_description_fmriprep):
+        write_json(
+            {
+                'Name': 'ABCD-DCAN',
+                'BIDSVersion': BIDS_VERSION,
+                'DatasetType': 'derivative',
+                'GeneratedBy': [
+                    {
+                        'Name': 'DCAN',
+                        'Version': '0.0.4',
+                        'CodeURL': 'https://github.com/DCAN-Labs/abcd-hcp-pipeline',
+                    },
+                ],
+            },
+            dataset_description_fmriprep,
+        )
+
     return participant_ids
 
 
@@ -160,11 +178,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     ]
     if not ses_entities:
         raise FileNotFoundError(f'No session volumes found in {os.path.join(in_dir, sub_ent)}')
-
-    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
-    if os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info('Converted dataset folder already exists. Skipping conversion.')
-        return
 
     copy_dictionary = {}
     identity_xfm = str(load_data('transform/itkIdentityTransform.txt'))
@@ -331,22 +344,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     LOGGER.info('Copying files')
     copy_files_in_dict(copy_dictionary)
     LOGGER.info('Finished copying files')
-
-    dataset_description_dict = {
-        'Name': 'ABCD-DCAN',
-        'BIDSVersion': BIDS_VERSION,
-        'DatasetType': 'derivative',
-        'GeneratedBy': [
-            {
-                'Name': 'DCAN',
-                'Version': '0.0.4',
-                'CodeURL': 'https://github.com/DCAN-Labs/abcd-hcp-pipeline',
-            },
-        ],
-    }
-
-    if not os.path.isfile(dataset_description_fmriprep):
-        write_json(dataset_description_dict, dataset_description_fmriprep)
 
     copy_dictionary = {**copy_dictionary, **morph_dict_all_ses}
     write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents)
