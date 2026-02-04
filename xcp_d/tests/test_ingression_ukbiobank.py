@@ -1,7 +1,6 @@
 """Tests for xcp_d.ingression.ukbiobank."""
 
 import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -51,8 +50,9 @@ def test_convert_ukb2bids_two_subjects_both_converted_reproduces_issue_1471(tmp_
     out_dir.mkdir()
 
     # Stash real load_data and ApplyWarp; we mock them so conversion succeeds without FSL.
-    from xcp_d.data import load as real_load
     from nipype.interfaces.fsl.preprocess import ApplyWarp
+
+    from xcp_d.data import load as real_load
 
     def fake_load_data(name):
         if 'MNI152_T1_2mm' in name:
@@ -95,8 +95,13 @@ def test_convert_ukb2bids_two_subjects_both_converted_reproduces_issue_1471(tmp_
     for sub_label, sub_out in [('sub-sub1', sub1_out), ('sub-sub2', sub2_out)]:
         anat_dir = sub_out / 'anat'
         func_dir = sub_out / 'func'
-        assert (anat_dir / f'{sub_label}_ses-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.txt').exists()
-        assert (func_dir / f'{sub_label}_ses-01_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz').exists()
+        assert (
+            anat_dir / f'{sub_label}_ses-01_from-T1w_to-MNI152NLin6Asym_mode-image_xfm.txt'
+        ).exists()
+        assert (
+            func_dir
+            / f'{sub_label}_ses-01_task-rest_space-MNI152NLin6Asym_desc-preproc_bold.nii.gz'
+        ).exists()
         assert (sub_out / f'{sub_label}_ses-01_scans.tsv').exists()
 
 
