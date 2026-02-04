@@ -1,11 +1,32 @@
 """Tests for xcp_d.ingression.ukbiobank."""
 
 import json
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import nibabel as nb
+import numpy as np
 import pytest
 
 from xcp_d.ingression import ukbiobank
+
+# Small grid for minimal NIfTIs (nibabel/nilearn need non-empty valid files).
+_SHAPE_3D = (5, 5, 5)
+_SHAPE_4D = (5, 5, 5, 4)
+
+
+def _write_minimal_nifti(path, shape, zooms=None, mask=False):
+    """Write a minimal valid NIfTI so nibabel/nilearn can load it."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    arr = np.zeros(shape, dtype=np.float32)
+    if mask:
+        arr.flat[0] = 1
+    if zooms is None:
+        zooms = (2.0,) * len(shape)
+    aff = np.diag([float(z) for z in zooms] + [1.0])[:4, :4]
+    img = nb.Nifti1Image(arr, aff)
+    img.to_filename(str(path))
 
 
 def _make_ukb_skeleton(tmp_path, sub_id, ses_id='01'):
@@ -19,9 +40,9 @@ def _make_ukb_skeleton(tmp_path, sub_id, ses_id='01'):
     (in_dir / 'T1').mkdir()
 
     ica = in_dir / 'fMRI' / 'rfMRI.ica'
-    (ica / 'filtered_func_data_clean.nii.gz').write_bytes(b'')
-    (ica / 'mask.nii.gz').write_bytes(b'')
-    (ica / 'example_func.nii.gz').write_bytes(b'')
+    _write_minimal_nifti(ica / 'filtered_func_data_clean.nii.gz', _SHAPE_4D)
+    _write_minimal_nifti(ica / 'mask.nii.gz', _SHAPE_3D, mask=True)
+    _write_minimal_nifti(ica / 'example_func.nii.gz', _SHAPE_3D)
     # One row per volume (NormalizeMotionParams expects 2D); use 4 rows for a minimal run.
     (ica / 'mc' / 'prefiltered_func_data_mcf.par').write_text(
         '\n'.join('0 0 0 0 0 0' for _ in range(4)) + '\n'
