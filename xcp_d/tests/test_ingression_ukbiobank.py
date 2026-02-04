@@ -91,11 +91,12 @@ def test_convert_ukb2bids_two_subjects_both_converted_reproduces_issue_1471(tmp_
 
     call_count = [0]
 
-    def fake_apply_warp_run(self, cwd=None):
+    def fake_apply_warp_run(cwd=None):
         call_count[0] += 1
         out_file = tmp_path / f'warped_{call_count[0]}.nii.gz'
         out_file.parent.mkdir(parents=True, exist_ok=True)
-        out_file.write_bytes(b'')
+        # Write a minimal valid NIfTI so copy_files_in_dict can copy it
+        _write_minimal_nifti(out_file, _SHAPE_3D)
         result = MagicMock()
         result.outputs.out_file = str(out_file)
         return result
