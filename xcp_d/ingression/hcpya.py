@@ -375,5 +375,5 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     LOGGER.info('Finished copying files')
 
     copy_dictionary = {**copy_dictionary, **morphometry_dict}
-    write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents)
+    write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents, out_dir=out_dir)
     LOGGER.info('Conversion completed')
