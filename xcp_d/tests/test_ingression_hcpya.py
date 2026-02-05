@@ -213,6 +213,35 @@ def test_convert_hcp_to_bids_single_subject_asserts_inputs():
         )
 
 
+def test_convert_hcp_to_bids_single_subject_raises_type_error_for_non_string_inputs(
+    tmp_path,
+):
+    """convert_hcp_to_bids_single_subject raises TypeError when inputs are not strings."""
+    in_dir = tmp_path / 'in'
+    in_dir.mkdir()
+    out_dir = tmp_path / 'out'
+    out_dir.mkdir()
+
+    with pytest.raises(TypeError, match='in_dir must be a string'):
+        hcpya.convert_hcp_to_bids_single_subject(
+            in_dir=123,
+            out_dir=str(out_dir),
+            sub_ent='sub-01',
+        )
+    with pytest.raises(TypeError, match='out_dir must be a string'):
+        hcpya.convert_hcp_to_bids_single_subject(
+            in_dir=str(in_dir),
+            out_dir=123,
+            sub_ent='sub-01',
+        )
+    with pytest.raises(TypeError, match='sub_ent must be a string'):
+        hcpya.convert_hcp_to_bids_single_subject(
+            in_dir=str(in_dir),
+            out_dir=str(out_dir),
+            sub_ent=123,
+        )
+
+
 def test_convert_hcp_to_bids_single_subject_runs_even_when_dataset_description_exists(
     tmp_path,
 ):

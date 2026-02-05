@@ -210,6 +210,36 @@ def test_convert_dcan_to_bids_single_subject_asserts_inputs():
         )
 
 
+def test_convert_dcan_to_bids_single_subject_raises_type_error_for_non_string_inputs(
+    tmp_path,
+):
+    """convert_dcan_to_bids_single_subject raises TypeError when inputs are not strings."""
+    in_dir = tmp_path / 'in'
+    in_dir.mkdir()
+    (in_dir / 'sub-01').mkdir()
+    out_dir = tmp_path / 'out'
+    out_dir.mkdir()
+
+    with pytest.raises(TypeError, match='in_dir must be a string'):
+        abcdbids.convert_dcan_to_bids_single_subject(
+            in_dir=123,
+            out_dir=str(out_dir),
+            sub_ent='sub-01',
+        )
+    with pytest.raises(TypeError, match='out_dir must be a string'):
+        abcdbids.convert_dcan_to_bids_single_subject(
+            in_dir=str(in_dir),
+            out_dir=123,
+            sub_ent='sub-01',
+        )
+    with pytest.raises(TypeError, match='sub_ent must be a string'):
+        abcdbids.convert_dcan_to_bids_single_subject(
+            in_dir=str(in_dir),
+            out_dir=str(out_dir),
+            sub_ent=123,
+        )
+
+
 def test_convert_dcan_to_bids_single_subject_raises_when_no_sessions(tmp_path):
     """convert_dcan_to_bids_single_subject raises when no session folders."""
     in_dir = tmp_path / 'in'

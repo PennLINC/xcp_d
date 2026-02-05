@@ -440,6 +440,31 @@ def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
 
+@pytest.mark.parametrize(
+    'invalid_opt,invalid_val,expected_match',
+    [
+        ('abcc_qc', 'invalid', 'Invalid abcc_qc'),
+        ('combine_runs', 'invalid', 'Invalid combine_runs'),
+        ('despike', 'invalid', 'Invalid despike'),
+        ('file_format', 'invalid', 'Invalid file_format'),
+        ('linc_qc', 'invalid', 'Invalid linc_qc'),
+        ('output_layout', 'invalid', 'Invalid output_layout'),
+        ('output_run_wise_correlations', 'invalid', 'Invalid output_run_wise_correlations'),
+        ('output_type', 'invalid', 'Invalid output_type'),
+        ('process_surfaces', 'invalid', 'Invalid process_surfaces'),
+    ],
+)
+def test_validate_parameters_invalid_option_values(
+    base_opts, base_parser, invalid_opt, invalid_val, expected_match
+):
+    """Test parser._validate_parameters raises ValueError for invalid option values."""
+    opts = deepcopy(base_opts)
+    setattr(opts, invalid_opt, invalid_val)
+
+    with pytest.raises(ValueError, match=expected_match):
+        parser._validate_parameters(opts, build_log, parser=base_parser)
+
+
 def test_build_parser_01(tmp_path_factory):
     """Test parser._build_parser with abcd mode."""
     tmpdir = tmp_path_factory.mktemp('test_build_parser_01')
