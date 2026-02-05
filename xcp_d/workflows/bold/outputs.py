@@ -30,12 +30,13 @@ def init_postproc_derivatives_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.outputs import init_postproc_derivatives_wf
+            from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
 
             with mock_config():
                 wf = init_postproc_derivatives_wf(
                     name_source="/path/to/file.nii.gz",
                     source_metadata={},
+                    has_multiple_runs=False,
                     exact_scans=[],
                     name="postproc_derivatives_wf",
                 )

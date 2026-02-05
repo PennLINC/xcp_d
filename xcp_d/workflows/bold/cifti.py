@@ -55,6 +55,7 @@ def init_postprocess_cifti_wf(
             from xcp_d.workflows.bold.cifti import init_postprocess_cifti_wf
 
             with mock_config():
+                layout = config.execution.layout
                 bold_file = str(
                     config.execution.fmri_dir / "sub-01" / "func" /
                     "sub-01_task-imagery_run-01_space-fsLR_den-91k_bold.dtseries.nii"
