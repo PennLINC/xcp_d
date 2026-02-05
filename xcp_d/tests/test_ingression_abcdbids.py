@@ -202,7 +202,7 @@ def test_convert_dcan2bids_passes_participant_ids_through(tmp_path):
 
 def test_convert_dcan_to_bids_single_subject_asserts_inputs():
     """convert_dcan_to_bids_single_subject asserts in_dir exists and types."""
-    with pytest.raises(AssertionError):
+    with pytest.raises(FileNotFoundError):
         abcdbids.convert_dcan_to_bids_single_subject(
             in_dir='/nonexistent',
             out_dir='/out',

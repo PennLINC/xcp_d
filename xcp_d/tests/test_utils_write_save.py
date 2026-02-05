@@ -23,7 +23,7 @@ def test_read_ndata(ds001419_data):
     nifti_file = ds001419_data['nifti_file']
     mask_file = ds001419_data['brain_mask_file']
 
-    with pytest.raises(AssertionError, match='must be provided'):
+    with pytest.raises(ValueError, match='must be provided'):
         write_save.read_ndata(nifti_file, maskfile=None)
 
     nifti_data = write_save.read_ndata(nifti_file, maskfile=mask_file)

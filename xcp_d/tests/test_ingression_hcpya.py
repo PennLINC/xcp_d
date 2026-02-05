@@ -205,7 +205,7 @@ def test_convert_hcp2bids_passes_participant_ids_through(tmp_path):
 
 def test_convert_hcp_to_bids_single_subject_asserts_inputs():
     """convert_hcp_to_bids_single_subject asserts in_dir, out_dir, sub_ent."""
-    with pytest.raises(AssertionError):
+    with pytest.raises(FileNotFoundError):
         hcpya.convert_hcp_to_bids_single_subject(
             in_dir='/nonexistent',
             out_dir='/out',

@@ -226,7 +226,7 @@ def test_extract_mean_signal_raises_when_mask_missing(tmp_path):
     work_dir.mkdir()
     bold_path = tmp_path / 'bold.nii.gz'
     _minimal_nifti_4d(path=str(bold_path))
-    with pytest.raises(AssertionError, match='File DNE'):
+    with pytest.raises(FileNotFoundError, match='File DNE'):
         ingress_utils.extract_mean_signal(
             str(tmp_path / 'nonexistent.nii.gz'), str(bold_path), str(work_dir)
         )
@@ -287,7 +287,7 @@ def test_collect_hcp_confounds_raises_when_movement_missing(tmp_path):
     """collect_hcp_confounds asserts Movement_Regressors.txt exists."""
     task_dir = tmp_path / 'task'
     task_dir.mkdir()
-    with pytest.raises(AssertionError):
+    with pytest.raises(FileNotFoundError):
         ingress_utils.collect_hcp_confounds(
             task_dir_orig=str(task_dir),
             out_dir=str(tmp_path),
@@ -347,7 +347,7 @@ def test_collect_ukbiobank_confounds_raises_when_par_missing(tmp_path):
     task_dir = tmp_path / 'task'
     task_dir.mkdir()
     (task_dir / 'mc').mkdir()
-    with pytest.raises(AssertionError):
+    with pytest.raises(FileNotFoundError):
         ingress_utils.collect_ukbiobank_confounds(
             task_dir_orig=str(task_dir),
             out_dir=str(tmp_path),

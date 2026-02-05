@@ -181,7 +181,7 @@ def test_convert_ukb2bids_with_participant_ids(tmp_path):
 
 def test_convert_ukb_to_bids_single_subject_asserts_inputs():
     """convert_ukb_to_bids_single_subject asserts in_dir exists."""
-    with pytest.raises(AssertionError):
+    with pytest.raises(FileNotFoundError):
         ukbiobank.convert_ukb_to_bids_single_subject(
             in_dir='/nonexistent',
             out_dir='/out',
@@ -199,7 +199,7 @@ def test_convert_ukb_to_bids_single_subject_raises_when_bold_missing(tmp_path):
     (in_dir / 'T1').mkdir()
     out_dir = tmp_path / 'out'
     out_dir.mkdir()
-    with pytest.raises(AssertionError, match='File DNE'):
+    with pytest.raises(FileNotFoundError, match='File DNE'):
         ukbiobank.convert_ukb_to_bids_single_subject(
             in_dir=str(in_dir),
             out_dir=str(out_dir),
