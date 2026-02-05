@@ -157,8 +157,7 @@ extend-select = [
 ignore = [
   "S105",
   "S311",  # We are not using random for cryptographic purposes
-  # "ISC001",
-  # "S603",
+  "S603",  # subprocess used only for trusted commands (git, pandoc, test runners)
 ]
 
 [tool.ruff.lint.flake8-quotes]
