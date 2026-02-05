@@ -870,9 +870,7 @@ def plot_carpet(
 
     if isinstance(img, nb.Cifti2Image):  # CIFTI
         if img.nifti_header.get_intent()[0] != 'ConnDenseSeries':
-            raise ValueError(
-                f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}'
-            )
+            raise ValueError(f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}')
 
         # Get required information
         data = img.get_fdata().T

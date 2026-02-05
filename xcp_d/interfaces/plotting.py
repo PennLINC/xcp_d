@@ -725,9 +725,7 @@ class PlotCiftiParcellation(SimpleInterface):
     def _run_interface(self, runtime):
         if len(self.inputs.in_files) != len(self.inputs.labels):
             n_files, n_labels = len(self.inputs.in_files), len(self.inputs.labels)
-            raise ValueError(
-                f'Number of in_files ({n_files}) must match labels ({n_labels})'
-            )
+            raise ValueError(f'Number of in_files ({n_files}) must match labels ({n_labels})')
         if len(self.inputs.cortical_atlases) <= 0:
             raise ValueError('At least one cortical atlas must be provided.')
 
