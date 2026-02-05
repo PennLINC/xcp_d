@@ -441,7 +441,7 @@ def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
 
 
 @pytest.mark.parametrize(
-    'invalid_opt,invalid_val,expected_match',
+    ('invalid_opt', 'invalid_val', 'expected_match'),
     [
         ('abcc_qc', 'invalid', 'Invalid abcc_qc'),
         ('combine_runs', 'invalid', 'Invalid combine_runs'),
