@@ -164,7 +164,11 @@ class CensoringPlot(SimpleInterface):
 
         # Plot motion-censored volumes as vertical lines
         tmask_arr = get_col(censoring_df, 'framewise_displacement').values
-        assert preproc_fd_timeseries.size == tmask_arr.size
+        if preproc_fd_timeseries.size != tmask_arr.size:
+            raise ValueError(
+                f'preproc_fd_timeseries.size ({preproc_fd_timeseries.size}) != '
+                f'tmask_arr.size ({tmask_arr.size})'
+            )
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
             label = 'Motion-Censored Volumes' if i_idx == 0 else ''
@@ -719,8 +723,13 @@ class PlotCiftiParcellation(SimpleInterface):
     output_spec = _PlotCiftiParcellationOutputSpec
 
     def _run_interface(self, runtime):
-        assert len(self.inputs.in_files) == len(self.inputs.labels)
-        assert len(self.inputs.cortical_atlases) > 0
+        if len(self.inputs.in_files) != len(self.inputs.labels):
+            n_files, n_labels = len(self.inputs.in_files), len(self.inputs.labels)
+            raise ValueError(
+                f'Number of in_files ({n_files}) must match labels ({n_labels})'
+            )
+        if len(self.inputs.cortical_atlases) <= 0:
+            raise ValueError('At least one cortical atlas must be provided.')
 
         if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
             self._results['desc'] = f'{self.inputs.base_desc}ParcellatedStandard'

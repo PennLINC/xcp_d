@@ -147,26 +147,37 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
             └── T1
                 └── T1_brain_to_MNI.nii.gz
     """
-    assert isinstance(in_dir, str)
-    assert os.path.isdir(in_dir), f'Folder DNE: {in_dir}'
-    assert isinstance(out_dir, str)
-    assert isinstance(sub_id, str)
-    assert isinstance(ses_id, str)
+    if not isinstance(in_dir, str):
+        raise TypeError('in_dir must be a string')
+    if not os.path.isdir(in_dir):
+        raise FileNotFoundError(f'Folder DNE: {in_dir}')
+    if not isinstance(out_dir, str):
+        raise TypeError('out_dir must be a string')
+    if not isinstance(sub_id, str):
+        raise TypeError('sub_id must be a string')
+    if not isinstance(ses_id, str):
+        raise TypeError('ses_id must be a string')
     subses_ents = f'sub-{sub_id}_ses-{ses_id}'
 
     task_dir_orig = os.path.join(in_dir, 'fMRI', 'rfMRI.ica')
     bold_file = os.path.join(task_dir_orig, 'filtered_func_data_clean.nii.gz')
-    assert os.path.isfile(bold_file), f'File DNE: {bold_file}'
+    if not os.path.isfile(bold_file):
+        raise FileNotFoundError(f'File DNE: {bold_file}')
     bold_json = os.path.join(in_dir, 'fMRI', 'rfMRI.json')
-    assert os.path.isfile(bold_json), f'File DNE: {bold_json}'
+    if not os.path.isfile(bold_json):
+        raise FileNotFoundError(f'File DNE: {bold_json}')
     boldref_file = os.path.join(task_dir_orig, 'example_func.nii.gz')
-    assert os.path.isfile(boldref_file), f'File DNE: {boldref_file}'
+    if not os.path.isfile(boldref_file):
+        raise FileNotFoundError(f'File DNE: {boldref_file}')
     brainmask_file = os.path.join(task_dir_orig, 'mask.nii.gz')
-    assert os.path.isfile(brainmask_file), f'File DNE: {brainmask_file}'
+    if not os.path.isfile(brainmask_file):
+        raise FileNotFoundError(f'File DNE: {brainmask_file}')
     t1w = os.path.join(in_dir, 'T1', 'T1_brain_to_MNI.nii.gz')
-    assert os.path.isfile(t1w), f'File DNE: {t1w}'
+    if not os.path.isfile(t1w):
+        raise FileNotFoundError(f'File DNE: {t1w}')
     warp_file = os.path.join(task_dir_orig, 'reg', 'example_func2standard_warp.nii.gz')
-    assert os.path.isfile(warp_file), f'File DNE: {warp_file}'
+    if not os.path.isfile(warp_file):
+        raise FileNotFoundError(f'File DNE: {warp_file}')
 
     func_prefix = f'sub-{sub_id}_ses-{ses_id}_task-rest'
     subject_dir_bids = os.path.join(out_dir, f'sub-{sub_id}', f'ses-{ses_id}')

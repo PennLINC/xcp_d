@@ -869,9 +869,10 @@ def plot_carpet(
     img = nb.load(func)
 
     if isinstance(img, nb.Cifti2Image):  # CIFTI
-        assert img.nifti_header.get_intent()[0] == 'ConnDenseSeries', (
-            f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}'
-        )
+        if img.nifti_header.get_intent()[0] != 'ConnDenseSeries':
+            raise ValueError(
+                f'Not a dense timeseries: {img.nifti_header.get_intent()[0]}, {func}'
+            )
 
         # Get required information
         data = img.get_fdata().T
@@ -893,7 +894,8 @@ def plot_carpet(
                 lidx = 3
             index_final = brain_model.index_offset + brain_model.index_count
             seg_data[brain_model.index_offset : index_final] = lidx
-        assert len(seg_data[seg_data < 1]) == 0, 'Unassigned labels'
+        if len(seg_data[seg_data < 1]) != 0:
+            raise ValueError('Unassigned labels')
 
     else:  # Volumetric NIfTI
         img_nii = check_niimg_4d(img, dtype='auto')  # Check the image is in nifti format
@@ -920,9 +922,8 @@ def plot_carpet(
         order = seg_data.argsort(kind='stable')
         # Get color maps
         cmap = ListedColormap([plt.get_cmap('Paired').colors[i] for i in (1, 0, 7, 3)])
-        assert len(cmap.colors) == len(struct_map), (
-            'Mismatch between expected # of structures and colors'
-        )
+        if len(cmap.colors) != len(struct_map):
+            raise ValueError('Mismatch between expected # of structures and colors')
     else:
         # Order following segmentation labels
         order = np.argsort(seg_data)[::-1]
@@ -1066,7 +1067,8 @@ def surf_data_from_cifti(data, axis, surf_name):
     https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/master/\
     we-nibabel-markiewicz/NiBabel.ipynb
     """
-    assert isinstance(axis, nb.cifti2.BrainModelAxis | nb.cifti2.ParcelsAxis)
+    if not isinstance(axis, (nb.cifti2.BrainModelAxis, nb.cifti2.ParcelsAxis)):
+        raise TypeError(f'axis must be BrainModelAxis or ParcelsAxis, got {type(axis)}')
     if isinstance(axis, nb.cifti2.BrainModelAxis):
         for name, data_indices, model in axis.iter_structures():
             # Iterates over volumetric and surface structures
