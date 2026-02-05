@@ -525,7 +525,7 @@ class execution(_Config):
         if cls.task_id:
             cls.bids_filters = cls.bids_filters or {}
             cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
-            cls.bids_filters['bold']['task'] = cls.task_id
+            cls.bids_filters['bold']['task'] = listify(cls.task_id)
 
         if cls.session_id:
             # Patch session ID into all of the filters

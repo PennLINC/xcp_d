@@ -126,12 +126,12 @@ def _build_parser():
         '--task_id',
         dest='task_id',
         action='store',
+        nargs='+',
+        type=lambda label: label.removeprefix('task-'),
         help=(
-            'The name of a specific task to postprocess. '
-            'By default, all tasks will be postprocessed. '
-            'If you want to select more than one task to postprocess (but not all of them), '
-            'you can either run XCP-D with the --task-id parameter, separately for each task, '
-            'or you can use the --bids-filter-file to specify the tasks to postprocess.'
+            'A space-delimited list of task identifiers, or a single identifier. '
+            'The "task-" prefix can be removed. '
+            'By default, all tasks will be postprocessed.'
         ),
     )
     g_bids.add_argument(
