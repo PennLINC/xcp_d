@@ -52,7 +52,7 @@ def init_prepare_confounds_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_prepare_confounds_wf
+            from xcp_d.workflows.bold.postprocessing import init_prepare_confounds_wf
 
             with mock_config():
                 wf = init_prepare_confounds_wf(
@@ -437,7 +437,7 @@ def init_despike_wf(TR, name='despike_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_despike_wf
+            from xcp_d.workflows.bold.postprocessing import init_despike_wf
 
             with mock_config():
                 wf = init_despike_wf(
@@ -529,11 +529,12 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_denoise_bold_wf
+            from xcp_d.workflows.bold.postprocessing import init_denoise_bold_wf
 
             with mock_config():
                 wf = init_denoise_bold_wf(
                     TR=0.8,
+                    mem_gb={"bold": 1.0},
                     name="denoise_bold_wf",
                 )
 
@@ -781,10 +782,10 @@ def init_resd_smoothing_wf(mem_gb, name='resd_smoothing_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
+            from xcp_d.workflows.bold.postprocessing import init_resd_smoothing_wf
 
             with mock_config():
-                wf = init_resd_smoothing_wf()
+                wf = init_resd_smoothing_wf(mem_gb={"bold": 1.0})
 
     Parameters
     ----------

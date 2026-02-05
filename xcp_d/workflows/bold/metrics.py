@@ -40,7 +40,7 @@ def init_alff_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.restingstate import init_alff_wf
+            from xcp_d.workflows.bold.metrics import init_alff_wf
 
             with mock_config():
                 wf = init_alff_wf(
@@ -269,7 +269,7 @@ def init_reho_cifti_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.restingstate import init_reho_cifti_wf
+            from xcp_d.workflows.bold.metrics import init_reho_cifti_wf
 
             with mock_config():
                 wf = init_reho_cifti_wf(
@@ -437,12 +437,12 @@ def init_reho_nifti_wf(name_source, mem_gb, name='reho_nifti_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.restingstate import init_reho_nifti_wf
+            from xcp_d.workflows.bold.metrics import init_reho_nifti_wf
 
             with mock_config():
                 wf = init_reho_nifti_wf(
                     name_source="/path/to/bold.nii.gz",
-                    mem_gb={"volume": 0.1}
+                    mem_gb={"volume": 0.1},
                     name="nifti_reho_wf",
                 )
 

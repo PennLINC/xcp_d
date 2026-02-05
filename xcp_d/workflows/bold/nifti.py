@@ -55,6 +55,7 @@ def init_postprocess_nifti_wf(
             from xcp_d.workflows.bold.nifti import init_postprocess_nifti_wf
 
             with mock_config():
+                layout = config.execution.layout
                 bold_file = str(
                     config.execution.fmri_dir / "sub-01" / "func" /
                     (

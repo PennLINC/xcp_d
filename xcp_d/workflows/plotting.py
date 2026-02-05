@@ -99,7 +99,7 @@ def init_plot_custom_slices_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.workflows.execsummary import init_plot_custom_slices_wf
+            from xcp_d.workflows.plotting import init_plot_custom_slices_wf
 
             wf = init_plot_custom_slices_wf(
                 desc="AtlasOnSubcorticals",

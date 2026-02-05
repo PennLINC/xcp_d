@@ -34,13 +34,14 @@ def init_functional_connectivity_nifti_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
+            from xcp_d.workflows.bold.connectivity import init_functional_connectivity_nifti_wf
 
             with mock_config():
                 config.execution.atlases = ["Glasser", "Gordon"]
 
                 wf = init_functional_connectivity_nifti_wf(
                     mem_gb={"volume": 0.1, "bold": 1.0},
+                    has_multiple_runs=False,
                 )
 
     Parameters
@@ -239,13 +240,14 @@ def init_functional_connectivity_cifti_wf(
 
             from xcp_d import config
             from xcp_d.tests.tests import mock_config
-            from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
+            from xcp_d.workflows.bold.connectivity import init_functional_connectivity_cifti_wf
 
             with mock_config():
                 config.execution.atlases = ["Glasser", "Gordon"]
 
                 wf = init_functional_connectivity_cifti_wf(
                     mem_gb={"volume": 0.1, "bold": 1.0},
+                    has_multiple_runs=False,
                     exact_scans=[30, 40],
                 )
 
