@@ -342,8 +342,8 @@ def test_convert_hcp_to_bids_single_subject_full_run(tmp_path):
     assert 'source_file' in scans_df.columns
     assert len(scans_df) >= 1
 
-    # Check that scans.tsv is also copied to sourcedata/bids_conversion
-    sourcedata_scans = out_dir / 'sourcedata' / 'bids_conversion' / 'sub-01_scans.tsv'
+    # Check that scans.tsv is also copied to sourcedata/bids_conversion/sub-01/
+    sourcedata_scans = out_dir / 'sourcedata' / 'bids_conversion' / 'sub-01' / 'sub-01_scans.tsv'
     assert sourcedata_scans.exists()
     sourcedata_df = pd.read_csv(sourcedata_scans, sep='\t')
     assert scans_df.equals(sourcedata_df)

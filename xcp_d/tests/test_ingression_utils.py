@@ -414,8 +414,8 @@ def test_write_scans_tsv_with_out_dir(tmp_path):
     subject_scans_tsv = subject_dir / 'sub-01_scans.tsv'
     assert subject_scans_tsv.exists()
     
-    # Check that scans.tsv is also copied to sourcedata/bids_conversion
-    sourcedata_scans_tsv = out_dir / 'sourcedata' / 'bids_conversion' / 'sub-01_scans.tsv'
+    # Check that scans.tsv is also copied to sourcedata/bids_conversion/sub-01/
+    sourcedata_scans_tsv = out_dir / 'sourcedata' / 'bids_conversion' / 'sub-01' / 'sub-01_scans.tsv'
     assert sourcedata_scans_tsv.exists()
     
     # Verify both files have the same content
@@ -440,7 +440,8 @@ def test_write_scans_tsv_with_session(tmp_path):
     subject_scans_tsv = subject_dir / 'sub-01_ses-01_scans.tsv'
     assert subject_scans_tsv.exists()
     
-    sourcedata_scans_tsv = out_dir / 'sourcedata' / 'bids_conversion' / 'sub-01_ses-01_scans.tsv'
+    # Check sourcedata/bids_conversion/sub-01/ses-01/
+    sourcedata_scans_tsv = out_dir / 'sourcedata' / 'bids_conversion' / 'sub-01' / 'ses-01' / 'sub-01_ses-01_scans.tsv'
     assert sourcedata_scans_tsv.exists()
     
     df = pd.read_csv(sourcedata_scans_tsv, sep='\t')

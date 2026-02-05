@@ -93,7 +93,20 @@ def write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents, out_dir=None
     
     # Also copy the scans.tsv to sourcedata/bids_conversion if out_dir is provided
     if out_dir is not None:
-        sourcedata_dir = os.path.join(out_dir, 'sourcedata', 'bids_conversion')
+        # Parse subses_ents to extract subject and optional session
+        # Format can be: "sub-01" or "sub-01_ses-01"
+        parts = subses_ents.split('_')
+        sub_part = parts[0]  # e.g., "sub-01"
+        
+        # Build the sourcedata path with subject/session structure
+        if len(parts) > 1 and parts[1].startswith('ses-'):
+            # Has session: bids_conversion/sub-01/ses-01/
+            ses_part = parts[1]  # e.g., "ses-01"
+            sourcedata_dir = os.path.join(out_dir, 'sourcedata', 'bids_conversion', sub_part, ses_part)
+        else:
+            # No session: bids_conversion/sub-01/
+            sourcedata_dir = os.path.join(out_dir, 'sourcedata', 'bids_conversion', sub_part)
+        
         os.makedirs(sourcedata_dir, exist_ok=True)
         sourcedata_scans_tsv = os.path.join(sourcedata_dir, f'{subses_ents}_scans.tsv')
         scans_df.to_csv(sourcedata_scans_tsv, sep='\t', index=False)
