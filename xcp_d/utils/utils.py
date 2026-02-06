@@ -125,6 +125,26 @@ def check_deps(workflow):
     )
 
 
+def _format_space_error(space, context=None, needs_cohort=False):
+    context_str = f' for {context}' if context else ''
+    if needs_cohort:
+        return (
+            f'Space "{space}" requires a cohort{context_str}. '
+            'Please specify the cohort using the "cohort" entity.'
+        )
+
+    context_str = f' in {context}' if context else ''
+    return f'Space "{space}"{context_str} not supported.'
+
+
+def _validate_bold_space(space, cohort, supported_spaces, context=None):
+    if space not in supported_spaces:
+        raise ValueError(_format_space_error(space, context=context))
+
+    if space == 'MNIInfant' and cohort is None:
+        raise ValueError(_format_space_error(space, context=context, needs_cohort=True))
+
+
 def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     """Find transform files in reverse order to transform BOLD to MNI152NLin2009cAsym/T1w space.
 
@@ -160,24 +180,7 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
     from xcp_d.utils.bids import get_entity
-
-    def _format_space_error(space, context=None, needs_cohort=False):
-        context_str = f' for {context}' if context else ''
-        if needs_cohort:
-            return (
-                f'Space "{space}" requires a cohort{context_str}. '
-                'Please specify the cohort using the "cohort" entity.'
-            )
-
-        context_str = f' in {context}' if context else ''
-        return f'Space "{space}"{context_str} not supported.'
-
-    def _validate_bold_space(space, cohort, supported_spaces, context=None):
-        if space not in supported_spaces:
-            raise ValueError(_format_space_error(space, context=context))
-
-        if space == 'MNIInfant' and cohort is None:
-            raise ValueError(_format_space_error(space, context=context, needs_cohort=True))
+    from xcp_d.utils.utils import _build_mni_chain, _validate_bold_space
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, 'space')
@@ -255,24 +258,7 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     Can easily be added in the future.
     """
     from xcp_d.utils.bids import get_entity
-
-    def _format_space_error(space, context=None, needs_cohort=False):
-        context_str = f' for {context}' if context else ''
-        if needs_cohort:
-            return (
-                f'Space "{space}" requires a cohort{context_str}. '
-                'Please specify the cohort using the "cohort" entity.'
-            )
-
-        context_str = f' in {context}' if context else ''
-        return f'Space "{space}"{context_str} not supported.'
-
-    def _validate_bold_space(space, cohort, supported_spaces, context=None):
-        if space not in supported_spaces:
-            raise ValueError(_format_space_error(space, context=context))
-
-        if space == 'MNIInfant' and cohort is None:
-            raise ValueError(_format_space_error(space, context=context, needs_cohort=True))
+    from xcp_d.utils.utils import _build_mni_chain, _format_space_error, _validate_bold_space
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, 'space')
