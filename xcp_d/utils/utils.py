@@ -11,6 +11,37 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger('nipype.utils')
 
 
+def _validate_bold_space(space, cohort, supported_spaces, context=None):
+    """Validate a BOLD or source space and its cohort requirements.
+
+    Parameters
+    ----------
+    space : :obj:`str`
+        Space to validate.
+    cohort : :obj:`str` or None
+        Cohort label for MNIInfant inputs.
+    supported_spaces : :obj:`tuple` of :obj:`str`
+        Supported space names.
+    context : :obj:`str` or None
+        Optional context to include in error messages.
+
+    Raises
+    ------
+    ValueError
+        If the space is unsupported or a required cohort is missing.
+    """
+    if space not in supported_spaces:
+        context_str = f' in {context}' if context else ''
+        raise ValueError(f'Space "{space}"{context_str} not supported.')
+
+    if space == 'MNIInfant' and cohort is None:
+        context_str = f' for {context}' if context else ''
+        raise ValueError(
+            f'Space "{space}" requires a cohort{context_str}. '
+            'Please specify the cohort using the "cohort" entity.'
+        )
+
+
 def _get_template_transform(template, from_space, cohort=None):
     """Get a TemplateFlow transform path as a string.
 
@@ -173,11 +204,13 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
         raise ValueError(
             f'Transform does not match BOLD space: {bold_space} != {template_to_anat_xfm}'
         )
-    elif bold_space == 'MNIInfant' and bold_cohort is None:
-        raise ValueError(
-            f'BOLD cohort is not specified for {bold_file}. '
-            'Please specify the cohort using the "cohort" entity.'
-        )
+
+    _validate_bold_space(
+        space=bold_space,
+        cohort=bold_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        context=bold_file,
+    )
 
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [template_to_anat_xfm]  # used for all spaces except T1w and native
@@ -255,17 +288,18 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     elif '+' in source_space:
         source_space, source_cohort = source_space.split('+')
 
-    if source_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
-        raise ValueError(f'Source space "{source_space}" not supported.')
-
-    if bold_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
-        raise ValueError(f'BOLD space "{bold_space}" not supported.')
-
-    if source_space == 'MNIInfant' and source_cohort is None:
-        raise ValueError(
-            f'Source cohort is not specified for {source_file}. '
-            'Please specify the cohort using the "cohort" entity.'
-        )
+    _validate_bold_space(
+        space=source_space,
+        cohort=source_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        context=source_file,
+    )
+    _validate_bold_space(
+        space=bold_space,
+        cohort=bold_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        context=bold_file,
+    )
 
     transforms = _build_mni_chain(
         source_space,
