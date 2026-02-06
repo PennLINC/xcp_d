@@ -208,8 +208,8 @@ def _apply_session_filters(queries, anat_session, func_sessions):
     return updated_queries
 
 
-def _disable_t1w_t2w_transforms(queries):
-    """Disable collection of T1w/T2w transform files.
+def _disable_t1w_to_t2w_transform(queries):
+    """Disable collection of T1w-to-T2w transform files.
 
     Parameters
     ----------
@@ -219,7 +219,7 @@ def _disable_t1w_t2w_transforms(queries):
     Returns
     -------
     updated_queries : :obj:`dict`
-        Query dictionary with T1w/T2w transform queries disabled.
+        Query dictionary with T1w-to-T2w transform queries disabled.
 
     Raises
     ------
@@ -227,6 +227,27 @@ def _disable_t1w_t2w_transforms(queries):
     """
     updated_queries = copy.deepcopy(queries)
     updated_queries['t1w_to_t2w_xfm']['desc'] = 'ignore'
+    return updated_queries
+
+
+def _disable_t2w_to_t1w_transform(queries):
+    """Disable collection of T2w-to-T1w transform files.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with T2w-to-T1w transform queries disabled.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
     updated_queries['t2w_to_t1w_xfm']['desc'] = 'ignore'
     return updated_queries
 
@@ -400,7 +421,9 @@ def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
 
     if t1w_files and t2w_files and (input_type == 'fmriprep'):
         LOGGER.info('Assuming T2w is in T1w space.')
-        return _disable_t1w_t2w_transforms(updated_queries)
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
 
     if t1w_files and t2w_files:
         LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
@@ -412,7 +435,8 @@ def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
             LOGGER.warning('T1w-space T2w found. Processing anatomical images in T1w space.')
             updated_queries['t1w']['space'] = [None, 'T1w']
             updated_queries['t2w']['space'] = 'T1w'
-            updated_queries = _disable_t1w_t2w_transforms(updated_queries)
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
             return updated_queries
 
         LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
@@ -427,7 +451,9 @@ def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
         )
         if t2wspace_t1w_found:
             LOGGER.warning('T2w-space T1w found. Processing anatomical images in T2w space.')
-            return _disable_t1w_t2w_transforms(updated_queries)
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+            return updated_queries
 
         LOGGER.warning('No T2w-space T1w found. Attempting T2w-primary processing.')
         updated_queries['anat_to_template_xfm']['from'] = 'T2w'
@@ -453,14 +479,15 @@ def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
                     'Processing both T1w and T2w.'
                 )
                 updated_queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
-                updated_queries = _disable_t1w_t2w_transforms(updated_queries)
+                updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
             else:
                 LOGGER.warning(
                     'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
                     'Processing T1w only.'
                 )
                 updated_queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
-                updated_queries = _disable_t1w_t2w_transforms(updated_queries)
+                updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+                updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
 
             updated_queries['t1w']['space'] = [None, 'T1w']
             updated_queries['template_to_anat_xfm']['to'] = 'T1w'
@@ -487,7 +514,8 @@ def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
                 'Processing T2w only.'
             )
             updated_queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
-            updated_queries = _disable_t1w_t2w_transforms(updated_queries)
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
 
         updated_queries['t2w']['space'] = [None, 'T2w']
         updated_queries['template_to_anat_xfm']['to'] = 'T2w'
@@ -498,11 +526,15 @@ def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
         LOGGER.warning('T2w found, but no T1w. Enabling T2w-only processing.')
         updated_queries['template_to_anat_xfm']['to'] = 'T2w'
         updated_queries['anat_to_template_xfm']['from'] = 'T2w'
-        return _disable_t1w_t2w_transforms(updated_queries)
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
 
     if t1w_files and not t2w_files:
         LOGGER.warning('T1w found, but no T2w. Enabling T1w-only processing.')
-        return _disable_t1w_t2w_transforms(updated_queries)
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
 
     return updated_queries
 
