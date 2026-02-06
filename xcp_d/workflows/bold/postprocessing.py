@@ -33,6 +33,20 @@ from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
 from xcp_d.utils.utils import fwhm2sigma, is_number
 
 
+def _load_confounds_config():
+    """Load the confounds configuration from the execution config.
+
+    Returns
+    -------
+    confounds_config : :obj:`dict` or None
+        Parsed confounds configuration, or None if not provided.
+    """
+    if config.execution.confounds_config is None:
+        return None
+
+    return yaml.safe_load(config.execution.confounds_config.read_text())
+
+
 @fill_doc
 def init_prepare_confounds_wf(
     TR,
@@ -142,10 +156,7 @@ def init_prepare_confounds_wf(
     else:
         censoring_description = ''
 
-    if config.execution.confounds_config is None:
-        confounds_config = None
-    else:
-        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+    confounds_config = _load_confounds_config()
 
     confounds_description = describe_regression(
         confounds_config=confounds_config,
@@ -217,9 +228,7 @@ def init_prepare_confounds_wf(
         (process_motion, outputnode, [('motion_metadata', 'motion_metadata')]),
     ])  # fmt:skip
 
-    if config.execution.confounds_config is not None:
-        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
-
+    if confounds_config is not None:
         generate_confounds = pe.Node(
             GenerateConfounds(
                 confounds_config=confounds_config,
