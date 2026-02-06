@@ -165,9 +165,7 @@ def _build_mni_chain(source_space, target_space, source_cohort=None, target_coho
                 _get_template_transform('MNI152NLin6Asym', 'MNI152NLin2009cAsym'),
             ]
 
-    raise ValueError(
-        f'Transform chain not supported: {source_space} -> {target_space}'
-    )
+    raise ValueError(f'Transform chain not supported: {source_space} -> {target_space}')
 
 
 def check_deps(workflow):

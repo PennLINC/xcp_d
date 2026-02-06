@@ -351,9 +351,7 @@ def _select_cifti_volspace(layout, queries, input_type):
             break
 
     if not bold_data or not transform_files:
-        raise FileNotFoundError(
-            f'No BOLD NIfTI or transforms found to allowed space ({volspace})'
-        )
+        raise FileNotFoundError(f'No BOLD NIfTI or transforms found to allowed space ({volspace})')
 
     updated_queries['anat_to_template_xfm']['to'] = volspace
     updated_queries['template_to_anat_xfm']['from'] = volspace
@@ -479,8 +477,7 @@ def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
         if t1w_to_t2w_found:
             # Prepare for T1w --> T2w --> template chain
             LOGGER.info(
-                'T2w-to-template and T1w-to-T2w transforms found. '
-                'Processing both T1w and T2w.'
+                'T2w-to-template and T1w-to-T2w transforms found. Processing both T1w and T2w.'
             )
             updated_queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
             updated_queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
