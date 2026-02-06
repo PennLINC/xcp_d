@@ -153,10 +153,19 @@ def _apply_bids_filters(queries, bids_filters):
 
     Parameters
     ----------
-    queries : dict
+    queries : :obj:`dict`
         Base query dictionary from ``io_spec.yaml``.
-    bids_filters : dict or None
+    bids_filters : :obj:`dict` or None
         Mapping of acquisition keys to filter dictionaries.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with filters applied.
+
+    Raises
+    ------
+    None
     """
     updated_queries = copy.deepcopy(queries)
     bids_filters = bids_filters or {}
@@ -172,12 +181,21 @@ def _apply_session_filters(queries, anat_session, func_sessions):
 
     Parameters
     ----------
-    queries : dict
+    queries : :obj:`dict`
         Base query dictionary from ``io_spec.yaml``.
-    anat_session : str or None
+    anat_session : :obj:`str` or None
         Session label to apply to anatomical queries.
-    func_sessions : list or None
+    func_sessions : :obj:`list` or None
         Session labels to apply to functional queries.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with session filters applied.
+
+    Raises
+    ------
+    None
     """
     updated_queries = copy.deepcopy(queries)
     for query in updated_queries.values():
@@ -197,19 +215,25 @@ def _select_bold_space(layout, queries, input_type, file_format):
     ----------
     layout : :obj:`bids.layout.BIDSLayout`
         BIDSLayout instance for the dataset.
-    queries : dict
+    queries : :obj:`dict`
         Base query dictionary from ``io_spec.yaml``.
-    input_type : str
+    input_type : :obj:`str`
         Input dataset type (e.g., ``fmriprep``, ``hcp``).
     file_format : {"cifti", "nifti"}
         Desired output format for BOLD data.
 
     Returns
     -------
-    bold_data : list
+    bold_data : :obj:`list`
         BOLD files returned by ``layout.get`` for the chosen space.
-    allowed_spaces : list
+    allowed_spaces : :obj:`list`
         List of allowed spaces that were searched in order.
+    updated_queries : :obj:`dict`
+        Query dictionary with the selected BOLD space applied.
+
+    Raises
+    ------
+    None
     """
     updated_queries = copy.deepcopy(queries)
     if 'space' in updated_queries['bold']:
@@ -235,13 +259,18 @@ def _get_single_cohort(bold_data):
 
     Parameters
     ----------
-    bold_data : list
+    bold_data : :obj:`list`
         Files returned by ``layout.get`` for the BOLD query.
 
     Returns
     -------
-    cohort : str or None
+    cohort : :obj:`str` or None
         Cohort value if present, otherwise ``None``.
+
+    Raises
+    ------
+    ValueError
+        If multiple cohorts are found across BOLD files.
     """
     cohorts = [bold_file.entities.get('cohort') for bold_file in bold_data]
     cohorts = [cohort for cohort in cohorts if cohort is not None]
@@ -257,15 +286,22 @@ def _select_cifti_volspace(layout, queries, input_type):
     ----------
     layout : :obj:`bids.layout.BIDSLayout`
         BIDSLayout instance for the dataset.
-    queries : dict
+    queries : :obj:`dict`
         Base query dictionary from ``io_spec.yaml``.
-    input_type : str
+    input_type : :obj:`str`
         Input dataset type (e.g., ``fmriprep``, ``hcp``).
 
     Returns
     -------
-    volspace : str
+    volspace : :obj:`str`
         Selected volumetric space with both NIfTI BOLD and transforms.
+    updated_queries : :obj:`dict`
+        Query dictionary with volumetric space applied to relevant queries.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no NIfTI BOLD data or transforms are found for allowed spaces.
     """
     updated_queries = copy.deepcopy(queries)
     allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
@@ -310,12 +346,22 @@ def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
     ----------
     layout : :obj:`bids.layout.BIDSLayout`
         BIDSLayout instance for the dataset.
-    participant_label : str
+    participant_label : :obj:`str`
         Participant label (without the ``sub-`` prefix).
-    input_type : str
+    input_type : :obj:`str`
         Input dataset type (e.g., ``fmriprep``, ``hcp``).
-    queries : dict
+    queries : :obj:`dict`
         Base query dictionary from ``io_spec.yaml``.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary updated for anatomical space and transform availability.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no T1w or T2w files are found for the participant.
     """
     updated_queries = copy.deepcopy(queries)
     t1w_files = layout.get(
