@@ -67,7 +67,7 @@ def get_identity_transform_destinations(anat_dir_bids, subses_ents, volspace=TEM
     ]
 
 
-def write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents):
+def write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents, out_dir=None):
     """Write a scans TSV mapping BIDS derivative filenames to their source paths.
 
     Parameters
@@ -79,6 +79,9 @@ def write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents):
         Path to subject (or subject/session) BIDS directory.
     subses_ents : str
         BIDS entity string used in the output filename (e.g., "sub-01_ses-1").
+    out_dir : str, optional
+        Path to the output directory. If provided, the scans.tsv file will also be
+        copied to {out_dir}/sourcedata/bids_conversion/.
     """
     scans_dict = {}
     for src, dests in copy_dictionary.items():
@@ -87,6 +90,28 @@ def write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents):
     scans_df = pd.DataFrame(list(scans_dict.items()), columns=['filename', 'source_file'])
     scans_tsv = os.path.join(subject_dir_bids, f'{subses_ents}_scans.tsv')
     scans_df.to_csv(scans_tsv, sep='\t', index=False)
+
+    # Also copy the scans.tsv to sourcedata/bids_conversion if out_dir is provided
+    if out_dir is not None:
+        # Parse subses_ents to extract subject and optional session
+        # Format can be: "sub-01" or "sub-01_ses-01"
+        parts = subses_ents.split('_')
+        sub_part = parts[0]  # e.g., "sub-01"
+
+        # Build the sourcedata path with subject/session structure
+        if len(parts) > 1 and parts[1].startswith('ses-'):
+            # Has session: bids_conversion/sub-01/ses-01/
+            ses_part = parts[1]  # e.g., "ses-01"
+            sourcedata_dir = os.path.join(
+                out_dir, 'sourcedata', 'bids_conversion', sub_part, ses_part
+            )
+        else:
+            # No session: bids_conversion/sub-01/
+            sourcedata_dir = os.path.join(out_dir, 'sourcedata', 'bids_conversion', sub_part)
+
+        os.makedirs(sourcedata_dir, exist_ok=True)
+        sourcedata_scans_tsv = os.path.join(sourcedata_dir, f'{subses_ents}_scans.tsv')
+        scans_df.to_csv(sourcedata_scans_tsv, sep='\t', index=False)
 
 
 def collect_anatomical_files(anat_dir_orig, anat_dir_bids, base_anatomical_ents):

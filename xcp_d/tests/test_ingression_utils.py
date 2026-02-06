@@ -379,3 +379,82 @@ def test_plot_bbreg(tmp_path):
     assert out_file.exists()
     content = out_file.read_text()
     assert 'svg' in content.lower() or content.lstrip().startswith('<?xml')
+
+
+def test_write_scans_tsv_without_out_dir(tmp_path):
+    """write_scans_tsv writes scans.tsv to subject directory."""
+    subject_dir = tmp_path / 'sub-01'
+    subject_dir.mkdir()
+    copy_dict = {
+        '/source/file1.nii.gz': [str(subject_dir / 'anat' / 'sub-01_T1w.nii.gz')],
+        '/source/file2.nii.gz': [str(subject_dir / 'func' / 'sub-01_bold.nii.gz')],
+    }
+    ingress_utils.write_scans_tsv(copy_dict, str(subject_dir), 'sub-01')
+    scans_tsv = subject_dir / 'sub-01_scans.tsv'
+    assert scans_tsv.exists()
+    df = pd.read_csv(scans_tsv, sep='\t')
+    assert 'filename' in df.columns
+    assert 'source_file' in df.columns
+    assert len(df) == 2
+
+
+def test_write_scans_tsv_with_out_dir(tmp_path):
+    """write_scans_tsv copies scans.tsv to sourcedata/bids_conversion when out_dir provided."""
+    out_dir = tmp_path / 'output'
+    out_dir.mkdir()
+    subject_dir = out_dir / 'sub-01'
+    subject_dir.mkdir()
+    copy_dict = {
+        '/source/file1.nii.gz': [str(subject_dir / 'anat' / 'sub-01_T1w.nii.gz')],
+        '/source/file2.nii.gz': [str(subject_dir / 'func' / 'sub-01_bold.nii.gz')],
+    }
+    ingress_utils.write_scans_tsv(copy_dict, str(subject_dir), 'sub-01', out_dir=str(out_dir))
+
+    # Check that scans.tsv exists in subject directory
+    subject_scans_tsv = subject_dir / 'sub-01_scans.tsv'
+    assert subject_scans_tsv.exists()
+
+    # Check that scans.tsv is also copied to sourcedata/bids_conversion/sub-01/
+    sourcedata_scans_tsv = (
+        out_dir / 'sourcedata' / 'bids_conversion' / 'sub-01' / 'sub-01_scans.tsv'
+    )
+    assert sourcedata_scans_tsv.exists()
+
+    # Verify both files have the same content
+    df_subject = pd.read_csv(subject_scans_tsv, sep='\t')
+    df_sourcedata = pd.read_csv(sourcedata_scans_tsv, sep='\t')
+    assert df_subject.equals(df_sourcedata)
+    assert len(df_subject) == 2
+
+
+def test_write_scans_tsv_with_session(tmp_path):
+    """write_scans_tsv handles session-specific scans.tsv files correctly."""
+    out_dir = tmp_path / 'output'
+    out_dir.mkdir()
+    subject_dir = out_dir / 'sub-01' / 'ses-01'
+    subject_dir.mkdir(parents=True)
+    copy_dict = {
+        '/source/bold.nii.gz': [str(subject_dir / 'func' / 'sub-01_ses-01_bold.nii.gz')],
+    }
+    ingress_utils.write_scans_tsv(
+        copy_dict, str(subject_dir), 'sub-01_ses-01', out_dir=str(out_dir)
+    )
+
+    # Check both locations
+    subject_scans_tsv = subject_dir / 'sub-01_ses-01_scans.tsv'
+    assert subject_scans_tsv.exists()
+
+    # Check sourcedata/bids_conversion/sub-01/ses-01/
+    sourcedata_scans_tsv = (
+        out_dir
+        / 'sourcedata'
+        / 'bids_conversion'
+        / 'sub-01'
+        / 'ses-01'
+        / 'sub-01_ses-01_scans.tsv'
+    )
+    assert sourcedata_scans_tsv.exists()
+
+    df = pd.read_csv(sourcedata_scans_tsv, sep='\t')
+    assert len(df) == 1
+    assert 'sub-01_ses-01_bold.nii.gz' in df['filename'].values[0]
