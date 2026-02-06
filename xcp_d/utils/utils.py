@@ -11,6 +11,111 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger('nipype.utils')
 
 
+def _get_template_transform(template, from_space, cohort=None):
+    """Get a TemplateFlow transform path as a string.
+
+    Parameters
+    ----------
+    template : :obj:`str`
+        Template name to query from TemplateFlow.
+    from_space : :obj:`str`
+        Source space for the transform, passed via the ``from`` entity.
+    cohort : :obj:`str` or None
+        Cohort label to include when the target template requires it.
+
+    Returns
+    -------
+    transform_path : :obj:`str`
+        Path to the transform file.
+
+    Raises
+    ------
+    ValueError
+        If the TemplateFlow query cannot be resolved.
+    """
+    from templateflow.api import get as get_template
+
+    template_kwargs = {'from': from_space}
+    if cohort is not None:
+        template_kwargs['cohort'] = cohort
+
+    return str(
+        get_template(
+            template=template,
+            mode='image',
+            suffix='xfm',
+            extension='.h5',
+            raise_empty=True,
+            **template_kwargs,
+        )
+    )
+
+
+def _build_mni_chain(source_space, target_space, source_cohort=None, target_cohort=None):
+    """Build a transform chain between supported MNI template spaces.
+
+    Parameters
+    ----------
+    source_space : :obj:`str`
+        The source space for the transform chain.
+    target_space : :obj:`str`
+        The target space for the transform chain.
+    source_cohort : :obj:`str` or None
+        Cohort label for MNIInfant source spaces.
+    target_cohort : :obj:`str` or None
+        Cohort label for MNIInfant target spaces.
+
+    Returns
+    -------
+    transforms : :obj:`list` of :obj:`str`
+        Transform chain from ``source_space`` to ``target_space``.
+
+    Raises
+    ------
+    ValueError
+        If the spaces are not supported or cohort is missing for MNIInfant sources.
+    """
+    if source_space == target_space:
+        return ['identity']
+
+    if target_space == 'MNI152NLin6Asym':
+        if source_space == 'MNI152NLin2009cAsym':
+            return [_get_template_transform('MNI152NLin6Asym', 'MNI152NLin2009cAsym')]
+        if source_space == 'MNIInfant':
+            if source_cohort is None:
+                raise ValueError('Source cohort is required for MNIInfant transforms.')
+            return [_get_template_transform('MNI152NLin6Asym', f'MNIInfant+{source_cohort}')]
+
+    if target_space == 'MNI152NLin2009cAsym':
+        if source_space == 'MNI152NLin6Asym':
+            return [_get_template_transform('MNI152NLin2009cAsym', 'MNI152NLin6Asym')]
+        if source_space == 'MNIInfant':
+            if source_cohort is None:
+                raise ValueError('Source cohort is required for MNIInfant transforms.')
+            return [
+                _get_template_transform('MNI152NLin2009cAsym', 'MNI152NLin6Asym'),
+                _get_template_transform('MNI152NLin6Asym', f'MNIInfant+{source_cohort}'),
+            ]
+
+    if target_space == 'MNIInfant':
+        target_to_infant = _get_template_transform(
+            'MNIInfant',
+            'MNI152NLin6Asym',
+            cohort=target_cohort,
+        )
+        if source_space == 'MNI152NLin6Asym':
+            return [target_to_infant]
+        if source_space == 'MNI152NLin2009cAsym':
+            return [
+                target_to_infant,
+                _get_template_transform('MNI152NLin6Asym', 'MNI152NLin2009cAsym'),
+            ]
+
+    raise ValueError(
+        f'Transform chain not supported: {source_space} -> {target_space}'
+    )
+
+
 def check_deps(workflow):
     """Make sure dependencies are present in this system."""
     from nipype.utils.filemanip import which
@@ -56,8 +161,6 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     Only used for QCReport in init_postprocess_nifti_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    from templateflow.api import get as get_template
-
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
@@ -65,7 +168,6 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     bold_cohort = get_entity(bold_file, 'cohort')
 
     if bold_space in ('native', 'T1w'):
-        base_std_space = get_entity(template_to_anat_xfm, 'from')
         raise ValueError(f'BOLD space "{bold_space}" not supported.')
     elif f'from-{bold_space}' not in template_to_anat_xfm:
         raise ValueError(
@@ -77,68 +179,26 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
             'Please specify the cohort using the "cohort" entity.'
         )
 
-    MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
-        get_template(
-            template='MNI152NLin2009cAsym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
-            raise_empty=True,
-            **{'from': 'MNI152NLin6Asym'},
-        ),
-    )
-
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [template_to_anat_xfm]  # used for all spaces except T1w and native
     xforms_to_T1w_invert = [False]
     if bold_space == 'MNI152NLin2009cAsym':
         # Data already in MNI152NLin2009cAsym space.
-        xforms_to_MNI = ['identity']
-        xforms_to_MNI_invert = [False]
-
+        xforms_to_MNI = _build_mni_chain('MNI152NLin2009cAsym', 'MNI152NLin2009cAsym')
     elif bold_space == 'MNI152NLin6Asym':
         # MNI152NLin6Asym --> MNI152NLin2009cAsym
-        xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        xforms_to_MNI_invert = [False]
-
+        xforms_to_MNI = _build_mni_chain('MNI152NLin6Asym', 'MNI152NLin2009cAsym')
     elif bold_space == 'MNIInfant':
         # MNIInfant --> MNI152NLin2009cAsym
-        MNIInfant_to_MNI152NLin6Asym = get_template(
-            template='MNI152NLin6Asym',
-            suffix='xfm',
-            extension='.h5',
-            raise_empty=True,
-            **{'from': f'MNIInfant+{bold_cohort}'},
+        xforms_to_MNI = _build_mni_chain(
+            'MNIInfant',
+            'MNI152NLin2009cAsym',
+            source_cohort=bold_cohort,
         )
-
-        xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym, str(MNIInfant_to_MNI152NLin6Asym)]
-        xforms_to_MNI_invert = [False, False]
-
-    elif bold_space == 'T1w':
-        # T1w --> ?? (extract from template_to_anat_xfm) --> MNI152NLin2009cAsym
-        # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
-        if base_std_space != 'MNI152NLin2009cAsym':
-            std_to_mni_xfm = str(
-                get_template(
-                    template='MNI152NLin2009cAsym',
-                    mode='image',
-                    suffix='xfm',
-                    extension='.h5',
-                    raise_empty=True,
-                    **{'from': base_std_space},
-                ),
-            )
-            xforms_to_MNI = [std_to_mni_xfm, template_to_anat_xfm]
-            xforms_to_MNI_invert = [False, True]
-        else:
-            xforms_to_MNI = [template_to_anat_xfm]
-            xforms_to_MNI_invert = [True]
-
-        xforms_to_T1w = ['identity']
-        xforms_to_T1w_invert = [False]
-
     else:
         raise ValueError(f'Space "{bold_space}" in {bold_file} not supported.')
+
+    xforms_to_MNI_invert = [False] * len(xforms_to_MNI)
 
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
@@ -176,8 +236,6 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     Does not include inversion flag output because there is no need (yet).
     Can easily be added in the future.
     """
-    from templateflow.api import get as get_template
-
     from xcp_d.utils.bids import get_entity
 
     # Extract the space of the BOLD file
@@ -203,87 +261,18 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     if bold_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
         raise ValueError(f'BOLD space "{bold_space}" not supported.')
 
-    # Load useful inter-template transforms from templateflow and package data
-    MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
-        get_template(
-            template='MNI152NLin2009cAsym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
-            raise_empty=True,
-            **{'from': 'MNI152NLin6Asym'},
-        ),
-    )
-    MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
-        get_template(
-            template='MNI152NLin6Asym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
-            raise_empty=True,
-            **{'from': 'MNI152NLin2009cAsym'},
-        ),
-    )
-
-    if bold_space == source_space:
-        transforms = ['identity']
-
-    elif bold_space == 'MNI152NLin6Asym':
-        if source_space == 'MNI152NLin2009cAsym':
-            transforms = [MNI152NLin2009cAsym_to_MNI152NLin6Asym]
-        elif source_space == 'MNIInfant':
-            if source_cohort is None:
-                raise ValueError(
-                    f'Source cohort is not specified for {source_file}. '
-                    'Please specify the cohort using the "cohort" entity.'
-                )
-            MNIInfant_to_MNI152NLin6Asym = get_template(
-                template='MNI152NLin6Asym',
-                suffix='xfm',
-                extension='.h5',
-                raise_empty=True,
-                **{'from': f'MNIInfant+{source_cohort}'},
-            )
-            transforms = [str(MNIInfant_to_MNI152NLin6Asym)]
-
-    elif bold_space == 'MNI152NLin2009cAsym':
-        if source_space == 'MNI152NLin6Asym':
-            transforms = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        elif source_space == 'MNIInfant':
-            if source_cohort is None:
-                raise ValueError(
-                    f'Source cohort is not specified for {source_file}. '
-                    'Please specify the cohort using the "cohort" entity.'
-                )
-            MNIInfant_to_MNI152NLin6Asym = get_template(
-                template='MNI152NLin6Asym',
-                suffix='xfm',
-                extension='.h5',
-                raise_empty=True,
-                **{'from': f'MNIInfant+{source_cohort}'},
-            )
-            transforms = [
-                MNI152NLin6Asym_to_MNI152NLin2009cAsym,
-                str(MNIInfant_to_MNI152NLin6Asym),
-            ]
-
-    elif bold_space == 'MNIInfant':
-        MNI152NLin6Asym_to_MNIInfant = get_template(
-            template='MNIInfant',
-            cohort=bold_cohort,
-            suffix='xfm',
-            extension='.h5',
-            raise_empty=True,
-            **{'from': 'MNI152NLin6Asym'},
+    if source_space == 'MNIInfant' and source_cohort is None:
+        raise ValueError(
+            f'Source cohort is not specified for {source_file}. '
+            'Please specify the cohort using the "cohort" entity.'
         )
 
-        if source_space == 'MNI152NLin6Asym':
-            transforms = [str(MNI152NLin6Asym_to_MNIInfant)]
-        elif source_space == 'MNI152NLin2009cAsym':
-            transforms = [
-                str(MNI152NLin6Asym_to_MNIInfant),
-                MNI152NLin2009cAsym_to_MNI152NLin6Asym,
-            ]
+    transforms = _build_mni_chain(
+        source_space,
+        bold_space,
+        source_cohort=source_cohort,
+        target_cohort=bold_cohort,
+    )
 
     return transforms
 
