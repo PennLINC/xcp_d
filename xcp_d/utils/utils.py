@@ -11,6 +11,34 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger('nipype.utils')
 
 
+def _format_space_error(space, context=None, needs_cohort=False):
+    """Format a consistent space validation error message.
+
+    Parameters
+    ----------
+    space : :obj:`str`
+        Space name that failed validation.
+    context : :obj:`str` or None
+        Optional context (e.g., file path) for the error message.
+    needs_cohort : :obj:`bool`
+        Whether the error is for a missing cohort.
+
+    Returns
+    -------
+    message : :obj:`str`
+        Formatted error message.
+    """
+    context_str = f' for {context}' if context else ''
+    if needs_cohort:
+        return (
+            f'Space "{space}" requires a cohort{context_str}. '
+            'Please specify the cohort using the "cohort" entity.'
+        )
+
+    context_str = f' in {context}' if context else ''
+    return f'Space "{space}"{context_str} not supported.'
+
+
 def _validate_bold_space(space, cohort, supported_spaces, context=None):
     """Validate a BOLD or source space and its cohort requirements.
 
@@ -31,15 +59,10 @@ def _validate_bold_space(space, cohort, supported_spaces, context=None):
         If the space is unsupported or a required cohort is missing.
     """
     if space not in supported_spaces:
-        context_str = f' in {context}' if context else ''
-        raise ValueError(f'Space "{space}"{context_str} not supported.')
+        raise ValueError(_format_space_error(space, context=context))
 
     if space == 'MNIInfant' and cohort is None:
-        context_str = f' for {context}' if context else ''
-        raise ValueError(
-            f'Space "{space}" requires a cohort{context_str}. '
-            'Please specify the cohort using the "cohort" entity.'
-        )
+        raise ValueError(_format_space_error(space, context=context, needs_cohort=True))
 
 
 def _get_template_transform(template, from_space, cohort=None):
