@@ -486,7 +486,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         'from-MNI152NLin6Asym_',
         'from-MNIInfant+1_',
     )
-    with pytest.raises(ValueError, match='Source cohort is required'):
+    with pytest.raises(ValueError, match='BOLD cohort is not specified'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_infant,
             infant_to_anat_xfm,
