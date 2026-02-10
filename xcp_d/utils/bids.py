@@ -6,6 +6,7 @@ Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
 
+import copy
 import os
 import warnings
 from pathlib import Path
@@ -147,6 +148,397 @@ def collect_participants(layout, participant_label=None, strict=False):
     return found_label
 
 
+def _apply_bids_filters(queries, bids_filters):
+    """Apply user-provided BIDS filters to the base queries.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+    bids_filters : :obj:`dict` or None
+        Mapping of acquisition keys to filter dictionaries.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with filters applied.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    bids_filters = bids_filters or {}
+    for acq, filters in bids_filters.items():
+        if acq in updated_queries:
+            updated_queries[acq].update(filters)
+
+    return updated_queries
+
+
+def _apply_session_filters(queries, anat_session, func_sessions):
+    """Add anat/func session filters to queries.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+    anat_session : :obj:`str` or None
+        Session label to apply to anatomical queries.
+    func_sessions : :obj:`list` or None
+        Session labels to apply to functional queries.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with session filters applied.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    for query in updated_queries.values():
+        datatype = query.get('datatype')
+        if datatype == 'anat':
+            query.update({'session': anat_session})
+        elif datatype == 'func':
+            query.update({'session': func_sessions})
+
+    return updated_queries
+
+
+def _disable_t1w_to_t2w_transform(queries):
+    """Disable collection of T1w-to-T2w transform files.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with T1w-to-T2w transform queries disabled.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    updated_queries['t1w_to_t2w_xfm']['desc'] = 'ignore'
+    return updated_queries
+
+
+def _disable_t2w_to_t1w_transform(queries):
+    """Disable collection of T2w-to-T1w transform files.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with T2w-to-T1w transform queries disabled.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    updated_queries['t2w_to_t1w_xfm']['desc'] = 'ignore'
+    return updated_queries
+
+
+def _select_bold_space(layout, queries, input_type, file_format):
+    """Pick the first available BOLD space from the allowed list.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.layout.BIDSLayout`
+        BIDSLayout instance for the dataset.
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+    input_type : :obj:`str`
+        Input dataset type (e.g., ``fmriprep``, ``hcp``).
+    file_format : {"cifti", "nifti"}
+        Desired output format for BOLD data.
+
+    Returns
+    -------
+    bold_data : :obj:`list`
+        BOLD files returned by ``layout.get`` for the chosen space.
+    allowed_spaces : :obj:`list`
+        List of allowed spaces that were searched in order.
+    updated_queries : :obj:`dict`
+        Query dictionary with the selected BOLD space applied.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    if 'space' in updated_queries['bold']:
+        allowed_spaces = ensure_list(updated_queries['bold']['space'])
+    else:
+        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )[file_format]
+
+    bold_data = []
+    for space in allowed_spaces:
+        updated_queries['bold']['space'] = space
+        bold_data = layout.get(**updated_queries['bold'])
+        if bold_data:
+            break
+
+    return bold_data, allowed_spaces, updated_queries
+
+
+def _get_single_cohort(bold_data):
+    """Extract the cohort entity from BOLD files, ensuring uniqueness.
+
+    Parameters
+    ----------
+    bold_data : :obj:`list`
+        Files returned by ``layout.get`` for the BOLD query.
+
+    Returns
+    -------
+    cohort : :obj:`str` or None
+        Cohort value if present, otherwise ``None``.
+
+    Raises
+    ------
+    ValueError
+        If multiple cohorts are found across BOLD files.
+    """
+    cohorts = [bold_file.entities.get('cohort') for bold_file in bold_data]
+    cohorts = [cohort for cohort in cohorts if cohort is not None]
+    if len(cohorts) > 1:
+        raise ValueError(f'Multiple cohorts found: {", ".join(cohorts)}')
+    return cohorts[0] if cohorts else None
+
+
+def _select_cifti_volspace(layout, queries, input_type):
+    """Select a volumetric space with available NIfTI data and transforms.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.layout.BIDSLayout`
+        BIDSLayout instance for the dataset.
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+    input_type : :obj:`str`
+        Input dataset type (e.g., ``fmriprep``, ``hcp``).
+
+    Returns
+    -------
+    volspace : :obj:`str`
+        Selected volumetric space with both NIfTI BOLD and transforms.
+    updated_queries : :obj:`dict`
+        Query dictionary with volumetric space applied to relevant queries.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no NIfTI BOLD data or transforms are found for allowed spaces.
+    """
+    updated_queries = copy.deepcopy(queries)
+    allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+        input_type,
+        DEFAULT_ALLOWED_SPACES,
+    )['nifti']
+
+    temp_bold_query = updated_queries['bold'].copy()
+    temp_bold_query.pop('den', None)
+    temp_bold_query['extension'] = '.nii.gz'
+
+    temp_xfm_query = updated_queries['anat_to_template_xfm'].copy()
+
+    bold_data = []
+    transform_files = []
+    volspace = None
+    for candidate in allowed_spaces:
+        temp_bold_query['space'] = candidate
+        bold_data = layout.get(**temp_bold_query)
+        temp_xfm_query['to'] = candidate
+        transform_files = layout.get(**temp_xfm_query)
+        if bold_data and transform_files:
+            volspace = candidate
+            break
+
+    if not bold_data or not transform_files:
+        raise FileNotFoundError(f'No BOLD NIfTI or transforms found to allowed space ({volspace})')
+
+    updated_queries['anat_to_template_xfm']['to'] = volspace
+    updated_queries['template_to_anat_xfm']['from'] = volspace
+    updated_queries['anat_brainmask']['space'] = volspace
+
+    return volspace, updated_queries
+
+
+def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
+    """Update queries based on available T1w/T2w data and transforms.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.layout.BIDSLayout`
+        BIDSLayout instance for the dataset.
+    participant_label : :obj:`str`
+        Participant label (without the ``sub-`` prefix).
+    input_type : :obj:`str`
+        Input dataset type (e.g., ``fmriprep``, ``hcp``).
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary updated for anatomical space and transform availability.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no T1w or T2w files are found for the participant.
+    """
+    updated_queries = copy.deepcopy(queries)
+    t1w_files = layout.get(
+        return_type='file',
+        subject=participant_label,
+        **updated_queries['t1w'],
+    )
+    t2w_files = layout.get(
+        return_type='file',
+        subject=participant_label,
+        **updated_queries['t2w'],
+    )
+    if not t1w_files and not t2w_files:
+        raise FileNotFoundError('No T1w or T2w files found.')
+
+    if t1w_files and t2w_files and (input_type == 'fmriprep'):
+        LOGGER.info('Assuming T2w is in T1w space.')
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
+
+    if t1w_files and t2w_files:
+        LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
+        updated_queries['t2w']['space'] = 'T1w'
+        t1wspace_t2w_found = bool(
+            layout.get(return_type='file', subject=participant_label, **updated_queries['t2w'])
+        )
+        if t1wspace_t2w_found:
+            LOGGER.warning('T1w-space T2w found. Processing anatomical images in T1w space.')
+            updated_queries['t1w']['space'] = [None, 'T1w']
+            updated_queries['t2w']['space'] = 'T1w'
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+            return updated_queries
+
+        LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
+        updated_queries['t1w']['space'] = 'T2w'
+        updated_queries['t2w']['space'] = None  # we want T2w without space entity
+        t2wspace_t1w_found = bool(
+            layout.get(
+                return_type='file',
+                subject=participant_label,
+                **updated_queries['t1w'],
+            )
+        )
+        if t2wspace_t1w_found:
+            LOGGER.warning('T2w-space T1w found. Processing anatomical images in T2w space.')
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+            return updated_queries
+
+        LOGGER.warning('No T2w-space T1w found. Attempting T2w-primary processing.')
+        updated_queries['anat_to_template_xfm']['from'] = 'T2w'
+        t2w_to_template_found = bool(
+            layout.get(
+                return_type='file',
+                subject=participant_label,
+                **updated_queries['anat_to_template_xfm'],
+            )
+        )
+        if not t2w_to_template_found:
+            t2w_to_t1w_found = bool(
+                layout.get(
+                    return_type='file',
+                    subject=participant_label,
+                    **updated_queries['t2w_to_t1w_xfm'],
+                )
+            )
+            if t2w_to_t1w_found:
+                # Prepare for T2w --> T1w --> template chain
+                LOGGER.warning(
+                    'T2w-to-template transform not found, but T2w-to-T1w transform found. '
+                    'Processing both T1w and T2w.'
+                )
+                updated_queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+                updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            else:
+                LOGGER.warning(
+                    'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
+                    'Processing T1w only.'
+                )
+                updated_queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
+                updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+                updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+
+            updated_queries['t1w']['space'] = [None, 'T1w']
+            updated_queries['template_to_anat_xfm']['to'] = 'T1w'
+            updated_queries['anat_to_template_xfm']['from'] = 'T1w'
+            return updated_queries
+
+        t1w_to_t2w_found = bool(
+            layout.get(
+                return_type='file',
+                subject=participant_label,
+                **updated_queries['t1w_to_t2w_xfm'],
+            )
+        )
+        if t1w_to_t2w_found:
+            # Prepare for T1w --> T2w --> template chain
+            LOGGER.info(
+                'T2w-to-template and T1w-to-T2w transforms found. Processing both T1w and T2w.'
+            )
+            updated_queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+            updated_queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        else:
+            LOGGER.warning(
+                'T2w-to-template transform found, but no T1w-to-T2w transform found. '
+                'Processing T2w only.'
+            )
+            updated_queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+
+        updated_queries['t2w']['space'] = [None, 'T2w']
+        updated_queries['template_to_anat_xfm']['to'] = 'T2w'
+        updated_queries['anat_to_template_xfm']['from'] = 'T2w'
+        return updated_queries
+
+    if t2w_files and not t1w_files:
+        LOGGER.warning('T2w found, but no T1w. Enabling T2w-only processing.')
+        updated_queries['template_to_anat_xfm']['to'] = 'T2w'
+        updated_queries['anat_to_template_xfm']['from'] = 'T2w'
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
+
+    if t1w_files and not t2w_files:
+        LOGGER.warning('T1w found, but no T2w. Enabling T1w-only processing.')
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
+
+    return updated_queries
+
+
 @fill_doc
 def collect_data(
     layout,
@@ -184,36 +576,16 @@ def collect_data(
 
     queries['bold']['extension'] = '.dtseries.nii' if (file_format == 'cifti') else '.nii.gz'
 
-    # Apply filters. These may override anything.
-    bids_filters = bids_filters or {}
-    for acq in queries.keys():
-        if acq in bids_filters:
-            queries[acq].update(bids_filters[acq])
-
-    # Add sessions to queries
-    for acq, query in queries.items():
-        if query['datatype'] == 'anat':
-            queries[acq].update({'session': anat_session})
-        elif query['datatype'] == 'func':
-            queries[acq].update({'session': func_sessions})
+    queries = _apply_bids_filters(queries, bids_filters)
+    queries = _apply_session_filters(queries, anat_session, func_sessions)
 
     # Select the best available space.
-    if 'space' in queries['bold']:
-        # Hopefully no one puts in multiple spaces here,
-        # but we'll grab the first one with available data if they did.
-        allowed_spaces = ensure_list(queries['bold']['space'])
-    else:
-        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )[file_format]
-
-    for space in allowed_spaces:
-        queries['bold']['space'] = space
-        bold_data = layout.get(**queries['bold'])
-        if bold_data:
-            # will leave the best available space in the query
-            break
+    bold_data, allowed_spaces, queries = _select_bold_space(
+        layout=layout,
+        queries=queries,
+        input_type=input_type,
+        file_format=file_format,
+    )
 
     if not bold_data:
         filenames = '\n\t'.join(
@@ -225,42 +597,18 @@ def collect_data(
             f'Found files:\n\n{filenames}'
         )
 
-    cohorts = [bold_file.entities.get('cohort') for bold_file in bold_data]
-    cohorts = [c for c in cohorts if c is not None]
-    if len(cohorts) > 1:
-        raise ValueError(f'Multiple cohorts found: {", ".join(cohorts)}')
-
-    cohort = cohorts[0] if cohorts else None
+    cohort = _get_single_cohort(bold_data)
 
     if file_format == 'cifti':
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )['nifti']
+        volspace, updated_queries = _select_cifti_volspace(
+            layout=layout,
+            queries=queries,
+            input_type=input_type,
+        )
 
-        temp_bold_query = queries['bold'].copy()
-        temp_bold_query.pop('den', None)
-        temp_bold_query['extension'] = '.nii.gz'
-
-        temp_xfm_query = queries['anat_to_template_xfm'].copy()
-
-        for volspace in allowed_spaces:
-            temp_bold_query['space'] = volspace
-            bold_data = layout.get(**temp_bold_query)
-            temp_xfm_query['to'] = volspace
-            transform_files = layout.get(**temp_xfm_query)
-
-            if bold_data and transform_files:
-                # will leave the best available space in the query
-                break
-
-        if not bold_data or not transform_files:
-            raise FileNotFoundError(
-                f'No BOLD NIfTI or transforms found to allowed space ({volspace})'
-            )
-
+        queries = updated_queries
         volspace_cohort = volspace
         if cohort:
             volspace_cohort += f'+{cohort}'
@@ -289,119 +637,12 @@ def collect_data(
         queries['bold']['den'] = densities[0]
 
     # Check for anatomical images, and determine if T2w xfms must be used.
-    t1w_files = layout.get(return_type='file', subject=participant_label, **queries['t1w'])
-    t2w_files = layout.get(return_type='file', subject=participant_label, **queries['t2w'])
-    if not t1w_files and not t2w_files:
-        raise FileNotFoundError('No T1w or T2w files found.')
-    elif t1w_files and t2w_files and (input_type == 'fmriprep'):
-        LOGGER.info('Assuming T2w is in T1w space.')
-        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-    elif t1w_files and t2w_files:
-        LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
-        queries['t2w']['space'] = 'T1w'
-        t1wspace_t2w_found = bool(
-            layout.get(return_type='file', subject=participant_label, **queries['t2w'])
-        )
-        if not t1wspace_t2w_found:
-            LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
-            queries['t1w']['space'] = 'T2w'
-            queries['t2w']['space'] = None  # we want T2w without space entity
-            t2wspace_t1w_found = bool(
-                layout.get(
-                    return_type='file',
-                    subject=participant_label,
-                    **queries['t1w'],
-                )
-            )
-            if not t2wspace_t1w_found:
-                LOGGER.warning('No T2w-space T1w found. Attempting T2w-primary processing.')
-                queries['anat_to_template_xfm']['from'] = 'T2w'
-                t2w_to_template_found = bool(
-                    layout.get(
-                        return_type='file',
-                        subject=participant_label,
-                        **queries['anat_to_template_xfm'],
-                    )
-                )
-                if not t2w_to_template_found:
-                    t2w_to_t1w_found = bool(
-                        layout.get(
-                            return_type='file',
-                            subject=participant_label,
-                            **queries['t2w_to_t1w_xfm'],
-                        ),
-                    )
-                    if t2w_to_t1w_found:
-                        # Prepare for T2w --> T1w --> template chain
-                        LOGGER.warning(
-                            'T2w-to-template transform not found, but T2w-to-T1w transform found. '
-                            'Processing both T1w and T2w.'
-                        )
-                        queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
-                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-                    else:
-                        LOGGER.warning(
-                            'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
-                            'Processing T1w only.'
-                        )
-                        queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
-                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-
-                    queries['t1w']['space'] = [None, 'T1w']
-                    queries['template_to_anat_xfm']['to'] = 'T1w'
-                    queries['anat_to_template_xfm']['from'] = 'T1w'
-                else:
-                    t1w_to_t2w_found = bool(
-                        layout.get(
-                            return_type='file',
-                            subject=participant_label,
-                            **queries['t1w_to_t2w_xfm'],
-                        ),
-                    )
-                    if t1w_to_t2w_found:
-                        # Prepare for T1w --> T2w --> template chain
-                        LOGGER.info(
-                            'T2w-to-template and T1w-to-T2w transforms found. '
-                            'Processing both T1w and T2w.'
-                        )
-                        queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
-                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-                    else:
-                        LOGGER.warning(
-                            'T2w-to-template transform found, but no T1w-to-T2w transform found. '
-                            'Processing T2w only.'
-                        )
-                        queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
-                        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-                        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-
-                    queries['t2w']['space'] = [None, 'T2w']
-                    queries['template_to_anat_xfm']['to'] = 'T2w'
-                    queries['anat_to_template_xfm']['from'] = 'T2w'
-            else:
-                LOGGER.warning('T2w-space T1w found. Processing anatomical images in T2w space.')
-                queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-                queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-        else:
-            LOGGER.warning('T1w-space T2w found. Processing anatomical images in T1w space.')
-            queries['t1w']['space'] = [None, 'T1w']
-            queries['t2w']['space'] = 'T1w'
-            queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-            queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-
-    elif t2w_files and not t1w_files:
-        LOGGER.warning('T2w found, but no T1w. Enabling T2w-only processing.')
-        queries['template_to_anat_xfm']['to'] = 'T2w'
-        queries['anat_to_template_xfm']['from'] = 'T2w'
-        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-
-    elif t1w_files and not t2w_files:
-        LOGGER.warning('T1w found, but no T2w. Enabling T1w-only processing.')
-        queries['t1w_to_t2w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
-        queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+    queries = _resolve_anatomical_queries(
+        layout=layout,
+        participant_label=participant_label,
+        input_type=input_type,
+        queries=queries,
+    )
 
     # Search for the files.
     subj_data = {
