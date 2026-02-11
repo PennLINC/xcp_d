@@ -50,6 +50,7 @@ def test_compute_alff(ds001419_data):
     # Now try with a sample mask
     sample_mask = np.ones(bold_data.shape[1], dtype=bool)
     sample_mask[20:30] = False
+    bold_data = bold_data[:, sample_mask]
 
     alff2 = restingstate.compute_alff_chunk((bold_data, 0.1, 0.01, TR, sample_mask))
 

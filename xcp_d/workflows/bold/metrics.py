@@ -5,23 +5,18 @@
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-from templateflow.api import get as get_template
 
 from xcp_d import config
 from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.plotting import PlotDenseCifti, PlotNifti
 from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiSeparateMetric,
     CiftiSeparateVolumeAll,
-    CiftiSmooth,
-    FixCiftiIntent,
 )
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import fwhm2sigma
 
 
 @fill_doc
@@ -62,8 +57,9 @@ def init_alff_wf(
     Inputs
     ------
     denoised_bold
-       This is the ``filtered, interpolated, denoised BOLD``,
-       although interpolation is not necessary if the data were not originally censored.
+       This is the denoised BOLD after optional re-censoring.
+    smoothed_bold
+        Smoothed BOLD after optional re-censoring.
     bold_mask
        bold mask if bold is nifti
     temporal_mask
@@ -125,6 +121,7 @@ series to retain the original scaling.
         niu.IdentityInterface(
             fields=[
                 'denoised_bold',
+                'smoothed_bold',
                 'bold_mask',
                 'temporal_mask',
                 # only used for CIFTI data if the anatomical workflow is enabled
@@ -195,61 +192,62 @@ series to retain the original scaling.
     ])  # fmt:skip
 
     if smoothing:  # If we want to smooth
-        if file_format == 'nifti':
-            workflow.__desc__ = workflow.__desc__ + (
-                ' The ALFF maps were smoothed with Nilearn using a Gaussian kernel '
-                f'(FWHM={str(smoothing)} mm).'
-            )
-            # Smooth via Nilearn
-            smooth_data = pe.Node(
-                Smooth(fwhm=smoothing),
-                name='niftismoothing',
+        workflow.__desc__ += ' ALFF was also calculated from the smoothed, denoised BOLD data.'
+
+        # compute alff
+        compute_smoothed_alff = pe.Node(
+            ComputeALFF(
+                TR=TR,
+                low_pass=low_pass,
+                high_pass=high_pass,
+                n_threads=config.nipype.omp_nthreads,
+            ),
+            mem_gb=mem_gb['bold'],
+            name='compute_smoothed_alff',
+            n_procs=config.nipype.omp_nthreads,
+        )
+        workflow.connect([
+            (inputnode, compute_smoothed_alff, [
+                ('smoothed_bold', 'in_file'),
+                ('bold_mask', 'mask'),
+                ('temporal_mask', 'temporal_mask'),
+            ]),
+            (compute_smoothed_alff, outputnode, [('alff', 'smoothed_alff')])
+        ])  # fmt:skip
+
+        # Plot the ALFF map
+        ds_report_smoothed_alff = pe.Node(
+            DerivativesDataSink(
+                source_file=name_source,
+            ),
+            name='ds_report_smoothed_alff',
+            run_without_submitting=False,
+        )
+
+        if file_format == 'cifti':
+            plot_smoothed_alff = pe.Node(
+                PlotDenseCifti(base_desc='alff'),
+                name='plot_smoothed_alff',
             )
             workflow.connect([
-                (alff_compt, smooth_data, [('alff', 'in_file')]),
-                (smooth_data, outputnode, [('out_file', 'smoothed_alff')])
+                (inputnode, plot_smoothed_alff, [
+                    ('lh_midthickness', 'lh_underlay'),
+                    ('rh_midthickness', 'rh_underlay'),
+                ]),
+                (plot_smoothed_alff, ds_report_smoothed_alff, [('desc', 'desc')]),
             ])  # fmt:skip
+            ds_report_smoothed_alff.inputs.desc = 'alffSmoothedSurfacePlot'
+        else:
+            plot_smoothed_alff = pe.Node(
+                PlotNifti(name_source=name_source),
+                name='plot_smoothed_alff',
+            )
+            ds_report_smoothed_alff.inputs.desc = 'alffSmoothedVolumetricPlot'
 
-        else:  # If cifti
-            workflow.__desc__ = workflow.__desc__ + (
-                ' The ALFF maps were smoothed with the Connectome Workbench using a Gaussian '
-                f'kernel (FWHM={str(smoothing)} mm).'
-            )
-
-            # Smooth via Connectome Workbench
-            sigma_lx = fwhm2sigma(smoothing)  # Convert fwhm to standard deviation
-            # Get templates for each hemisphere
-            lh_midthickness = str(
-                get_template('fsLR', hemi='L', suffix='sphere', density='32k', raise_empty=True)[0]
-            )
-            rh_midthickness = str(
-                get_template('fsLR', hemi='R', suffix='sphere', density='32k', raise_empty=True)[0]
-            )
-            smooth_data = pe.Node(
-                CiftiSmooth(
-                    sigma_surf=sigma_lx,
-                    sigma_vol=sigma_lx,
-                    direction='COLUMN',
-                    right_surf=rh_midthickness,
-                    left_surf=lh_midthickness,
-                    num_threads=config.nipype.omp_nthreads,
-                ),
-                name='ciftismoothing',
-                mem_gb=mem_gb['bold'],
-                n_procs=config.nipype.omp_nthreads,
-            )
-
-            # Always check the intent code in CiftiSmooth's output file
-            fix_cifti_intent = pe.Node(
-                FixCiftiIntent(),
-                name='fix_cifti_intent',
-                mem_gb=mem_gb['bold'],
-            )
-            workflow.connect([
-                (alff_compt, smooth_data, [('alff', 'in_file')]),
-                (smooth_data, fix_cifti_intent, [('out_file', 'in_file')]),
-                (fix_cifti_intent, outputnode, [('out_file', 'smoothed_alff')]),
-            ])  # fmt:skip
+        workflow.connect([
+            (compute_smoothed_alff, plot_smoothed_alff, [('alff', 'in_file')]),
+            (plot_smoothed_alff, ds_report_smoothed_alff, [('out_file', 'in_file')]),
+        ])  # fmt:skip
 
     return workflow
 

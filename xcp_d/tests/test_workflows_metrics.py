@@ -52,6 +52,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         alff_wf.base_dir = tempdir
         alff_wf.inputs.inputnode.bold_mask = bold_mask
         alff_wf.inputs.inputnode.denoised_bold = bold_file
+        alff_wf.inputs.inputnode.smoothed_bold = bold_file
         alff_wf = clean_datasinks(alff_wf)
         compute_alff_res = alff_wf.run()
 
@@ -94,6 +95,7 @@ def test_nifti_alff(ds001419_data, tmp_path_factory):
         alff_wf.base_dir = tempdir
         alff_wf.inputs.inputnode.bold_mask = bold_mask
         alff_wf.inputs.inputnode.denoised_bold = filename
+        alff_wf.inputs.inputnode.smoothed_bold = filename
         alff_wf = clean_datasinks(alff_wf)
         compute_alff_res = alff_wf.run()
         nodes = get_nodes(compute_alff_res)
@@ -140,6 +142,7 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
         alff_wf.base_dir = tempdir
         alff_wf.inputs.inputnode.bold_mask = bold_mask
         alff_wf.inputs.inputnode.denoised_bold = bold_file
+        alff_wf.inputs.inputnode.smoothed_bold = bold_file
         alff_wf = clean_datasinks(alff_wf)
         compute_alff_res = alff_wf.run()
 
@@ -169,9 +172,16 @@ def test_cifti_alff(ds001419_data, tmp_path_factory):
 
         # Now let's compute ALFF for the new file and see how it compares
         tempdir = tmp_path_factory.mktemp('test_cifti_alff_02')
+        config.workflow.smoothing = 0
+        alff_wf = metrics.init_alff_wf(
+            name_source=bold_file,
+            TR=TR,
+            mem_gb=mem_gbx,
+        )
         alff_wf.base_dir = tempdir
         alff_wf.inputs.inputnode.bold_mask = bold_mask
         alff_wf.inputs.inputnode.denoised_bold = filename
+        alff_wf = clean_datasinks(alff_wf)
         compute_alff_res = alff_wf.run()
         nodes = get_nodes(compute_alff_res)
 

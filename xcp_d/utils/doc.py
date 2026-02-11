@@ -113,7 +113,6 @@ docdict['smoothing'] = """
 smoothing : :obj:`float`
     The full width at half maximum (FWHM), in millimeters,
     of the Gaussian smoothing kernel that will be applied to the post-processed and denoised data.
-    ALFF and ReHo outputs will also be smoothing with this kernel.
 """
 
 docdict['custom_confounds_folder'] = """
@@ -381,8 +380,8 @@ docdict['smoothed_denoised_bold'] = """
 smoothed_denoised_bold : :obj:`str`
     Path to the censored, denoised, interpolated, filtered, re-censored, and smoothed BOLD file.
     This file is the result of denoising the censored preprocessed BOLD data,
-    followed by cubic spline interpolation, band-pass filtering, re-censoring, and spatial
-    smoothing.
+    followed by cubic spline interpolation, band-pass filtering,
+    re-censoring (if output_interpolated is False), and spatial smoothing.
 """
 
 docdict['atlases'] = """
