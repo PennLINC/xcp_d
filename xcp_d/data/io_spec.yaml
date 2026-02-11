@@ -39,6 +39,22 @@ queries:
             - null
             - T1w
             suffix: T2w
+        # transform from T1w to T2w space
+        t1w_to_t2w_xfm:
+            datatype: anat
+            suffix: xfm
+            from:
+            - T1w
+            to:
+            - T2w
+        # transform from T2w to T1w space
+        t2w_to_t1w_xfm:
+            datatype: anat
+            suffix: xfm
+            from:
+            - T2w
+            to:
+            - T1w
         # transform from standard space to anatomical (T1w or T2w) space
         # "from" entity will be set later
         template_to_anat_xfm:
@@ -65,6 +81,14 @@ queries:
             - null
             - fsaverage
             suffix: sphere
+        # Subject's surface sphere to be used to warp fsaverage meshes to fsLR space
+        lh_reg_sphere:
+            datatype: anat
+            desc: reg
+            extension: .surf.gii
+            hemi: L
+            space: fsLR
+            suffix: sphere
         # White matter surface mesh in fsnative space (fsLR-space mesh will be searched for separately)
         lh_wm_surf:
             datatype: anat
@@ -90,6 +114,14 @@ queries:
             space:
             - null
             - fsaverage
+            suffix: sphere
+        # Subject's surface sphere to be used to warp fsaverage meshes to fsLR space
+        rh_reg_sphere:
+            datatype: anat
+            desc: reg
+            extension: .surf.gii
+            hemi: R
+            space: fsLR
             suffix: sphere
         # White matter surface mesh in fsnative space (fsLR-space mesh will be searched for separately)
         rh_wm_surf:

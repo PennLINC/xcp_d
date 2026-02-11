@@ -19,6 +19,7 @@ from nipype.interfaces.base import (
 from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd
+from xcp_d.utils.utils import get_col
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -33,6 +34,11 @@ class _RemoveDummyVolumesInputSpec(BaseInterfaceInputSpec):
             'Number of volumes to drop from the beginning, '
             'calculated in an earlier workflow from dummy_scans.'
         ),
+    )
+    dummy_scan_source = File(
+        exists=True,
+        mandatory=False,
+        desc='Source file for dummy scans (i.e., the fMRIPrep confounds file).',
     )
     confounds_tsv = traits.Either(
         File(exists=True),
@@ -101,7 +107,7 @@ class RemoveDummyVolumes(SimpleInterface):
     def _run_interface(self, runtime):
         dummy_scans = _infer_dummy_scans(
             dummy_scans=self.inputs.dummy_scans,
-            confounds_file=self.inputs.motion_file,
+            confounds_file=self.inputs.dummy_scan_source,
         )
 
         self._results['dummy_scans'] = dummy_scans
@@ -251,7 +257,7 @@ class Censor(SimpleInterface):
 
         # Drop the high-motion volumes, because the image is already censored
         if self.inputs.column != 'framewise_displacement':
-            censoring_df = censoring_df.loc[censoring_df['framewise_displacement'] == 0]
+            censoring_df = censoring_df.loc[get_col(censoring_df, 'framewise_displacement') == 0]
             censoring_df.reset_index(drop=True, inplace=True)
 
         retain_idx = censoring_df.loc[censoring_df[self.inputs.column] == 0].index.values
@@ -375,7 +381,9 @@ class RandomCensor(SimpleInterface):
             use_ext=True,
         )
         rng = np.random.default_rng(self.inputs.random_seed)
-        low_motion_idx = censoring_df.loc[censoring_df['framewise_displacement'] != 1].index.values
+        low_motion_idx = censoring_df.loc[
+            get_col(censoring_df, 'framewise_displacement') != 1
+        ].index.values
         for exact_scan in self.inputs.exact_scans:
             random_censor = rng.choice(low_motion_idx, size=exact_scan, replace=False)
             column_name = f'exact_{exact_scan}'

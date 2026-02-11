@@ -20,30 +20,30 @@ dependencies = [
     "acres",
     "beautifulsoup4",  # to clean up HTML in DCAN executive summary outputs
     "bids-validator <= 1.14.7.post0",
-    "h5py <= 3.12.1",  # for DCAN motion file
-    "indexed_gzip ~= 1.9.1",  # for loading imgs in nibabel
+    "h5py <= 3.15.1",  # for DCAN motion file
+    "indexed_gzip ~= 1.10.1",  # for loading imgs in nibabel
     "jinja2 ~= 3.1.2",  # for executive summary
-    "joblib <= 1.4.2",
+    "joblib <= 1.5.3",
     "matplotlib ~= 3.10.0",
     "networkx <= 3.4.2",  # nipype needs networkx, but 3+ isn't compatible with nipype 1.8.5
     "nibabel >= 3.2.1",
-    "nilearn == 0.11.1",  # 0.10.2 raises error with compcor from fMRIPrep 23
-    "nipype ~= 1.9.1",
-    "nireports ~= 24.1.0",
-    "niworkflows == 1.12.2",
+    "nilearn == 0.13.0",  # 0.10.2 raises error with compcor from fMRIPrep 23
+    "nipype ~= 1.10.0",
+    "nireports ~= 25.3.0",
+    "niworkflows == 1.14.4",
     "nitime",  # for DVARS calculation in Nipype
     "num2words",  # for boilerplates
     "numpy ~= 2.0",
     "packaging",  # for version string parsing
     "pandas",
     "psutil >= 5.4",  # for sentry
-    "pybids ~= 0.18.1",
+    "pybids ~= 0.21.0",
     "pyyaml",
-    "scikit-learn <= 1.6.1",
-    "scipy >= 1.14.0,<= 1.15.1",  # nipype needs networkx, which needs scipy > 1.8.0
+    "scikit-learn <= 1.7.2",
+    "scipy >= 1.14.0,<= 1.15.3",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
-    "sentry-sdk ~= 2.20.0",  # for usage reports
-    "templateflow ~= 24.2.0",
+    "sentry-sdk ~= 2.52.0",  # for usage reports
+    "templateflow ~= 25.1.1",
     "toml",
     "trimesh",
 ]
@@ -69,9 +69,10 @@ doc = [
     "sphinxcontrib-apidoc",
     "sphinxcontrib-bibtex",
     "svgutils",
+    "sphinx_design",
 ]
 dev = [
-    "ruff ~= 0.9.2",
+    "ruff ~= 0.15.0",
     "pre-commit",
 ]
 tests = [
@@ -154,11 +155,9 @@ extend-select = [
   "Q",
 ]
 ignore = [
-  "S101",  # Ignore use of assert for now
   "S105",
   "S311",  # We are not using random for cryptographic purposes
-  "ISC001",
-  "S603",
+  "S603",  # subprocess used only for trusted commands (git, pandoc, test runners)
 ]
 
 [tool.ruff.lint.flake8-quotes]
@@ -186,9 +185,9 @@ markers = [
     "fmriprep_without_freesurfer_with_main: mark integration test for fMRIPrep derivatives without FreeSurfer using main function",
     "nibabies: mark integration test for nibabies derivatives",
 ]
-env = [
-    "RUNNING_PYTEST = 1",
-]
+
+[tool.pytest_env]
+RUNNING_PYTEST = "1"
 
 [tool.coverage.run]
 branch = true

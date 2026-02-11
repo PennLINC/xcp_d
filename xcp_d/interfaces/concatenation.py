@@ -227,6 +227,13 @@ class FilterOutFailedRuns(SimpleInterface):
         if len(successful_runs) < n_runs:
             LOGGER.warning(f'Of {n_runs} runs, only runs {successful_runs} were successful.')
 
+        if not successful_runs:
+            LOGGER.warning('No successful runs found. Returning empty outputs.')
+            self._results['denoised_bold'] = []
+            for input_name in inputs_to_filter:
+                self._results[input_name] = []
+            return runtime
+
         self._results['denoised_bold'] = [denoised_bold[i] for i in successful_runs]
 
         for input_name, input_list in inputs_to_filter.items():
@@ -236,7 +243,17 @@ class FilterOutFailedRuns(SimpleInterface):
                 )
                 input_list = [Undefined for _ in range(n_runs)]
 
-            self._results[input_name] = [input_list[i] for i in successful_runs]
+            # Filter out undefined values
+            input_list = [input_list[i] for i in successful_runs]
+
+            if isinstance(input_list[0], list):
+                # Transpose lists of lists from
+                # [['run-1_atlas-a', 'run-1_atlas-b'], ['run-2_atlas-a', 'run-2_atlas-b']]
+                # to
+                # [['run-1_atlas-a', 'run-2_atlas-a'], ['run-1_atlas-b', 'run-2_atlas-b']]
+                input_list = list(map(list, itertools.zip_longest(*input_list, fillvalue=None)))
+
+            self._results[input_name] = input_list
 
         return runtime
 
@@ -388,12 +405,10 @@ class ConcatenateInputs(SimpleInterface):
                 continue
 
             if isinstance(run_files[0], list):
-                # Files are organized in a list of lists, like parcellated time series.
-                transposed_run_files = list(
-                    map(list, itertools.zip_longest(*run_files, fillvalue=None))
-                )
+                # Files are organized in a list of lists, like parcellated time series, in order
+                # [['run-1_atlas-a', 'run-2_atlas-a'], ['run-1_atlas-b', 'run-2_atlas-b']]
                 out_files = []
-                for i_atlas, parc_files in enumerate(transposed_run_files):
+                for i_atlas, parc_files in enumerate(run_files):
                     extension = '.'.join(os.path.basename(parc_files[0]).split('.')[1:])
                     out_file = os.path.join(runtime.cwd, f'{name}_{i_atlas}.{extension}')
                     if out_file.endswith('.tsv'):
@@ -401,7 +416,8 @@ class ConcatenateInputs(SimpleInterface):
                     else:
                         concatenate_niimgs(parc_files, out_file=out_file)
 
-                    assert os.path.isfile(out_file), f'Output file {out_file} not created.'
+                    if not os.path.isfile(out_file):
+                        raise RuntimeError(f'Output file {out_file} not created.')
                     out_files.append(out_file)
 
                 self._results[name] = out_files
@@ -414,7 +430,8 @@ class ConcatenateInputs(SimpleInterface):
                 else:
                     concatenate_niimgs(run_files, out_file=out_file)
 
-                assert os.path.isfile(out_file), f'Output file {out_file} not created.'
+                if not os.path.isfile(out_file):
+                    raise RuntimeError(f'Output file {out_file} not created.')
                 self._results[name] = out_file
 
         return runtime

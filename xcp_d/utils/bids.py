@@ -6,13 +6,15 @@ Most of the code is copied from niworkflows.
 A PR will be submitted to niworkflows at some point.
 """
 
+import copy
 import os
 import warnings
 from pathlib import Path
 
+import filelock
 import nibabel as nb
 import yaml
-from bids.layout import BIDSLayout
+from bids.layout import BIDSLayout, Query
 from bids.utils import listify
 from nipype import logging
 from nipype.interfaces.base import isdefined
@@ -146,6 +148,397 @@ def collect_participants(layout, participant_label=None, strict=False):
     return found_label
 
 
+def _apply_bids_filters(queries, bids_filters):
+    """Apply user-provided BIDS filters to the base queries.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+    bids_filters : :obj:`dict` or None
+        Mapping of acquisition keys to filter dictionaries.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with filters applied.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    bids_filters = bids_filters or {}
+    for acq, filters in bids_filters.items():
+        if acq in updated_queries:
+            updated_queries[acq].update(filters)
+
+    return updated_queries
+
+
+def _apply_session_filters(queries, anat_session, func_sessions):
+    """Add anat/func session filters to queries.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+    anat_session : :obj:`str` or None
+        Session label to apply to anatomical queries.
+    func_sessions : :obj:`list` or None
+        Session labels to apply to functional queries.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with session filters applied.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    for query in updated_queries.values():
+        datatype = query.get('datatype')
+        if datatype == 'anat':
+            query.update({'session': anat_session})
+        elif datatype == 'func':
+            query.update({'session': func_sessions})
+
+    return updated_queries
+
+
+def _disable_t1w_to_t2w_transform(queries):
+    """Disable collection of T1w-to-T2w transform files.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with T1w-to-T2w transform queries disabled.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    updated_queries['t1w_to_t2w_xfm']['desc'] = 'ignore'
+    return updated_queries
+
+
+def _disable_t2w_to_t1w_transform(queries):
+    """Disable collection of T2w-to-T1w transform files.
+
+    Parameters
+    ----------
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary with T2w-to-T1w transform queries disabled.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    updated_queries['t2w_to_t1w_xfm']['desc'] = 'ignore'
+    return updated_queries
+
+
+def _select_bold_space(layout, queries, input_type, file_format):
+    """Pick the first available BOLD space from the allowed list.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.layout.BIDSLayout`
+        BIDSLayout instance for the dataset.
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+    input_type : :obj:`str`
+        Input dataset type (e.g., ``fmriprep``, ``hcp``).
+    file_format : {"cifti", "nifti"}
+        Desired output format for BOLD data.
+
+    Returns
+    -------
+    bold_data : :obj:`list`
+        BOLD files returned by ``layout.get`` for the chosen space.
+    allowed_spaces : :obj:`list`
+        List of allowed spaces that were searched in order.
+    updated_queries : :obj:`dict`
+        Query dictionary with the selected BOLD space applied.
+
+    Raises
+    ------
+    None
+    """
+    updated_queries = copy.deepcopy(queries)
+    if 'space' in updated_queries['bold']:
+        allowed_spaces = ensure_list(updated_queries['bold']['space'])
+    else:
+        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+            input_type,
+            DEFAULT_ALLOWED_SPACES,
+        )[file_format]
+
+    bold_data = []
+    for space in allowed_spaces:
+        updated_queries['bold']['space'] = space
+        bold_data = layout.get(**updated_queries['bold'])
+        if bold_data:
+            break
+
+    return bold_data, allowed_spaces, updated_queries
+
+
+def _get_single_cohort(bold_data):
+    """Extract the cohort entity from BOLD files, ensuring uniqueness.
+
+    Parameters
+    ----------
+    bold_data : :obj:`list`
+        Files returned by ``layout.get`` for the BOLD query.
+
+    Returns
+    -------
+    cohort : :obj:`str` or None
+        Cohort value if present, otherwise ``None``.
+
+    Raises
+    ------
+    ValueError
+        If multiple cohorts are found across BOLD files.
+    """
+    cohorts = [bold_file.entities.get('cohort') for bold_file in bold_data]
+    cohorts = [cohort for cohort in cohorts if cohort is not None]
+    if len(cohorts) > 1:
+        raise ValueError(f'Multiple cohorts found: {", ".join(cohorts)}')
+    return cohorts[0] if cohorts else None
+
+
+def _select_cifti_volspace(layout, queries, input_type):
+    """Select a volumetric space with available NIfTI data and transforms.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.layout.BIDSLayout`
+        BIDSLayout instance for the dataset.
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+    input_type : :obj:`str`
+        Input dataset type (e.g., ``fmriprep``, ``hcp``).
+
+    Returns
+    -------
+    volspace : :obj:`str`
+        Selected volumetric space with both NIfTI BOLD and transforms.
+    updated_queries : :obj:`dict`
+        Query dictionary with volumetric space applied to relevant queries.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no NIfTI BOLD data or transforms are found for allowed spaces.
+    """
+    updated_queries = copy.deepcopy(queries)
+    allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
+        input_type,
+        DEFAULT_ALLOWED_SPACES,
+    )['nifti']
+
+    temp_bold_query = updated_queries['bold'].copy()
+    temp_bold_query.pop('den', None)
+    temp_bold_query['extension'] = '.nii.gz'
+
+    temp_xfm_query = updated_queries['anat_to_template_xfm'].copy()
+
+    bold_data = []
+    transform_files = []
+    volspace = None
+    for candidate in allowed_spaces:
+        temp_bold_query['space'] = candidate
+        bold_data = layout.get(**temp_bold_query)
+        temp_xfm_query['to'] = candidate
+        transform_files = layout.get(**temp_xfm_query)
+        if bold_data and transform_files:
+            volspace = candidate
+            break
+
+    if not bold_data or not transform_files:
+        raise FileNotFoundError(f'No BOLD NIfTI or transforms found to allowed space ({volspace})')
+
+    updated_queries['anat_to_template_xfm']['to'] = volspace
+    updated_queries['template_to_anat_xfm']['from'] = volspace
+    updated_queries['anat_brainmask']['space'] = volspace
+
+    return volspace, updated_queries
+
+
+def _resolve_anatomical_queries(layout, participant_label, input_type, queries):
+    """Update queries based on available T1w/T2w data and transforms.
+
+    Parameters
+    ----------
+    layout : :obj:`bids.layout.BIDSLayout`
+        BIDSLayout instance for the dataset.
+    participant_label : :obj:`str`
+        Participant label (without the ``sub-`` prefix).
+    input_type : :obj:`str`
+        Input dataset type (e.g., ``fmriprep``, ``hcp``).
+    queries : :obj:`dict`
+        Base query dictionary from ``io_spec.yaml``.
+
+    Returns
+    -------
+    updated_queries : :obj:`dict`
+        Query dictionary updated for anatomical space and transform availability.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no T1w or T2w files are found for the participant.
+    """
+    updated_queries = copy.deepcopy(queries)
+    t1w_files = layout.get(
+        return_type='file',
+        subject=participant_label,
+        **updated_queries['t1w'],
+    )
+    t2w_files = layout.get(
+        return_type='file',
+        subject=participant_label,
+        **updated_queries['t2w'],
+    )
+    if not t1w_files and not t2w_files:
+        raise FileNotFoundError('No T1w or T2w files found.')
+
+    if t1w_files and t2w_files and (input_type == 'fmriprep'):
+        LOGGER.info('Assuming T2w is in T1w space.')
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
+
+    if t1w_files and t2w_files:
+        LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
+        updated_queries['t2w']['space'] = 'T1w'
+        t1wspace_t2w_found = bool(
+            layout.get(return_type='file', subject=participant_label, **updated_queries['t2w'])
+        )
+        if t1wspace_t2w_found:
+            LOGGER.warning('T1w-space T2w found. Processing anatomical images in T1w space.')
+            updated_queries['t1w']['space'] = [None, 'T1w']
+            updated_queries['t2w']['space'] = 'T1w'
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+            return updated_queries
+
+        LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
+        updated_queries['t1w']['space'] = 'T2w'
+        updated_queries['t2w']['space'] = None  # we want T2w without space entity
+        t2wspace_t1w_found = bool(
+            layout.get(
+                return_type='file',
+                subject=participant_label,
+                **updated_queries['t1w'],
+            )
+        )
+        if t2wspace_t1w_found:
+            LOGGER.warning('T2w-space T1w found. Processing anatomical images in T2w space.')
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+            return updated_queries
+
+        LOGGER.warning('No T2w-space T1w found. Attempting T2w-primary processing.')
+        updated_queries['anat_to_template_xfm']['from'] = 'T2w'
+        t2w_to_template_found = bool(
+            layout.get(
+                return_type='file',
+                subject=participant_label,
+                **updated_queries['anat_to_template_xfm'],
+            )
+        )
+        if not t2w_to_template_found:
+            t2w_to_t1w_found = bool(
+                layout.get(
+                    return_type='file',
+                    subject=participant_label,
+                    **updated_queries['t2w_to_t1w_xfm'],
+                )
+            )
+            if t2w_to_t1w_found:
+                # Prepare for T2w --> T1w --> template chain
+                LOGGER.warning(
+                    'T2w-to-template transform not found, but T2w-to-T1w transform found. '
+                    'Processing both T1w and T2w.'
+                )
+                updated_queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+                updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            else:
+                LOGGER.warning(
+                    'Neither T2w-to-template, nor T2w-to-T1w, transform found. '
+                    'Processing T1w only.'
+                )
+                updated_queries['t2w']['space'] = 'T1w'  # ensure T2w is not collected
+                updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+                updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+
+            updated_queries['t1w']['space'] = [None, 'T1w']
+            updated_queries['template_to_anat_xfm']['to'] = 'T1w'
+            updated_queries['anat_to_template_xfm']['from'] = 'T1w'
+            return updated_queries
+
+        t1w_to_t2w_found = bool(
+            layout.get(
+                return_type='file',
+                subject=participant_label,
+                **updated_queries['t1w_to_t2w_xfm'],
+            )
+        )
+        if t1w_to_t2w_found:
+            # Prepare for T1w --> T2w --> template chain
+            LOGGER.info(
+                'T2w-to-template and T1w-to-T2w transforms found. Processing both T1w and T2w.'
+            )
+            updated_queries['t1w']['space'] = [None, 'T1w']  # ensure T1w is collected
+            updated_queries['t2w_to_t1w_xfm']['desc'] = 'ignore'  # ensure xfm not collected
+        else:
+            LOGGER.warning(
+                'T2w-to-template transform found, but no T1w-to-T2w transform found. '
+                'Processing T2w only.'
+            )
+            updated_queries['t1w']['space'] = 'T2w'  # ensure T1w is not collected
+            updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+            updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+
+        updated_queries['t2w']['space'] = [None, 'T2w']
+        updated_queries['template_to_anat_xfm']['to'] = 'T2w'
+        updated_queries['anat_to_template_xfm']['from'] = 'T2w'
+        return updated_queries
+
+    if t2w_files and not t1w_files:
+        LOGGER.warning('T2w found, but no T1w. Enabling T2w-only processing.')
+        updated_queries['template_to_anat_xfm']['to'] = 'T2w'
+        updated_queries['anat_to_template_xfm']['from'] = 'T2w'
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
+
+    if t1w_files and not t2w_files:
+        LOGGER.warning('T1w found, but no T2w. Enabling T1w-only processing.')
+        updated_queries = _disable_t1w_to_t2w_transform(updated_queries)
+        updated_queries = _disable_t2w_to_t1w_transform(updated_queries)
+        return updated_queries
+
+    return updated_queries
+
+
 @fill_doc
 def collect_data(
     layout,
@@ -153,6 +546,8 @@ def collect_data(
     participant_label,
     bids_filters,
     file_format,
+    anat_session,
+    func_sessions,
 ):
     """Collect data from a BIDS dataset.
 
@@ -163,6 +558,8 @@ def collect_data(
     participant_label
     bids_filters
     file_format
+    anat_session
+    func_sessions
 
     Returns
     -------
@@ -179,29 +576,16 @@ def collect_data(
 
     queries['bold']['extension'] = '.dtseries.nii' if (file_format == 'cifti') else '.nii.gz'
 
-    # Apply filters. These may override anything.
-    bids_filters = bids_filters or {}
-    for acq in queries.keys():
-        if acq in bids_filters:
-            queries[acq].update(bids_filters[acq])
+    queries = _apply_bids_filters(queries, bids_filters)
+    queries = _apply_session_filters(queries, anat_session, func_sessions)
 
     # Select the best available space.
-    if 'space' in queries['bold']:
-        # Hopefully no one puts in multiple spaces here,
-        # but we'll grab the first one with available data if they did.
-        allowed_spaces = ensure_list(queries['bold']['space'])
-    else:
-        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )[file_format]
-
-    for space in allowed_spaces:
-        queries['bold']['space'] = space
-        bold_data = layout.get(**queries['bold'])
-        if bold_data:
-            # will leave the best available space in the query
-            break
+    bold_data, allowed_spaces, queries = _select_bold_space(
+        layout=layout,
+        queries=queries,
+        input_type=input_type,
+        file_format=file_format,
+    )
 
     if not bold_data:
         filenames = '\n\t'.join(
@@ -213,42 +597,31 @@ def collect_data(
             f'Found files:\n\n{filenames}'
         )
 
+    cohort = _get_single_cohort(bold_data)
+
     if file_format == 'cifti':
         # Select the appropriate volumetric space for the CIFTI template.
         # This space will be used in the executive summary and T1w/T2w workflows.
-        allowed_spaces = INPUT_TYPE_ALLOWED_SPACES.get(
-            input_type,
-            DEFAULT_ALLOWED_SPACES,
-        )['nifti']
+        volspace, updated_queries = _select_cifti_volspace(
+            layout=layout,
+            queries=queries,
+            input_type=input_type,
+        )
 
-        temp_bold_query = queries['bold'].copy()
-        temp_bold_query.pop('den', None)
-        temp_bold_query['extension'] = '.nii.gz'
-
-        temp_xfm_query = queries['anat_to_template_xfm'].copy()
-
-        for volspace in allowed_spaces:
-            temp_bold_query['space'] = volspace
-            bold_data = layout.get(**temp_bold_query)
-            temp_xfm_query['to'] = volspace
-            transform_files = layout.get(**temp_xfm_query)
-
-            if bold_data and transform_files:
-                # will leave the best available space in the query
-                break
-
-        if not bold_data or not transform_files:
-            raise FileNotFoundError(
-                f'No BOLD NIfTI or transforms found to allowed space ({volspace})'
-            )
-
-        queries['anat_to_template_xfm']['to'] = volspace
-        queries['template_to_anat_xfm']['from'] = volspace
+        queries = updated_queries
+        volspace_cohort = volspace
+        if cohort:
+            volspace_cohort += f'+{cohort}'
+        queries['anat_to_template_xfm']['to'] = volspace_cohort
+        queries['template_to_anat_xfm']['from'] = volspace_cohort
         queries['anat_brainmask']['space'] = volspace
     else:
+        volspace_cohort = queries['bold']['space']
+        if cohort:
+            volspace_cohort += f'+{cohort}'
         # use the BOLD file's space if the BOLD file is a nifti.
-        queries['anat_to_template_xfm']['to'] = queries['bold']['space']
-        queries['template_to_anat_xfm']['from'] = queries['bold']['space']
+        queries['anat_to_template_xfm']['to'] = volspace_cohort
+        queries['template_to_anat_xfm']['from'] = volspace_cohort
         queries['anat_brainmask']['space'] = queries['bold']['space']
 
     # Grab the first (and presumably best) density and resolution if there are multiple.
@@ -264,55 +637,12 @@ def collect_data(
         queries['bold']['den'] = densities[0]
 
     # Check for anatomical images, and determine if T2w xfms must be used.
-    t1w_files = layout.get(return_type='file', subject=participant_label, **queries['t1w'])
-    t2w_files = layout.get(return_type='file', subject=participant_label, **queries['t2w'])
-    if not t1w_files and not t2w_files:
-        raise FileNotFoundError('No T1w or T2w files found.')
-    elif t1w_files and t2w_files:
-        LOGGER.warning('Both T1w and T2w found. Checking for T1w-space T2w.')
-        temp_query = queries['t2w'].copy()
-        temp_query['space'] = 'T1w'
-        temp_t2w_files = layout.get(return_type='file', subject=participant_label, **temp_query)
-        if not temp_t2w_files:
-            LOGGER.warning('No T1w-space T2w found. Checking for T2w-space T1w.')
-            temp_query = queries['t1w'].copy()
-            temp_query['space'] = 'T2w'
-            temp_t1w_files = layout.get(
-                return_type='file',
-                subject=participant_label,
-                **temp_query,
-            )
-            queries['t1w']['space'] = 'T2w'
-            if not temp_t1w_files:
-                LOGGER.warning('No T2w-space T1w found. Attempting T2w-only processing.')
-                temp_query = queries['anat_to_template_xfm'].copy()
-                temp_query['from'] = 'T2w'
-                temp_xfm_files = layout.get(
-                    return_type='file',
-                    subject=participant_label,
-                    **temp_query,
-                )
-                if not temp_xfm_files:
-                    LOGGER.warning(
-                        'T2w-to-template transform not found. Attempting T1w-only processing.'
-                    )
-                    queries['t1w']['space'] = ['T1w', None]
-                    queries['template_to_anat_xfm']['to'] = 'T1w'
-                    queries['anat_to_template_xfm']['from'] = 'T1w'
-                else:
-                    LOGGER.info('Performing T2w-only processing.')
-                    queries['template_to_anat_xfm']['to'] = 'T2w'
-                    queries['anat_to_template_xfm']['from'] = 'T2w'
-            else:
-                LOGGER.warning('T2w-space T1w found. Processing anatomical images in T2w space.')
-        else:
-            LOGGER.warning('T1w-space T2w found. Processing anatomical images in T1w space.')
-            queries['t2w']['space'] = 'T1w'
-            queries['t1w']['space'] = ['T1w', None]
-    elif t2w_files and not t1w_files:
-        LOGGER.warning('T2w found, but no T1w. Enabling T2w-only processing.')
-        queries['template_to_anat_xfm']['to'] = 'T2w'
-        queries['anat_to_template_xfm']['from'] = 'T2w'
+    queries = _resolve_anatomical_queries(
+        layout=layout,
+        participant_label=participant_label,
+        input_type=input_type,
+        queries=queries,
+    )
 
     # Search for the files.
     subj_data = {
@@ -330,7 +660,7 @@ def collect_data(
     for field, filenames in subj_data.items():
         # All fields except the BOLD data should have a single file
         if field != 'bold' and isinstance(filenames, list):
-            if field not in ('t1w', 't2w') and not filenames:
+            if field not in ('t1w', 't2w', 't1w_to_t2w_xfm', 't2w_to_t1w_xfm') and not filenames:
                 raise FileNotFoundError(f'No {field} found with query: {queries[field]}')
 
             if len(filenames) == 1:
@@ -351,7 +681,7 @@ def collect_data(
 
 
 @fill_doc
-def collect_mesh_data(layout, participant_label, bids_filters):
+def collect_mesh_data(layout, participant_label, bids_filters, anat_session):
     """Collect surface files from preprocessed derivatives.
 
     This function will try to collect fsLR-space, 32k-resolution surface files first.
@@ -363,6 +693,7 @@ def collect_mesh_data(layout, participant_label, bids_filters):
     %(layout)s
     participant_label : :obj:`str`
         Subject ID.
+    anat_session : :obj:`str` or Query.NONE
 
     Returns
     -------
@@ -388,12 +719,14 @@ def collect_mesh_data(layout, participant_label, bids_filters):
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
 
+        queries[acq].update({'session': anat_session})
+
     # First, try to grab the first base surface file in standard (fsLR) space.
     # If it's not available, switch to native fsnative-space data.
     standard_space_mesh = True
     for name, query in queries.items():
         # Don't look for fsLR-space versions of the subject spheres.
-        if 'subject_sphere' in name:
+        if 'sphere' in name:
             continue
 
         temp_files = layout.get(
@@ -426,8 +759,17 @@ def collect_mesh_data(layout, participant_label, bids_filters):
             'subject': participant_label,
             **query,
         }
-        if 'subject_sphere' not in name:
+        if 'sphere' not in name:
             queries[name].update(query_extras)
+        elif 'reg_sphere' in name:
+            # Check if msmsulc sphere is available.
+            msmsulc_query = queries[name].copy()
+            msmsulc_query['desc'] = 'msmsulc'
+            msmsulc_file = layout.get(return_type='file', **msmsulc_query)
+            if len(msmsulc_file) == 1:
+                queries[name] = msmsulc_query
+            else:
+                LOGGER.warning('No msmsulc sphere found. Using original query.')
 
         initial_mesh_files[name] = layout.get(return_type='file', **queries[name])
 
@@ -439,8 +781,11 @@ def collect_mesh_data(layout, participant_label, bids_filters):
 
         elif len(surface_files_) == 0:
             mesh_files[dtype] = None
-            # We don't need subject spheres if we have standard-space meshes already
-            if not ('subject_sphere' in dtype and standard_space_mesh):
+            # We don't need subject spheres if we have standard-space meshes already.
+            # We never *require* msmsulc spheres, but we can use them if they're available.
+            if (not dtype.endswith('reg_sphere')) and not (
+                dtype.endswith('subject_sphere') and standard_space_mesh
+            ):
                 mesh_available = False
 
         else:
@@ -477,7 +822,7 @@ def collect_mesh_data(layout, participant_label, bids_filters):
 
 
 @fill_doc
-def collect_morphometry_data(layout, participant_label, bids_filters):
+def collect_morphometry_data(layout, participant_label, bids_filters, anat_session):
     """Collect morphometry surface files from preprocessed derivatives.
 
     This function will look for fsLR-space, 91k-resolution morphometry CIFTI files.
@@ -487,6 +832,7 @@ def collect_morphometry_data(layout, participant_label, bids_filters):
     %(layout)s
     participant_label : :obj:`str`
         Subject ID.
+    anat_session : :obj:`str` or Query.NONE
 
     Returns
     -------
@@ -506,6 +852,8 @@ def collect_morphometry_data(layout, participant_label, bids_filters):
     for acq in queries.keys():
         if acq in bids_filters:
             queries[acq].update(bids_filters[acq])
+
+        queries[acq].update({'session': anat_session})
 
     morphometry_files = {}
     for name, query in queries.items():
@@ -618,6 +966,25 @@ def collect_run_data(layout, bold_file, file_format, target_space):
             extension=['.nii', '.nii.gz'],
             invalid_filters='allow',
         )
+        run_data['boldmask'] = layout.get_nearest(
+            bids_file.path,
+            strict=True,
+            ignore_strict_entities=[
+                'cohort',
+                'space',
+                'res',
+                'den',
+                'desc',
+                'suffix',
+                'extension',
+            ],
+            space=target_space,
+            cohort=cohort,
+            desc='brain',
+            suffix='mask',
+            extension=['.nii', '.nii.gz'],
+            invalid_filters='allow',
+        )
         run_data['nifti_file'] = layout.get_nearest(
             bids_file.path,
             strict=True,
@@ -710,8 +1077,12 @@ def collect_confounds(
                     config=['bids', 'derivatives', xcp_d_config],
                     indexer=_indexer,
                 )
-                if layout.get_dataset_description().get('DatasetType') != 'derivatives':
-                    print(f'Dataset {k} is not a derivatives dataset. Skipping.')
+                desc = layout.get_dataset_description()
+                # Check for derivative or derivatives. The latter is a typo, but one that I've
+                # used in other places, and I don't want to have to update all of my test datasets.
+                if desc.get('DatasetType') not in ['derivative', 'derivatives']:
+                    print(f'Dataset {k} is not a derivative dataset. Skipping.')
+                    continue
 
                 layout_dict[k] = layout
             else:
@@ -730,6 +1101,20 @@ def collect_confounds(
         bold_file_entities = bold_file.get_entities()
         query = {**bold_file_entities, **confound_def['query']}
         confound_file = layout.get(**query)
+        if len(confound_file) > 1:
+            # Find all entities present in any of the found confound files that are not in the
+            # query, set them to Query.NONE in an updated query, and search again.
+            entities_in_confound_files = set()
+            for f in confound_file:
+                entities_in_confound_files.update(f.get_entities().keys())
+            entities_not_in_query = entities_in_confound_files - set(query.keys())
+            if entities_not_in_query:
+                query = {
+                    **query,
+                    **dict.fromkeys(entities_not_in_query, Query.NONE),
+                }
+                confound_file = layout.get(**query)
+
         if not confound_file:
             raise FileNotFoundError(
                 f'Could not find confound file for {confound_name} with query {query}'
@@ -747,6 +1132,7 @@ def collect_confounds(
 def write_derivative_description(
     fmri_dir,
     output_dir,
+    parameters_hash,
     atlases=None,
     dataset_links=None,
 ):
@@ -758,6 +1144,8 @@ def write_derivative_description(
         Path to the BIDS derivative dataset being ingested.
     output_dir : :obj:`str`
         Path to the output XCP-D dataset.
+    hash : :obj:`str`
+        Hash of the parameters used to generate the derivatives.
     atlases : :obj:`list` of :obj:`str`, optional
         Names of requested XCP-D atlases.
     dataset_links : :obj:`dict`, optional
@@ -799,6 +1187,7 @@ def write_derivative_description(
             'Name': 'xcp_d',
             'Version': __version__,
             'CodeURL': DOWNLOAD_URL,
+            'ConfigurationHash': parameters_hash,
         },
     )
     desc['GeneratedBy'] = generated_by
@@ -828,7 +1217,9 @@ def write_derivative_description(
                     f"DatasetLink '{k}' does not match ({v} != {old_desc['DatasetLinks'][k]})."
                 )
     else:
-        xcpd_dset_description.write_text(json.dumps(desc, indent=4))
+        lock_xcpd_dset_description = os.path.join(output_dir, 'dataset_description.json.lock')
+        with filelock.SoftFileLock(lock_xcpd_dset_description, timeout=60):
+            xcpd_dset_description.write_text(json.dumps(desc, indent=4))
 
 
 def write_atlas_dataset_description(atlas_dir):
@@ -868,8 +1259,10 @@ def write_atlas_dataset_description(atlas_dir):
             LOGGER.warning(f'Previous output generated by version {old_version} found.')
 
     else:
-        with open(atlas_dset_description, 'w') as fo:
-            json.dump(desc, fo, indent=4, sort_keys=True)
+        lock_atlas_dset_description = os.path.join(atlas_dir, 'dataset_description.json.lock')
+        with filelock.SoftFileLock(lock_atlas_dset_description, timeout=60):
+            with open(atlas_dset_description, 'w') as fo:
+                json.dump(desc, fo, indent=4, sort_keys=True)
 
 
 def get_preproc_pipeline_info(input_type, fmri_dir):

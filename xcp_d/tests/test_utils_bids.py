@@ -5,7 +5,8 @@ import os
 import shutil
 
 import pytest
-from bids.layout import BIDSLayout
+from bids.layout import BIDSLayout, Query
+from niworkflows.utils.testing import generate_bids_skeleton
 
 import xcp_d.utils.bids as xbids
 from xcp_d.data import load as load_data
@@ -44,90 +45,15 @@ def test_collect_participants(datasets):
     assert found_labels == ['01']
 
 
-def test_collect_data_ds001419(datasets):
-    """Test the collect_data function."""
-    bids_dir = datasets['ds001419']
-    layout = BIDSLayout(bids_dir, validate=False)
-
-    # NIFTI workflow, but also get a BIDSLayout
-    subj_data = xbids.collect_data(
-        layout=layout,
-        input_type='fmriprep',
-        participant_label='01',
-        bids_filters=None,
-        file_format='nifti',
-    )
-
-    assert len(subj_data['bold']) == 4
-    assert 'space-MNI152NLin6Asym' in subj_data['bold'][0]
-    assert os.path.basename(subj_data['t1w']) == 'sub-01_desc-preproc_T1w.nii.gz'
-    assert 'space-' not in subj_data['t1w']
-    assert 'to-MNI152NLin6Asym' in subj_data['anat_to_template_xfm']
-    assert 'from-MNI152NLin6Asym' in subj_data['template_to_anat_xfm']
-
-    # CIFTI workflow
-    subj_data = xbids.collect_data(
-        layout=layout,
-        input_type='fmriprep',
-        participant_label='01',
-        bids_filters={'bold': {'task': 'rest'}},
-        file_format='cifti',
-    )
-
-    assert len(subj_data['bold']) == 1
-    assert 'space-fsLR' in subj_data['bold'][0]
-    assert 'space-' not in subj_data['t1w']
-    assert os.path.basename(subj_data['t1w']) == 'sub-01_desc-preproc_T1w.nii.gz'
-    assert 'to-MNI152NLin6Asym' in subj_data['anat_to_template_xfm']
-    assert 'from-MNI152NLin6Asym' in subj_data['template_to_anat_xfm']
-
-
-def test_collect_data_nibabies(datasets):
-    """Test the collect_data function."""
-    bids_dir = datasets['nibabies']
-    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
-    layout = BIDSLayout(
-        bids_dir,
-        validate=False,
-        config=['bids', 'derivatives', xcp_d_config],
-    )
-    cohort_files = layout.get(subject='01', cohort='1', space='MNIInfant', suffix='boldref')
-    assert len(cohort_files) > 0
-
-    # NIFTI workflow
-    subj_data = xbids.collect_data(
-        layout=layout,
-        input_type='fmriprep',
-        participant_label='01',
-        bids_filters=None,
-        file_format='nifti',
-    )
-
-    assert len(subj_data['bold']) == 1
-    assert 'space-MNIInfant' in subj_data['bold'][0]
-    assert 'cohort-1' in subj_data['bold'][0]
-    assert os.path.basename(subj_data['t1w']) == 'sub-01_ses-1mo_run-001_desc-preproc_T1w.nii.gz'
-    assert 'space-' not in subj_data['t1w']
-    assert 'to-MNIInfant' in subj_data['anat_to_template_xfm']
-    assert 'from-MNIInfant' in subj_data['template_to_anat_xfm']
-
-    # CIFTI workflow
-    with pytest.raises(FileNotFoundError):
-        subj_data = xbids.collect_data(
-            layout=layout,
-            input_type='fmriprep',
-            participant_label='01',
-            bids_filters=None,
-            file_format='cifti',
-        )
-
-
 def test_collect_mesh_data(datasets, tmp_path_factory):
     """Test collect_mesh_data."""
     # Dataset without mesh files
     layout = BIDSLayout(datasets['fmriprep_without_freesurfer'], validate=False)
     mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
-        layout, '1648798153', bids_filters={}
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session=Query.NONE,
     )
     assert mesh_available is False
     assert standard_space_mesh is False
@@ -135,7 +61,10 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
     # Dataset with native-space mesh files (one file matching each query)
     layout = BIDSLayout(datasets['pnc'], validate=False)
     mesh_available, standard_space_mesh, _, _ = xbids.collect_mesh_data(
-        layout, '1648798153', bids_filters={}
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session='PNC1',
     )
     assert mesh_available is True
     assert standard_space_mesh is False
@@ -162,7 +91,10 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     mesh_available, standard_space_mesh, _, mesh_files = xbids.collect_mesh_data(
-        layout, '1648798153', bids_filters={}
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session='PNC1',
     )
     assert mesh_available is True
     assert standard_space_mesh is True
@@ -194,7 +126,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(std_mesh_dir, validate=False)
     with pytest.raises(ValueError, match='More than one surface found'):
-        xbids.collect_mesh_data(layout, '1648798153', bids_filters={})
+        xbids.collect_mesh_data(layout, '1648798153', bids_filters={}, anat_session='PNC1')
 
     # If we include BIDS filters, we should be able to ignore the existing files
     layout = BIDSLayout(datasets['pnc'], validate=False)
@@ -209,6 +141,7 @@ def test_collect_mesh_data(datasets, tmp_path_factory):
             'lh_subject_sphere': {'acquisition': 'test'},
             'rh_subject_sphere': {'acquisition': 'test'},
         },
+        anat_session='PNC1',
     )
     assert mesh_available is False
     assert standard_space_mesh is False
@@ -218,12 +151,22 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
     """Test collect_morphometry_data."""
     # Dataset without morphometry files
     layout = BIDSLayout(datasets['fmriprep_without_freesurfer'], validate=False)
-    morph_file_types, _ = xbids.collect_morphometry_data(layout, '1648798153', bids_filters={})
+    morph_file_types, _ = xbids.collect_morphometry_data(
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session=Query.NONE,
+    )
     assert morph_file_types == []
 
     # Dataset with morphometry files (one file matching each query)
     layout = BIDSLayout(datasets['pnc'], validate=False)
-    morph_file_types, _ = xbids.collect_morphometry_data(layout, '1648798153', bids_filters={})
+    morph_file_types, _ = xbids.collect_morphometry_data(
+        layout,
+        '1648798153',
+        bids_filters={},
+        anat_session='PNC1',
+    )
     assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
 
     # Dataset with multiple files matching each query (raises an error)
@@ -246,7 +189,12 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
 
     layout = BIDSLayout(bad_morph_dir, validate=False)
     with pytest.raises(ValueError, match='More than one .* found'):
-        xbids.collect_morphometry_data(layout, '1648798153', bids_filters={})
+        xbids.collect_morphometry_data(
+            layout,
+            '1648798153',
+            bids_filters={},
+            anat_session='PNC1',
+        )
 
     # If we include BIDS filters, we should be able to ignore the existing files
     layout = BIDSLayout(datasets['pnc'], validate=False)
@@ -258,6 +206,7 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
             'sulcal_curv': {'acquisition': 'test'},
             'sulcal_depth': {'acquisition': 'test'},
         },
+        anat_session='PNC1',
     )
     assert morph_file_types == []
 
@@ -272,6 +221,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
         xbids.write_derivative_description(
             tmpdir,
             tmpdir,
+            parameters_hash='1234567890',
             atlases=None,
             dataset_links={},
         )
@@ -282,6 +232,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         fmri_dir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=['Gordon'],
         dataset_links={'preprocessed': '/fake/path1', 'confounds': '/fake/path4'},
     )
@@ -296,6 +247,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         tmpdir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=['Gordon'],
         dataset_links={'preprocessed': '/fake/path2', 'confounds': '/fake/path5'},
     )
@@ -311,6 +263,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         fmri_dir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=None,
         dataset_links={},
     )
@@ -325,6 +278,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     xbids.write_derivative_description(
         tmpdir,
         tmpdir,
+        parameters_hash='1234567890',
         atlases=None,
         dataset_links={},
     )
@@ -339,6 +293,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
         xbids.write_derivative_description(
             tmpdir,
             tmpdir,
+            parameters_hash='1234567890',
             atlases=None,
             dataset_links={},
         )
@@ -477,3 +432,132 @@ def test_group_across_runs():
         '/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz',
         '/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz',
     ]
+
+
+def test_collect_mesh_data_crosssectional(tmp_path_factory, caplog):
+    """Test that XCP-D works on a cross-sectional dataset."""
+    skeleton = load_data('tests/skeletons/nibabies_crosssectional.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_mesh_data_crosssectional') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    mesh_available, standard_space_mesh, software, _ = xbids.collect_mesh_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session=Query.NONE,
+    )
+    assert mesh_available is True
+    assert standard_space_mesh is True
+    assert software == 'FreeSurfer'
+
+
+def test_collect_mesh_data_longitudinal_one_to_all(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for all sessions."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_mesh_data_longitudinal_one_to_all') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    mesh_available, standard_space_mesh, software, _ = xbids.collect_mesh_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session=Query.NONE,
+    )
+    assert mesh_available is True
+    assert standard_space_mesh is True
+    assert software == 'FreeSurfer'
+
+
+def test_collect_mesh_data_longitudinal_one_to_one(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for each session."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_mesh_data_longitudinal_one_to_one') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    mesh_available, standard_space_mesh, software, _ = xbids.collect_mesh_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session='V03',
+    )
+    assert mesh_available is True
+    assert standard_space_mesh is True
+    assert software == 'FreeSurfer'
+
+
+def test_collect_morphometry_data_crosssectional(tmp_path_factory, caplog):
+    """Test that XCP-D works on a cross-sectional dataset."""
+    skeleton = load_data('tests/skeletons/nibabies_crosssectional.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_morphometry_data_crosssectional') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    morph_file_types, morphometry_files = xbids.collect_morphometry_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session=Query.NONE,
+    )
+    assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
+    assert morphometry_files is not None
+
+
+def test_collect_morphometry_data_longitudinal_one_to_all(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for all sessions."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_morph_data_longitudinal_one_to_all') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    morph_file_types, morphometry_files = xbids.collect_morphometry_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session=Query.NONE,
+    )
+    assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
+    assert morphometry_files is not None
+
+
+def test_collect_morphometry_data_longitudinal_one_to_one(tmp_path_factory, caplog):
+    """Test that XCP-D works on a longitudinal dataset with one anat for each session."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
+    bids_dir = tmp_path_factory.mktemp('test_collect_morph_data_longitudinal_one_to_one') / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
+    layout = BIDSLayout(
+        bids_dir,
+        validate=False,
+        config=['bids', 'derivatives', xcp_d_config],
+    )
+    morph_file_types, morphometry_files = xbids.collect_morphometry_data(
+        layout=layout,
+        participant_label='01',
+        bids_filters=None,
+        anat_session='V03',
+    )
+    assert morph_file_types == ['cortical_thickness', 'sulcal_curv', 'sulcal_depth']
+    assert morphometry_files is not None

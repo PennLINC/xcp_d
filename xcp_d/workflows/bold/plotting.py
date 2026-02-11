@@ -10,9 +10,10 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
-from xcp_d.interfaces.nilearn import BinaryMath, ResampleToImage
+from xcp_d.interfaces.nilearn import ApplyMask, BinaryMath, ResampleToImage
 from xcp_d.interfaces.plotting import AnatomicalPlot, QCPlots, QCPlotsES
 from xcp_d.interfaces.report import FunctionalSummary
 from xcp_d.interfaces.utils import ABCCQC, LINCQC
@@ -27,6 +28,7 @@ LOGGER = logging.getLogger('nipype.workflow')
 def init_qc_report_wf(
     TR,
     head_radius,
+    mem_gb,
     name='qc_report_wf',
 ):
     """Generate quality control figures and a QC file.
@@ -44,6 +46,7 @@ def init_qc_report_wf(
                 wf = init_qc_report_wf(
                     TR=0.5,
                     head_radius=50,
+                    mem_gb={"bold": 1.0},
                     name="qc_report_wf",
                 )
 
@@ -51,6 +54,8 @@ def init_qc_report_wf(
     ----------
     %(TR)s
     %(head_radius)s
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "qc_report_wf".
 
@@ -123,6 +128,7 @@ def init_qc_report_wf(
             desc='brain',
             suffix='mask',
             extension=['.nii', '.nii.gz'],
+            raise_empty=True,
         )
     )
 
@@ -157,7 +163,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_boldmask_to_t1w',
-            mem_gb=1,
+            mem_gb=mem_gb['volume'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -179,7 +185,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_boldmask_to_mni',
-            mem_gb=1,
+            mem_gb=mem_gb['volume'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -198,17 +204,16 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_anatmask_to_t1w',
-            mem_gb=1,
+            mem_gb=mem_gb['volume'] * 2,
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
             (inputnode, warp_anatmask_to_t1w, [
-                ('bold_mask', 'input_image'),
+                ('anat_brainmask', 'input_image'),
                 ('anat', 'reference_image'),
             ]),
-            (get_native2space_transforms, warp_anatmask_to_t1w, [
-                ('bold_to_t1w_xfms', 'transforms'),
-                ('bold_to_t1w_xfms_invert', 'invert_transform_flags'),
+            (inputnode, warp_anatmask_to_t1w, [
+                ('template_to_anat_xfm', 'transforms'),
             ]),
         ])  # fmt:skip
 
@@ -234,6 +239,7 @@ def init_qc_report_wf(
                 desc='carpet',
                 suffix='dseg',
                 extension=['.nii', '.nii.gz'],
+                raise_empty=True,
             )
         )
 
@@ -246,7 +252,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_dseg_to_bold',
-            mem_gb=3,
+            mem_gb=mem_gb['volume'] * 2,
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -262,7 +268,7 @@ def init_qc_report_wf(
                 template_mask=nlin2009casym_brain_mask,
             ),
             name='make_linc_qc',
-            mem_gb=2,
+            mem_gb=mem_gb['volume'],
         )
         workflow.connect([
             (inputnode, make_linc_qc, [
@@ -288,7 +294,7 @@ def init_qc_report_wf(
 
         ds_qc_metadata = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=list(DerivativesDataSink._allowed_entities),
+                dismiss_entities=dismiss_hash(list(DerivativesDataSink._allowed_entities)),
                 allowed_entities=['desc'],
                 desc='linc',
                 suffix='qc',
@@ -305,7 +311,7 @@ def init_qc_report_wf(
         make_qc_plots_nipreps = pe.Node(
             QCPlots(TR=TR, head_radius=head_radius),
             name='make_qc_plots_nipreps',
-            mem_gb=2,
+            mem_gb=mem_gb['bold'] * 2,
         )
         workflow.connect([
             (inputnode, make_qc_plots_nipreps, [
@@ -325,9 +331,12 @@ def init_qc_report_wf(
             make_qc_plots_nipreps.inputs.mask_file = None
 
         ds_report_preproc_qc_nipreps = pe.Node(
-            DerivativesDataSink(desc='preprocessing'),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                desc='preprocessing',
+            ),
             name='ds_report_preproc_qc_nipreps',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_preproc_qc_nipreps, [('name_source', 'source_file')]),
@@ -335,9 +344,12 @@ def init_qc_report_wf(
         ])  # fmt:skip
 
         ds_report_postproc_qc_nipreps = pe.Node(
-            DerivativesDataSink(desc='postprocessing'),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                desc='postprocessing',
+            ),
             name='ds_report_postproc_qc_nipreps',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_postproc_qc_nipreps, [('name_source', 'source_file')]),
@@ -347,7 +359,6 @@ def init_qc_report_wf(
         functional_qc = pe.Node(
             FunctionalSummary(TR=TR),
             name='qcsummary',
-            run_without_submitting=False,
             mem_gb=2,
         )
         workflow.connect([
@@ -356,9 +367,12 @@ def init_qc_report_wf(
         ])  # fmt:skip
 
         ds_report_qualitycontrol = pe.Node(
-            DerivativesDataSink(desc='qualitycontrol'),
+            DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
+                desc='qualitycontrol',
+            ),
             name='ds_report_qualitycontrol',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_report_qualitycontrol, [('name_source', 'source_file')]),
@@ -378,6 +392,7 @@ def init_qc_report_wf(
 
         ds_abcc_qc = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 datatype='func',
                 desc='abcc',
                 suffix='qc',
@@ -395,7 +410,7 @@ def init_qc_report_wf(
         make_qc_plots_es = pe.Node(
             QCPlotsES(TR=TR, standardize=config.execution.confounds_config is None),
             name='make_qc_plots_es',
-            mem_gb=2,
+            mem_gb=mem_gb['bold'] * 2,
         )
         workflow.connect([
             (inputnode, make_qc_plots_es, [
@@ -415,7 +430,7 @@ def init_qc_report_wf(
 
         ds_report_preproc_qc_es = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['den'],
+                dismiss_entities=dismiss_hash(['den']),
                 desc='preprocESQC',
             ),
             name='ds_report_preproc_qc_es',
@@ -428,7 +443,7 @@ def init_qc_report_wf(
 
         ds_report_postproc_qc_es = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['den'],
+                dismiss_entities=dismiss_hash(['den']),
                 desc='postprocESQC',
             ),
             name='ds_report_postproc_qc_es',
@@ -472,7 +487,7 @@ def init_execsummary_functional_plots_wf(
                     preproc_nifti=None,
                     t1w_available=True,
                     t2w_available=True,
-                    mem_gb={"resampled": 1},
+                    mem_gb={"bold": 1},
                     name="execsummary_functional_plots_wf",
                 )
 
@@ -481,6 +496,8 @@ def init_execsummary_functional_plots_wf(
     preproc_nifti : :obj:`str` or None
         BOLD data before post-processing.
         A NIFTI file, not a CIFTI.
+        Used as a DerivativesDataSink source_file and to find the bbregister figure from
+        fMRIPrep derivatives.
     t1w_available : :obj:`bool`
         Generally True.
     t2w_available : :obj:`bool`
@@ -495,6 +512,7 @@ def init_execsummary_functional_plots_wf(
         BOLD data before post-processing.
         A NIFTI file, not a CIFTI.
         Set from the parameter.
+        Used for figures.
     %(boldref)s
     t1w
         T1w image in a standard space, taken from the output of init_postprocess_anat_wf.
@@ -510,18 +528,19 @@ def init_execsummary_functional_plots_wf(
             fields=[
                 'preproc_nifti',
                 'boldref',  # a nifti boldref
+                'bold_mask',  # a nifti bold_mask
                 't1w',
                 't2w',  # optional
+                'anat_brainmask',  # a nifti anat_brainmask
             ],
         ),
         name='inputnode',
     )
+    inputnode.inputs.preproc_nifti = preproc_nifti
     if not preproc_nifti:
         raise ValueError(
             'No preprocessed NIfTI found. Executive summary figures cannot be generated.'
         )
-
-    inputnode.inputs.preproc_nifti = preproc_nifti
 
     # Get bb_registration_file prefix from fmriprep
     # TODO: Replace with interfaces.
@@ -549,24 +568,49 @@ def init_execsummary_functional_plots_wf(
 
         ds_report_registration = pe.Node(
             DerivativesDataSink(
+                source_file=preproc_nifti,
                 in_file=bold_t1w_registration_file,
-                dismiss_entities=['den'],
+                dismiss_entities=dismiss_hash(['den']),
                 desc='bbregister',
             ),
             name='ds_report_registration',
             run_without_submitting=True,
             mem_gb=config.DEFAULT_MEMORY_MIN_GB,
         )
+        workflow.add_nodes([ds_report_registration])
 
-        workflow.connect([(inputnode, ds_report_registration, [('preproc_nifti', 'source_file')])])
+    # mask BOLD NIfTI file and anatomical NIfTI file
+    mask_preproc_nifti = pe.Node(
+        ApplyMask(),
+        name='mask_preproc_nifti',
+    )
+    workflow.connect([
+        (inputnode, mask_preproc_nifti, [
+            ('preproc_nifti', 'in_file'),
+            ('bold_mask', 'mask'),
+        ]),
+    ])  # fmt:skip
+
+    mask_boldref = pe.Node(
+        ApplyMask(),
+        name='mask_boldref',
+    )
+    workflow.connect([
+        (inputnode, mask_boldref, [
+            ('boldref', 'in_file'),
+            ('bold_mask', 'mask'),
+        ]),
+    ])  # fmt:skip
 
     # Calculate the mean bold image
     calculate_mean_bold = pe.Node(
         BinaryMath(expression='np.mean(img, axis=3)'),
         name='calculate_mean_bold',
-        mem_gb=mem_gb['timeseries'],
+        mem_gb=mem_gb['bold'],
     )
-    workflow.connect([(inputnode, calculate_mean_bold, [('preproc_nifti', 'in_file')])])
+    workflow.connect([
+        (mask_preproc_nifti, calculate_mean_bold, [('out_file', 'in_file')]),
+    ])  # fmt:skip
 
     # Plot the mean bold image
     plot_meanbold = pe.Node(AnatomicalPlot(), name='plot_meanbold')
@@ -575,36 +619,32 @@ def init_execsummary_functional_plots_wf(
     # Write out the figures.
     ds_report_meanbold = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=['den'],
+            source_file=preproc_nifti,
+            dismiss_entities=dismiss_hash(['den']),
             desc='mean',
         ),
         name='ds_report_meanbold',
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
-    workflow.connect([
-        (inputnode, ds_report_meanbold, [('preproc_nifti', 'source_file')]),
-        (plot_meanbold, ds_report_meanbold, [('out_file', 'in_file')]),
-    ])  # fmt:skip
+    workflow.connect([(plot_meanbold, ds_report_meanbold, [('out_file', 'in_file')])])
 
     # Plot the reference bold image
     plot_boldref = pe.Node(AnatomicalPlot(), name='plot_boldref')
-    workflow.connect([(inputnode, plot_boldref, [('boldref', 'in_file')])])
+    workflow.connect([(mask_boldref, plot_boldref, [('out_file', 'in_file')])])
 
     # Write out the figures.
     ds_report_boldref = pe.Node(
         DerivativesDataSink(
-            dismiss_entities=['den'],
+            source_file=preproc_nifti,
+            dismiss_entities=dismiss_hash(['den']),
             desc='boldref',
         ),
         name='ds_report_boldref',
         run_without_submitting=True,
         mem_gb=config.DEFAULT_MEMORY_MIN_GB,
     )
-    workflow.connect([
-        (inputnode, ds_report_boldref, [('preproc_nifti', 'source_file')]),
-        (plot_boldref, ds_report_boldref, [('out_file', 'in_file')]),
-    ])  # fmt:skip
+    workflow.connect([(plot_boldref, ds_report_boldref, [('out_file', 'in_file')])])
 
     # Start plotting the overlay figures
     # T1 in Task, Task in T1, Task in T2, T2 in Task
@@ -614,22 +654,32 @@ def init_execsummary_functional_plots_wf(
         resample_bold_to_anat = pe.Node(
             ResampleToImage(),
             name=f'resample_bold_to_{anat}',
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, resample_bold_to_anat, [(anat, 'target_file')]),
             (calculate_mean_bold, resample_bold_to_anat, [('out_file', 'in_file')]),
         ])  # fmt:skip
 
+        # Mask the anatomical image
+        mask_anat = pe.Node(
+            ApplyMask(),
+            name=f'mask_{anat}',
+        )
+        workflow.connect([
+            (inputnode, mask_anat, [
+                (anat, 'in_file'),
+                ('anat_brainmask', 'mask'),
+            ]),
+        ])  # fmt:skip
+
         plot_anat_on_task_wf = init_plot_overlay_wf(
             desc=f'{anat[0].upper()}{anat[1:]}OnTask',
             name=f'plot_{anat}_on_task_wf',
         )
+        plot_anat_on_task_wf.inputs.inputnode.name_source = preproc_nifti
         workflow.connect([
-            (inputnode, plot_anat_on_task_wf, [
-                ('preproc_nifti', 'inputnode.name_source'),
-                (anat, 'inputnode.overlay_file'),
-            ]),
+            (mask_anat, plot_anat_on_task_wf, [('out_file', 'inputnode.overlay_file')]),
             (resample_bold_to_anat, plot_anat_on_task_wf, [
                 ('out_file', 'inputnode.underlay_file'),
             ]),
@@ -639,11 +689,9 @@ def init_execsummary_functional_plots_wf(
             desc=f'TaskOn{anat[0].upper()}{anat[1:]}',
             name=f'plot_task_on_{anat}_wf',
         )
+        plot_task_on_anat_wf.inputs.inputnode.name_source = preproc_nifti
         workflow.connect([
-            (inputnode, plot_task_on_anat_wf, [
-                ('preproc_nifti', 'inputnode.name_source'),
-                (anat, 'inputnode.underlay_file'),
-            ]),
+            (mask_anat, plot_task_on_anat_wf, [('out_file', 'inputnode.underlay_file')]),
             (resample_bold_to_anat, plot_task_on_anat_wf, [
                 ('out_file', 'inputnode.overlay_file'),
             ]),

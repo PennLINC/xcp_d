@@ -5,7 +5,7 @@ orbs:
 .dockersetup:
   &dockersetup
   docker:
-    - image: pennlinc/xcp_d_build:0.0.21
+    - image: pennlinc/xcp_d_build:0.0.22
   working_directory: /src/xcp_d
 
 runinstall:
@@ -295,7 +295,7 @@ jobs:
     <<: *dockersetup
     resource_class: xlarge
     environment:
-      CIRCLE_CPUS: 4
+      CIRCLE_CPUS: 8
     steps:
       - checkout
       - run:

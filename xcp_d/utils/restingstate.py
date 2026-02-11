@@ -80,7 +80,16 @@ def mesh_adjacency(hemi):
     -----
     Modified by Taylor Salo to loop over all vertices in faces.
     """
-    surf = str(get_template('fsLR', space=None, hemi=hemi, suffix='sphere', density='32k'))
+    surf = str(
+        get_template(
+            'fsLR',
+            space=None,
+            hemi=hemi,
+            suffix='sphere',
+            density='32k',
+            raise_empty=True,
+        )
+    )
     surf = nb.load(surf)  # load via nibabel
 
     # Aggregate GIFTI data arrays into an ndarray or tuple of ndarray select the arrays in a
@@ -98,7 +107,8 @@ def mesh_adjacency(hemi):
                 if vertex1 != vertex2:  # don't include the vertex as its own neighbor
                     adjacency_matrix[vertex1, vertex2] = True
 
-    assert np.array_equal(adjacency_matrix, adjacency_matrix.T)
+    if not np.array_equal(adjacency_matrix, adjacency_matrix.T):
+        raise ValueError('Adjacency matrix must be symmetric')
     return adjacency_matrix
 
 
@@ -163,7 +173,7 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         voxel_data = data_matrix[i_voxel, :]
         # Check if the voxel's data are all the same value (esp. zeros).
         # Set ALFF to 0 in that case and move on to the next voxel.
-        if np.std(voxel_data) == 0:
+        if np.nanstd(voxel_data) == 0:
             alff[i_voxel] = 0
             continue
 
@@ -171,12 +181,17 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         # This will ensure that the power spectra from the standard and Lomb-Scargle periodograms
         # have the same scale.
         # However, this also changes ALFF's scale, so we retain the SD to rescale ALFF.
-        sd_scale = np.std(voxel_data)
-
-        voxel_data -= np.mean(voxel_data)
-        voxel_data /= sd_scale
+        sd_scale = np.nanstd(voxel_data)
 
         if sample_mask is not None:
+            voxel_data_censored = voxel_data[sample_mask]
+            voxel_data_censored -= np.nanmean(voxel_data_censored)
+            voxel_data_censored /= np.nanstd(voxel_data_censored)
+
+            time_arr = np.arange(n_volumes) * TR
+            if sample_mask.size != time_arr.size:
+                raise ValueError(f'{sample_mask.size} != {time_arr.size}')
+            time_arr = time_arr[sample_mask]
             frequencies_hz = np.linspace(0, 0.5 * fs, (n_volumes // 2) + 1)[1:]
             angular_frequencies = 2 * np.pi * frequencies_hz
             power_spectrum = signal.lombscargle(
@@ -186,6 +201,8 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
                 normalize=True,
             )
         else:
+            voxel_data -= np.nanmean(voxel_data)
+            voxel_data /= np.nanstd(voxel_data)
             # get array of sample frequencies + power spectrum density
             frequencies_hz, power_spectrum = signal.periodogram(
                 voxel_data,
@@ -211,9 +228,10 @@ def compute_alff(*, data_matrix, low_pass, high_pass, TR, sample_mask):
         # alff for that voxel is 2 * the mean of the sqrt of the power spec
         # from the value closest to the low pass cutoff, to the value closest
         # to the high pass pass cutoff
-        alff[i_voxel] = len(ff_alff) * np.mean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
+        alff[i_voxel] = len(ff_alff) * np.nanmean(power_spectrum_sqrt[ff_alff[0] : ff_alff[1]])
         # Rescale ALFF based on original BOLD scale
         alff[i_voxel] *= sd_scale
 
-    assert alff.size == n_voxels, f'{alff.shape} != {n_voxels}'
+    if alff.size != n_voxels:
+        raise ValueError(f'{alff.shape} != {n_voxels}')
     return alff

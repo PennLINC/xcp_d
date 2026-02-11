@@ -55,6 +55,34 @@ such as the NiPreps-format HTML report and the LINC QC file.
 All denoised BOLD data, including dense time series, parcellated time series,
 and correlation matrices, will be censored.
 
+.. dropdown:: Default parameters of linc mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "linc"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 6
+       output_interpolated = false
+       combine_runs = false
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0
+       min_time = 0
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       correlation_lengths = [ "all",]
+       process_surfaces = false
+       abcc_qc = false
+       linc_qc = true
+
+
 Defaults
 --------
 
@@ -104,6 +132,33 @@ Correlation matrices can be created optionally from the censored data.
 
    Currently, ``abcd`` mode is identical to ``hbcd`` mode, except for the expected preprocessing
    pipeline.
+
+.. dropdown:: Default parameters of abcd mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "abcd"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 6
+       output_interpolated = true
+       combine_runs = true
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0.3
+       min_time = 240
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       correlation_lengths = []
+       process_surfaces = true
+       abcc_qc = true
+       linc_qc = true
 
 Defaults
 --------
@@ -158,6 +213,33 @@ Correlation matrices can be created optionally from the censored data.
    Currently, ``hbcd`` mode is identical to ``abcd`` mode, except for the expected preprocessing
    pipeline.
 
+.. dropdown:: Default parameters of hbcd mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "hbcd"
+       file_format = "cifti"
+       dummy_scans = 0
+       input_type = "nibabies"
+       despike = true
+       smoothing = 6
+       output_interpolated = true
+       combine_runs = true
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0.3
+       min_time = 240
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.5
+       correlation_lengths = []
+       process_surfaces = true
+       abcc_qc = true
+       linc_qc = true
+
 Defaults
 --------
 
@@ -203,6 +285,33 @@ The ``nichart`` mode is used by the `NiChart project <https://neuroimagingchart.
 This mode is very similar to ``linc`` mode, with the exception that it processes NIfTI files
 by default and has smoothing disabled.
 
+.. dropdown:: Default parameters of nichart mode are in the .toml file below:
+
+    .. code-block:: toml
+
+       [workflow]
+       mode = "nichart"
+       file_format = "nifti"
+       dummy_scans = 0
+       input_type = "fmriprep"
+       despike = true
+       smoothing = 0
+       output_interpolated = false
+       combine_runs = false
+       motion_filter_order = 4
+       head_radius = 50
+       fd_thresh = 0
+       min_time = 0
+       bandpass_filter = true
+       high_pass = 0.01
+       low_pass = 0.08
+       bpf_order = 2
+       min_coverage = 0.4
+       correlation_lengths = "all"
+       process_surfaces = false
+       abcc_qc = false
+       linc_qc = true
+
 Defaults
 --------
 
@@ -219,59 +328,55 @@ which may be overridden by the user:
 -  ``--smoothing 0``: Smoothing is disabled by default.
 
 
-Major Differences Between Modes
-===============================
+**********************
+Skipping Output Steps
+**********************
 
-Interpolated vs. Censored Time Series
--------------------------------------
+*XCP-D* includes a ``--skip`` parameter that allows users to
+selectively skip certain postprocessing steps to optimize processing time.
+This is particularly useful when you only need a subset of the outputs.
 
-The ``abcd`` and ``hbcd`` modes output denoised BOLD data and parcellated time series with
-interpolated volumes.
-The ``linc`` mode outputs denoised BOLD data and parcellated time series with censored volumes
-instead.
+The ``--skip`` parameter accepts the following options:
 
-The benefit to writing out interpolated data is that the outputs retain the temporal structure of
-the original data.
-This may make it easier to use the post-processed BOLD data in conjunction with other data acquired
-at the same time, such as physiological recordings or task regressors.
-Additionally, some tools, such as `biceps <https://biceps-cmdln.readthedocs.io/en/latest/>`_,
-are designed to perform additional post-processing, such as additional censoring and parcellation,
-on interpolated data.
+-  ``alff``: Skip ALFF (Amplitude of Low-Frequency Fluctuation) calculation.
+   ALFF is only calculated when bandpass filtering is enabled,
+   so this option only has an effect when ``--bandpass-filter`` is used.
 
-The risk to working with interpolated data is that the interpolated volumes should not be used for
-actual analyses, as the values do not reflect real data.
-Thus, with the ``abcd`` and ``hbcd`` modes, it is imperative that users understand that additional
-steps must be taken before using the interpolated data for analyses.
+-  ``reho``: Skip ReHo (Regional Homogeneity) calculation.
 
-The benefit to writing out censored data is that the outputs are more directly usable for analyses,
-and there is less of a chance that users will accidentally use interpolated data in their analyses.
+-  ``parcellation``: Skip parcellation and time series extraction.
+   This is functionally equivalent to setting ``--atlases`` to an empty list.
 
-In this sense, the ``abcd`` and ``hbcd`` modes are designed to be used with additional tools,
-such as ``biceps``, or with additional steps taken by the user to ensure that the interpolated data
-are re-censored appropriately before being used in analyses.
-Conversely, the ``linc`` mode is designed to output data that is directly usable for analyses,
-at the cost of losing the temporal structure of the original data and making it harder to pass the
-data along to other tools that require the original temporal structure.
+   .. admonition:: Deprecated option
 
-Correlation Matrices From Matching Lengths
-------------------------------------------
+      Historically, users could pass the legacy ``--skip-parcellation`` flag to
+      achieve this behavior. That flag is now deprecated — use
+      ``--skip parcellation`` instead.
+   **Note that skipping parcellation will automatically skip connectivity as well,
+   since connectivity requires parcellated data.**
 
-The ``abcd`` and ``hbcd`` modes allow the ``--create-matrices`` parameter,
-which will create correlation matrices from subsampled data,
-while ``linc`` mode does not allow this parameter.
+-  ``connectivity``: Skip functional connectivity matrix calculations.
+   Parcellation will still be performed to extract parcellated time series,
+   but correlation matrices will not be computed.
+   This is useful when you need time series but not connectivity matrices.
 
-This parameter exists because motion (and thus censoring) can exhibit a non-linear relationship
-with functional connectivity estimates.
-By randomly selecting a subset of volumes from each run before calculating correlations,
-the user can ensure that every run has the same number of data points contributing to its
-functional connectivity estimate, which may ameliorate the effect of motion on the estimates.
-This is the DCAN lab's recommended approach.
+Multiple options can be specified simultaneously.
+For example, ``--skip alff reho`` will skip both ALFF and ReHo calculations.
 
-Conversely, the LINC lab does not recommend doing this,
-as it removes meaningful data that may contribute to the functional connectivity estimates.
-Instead, the LINC lab recommends accounting for the number of volumes in group-level models,
-or using other methods, such as xDF :footcite:p:`afyouni2019effective`,
-to account for the effect of motion on functional connectivity estimates (or their variance).
+.. note::
+
+   Skipping certain steps can significantly reduce processing time and disk usage,
+   especially for large datasets.
+
+   - Use ``--skip connectivity`` if you need parcellated time series but not correlation matrices.
+   - Use ``--skip parcellation`` if you don't need either parcellated time series or connectivity
+     matrices (this automatically skips connectivity too).
+
+.. tip::
+
+   The ``--skip`` parameter is compatible with all processing modes (``linc``, ``abcd``, ``hbcd``,
+   etc.) and will not affect other outputs.
+   For example, skipping ALFF will not affect ReHo or connectivity calculations.
 
 
 ****************
@@ -890,7 +995,13 @@ These atlases are documented in :doc:`outputs`.
 
 Users can control which atlases are used with the ``--atlases`` parameter
 (by default, all atlases are used),
-or can skip this step entirely with ``--skip-parcellation``.
+or can skip this step entirely with the unified ``--skip parcellation`` option.
+
+.. admonition:: Deprecated option
+
+   The legacy ``--skip-parcellation`` flag is deprecated and will be removed in a
+   future release. It is still accepted for backward compatibility, but please
+   migrate to ``--skip parcellation``.
 
 The resulting parcellated time series for each atlas is then used to generate static functional
 connectivity matrices, as measured with Pearson correlation coefficients.

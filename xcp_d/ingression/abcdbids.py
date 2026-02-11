@@ -11,18 +11,21 @@ import os
 import re
 
 import nibabel as nb
-import pandas as pd
 from nipype import logging
 
 from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
+    BIDS_VERSION,
+    TEMPLATE_SPACE,
     collect_anatomical_files,
     collect_hcp_confounds,
     collect_meshes,
     collect_morphs,
     copy_files_in_dict,
+    get_identity_transform_destinations,
     plot_bbreg,
     write_json,
+    write_scans_tsv,
 )
 from xcp_d.utils.filemanip import ensure_list
 
@@ -75,6 +78,24 @@ def convert_dcan2bids(in_dir, out_dir, participant_ids=None):
             in_dir=in_dir,
             out_dir=out_dir,
             sub_ent=subject_id,
+        )
+
+    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
+    if not os.path.isfile(dataset_description_fmriprep):
+        write_json(
+            {
+                'Name': 'ABCD-DCAN',
+                'BIDSVersion': BIDS_VERSION,
+                'DatasetType': 'derivative',
+                'GeneratedBy': [
+                    {
+                        'Name': 'DCAN',
+                        'Version': '0.0.4',
+                        'CodeURL': 'https://github.com/DCAN-Labs/abcd-hcp-pipeline',
+                    },
+                ],
+            },
+            dataset_description_fmriprep,
         )
 
     return participant_ids
@@ -135,18 +156,21 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                         ├── vent_2mm_<sub_id>_mask_eroded.nii.gz
                         └── wm_2mm_<sub_id>_mask_eroded.nii.gz
     """
-    assert isinstance(in_dir, str)
-    assert os.path.isdir(in_dir), f'Folder DNE: {in_dir}'
-    assert isinstance(out_dir, str)
-    assert isinstance(sub_ent, str)
+    if not isinstance(in_dir, str):
+        raise TypeError('in_dir must be a string')
+    if not os.path.isdir(in_dir):
+        raise FileNotFoundError(f'Folder DNE: {in_dir}')
+    if not isinstance(out_dir, str):
+        raise TypeError('out_dir must be a string')
+    if not isinstance(sub_ent, str):
+        raise TypeError('sub_ent must be a string')
 
     sub_id = sub_ent.replace('sub-', '')
     # Reset the subject entity in case the sub- prefix wasn't included originally.
     sub_ent = f'sub-{sub_id}'
 
-    VOLSPACE = 'MNI152NLin6Asym'
-    volspace_ent = f'space-{VOLSPACE}'
-    RES_ENT = 'res-2'
+    volspace_ent = f'space-{TEMPLATE_SPACE}'
+    res_ent = 'res-2'
 
     subject_dir_bids = os.path.join(out_dir, sub_ent)
     os.makedirs(subject_dir_bids, exist_ok=True)
@@ -159,16 +183,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     if not ses_entities:
         raise FileNotFoundError(f'No session volumes found in {os.path.join(in_dir, sub_ent)}')
 
-    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
-    if os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info('Converted dataset folder already exists. Skipping conversion.')
-        return
-
-    # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
-    # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
-
-    # The identity xform is used in place of any actual ones.
     identity_xfm = str(load_data('transform/itkIdentityTransform.txt'))
     copy_dictionary[identity_xfm] = []
     morph_dict_all_ses = {}
@@ -187,21 +202,12 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
         os.makedirs(func_dir_bids, exist_ok=True)
         os.makedirs(work_dir, exist_ok=True)
 
-        # Create identity-based transforms
-        t1w_to_template_fmriprep = os.path.join(
-            anat_dir_bids,
-            f'{subses_ents}_from-T1w_to-{VOLSPACE}_mode-image_xfm.txt',
+        copy_dictionary[identity_xfm].extend(
+            get_identity_transform_destinations(anat_dir_bids, subses_ents, TEMPLATE_SPACE)
         )
-        copy_dictionary[identity_xfm].append(t1w_to_template_fmriprep)
-
-        template_to_t1w_fmriprep = os.path.join(
-            anat_dir_bids,
-            f'{subses_ents}_from-{VOLSPACE}_to-T1w_mode-image_xfm.txt',
-        )
-        copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
         # Collect anatomical files to copy
-        base_anatomical_ents = f'{subses_ents}_{volspace_ent}_{RES_ENT}'
+        base_anatomical_ents = f'{subses_ents}_{volspace_ent}_{res_ent}'
         anat_dict = collect_anatomical_files(
             anat_dir_orig,
             anat_dir_bids,
@@ -251,14 +257,14 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             sbref_orig = os.path.join(task_dir_orig, f'{base_task_name}_SBRef.nii.gz')
             boldref_fmriprep = os.path.join(
                 func_dir_bids,
-                f'{func_prefix}_{volspace_ent}_{RES_ENT}_boldref.nii.gz',
+                f'{func_prefix}_{volspace_ent}_{res_ent}_boldref.nii.gz',
             )
             copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
             bold_nifti_orig = os.path.join(task_dir_orig, f'{base_task_name}.nii.gz')
             bold_nifti_fmriprep = os.path.join(
                 func_dir_bids,
-                f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.nii.gz',
+                f'{func_prefix}_{volspace_ent}_{res_ent}_desc-preproc_bold.nii.gz',
             )
             copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
@@ -269,6 +275,16 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             )
             copy_dictionary[bold_cifti_orig] = [bold_cifti_fmriprep]
 
+            bold_mask_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.0.nii.gz')
+            if not os.path.isfile(bold_mask_orig):
+                bold_mask_orig = os.path.join(task_dir_orig, 'brainmask_fs.nii.gz')
+
+            bold_mask_fmriprep = os.path.join(
+                func_dir_bids,
+                f'{func_prefix}_{volspace_ent}_{res_ent}_desc-brain_mask.nii.gz',
+            )
+            copy_dictionary[bold_mask_orig] = [bold_mask_fmriprep]
+
             # Extract metadata for JSON files
             bold_metadata = {
                 'RepetitionTime': float(nb.load(bold_nifti_orig).header.get_zooms()[-1]),
@@ -276,7 +292,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
             }
             bold_nifti_json_fmriprep = os.path.join(
                 func_dir_bids,
-                f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.json',
+                f'{func_prefix}_{volspace_ent}_{res_ent}_desc-preproc_bold.json',
             )
             write_json(bold_metadata, bold_nifti_json_fmriprep)
 
@@ -286,7 +302,7 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
                     'space': 'HCP grayordinates',
                     'surface': 'fsLR',
                     'surface_density': '32k',
-                    'volume': 'MNI152NLin6Asym',
+                    'volume': TEMPLATE_SPACE,
                 },
             )
             bold_cifti_json_fmriprep = os.path.join(
@@ -333,32 +349,6 @@ def convert_dcan_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_files_in_dict(copy_dictionary)
     LOGGER.info('Finished copying files')
 
-    # Write the dataset description out last
-    dataset_description_dict = {
-        'Name': 'ABCD-DCAN',
-        'BIDSVersion': '1.9.0',
-        'DatasetType': 'derivative',
-        'GeneratedBy': [
-            {
-                'Name': 'DCAN',
-                'Version': '0.0.4',
-                'CodeURL': 'https://github.com/DCAN-Labs/abcd-hcp-pipeline',
-            },
-        ],
-    }
-
-    if not os.path.isfile(dataset_description_fmriprep):
-        write_json(dataset_description_dict, dataset_description_fmriprep)
-
-    # Write out the mapping from DCAN to fMRIPrep
     copy_dictionary = {**copy_dictionary, **morph_dict_all_ses}
-    scans_dict = {}
-    for key, values in copy_dictionary.items():
-        for item in values:
-            scans_dict[item] = key
-
-    scans_tuple = tuple(scans_dict.items())
-    scans_df = pd.DataFrame(scans_tuple, columns=['filename', 'source_file'])
-    scans_tsv = os.path.join(subject_dir_bids, f'{subses_ents}_scans.tsv')
-    scans_df.to_csv(scans_tsv, sep='\t', index=False)
+    write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents, out_dir=out_dir)
     LOGGER.info('Conversion completed')

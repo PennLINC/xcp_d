@@ -17,7 +17,7 @@ LOGGER = logging.getLogger('nipype.utils')
 
 
 def read_ndata(datafile, maskfile=None):
-    """Read nifti or cifti file.
+    """Read nifti or cifti file as numpy array.
 
     Parameters
     ----------
@@ -29,7 +29,7 @@ def read_ndata(datafile, maskfile=None):
 
     Outputs
     -------
-    data : (TxS) :obj:`numpy.ndarray`
+    data : (SxT) :obj:`numpy.ndarray`
         Vertices or voxels by timepoints.
     """
     # read cifti series
@@ -39,7 +39,8 @@ def read_ndata(datafile, maskfile=None):
 
     # or nifti data, mask is required
     elif datafile.endswith('.nii.gz'):
-        assert maskfile is not None, 'Input `maskfile` must be provided if `datafile` is a nifti.'
+        if maskfile is None:
+            raise ValueError('Input `maskfile` must be provided if `datafile` is a nifti.')
         data = masking.apply_mask(datafile, maskfile)
 
     else:
@@ -103,8 +104,10 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
     -----
     This function currently only works for NIfTIs and .dtseries.nii and .dscalar.nii CIFTIs.
     """
-    assert data_matrix.ndim in (1, 2), f'Input data must be a 1-2D array, not {data_matrix.ndim}.'
-    assert os.path.isfile(template)
+    if data_matrix.ndim not in (1, 2):
+        raise ValueError(f'Input data must be a 1-2D array, not {data_matrix.ndim}.')
+    if not os.path.isfile(template):
+        raise FileNotFoundError(f'Template file does not exist: {template}')
 
     cifti_intents = get_cifti_intents()
 
@@ -113,8 +116,10 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         file_format = 'cifti'
     elif template.endswith('.nii.gz'):
         file_format = 'nifti'
-        assert mask is not None, 'A binary mask must be provided for nifti inputs.'
-        assert os.path.isfile(mask), f'The mask file does not exist: {mask}'
+        if mask is None:
+            raise ValueError('A binary mask must be provided for nifti inputs.')
+        if not os.path.isfile(mask):
+            raise FileNotFoundError(f'The mask file does not exist: {mask}')
     else:
         raise ValueError(f'Unknown extension for {template}')
 
@@ -202,7 +207,14 @@ def write_gii(datat, template, filename, hemi):
     """
     datax = np.array(datat, dtype='float32')
     template = str(
-        get_template('fsLR', hemi=hemi, suffix='midthickness', density='32k', desc='vaavg')
+        get_template(
+            'fsLR',
+            hemi=hemi,
+            suffix='midthickness',
+            density='32k',
+            desc='vaavg',
+            raise_empty=True,
+        )
     )
     template = nb.load(template)
     dataimg = nb.gifti.GiftiImage(

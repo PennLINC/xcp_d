@@ -1,9 +1,11 @@
 """Classes for building an executive summary file."""
 
+import multiprocessing
 import os
 import re
 from pathlib import Path
 
+import nibabel as nb
 import numpy as np
 import pandas as pd
 from bids.layout import BIDSLayout, Query
@@ -14,12 +16,15 @@ from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
     InputMultiPath,
+    OutputMultiObject,
     SimpleInterface,
     TraitedSpec,
+    traits,
 )
 from PIL import Image
 
 from xcp_d.data import load as load_data
+from xcp_d.utils.execsummary import get_mesh, plot_gii
 from xcp_d.utils.filemanip import fname_presuffix
 
 
@@ -30,14 +35,17 @@ class ExecutiveSummary:
     ----------
     xcpd_path : :obj:`str`
         Path to the XCP-D derivatives.
+    output_dir : :obj:`str`
+        Folder where the executive summary will be written out.
     subject_id : :obj:`str`
         Subject ID.
     session_id : None or :obj:`str`, optional
         Session ID.
     """
 
-    def __init__(self, xcpd_path, subject_id, session_id=None):
+    def __init__(self, xcpd_path, output_dir, subject_id, session_id=None):
         self.xcpd_path = xcpd_path
+        self.output_dir = output_dir
         self.subject_id = subject_id
         if session_id:
             self.session_id = session_id
@@ -52,14 +60,14 @@ class ExecutiveSummary:
         Parameters
         ----------
         document : :obj:`str`
-            html document.
+            HTML contents to write to file.
         filename : :obj:`str`
-            name of html file.
+            Name of HTML file to write.
         """
         soup = BeautifulSoup(document, features='lxml')
         html = soup.prettify()  # prettify the html
 
-        filepath = os.path.join(self.xcpd_path, filename)
+        filepath = os.path.join(self.output_dir, filename)
         with open(filepath, 'w') as fo:
             fo.write(html)
 
@@ -67,7 +75,7 @@ class ExecutiveSummary:
         files = self.layout.get(**query)
         if len(files) == 1:
             found_file = files[0].path
-            found_file = os.path.relpath(found_file, self.xcpd_path)
+            found_file = os.path.relpath(found_file, self.output_dir)
         else:
             found_file = 'None'
 
@@ -93,10 +101,10 @@ class ExecutiveSummary:
             # "SubcorticalsOnAtlas",
         ]
         ANAT_REGISTRATION_TITLES = [
-            'Atlas On {modality}',  # noqa: FS003
-            '{modality} On Atlas',  # noqa: FS003
-            # "Atlas On {modality} Subcorticals",  # noqa: FS003
-            # "{modality} Subcorticals On Atlas",  # noqa: FS003
+            'Atlas On {modality}',
+            '{modality} On Atlas',
+            # "Atlas On {modality} Subcorticals",
+            # "{modality} Subcorticals On Atlas",
         ]
         TASK_REGISTRATION_DESCS = [
             'TaskOnT1w',
@@ -288,16 +296,20 @@ class ExecutiveSummary:
 
         self.task_files_ = task_files
 
-    def generate_report(self, out_file=None):
+    def generate_report(self, out_file=None, parameters_hash=None):
         """Generate the report."""
         logs_path = Path(self.xcpd_path) / 'logs'
         if out_file is None:
+            prefix = f'sub-{self.subject_id}'
             if self.session_id:
-                out_file = f'sub-{self.subject_id}_ses-{self.session_id}_executive_summary.html'
-            else:
-                out_file = f'sub-{self.subject_id}_executive_summary.html'
+                prefix = f'{prefix}_ses-{self.session_id}'
 
-            out_file = os.path.join(self.xcpd_path, out_file)
+            if parameters_hash:
+                prefix = f'{prefix}_hash-{parameters_hash}'
+
+            out_file = f'{prefix}_executive_summary.html'
+
+            out_file = os.path.join(self.output_dir, out_file)
 
         boilerplate = []
         boiler_idx = 0
@@ -335,7 +347,7 @@ class ExecutiveSummary:
             boiler_idx += 1
 
         def include_file(name):
-            return Markup(loader.get_source(environment, name)[0])
+            return Markup(loader.get_source(environment, name)[0])  # noqa: S704
 
         template_folder = str(load_data('executive_summary_templates/'))
         loader = FileSystemLoader(template_folder)
@@ -384,7 +396,8 @@ class FormatForBrainSwipes(SimpleInterface):
 
     def _run_interface(self, runtime):
         input_files = self.inputs.in_files
-        assert len(input_files) == 9, 'There must be 9 input files.'
+        if len(input_files) != 9:
+            raise ValueError(f'There must be 9 input files, got {len(input_files)}.')
         idx = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         widths, rows = [], []
         for i_row in range(3):
@@ -420,3 +433,112 @@ class FormatForBrainSwipes(SimpleInterface):
         self._results['out_file'] = output_file
 
         return runtime
+
+
+class _PlotSlicesForBrainSpriteInputSpec(BaseInterfaceInputSpec):
+    n_procs = traits.Int(1, usedefault=True, desc='number of cpus to use for making figures')
+    lh_wm = File(exists=True, mandatory=True, desc='left hemisphere wm surface in gifti format')
+    rh_wm = File(exists=True, mandatory=True, desc='right hemisphere wm surface in gifti format')
+    lh_pial = File(
+        exists=True, mandatory=True, desc='left hemisphere pial surface in gifti format'
+    )
+    rh_pial = File(
+        exists=True, mandatory=True, desc='right hemisphere pial surface in gifti format'
+    )
+    nifti = File(exists=True, mandatory=True, desc='3dVolume aligned to the wm and pial surfaces')
+
+
+class _PlotSlicesForBrainSpriteOutputSpec(BaseInterfaceInputSpec):
+    out_files = OutputMultiObject(File(exist=True), desc='png files')
+
+
+class PlotSlicesForBrainSprite(SimpleInterface):
+    """A class that produces images for BrainSprite mosaics."""
+
+    input_spec = _PlotSlicesForBrainSpriteInputSpec
+    output_spec = _PlotSlicesForBrainSpriteOutputSpec
+
+    def _run_interface(self, runtime):
+        img = nb.load(self.inputs.nifti)
+        lh_wm = get_mesh(self.inputs.lh_wm)
+        lh_pial = get_mesh(self.inputs.lh_pial)
+        rh_wm = get_mesh(self.inputs.rh_wm)
+        rh_pial = get_mesh(self.inputs.rh_pial)
+
+        n_x = img.shape[0]
+        filenames = []
+        slice_args = [
+            (img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, runtime.cwd) for i_slice in range(n_x)
+        ]
+
+        with multiprocessing.Pool(processes=self.inputs.n_procs) as pool:
+            filenames = pool.starmap(_plot_single_slice, slice_args)
+        self._results['out_files'] = filenames
+
+        return runtime
+
+
+def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
+    """Filter translation and rotation motion parameters.
+
+    Parameters
+    ----------
+    img : nb.Nifti1Image
+        NiBabel Spatial Image
+    i_slice : int
+        Which slice number to create a png of
+    rh_pial : trimesh.Trimesh
+        Right hemisphere pial surface loaded as a Trimesh
+    lh_pial : trimesh.Trimesh
+        Left hemisphere pial surface loaded as a Trimesh
+    rh_wm : trimesh.Trimesh
+        Right hemisphere wm surface loaded as a Trimesh
+    lh_wm : trimesh.Trimesh
+        Left hemisphere wm surface loaded as a Trimesh
+    root_dir : str
+        String representing the directory where files will be written
+
+    Returns
+    -------
+    filename : str
+        Absolute path of the png created
+    """
+
+    import os
+
+    import matplotlib.pyplot as plt
+    import nibabel as nb
+    from nilearn import plotting
+
+    fig, ax = plt.subplots(figsize=(9, 7.5))
+
+    # Get the appropriate coordinate
+    # TODO: Shift so middle is center of image
+    coord = nb.affines.apply_affine(img.affine, [i_slice, 0, 0])[0]
+
+    # Display a sagittal slice (adjust 'display_mode' and 'cut_coords' as needed)
+    data = img.get_fdata()
+    vmin = np.percentile(data, 2)
+    vmax = np.percentile(data, 98)
+    slicer = plotting.plot_anat(
+        img,
+        display_mode='x',
+        cut_coords=[coord],
+        axes=ax,
+        figure=fig,
+        annotate=False,
+        vmin=vmin,
+        vmax=vmax,
+        colorbar=False,
+        black_bg=True,
+    )
+
+    # Load the surface mesh (GIFTI format)
+    plot_gii(lh_pial, coord, 'darkred', slicer, 'x')
+    plot_gii(rh_pial, coord, 'darkred', slicer, 'x')
+    plot_gii(lh_wm, coord, 'black', slicer, 'x')
+    plot_gii(rh_wm, coord, 'black', slicer, 'x')
+
+    filename = os.path.join(root_dir, f'test_{i_slice:03d}.png')
+    fig.savefig(filename, bbox_inches='tight', facecolor='black')
+    return filename

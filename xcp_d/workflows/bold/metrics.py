@@ -7,6 +7,7 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.plotting import PlotDenseCifti, PlotNifti
 from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
@@ -34,13 +35,13 @@ def init_alff_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.restingstate import init_alff_wf
+            from xcp_d.workflows.bold.metrics import init_alff_wf
 
             with mock_config():
                 wf = init_alff_wf(
                     name_source="/path/to/file.nii.gz",
                     TR=2.,
-                    mem_gb={"resampled": 0.1},
+                    mem_gb={"bold": 0.1},
                     name="alff_wf",
                 )
 
@@ -143,7 +144,7 @@ series to retain the original scaling.
             high_pass=high_pass,
             n_threads=config.nipype.omp_nthreads,
         ),
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         name='alff_compt',
         n_procs=config.nipype.omp_nthreads,
     )
@@ -159,10 +160,11 @@ series to retain the original scaling.
     # Plot the ALFF map
     ds_report_alff = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             source_file=name_source,
         ),
         name='ds_report_alff',
-        run_without_submitting=False,
+        run_without_submitting=True,
     )
 
     if file_format == 'cifti':
@@ -265,12 +267,12 @@ def init_reho_cifti_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.restingstate import init_reho_cifti_wf
+            from xcp_d.workflows.bold.metrics import init_reho_cifti_wf
 
             with mock_config():
                 wf = init_reho_cifti_wf(
                     name_source="/path/to/bold.dtseries.nii",
-                    mem_gb={"resampled": 0.1},
+                    mem_gb={"volume": 0.1},
                     name="cifti_reho_wf",
                 )
 
@@ -328,7 +330,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             num_threads=config.nipype.omp_nthreads,
         ),
         name='separate_lh',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     rh_surf = pe.Node(
@@ -338,7 +340,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             num_threads=config.nipype.omp_nthreads,
         ),
         name='separate_rh',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     subcortical_nifti = pe.Node(
@@ -347,7 +349,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             num_threads=config.nipype.omp_nthreads,
         ),
         name='separate_subcortical',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
 
@@ -355,17 +357,17 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
     lh_reho = pe.Node(
         SurfaceReHo(surf_hemi='L'),
         name='reho_lh',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
     rh_reho = pe.Node(
         SurfaceReHo(surf_hemi='R'),
         name='reho_rh',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
     subcortical_reho = pe.Node(
         ReHoNamePatch(neighborhood='vertices'),
         name='reho_subcortical',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
 
     # Merge the surfaces and subcortical structures back into a CIFTI
@@ -376,7 +378,7 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
             num_threads=config.nipype.omp_nthreads,
         ),
         name='merge_cifti',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     reho_plot = pe.Node(
@@ -392,10 +394,11 @@ For the subcortical, volumetric data, ReHo was computed with neighborhood voxels
 
     ds_report_reho = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             source_file=name_source,
         ),
         name='ds_report_reho',
-        run_without_submitting=False,
+        run_without_submitting=True,
     )
 
     # Write out results
@@ -432,12 +435,12 @@ def init_reho_nifti_wf(name_source, mem_gb, name='reho_nifti_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.restingstate import init_reho_nifti_wf
+            from xcp_d.workflows.bold.metrics import init_reho_nifti_wf
 
             with mock_config():
                 wf = init_reho_nifti_wf(
                     name_source="/path/to/bold.nii.gz",
-                    mem_gb={"resampled": 0.1}
+                    mem_gb={"volume": 0.1},
                     name="nifti_reho_wf",
                 )
 
@@ -479,7 +482,7 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
     compute_reho = pe.Node(
         ReHoNamePatch(neighborhood='vertices'),
         name='reho_3d',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=1,
     )
     # Get the svg
@@ -490,11 +493,12 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
 
     ds_report_reho = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             source_file=name_source,
             desc='rehoVolumetricPlot',
         ),
         name='ds_report_reho',
-        run_without_submitting=False,
+        run_without_submitting=True,
     )
 
     # Write the results out

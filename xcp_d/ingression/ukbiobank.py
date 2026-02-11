@@ -4,15 +4,18 @@ import glob
 import json
 import os
 
-import pandas as pd
 from nipype import logging
 from nipype.interfaces.fsl.preprocess import ApplyWarp
 
 from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
+    BIDS_VERSION,
+    TEMPLATE_SPACE,
     collect_ukbiobank_confounds,
     copy_files_in_dict,
+    get_identity_transform_destinations,
     write_json,
+    write_scans_tsv,
 )
 from xcp_d.utils.filemanip import ensure_list
 
@@ -58,12 +61,7 @@ def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters=None):
         participant_ids = [
             os.path.basename(subject_folder).split('_')[0] for subject_folder in subject_folders
         ]
-        all_subject_ids = []
-        for subject_id in participant_ids:
-            if subject_id not in all_subject_ids:
-                all_subject_ids.append(subject_id)
-
-        participant_ids = all_subject_ids
+        participant_ids = list(dict.fromkeys(participant_ids))
 
         if len(participant_ids) == 0:
             raise ValueError(f'No subject found in {in_dir}')
@@ -82,11 +80,30 @@ def convert_ukb2bids(in_dir, out_dir, participant_ids=None, bids_filters=None):
         for subject_dir in subject_dirs:
             session_id = os.path.basename(subject_dir).split('_')[1]
             convert_ukb_to_bids_single_subject(
-                in_dir=subject_dirs[0],
+                in_dir=subject_dir,
                 out_dir=out_dir,
                 sub_id=subject_id,
                 ses_id=session_id,
             )
+
+    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
+    if not os.path.isfile(dataset_description_fmriprep):
+        LOGGER.info(f'Writing dataset description to {dataset_description_fmriprep}')
+        write_json(
+            {
+                'Name': 'UK Biobank',
+                'BIDSVersion': BIDS_VERSION,
+                'DatasetType': 'derivative',
+                'GeneratedBy': [
+                    {
+                        'Name': 'UK Biobank',
+                        'Version': 'unknown',
+                        'CodeURL': 'https://github.com/ucam-department-of-psychiatry/UKB',
+                    },
+                ],
+            },
+            dataset_description_fmriprep,
+        )
 
     return participant_ids
 
@@ -130,26 +147,37 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
             └── T1
                 └── T1_brain_to_MNI.nii.gz
     """
-    assert isinstance(in_dir, str)
-    assert os.path.isdir(in_dir), f'Folder DNE: {in_dir}'
-    assert isinstance(out_dir, str)
-    assert isinstance(sub_id, str)
-    assert isinstance(ses_id, str)
+    if not isinstance(in_dir, str):
+        raise TypeError('in_dir must be a string')
+    if not os.path.isdir(in_dir):
+        raise FileNotFoundError(f'Folder DNE: {in_dir}')
+    if not isinstance(out_dir, str):
+        raise TypeError('out_dir must be a string')
+    if not isinstance(sub_id, str):
+        raise TypeError('sub_id must be a string')
+    if not isinstance(ses_id, str):
+        raise TypeError('ses_id must be a string')
     subses_ents = f'sub-{sub_id}_ses-{ses_id}'
 
     task_dir_orig = os.path.join(in_dir, 'fMRI', 'rfMRI.ica')
     bold_file = os.path.join(task_dir_orig, 'filtered_func_data_clean.nii.gz')
-    assert os.path.isfile(bold_file), f'File DNE: {bold_file}'
+    if not os.path.isfile(bold_file):
+        raise FileNotFoundError(f'File DNE: {bold_file}')
     bold_json = os.path.join(in_dir, 'fMRI', 'rfMRI.json')
-    assert os.path.isfile(bold_json), f'File DNE: {bold_json}'
+    if not os.path.isfile(bold_json):
+        raise FileNotFoundError(f'File DNE: {bold_json}')
     boldref_file = os.path.join(task_dir_orig, 'example_func.nii.gz')
-    assert os.path.isfile(boldref_file), f'File DNE: {boldref_file}'
+    if not os.path.isfile(boldref_file):
+        raise FileNotFoundError(f'File DNE: {boldref_file}')
     brainmask_file = os.path.join(task_dir_orig, 'mask.nii.gz')
-    assert os.path.isfile(brainmask_file), f'File DNE: {brainmask_file}'
+    if not os.path.isfile(brainmask_file):
+        raise FileNotFoundError(f'File DNE: {brainmask_file}')
     t1w = os.path.join(in_dir, 'T1', 'T1_brain_to_MNI.nii.gz')
-    assert os.path.isfile(t1w), f'File DNE: {t1w}'
+    if not os.path.isfile(t1w):
+        raise FileNotFoundError(f'File DNE: {t1w}')
     warp_file = os.path.join(task_dir_orig, 'reg', 'example_func2standard_warp.nii.gz')
-    assert os.path.isfile(warp_file), f'File DNE: {warp_file}'
+    if not os.path.isfile(warp_file):
+        raise FileNotFoundError(f'File DNE: {warp_file}')
 
     func_prefix = f'sub-{sub_id}_ses-{ses_id}_task-rest'
     subject_dir_bids = os.path.join(out_dir, f'sub-{sub_id}', f'ses-{ses_id}')
@@ -169,15 +197,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
         brainmask_file=brainmask_file,
     )
 
-    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
-
-    if os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info('Converted dataset already exists. Skipping conversion.')
-        return
-
-    VOLSPACE = 'MNI152NLin6Asym'
-
-    # Warp BOLD, T1w, and brainmask to MNI152NLin6Asym
+    # Warp BOLD, boldref, and brainmask to template space.
     # We use FSL's MNI152NLin6Asym 2 mm3 template instead of TemplateFlow's version,
     # because FSL uses LAS+ orientation, while TemplateFlow uses RAS+.
     template_file = str(load_data('MNI152_T1_2mm.nii.gz'))
@@ -195,7 +215,7 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     warp_bold_to_std_results = warp_bold_to_std.run(cwd=work_dir)
     bold_nifti_fmriprep = os.path.join(
         func_dir_bids,
-        f'{func_prefix}_space-{VOLSPACE}_desc-preproc_bold.nii.gz',
+        f'{func_prefix}_space-{TEMPLATE_SPACE}_desc-preproc_bold.nii.gz',
     )
     copy_dictionary[warp_bold_to_std_results.outputs.out_file] = [bold_nifti_fmriprep]
 
@@ -229,16 +249,13 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     copy_dictionary[warp_brainmask_to_std_results.outputs.out_file] = [
         os.path.join(
             func_dir_bids,
-            f'{func_prefix}_space-{VOLSPACE}_desc-brain_mask.nii.gz',
-        )
-    ]
-    # Use the brain mask as the anatomical brain mask too.
-    copy_dictionary[warp_brainmask_to_std_results.outputs.out_file].append(
+            f'{func_prefix}_space-{TEMPLATE_SPACE}_desc-brain_mask.nii.gz',
+        ),
         os.path.join(
             anat_dir_bids,
-            f'{subses_ents}_space-{VOLSPACE}_desc-brain_mask.nii.gz',
-        )
-    )
+            f'{subses_ents}_space-{TEMPLATE_SPACE}_desc-brain_mask.nii.gz',
+        ),
+    ]
 
     # Warp the reference file to MNI space.
     warp_boldref_to_std = ApplyWarp(
@@ -251,30 +268,20 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     warp_boldref_to_std_results = warp_boldref_to_std.run(cwd=work_dir)
     boldref_nifti_fmriprep = os.path.join(
         func_dir_bids,
-        f'{func_prefix}_space-{VOLSPACE}_boldref.nii.gz',
+        f'{func_prefix}_space-{TEMPLATE_SPACE}_boldref.nii.gz',
     )
     copy_dictionary[warp_boldref_to_std_results.outputs.out_file] = [boldref_nifti_fmriprep]
 
-    # The MNI-space anatomical image.
     copy_dictionary[t1w] = [
-        os.path.join(anat_dir_bids, f'{subses_ents}_space-{VOLSPACE}_desc-preproc_T1w.nii.gz')
+        os.path.join(
+            anat_dir_bids, f'{subses_ents}_space-{TEMPLATE_SPACE}_desc-preproc_T1w.nii.gz'
+        )
     ]
 
-    # The identity xform is used in place of any actual ones.
     identity_xfm = str(load_data('transform/itkIdentityTransform.txt'))
-    copy_dictionary[identity_xfm] = []
-
-    t1w_to_template_fmriprep = os.path.join(
-        anat_dir_bids,
-        f'{subses_ents}_from-T1w_to-{VOLSPACE}_mode-image_xfm.txt',
+    copy_dictionary[identity_xfm] = get_identity_transform_destinations(
+        anat_dir_bids, subses_ents, TEMPLATE_SPACE
     )
-    copy_dictionary[identity_xfm].append(t1w_to_template_fmriprep)
-
-    template_to_t1w_fmriprep = os.path.join(
-        anat_dir_bids,
-        f'{subses_ents}_from-{VOLSPACE}_to-T1w_mode-image_xfm.txt',
-    )
-    copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
     LOGGER.info('Finished collecting functional files')
 
@@ -283,32 +290,5 @@ def convert_ukb_to_bids_single_subject(in_dir, out_dir, sub_id, ses_id):
     copy_files_in_dict(copy_dictionary)
     LOGGER.info('Finished copying files')
 
-    # Write the dataset description out last
-    dataset_description_dict = {
-        'Name': 'UK Biobank',
-        'BIDSVersion': '1.9.0',
-        'DatasetType': 'derivative',
-        'GeneratedBy': [
-            {
-                'Name': 'UK Biobank',
-                'Version': 'unknown',
-                'CodeURL': 'https://github.com/ucam-department-of-psychiatry/UKB',
-            },
-        ],
-    }
-
-    if not os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info(f'Writing dataset description to {dataset_description_fmriprep}')
-        write_json(dataset_description_dict, dataset_description_fmriprep)
-
-    # Write out the mapping from UK Biobank to fMRIPrep
-    scans_dict = {}
-    for key, values in copy_dictionary.items():
-        for item in values:
-            scans_dict[item] = key
-
-    scans_tuple = tuple(scans_dict.items())
-    scans_df = pd.DataFrame(scans_tuple, columns=['filename', 'source_file'])
-    scans_tsv = os.path.join(subject_dir_bids, f'{subses_ents}_scans.tsv')
-    scans_df.to_csv(scans_tsv, sep='\t', index=False)
+    write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents, out_dir=out_dir)
     LOGGER.info('Conversion completed')

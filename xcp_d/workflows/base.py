@@ -23,6 +23,7 @@ from packaging.version import Version
 
 from xcp_d import config
 from xcp_d.__about__ import __version__
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
@@ -77,8 +78,8 @@ def init_xcpd_wf():
     xcpd_wf = Workflow(name=f'xcp_d_{ver.major}_{ver.minor}_wf')
     xcpd_wf.base_dir = config.execution.work_dir
 
-    for subject_id in config.execution.participant_label:
-        single_subject_wf = init_single_subject_wf(subject_id)
+    for subject_id, anat_session, func_sessions in config.execution.processing_list:
+        single_subject_wf = init_single_subject_wf(subject_id, anat_session, func_sessions)
 
         single_subject_wf.config['execution']['crashdump_dir'] = str(
             config.execution.output_dir / f'sub-{subject_id}' / 'log' / config.execution.run_uuid
@@ -99,7 +100,7 @@ def init_xcpd_wf():
 
 
 @fill_doc
-def init_single_subject_wf(subject_id: str):
+def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: list[str]):
     """Organize the postprocessing pipeline for a single subject.
 
     It collects and reports information about the subject, and prepares
@@ -115,35 +116,52 @@ def init_single_subject_wf(subject_id: str):
             from xcp_d.workflows.base import init_single_subject_wf
 
             with mock_config():
-                wf = init_single_subject_wf("01")
+                wf = init_single_subject_wf("01", "01", ["01"])
 
     Parameters
     ----------
     subject_id : :obj:`str`
         Subject label for this single-subject workflow.
+    anat_session : :obj:`str`
+        Anatomical session label for this single-subject workflow.
+        If "", then the anatomical data is at the subject level (e.g., fMRIPrep's default).
+    func_sessions : :obj:`list` of :obj:`str`
+        Functional session labels for this single-subject workflow.
     """
+    from bids.layout import Query
     from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
+    # Collect anatomical data
+    # If session is in the anatomical files, loop over sessions and collect functional data
+    # separately for each session.
+    # Otherwise, collect functional data for all sessions at once.
     subj_data = collect_data(
         layout=config.execution.layout,
         participant_label=subject_id,
-        bids_filters=config.execution.bids_filters,
+        bids_filters=config.execution.bids_filters or {},
         input_type=config.workflow.input_type,
         file_format=config.workflow.file_format,
+        anat_session=anat_session or Query.NONE,
+        func_sessions=[ses or Query.NONE for ses in func_sessions],
     )
     t1w_available = subj_data['t1w'] is not None
     t2w_available = subj_data['t2w'] is not None
-    anat_mod = 't1w' if t1w_available else 't2w'
+    anat_mod = get_entity(subj_data['anat_to_template_xfm'], 'from').lower()
 
     mesh_available, standard_space_mesh, software, mesh_files = collect_mesh_data(
         layout=config.execution.layout,
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
+        anat_session=anat_session or Query.NONE,
+    )
+    reg_sphere_available = (
+        mesh_files['lh_reg_sphere'] is not None and mesh_files['rh_reg_sphere'] is not None
     )
     morph_file_types, morphometry_files = collect_morphometry_data(
         layout=config.execution.layout,
         participant_label=subject_id,
         bids_filters=config.execution.bids_filters,
+        anat_session=anat_session or Query.NONE,
     )
 
     # determine the appropriate post-processing workflow
@@ -162,6 +180,8 @@ def init_single_subject_wf(subject_id: str):
                 'anat_brainmask',  # used to estimate head radius and for QC metrics
                 'template_to_anat_xfm',  # not used by cifti workflow
                 'anat_to_template_xfm',
+                't1w_to_t2w_xfm',
+                't2w_to_t1w_xfm',
                 # mesh files
                 'lh_pial_surf',
                 'rh_pial_surf',
@@ -169,6 +189,8 @@ def init_single_subject_wf(subject_id: str):
                 'rh_wm_surf',
                 'lh_subject_sphere',
                 'rh_subject_sphere',
+                'lh_reg_sphere',
+                'rh_reg_sphere',
                 # morphometry files
                 'sulcal_depth',
                 'sulcal_curv',
@@ -180,11 +202,14 @@ def init_single_subject_wf(subject_id: str):
         ),
         name='inputnode',
     )
+    # TODO: Replace with BIDSDataGrabber interface
     inputnode.inputs.t1w = subj_data['t1w']
     inputnode.inputs.t2w = subj_data['t2w']
     inputnode.inputs.anat_brainmask = subj_data['anat_brainmask']
     inputnode.inputs.template_to_anat_xfm = subj_data['template_to_anat_xfm']
     inputnode.inputs.anat_to_template_xfm = subj_data['anat_to_template_xfm']
+    inputnode.inputs.t1w_to_t2w_xfm = subj_data['t1w_to_t2w_xfm']
+    inputnode.inputs.t2w_to_t1w_xfm = subj_data['t2w_to_t1w_xfm']
 
     # surface mesh files (required for brainsprite/warp workflows)
     inputnode.inputs.lh_pial_surf = mesh_files['lh_pial_surf']
@@ -193,6 +218,8 @@ def init_single_subject_wf(subject_id: str):
     inputnode.inputs.rh_wm_surf = mesh_files['rh_wm_surf']
     inputnode.inputs.lh_subject_sphere = mesh_files['lh_subject_sphere']
     inputnode.inputs.rh_subject_sphere = mesh_files['rh_subject_sphere']
+    inputnode.inputs.lh_reg_sphere = mesh_files['lh_reg_sphere']
+    inputnode.inputs.rh_reg_sphere = mesh_files['rh_reg_sphere']
 
     # optional surface shape files (used by surface-warping workflow)
     inputnode.inputs.sulcal_depth = morphometry_files['sulcal_depth']
@@ -202,7 +229,9 @@ def init_single_subject_wf(subject_id: str):
     inputnode.inputs.myelin = morphometry_files['myelin']
     inputnode.inputs.myelin_smoothed = morphometry_files['myelin_smoothed']
 
-    workflow = Workflow(name=f'sub_{subject_id}_wf')
+    workflow = Workflow(
+        name=f'sub_{subject_id}_ses_{anat_session}_ses_{"".join(func_sessions)}_wf'
+    )
 
     info_dict = get_preproc_pipeline_info(
         input_type=config.workflow.input_type,
@@ -263,6 +292,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_summary = pe.Node(
         DerivativesDataSink(
             source_file=preproc_files[0],
+            dismiss_entities=dismiss_hash(),
             desc='summary',
         ),
         name='ds_report_summary',
@@ -271,6 +301,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     ds_report_about = pe.Node(
         DerivativesDataSink(
             source_file=preproc_files[0],
+            dismiss_entities=dismiss_hash(),
             desc='about',
         ),
         name='ds_report_about',
@@ -279,6 +310,63 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     # Extract target volumetric space for T1w image
     target_space = get_entity(subj_data['anat_to_template_xfm'], 'to')
+    anat_buffer = pe.Node(
+        niu.IdentityInterface(fields=['t1w', 't2w']),
+        name='anat_buffer',
+    )
+    if subj_data['t1w_to_t2w_xfm'] is not None and t1w_available and t2w_available:
+        workflow.connect([(inputnode, anat_buffer, [('t2w', 't2w')])])
+
+        # Warp T1w to T2w
+        warp_t1w_to_t2w = pe.Node(
+            ApplyTransforms(
+                interpolation='LanczosWindowedSinc',
+                input_image_type=3,
+                dimension=3,
+                num_threads=config.nipype.omp_nthreads,
+            ),
+            name='warp_t1w_to_t2w',
+            mem_gb=2,
+            n_procs=config.nipype.omp_nthreads,
+        )
+        workflow.connect([
+            (inputnode, warp_t1w_to_t2w, [
+                ('t1w', 'input_image'),
+                ('t1w_to_t2w_xfm', 'transforms'),
+                ('t2w', 'reference_image'),
+            ]),
+            (warp_t1w_to_t2w, anat_buffer, [('output_image', 't1w')]),
+        ])  # fmt:skip
+    elif subj_data['t2w_to_t1w_xfm'] is not None and t1w_available and t2w_available:
+        workflow.connect([(inputnode, anat_buffer, [('t1w', 't1w')])])
+
+        # Warp T2w to T1w
+        warp_t2w_to_t1w = pe.Node(
+            ApplyTransforms(
+                interpolation='LanczosWindowedSinc',
+                input_image_type=3,
+                dimension=3,
+                num_threads=config.nipype.omp_nthreads,
+            ),
+            name='warp_t2w_to_t1w',
+            mem_gb=2,
+            n_procs=config.nipype.omp_nthreads,
+        )
+        workflow.connect([
+            (inputnode, warp_t2w_to_t1w, [
+                ('t2w', 'input_image'),
+                ('t2w_to_t1w_xfm', 'transforms'),
+                ('t1w', 'reference_image'),
+            ]),
+            (warp_t2w_to_t1w, anat_buffer, [('output_image', 't2w')]),
+        ])  # fmt:skip
+    else:
+        workflow.connect([
+            (inputnode, anat_buffer, [
+                ('t1w', 't1w'),
+                ('t2w', 't2w'),
+            ]),
+        ])  # fmt:skip
 
     postprocess_anat_wf = init_postprocess_anat_wf(
         t1w_available=t1w_available,
@@ -288,9 +376,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
 
     workflow.connect([
         (inputnode, postprocess_anat_wf, [
+            ('anat_to_template_xfm', 'inputnode.anat_to_template_xfm'),
+            ('anat_brainmask', 'inputnode.anat_brainmask'),
+        ]),
+        (anat_buffer, postprocess_anat_wf, [
             ('t1w', 'inputnode.t1w'),
             ('t2w', 'inputnode.t2w'),
-            ('anat_to_template_xfm', 'inputnode.anat_to_template_xfm'),
         ]),
     ])  # fmt:skip
 
@@ -306,6 +397,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         postprocess_surfaces_wf = init_postprocess_surfaces_wf(
             mesh_available=mesh_available,
             standard_space_mesh=standard_space_mesh,
+            reg_sphere_available=reg_sphere_available,
             morphometry_files=morph_file_types,
             t1w_available=t1w_available,
             t2w_available=t2w_available,
@@ -320,6 +412,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ('rh_wm_surf', 'inputnode.rh_wm_surf'),
                 ('lh_subject_sphere', 'inputnode.lh_subject_sphere'),
                 ('rh_subject_sphere', 'inputnode.rh_subject_sphere'),
+                ('lh_reg_sphere', 'inputnode.lh_reg_sphere'),
+                ('rh_reg_sphere', 'inputnode.rh_reg_sphere'),
                 ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
             ]),
         ])  # fmt:skip
@@ -329,7 +423,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 (inputnode, postprocess_surfaces_wf, [(morph_file, f'inputnode.{morph_file}')]),
             ])  # fmt:skip
 
-        if config.workflow.process_surfaces or standard_space_mesh:
+        if config.workflow.process_surfaces:
             # Use standard-space structurals
             workflow.connect([
                 (postprocess_anat_wf, postprocess_surfaces_wf, [
@@ -339,9 +433,10 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             ])  # fmt:skip
 
         else:
+            # Warp T1w to T2w or T2w to T1w if necessary
             # Use native-space structurals
             workflow.connect([
-                (inputnode, postprocess_surfaces_wf, [
+                (anat_buffer, postprocess_surfaces_wf, [
                     ('t1w', 'inputnode.t1w'),
                     ('t2w', 'inputnode.t2w'),
                 ]),
@@ -361,26 +456,28 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 ])  # fmt:skip
 
     # Estimate head radius, if necessary
-    # Need to warp the standard-space brain mask to the anatomical space to estimate head radius
-    warp_brainmask = ApplyTransforms(
-        input_image=subj_data['anat_brainmask'],
-        transforms=[subj_data['template_to_anat_xfm']],
-        reference_image=subj_data[anat_mod],
-        num_threads=2,
-        interpolation='GenericLabel',
-        input_image_type=3,
-        dimension=3,
-    )
-    os.makedirs(config.execution.work_dir / workflow.fullname, exist_ok=True)
-    warp_brainmask_results = warp_brainmask.run(
-        cwd=(config.execution.work_dir / workflow.fullname),
-    )
-    anat_brainmask_in_anat_space = warp_brainmask_results.outputs.output_image
+    head_radius = config.workflow.head_radius
+    if config.workflow.head_radius == 'auto':
+        # Warp the standard-space brain mask to the anatomical space to estimate head radius
+        warp_brainmask = ApplyTransforms(
+            input_image=subj_data['anat_brainmask'],
+            transforms=[subj_data['template_to_anat_xfm']],
+            reference_image=subj_data[anat_mod],
+            num_threads=2,
+            interpolation='GenericLabel',
+            input_image_type=3,
+            dimension=3,
+        )
+        os.makedirs(config.execution.work_dir / workflow.fullname, exist_ok=True)
+        warp_brainmask_results = warp_brainmask.run(
+            cwd=(config.execution.work_dir / workflow.fullname),
+        )
+        anat_brainmask_in_anat_space = warp_brainmask_results.outputs.output_image
 
-    head_radius = estimate_brain_radius(
-        mask_file=anat_brainmask_in_anat_space,
-        head_radius=config.workflow.head_radius,
-    )
+        head_radius = estimate_brain_radius(
+            mask_file=anat_brainmask_in_anat_space,
+            head_radius=config.workflow.head_radius,
+        )
 
     n_runs = len(preproc_files)
     # group files across runs and directions, to facilitate concatenation
@@ -390,8 +487,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         # Assuming TR is constant across runs for a given combination of entities.
         TR = _get_tr(nb.load(task_files[0]))
 
+        # We only "concatenate" if scans are named with a run or direction entity.
+        multirun_entity = get_entity(task_files[0], 'run') is not None
+        multidir_entity = get_entity(task_files[0], 'dir') is not None
+        multiscans = multirun_entity or multidir_entity
+
         n_task_runs = len(task_files)
-        if config.workflow.combine_runs and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_task_runs > 0) and multiscans:
             merge_elements = [
                 'name_source',
                 'preprocessed_bold',
@@ -414,6 +516,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 for io_name in merge_elements
             }
 
+        n_processed_task_runs = 0
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(
                 layout=config.execution.layout,
@@ -472,12 +575,20 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t1w_available=t1w_available,
                 t2w_available=t2w_available,
                 n_runs=n_runs,
+                has_multiple_runs=multiscans,
                 exact_scans=exact_scans,
                 name=f'postprocess_{run_counter}_wf',
             )
             run_counter += 1
+            n_processed_task_runs += 1
 
             workflow.connect([
+                (inputnode, postprocess_bold_wf, [
+                    ('anat_brainmask', 'inputnode.anat_brainmask'),
+                    ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
+                    # The workflow needs a native anat-space image as a reference
+                    (anat_mod, 'inputnode.anat_native'),
+                ]),
                 (postprocess_anat_wf, postprocess_bold_wf, [
                     ('outputnode.t1w', 'inputnode.t1w'),
                     ('outputnode.t2w', 'inputnode.t2w'),
@@ -503,26 +614,13 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ]),
                 ])  # fmt:skip
 
-            if config.workflow.file_format == 'nifti':
-                workflow.connect([
-                    (inputnode, postprocess_bold_wf, [
-                        ('anat_brainmask', 'inputnode.anat_brainmask'),
-                        ('template_to_anat_xfm', 'inputnode.template_to_anat_xfm'),
-                    ]),
-                ])  # fmt:skip
-
-                # The post-processing workflow needs a native anatomical-space image as a reference
-                workflow.connect([
-                    (inputnode, postprocess_bold_wf, [(anat_mod, 'inputnode.anat_native')]),
-                ])  # fmt:skip
-
-            if config.workflow.combine_runs and (n_task_runs > 1):
+            if config.workflow.combine_runs and (n_task_runs > 0) and multiscans:
                 for io_name, node in merge_dict.items():
                     workflow.connect([
                         (postprocess_bold_wf, node, [(f'outputnode.{io_name}', f'in{j_run + 1}')]),
                     ])  # fmt:skip
 
-        if config.workflow.combine_runs and (n_task_runs > 1):
+        if config.workflow.combine_runs and (n_processed_task_runs > 0) and multiscans:
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,
@@ -536,6 +634,12 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     (anat_mod, 'inputnode.anat_native'),
                 ]),
             ])  # fmt:skip
+            if config.execution.atlases:
+                workflow.connect([
+                    (load_atlases_wf, concatenate_data_wf, [
+                        ('outputnode.atlas_labels_files', 'inputnode.atlas_labels_files'),
+                    ]),
+                ])  # fmt:skip
 
             for io_name, node in merge_dict.items():
                 workflow.connect([(node, concatenate_data_wf, [('out', f'inputnode.{io_name}')])])
@@ -562,7 +666,16 @@ def clean_datasinks(workflow):
             workflow.get_node(node).interface.out_path_base = ''
             workflow.get_node(node).interface.inputs.base_directory = config.execution.output_dir
 
+            if config.execution.output_layout == 'multiverse':
+                workflow.get_node(node).interface.inputs.hash = config.execution.parameters_hash
+
         if node_name.startswith('ds_report_'):
             workflow.get_node(node).interface.inputs.datatype = 'figures'
+
+        if node_name.startswith('add_hash_'):
+            if config.execution.output_layout == 'multiverse':
+                workflow.get_node(
+                    node
+                ).interface.inputs.parameters_hash = config.execution.parameters_hash
 
     return workflow

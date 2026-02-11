@@ -11,7 +11,6 @@ from nilearn.maskers import NiftiLabelsMasker
 from xcp_d import config
 from xcp_d.data import load as load_data
 from xcp_d.interfaces.ants import ApplyTransforms
-from xcp_d.interfaces.connectivity import _sanitize_nifti_atlas
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
 from xcp_d.utils.bids import _get_tr
@@ -84,7 +83,10 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
 
 
 def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
-    """Test the nifti workflow."""
+    """Test the nifti workflow.
+
+    TODO: Improve this test by constructing an atlas with missing and poorly covered parcels.
+    """
     tmpdir = tmp_path_factory.mktemp('test_init_functional_connectivity_nifti_wf')
 
     bold_file = ds001419_data['nifti_file']
@@ -171,7 +173,9 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
+            has_multiple_runs=False,
             name='connectivity_wf',
+            skip_alff=True,  # bandpass_filter=False so skip ALFF
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
@@ -200,39 +204,27 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         # Read that into a df
         coverage_df = pd.read_table(coverage, index_col='Node')
-        coverage_arr = coverage_df.to_numpy()
+        coverage_arr = np.squeeze(coverage_df.to_numpy())
         assert coverage_arr.shape[0] == n_parcels
         correlations_arr = pd.read_table(correlations, index_col='Node').to_numpy()
         assert correlations_arr.shape == (n_parcels, n_parcels)
 
-        # Now to get ground truth correlations
-        labels_df = pd.read_table(atlas_labels_file, index_col='index')
-        atlas_img, _ = _sanitize_nifti_atlas(atlas_file, labels_df)
-        masker = NiftiLabelsMasker(
-            labels_img=atlas_img,
-            labels=['background'] + coverage_df.index.tolist(),
-            smoothing_fwhm=None,
-            standardize=False,
-        )
-        masker.fit(fake_bold_file)
-        signals = masker.transform(fake_bold_file)
-
         # Parcels with <50% coverage should have NaNs
         assert np.array_equal(np.squeeze(coverage_arr) < 0.5, np.isnan(np.diag(correlations_arr)))
 
-        atlas_idx = np.arange(len(coverage_df.index.tolist()), dtype=int)
-        idx_not_in_atlas = np.setdiff1d(atlas_idx + 1, masker.labels_)
-        idx_in_atlas = np.array(masker.labels_, dtype=int) - 1
-        n_partial_parcels = np.where(coverage_df['coverage'] >= 0.5)[0].size
-
-        # Drop missing parcels
-        correlations_arr = correlations_arr[idx_in_atlas, :]
-        correlations_arr = correlations_arr[:, idx_in_atlas]
-        assert correlations_arr.shape == (n_parcels_in_atlas, n_parcels_in_atlas)
-
-        # The masker.labels_ attribute only contains the labels that were found
-        assert idx_not_in_atlas.size == 0
-        assert idx_in_atlas.size == n_parcels_in_atlas
+        # Now to get ground truth correlations
+        labels_df = pd.read_table(atlas_labels_file)
+        labels_df['name'] = labels_df['label']
+        labels_df = labels_df[['index', 'name']]
+        masker = NiftiLabelsMasker(
+            labels_img=atlas_file,
+            lut=labels_df,
+            smoothing_fwhm=None,
+            standardize=False,
+            keep_masked_labels=True,
+        )
+        masker.fit(fake_bold_file)
+        signals = masker.transform(fake_bold_file)
 
         # The "ground truth" matrix
         calculated_correlations = np.corrcoef(signals.T)
@@ -241,7 +233,6 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         # If we replace the bad parcels' results in the "ground truth" matrix with NaNs,
         # the resulting matrix should match the workflow-generated one.
         bad_parcel_idx = np.where(np.isnan(np.diag(correlations_arr)))[0]
-        assert bad_parcel_idx.size == n_parcels_in_atlas - n_partial_parcels
         calculated_correlations[bad_parcel_idx, :] = np.nan
         calculated_correlations[:, bad_parcel_idx] = np.nan
 
@@ -312,8 +303,10 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,
+            has_multiple_runs=False,
             exact_scans=[],
             name='connectivity_wf',
+            skip_alff=True,  # bandpass_filter=False so skip ALFF
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask

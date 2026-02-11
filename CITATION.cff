@@ -51,6 +51,10 @@ authors:
     family-names: Covitz
     affiliation: Stanford University
     orcid: 'https://orcid.org/0000-0002-7430-4125'
+  - given-names: Roey
+    family-names: Schurr
+    affiliation: Hebrew University of Jerusalem
+    orcid: 'https://orcid.org/0000-0002-5325-2071'
   - given-names: Damien
     family-names: Fair
     affiliation: University of Minnesota
@@ -83,5 +87,5 @@ keywords:
   - BIDS-App
   - Neuroimaging
 license: BSD-3-Clause
-version: 0.10.5
-date-released: '2025-01-27'
+version: 0.14.1
+date-released: '2026-02-02'

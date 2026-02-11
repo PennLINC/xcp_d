@@ -66,7 +66,8 @@ def test_fsnative_to_fsLR_wf(
 ):
     """Test surface-warping workflow with mesh surfaces available, but not in standard space.
 
-    The transforms should be applied and all of the standard-space outputs should be generated.
+    The transforms should be applied and workflow should run without errors.
+    The workflow no longer writes out files to the output directory.
     """
     tmpdir = tmp_path_factory.mktemp('test_fsnative_to_fsLR_wf')
 
@@ -75,6 +76,7 @@ def test_fsnative_to_fsLR_wf(
         config.execution.output_dir = tmpdir
 
         wf = anatomical.surface.init_fsnative_to_fsLR_wf(
+            reg_sphere_available=False,
             software='FreeSurfer',
             omp_nthreads=1,
         )
@@ -86,16 +88,7 @@ def test_fsnative_to_fsLR_wf(
         wf.inputs.inputnode.lh_subject_sphere = surface_files['lh_subject_sphere']
         wf.inputs.inputnode.rh_subject_sphere = surface_files['rh_subject_sphere']
         wf.base_dir = tmpdir
-        wf = clean_datasinks(wf)
         wf.run()
-
-        # All of the possible fsLR surfaces should be available.
-        out_anat_dir = os.path.join(tmpdir, 'sub-1648798153', 'ses-PNC1', 'anat')
-        for key, filename in surface_files.items():
-            if 'fsLR' in key:
-                out_fname = os.path.basename(filename)
-                out_file = os.path.join(out_anat_dir, out_fname)
-                assert os.path.isfile(out_file), '\n'.join(sorted(os.listdir(tmpdir)))
 
 
 def test_itk_warp_gifti_surface_wf(

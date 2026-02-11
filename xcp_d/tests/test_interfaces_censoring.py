@@ -130,7 +130,7 @@ def test_generate_confounds(ds001419_data, tmp_path_factory):
     assert os.path.isfile(results.outputs.confounds_tsv)
     out_confounds_file = results.outputs.confounds_tsv
     out_df = pd.read_table(out_confounds_file)
-    assert out_df.shape[1] == 31  # 31 parameters
+    assert out_df.shape[1] == 29  # 29 parameters
 
     # Test with signal regressors
     config = load_data.readable('nuisance/24P.yml')
@@ -304,6 +304,7 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
         motion_file=confounds_file,
         temporal_mask=confounds_file,
         dummy_scans=0,
+        dummy_scan_source=confounds_file,
     )
     results = remove_nothing.run(cwd=tmpdir)
     undropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
@@ -327,6 +328,7 @@ def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
             motion_file=confounds_file,
             temporal_mask=confounds_file,
             dummy_scans=n,
+            dummy_scan_source=confounds_file,
         )
         results = remove_n_vols.run(cwd=tmpdir)
         dropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
@@ -363,6 +365,7 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
         motion_file=confounds_file,
         temporal_mask=confounds_file,
         dummy_scans=0,
+        dummy_scan_source=confounds_file,
     )
     results = remove_nothing.run(cwd=tmpdir)
     undropped_confounds = pd.read_table(results.outputs.confounds_tsv_dropped_TR)
@@ -385,6 +388,7 @@ def test_removedummyvolumes_cifti(ds001419_data, tmp_path_factory):
             motion_file=confounds_file,
             temporal_mask=confounds_file,
             dummy_scans=n,
+            dummy_scan_source=confounds_file,
         )
 
         results = remove_n_vols.run(cwd=tmpdir)

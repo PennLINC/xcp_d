@@ -89,8 +89,12 @@ The :py:mod:`config` is responsible for other conveniency actions.
 """
 
 import os
+import typing as ty
 from multiprocessing import set_start_method
 
+import yaml
+from bids.layout import Query
+from bids.utils import listify
 from templateflow.conf import TF_LAYOUT
 
 # Disable NiPype etelemetry always
@@ -102,8 +106,8 @@ CONFIG_FILENAME = 'xcp_d.toml'
 
 try:
     set_start_method('forkserver')
-except RuntimeError:
-    pass  # context has been already set
+except (RuntimeError, ValueError):
+    pass  # context has been already set or not available (e.g., Windows)
 finally:
     # Defer all custom import for after initializing the forkserver and
     # ignoring the most annoying warnings
@@ -235,7 +239,20 @@ class _Config:
                 else:
                     setattr(cls, k, Path(v).absolute())
             elif hasattr(cls, k):
-                setattr(cls, k, v)
+                if k == 'processing_list':
+                    new_v = []
+                    for el in v:
+                        parts = el.split(':')
+                        if len(parts) != 3:
+                            raise ValueError(
+                                f'Malformed element in processing_list: "{el}". '
+                                'Each element must contain exactly two colons.'
+                            )
+                        sub, anat_ses, func_ses = parts
+                        new_v.append((sub, anat_ses, list(func_ses.split(','))))
+                    setattr(cls, k, new_v)
+                else:
+                    setattr(cls, k, v)
 
         if init:
             try:
@@ -410,6 +427,12 @@ class execution(_Config):
     """Do not convert boilerplate from MarkDown to LaTex and HTML."""
     notrack = None
     """Do not collect telemetry information for *XCP-D*."""
+    output_layout = None
+    """Output layout for the derivatives."""
+    parameters_hash = None
+    """Unique identifier for this set of configurable parameters."""
+    report_output_level = None
+    """Directory level at which the html reports should be written."""
     reports_only = None
     """Only build the reports, based on the reportlets found in a cached working directory."""
     output_dir = None
@@ -420,8 +443,12 @@ class execution(_Config):
     """Unique identifier of this particular run."""
     participant_label = None
     """List of participant identifiers that are to be preprocessed."""
+    session_id = None
+    """Select a particular session from all available in the dataset."""
     task_id = None
     """Select a particular task from all available in the dataset."""
+    processing_list = []
+    """List of (subject_id, anat_session_id, [func_session_id, ...]) to be postprocessed."""
     templateflow_home = _templateflow_home
     """The root folder of the TemplateFlow client."""
     work_dir = Path('work').absolute()
@@ -495,8 +522,28 @@ class execution(_Config):
 
         cls.layout = cls._layout
 
+        if cls.task_id:
+            cls.bids_filters = cls.bids_filters or {}
+            cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
+            cls.bids_filters['bold']['task'] = listify(cls.task_id)
+
+        if cls.session_id:
+            # Patch session ID into all of the filters
+            session_id = listify(cls.session_id) + [Query.NONE]  # allow none (esp. for anats)
+
+            cls.bids_filters = cls.bids_filters or {}
+
+            # Load the io_spec to get the filter fields
+            _spec = yaml.safe_load(load_data.readable('io_spec.yaml').read_text())
+            filter_fields = []
+            for subspec in _spec['queries'].values():
+                filter_fields += list(subspec.keys())
+
+            for field in filter_fields:
+                cls.bids_filters[field] = cls.bids_filters.get(field, {})
+                cls.bids_filters[field]['session'] = session_id
+
         if cls.bids_filters:
-            from bids.layout import Query
 
             def _process_value(value):
                 """Convert string with "Query" in it to Query object."""
@@ -513,11 +560,6 @@ class execution(_Config):
             for acq, filters in cls.bids_filters.items():
                 for k, v in filters.items():
                     cls.bids_filters[acq][k] = _process_value(v)
-
-        if cls.task_id:
-            cls.bids_filters = cls.bids_filters or {}
-            cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
-            cls.bids_filters['bold']['task'] = cls.task_id
 
         dataset_links = {
             'preprocessed': cls.fmri_dir,
@@ -592,12 +634,18 @@ class workflow(_Config):
     """Produce correlation matrices limited to each requested amount of time.
     If this list includes 'all' then correlations from the full (censored) time series will
     be produced."""
+    output_run_wise_correlations = None
+    """Output run-wise correlations."""
     process_surfaces = None
     """Warp fsnative-space surfaces to the MNI space."""
     abcc_qc = None
     """Run DCAN QC."""
     linc_qc = None
     """Run LINC QC."""
+    skip_outputs = []
+    """List of outputs to skip during postprocessing (e.g.,
+    'alff', 'reho', 'parcellation', 'connectivity').
+    """
 
     @classmethod
     def init(cls):
@@ -730,6 +778,11 @@ def get(flat=False):
         'nipype': nipype.get(),
         'seeds': seeds.get(),
     }
+    if 'processing_list' in settings['execution']:
+        settings['execution']['processing_list'] = [
+            f'{el[0]}:{el[1]}:{",".join(el[2])}' for el in settings['execution']['processing_list']
+        ]
+
     if not flat:
         return settings
 
@@ -751,3 +804,106 @@ def to_filename(filename):
     """Write settings to file."""
     filename = Path(filename)
     filename.write_text(dumps())
+
+
+def dismiss_hash(entities: list | None = None):
+    """Set entities to dismiss in a DerivativesDataSink."""
+    entities = entities or []
+    output_layout = execution.output_layout
+    if output_layout != 'multiverse':
+        entities.append('hash')
+    return entities
+
+
+DEFAULT_DISMISS_ENTITIES = dismiss_hash()
+
+DEFAULT_CONFIG_HASH_FIELDS = {
+    'execution': [
+        'bids_filters',
+        'confounds_config',
+        'atlases',
+        'output_layout',
+    ],
+    'workflow': [
+        'mode',
+        'file_format',
+        'dummy_scans',
+        'input_type',
+        'despike',
+        'smoothing',
+        'output_interpolated',
+        'combine_runs',
+        'motion_filter_type',
+        'band_stop_min',
+        'band_stop_max',
+        'motion_filter_order',
+        'head_radius',
+        'fd_thresh',
+        'min_time',
+        'bandpass_filter',
+        'high_pass',
+        'low_pass',
+        'bpf_order',
+        'min_coverage',
+        'correlation_lengths',
+        'process_surfaces',
+        'output_run_wise_correlations',
+        'abcc_qc',
+        'linc_qc',
+    ],
+}
+
+
+def hash_config(
+    conf: dict[str, ty.Any],
+    *,
+    fields_required: dict[str, list[str]] = DEFAULT_CONFIG_HASH_FIELDS,
+    version: str = None,
+    digest_size: int = 4,
+) -> str:
+    """
+    Generate a unique BLAKE2b hash of configuration attributes.
+    By default, uses a preselected list of workflow-altering parameters.
+
+    This will also grab the configuration hash from the fmri_dir's dataset_description.json if it
+    exists. If it does, it will be prefixed to the hash.
+
+    Parameters
+    ----------
+    conf : dict
+        Configuration dictionary.
+    fields_required : dict
+        Dictionary of required fields for each level.
+    version : str
+        Version of the configuration.
+    digest_size : int
+        Size of the digest in bytes.
+
+    Returns
+    -------
+    str
+        A unique BLAKE2b hash of the configuration.
+    """
+    import json
+    from hashlib import blake2b
+
+    if version is None:
+        from xcp_d import __version__ as version
+
+    # Load the preprocessing derivatives dataset description
+    dset_desc_path = Path(conf['execution']['fmri_dir']) / 'dataset_description.json'
+    prefix = ''
+    if dset_desc_path.exists():
+        with open(dset_desc_path) as fobj:
+            desc = json.load(fobj)
+
+        if 'ConfigurationHash' in desc.get('GeneratedBy', [{}])[0]:
+            prefix = desc.get('GeneratedBy', [{}])[0]['ConfigurationHash'] + '+'
+
+    data = {}
+    for level, fields in fields_required.items():
+        for f in fields:
+            data[f] = conf[level].get(f, None)
+
+    datab = json.dumps(data, sort_keys=True).encode()
+    return prefix + blake2b(datab, digest_size=digest_size).hexdigest()

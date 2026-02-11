@@ -7,6 +7,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.utils.doc import fill_doc
@@ -85,6 +86,8 @@ def init_postprocess_anat_wf(
                 't2w',
                 'anat_to_template_xfm',
                 'template',
+                'anat_brainmask',
+                'template_mask',
             ],
         ),
         name='inputnode',
@@ -100,20 +103,51 @@ def init_postprocess_anat_wf(
     if '+' in target_space:
         target_space, cohort = target_space.split('+')
 
-    template_file = str(
-        get_template(template=target_space, cohort=cohort, resolution=1, desc=None, suffix='T1w')
+    # Use skull-stripped template when available
+    apply_template_mask = False
+    template_file = get_template(
+        template=target_space,
+        cohort=cohort,
+        resolution=1,
+        desc='brain',
+        suffix='T1w',
     )
+    if not template_file:
+        # Otherwise, use unstripped template
+        template_file = get_template(
+            template=target_space,
+            cohort=cohort,
+            resolution=1,
+            desc=None,
+            suffix='T1w',
+            raise_empty=True,
+        )
+        mask_file = get_template(
+            template=target_space,
+            cohort=cohort,
+            resolution=1,
+            desc='brain',
+            suffix='mask',
+            raise_empty=True,
+        )
+        if mask_file:
+            apply_template_mask = True
+            mask_file = str(mask_file)
+            inputnode.inputs.template_mask = mask_file
+
+    template_file = str(template_file)
     inputnode.inputs.template = template_file
 
     if t1w_available:
         ds_t1w_std = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 space=target_space,
                 cohort=cohort,
                 extension='.nii.gz',
             ),
             name='ds_t1w_std',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_t1w_std, [('t1w', 'source_file')]),
@@ -123,12 +157,13 @@ def init_postprocess_anat_wf(
     if t2w_available:
         ds_t2w_std = pe.Node(
             DerivativesDataSink(
+                dismiss_entities=dismiss_hash(),
                 space=target_space,
                 cohort=cohort,
                 extension='.nii.gz',
             ),
             name='ds_t2w_std',
-            run_without_submitting=False,
+            run_without_submitting=True,
         )
         workflow.connect([
             (inputnode, ds_t2w_std, [('t2w', 'source_file')]),
@@ -203,9 +238,14 @@ resolution.
         execsummary_anatomical_plots_wf = init_execsummary_anatomical_plots_wf(
             t1w_available=t1w_available,
             t2w_available=t2w_available,
+            apply_template_mask=apply_template_mask,
         )
         workflow.connect([
-            (inputnode, execsummary_anatomical_plots_wf, [('template', 'inputnode.template')]),
+            (inputnode, execsummary_anatomical_plots_wf, [
+                ('template', 'inputnode.template'),
+                ('anat_brainmask', 'inputnode.anat_brainmask'),
+                ('template_mask', 'inputnode.template_mask'),
+            ]),
         ])  # fmt:skip
 
         if t1w_available:

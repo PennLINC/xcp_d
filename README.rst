@@ -44,14 +44,14 @@ About
 
 *XCP-D* paves the final section of the reproducible and scalable route from the MRI scanner to
 functional connectivity data in the hands of neuroscientists.
-We developed *XCP-D* to extend the BIDS and NiPrep apparatus to the point where data is most
+We developed *XCP-D* to extend the BIDS and NiPreps apparatus to the point where data is most
 commonly consumed and analyzed by neuroscientists studying functional connectivity.
 Thus, with the development of *XCP-D*, data can be automatically preprocessed and analyzed in BIDS
 format, using NiPrep-style containerized code, all the way from the scanner to functional
 connectivity matrices.
 
-*XCP-D* picks up right where `fMRIprep <https://fmriprep.org>`_ ends, directly consuming the outputs
-of fMRIPrep.
+*XCP-D* picks up right where `fMRIPrep <https://fmriprep.org>`_ ends,
+directly consuming the outputs of fMRIPrep.
 *XCP-D* leverages the BIDS and NiPreps frameworks to automatically generate denoised BOLD images,
 parcellated time series, functional connectivity matrices, and quality assessment reports.
 *XCP-D* can also process outputs from: `NiBabies <https://nibabies.readthedocs.io>`_,
@@ -60,7 +60,13 @@ parcellated time series, functional connectivity matrices, and quality assessmen
 data-releases>`_,
 and `UK Biobank <https://doi.org/10.1016/j.neuroimage.2017.10.034>`_ data.
 
-*Please note that XCP is only compatible with HCP-YA versions downloaded c.a. Feb 2023 at the moment.*
+.. important::
+
+   Please note that *XCP-D* is only compatible with HCP-YA data released around February 2023.
+   This is because the HCP-YA data was not versioned at the time of release,
+   and we have to pin to a specific release date.
+   We cannot guarantee that *XCP-D* will work with other versions of the HCP-YA data,
+   or with data from other HCP projects.
 
 .. image:: https://raw.githubusercontent.com/pennlinc/xcp_d/main/docs/_static/xcp_figure_1.png
 

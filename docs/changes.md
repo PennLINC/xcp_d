@@ -1,6 +1,183 @@
 # What's New
 
-## 0.10.5
+## 0.14.1 (February 2, 2026)
+
+### 🐛 Bug Fixes
+
+* Change smoothing surf from 'sphere' to 'midthickness' by @joey-scanga in https://github.com/PennLINC/xcp_d/pull/1565
+
+## New Contributors
+
+* @joey-scanga made their first contribution in https://github.com/PennLINC/xcp_d/pull/1565
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.14.0...0.14.1
+
+
+## 0.14.0 (January 6, 2026)
+
+### 🎉 Exciting New Features
+
+* Generate pconn.niis from concatenated CIFTI time series by @tsalo in https://github.com/PennLINC/xcp_d/pull/1541
+* Add parameter to control run-wise correlations by @tsalo in https://github.com/PennLINC/xcp_d/pull/1544
+* Add --skip parameter to skip outputs during postprocessing by @psychelzh in https://github.com/PennLINC/xcp_d/pull/1535
+
+### Other Changes
+
+* Remove information on differences between modes by @tsalo in https://github.com/PennLINC/xcp_d/pull/1542
+* Support BIDS proc-<label> entity in xcp_d path patterns by @magicbrainresearch in https://github.com/PennLINC/xcp_d/pull/1546
+
+### New Contributors
+
+* @magicbrainresearch made their first contribution in https://github.com/PennLINC/xcp_d/pull/1546
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.13.0...0.14.0
+
+
+## 0.13.0 (November 11, 2025)
+
+### 🎉 Exciting New Features
+
+* Assume T1w and T2w are in same space if using fMRIPrep derivatives by @tsalo in https://github.com/PennLINC/xcp_d/pull/1514
+
+### 🐛 Bug Fixes
+
+* Estimate memory requirements more accurately by @tsalo in https://github.com/PennLINC/xcp_d/pull/1513
+* Remove colorbar from brainsprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1529
+* Account for longitudinal studies with a single anatomical session by @tsalo in https://github.com/PennLINC/xcp_d/pull/1534
+
+### Other Changes
+
+* Change metavar for `--mem-mb` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1510
+* Update citation for MIDB atlas by @tsalo in https://github.com/PennLINC/xcp_d/pull/1523
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.12.0...0.13.0
+
+
+## 0.12.0 (September 17, 2025)
+
+### 🎉 Exciting New Features
+
+* Use MNIInfant transforms from templateflow by @tsalo in https://github.com/PennLINC/xcp_d/pull/1487
+
+### 🐛 Bug Fixes
+
+* Change memory argument destination to `memory_gb` by @j1c in https://github.com/PennLINC/xcp_d/pull/1490
+* Fix WM and CSF component selection in acompcor and acompcor_gsr by @roeysc in https://github.com/PennLINC/xcp_d/pull/1498
+* Fix brainsprite when `--warp-surfaces-native2std` is disabled by @tsalo in https://github.com/PennLINC/xcp_d/pull/1501
+
+### Other Changes
+
+* Use fsLR-registered spheres when available by @tsalo in https://github.com/PennLINC/xcp_d/pull/1486
+* Add hash entity to outputs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1496
+
+### New Contributors
+
+* @j1c made their first contribution in https://github.com/PennLINC/xcp_d/pull/1490
+* @roeysc made their first contribution in https://github.com/PennLINC/xcp_d/pull/1498
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.11.1...0.12.0
+
+
+## 0.11.1 (July 28, 2025)
+
+### 🐛 Bug Fixes
+
+* Fix figure collection for longitudinal, but not session-wise, reports by @tsalo in https://github.com/PennLINC/xcp_d/pull/1482
+
+### Other Changes
+
+* Drop dir and run entities from single-run tasks by @tsalo in https://github.com/PennLINC/xcp_d/pull/1472
+* Check DatasetType for "derivative" or "derivatives" by @tsalo in https://github.com/PennLINC/xcp_d/pull/1481
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.11.0...0.11.1
+
+
+## 0.11.0 (July 15, 2025)
+
+### 🛠 Breaking Changes
+
+* Use `mem_mb` instead of `mem_gb` by @smeisler in https://github.com/PennLINC/xcp_d/pull/1417
+
+### 🎉 Exciting New Features
+
+* Add `--report-output-level` parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1436
+* Collect and apply transforms between native anatomical spaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1437
+
+### 🐛 Bug Fixes
+
+* Ensure T1w-only processing does not collect T2w by @tsalo in https://github.com/PennLINC/xcp_d/pull/1433
+* Support session-wise anatomical processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1438
+* Fix session-wise collection by @tsalo in https://github.com/PennLINC/xcp_d/pull/1439
+* Fix session-wise collection of surface files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1440
+* Make workflow name unique for session-wise processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1441
+* Add nifti brain mask to hcpya ingression by @smeisler in https://github.com/PennLINC/xcp_d/pull/1411
+* Write out filtered motion parameters when dummy-scans is not zero by @tsalo in https://github.com/PennLINC/xcp_d/pull/1446
+* Ingress BOLD brain mask in ABCD-BIDS and HCP processing by @tsalo in https://github.com/PennLINC/xcp_d/pull/1473
+
+### Other Changes
+
+* Update note about HCP compatibility by @tsalo in https://github.com/PennLINC/xcp_d/pull/1465
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.7...0.11.0
+
+
+## 0.10.7 (April 8, 2025)
+
+### 🎉 Exciting New Features
+
+* Use masked functional and anatomical images for executive summary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1425
+
+### 🐛 Bug Fixes
+
+* Warp fsLR surfaces to NLin6 for brainsprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1419
+* Warp anat mask to anat space for coreg QC by @tsalo in https://github.com/PennLINC/xcp_d/pull/1423
+* Remove background label in ConnectPlot by @tsalo in https://github.com/PennLINC/xcp_d/pull/1424
+
+### Other Changes
+
+* Run vertex normalization on output surfaces by @tsalo in https://github.com/PennLINC/xcp_d/pull/1420
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.6...0.10.7
+
+
+## 0.10.6 (February 21, 2025)
+
+### 🎉 Exciting New Features
+
+* Add session-id parameter by @tsalo in https://github.com/PennLINC/xcp_d/pull/1379
+* Add colorbar to correlation matrix plot by @tsalo in https://github.com/PennLINC/xcp_d/pull/1401
+
+### 🐛 Bug Fixes
+
+* Support `--abcc-qc` with `--file-format nifti` by @tsalo in https://github.com/PennLINC/xcp_d/pull/1388
+* Do not attempt to concatenate runs when no runs in entity set are processed by @tsalo in https://github.com/PennLINC/xcp_d/pull/1398
+* Make calculations robust to NaNs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1399
+* Fix atlas names in concatenated parcellated output files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1407
+
+### Other Changes
+
+* Only estimate head radius if necessary by @tsalo in https://github.com/PennLINC/xcp_d/pull/1381
+* Simplify the brainsprite workflow setup by @tsalo in https://github.com/PennLINC/xcp_d/pull/1384
+* Parallelize image denoising by @mattcieslak in https://github.com/PennLINC/xcp_d/pull/1387
+* Apply consistency across XCP-D quick-start instructions by @singlesp in https://github.com/PennLINC/xcp_d/pull/1382
+* Test PlotSlicesForBrainSprite by @tsalo in https://github.com/PennLINC/xcp_d/pull/1393
+* Update mode documentation by @B-Sevchik in https://github.com/PennLINC/xcp_d/pull/1392
+* Add comments and debug logging to init_denoise_bold_wf by @tientong98 in https://github.com/PennLINC/xcp_d/pull/1391
+* Add more OMP by @mattcieslak in https://github.com/PennLINC/xcp_d/pull/1386
+* Note that automatic head radius estimation gives higher values than 50 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1397
+* Add file lock to avoid concurrent edits by @tientong98 in https://github.com/PennLINC/xcp_d/pull/1403
+* Clarify mounting in apptainer instructions by @singlesp in https://github.com/PennLINC/xcp_d/pull/1394
+
+### New Contributors
+
+* @singlesp made their first contribution in https://github.com/PennLINC/xcp_d/pull/1382
+* @B-Sevchik made their first contribution in https://github.com/PennLINC/xcp_d/pull/1392
+* @tientong98 made their first contribution in https://github.com/PennLINC/xcp_d/pull/1391
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.5...0.10.6
+
+
+## 0.10.5 (January 27, 2025)
 
 ### 🎉 Exciting New Features
 
@@ -13,7 +190,7 @@
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.4...0.10.5
 
 
-## 0.10.4
+## 0.10.4 (January 23, 2025)
 
 This release makes the brainsprite work with composite transforms from Nibabies.
 
@@ -24,12 +201,9 @@ This release makes the brainsprite work with composite transforms from Nibabies.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.3...0.10.4
 
 
-## 0.10.3
+## 0.10.3 (January 20, 2025)
 
-<!-- Release notes generated using configuration in .github/release.yml at main -->
 This release fixes a testing bug that prevented 0.10.2 from deploying.
-
-## What's Changed
 
 ### 🐛 Bug Fixes
 
@@ -45,7 +219,7 @@ This release fixes a testing bug that prevented 0.10.2 from deploying.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.1...0.10.3
 
 
-## 0.10.2
+## 0.10.2 (January 17, 2025)
 
 A patch release.
 
@@ -64,7 +238,7 @@ A patch release.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.1...0.10.2
 
 
-## 0.10.1
+## 0.10.1 (November 21, 2024)
 
 A patch release fixing bugs stemming from 0.10.0.
 
@@ -81,7 +255,7 @@ A patch release fixing bugs stemming from 0.10.0.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.10.0...0.10.1
 
 
-## 0.10.0
+## 0.10.0 (November 17, 2024)
 
 This backwards-incompatible release brings XCP-D further in line with the fMRIPost workflows in the NiPreps ecosystem.
 We have added the ability to provide custom confound sets defined as YAML config files,
@@ -129,7 +303,7 @@ so the expected organization of these external atlas datasets may change over ti
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.9.1...0.10.0
 
 
-## 0.9.1
+## 0.9.1 (September 13, 2024)
 
 This release improves performance with multi-core processing.
 
@@ -143,7 +317,7 @@ This release improves performance with multi-core processing.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.9.0...0.9.1
 
 
-## 0.9.0
+## 0.9.0 (September 6, 2024)
 
 This backwards-incompatible release makes two important breaking changes.
 First, we changed the default file format for 'linc' mode from NIfTI to CIFTI.
@@ -170,7 +344,7 @@ which should only affect derivatives from fMRIPrep and Nibabies versions >= 24.0
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.3...0.9.0
 
 
-## 0.8.3
+## 0.8.3 (August 23, 2024)
 
 This patch release fixes a bug introduced in 0.8.1.
 
@@ -185,7 +359,7 @@ This patch release fixes a bug introduced in 0.8.1.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.2...0.8.3
 
 
-## 0.8.2
+## 0.8.2 (August 20, 2024)
 
 This release adds the "none" option for the mode parameter.
 
@@ -200,7 +374,7 @@ This release adds the "none" option for the mode parameter.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.1...0.8.2
 
 
-## 0.8.1
+## 0.8.1 (August 16, 2024)
 
 Patch release for HBCD to support Nibabies runs with both T1w and T2w data.
 
@@ -217,7 +391,7 @@ Patch release for HBCD to support Nibabies runs with both T1w and T2w data.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.8.0...0.8.1
 
 
-## 0.8.0
+## 0.8.0 (July 31, 2024)
 
 This is a backwards-incompatible release that will be used to postprocess the beta version of the first release of the HBCD dataset.
 There are two major breaking changes.
@@ -257,7 +431,7 @@ The rest of XCP-D should still work for versions of fMRIPrep and Nibabies that w
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.5...0.8.0
 
 
-## 0.7.5
+## 0.7.5 (June 28, 2024)
 
 This is a patch release that fixes how the correlation matrix plot is generated when users select only one atlas for parcellation.
 The bug was likely introduced in 0.7.4 and only affects runs with a single atlas.
@@ -274,7 +448,7 @@ The bug was likely introduced in 0.7.4 and only affects runs with a single atlas
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.4...0.7.5
 
 
-## 0.7.4
+## 0.7.4 (May 29, 2024)
 
 This is a patch release that fixes two important bugs.
 The two bugs are:
@@ -299,7 +473,7 @@ The dense CIFTI files should still be usable though.
 
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.3...0.7.4
 
-## 0.7.3
+## 0.7.3 (April 29, 2024)
 
 Small patch release for manuscript's executive summary.
 
@@ -312,7 +486,7 @@ Small patch release for manuscript's executive summary.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.2...0.7.3
 
 
-## 0.7.2
+## 0.7.2 (April 24, 2024)
 
 This is a patch release fixing small bugs in 0.7.1.
 
@@ -334,7 +508,7 @@ This is a patch release fixing small bugs in 0.7.1.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.1...0.7.2
 
 
-## 0.7.1
+## 0.7.1 (April 19, 2024)
 
 This release prepares for the XCP-D manuscript.
 
@@ -372,7 +546,7 @@ This release prepares for the XCP-D manuscript.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.7.0...0.7.1
 
 
-## 0.7.0
+## 0.7.0 (March 22, 2024)
 
 This is a large, backwards-incompatible release.
 The changes in this release mostly stem from reviewer comments on the XCP-D manuscript.
@@ -399,7 +573,7 @@ I expect to release 0.7.1, which will add the NiPreps Config object, very soon.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.4...0.7.0
 
 
-## 0.6.4
+## 0.6.4 (March 19, 2024)
 
 ### 🎉 Exciting New Features
 
@@ -422,7 +596,7 @@ I expect to release 0.7.1, which will add the NiPreps Config object, very soon.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.3...0.6.4
 
 
-## 0.6.3
+## 0.6.3 (March 8, 2024)
 
 ### 🎉 Exciting New Features
 
@@ -442,7 +616,7 @@ I expect to release 0.7.1, which will add the NiPreps Config object, very soon.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.2...0.6.3
 
 
-## 0.6.2
+## 0.6.2 (February 27, 2024)
 
 ### 🐛 Bug Fixes
 
@@ -458,7 +632,7 @@ I expect to release 0.7.1, which will add the NiPreps Config object, very soon.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.1...0.6.2
 
 
-## 0.6.1
+## 0.6.1 (February 12, 2024)
 
 ### 🛠 Breaking Changes
 
@@ -494,7 +668,7 @@ I expect to release 0.7.1, which will add the NiPreps Config object, very soon.
 **Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.6.0...0.6.1
 
 
-## 0.6.0
+## 0.6.0 (December 8, 2023)
 
 ### 🛠 Breaking Changes
 * Replace Schaefer atlases with AtlasPack by @tsalo in https://github.com/PennLINC/xcp_d/pull/928
