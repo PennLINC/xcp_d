@@ -202,7 +202,7 @@ series to retain the original scaling.
                 high_pass=high_pass,
                 n_threads=config.nipype.omp_nthreads,
             ),
-            mem_gb=mem_gb['resampled'],
+            mem_gb=mem_gb['bold'],
             name='compute_smoothed_alff',
             n_procs=config.nipype.omp_nthreads,
         )
