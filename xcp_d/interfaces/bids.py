@@ -91,8 +91,6 @@ class CollectRegistrationFiles(SimpleInterface):
     def _run_interface(self, runtime):
         from templateflow.api import get as get_template
 
-        from xcp_d.data import load as load_data
-
         hemisphere = self.inputs.hemisphere
 
         if self.inputs.software == 'FreeSurfer':
@@ -110,14 +108,15 @@ class CollectRegistrationFiles(SimpleInterface):
                 )
             )
 
-            # TODO: Collect from templateflow once it's uploaded.
-            # FreeSurfer: fs_?/fs_?-to-fs_LR_fsaverage.?_LR.spherical_std.164k_fs_?.surf.gii
-            # Should be tpl-fsLR_hemi-?_space-fsaverage_den-164k_sphere.surf.gii on TemplateFlow
+            # tpl-fsLR_hemi-?_space-fsaverage_den-164k_sphere.surf.gii
             self._results['sphere_to_sphere'] = str(
-                load_data(
-                    f'standard_mesh_atlases/fs_{hemisphere}/'
-                    f'fs_{hemisphere}-to-fs_LR_fsaverage.{hemisphere}_LR.spherical_std.'
-                    f'164k_fs_{hemisphere}.surf.gii'
+                get_template(
+                    template='fsLR',
+                    space='fsaverage',
+                    hemi=hemisphere,
+                    density='164k',
+                    desc=None,
+                    suffix='sphere',
                 )
             )
 
