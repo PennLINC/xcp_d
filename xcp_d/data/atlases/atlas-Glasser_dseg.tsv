@@ -1,4 +1,4 @@
-index	label	cifti_label	community_yeo	community_mesulam	community_economo
+index	name	cifti_label	community_yeo	community_mesulam	community_economo
 1	Right_V1	R_V1_ROI	visual	paralimbic	sensory 2
 2	Right_MST	R_MST_ROI	dorsal attention	unimodal	sensory 1
 3	Right_V6	R_V6_ROI	visual	unimodal	sensory 1

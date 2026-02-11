@@ -1,4 +1,4 @@
-index	label	cifti_label	network_label
+index	name	cifti_label	network_label
 1	PostDefault	Label_1	PostDefault
 2	L_PostPreMotor_1	Label_2	PostPreMotor
 3	L_AntDefault_1	Label_3	AntDefault

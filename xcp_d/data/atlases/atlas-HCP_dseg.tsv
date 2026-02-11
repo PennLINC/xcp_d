@@ -1,4 +1,4 @@
-index	label	cifti_label	color_red	color_green	color_blue	opacity
+index	name	cifti_label	color_red	color_green	color_blue	opacity
 8	CEREBELLUM_LEFT	CEREBELLUM_LEFT	230	147	33	255
 10	THALAMUS_LEFT	THALAMUS_LEFT	0	117	14	255
 11	CAUDATE_LEFT	CAUDATE_LEFT	121	186	219	255
