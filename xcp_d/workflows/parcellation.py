@@ -28,7 +28,7 @@ def init_load_atlases_wf(name='load_atlases_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.connectivity import init_load_atlases_wf
+            from xcp_d.workflows.parcellation import init_load_atlases_wf
 
             with mock_config():
                 wf = init_load_atlases_wf()
@@ -243,10 +243,10 @@ def init_parcellate_cifti_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.connectivity import init_parcellate_cifti_wf
+            from xcp_d.workflows.parcellation import init_parcellate_cifti_wf
 
             with mock_config():
-                wf = init_parcellate_cifti_wf(mem_gb={"resampled": 2})
+                wf = init_parcellate_cifti_wf(mem_gb={"bold": 2})
 
     Parameters
     ----------
@@ -385,7 +385,7 @@ def init_parcellate_cifti_wf(
         ),
         name='parcellate_data',
         iterfield=['atlas_label'],
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([

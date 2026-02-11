@@ -6,7 +6,8 @@ from nipype.pipeline import engine as pe
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 
 from xcp_d import config
-from xcp_d.interfaces.bids import DerivativesDataSink
+from xcp_d.config import dismiss_hash
+from xcp_d.interfaces.bids import AddHashToTSV, DerivativesDataSink
 from xcp_d.utils.atlas import select_atlases
 from xcp_d.utils.doc import fill_doc
 from xcp_d.workflows.parcellation import init_parcellate_cifti_wf
@@ -25,7 +26,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.connectivity import init_parcellate_surfaces_wf
+            from xcp_d.workflows.anatomical.parcellation import init_parcellate_surfaces_wf
 
             with mock_config():
                 wf = init_parcellate_surfaces_wf(
@@ -138,7 +139,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
         ])  # fmt:skip
 
         parcellate_surface_wf = init_parcellate_cifti_wf(
-            mem_gb={'resampled': 2},
+            mem_gb={'bold': 2},
             compute_mask=True,
             name=f'parcellate_{file_to_parcellate}_wf',
         )
@@ -152,10 +153,24 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
             ]),
         ])  # fmt:skip
 
+        add_hash_parcellated_surface = pe.MapNode(
+            AddHashToTSV(
+                add_to_columns=True,
+                add_to_rows=False,
+            ),
+            name=f'add_hash_parcellated_{file_to_parcellate}',
+            iterfield=['in_file'],
+        )
+        workflow.connect([
+            (parcellate_surface_wf, add_hash_parcellated_surface, [
+                ('outputnode.parcellated_tsv', 'in_file'),
+            ]),
+        ])  # fmt:skip
+
         # Write out the parcellated files
         ds_parcellated_surface = pe.MapNode(
             DerivativesDataSink(
-                dismiss_entities=['hemi', 'desc', 'den', 'res'],
+                dismiss_entities=dismiss_hash(['hemi', 'desc', 'den', 'res']),
                 desc=SURF_DESCS[file_to_parcellate],
                 statistic='mean',
                 suffix='morph',
@@ -171,9 +186,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
                 (file_to_parcellate, 'source_file'),
                 ('atlas_names', 'segmentation'),
             ]),
-            (parcellate_surface_wf, ds_parcellated_surface, [
-                ('outputnode.parcellated_tsv', 'in_file'),
-            ]),
+            (add_hash_parcellated_surface, ds_parcellated_surface, [('out_file', 'in_file')]),
         ])  # fmt:skip
 
     return workflow

@@ -232,3 +232,38 @@ def test_confounds_action(tmp_path):
     # Path to a non-existent file should raise an error
     with pytest.raises(SystemExit):
         parser.parse_args(['--confounds', '/invalid/path/to/confounds.yml'])
+
+
+def test_task_id_argument(tmp_path_factory):
+    """Test that --task-id accepts space-delimited list and removes 'task-' prefix."""
+    from xcp_d.cli.parser import _build_parser
+
+    # Create temporary directories for input and output
+    tmpdir = tmp_path_factory.mktemp('test_task_id')
+    input_dir = tmpdir / 'input'
+    output_dir = tmpdir / 'output'
+    input_dir.mkdir()
+    output_dir.mkdir()
+
+    parser = _build_parser()
+    base_args = [str(input_dir), str(output_dir), 'participant', '--mode', 'none']
+
+    # Single task-id without prefix
+    args = parser.parse_args(base_args + ['--task-id', 'rest'])
+    assert args.task_id == ['rest']
+
+    # Single task-id with prefix
+    args = parser.parse_args(base_args + ['--task-id', 'task-rest'])
+    assert args.task_id == ['rest']
+
+    # Multiple task-ids without prefix
+    args = parser.parse_args(base_args + ['--task-id', 'rest', 'imagery', 'nback'])
+    assert args.task_id == ['rest', 'imagery', 'nback']
+
+    # Multiple task-ids with prefix
+    args = parser.parse_args(base_args + ['--task-id', 'task-rest', 'task-imagery'])
+    assert args.task_id == ['rest', 'imagery']
+
+    # Mixed prefix usage
+    args = parser.parse_args(base_args + ['--task-id', 'rest', 'task-imagery'])
+    assert args.task_id == ['rest', 'imagery']

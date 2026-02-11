@@ -32,6 +32,7 @@ from templateflow.api import get as get_template
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.plotting import FMRIPlot, plot_fmri_es, surf_data_from_cifti
 from xcp_d.utils.qcmetrics import compute_dvars
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -69,7 +70,7 @@ class CensoringPlot(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion with motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        preproc_fd_timeseries = motion_df['framewise_displacement'].values
+        preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement').values
 
         # Load temporal mask
         censoring_df = pd.read_table(self.inputs.temporal_mask)
@@ -162,8 +163,12 @@ class CensoringPlot(SimpleInterface):
             vline_ymax = vline_ymin
 
         # Plot motion-censored volumes as vertical lines
-        tmask_arr = censoring_df['framewise_displacement'].values
-        assert preproc_fd_timeseries.size == tmask_arr.size
+        tmask_arr = get_col(censoring_df, 'framewise_displacement').values
+        if preproc_fd_timeseries.size != tmask_arr.size:
+            raise ValueError(
+                f'preproc_fd_timeseries.size ({preproc_fd_timeseries.size}) != '
+                f'tmask_arr.size ({tmask_arr.size})'
+            )
         tmask_idx = np.where(tmask_arr)[0]
         for i_idx, idx in enumerate(tmask_idx):
             label = 'Motion-Censored Volumes' if i_idx == 0 else ''
@@ -257,15 +262,15 @@ class QCPlots(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        if 'framewise_displacement_filtered' in motion_df.columns:
-            preproc_fd_timeseries = motion_df['framewise_displacement_filtered'].values
+        if any(col.startswith('framewise_displacement_filtered') for col in motion_df.columns):
+            preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement_filtered').values
         else:
-            preproc_fd_timeseries = motion_df['framewise_displacement'].values
+            preproc_fd_timeseries = get_col(motion_df, 'framewise_displacement').values
 
         # Determine number of dummy volumes and load temporal mask
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = censoring_df['framewise_displacement'].values
+            tmask_arr = get_col(censoring_df, 'framewise_displacement').values
         else:
             tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
 
@@ -718,8 +723,11 @@ class PlotCiftiParcellation(SimpleInterface):
     output_spec = _PlotCiftiParcellationOutputSpec
 
     def _run_interface(self, runtime):
-        assert len(self.inputs.in_files) == len(self.inputs.labels)
-        assert len(self.inputs.cortical_atlases) > 0
+        if len(self.inputs.in_files) != len(self.inputs.labels):
+            n_files, n_labels = len(self.inputs.in_files), len(self.inputs.labels)
+            raise ValueError(f'Number of in_files ({n_files}) must match labels ({n_labels})')
+        if len(self.inputs.cortical_atlases) <= 0:
+            raise ValueError('At least one cortical atlas must be provided.')
 
         if not (isdefined(self.inputs.lh_underlay) and isdefined(self.inputs.rh_underlay)):
             self._results['desc'] = f'{self.inputs.base_desc}ParcellatedStandard'
@@ -730,6 +738,7 @@ class PlotCiftiParcellation(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
             lh = str(
@@ -739,6 +748,7 @@ class PlotCiftiParcellation(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
         else:
@@ -948,6 +958,7 @@ class PlotDenseCifti(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
             lh = str(
@@ -957,6 +968,7 @@ class PlotDenseCifti(SimpleInterface):
                     density='32k',
                     suffix='midthickness',
                     extension='.surf.gii',
+                    raise_empty=True,
                 )
             )
         else:
@@ -1124,7 +1136,13 @@ class PlotNifti(SimpleInterface):
         cohort = get_entity(self.inputs.name_source, 'cohort')
         entities_to_use['cohort'] = cohort
 
-        template_file = get_template(template=space, **entities_to_use, suffix='T1w', desc=None)
+        template_file = get_template(
+            template=space,
+            **entities_to_use,
+            suffix='T1w',
+            desc=None,
+            raise_empty=True,
+        )
         if isinstance(template_file, list):
             template_file = template_file[0]
 

@@ -10,6 +10,7 @@ from num2words import num2words
 from templateflow.api import get as get_template
 
 from xcp_d import config
+from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
@@ -32,6 +33,20 @@ from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
 from xcp_d.utils.utils import fwhm2sigma, is_number
 
 
+def _load_confounds_config():
+    """Load the confounds configuration from the execution config.
+
+    Returns
+    -------
+    confounds_config : :obj:`dict` or None
+        Parsed confounds configuration, or None if not provided.
+    """
+    if config.execution.confounds_config is None:
+        return None
+
+    return yaml.safe_load(config.execution.confounds_config.read_text())
+
+
 @fill_doc
 def init_prepare_confounds_wf(
     TR,
@@ -51,7 +66,7 @@ def init_prepare_confounds_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_prepare_confounds_wf
+            from xcp_d.workflows.bold.postprocessing import init_prepare_confounds_wf
 
             with mock_config():
                 wf = init_prepare_confounds_wf(
@@ -141,10 +156,7 @@ def init_prepare_confounds_wf(
     else:
         censoring_description = ''
 
-    if config.execution.confounds_config is None:
-        confounds_config = None
-    else:
-        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
+    confounds_config = _load_confounds_config()
 
     confounds_description = describe_regression(
         confounds_config=confounds_config,
@@ -216,9 +228,7 @@ def init_prepare_confounds_wf(
         (process_motion, outputnode, [('motion_metadata', 'motion_metadata')]),
     ])  # fmt:skip
 
-    if config.execution.confounds_config is not None:
-        confounds_config = yaml.safe_load(config.execution.confounds_config.read_text())
-
+    if confounds_config is not None:
         generate_confounds = pe.Node(
             GenerateConfounds(
                 confounds_config=confounds_config,
@@ -368,7 +378,7 @@ def init_prepare_confounds_wf(
 
         ds_report_design_matrix = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=['space', 'res', 'den', 'desc'],
+                dismiss_entities=dismiss_hash(['space', 'res', 'den', 'desc']),
                 suffix='design',
                 extension='.svg',
             ),
@@ -401,6 +411,7 @@ def init_prepare_confounds_wf(
 
     ds_report_censoring = pe.Node(
         DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
             desc='censoring',
             suffix='motion',
             extension='.svg',
@@ -435,7 +446,7 @@ def init_despike_wf(TR, name='despike_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_despike_wf
+            from xcp_d.workflows.bold.postprocessing import init_despike_wf
 
             with mock_config():
                 wf = init_despike_wf(
@@ -527,11 +538,12 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_denoise_bold_wf
+            from xcp_d.workflows.bold.postprocessing import init_denoise_bold_wf
 
             with mock_config():
                 wf = init_denoise_bold_wf(
                     TR=0.8,
+                    mem_gb={"bold": 1.0},
                     name="denoise_bold_wf",
                 )
 
@@ -684,7 +696,7 @@ approach.
             num_threads=config.nipype.omp_nthreads,
         ),
         name='regress_and_filter_bold',
-        mem_gb=mem_gb['timeseries'],
+        mem_gb=mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')
@@ -713,7 +725,7 @@ approach.
     censor_interpolated_data = pe.Node(
         Censor(column='framewise_displacement'),
         name='censor_interpolated_data',
-        mem_gb=mem_gb['resampled'],
+        mem_gb=mem_gb['bold'],
     )
     config.loggers.workflow.debug('Created censor node for high-motion volumes.')
 
@@ -779,10 +791,10 @@ def init_resd_smoothing_wf(mem_gb, name='resd_smoothing_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.postprocessing import init_resd_smoothing_wf
+            from xcp_d.workflows.bold.postprocessing import init_resd_smoothing_wf
 
             with mock_config():
-                wf = init_resd_smoothing_wf()
+                wf = init_resd_smoothing_wf(mem_gb={"bold": 1.0})
 
     Parameters
     ----------
@@ -828,7 +840,8 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                         hemi='R',
                         density='32k',
                         desc=None,
-                        suffix='sphere',
+                        suffix='midthickness',
+                        raise_empty=True,
                     )
                 ),
                 left_surf=str(
@@ -838,13 +851,14 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                         hemi='L',
                         density='32k',
                         desc=None,
-                        suffix='sphere',
+                        suffix='midthickness',
+                        raise_empty=True,
                     )
                 ),
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='cifti_smoothing',
-            mem_gb=mem_gb['timeseries'],
+            mem_gb=mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
 
@@ -867,7 +881,7 @@ The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str
         smooth_data = pe.Node(
             Smooth(fwhm=smoothing),  # FWHM = kernel size
             name='nifti_smoothing',
-            mem_gb=mem_gb['timeseries'],
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([(smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
 

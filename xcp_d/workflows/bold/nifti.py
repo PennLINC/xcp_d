@@ -36,6 +36,7 @@ def init_postprocess_nifti_wf(
     t1w_available,
     t2w_available,
     n_runs,
+    has_multiple_runs,
     exact_scans,
     name='bold_postprocess_wf',
 ):
@@ -54,6 +55,7 @@ def init_postprocess_nifti_wf(
             from xcp_d.workflows.bold.nifti import init_postprocess_nifti_wf
 
             with mock_config():
+                layout = config.execution.layout
                 bold_file = str(
                     config.execution.fmri_dir / "sub-01" / "func" /
                     (
@@ -76,6 +78,7 @@ def init_postprocess_nifti_wf(
                     t1w_available=True,
                     t2w_available=True,
                     n_runs=1,
+                    has_multiple_runs=False,
                     exact_scans=[],
                     name="nifti_postprocess_wf",
                 )
@@ -90,6 +93,9 @@ def init_postprocess_nifti_wf(
     n_runs
         Number of runs being postprocessed by XCP-D.
         This is just used for the boilerplate, as this workflow only posprocesses one run.
+    has_multiple_runs
+        Whether there are multiple runs for this task or not.
+        Interacts with the output_run_wise_correlations parameter.
     %(exact_scans)s
     %(name)s
         Default is "nifti_postprocess_wf".
@@ -214,7 +220,7 @@ the following post-processing was performed.
     downcast_data = pe.Node(
         ConvertTo32(),
         name='downcast_data',
-        mem_gb=mem_gbx['timeseries'],
+        mem_gb=mem_gbx['bold'],
     )
 
     workflow.connect([
@@ -283,7 +289,12 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    if bandpass_filter:
+    # Determine whether ALFF should be skipped. ALFF is only meaningful when
+    # bandpass filtering is enabled; users may also explicitly request it be
+    # skipped via the --skip parameter.
+    skip_alff = (not bandpass_filter) or ('alff' in config.workflow.skip_outputs)
+
+    if not skip_alff:
         alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
 
         workflow.connect([
@@ -296,18 +307,22 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
-    reho_wf = init_reho_nifti_wf(name_source=bold_file, mem_gb=mem_gbx)
+    # Skip ReHo calculation if requested
+    skip_reho = 'reho' in config.workflow.skip_outputs
+    if not skip_reho:
+        reho_wf = init_reho_nifti_wf(name_source=bold_file, mem_gb=mem_gbx)
 
-    workflow.connect([
-        (downcast_data, reho_wf, [('bold_mask', 'inputnode.bold_mask')]),
-        (denoise_bold_wf, reho_wf, [
-            ('outputnode.censored_denoised_bold', 'inputnode.denoised_bold'),
-        ]),
-    ])  # fmt:skip
+        workflow.connect([
+            (downcast_data, reho_wf, [('bold_mask', 'inputnode.bold_mask')]),
+            (denoise_bold_wf, reho_wf, [
+                ('outputnode.censored_denoised_bold', 'inputnode.denoised_bold'),
+            ]),
+        ])  # fmt:skip
 
     qc_report_wf = init_qc_report_wf(
         TR=TR,
         head_radius=head_radius,
+        mem_gb=mem_gbx,
         name='qc_report_wf',
     )
 
@@ -335,6 +350,7 @@ the following post-processing was performed.
     postproc_derivatives_wf = init_postproc_derivatives_wf(
         name_source=bold_file,
         source_metadata=run_data['bold_metadata'],
+        has_multiple_runs=has_multiple_runs,
         exact_scans=exact_scans,
     )
 
@@ -357,7 +373,6 @@ the following post-processing was performed.
             ('outputnode.smoothed_denoised_bold', 'inputnode.smoothed_denoised_bold'),
         ]),
         (qc_report_wf, postproc_derivatives_wf, [('outputnode.qc_file', 'inputnode.qc_file')]),
-        (reho_wf, postproc_derivatives_wf, [('outputnode.reho', 'inputnode.reho')]),
         (postproc_derivatives_wf, outputnode, [
             ('outputnode.motion_file', 'motion_file'),
             ('outputnode.temporal_mask', 'temporal_mask'),
@@ -367,7 +382,14 @@ the following post-processing was performed.
         ]),
     ])  # fmt:skip
 
-    if bandpass_filter:
+    # Connect ReHo workflow if not skipped
+    if not skip_reho:
+        workflow.connect([
+            (reho_wf, postproc_derivatives_wf, [('outputnode.reho', 'inputnode.reho')]),
+        ])  # fmt:skip
+
+    # Connect ALFF workflow if not skipped
+    if not skip_alff:
         workflow.connect([
             (alff_wf, postproc_derivatives_wf, [
                 ('outputnode.alff', 'inputnode.alff'),
@@ -376,7 +398,12 @@ the following post-processing was performed.
         ])  # fmt:skip
 
     if config.execution.atlases:
-        connectivity_wf = init_functional_connectivity_nifti_wf(mem_gb=mem_gbx)
+        connectivity_wf = init_functional_connectivity_nifti_wf(
+            has_multiple_runs=has_multiple_runs,
+            mem_gb=mem_gbx,
+            skip_reho=skip_reho,
+            skip_alff=skip_alff,
+        )
 
         workflow.connect([
             (inputnode, connectivity_wf, [
@@ -392,17 +419,25 @@ the following post-processing was performed.
             (denoise_bold_wf, connectivity_wf, [
                 ('outputnode.denoised_bold', 'inputnode.denoised_bold'),
             ]),
-            (reho_wf, connectivity_wf, [('outputnode.reho', 'inputnode.reho')]),
             (connectivity_wf, postproc_derivatives_wf, [
                 ('outputnode.coverage', 'inputnode.coverage'),
                 ('outputnode.timeseries', 'inputnode.timeseries'),
                 ('outputnode.correlations', 'inputnode.correlations'),
                 ('outputnode.correlations_exact', 'inputnode.correlations_exact'),
-                ('outputnode.parcellated_reho', 'inputnode.parcellated_reho'),
             ]),
         ])  # fmt:skip
 
-        if bandpass_filter:
+        # Connect ReHo to connectivity workflow if not skipped
+        if not skip_reho:
+            workflow.connect([
+                (reho_wf, connectivity_wf, [('outputnode.reho', 'inputnode.reho')]),
+                (connectivity_wf, postproc_derivatives_wf, [
+                    ('outputnode.parcellated_reho', 'inputnode.parcellated_reho'),
+                ]),
+            ])  # fmt:skip
+
+        # Connect ALFF to connectivity workflow if not skipped
+        if not skip_alff:
             workflow.connect([
                 (alff_wf, connectivity_wf, [('outputnode.alff', 'inputnode.alff')]),
                 (connectivity_wf, postproc_derivatives_wf, [

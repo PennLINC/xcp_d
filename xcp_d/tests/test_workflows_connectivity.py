@@ -173,7 +173,9 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_nifti_wf(
             mem_gb=mem_gbx,
+            has_multiple_runs=False,
             name='connectivity_wf',
+            skip_alff=True,  # bandpass_filter=False so skip ALFF
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
@@ -213,11 +215,13 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         # Now to get ground truth correlations
         labels_df = pd.read_table(atlas_labels_file)
         labels_df['name'] = labels_df['label']
+        labels_df = labels_df[['index', 'name']]
         masker = NiftiLabelsMasker(
             labels_img=atlas_file,
             lut=labels_df,
             smoothing_fwhm=None,
             standardize=False,
+            keep_masked_labels=True,
         )
         masker.fit(fake_bold_file)
         signals = masker.transform(fake_bold_file)
@@ -299,8 +303,10 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
 
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gbx,
+            has_multiple_runs=False,
             exact_scans=[],
             name='connectivity_wf',
+            skip_alff=True,  # bandpass_filter=False so skip ALFF
         )
         connectivity_wf.inputs.inputnode.denoised_bold = fake_bold_file
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask

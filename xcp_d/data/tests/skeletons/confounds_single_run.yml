@@ -1,0 +1,13 @@
+# Minimal derivatives skeleton to test confounds collection (single run, no acq)
+"01":
+  - func:
+    - task: rest
+      run: 1
+      desc: preproc
+      suffix: bold
+      extension: .nii.gz
+    - task: rest
+      run: 1
+      desc: confounds
+      suffix: timeseries
+      extension: .tsv

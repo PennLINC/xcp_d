@@ -60,7 +60,8 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--head_radius=40',
         '--motion-filter-type=lp',
         '--band-stop-min=6',
-        '--skip-parcellation',
+        '--skip',
+        'parcellation',
         '--min-coverage=0.4',
         '--min-time=100',
         '--smoothing=6',
@@ -73,6 +74,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         '--input-type=fmriprep',
         '--warp-surfaces-native2std=n',
         '--report-output-level=root',
+        '--output-run-wise-correlations=y',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -116,6 +118,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         '--create-matrices',
         '80',
         '200',
+        'all',
         '--atlases',
         '4S156Parcels',
         '4S256Parcels',
@@ -123,6 +126,58 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         '4S456Parcels',
         '--linc-qc',
         '--report-output-level=subject',
+    ]
+    _run_and_generate(
+        test_name=test_name,
+        parameters=parameters,
+        input_type='cifti',
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.ds001419_cifti
+def test_ds001419_cifti_with_skip(data_dir, output_dir, working_dir):
+    """Run xcp_d on ds001419 with cifti options and explicit --skip flags."""
+    test_name = 'test_ds001419_cifti_with_skip'
+
+    dataset_dir = download_test_data('ds001419', data_dir)
+    out_dir = os.path.join(output_dir, test_name)
+    work_dir = os.path.join(working_dir, test_name)
+
+    test_data_dir = get_test_data_path()
+    filter_file = os.path.join(test_data_dir, 'ds001419_cifti_filter.json')
+
+    parameters = [
+        dataset_dir,
+        out_dir,
+        'participant',
+        '--participant-label=sub-01',
+        '--mode=abcd',
+        f'-w={work_dir}',
+        '--task-id=imagery',
+        f'--bids-filter-file={filter_file}',
+        '--nuisance-regressors=acompcor_gsr',
+        '--warp_surfaces_native2std=n',
+        '--head_radius=40',
+        '--motion-filter-type=notch',
+        '--motion-filter-order=4',
+        '--band-stop-min=12',
+        '--band-stop-max=18',
+        '--dummy-scans=auto',
+        '--upper-bpf=0.0',
+        '--min-time=100',
+        '--create-matrices',
+        '80',
+        '200',
+        '--atlases',
+        '4S156Parcels',
+        '4S256Parcels',
+        '4S356Parcels',
+        '4S456Parcels',
+        '--linc-qc',
+        '--report-output-level=subject',
+        '--skip',
+        'reho',
     ]
     _run_and_generate(
         test_name=test_name,
@@ -275,12 +330,13 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         '--create-matrices=all',
         '--linc-qc=n',
         '--report-output-level=root',
+        '--output-layout=multiverse',
     ]
     _run_and_generate(
         test_name=test_name,
         parameters=parameters,
         input_type='cifti',
-        test_main=False,
+        test_main=True,
     )
 
 
@@ -461,6 +517,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         write_derivative_description(
             config.execution.fmri_dir,
             config.execution.output_dir,
+            parameters_hash=config.execution.parameters_hash,
             dataset_links=config.execution.dataset_links,
         )
         if config.execution.atlases:

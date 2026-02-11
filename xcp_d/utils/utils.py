@@ -11,6 +11,109 @@ from xcp_d.utils.doc import fill_doc
 LOGGER = logging.getLogger('nipype.utils')
 
 
+def _get_template_transform(template, from_space, cohort=None):
+    """Get a TemplateFlow transform path as a string.
+
+    Parameters
+    ----------
+    template : :obj:`str`
+        Template name to query from TemplateFlow.
+    from_space : :obj:`str`
+        Source space for the transform, passed via the ``from`` entity.
+    cohort : :obj:`str` or None
+        Cohort label to include when the target template requires it.
+
+    Returns
+    -------
+    transform_path : :obj:`str`
+        Path to the transform file.
+
+    Raises
+    ------
+    ValueError
+        If the TemplateFlow query cannot be resolved.
+    """
+    from templateflow.api import get as get_template
+
+    template_kwargs = {'from': from_space}
+    if cohort is not None:
+        template_kwargs['cohort'] = cohort
+
+    return str(
+        get_template(
+            template=template,
+            mode='image',
+            suffix='xfm',
+            extension='.h5',
+            raise_empty=True,
+            **template_kwargs,
+        )
+    )
+
+
+def _build_mni_chain(source_space, target_space, source_cohort=None, target_cohort=None):
+    """Build a transform chain between supported MNI template spaces.
+
+    Parameters
+    ----------
+    source_space : :obj:`str`
+        The source space for the transform chain.
+    target_space : :obj:`str`
+        The target space for the transform chain.
+    source_cohort : :obj:`str` or None
+        Cohort label for MNIInfant source spaces.
+    target_cohort : :obj:`str` or None
+        Cohort label for MNIInfant target spaces.
+
+    Returns
+    -------
+    transforms : :obj:`list` of :obj:`str`
+        Transform chain from ``source_space`` to ``target_space``.
+
+    Raises
+    ------
+    ValueError
+        If the spaces are not supported or cohort is missing for MNIInfant sources.
+    """
+    if source_space == target_space:
+        return ['identity']
+
+    if target_space == 'MNI152NLin6Asym':
+        if source_space == 'MNI152NLin2009cAsym':
+            return [_get_template_transform('MNI152NLin6Asym', 'MNI152NLin2009cAsym')]
+        if source_space == 'MNIInfant':
+            if source_cohort is None:
+                raise ValueError('Source cohort is required for MNIInfant transforms.')
+            return [_get_template_transform('MNI152NLin6Asym', f'MNIInfant+{source_cohort}')]
+
+    if target_space == 'MNI152NLin2009cAsym':
+        if source_space == 'MNI152NLin6Asym':
+            return [_get_template_transform('MNI152NLin2009cAsym', 'MNI152NLin6Asym')]
+        if source_space == 'MNIInfant':
+            if source_cohort is None:
+                raise ValueError('Source cohort is required for MNIInfant transforms.')
+            return [
+                _get_template_transform('MNI152NLin2009cAsym', 'MNI152NLin6Asym'),
+                _get_template_transform('MNI152NLin6Asym', f'MNIInfant+{source_cohort}'),
+            ]
+
+    if target_space == 'MNIInfant':
+        target_to_infant = _get_template_transform(
+            'MNIInfant',
+            'MNI152NLin6Asym',
+            cohort=target_cohort,
+        )
+        if source_space == 'MNI152NLin6Asym':
+            return [target_to_infant]
+        if source_space == 'MNI152NLin2009cAsym':
+            return [
+                target_to_infant,
+                _get_template_transform('MNI152NLin6Asym', 'MNI152NLin2009cAsym'),
+            ]
+
+    raise ValueError(f'Transform chain not supported: {source_space} -> {target_space}')
+
+
 def check_deps(workflow):
     """Make sure dependencies are present in this system."""
     from nipype.utils.filemanip import which
@@ -20,6 +123,19 @@ def check_deps(workflow):
         for node in workflow._get_all_nodes()
         if (hasattr(node.interface, '_cmd') and which(node.interface._cmd.split()[0]) is None)
     )
+
+
+def _validate_space(space, cohort, supported_spaces, label, context=None):
+    if space not in supported_spaces:
+        raise ValueError(f'{label} "{space}" not supported.')
+
+    if space == 'MNIInfant' and cohort is None:
+        prefix = label.split()[0]
+        context_str = f' for {context}' if context else ''
+        raise ValueError(
+            f'{prefix} cohort is not specified{context_str}. '
+            'Please specify the cohort using the "cohort" entity.'
+        )
 
 
 def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
@@ -56,78 +172,48 @@ def get_bold2std_and_t1w_xfms(bold_file, template_to_anat_xfm):
     Only used for QCReport in init_postprocess_nifti_wf.
     QCReport wants MNI-space data in MNI152NLin2009cAsym.
     """
-    from templateflow.api import get as get_template
-
-    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
+    from xcp_d.utils.utils import _build_mni_chain, _validate_space
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, 'space')
+    bold_cohort = get_entity(bold_file, 'cohort')
 
     if bold_space in ('native', 'T1w'):
-        base_std_space = get_entity(template_to_anat_xfm, 'from')
-        raise ValueError(f"BOLD space '{bold_space}' not supported.")
+        raise ValueError(f'BOLD space "{bold_space}" not supported.')
     elif f'from-{bold_space}' not in template_to_anat_xfm:
         raise ValueError(
             f'Transform does not match BOLD space: {bold_space} != {template_to_anat_xfm}'
         )
+
+    _validate_space(
+        space=bold_space,
+        cohort=bold_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        label='BOLD space',
+        context=bold_file,
+    )
 
     # Pull out the correct transforms based on bold_file name and string them together.
     xforms_to_T1w = [template_to_anat_xfm]  # used for all spaces except T1w and native
     xforms_to_T1w_invert = [False]
     if bold_space == 'MNI152NLin2009cAsym':
         # Data already in MNI152NLin2009cAsym space.
-        xforms_to_MNI = ['identity']
-        xforms_to_MNI_invert = [False]
-
+        xforms_to_MNI = _build_mni_chain('MNI152NLin2009cAsym', 'MNI152NLin2009cAsym')
     elif bold_space == 'MNI152NLin6Asym':
         # MNI152NLin6Asym --> MNI152NLin2009cAsym
-        MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
-            get_template(
-                template='MNI152NLin2009cAsym',
-                mode='image',
-                suffix='xfm',
-                extension='.h5',
-                **{'from': 'MNI152NLin6Asym'},
-            ),
-        )
-        xforms_to_MNI = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        xforms_to_MNI_invert = [False]
-
+        xforms_to_MNI = _build_mni_chain('MNI152NLin6Asym', 'MNI152NLin2009cAsym')
     elif bold_space == 'MNIInfant':
         # MNIInfant --> MNI152NLin2009cAsym
-        MNIInfant_to_MNI152NLin2009cAsym = str(
-            load_data(
-                'transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5',
-            )
+        xforms_to_MNI = _build_mni_chain(
+            'MNIInfant',
+            'MNI152NLin2009cAsym',
+            source_cohort=bold_cohort,
         )
-        xforms_to_MNI = [MNIInfant_to_MNI152NLin2009cAsym]
-        xforms_to_MNI_invert = [False]
-
-    elif bold_space == 'T1w':
-        # T1w --> ?? (extract from template_to_anat_xfm) --> MNI152NLin2009cAsym
-        # Should not be reachable, since xcpd doesn't support T1w-space BOLD inputs
-        if base_std_space != 'MNI152NLin2009cAsym':
-            std_to_mni_xfm = str(
-                get_template(
-                    template='MNI152NLin2009cAsym',
-                    mode='image',
-                    suffix='xfm',
-                    extension='.h5',
-                    **{'from': base_std_space},
-                ),
-            )
-            xforms_to_MNI = [std_to_mni_xfm, template_to_anat_xfm]
-            xforms_to_MNI_invert = [False, True]
-        else:
-            xforms_to_MNI = [template_to_anat_xfm]
-            xforms_to_MNI_invert = [True]
-
-        xforms_to_T1w = ['identity']
-        xforms_to_T1w_invert = [False]
-
     else:
-        raise ValueError(f"Space '{bold_space}' in {bold_file} not supported.")
+        raise ValueError(f'Space "{bold_space}" in {bold_file} not supported.')
+
+    xforms_to_MNI_invert = [False] * len(xforms_to_MNI)
 
     return xforms_to_MNI, xforms_to_MNI_invert, xforms_to_T1w, xforms_to_T1w_invert
 
@@ -165,85 +251,47 @@ def get_std2bold_xfms(bold_file, source_file, source_space=None):
     Does not include inversion flag output because there is no need (yet).
     Can easily be added in the future.
     """
-    from templateflow.api import get as get_template
-
-    from xcp_d.data import load as load_data
     from xcp_d.utils.bids import get_entity
+    from xcp_d.utils.utils import _build_mni_chain, _validate_space
 
     # Extract the space of the BOLD file
     bold_space = get_entity(bold_file, 'space')
+    bold_cohort = get_entity(bold_file, 'cohort')
 
+    source_cohort = None
     if source_space is None:
         # If a source space is not provided, extract the space of the source file
         # First try tpl because that won't raise an error
         source_space = get_entity(source_file, 'tpl')
+        source_cohort = get_entity(source_file, 'cohort')
         if source_space is None:
             # If tpl isn't available, try space.
             # get_entity will raise an error if space isn't there.
             source_space = get_entity(source_file, 'space')
+    elif '+' in source_space:
+        source_space, source_cohort = source_space.split('+')
 
-    if source_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
-        raise ValueError(f"Source space '{source_space}' not supported.")
-
-    if bold_space not in ('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'):
-        raise ValueError(f"BOLD space '{bold_space}' not supported.")
-
-    # Load useful inter-template transforms from templateflow and package data
-    MNI152NLin6Asym_to_MNI152NLin2009cAsym = str(
-        get_template(
-            template='MNI152NLin2009cAsym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
-            **{'from': 'MNI152NLin6Asym'},
-        ),
+    _validate_space(
+        space=source_space,
+        cohort=source_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        label='Source space',
+        context=source_file,
     )
-    MNI152NLin2009cAsym_to_MNI152NLin6Asym = str(
-        get_template(
-            template='MNI152NLin6Asym',
-            mode='image',
-            suffix='xfm',
-            extension='.h5',
-            **{'from': 'MNI152NLin2009cAsym'},
-        ),
-    )
-    MNIInfant_to_MNI152NLin2009cAsym = str(
-        load_data(
-            'transform/tpl-MNIInfant_from-MNI152NLin2009cAsym_mode-image_xfm.h5',
-        )
-    )
-    MNI152NLin2009cAsym_to_MNIInfant = str(
-        load_data(
-            'transform/tpl-MNI152NLin2009cAsym_from-MNIInfant_mode-image_xfm.h5',
-        )
+    _validate_space(
+        space=bold_space,
+        cohort=bold_cohort,
+        supported_spaces=('MNI152NLin6Asym', 'MNI152NLin2009cAsym', 'MNIInfant'),
+        label='BOLD space',
+        context=bold_file,
     )
 
-    if bold_space == source_space:
-        transforms = ['identity']
-
-    elif bold_space == 'MNI152NLin6Asym':
-        if source_space == 'MNI152NLin2009cAsym':
-            transforms = [MNI152NLin2009cAsym_to_MNI152NLin6Asym]
-        elif source_space == 'MNIInfant':
-            transforms = [
-                MNI152NLin2009cAsym_to_MNI152NLin6Asym,
-                MNIInfant_to_MNI152NLin2009cAsym,
-            ]
-
-    elif bold_space == 'MNI152NLin2009cAsym':
-        if source_space == 'MNI152NLin6Asym':
-            transforms = [MNI152NLin6Asym_to_MNI152NLin2009cAsym]
-        elif source_space == 'MNIInfant':
-            transforms = [MNIInfant_to_MNI152NLin2009cAsym]
-
-    elif bold_space == 'MNIInfant':
-        if source_space == 'MNI152NLin6Asym':
-            transforms = [
-                MNI152NLin2009cAsym_to_MNIInfant,
-                MNI152NLin6Asym_to_MNI152NLin2009cAsym,
-            ]
-        elif source_space == 'MNI152NLin2009cAsym':
-            transforms = [MNI152NLin2009cAsym_to_MNIInfant]
+    transforms = _build_mni_chain(
+        source_space,
+        bold_space,
+        source_cohort=source_cohort,
+        target_cohort=bold_cohort,
+    )
 
     return transforms
 
@@ -475,13 +523,13 @@ def _denoise_with_nilearn(
     if detrend_and_denoise:
         # Detrend the interpolated data and confounds.
         # This also mean-centers the data and confounds.
-        preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=False)
+        preprocessed_bold = standardize_signal(preprocessed_bold, detrend=True, standardize=None)
         if have_confounds:
-            confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=False)
+            confounds_arr = standardize_signal(confounds_arr, detrend=True, standardize=None)
 
         if have_voxelwise_confounds:
             voxelwise_confounds = [
-                standardize_signal(arr, detrend=True, standardize=False)
+                standardize_signal(arr, detrend=True, standardize=None)
                 for arr in voxelwise_confounds
             ]
 
@@ -641,22 +689,22 @@ def _transpose_lol(lol):
 
 
 def _create_mem_gb(bold_fname):
-    import os
+    # Load only the header to get shape and data type information
+    bold_img = nb.load(bold_fname)
 
-    bold_size_gb = os.path.getsize(bold_fname) / (1024**3)
-    bold_tlen = nb.load(bold_fname).shape[-1]
+    # Calculate uncompressed memory size from header information
+    # This accounts for compression (e.g., .nii.gz files)
+    n_voxels = np.prod(bold_img.shape)
+    dtype_size = bold_img.get_data_dtype().itemsize
+    uncompressed_size_gb = (n_voxels * dtype_size) / (1024**3)
+
+    n_volumes = bold_img.shape[-1]
+
+    # Estimate memory usage based on uncompressed size
     mem_gbz = {
-        'derivative': bold_size_gb,
-        'resampled': bold_size_gb * 4,
-        'timeseries': bold_size_gb * (max(bold_tlen / 100, 1.0) + 4),
+        'bold': uncompressed_size_gb,
+        'volume': uncompressed_size_gb / n_volumes,
     }
-
-    if mem_gbz['timeseries'] < 4.0:
-        mem_gbz['timeseries'] = 6.0
-        mem_gbz['resampled'] = 2
-    elif mem_gbz['timeseries'] > 8.0:
-        mem_gbz['timeseries'] = 8.0
-        mem_gbz['resampled'] = 3
 
     return mem_gbz
 
@@ -668,3 +716,44 @@ def is_number(s):
         return True
     except ValueError:
         return False
+
+
+def get_col(df, col):
+    """Get a column from a dataframe, with support for `_hash-<hash>` suffixes.
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+        The dataframe to get the column from.
+    col : :obj:`str`
+        The column name to get. The actual column name in the DataFrame may have a `_hash-<hash>`
+        suffix.
+
+    Returns
+    -------
+    :obj:`pandas.Series`
+        The column from the dataframe.
+    """
+    import re
+
+    # Pattern to match the base name with optional hash suffix
+    # The hash can contain alphanumeric characters and plus signs
+    pattern = f'^{re.escape(col)}(_hash-[0-9a-zA-Z+]+)?$'
+
+    # Find columns that match the pattern
+    matching_cols = [c for c in df.columns if re.match(pattern, c)]
+
+    if not matching_cols:
+        raise ValueError(
+            f'No column found matching pattern "{pattern}" in DataFrame. '
+            f'Available columns: {list(df.columns)}'
+        )
+
+    # If multiple columns match, prefer the one without hash suffix
+    # (exact match first, then hash variants)
+    exact_match = [c for c in matching_cols if c == col]
+    if exact_match:
+        return df[exact_match[0]]
+    else:
+        # If no exact match, use the first hash variant
+        return df[matching_cols[0]]

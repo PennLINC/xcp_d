@@ -14,7 +14,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.nilearn import NilearnBaseInterface
 
-from xcp_d.utils.utils import denoise_with_nilearn
+from xcp_d.utils.utils import denoise_with_nilearn, get_col
 from xcp_d.utils.write_save import read_ndata, write_ndata
 
 
@@ -226,6 +226,7 @@ class ApplyMask(NilearnBaseInterface, SimpleInterface):
             source_img=self.inputs.mask,
             target_img=self.inputs.in_file,
             interpolation='nearest',
+            copy_header=True,
         )
         img_masked = masking.unmask(
             masking.apply_mask(self.inputs.in_file, resampled_mask),
@@ -279,6 +280,7 @@ class ResampleToImage(NilearnBaseInterface, SimpleInterface):
             source_img=self.inputs.in_file,
             target_img=self.inputs.target_file,
             interpolation='continuous',
+            copy_header=True,
         )
         self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
         resampled_img.to_filename(self._results['out_file'])
@@ -359,7 +361,7 @@ class DenoiseCifti(NilearnBaseInterface, SimpleInterface):
             )
 
         # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-        sample_mask = ~censoring_df['framewise_displacement'].to_numpy().astype(bool)
+        sample_mask = ~get_col(censoring_df, 'framewise_displacement').to_numpy().astype(bool)
 
         confounds_df = None
         if self.inputs.confounds_tsv:
@@ -444,7 +446,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             )
 
         # Invert temporal mask, so low-motion volumes are True and high-motion volumes are False.
-        sample_mask = ~censoring_df['framewise_displacement'].to_numpy().astype(bool)
+        sample_mask = ~get_col(censoring_df, 'framewise_displacement').to_numpy().astype(bool)
 
         confounds_df = None
         if self.inputs.confounds_tsv:

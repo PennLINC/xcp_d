@@ -1,0 +1,8 @@
+# Derivatives skeleton to test error when confounds are missing
+"01":
+  - func:
+    - task: rest
+      run: 1
+      desc: preproc
+      suffix: bold
+      extension: .nii.gz

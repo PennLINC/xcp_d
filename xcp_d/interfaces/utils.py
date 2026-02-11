@@ -22,6 +22,7 @@ from nipype.interfaces.base import (
 from xcp_d.utils.filemanip import fname_presuffix
 from xcp_d.utils.modified_data import downcast_to_32
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
+from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_ndata
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -245,14 +246,14 @@ class LINCQC(SimpleInterface):
     def _run_interface(self, runtime):
         # Load confound matrix and load motion without motion filtering
         motion_df = pd.read_table(self.inputs.motion_file)
-        preproc_fd = motion_df['framewise_displacement'].to_numpy()
-        rmsd = motion_df['rmsd'].to_numpy()
+        preproc_fd = get_col(motion_df, 'framewise_displacement').to_numpy()
+        rmsd = get_col(motion_df, 'rmsd').to_numpy()
 
         # Determine number of dummy volumes and load temporal mask
         dummy_scans = self.inputs.dummy_scans
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = censoring_df['framewise_displacement'].values
+            tmask_arr = get_col(censoring_df, 'framewise_displacement').values
         else:
             tmask_arr = np.zeros(preproc_fd.size, dtype=int)
 
@@ -506,10 +507,10 @@ class ABCCQC(SimpleInterface):
 
         # Load filtered framewise_displacement values from file
         motion_df = pd.read_table(self.inputs.motion_file)
-        if 'framewise_displacement_filtered' in motion_df.columns:
-            fd = motion_df['framewise_displacement_filtered'].values
+        if any(col.startswith('framewise_displacement_filtered') for col in motion_df.columns):
+            fd = get_col(motion_df, 'framewise_displacement_filtered').values
         else:
-            fd = motion_df['framewise_displacement'].values
+            fd = get_col(motion_df, 'framewise_displacement').values
 
         with h5py.File(self._results['qc_file'], 'w') as dcan:
             for thresh in np.linspace(0, 1, 101):

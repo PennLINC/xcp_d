@@ -90,6 +90,7 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory):
             density='32k',
             desc=None,
             suffix='sphere',
+            raise_empty=True,
         )
     )
     left_surf = str(
@@ -100,6 +101,7 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory):
             density='32k',
             desc=None,
             suffix='sphere',
+            raise_empty=True,
         )
     )
 

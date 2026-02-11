@@ -296,14 +296,18 @@ class ExecutiveSummary:
 
         self.task_files_ = task_files
 
-    def generate_report(self, out_file=None):
+    def generate_report(self, out_file=None, parameters_hash=None):
         """Generate the report."""
         logs_path = Path(self.xcpd_path) / 'logs'
         if out_file is None:
+            prefix = f'sub-{self.subject_id}'
             if self.session_id:
-                out_file = f'sub-{self.subject_id}_ses-{self.session_id}_executive_summary.html'
-            else:
-                out_file = f'sub-{self.subject_id}_executive_summary.html'
+                prefix = f'{prefix}_ses-{self.session_id}'
+
+            if parameters_hash:
+                prefix = f'{prefix}_hash-{parameters_hash}'
+
+            out_file = f'{prefix}_executive_summary.html'
 
             out_file = os.path.join(self.output_dir, out_file)
 
@@ -392,7 +396,8 @@ class FormatForBrainSwipes(SimpleInterface):
 
     def _run_interface(self, runtime):
         input_files = self.inputs.in_files
-        assert len(input_files) == 9, 'There must be 9 input files.'
+        if len(input_files) != 9:
+            raise ValueError(f'There must be 9 input files, got {len(input_files)}.')
         idx = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         widths, rows = [], []
         for i_row in range(3):
@@ -524,6 +529,8 @@ def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
         annotate=False,
         vmin=vmin,
         vmax=vmax,
+        colorbar=False,
+        black_bg=True,
     )
 
     # Load the surface mesh (GIFTI format)

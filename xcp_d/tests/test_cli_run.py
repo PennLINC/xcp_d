@@ -6,8 +6,12 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from niworkflows.utils.testing import generate_bids_skeleton
 
+from xcp_d import config
 from xcp_d.cli import parser
+from xcp_d.data import load as load_data
+from xcp_d.tests.test_config import _reset_config
 from xcp_d.tests.utils import modified_environ
 
 build_log = logging.getLogger()
@@ -54,7 +58,10 @@ def base_opts():
         'smoothing': 'auto',
         'combine_runs': 'auto',
         'output_type': 'auto',
+        'output_layout': 'bids',
+        'output_run_wise_correlations': 'auto',
         'fs_license_file': None,
+        'skip_outputs': [],
     }
     opts = FakeOptions(**opts_dict)
     return opts
@@ -378,6 +385,7 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
     assert opts.min_coverage == 0.4
     assert opts.smoothing == 0
     assert opts.report_output_level == 'root'
+    assert opts.correlation_lengths == ['all']  # Should be a list, not a string
 
 
 def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
@@ -399,6 +407,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     assert "'--min-coverage' is required for 'none' mode." in stderr
     assert "'--motion-filter-type' is required for 'none' mode." in stderr
     assert "'--nuisance-regressors' is required for 'none' mode." in stderr
+    assert "'--output-run-wise-correlations' (y or n) is required for 'none' mode." in stderr
     assert "'--output-type' is required for 'none' mode." in stderr
     assert "'--smoothing' is required for 'none' mode." in stderr
     assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
@@ -413,6 +422,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     opts.linc_qc = False
     opts.min_coverage = 0.5
     opts.motion_filter_type = 'none'
+    opts.output_run_wise_correlations = False
     opts.output_type = 'censored'
     opts.params = '36P'
     opts.process_surfaces = False
@@ -426,8 +436,33 @@ def test_validate_parameters_other_mode(base_opts, base_parser, capsys):
     opts = deepcopy(base_opts)
     opts.mode = 'other'
 
-    with pytest.raises(AssertionError, match='Unsupported mode "other"'):
+    with pytest.raises(ValueError, match='Unsupported mode "other"'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+
+@pytest.mark.parametrize(
+    ('invalid_opt', 'invalid_val', 'expected_match'),
+    [
+        ('abcc_qc', 'invalid', 'Invalid abcc_qc'),
+        ('combine_runs', 'invalid', 'Invalid combine_runs'),
+        ('despike', 'invalid', 'Invalid despike'),
+        ('file_format', 'invalid', 'Invalid file_format'),
+        ('linc_qc', 'invalid', 'Invalid linc_qc'),
+        ('output_layout', 'invalid', 'Invalid output_layout'),
+        ('output_run_wise_correlations', 'invalid', 'Invalid output_run_wise_correlations'),
+        ('output_type', 'invalid', 'Invalid output_type'),
+        ('process_surfaces', 'invalid', 'Invalid process_surfaces'),
+    ],
+)
+def test_validate_parameters_invalid_option_values(
+    base_opts, base_parser, invalid_opt, invalid_val, expected_match
+):
+    """Test parser._validate_parameters raises ValueError for invalid option values."""
+    opts = deepcopy(base_opts)
+    setattr(opts, invalid_opt, invalid_val)
+
+    with pytest.raises(ValueError, match=expected_match):
+        parser._validate_parameters(opts, build_log, parser=base_parser)
 
 
 def test_build_parser_01(tmp_path_factory):
@@ -711,3 +746,184 @@ def test_build_parser_06(tmp_path_factory, mode, file_format, expectation):
     opts = parser._validate_parameters(opts=opts, build_log=build_log, parser=parser_obj)
 
     assert opts.file_format == expectation
+
+
+def test_parse_args_01(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-to-all mapping."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_all.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_01')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [['01', '', ['V02', 'V03', 'V04']]]
+    _reset_config()
+
+
+def test_parse_args_02(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-to-one mapping."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_to_one.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_02')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [
+        ['01', 'V02', ['V02']],
+        ['01', 'V03', ['V03']],
+        ['01', 'V04', ['V04']],
+    ]
+    _reset_config()
+
+
+def test_parse_args_03(tmp_path_factory):
+    """Test parser._build_parser with nibabies input type and one-anat-session mapping."""
+    skeleton = load_data('tests/skeletons/nibabies_longitudinal_one_anat_session.yml')
+    tmpdir = tmp_path_factory.mktemp('test_parse_args_03')
+    bids_dir = tmpdir / 'bids'
+    generate_bids_skeleton(str(bids_dir), str(skeleton))
+    out_dir = tmpdir / 'out'
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    # Parameters for nibabies input type
+    base_args = [
+        str(bids_dir),
+        str(out_dir),
+        'participant',
+        '--mode',
+        'hbcd',
+        '--motion-filter-type',
+        'lp',
+        '--band-stop-min',
+        '10',
+        '--input-type',
+        'nibabies',
+    ]
+    parser.parse_args(args=base_args, namespace=None)
+    assert config.execution.fmri_dir == bids_dir
+    assert config.execution.output_dir == out_dir
+    assert config.execution.processing_list == [['01', 'V02', ['V02', 'V03', 'V04']]]
+    _reset_config()
+
+
+def test_validate_parameters_skip_alff(base_opts, base_parser):
+    """Test parser._validate_parameters with --skip alff option."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['alff']
+    opts.bandpass_filter = True
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert 'alff' in opts.skip_outputs
+
+
+def test_validate_parameters_skip_reho(base_opts, base_parser):
+    """Test parser._validate_parameters with --skip reho option."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['reho']
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert 'reho' in opts.skip_outputs
+
+
+def test_validate_parameters_skip_parcellation(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters with --skip parcellation option."""
+    caplog.set_level(logging.INFO)
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['parcellation']
+    opts.atlases = ['Glasser', 'Gordon']
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.atlases == []
+    assert 'Skipping parcellation as requested' in caplog.text
+
+
+def test_validate_parameters_skip_connectivity(base_opts, base_parser, caplog):
+    """Test parser._validate_parameters with --skip connectivity option."""
+    caplog.set_level(logging.INFO)
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['connectivity']
+    opts.atlases = ['Glasser']
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.atlases == ['Glasser']  # Atlases preserved for time series extraction
+    assert opts.correlation_lengths == []  # correlation_lengths set to empty
+    assert 'Skipping connectivity as requested' in caplog.text
+
+
+def test_validate_parameters_skip_multiple(base_opts, base_parser):
+    """Test parser._validate_parameters with multiple --skip options."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['alff', 'reho', 'connectivity']
+    opts.atlases = ['Glasser']
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert 'alff' in opts.skip_outputs
+    assert 'reho' in opts.skip_outputs
+    assert 'connectivity' in opts.skip_outputs
+    assert opts.atlases == ['Glasser']  # Atlases preserved for time series extraction
+    assert opts.correlation_lengths == []  # correlation_lengths set to empty
+
+
+def test_validate_parameters_skip_empty_list(base_opts, base_parser):
+    """Test parser._validate_parameters with empty skip_outputs list."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = []
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.skip_outputs == []
+    assert opts.atlases == ['Glasser']  # Should not be modified
+
+
+def test_validate_parameters_skip_parcellation_no_atlases(base_opts, base_parser):
+    """Test parser._validate_parameters with --skip parcellation when no atlases set."""
+    opts = deepcopy(base_opts)
+    opts.skip_outputs = ['parcellation']
+    opts.atlases = []
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.atlases == []
+    # Should not log anything since atlases is already empty

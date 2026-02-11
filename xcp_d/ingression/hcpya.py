@@ -13,22 +13,46 @@ import os
 import re
 
 import nibabel as nb
-import pandas as pd
 from nipype import logging
 
 from xcp_d.data import load as load_data
 from xcp_d.ingression.utils import (
+    BIDS_VERSION,
+    TEMPLATE_SPACE,
     collect_anatomical_files,
     collect_hcp_confounds,
     collect_meshes,
     collect_morphs,
     copy_files_in_dict,
+    get_identity_transform_destinations,
     plot_bbreg,
     write_json,
+    write_scans_tsv,
 )
 from xcp_d.utils.filemanip import ensure_list
 
 LOGGER = logging.getLogger('nipype.utils')
+
+# Folder names in HCP layout that are not subject identifiers.
+HCP_NON_SUBJECT_FOLDER_NAMES = [
+    'BiasField',
+    'Native',
+    'ROIs',
+    'Results',
+    'T1w',
+    'T1w_restore',
+    'T1w_restore_brain',
+    'T2w',
+    'T2w_restore',
+    'T2w_restore_brain',
+    'aparc',
+    'aparc.a2009s+aseg',
+    'brainmask_fs',
+    'fsaverage_LR32k',
+    'ribbon',
+    'wmparc',
+    'xfms',
+]
 
 
 def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
@@ -59,27 +83,6 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
     in_dir = os.path.abspath(in_dir)
     out_dir = os.path.abspath(out_dir)
 
-    # a list of folders that are not subject identifiers
-    EXCLUDE_LIST = [
-        'BiasField',
-        'Native',
-        'ROIs',
-        'Results',
-        'T1w',
-        'T1w_restore',
-        'T1w_restore_brain',
-        'T2w',
-        'T2w_restore',
-        'T2w_restore_brain',
-        'aparc',
-        'aparc.a2009s+aseg',
-        'brainmask_fs',
-        'fsaverage_LR32k',
-        'ribbon',
-        'wmparc',
-        'xfms',
-    ]
-
     if participant_ids is None:
         subject_folders = sorted(
             glob.glob(os.path.join(in_dir, '*', '*', '*', '*R.pial.32k_fs_LR.surf.gii'))
@@ -91,7 +94,10 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
         all_subject_ids = []
         for subject_id in participant_ids:
             subject_id = subject_id.split('.')[0]
-            if subject_id not in all_subject_ids and subject_id not in EXCLUDE_LIST:
+            if (
+                subject_id not in all_subject_ids
+                and subject_id not in HCP_NON_SUBJECT_FOLDER_NAMES
+            ):
                 all_subject_ids.append(f'sub-{subject_id}')
 
         participant_ids = all_subject_ids
@@ -108,6 +114,24 @@ def convert_hcp2bids(in_dir, out_dir, participant_ids=None):
             in_dir=in_dir,
             out_dir=out_dir,
             sub_ent=subject_id,
+        )
+
+    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
+    if not os.path.isfile(dataset_description_fmriprep):
+        write_json(
+            {
+                'Name': 'HCP',
+                'BIDSVersion': BIDS_VERSION,
+                'DatasetType': 'derivative',
+                'GeneratedBy': [
+                    {
+                        'Name': 'HCP',
+                        'Version': 'unknown',
+                        'CodeURL': 'https://github.com/Washington-University/HCPpipelines',
+                    },
+                ],
+            },
+            dataset_description_fmriprep,
         )
 
     return participant_ids
@@ -142,7 +166,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
                     │   │   ├── *_<TASK_ID><RUN_ID>_<DIR_ID>_Atlas_MSMAll.dtseries.nii
                     │   │   ├── Movement_Regressors.txt
                     │   │   ├── Movement_AbsoluteRMS.txt
-                    │   │   └── brainmask_fs.2.0.nii.gz
+                    │   │   └── brainmask_fs.2[.0].nii.gz
                     ├── fsaverage_LR32k
                     │   ├── L.pial.32k_fs_LR.surf.gii
                     │   ├── R.pial.32k_fs_LR.surf.gii
@@ -165,19 +189,22 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
                     ├── brainmask_fs.nii.gz
                     └── ribbon.nii.gz
     """
-    assert isinstance(in_dir, str)
-    assert os.path.isdir(in_dir), f'Folder DNE: {in_dir}'
-    assert isinstance(out_dir, str)
-    assert isinstance(sub_ent, str)
+    if not isinstance(in_dir, str):
+        raise TypeError('in_dir must be a string')
+    if not os.path.isdir(in_dir):
+        raise FileNotFoundError(f'Folder DNE: {in_dir}')
+    if not isinstance(out_dir, str):
+        raise TypeError('out_dir must be a string')
+    if not isinstance(sub_ent, str):
+        raise TypeError('sub_ent must be a string')
 
     sub_id = sub_ent.replace('sub-', '')
     # Reset the subject entity in case the sub- prefix wasn't included originally.
     sub_ent = f'sub-{sub_id}'
     subses_ents = sub_ent
 
-    VOLSPACE = 'MNI152NLin6Asym'
-    volspace_ent = f'space-{VOLSPACE}'
-    RES_ENT = 'res-2'
+    volspace_ent = f'space-{TEMPLATE_SPACE}'
+    res_ent = 'res-2'
 
     anat_dir_orig = os.path.join(in_dir, sub_id, 'MNINonLinear')
     func_dir_orig = os.path.join(anat_dir_orig, 'Results')
@@ -186,42 +213,22 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     func_dir_bids = os.path.join(subject_dir_bids, 'func')
     work_dir = os.path.join(subject_dir_bids, 'work')
 
-    dataset_description_fmriprep = os.path.join(out_dir, 'dataset_description.json')
-
-    if os.path.isfile(dataset_description_fmriprep):
-        LOGGER.info('Converted dataset already exists. Skipping conversion.')
-        return
-
     os.makedirs(anat_dir_bids, exist_ok=True)
     os.makedirs(func_dir_bids, exist_ok=True)
     os.makedirs(work_dir, exist_ok=True)
 
     # Get masks to be used to extract confounds
-    csf_mask = str(load_data(f'masks/{volspace_ent}_{RES_ENT}_label-CSF_mask.nii.gz'))
-    wm_mask = str(load_data(f'masks/{volspace_ent}_{RES_ENT}_label-WM_mask.nii.gz'))
+    csf_mask = str(load_data(f'masks/{volspace_ent}_{res_ent}_label-CSF_mask.nii.gz'))
+    wm_mask = str(load_data(f'masks/{volspace_ent}_{res_ent}_label-WM_mask.nii.gz'))
 
-    # A dictionary of mappings from HCP derivatives to fMRIPrep derivatives.
-    # Values will be lists, to allow one-to-many mappings.
     copy_dictionary = {}
-
-    # The identity xform is used in place of any actual ones.
     identity_xfm = str(load_data('transform/itkIdentityTransform.txt'))
-    copy_dictionary[identity_xfm] = []
-
-    t1w_to_template_fmriprep = os.path.join(
-        anat_dir_bids,
-        f'{subses_ents}_from-T1w_to-{VOLSPACE}_mode-image_xfm.txt',
+    copy_dictionary[identity_xfm] = get_identity_transform_destinations(
+        anat_dir_bids, subses_ents, TEMPLATE_SPACE
     )
-    copy_dictionary[identity_xfm].append(t1w_to_template_fmriprep)
-
-    template_to_t1w_fmriprep = os.path.join(
-        anat_dir_bids,
-        f'{subses_ents}_from-{VOLSPACE}_to-T1w_mode-image_xfm.txt',
-    )
-    copy_dictionary[identity_xfm].append(template_to_t1w_fmriprep)
 
     # Collect anatomical files to copy
-    base_anatomical_ents = f'{subses_ents}_{volspace_ent}_{RES_ENT}'
+    base_anatomical_ents = f'{subses_ents}_{volspace_ent}_{res_ent}'
     anat_dict = collect_anatomical_files(anat_dir_orig, anat_dir_bids, base_anatomical_ents)
     copy_dictionary = {**copy_dictionary, **anat_dict}
 
@@ -262,21 +269,25 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         sbref_orig = os.path.join(task_dir_orig, 'SBRef_dc.nii.gz')
         boldref_fmriprep = os.path.join(
             func_dir_bids,
-            f'{func_prefix}_{volspace_ent}_{RES_ENT}_boldref.nii.gz',
+            f'{func_prefix}_{volspace_ent}_{res_ent}_boldref.nii.gz',
         )
         copy_dictionary[sbref_orig] = [boldref_fmriprep]
 
         bold_nifti_orig = os.path.join(task_dir_orig, f'{base_task_name}.nii.gz')
         bold_nifti_fmriprep = os.path.join(
             func_dir_bids,
-            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.nii.gz',
+            f'{func_prefix}_{volspace_ent}_{res_ent}_desc-preproc_bold.nii.gz',
         )
         copy_dictionary[bold_nifti_orig] = [bold_nifti_fmriprep]
 
         boldmask_nifti_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.nii.gz')
+        # Sometimes it's named brainmask_fs.2.0.nii.gz instead.
+        if not os.path.isfile(boldmask_nifti_orig):
+            boldmask_nifti_orig = os.path.join(task_dir_orig, 'brainmask_fs.2.0.nii.gz')
+
         boldmask_nifti_fmriprep = os.path.join(
             func_dir_bids,
-            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-brain_mask.nii.gz',
+            f'{func_prefix}_{volspace_ent}_{res_ent}_desc-brain_mask.nii.gz',
         )
         copy_dictionary[boldmask_nifti_orig] = [boldmask_nifti_fmriprep]
 
@@ -296,7 +307,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
         bold_mask_fmriprep = os.path.join(
             func_dir_bids,
-            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-brain_mask.nii.gz',
+            f'{func_prefix}_{volspace_ent}_{res_ent}_desc-brain_mask.nii.gz',
         )
         copy_dictionary[bold_mask_orig] = [bold_mask_fmriprep]
 
@@ -307,7 +318,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
         }
         bold_nifti_json_fmriprep = os.path.join(
             func_dir_bids,
-            f'{func_prefix}_{volspace_ent}_{RES_ENT}_desc-preproc_bold.json',
+            f'{func_prefix}_{volspace_ent}_{res_ent}_desc-preproc_bold.json',
         )
         write_json(bold_metadata, bold_nifti_json_fmriprep)
 
@@ -317,7 +328,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
                 'space': 'HCP grayordinates',
                 'surface': 'fsLR',
                 'surface_density': '32k',
-                'volume': 'MNI152NLin6Asym',
+                'volume': TEMPLATE_SPACE,
             },
         )
         bold_cifti_json_fmriprep = os.path.join(
@@ -333,7 +344,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
             prefix=func_prefix,
             work_dir=work_dir,
             bold_file=bold_nifti_orig,
-            brainmask_file=os.path.join(task_dir_orig, 'brainmask_fs.2.nii.gz'),
+            brainmask_file=boldmask_nifti_orig,
             csf_mask_file=csf_mask,
             wm_mask_file=wm_mask,
         )
@@ -363,32 +374,6 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
     copy_files_in_dict(copy_dictionary)
     LOGGER.info('Finished copying files')
 
-    # Write the dataset description out last
-    dataset_description_dict = {
-        'Name': 'HCP',
-        'BIDSVersion': '1.9.0',
-        'DatasetType': 'derivative',
-        'GeneratedBy': [
-            {
-                'Name': 'HCP',
-                'Version': 'unknown',
-                'CodeURL': 'https://github.com/Washington-University/HCPpipelines',
-            },
-        ],
-    }
-
-    if not os.path.isfile(dataset_description_fmriprep):
-        write_json(dataset_description_dict, dataset_description_fmriprep)
-
-    # Write out the mapping from HCP to fMRIPrep
     copy_dictionary = {**copy_dictionary, **morphometry_dict}
-    scans_dict = {}
-    for key, values in copy_dictionary.items():
-        for item in values:
-            scans_dict[item] = key
-
-    scans_tuple = tuple(scans_dict.items())
-    scans_df = pd.DataFrame(scans_tuple, columns=['filename', 'source_file'])
-    scans_tsv = os.path.join(subject_dir_bids, f'{subses_ents}_scans.tsv')
-    scans_df.to_csv(scans_tsv, sep='\t', index=False)
+    write_scans_tsv(copy_dictionary, subject_dir_bids, subses_ents, out_dir=out_dir)
     LOGGER.info('Conversion completed')
