@@ -79,6 +79,7 @@ Logging
 -------
 .. autoclass:: loggers
    :members:
+   :no-index:
 
 Other responsibilities
 ----------------------
