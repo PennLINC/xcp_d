@@ -1,5 +1,5 @@
 {
-    "BIDSVersion": "1.8.0",
+    "BIDSVersion": "1.11.0",
     "Density": {
         "32k": "2 mm3 subcortical data."
     },

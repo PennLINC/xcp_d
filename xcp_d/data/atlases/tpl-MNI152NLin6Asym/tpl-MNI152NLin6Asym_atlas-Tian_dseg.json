@@ -1,5 +1,5 @@
 {
-    "BIDSVersion": "1.8.0",
+    "BIDSVersion": "1.11.0",
     "Description": "The 50-node Tian subcortical atlas.",
     "Name": "Tian",
     "ReferencesAndLinks": [

@@ -1,5 +1,5 @@
 {
-    "BIDSVersion": "1.8.0",
+    "BIDSVersion": "1.11.0",
     "Description": "The subcortical labels from the HCP CIFTI template. This should match 'tpl-MNI152NLin6Asym_res-02_atlas-HCP_dseg.nii.gz' from templateflow.",
     "Name": "HCP CIFTI Subcortical",
     "ReferencesAndLinks": [

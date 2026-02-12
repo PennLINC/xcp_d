@@ -1,5 +1,5 @@
 {
-    "BIDSVersion": "1.8.0",
+    "BIDSVersion": "1.11.0",
     "Description": "The 333-node Gordon cortical atlas.",
     "Name": "Gordon",
     "ReferencesAndLinks": [
