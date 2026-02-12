@@ -11,7 +11,6 @@ from num2words import num2words
 from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.doc import fill_doc
-from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.workflows.bold.connectivity import init_functional_connectivity_nifti_wf
 from xcp_d.workflows.bold.metrics import init_alff_wf, init_reho_nifti_wf
 from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
@@ -38,6 +37,7 @@ def init_postprocess_nifti_wf(
     n_runs,
     has_multiple_runs,
     exact_scans,
+    mem_gb,
     name='bold_postprocess_wf',
 ):
     """Organize the bold processing workflow.
@@ -71,6 +71,8 @@ def init_postprocess_nifti_wf(
                     cifti=False,
                 )
 
+                from xcp_d.utils.utils import _create_mem_gb
+
                 wf = init_postprocess_nifti_wf(
                     bold_file=bold_file,
                     head_radius=50.,
@@ -80,6 +82,7 @@ def init_postprocess_nifti_wf(
                     n_runs=1,
                     has_multiple_runs=False,
                     exact_scans=[],
+                    mem_gb=_create_mem_gb(bold_file),
                     name="nifti_postprocess_wf",
                 )
 
@@ -97,6 +100,8 @@ def init_postprocess_nifti_wf(
         Whether there are multiple runs for this task or not.
         Interacts with the output_run_wise_correlations parameter.
     %(exact_scans)s
+    mem_gb : :obj:`dict`
+        Dictionary of memory allocations with keys ``'bold'`` and ``'volume'``.
     %(name)s
         Default is "nifti_postprocess_wf".
 
@@ -215,7 +220,7 @@ the following post-processing was performed.
         name='outputnode',
     )
 
-    mem_gbx = _create_mem_gb(bold_file)
+    mem_gbx = mem_gb
 
     downcast_data = pe.Node(
         ConvertTo32(),
@@ -240,6 +245,7 @@ the following post-processing was performed.
         TR=TR,
         exact_scans=exact_scans,
         head_radius=head_radius,
+        mem_gb=mem_gbx,
     )
 
     workflow.connect([
@@ -271,7 +277,7 @@ the following post-processing was performed.
     ])  # fmt:skip
 
     if despike:
-        despike_wf = init_despike_wf(TR=TR)
+        despike_wf = init_despike_wf(TR=TR, mem_gb=mem_gbx)
 
         workflow.connect([
             (prepare_confounds_wf, despike_wf, [

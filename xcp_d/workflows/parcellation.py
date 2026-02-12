@@ -385,7 +385,7 @@ def init_parcellate_cifti_wf(
         ),
         name='parcellate_data',
         iterfield=['atlas_label'],
-        mem_gb=mem_gb['bold'],
+        mem_gb=2 * mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     workflow.connect([
