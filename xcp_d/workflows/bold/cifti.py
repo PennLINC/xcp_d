@@ -65,8 +65,9 @@ def init_postprocess_cifti_wf(
                     layout=layout,
                     bold_file=bold_file,
                     file_format="cifti",
-                    target_space="fsLR",
+                    target_space="MNI152NLin2009cAsym",
                 )
+                run_data['confounds'] = None
 
                 from xcp_d.utils.utils import _create_mem_gb
 

@@ -46,7 +46,7 @@ def init_qc_report_wf(
                 wf = init_qc_report_wf(
                     TR=0.5,
                     head_radius=50,
-                    mem_gb={"bold": 1.0},
+                    mem_gb={"bold": 1.0, "volume": 0.1},
                     name="qc_report_wf",
                 )
 

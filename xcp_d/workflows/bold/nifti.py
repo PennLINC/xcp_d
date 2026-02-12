@@ -70,6 +70,7 @@ def init_postprocess_nifti_wf(
                     file_format="nifti",
                     target_space="MNI152NLin2009cAsym",
                 )
+                run_data['confounds'] = None
 
                 from xcp_d.utils.utils import _create_mem_gb
 

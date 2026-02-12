@@ -116,7 +116,7 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
             from xcp_d.workflows.base import init_single_subject_wf
 
             with mock_config():
-                wf = init_single_subject_wf("01", "01", ["01"])
+                wf = init_single_subject_wf("01", "", [""])
 
     Parameters
     ----------
