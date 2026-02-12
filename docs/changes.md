@@ -6,7 +6,7 @@
 
 * Change smoothing surf from 'sphere' to 'midthickness' by @joey-scanga in https://github.com/PennLINC/xcp_d/pull/1565
 
-## New Contributors
+### New Contributors
 
 * @joey-scanga made their first contribution in https://github.com/PennLINC/xcp_d/pull/1565
 
