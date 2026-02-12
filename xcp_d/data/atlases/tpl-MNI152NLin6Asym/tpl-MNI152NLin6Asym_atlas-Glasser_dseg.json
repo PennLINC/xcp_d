@@ -23,8 +23,8 @@
     },
     "SpatialReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-01_T1w.nii.gz",
     "community_mesulam": {
-        "Description": "Network assignments from the Mesulam 2.00 (url:https://psycnet.apa.org/record/2.00-07493-001) 4 levels of laminar differentiation, applied to the Glasser atlas per Paquola 2019 (doi:10.1371/journal.pbio.3000284).",
-        "LongName": "Mesulam 2.00 Laminar Differentiation Level Assignment",
+        "Description": "Network assignments from the Mesulam 2000 (url:https://psycnet.apa.org/record/2000-07493-001) 4 levels of laminar differentiation, applied to the Glasser atlas per Paquola 2019 (doi:10.1371/journal.pbio.3000284).",
+        "LongName": "Mesulam 2000 Laminar Differentiation Level Assignment",
         "Levels": {
             "heteromodal": "Hetermodal network",
             "idiotypic": "Idiotypic network",
