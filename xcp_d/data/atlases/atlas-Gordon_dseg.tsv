@@ -1,4 +1,4 @@
-index	label	cifti_label	network_label
+index	name	cifti_label	network_label
 1	L_Default_1	Parcel_1	Default
 2	L_SMhand_1	Parcel_2	SMhand
 3	L_SMmouth_1	Parcel_3	SMmouth
