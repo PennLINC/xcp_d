@@ -484,7 +484,13 @@ def init_execsummary_functional_plots_wf(
 
             with mock_config():
                 wf = init_execsummary_functional_plots_wf(
-                    preproc_nifti=None,
+                    preproc_nifti=str(
+                        config.execution.fmri_dir / "sub-01" / "func" /
+                        (
+                            "sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_"
+                            "desc-preproc_bold.nii.gz"
+                        )
+                    ),
                     t1w_available=True,
                     t2w_available=True,
                     mem_gb={"bold": 1},

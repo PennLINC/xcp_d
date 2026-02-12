@@ -63,9 +63,9 @@ def init_postprocess_cifti_wf(
 
                 run_data = collect_run_data(
                     layout=layout,
-                    input_type="fmriprep",
                     bold_file=bold_file,
-                    cifti=True,
+                    file_format="cifti",
+                    target_space="fsLR",
                 )
 
                 from xcp_d.utils.utils import _create_mem_gb

@@ -66,9 +66,9 @@ def init_postprocess_nifti_wf(
 
                 run_data = collect_run_data(
                     layout=layout,
-                    input_type="fmriprep",
                     bold_file=bold_file,
-                    cifti=False,
+                    file_format="nifti",
+                    target_space="MNI152NLin2009cAsym",
                 )
 
                 from xcp_d.utils.utils import _create_mem_gb

@@ -274,7 +274,7 @@ def init_reho_cifti_wf(
             with mock_config():
                 wf = init_reho_cifti_wf(
                     name_source="/path/to/bold.dtseries.nii",
-                    mem_gb={"volume": 0.1},
+                    mem_gb={"bold": 0.1},
                     name="cifti_reho_wf",
                 )
 
@@ -442,7 +442,7 @@ def init_reho_nifti_wf(name_source, mem_gb, name='reho_nifti_wf'):
             with mock_config():
                 wf = init_reho_nifti_wf(
                     name_source="/path/to/bold.nii.gz",
-                    mem_gb={"volume": 0.1},
+                    mem_gb={"bold": 0.1},
                     name="nifti_reho_wf",
                 )
 
