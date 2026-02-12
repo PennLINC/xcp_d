@@ -587,31 +587,24 @@ External Atlases
 While *XCP-D* comes with many built-in parcellations,
 we understand that many users will want to use different ones.
 
-As long as the parcellation is organized in a BIDS-Atlas dataset and is in
+As long as the parcellation is organized according to BIDS v1.11.0 and is in
 fsLR-32k space (for CIFTI processing) or
 MNIInfant, MNI152NLin6Asym, or MNI152NLin2009cAsym space (for NIfTI processing),
 you can use it with *XCP-D*.
 
-.. warning::
-   BIDS Extension Proposal 38 (Atlas Specification) has not been integrated in BIDS yet,
-   so the organization and naming for atlas datasets may change in the future.
-
-   We have attempted to follow the proposed structure in *XCP-D*,
-   but we cannot guarantee that this will not change.
-
 .. tip::
    The main elements from the BIDS-Atlas dataset that *XCP-D* uses are:
 
-   1. There must be a dataset_description.json file with DatasetType set to "atlas".
+   1. There must be a dataset_description.json file with DatasetType set to "derivative".
    2. The atlas metadata files must have the same entities as the atlas image files,
-      as PyBIDS does not support the inheritance principle when querying BIDS-Atlas datasets (yet).
+      as PyBIDS does not support the inheritance principle when querying atlas datasets (yet).
    3. There must be a TSV file for the atlas, with "index" and "name" columns.
 
 To do this, use the ``--datasets`` and ``--atlases`` parameters.
 The ``--datasets`` parameter should point to the directory containing the BIDS-Atlas dataset,
 and the ``--atlases`` parameter should include the names of the atlases in the dataset to use.
 
-For example, consider a scenario where you have two BIDS-Atlas datasets, one containing all of the
+For example, consider a scenario where you have two BIDS atlas datasets, one containing all of the
 Schaefer 2018 resolutions and one containing the AAL atlas.
 These datasets are in ``/data/atlases/schaefer`` and ``/data/atlases/aal``, respectively.
 The file structure for these two datasets might look like this:
@@ -621,25 +614,25 @@ The file structure for these two datasets might look like this:
    /data/atlases/
       schaefer/
          dataset_description.json
-         atlas-Schaefer100/
-            atlas-Schaefer100_dseg.tsv
-            atlas-Schaefer100_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer100_space-fsLR_den-32k_dseg.json
-         atlas-Schaefer200/
-            atlas-Schaefer200_dseg.tsv
-            atlas-Schaefer200_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer200_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer100_dseg.tsv
+         atlas-Schaefer200_dseg.tsv
          ...
-         atlas-Schaefer1000/
-            atlas-Schaefer1000_dseg.tsv
-            atlas-Schaefer1000_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-Schaefer1000_space-fsLR_den-32k_dseg.json
+         atlas-Schaefer1000_dseg.tsv
+         tpl-fsLR/
+
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.json
+            ...
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.json
       aal/
          dataset_description.json
-         atlas-AAL/
-            atlas-AAL_dseg.tsv
-            atlas-AAL_space-fsLR_den-32k_dseg.dlabel.nii
-            atlas-AAL_space-fsLR_den-32k_dseg.json
+         atlas-AAL_dseg.tsv
+         tpl-fsLR/
+            tpl-fsLR_atlas-AAL_den-32k_dseg.dlabel.nii
+            tpl-fsLR_atlas-AAL_den-32k_dseg.json
 
 You may want to only apply the Schaefer100 atlas from the ``schaefer`` dataset and the AAL atlas
 from the ``aal`` dataset, along with one of *XCP-D*'s built-in atlases (``4S156Parcels``).
@@ -662,7 +655,7 @@ If the atlases are found, then they will be used for parcellation.
 
 .. important::
 
-   Atlas names must be unique across BIDS-Atlas datasets.
+   Atlas names must be unique across BIDS atlas datasets.
    If two atlases have the same name, *XCP-D* will raise an error.
 
 
