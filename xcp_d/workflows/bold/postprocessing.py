@@ -52,6 +52,7 @@ def init_prepare_confounds_wf(
     TR,
     exact_scans,
     head_radius,
+    mem_gb,
     name='prepare_confounds_wf',
 ):
     """Prepare confounds.
@@ -73,6 +74,7 @@ def init_prepare_confounds_wf(
                     TR=0.8,
                     exact_scans=[],
                     head_radius=70,
+                    mem_gb={"bold": 1.0},
                     name="prepare_confounds_wf",
                 )
 
@@ -82,6 +84,8 @@ def init_prepare_confounds_wf(
     %(exact_scans)s
     %(head_radius)s
         This will already be estimated before this workflow.
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "prepare_confounds_wf".
 
@@ -272,7 +276,7 @@ def init_prepare_confounds_wf(
         remove_dummy_scans = pe.Node(
             RemoveDummyVolumes(),
             name='remove_dummy_scans',
-            mem_gb=4,
+            mem_gb=2 * mem_gb['bold'],
         )
 
         workflow.connect([
@@ -429,7 +433,7 @@ def init_prepare_confounds_wf(
 
 
 @fill_doc
-def init_despike_wf(TR, name='despike_wf'):
+def init_despike_wf(TR, mem_gb, name='despike_wf'):
     """Despike BOLD data with AFNI's 3dDespike.
 
     Despiking truncates large spikes in the BOLD times series.
@@ -451,12 +455,15 @@ def init_despike_wf(TR, name='despike_wf'):
             with mock_config():
                 wf = init_despike_wf(
                     TR=0.8,
+                    mem_gb={"bold": 1.0},
                     name="despike_wf",
                 )
 
     Parameters
     ----------
     %(TR)s
+    mem_gb : :obj:`dict`
+        Memory size in GB to use for each of the nodes.
     %(name)s
         Default is "despike_wf".
 
@@ -480,7 +487,7 @@ def init_despike_wf(TR, name='despike_wf'):
     despike3d = pe.Node(
         DespikePatch(outputtype='NIFTI_GZ', args='-nomask -NEW'),
         name='despike3d',
-        mem_gb=4,
+        mem_gb=2 * mem_gb['bold'],
         n_procs=omp_nthreads,
     )
 
@@ -494,7 +501,7 @@ and converted back to CIFTI format.
         convert_to_nifti = pe.Node(
             CiftiConvert(target='to', num_threads=config.nipype.omp_nthreads),
             name='convert_to_nifti',
-            mem_gb=4,
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -506,7 +513,7 @@ and converted back to CIFTI format.
         convert_to_cifti = pe.Node(
             CiftiConvert(target='from', TR=TR, num_threads=config.nipype.omp_nthreads),
             name='convert_to_cifti',
-            mem_gb=4,
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -696,7 +703,7 @@ approach.
             num_threads=config.nipype.omp_nthreads,
         ),
         name='regress_and_filter_bold',
-        mem_gb=mem_gb['bold'],
+        mem_gb=3 * mem_gb['bold'],
         n_procs=config.nipype.omp_nthreads,
     )
     config.loggers.workflow.debug('Created node for regression and filtering of BOLD data.')
@@ -725,7 +732,7 @@ approach.
     censor_interpolated_data = pe.Node(
         Censor(column='framewise_displacement'),
         name='censor_interpolated_data',
-        mem_gb=mem_gb['bold'],
+        mem_gb=2 * mem_gb['bold'],
     )
     config.loggers.workflow.debug('Created censor node for high-motion volumes.')
 
@@ -858,7 +865,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='cifti_smoothing',
-            mem_gb=mem_gb['bold'],
+            mem_gb=2 * mem_gb['bold'],
             n_procs=config.nipype.omp_nthreads,
         )
 
@@ -866,7 +873,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
         fix_cifti_intent = pe.Node(
             FixCiftiIntent(),
             name='fix_cifti_intent',
-            mem_gb=1,
+            mem_gb=mem_gb['bold'],
         )
         workflow.connect([
             (smooth_data, fix_cifti_intent, [('out_file', 'in_file')]),
@@ -881,7 +888,7 @@ The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str
         smooth_data = pe.Node(
             Smooth(fwhm=smoothing),  # FWHM = kernel size
             name='nifti_smoothing',
-            mem_gb=mem_gb['bold'],
+            mem_gb=2 * mem_gb['bold'],
         )
         workflow.connect([(smooth_data, outputnode, [('out_file', 'smoothed_bold')])])
 

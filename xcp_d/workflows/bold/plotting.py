@@ -46,7 +46,7 @@ def init_qc_report_wf(
                 wf = init_qc_report_wf(
                     TR=0.5,
                     head_radius=50,
-                    mem_gb={"bold": 1.0},
+                    mem_gb={"bold": 1.0, "volume": 0.1},
                     name="qc_report_wf",
                 )
 
@@ -163,7 +163,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_boldmask_to_t1w',
-            mem_gb=mem_gb['volume'],
+            mem_gb=2 * mem_gb['volume'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -185,7 +185,7 @@ def init_qc_report_wf(
                 num_threads=config.nipype.omp_nthreads,
             ),
             name='warp_boldmask_to_mni',
-            mem_gb=mem_gb['volume'],
+            mem_gb=2 * mem_gb['volume'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
@@ -268,7 +268,7 @@ def init_qc_report_wf(
                 template_mask=nlin2009casym_brain_mask,
             ),
             name='make_linc_qc',
-            mem_gb=mem_gb['volume'],
+            mem_gb=2 * mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, make_linc_qc, [
@@ -311,7 +311,7 @@ def init_qc_report_wf(
         make_qc_plots_nipreps = pe.Node(
             QCPlots(TR=TR, head_radius=head_radius),
             name='make_qc_plots_nipreps',
-            mem_gb=mem_gb['bold'] * 2,
+            mem_gb=4 * mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, make_qc_plots_nipreps, [
@@ -410,7 +410,7 @@ def init_qc_report_wf(
         make_qc_plots_es = pe.Node(
             QCPlotsES(TR=TR, standardize=config.execution.confounds_config is None),
             name='make_qc_plots_es',
-            mem_gb=mem_gb['bold'] * 2,
+            mem_gb=4 * mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, make_qc_plots_es, [
@@ -484,7 +484,13 @@ def init_execsummary_functional_plots_wf(
 
             with mock_config():
                 wf = init_execsummary_functional_plots_wf(
-                    preproc_nifti=None,
+                    preproc_nifti=str(
+                        config.execution.fmri_dir / "sub-01" / "func" /
+                        (
+                            "sub-01_task-imagery_run-01_space-MNI152NLin2009cAsym_res-2_"
+                            "desc-preproc_bold.nii.gz"
+                        )
+                    ),
                     t1w_available=True,
                     t2w_available=True,
                     mem_gb={"bold": 1},
@@ -606,7 +612,7 @@ def init_execsummary_functional_plots_wf(
     calculate_mean_bold = pe.Node(
         BinaryMath(expression='np.mean(img, axis=3)'),
         name='calculate_mean_bold',
-        mem_gb=mem_gb['bold'],
+        mem_gb=2 * mem_gb['bold'],
     )
     workflow.connect([
         (mask_preproc_nifti, calculate_mean_bold, [('out_file', 'in_file')]),
@@ -654,7 +660,7 @@ def init_execsummary_functional_plots_wf(
         resample_bold_to_anat = pe.Node(
             ResampleToImage(),
             name=f'resample_bold_to_{anat}',
-            mem_gb=mem_gb['bold'],
+            mem_gb=2 * mem_gb['bold'],
         )
         workflow.connect([
             (inputnode, resample_bold_to_anat, [(anat, 'target_file')]),

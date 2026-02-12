@@ -32,6 +32,7 @@ def init_brainsprite_figures_wf(
     t1w_available,
     t2w_available,
     apply_transform,
+    mem_gb=None,
     name='brainsprite_figures_wf',
 ):
     """Create mosaic and PNG files for executive summary brainsprite.
@@ -61,6 +62,8 @@ def init_brainsprite_figures_wf(
         True if a T2w image is available.
     apply_transform : bool
         Whether to apply the transform to the surfaces.
+    mem_gb : :obj:`dict` or None
+        Memory size in GB. If None, a default of 1 GB per volume is used.
     %(name)s
         Default is "init_brainsprite_figures_wf".
 
@@ -76,6 +79,9 @@ def init_brainsprite_figures_wf(
     rh_pial_surf
     template_to_anat_xfm
     """
+    if mem_gb is None:
+        mem_gb = {'volume': 1}
+
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
@@ -140,7 +146,7 @@ def init_brainsprite_figures_wf(
         plot_slices = pe.Node(
             PlotSlicesForBrainSprite(n_procs=config.nipype.omp_nthreads),
             name=f'plot_slices_{image_type}',
-            mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+            mem_gb=mem_gb['volume'],
             n_procs=config.nipype.omp_nthreads,
         )
         workflow.connect([
