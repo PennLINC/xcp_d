@@ -173,8 +173,8 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
 
         # Check the contents of the labels file
         df = pd.read_table(atlas_info['labels'])
-        if 'label' not in df.columns:
-            raise ValueError(f"'label' column not found in {atlas_info['labels']}")
+        if 'name' not in df.columns:
+            raise ValueError(f"'name' column not found in {atlas_info['labels']}")
 
         if 'index' not in df.columns:
             raise ValueError(f"'index' column not found in {atlas_info['labels']}")

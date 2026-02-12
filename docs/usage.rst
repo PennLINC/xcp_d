@@ -605,7 +605,7 @@ you can use it with *XCP-D*.
    1. There must be a dataset_description.json file with DatasetType set to "atlas".
    2. The atlas metadata files must have the same entities as the atlas image files,
       as PyBIDS does not support the inheritance principle when querying BIDS-Atlas datasets (yet).
-   3. There must be a TSV file for the atlas, with "index" and "label" columns.
+   3. There must be a TSV file for the atlas, with "index" and "name" columns.
 
 To do this, use the ``--datasets`` and ``--atlases`` parameters.
 The ``--datasets`` parameter should point to the directory containing the BIDS-Atlas dataset,

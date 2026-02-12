@@ -86,11 +86,11 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
             bids_filters={},
         )
 
-    # Now there's an image and a TSV, but the TSV doesn't have a "label" column
+    # Now there's an image and a TSV, but the TSV doesn't have a "name" column
     with open(tmpdir / 'atlas-TEST' / 'atlas-TEST_dseg.tsv', 'w') as fo:
         fo.write('index\n1\n')
 
-    with pytest.raises(ValueError, match="'label' column not found"):
+    with pytest.raises(ValueError, match="'name' column not found"):
         atlas.collect_atlases(
             datasets={'test': tmpdir},
             atlases=['TEST'],
