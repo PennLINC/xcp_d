@@ -7,20 +7,8 @@
         "https://github.com/DCAN-Labs/dcan_bold_processing/blob/6a4739bfa4580fd4593f6c786c539ba9c582779b/templates/parcellations/subcortical/fsLR/subcortical.subcortical.32k_fs_LR.dlabel.nii"
     ],
     "Resolution": {
-        "01": {
-            "zooms": [
-                "1.0",
-                "1.0",
-                "1.0"
-            ]
-        },
-        "02": {
-            "zooms": [
-                "2.0",
-                "2.0",
-                "2.0"
-            ]
-        }
+        "01": "1x1x1 mm isotropic",
+        "02": "2x2x2 mm isotropic"
     },
     "SpatialReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-02_T1w.nii.gz",
     "color_red": {

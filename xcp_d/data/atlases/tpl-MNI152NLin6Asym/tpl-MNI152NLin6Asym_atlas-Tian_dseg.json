@@ -6,20 +6,8 @@
         "https://doi.org/10.1038/s41593-020-00711-6"
     ],
     "Resolution": {
-        "01": {
-            "zooms": [
-                "1.0",
-                "1.0",
-                "1.0"
-            ]
-        },
-        "02": {
-            "zooms": [
-                "2.0",
-                "2.0",
-                "2.0"
-            ]
-        }
+        "01": "1x1x1 mm isotropic",
+        "02": "2x2x2 mm isotropic"
     },
     "SpatialReference": "https://templateflow.s3.amazonaws.com/tpl-MNI152NLin6Asym_res-02_T1w.nii.gz"
 }
