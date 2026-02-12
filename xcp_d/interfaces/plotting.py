@@ -241,19 +241,24 @@ class QCPlots(SimpleInterface):
     Examples
     --------
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+
+        >>> from tempfile import TemporaryDirectory
+        >>> tmpdir = TemporaryDirectory()
+        >>> os.chdir(tmpdir.name)
+
     .. doctest::
-    qcplots = QCPlots()
-    qcplots.inputs.cleaned_file = datafile
-    qcplots.inputs.bold_file = rawbold
-    qcplots.inputs.TR = TR
-    qcplots.inputs.temporal_mask = temporalmask
-    qcplots.inputs.mask_file = mask
-    qcplots.run()
+
+        qcplots = QCPlots()
+        qcplots.inputs.cleaned_file = datafile
+        qcplots.inputs.bold_file = rawbold
+        qcplots.inputs.TR = TR
+        qcplots.inputs.temporal_mask = temporalmask
+        qcplots.inputs.mask_file = mask
+        qcplots.run()
+
     .. testcleanup::
-    >>> tmpdir.cleanup()
+
+        >>> tmpdir.cleanup()
     """
 
     input_spec = _QCPlotsInputSpec
@@ -551,12 +556,13 @@ class SlicesDir(FSLCommand):
 
     Notes
     -----
-    Usage: slicesdir [-o] [-p <image>] [-e <thr>] [-S] <filelist>
-    -o         :  filelist is pairs ( <underlying> <red-outline> ) of images
-    -p <image> :  use <image> as red-outline image on top of all images in <filelist>
-    -e <thr>   :  use the specified threshold for edges (if >0 use this proportion of max-min,
-                  if <0, use the absolute value)
-    -S         :  output every second axial slice rather than just 9 ortho slices
+    Usage: ``slicesdir [-o] [-p <image>] [-e <thr>] [-S] <filelist>``
+
+    - ``-o`` :  filelist is pairs ( <underlying> <red-outline> ) of images
+    - ``-p <image>`` :  use <image> as red-outline image on top of all images in <filelist>
+    - ``-e <thr>`` :  use the specified threshold for edges (if >0 use this proportion of
+      max-min, if <0, use the absolute value)
+    - ``-S`` :  output every second axial slice rather than just 9 ortho slices
     """
 
     _cmd = 'slicesdir'
@@ -633,9 +639,10 @@ class PNGAppend(FSLCommand):
 
     Usage: pngappend <input 1> <+|-> [n] <input 2> [<+|-> [n] <input n>]  output>
 
-    + appends horizontally,
-    - appends vertically (i.e. works like a linebreak)
-    [n] number ofgap pixels
+    - ``+`` appends horizontally,
+    - ``-`` appends vertically (i.e. works like a linebreak)
+    - ``[n]`` number of gap pixels
+
     note that files with .gif extension will be input/output in GIF format
     """
 

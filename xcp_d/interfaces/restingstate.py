@@ -48,16 +48,21 @@ class SurfaceReHo(SimpleInterface):
     Examples
     --------
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+
+        >>> from tempfile import TemporaryDirectory
+        >>> tmpdir = TemporaryDirectory()
+        >>> os.chdir(tmpdir.name)
+
     .. doctest::
-    >>> surfacereho_wf = SurfaceReHo()
-    >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
-    >>> surfacereho_wf.inputs.surf_hemi = 'R'
-    >>> surfacereho_wf.run()
+
+        >>> surfacereho_wf = SurfaceReHo()
+        >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
+        >>> surfacereho_wf.inputs.surf_hemi = 'R'
+        >>> surfacereho_wf.run()
+
     .. testcleanup::
-    >>> tmpdir.cleanup()
+
+        >>> tmpdir.cleanup()
     """
 
     input_spec = _SurfaceReHoInputSpec

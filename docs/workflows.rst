@@ -352,6 +352,7 @@ The ``--skip`` parameter accepts the following options:
       Historically, users could pass the legacy ``--skip-parcellation`` flag to
       achieve this behavior. That flag is now deprecated — use
       ``--skip parcellation`` instead.
+
    **Note that skipping parcellation will automatically skip connectivity as well,
    since connectivity requires parcellated data.**
 
