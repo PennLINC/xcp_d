@@ -48,16 +48,21 @@ class SurfaceReHo(SimpleInterface):
     Examples
     --------
     .. testsetup::
-    >>> from tempfile import TemporaryDirectory
-    >>> tmpdir = TemporaryDirectory()
-    >>> os.chdir(tmpdir.name)
+
+        >>> from tempfile import TemporaryDirectory
+        >>> tmpdir = TemporaryDirectory()
+        >>> os.chdir(tmpdir.name)
+
     .. doctest::
-    >>> surfacereho_wf = SurfaceReHo()
-    >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
-    >>> surfacereho_wf.inputs.surf_hemi = 'R'
-    >>> surfacereho_wf.run()
+
+        >>> surfacereho_wf = SurfaceReHo()
+        >>> surfacereho_wf.inputs.surf_bold = 'rhhemi.func.gii'
+        >>> surfacereho_wf.inputs.surf_hemi = 'R'
+        >>> surfacereho_wf.run()
+
     .. testcleanup::
-    >>> tmpdir.cleanup()
+
+        >>> tmpdir.cleanup()
     """
 
     input_spec = _SurfaceReHoInputSpec
@@ -166,7 +171,8 @@ class ComputeALFF(SimpleInterface):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
             sample_mask = ~get_col(censoring_df, 'framewise_displacement').values.astype(bool)
-            assert sample_mask.size == n_volumes, f'{sample_mask.size} != {n_volumes}'
+            if sample_mask.size != n_volumes:
+                raise ValueError(f'{sample_mask.size} != {n_volumes}')
 
         alff_mat = np.zeros(n_voxels)
         with Pool(processes=self.inputs.n_threads) as pool:

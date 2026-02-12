@@ -126,12 +126,12 @@ def _build_parser():
         '--task_id',
         dest='task_id',
         action='store',
+        nargs='+',
+        type=lambda label: label.removeprefix('task-'),
         help=(
-            'The name of a specific task to postprocess. '
-            'By default, all tasks will be postprocessed. '
-            'If you want to select more than one task to postprocess (but not all of them), '
-            'you can either run XCP-D with the --task-id parameter, separately for each task, '
-            'or you can use the --bids-filter-file to specify the tasks to postprocess.'
+            'A space-delimited list of task identifiers, or a single identifier. '
+            'The "task-" prefix can be removed. '
+            'By default, all tasks will be postprocessed.'
         ),
     )
     g_bids.add_argument(
@@ -916,7 +916,8 @@ def parse_args(args=None, namespace=None):
         )
 
         opts.fmri_dir = converted_fmri_dir
-        assert converted_fmri_dir.exists(), f'Conversion to BIDS failed: {converted_fmri_dir}'
+        if not converted_fmri_dir.exists():
+            raise ValueError(f'Conversion to BIDS failed: {converted_fmri_dir}')
 
     if not os.path.isfile(os.path.join(opts.fmri_dir, 'dataset_description.json')):
         config.loggers.cli.error(
@@ -927,9 +928,10 @@ def parse_args(args=None, namespace=None):
 
     config.execution.log_level = int(max(25 - 5 * opts.verbose_count, logging.DEBUG))
     config.from_dict(vars(opts), init=['nipype'])
-    assert config.execution.fmri_dir.exists(), (
-        f'Conversion to BIDS failed: {config.execution.fmri_dir}',
-    )
+    if not config.execution.fmri_dir.exists():
+        raise ValueError(
+            f'Conversion to BIDS failed: {config.execution.fmri_dir}',
+        )
 
     # Retrieve logging level
     build_log = config.loggers.cli
@@ -1135,22 +1137,34 @@ def _validate_parameters(opts, build_log, parser):
             os.environ['FS_LICENSE'] = str(fs_license_file)
 
     # Check parameter value types/valid values
-    assert opts.abcc_qc in (True, False, 'auto')
-    assert opts.combine_runs in (True, False, 'auto')
-    assert opts.despike in (True, False, 'auto')
-    assert opts.file_format in ('nifti', 'cifti', 'auto')
-    assert opts.linc_qc in (True, False, 'auto')
-    assert opts.mode in (
+    if opts.abcc_qc not in (True, False, 'auto'):
+        raise ValueError(f'Invalid abcc_qc: {opts.abcc_qc}')
+    if opts.combine_runs not in (True, False, 'auto'):
+        raise ValueError(f'Invalid combine_runs: {opts.combine_runs}')
+    if opts.despike not in (True, False, 'auto'):
+        raise ValueError(f'Invalid despike: {opts.despike}')
+    if opts.file_format not in ('nifti', 'cifti', 'auto'):
+        raise ValueError(f'Invalid file_format: {opts.file_format}')
+    if opts.linc_qc not in (True, False, 'auto'):
+        raise ValueError(f'Invalid linc_qc: {opts.linc_qc}')
+    if opts.mode not in (
         'abcd',
         'hbcd',
         'linc',
         'nichart',
         'none',
-    ), f'Unsupported mode "{opts.mode}".'
-    assert opts.output_layout in ('bids', 'multiverse')
-    assert opts.output_run_wise_correlations in (True, False, 'auto')
-    assert opts.output_type in ('censored', 'interpolated', 'auto')
-    assert opts.process_surfaces in (True, False, 'auto')
+    ):
+        raise ValueError(f'Unsupported mode "{opts.mode}".')
+    if opts.output_layout not in ('bids', 'multiverse'):
+        raise ValueError(f'Invalid output_layout: {opts.output_layout}')
+    if opts.output_run_wise_correlations not in (True, False, 'auto'):
+        raise ValueError(
+            f'Invalid output_run_wise_correlations: {opts.output_run_wise_correlations}'
+        )
+    if opts.output_type not in ('censored', 'interpolated', 'auto'):
+        raise ValueError(f'Invalid output_type: {opts.output_type}')
+    if opts.process_surfaces not in (True, False, 'auto'):
+        raise ValueError(f'Invalid process_surfaces: {opts.process_surfaces}')
 
     # Add internal atlas datasets to the list of datasets
     opts.datasets = opts.datasets or {}

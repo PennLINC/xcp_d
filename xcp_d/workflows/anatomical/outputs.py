@@ -23,7 +23,7 @@ def init_copy_inputs_to_outputs_wf(name='copy_inputs_to_outputs_wf'):
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.outputs import init_copy_inputs_to_outputs_wf
+            from xcp_d.workflows.anatomical.outputs import init_copy_inputs_to_outputs_wf
 
             with mock_config():
                 wf = init_copy_inputs_to_outputs_wf()

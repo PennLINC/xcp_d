@@ -31,7 +31,7 @@ Settings are stored using :abbr:`ToML (Tom's Markup Language)`.
 The module has a :py:func:`~xcp_d.config.to_filename` function to allow writing out
 the settings to hard disk in *ToML* format, which looks like:
 
-.. literalinclude:: ../xcp_d/data/tests/config.toml
+.. literalinclude:: ../../xcp_d/data/tests/config.toml
    :language: toml
    :name: xcp_d.toml
    :caption: **Example file representation of XCP-D settings**.
@@ -43,12 +43,16 @@ Configuration sections
 ----------------------
 .. autoclass:: environment
    :members:
+   :no-index:
 .. autoclass:: execution
    :members:
+   :no-index:
 .. autoclass:: workflow
    :members:
+   :no-index:
 .. autoclass:: nipype
    :members:
+   :no-index:
 
 Usage
 -----
@@ -75,6 +79,7 @@ Logging
 -------
 .. autoclass:: loggers
    :members:
+   :no-index:
 
 Other responsibilities
 ----------------------
@@ -525,7 +530,7 @@ class execution(_Config):
         if cls.task_id:
             cls.bids_filters = cls.bids_filters or {}
             cls.bids_filters['bold'] = cls.bids_filters.get('bold', {})
-            cls.bids_filters['bold']['task'] = cls.task_id
+            cls.bids_filters['bold']['task'] = listify(cls.task_id)
 
         if cls.session_id:
             # Patch session ID into all of the filters

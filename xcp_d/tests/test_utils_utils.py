@@ -471,7 +471,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
         )
 
     tofail_to_anat_xfm = nlin6asym_to_anat_xfm.replace('from-MNI152NLin6Asym_', 'from-tofail_')
-    with pytest.raises(ValueError, match='Space "tofail"'):
+    with pytest.raises(ValueError, match='BOLD space "tofail" not supported'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_tofail,
             tofail_to_anat_xfm,

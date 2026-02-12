@@ -97,6 +97,7 @@ class NiftiParcellate(SimpleInterface):
             standardize=False,
             strategy='sum',
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
         sum_masker_unmasked = NiftiLabelsMasker(
             labels_img=atlas_img,
@@ -106,6 +107,7 @@ class NiftiParcellate(SimpleInterface):
             standardize=False,
             strategy='sum',
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
         n_voxels_in_masked_parcels = sum_masker_masked.fit_transform(atlas_img_bin)
         n_voxels_in_parcels = sum_masker_unmasked.fit_transform(atlas_img_bin)
@@ -154,6 +156,7 @@ class NiftiParcellate(SimpleInterface):
             smoothing_fwhm=None,
             standardize=False,
             resampling_target=None,  # they should be in the same space/resolution already
+            keep_masked_labels=True,
         )
 
         # Use nilearn to parcellate the file
@@ -162,7 +165,11 @@ class NiftiParcellate(SimpleInterface):
             # Add singleton first dimension representing time.
             timeseries_arr = timeseries_arr[None, :]
 
-        assert timeseries_arr.shape[1] == n_found_nodes
+        if timeseries_arr.shape[1] != n_found_nodes:
+            raise ValueError(
+                f'timeseries_arr.shape[1] ({timeseries_arr.shape[1]}) != '
+                f'n_found_nodes ({n_found_nodes})'
+            )
         # Map from atlas value to column index for parcels found in the atlas image
         # Keys are cols/rows in the matrix, values are atlas values
         masker_parcel_mapper = masker.region_ids_
@@ -362,8 +369,11 @@ class ConnectPlot(SimpleInterface):
 
     def plot_matrix(self, corr_mat, network_labels, ax):
         """Plot matrix in subplot Axes."""
-        assert corr_mat.shape[0] == len(network_labels)
-        assert corr_mat.shape[1] == len(network_labels)
+        if corr_mat.shape[0] != len(network_labels) or corr_mat.shape[1] != len(network_labels):
+            n_labels = len(network_labels)
+            raise ValueError(
+                f'corr_mat shape {corr_mat.shape} does not match len(network_labels)={n_labels}'
+            )
 
         # Determine order of nodes while retaining original order of networks
         unique_labels = []
@@ -548,7 +558,10 @@ class CiftiToTSV(SimpleInterface):
         in_file = self.inputs.in_file
         atlas_labels = self.inputs.atlas_labels
 
-        assert in_file.endswith(('.ptseries.nii', '.pscalar.nii', '.pconn.nii')), in_file
+        if not in_file.endswith(('.ptseries.nii', '.pscalar.nii', '.pconn.nii')):
+            raise ValueError(
+                f'Expected .ptseries.nii, .pscalar.nii, or .pconn.nii file, got: {in_file}'
+            )
 
         img = nb.load(in_file)
         node_labels_df = pd.read_table(atlas_labels, index_col='index')
@@ -592,7 +605,8 @@ class CiftiToTSV(SimpleInterface):
         else:
             # Second axis is the parcels
             ax1 = img.header.get_axis(1)
-            assert isinstance(ax1, nb.cifti2.ParcelsAxis), type(ax1)
+            if not isinstance(ax1, nb.cifti2.ParcelsAxis):
+                raise TypeError(f'Expected ParcelsAxis, got {type(ax1)}')
             df = pd.DataFrame(columns=ax1.name, data=img.get_fdata())
             check_axes = [1]
 

@@ -221,6 +221,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
             lut=labels_df,
             smoothing_fwhm=None,
             standardize=False,
+            keep_masked_labels=True,
         )
         masker.fit(fake_bold_file)
         signals = masker.transform(fake_bold_file)

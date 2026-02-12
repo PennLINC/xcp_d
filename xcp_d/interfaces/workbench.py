@@ -813,61 +813,53 @@ class ShowScene(WBCommand):
 
     Notes
     -----
-    wb_command -show-scene
-        <scene-file> - scene file
-        <scene-name-or-number> - name or number (starting at one) of the scene in
-            the scene file
-        <image-file-name> - output image file name
-        <image-width> - width of output image(s), in pixels
-        <image-height> - height of output image(s), in pixels
+    ``wb_command -show-scene``
 
-        [-use-window-size] - Override image size with window size
+    Positional arguments:
 
-        [-no-scene-colors] - Do not use background and foreground colors in scene
+    - ``<scene-file>`` - scene file
+    - ``<scene-name-or-number>`` - name or number (starting at one) of the scene in
+      the scene file
+    - ``<image-file-name>`` - output image file name
+    - ``<image-width>`` - width of output image(s), in pixels
+    - ``<image-height>`` - height of output image(s), in pixels
 
-        [-set-map-yoke] - Override selected map index for a map yoking group.
-            <Map Yoking Roman Numeral> - Roman numeral identifying the map yoking
-            group (I, II, III, IV, V, VI, VII, VIII, IX, X)
-            <Map Index> - Map index for yoking group.  Indices start at 1 (one)
+    Optional arguments:
 
-        [-conn-db-login] - Login for scenes with files in Connectome Database
-            <Username> - Connectome DB Username
-            <Password> - Connectome DB Password
+    - ``[-use-window-size]`` - Override image size with window size
+    - ``[-no-scene-colors]`` - Do not use background and foreground colors in scene
+    - ``[-set-map-yoke]`` - Override selected map index for a map yoking group.
+    - ``[-conn-db-login]`` - Login for scenes with files in Connectome Database
 
-        Render content of browser windows displayed in a scene into image
-        file(s).  The image file name should be similar to "capture.png".  If
-        there is only one image to render, the image name will not change.  If
-        there is more than one image to render, an index will be inserted into
-        the image name: "capture_01.png", "capture_02.png" etc.
+    Render content of browser windows displayed in a scene into image
+    file(s).  The image file name should be similar to "capture.png".  If
+    there is only one image to render, the image name will not change.  If
+    there is more than one image to render, an index will be inserted into
+    the image name: "capture_01.png", "capture_02.png" etc.
 
-        If the scene references files in the Connectome Database,
-        the "-conn-db-login" option is available for providing the
-        username and password.  If this options is not specified,
-        the username and password stored in the user's preferences
-        is used.
+    If the scene references files in the Connectome Database,
+    the ``-conn-db-login`` option is available for providing the
+    username and password.  If this option is not specified,
+    the username and password stored in the user's preferences
+    is used.
 
-        The image format is determined by the image file extension.
-        The available image formats may vary by operating system.
-        Image formats available on this system are:
-            bmp
-            jpeg
-            jpg
-            png
-            ppm
-            tif
-            tiff
+    The image format is determined by the image file extension.
+    The available image formats may vary by operating system.
+    Image formats available on this system are:
+    bmp, jpeg, jpg, png, ppm, tif, tiff.
 
-        The result of using the "-use-window-size" option
-        is dependent upon the version used to create the scene.
-            * Versions 1.2 and newer contain the width and
-            height of the graphics region.  The output image
-            will be the width and height from the scene and
-            the image width and height specified on the command
-            line is ignored.
-            * If the scene does not contain the width and height
-            of the graphics region, the width and height specified
-            on the command line is used for the size of the
-            output image.
+    The result of using the ``-use-window-size`` option
+    is dependent upon the version used to create the scene.
+
+    * Versions 1.2 and newer contain the width and
+      height of the graphics region.  The output image
+      will be the width and height from the scene and
+      the image width and height specified on the command
+      line is ignored.
+    * If the scene does not contain the width and height
+      of the graphics region, the width and height specified
+      on the command line is used for the size of the
+      output image.
     """
 
     input_spec = _ShowSceneInputSpec

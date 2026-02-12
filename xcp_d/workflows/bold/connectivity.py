@@ -34,13 +34,14 @@ def init_functional_connectivity_nifti_wf(
 
             from xcp_d.tests.tests import mock_config
             from xcp_d import config
-            from xcp_d.workflows.connectivity import init_functional_connectivity_nifti_wf
+            from xcp_d.workflows.bold.connectivity import init_functional_connectivity_nifti_wf
 
             with mock_config():
                 config.execution.atlases = ["Glasser", "Gordon"]
 
                 wf = init_functional_connectivity_nifti_wf(
                     mem_gb={"volume": 0.1, "bold": 1.0},
+                    has_multiple_runs=False,
                 )
 
     Parameters
@@ -121,7 +122,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name='parcellate_data',
         iterfield=['atlas', 'atlas_labels'],
-        mem_gb=mem_gb['bold'],
+        mem_gb=2 * mem_gb['bold'],
     )
     workflow.connect([
         (inputnode, parcellate_data, [
@@ -239,13 +240,14 @@ def init_functional_connectivity_cifti_wf(
 
             from xcp_d import config
             from xcp_d.tests.tests import mock_config
-            from xcp_d.workflows.connectivity import init_functional_connectivity_cifti_wf
+            from xcp_d.workflows.bold.connectivity import init_functional_connectivity_cifti_wf
 
             with mock_config():
                 config.execution.atlases = ["Glasser", "Gordon"]
 
                 wf = init_functional_connectivity_cifti_wf(
                     mem_gb={"volume": 0.1, "bold": 1.0},
+                    has_multiple_runs=False,
                     exact_scans=[30, 40],
                 )
 
