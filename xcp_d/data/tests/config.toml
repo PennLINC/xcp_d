@@ -26,17 +26,15 @@ run_uuid = "20240205-123456"
 templateflow_home = "~/.cache/templateflow"
 work_dir = "work/"
 write_graph = false
+atlases = ["Gordon"]
 
 [workflow]
-cifti = false
+file_format = "nifti"
 dummy_scans = 0
 input_type = "fmriprep"
 despike = false
 smoothing = 6
 combine_runs = false
-motion_filter_type = false
-band_stop_min = false
-band_stop_max = false
 motion_filter_order = 4
 head_radius = 50
 fd_thresh = 0.3
@@ -45,7 +43,6 @@ bandpass_filter = true
 high_pass = 0.01
 low_pass = 0.1
 bpf_order = 2
-atlases = []
 min_coverage = 0.5
 correlation_lengths = []
 process_surfaces = false

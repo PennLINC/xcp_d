@@ -20,7 +20,7 @@ from xcp_d.workflows.bold.plotting import init_qc_report_wf
 
 
 @fill_doc
-def init_concatenate_data_wf(TR, head_radius, name='concatenate_data_wf'):
+def init_concatenate_data_wf(TR, head_radius, mem_gb, name='concatenate_data_wf'):
     """Concatenate postprocessed data across runs and directions.
 
     Workflow Graph
@@ -36,6 +36,7 @@ def init_concatenate_data_wf(TR, head_radius, name='concatenate_data_wf'):
                 wf = init_concatenate_data_wf(
                     TR=2,
                     head_radius=50,
+                    mem_gb={"bold": 2.0, "volume": 0.01},
                     name="concatenate_data_wf",
                 )
 
@@ -43,6 +44,9 @@ def init_concatenate_data_wf(TR, head_radius, name='concatenate_data_wf'):
     ----------
     %(TR)s
     %(head_radius)s
+    mem_gb : :obj:`dict`
+        Dictionary of memory allocations with keys ``'bold'`` and ``'volume'``.
+        This should represent the *total* memory across all runs being concatenated.
     %(name)s
         Default is "concatenate_data_wf".
 
@@ -82,9 +86,6 @@ def init_concatenate_data_wf(TR, head_radius, name='concatenate_data_wf'):
     file_format = config.workflow.file_format
     fd_thresh = config.workflow.fd_thresh
     atlases = config.execution.atlases
-
-    # Guess memory needs since they can't be estimated from the inputs
-    mem_gb = {'bold': 6.0, 'volume': 1.0}
 
     workflow.__desc__ = """
 Postprocessing derivatives from multi-run tasks were then concatenated across runs and directions.

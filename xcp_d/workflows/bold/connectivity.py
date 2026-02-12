@@ -122,7 +122,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         NiftiParcellate(min_coverage=min_coverage),
         name='parcellate_data',
         iterfield=['atlas', 'atlas_labels'],
-        mem_gb=mem_gb['bold'],
+        mem_gb=2 * mem_gb['bold'],
     )
     workflow.connect([
         (inputnode, parcellate_data, [
