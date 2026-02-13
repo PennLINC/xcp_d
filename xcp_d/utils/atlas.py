@@ -107,10 +107,10 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
     atlas_filter['extension'] = ['.nii.gz', '.nii'] if file_format == 'nifti' else '.dlabel.nii'
     # Hardcoded spaces for now
     if file_format == 'cifti':
-        atlas_filter['space'] = atlas_filter.get('space') or 'fsLR'
+        atlas_filter['template'] = atlas_filter.get('template') or 'fsLR'
         atlas_filter['den'] = atlas_filter.get('den') or ['32k', '91k']
     else:
-        atlas_filter['space'] = atlas_filter.get('space') or [
+        atlas_filter['template'] = atlas_filter.get('template') or [
             'MNI152NLin6Asym',
             'MNI152NLin2009cAsym',
             'MNIInfant',
