@@ -40,7 +40,7 @@ from xcp_d.utils.bids import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.modified_data import calculate_exact_scans, flag_bad_run
-from xcp_d.utils.utils import estimate_brain_radius, is_number
+from xcp_d.utils.utils import _create_mem_gb, estimate_brain_radius, is_number
 from xcp_d.workflows.anatomical.parcellation import init_parcellate_surfaces_wf
 from xcp_d.workflows.anatomical.surface import init_postprocess_surfaces_wf
 from xcp_d.workflows.anatomical.volume import init_postprocess_anat_wf
@@ -116,7 +116,7 @@ def init_single_subject_wf(subject_id: str, anat_session: str, func_sessions: li
             from xcp_d.workflows.base import init_single_subject_wf
 
             with mock_config():
-                wf = init_single_subject_wf("01", "01", ["01"])
+                wf = init_single_subject_wf("01", "", [""])
 
     Parameters
     ----------
@@ -517,6 +517,8 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             }
 
         n_processed_task_runs = 0
+        concat_bold_gb = 0
+        concat_volume_gb = 0
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(
                 layout=config.execution.layout,
@@ -568,6 +570,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     bold_file=bold_file,
                 )
 
+            # Compute memory estimates from the BOLD file header
+            mem_gbx = _create_mem_gb(bold_file)
+
+            # Accumulate memory estimates for the concatenation workflow.
+            # The concatenated file will be the sum of all runs.
+            concat_bold_gb += mem_gbx['bold']
+            concat_volume_gb = max(concat_volume_gb, mem_gbx['volume'])
+
             postprocess_bold_wf = init_postprocess_bold_wf(
                 bold_file=bold_file,
                 head_radius=head_radius,
@@ -577,6 +587,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 n_runs=n_runs,
                 has_multiple_runs=multiscans,
                 exact_scans=exact_scans,
+                mem_gb=mem_gbx,
                 name=f'postprocess_{run_counter}_wf',
             )
             run_counter += 1
@@ -621,9 +632,14 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                     ])  # fmt:skip
 
         if config.workflow.combine_runs and (n_processed_task_runs > 0) and multiscans:
+            concat_mem_gb = {
+                'bold': concat_bold_gb,
+                'volume': concat_volume_gb,
+            }
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,
+                mem_gb=concat_mem_gb,
                 name=f'concatenate_entity_set_{ent_set}_wf',
             )
 
