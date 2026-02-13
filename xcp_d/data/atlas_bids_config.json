@@ -13,7 +13,7 @@
         },
         {
             "name": "atlas",
-            "pattern": "[/\\\\]+atlas-([a-zA-Z0-9+]+)"
+            "pattern": "[_/\\\\]+atlas-([a-zA-Z0-9+]+)"
         },
         {
             "name": "hemi",
