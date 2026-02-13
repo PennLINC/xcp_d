@@ -1,4 +1,9 @@
 {
-    "Name": "MIDB",
-    "License": "todo"
+    "Name": "MID-B ABCD atlas thresholded at 75% probability",
+    "License": "unknown",
+    "Description": "The 80-node ABCD template-matched, combined-networks MID-B Precision Brain atlas, thresholded and binarized at 75% probability.",
+    "ReferencesAndLinks": [
+        "https://midbatlas.io/",
+        "https://www.biorxiv.org/content/10.1101/2022.01.12.475422"
+    ]
 }

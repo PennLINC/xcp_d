@@ -1,4 +1,8 @@
 {
     "Name": "Gordon",
-    "License": "todo"
+    "License": "unknown",
+    "Description": "The 333-node Gordon cortical atlas.",
+    "ReferencesAndLinks": [
+        "https://doi.org/10.1093/cercor/bhu239"
+    ]
 }

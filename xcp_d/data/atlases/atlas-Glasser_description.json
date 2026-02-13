@@ -1,4 +1,8 @@
 {
     "Name": "Glasser",
-    "License": "todo"
+    "Description": "The 360-node Glasser cortical atlas.",
+    "License": "unknown",
+    "ReferencesAndLinks": [
+        "https://www.nature.com/articles/nature18933"
+    ]
 }
