@@ -12,10 +12,6 @@
             "directory": "{cohort}"
         },
         {
-            "name": "atlas",
-            "pattern": "[/\\\\]+atlas-([a-zA-Z0-9+]+)"
-        },
-        {
             "name": "statistic",
             "pattern": "[_/\\\\]+stat-([a-zA-Z0-9+]+)"
         },
