@@ -7,6 +7,11 @@
             "directory": "{template}"
         },
         {
+            "name": "cohort",
+            "pattern": "[_/\\\\]+cohort-([a-zA-Z0-9+]+)",
+            "directory": "{cohort}"
+        },
+        {
             "name": "atlas",
             "pattern": "[/\\\\]+atlas-([a-zA-Z0-9+]+)"
         },
@@ -36,9 +41,9 @@
         }
     ],
     "default_path_patterns": [
-        "tpl-{template}/tpl-{template}_atlas-{atlas}[_res-{res}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<nii|nii.gz|json>|nii.gz}",
-        "tpl-{template}/tpl-{template}_atlas-{atlas}[_res-{res}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<dlabel.nii|json>|dlabel.nii}",
-        "tpl-{template}/tpl-{template}_atlas-{atlas}[_hemi-{hemi}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<label.gii|json>|label.gii}",
-        "tpl-{template}/tpl-{template}_atlas-{atlas}[_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<tsv|json>|tsv}"
+        "tpl-{template}/[cohort-{cohort}]/tpl-{template}[_cohort-{cohort}]_atlas-{atlas}[_res-{res}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<nii|nii.gz|json>|nii.gz}",
+        "tpl-{template}/[cohort-{cohort}]/tpl-{template}[_cohort-{cohort}]_atlas-{atlas}[_res-{res}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<dlabel.nii|json>|dlabel.nii}",
+        "tpl-{template}/[cohort-{cohort}]/tpl-{template}[_cohort-{cohort}]_atlas-{atlas}[_hemi-{hemi}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<label.gii|json>|label.gii}",
+        "tpl-{template}/[cohort-{cohort}]/tpl-{template}[_cohort-{cohort}]_atlas-{atlas}[_res-{res}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<tsv|json>|tsv}"
     ]
 }
