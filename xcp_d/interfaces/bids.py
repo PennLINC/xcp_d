@@ -258,25 +258,30 @@ class CopyAtlas(SimpleInterface):
         atlas = self.inputs.atlas
         Sources = self.inputs.Sources
 
-        atlas_out_dir = os.path.join(output_dir, f'atlases/atlas-{atlas}')
+        tpl = get_entity(name_source, 'tpl')
+        res = get_entity(name_source, 'res')
+        den = get_entity(name_source, 'den')
+        cohort = get_entity(name_source, 'cohort')
+
+        cohort_str = f'_cohort-{cohort}' if cohort else ''
+        res_str = f'_res-{res}' if res else ''
+        den_str = f'_den-{den}' if den else ''
+
+        atlas_out_dir = os.path.join(output_dir, f'atlases/tpl-{tpl}')
+        if cohort:
+            atlas_out_dir = os.path.join(atlas_out_dir, f'cohort-{cohort}')
+
+        if res:
+            out_basename = f'tpl-{tpl}{cohort_str}_atlas-{atlas}{res_str}_dseg'
+        else:
+            out_basename = f'tpl-{tpl}{cohort_str}_atlas-{atlas}{den_str}_dseg'
 
         if in_file.endswith('.tsv'):
-            out_basename = f'atlas-{atlas}_dseg'
             extension = '.tsv'
+        elif in_file.endswith('.dlabel.nii'):
+            extension = '.dlabel.nii'
         else:
-            extension = '.nii.gz' if name_source.endswith('.nii.gz') else '.dlabel.nii'
-            space = get_entity(name_source, 'space')
-            res = get_entity(name_source, 'res')
-            den = get_entity(name_source, 'den')
-            cohort = get_entity(name_source, 'cohort')
-
-            cohort_str = f'_cohort-{cohort}' if cohort else ''
-            res_str = f'_res-{res}' if res else ''
-            den_str = f'_den-{den}' if den else ''
-            if extension == '.dlabel.nii':
-                out_basename = f'atlas-{atlas}_space-{space}{den_str}{cohort_str}_dseg'
-            elif extension == '.nii.gz':
-                out_basename = f'atlas-{atlas}_space-{space}{res_str}{cohort_str}_dseg'
+            extension = '.nii.gz'
 
         os.makedirs(atlas_out_dir, exist_ok=True)
         out_file = os.path.join(atlas_out_dir, f'{out_basename}{extension}')
