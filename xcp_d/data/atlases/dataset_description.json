@@ -1,12 +1,11 @@
 {
-    "BIDSVersion": "1.11.0",
-    "DatasetType": "derivative",
     "Name": "XCP-D atlases",
+    "DatasetType": "derivative",
+    "BIDSVersion": "1.11.0",
     "GeneratedBy": [
         {
-            "Name": "todo",
-            "Version": "todo",
-            "CodeURL": "todo"
-        }
+            "Name": "Manual",
+            "Description": "Manually collected, renamed, and updated metadata for the atlases."
+          }
     ]
 }
