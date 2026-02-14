@@ -123,7 +123,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
         else:
             layout = dataset_path
 
-        if layout.get_dataset_description().get('DatasetType') != 'atlas':
+        if layout.get_dataset_description().get('DatasetType') != 'derivative':
             continue
 
         for atlas in atlases:

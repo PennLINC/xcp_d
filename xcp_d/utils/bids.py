@@ -1237,7 +1237,7 @@ def write_atlas_dataset_description(atlas_dir):
 
     desc = {
         'Name': 'XCP-D Atlases',
-        'DatasetType': 'atlas',
+        'DatasetType': 'derivative',
         'GeneratedBy': [
             {
                 'Name': 'xcp_d',

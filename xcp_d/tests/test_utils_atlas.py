@@ -69,7 +69,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     tmpdir = tmp_path_factory.mktemp('test_collect_atlases')
     # Make the dataset_description.json
     with open(tmpdir / 'dataset_description.json', 'w') as fo:
-        json.dump({'DatasetType': 'atlas', 'BIDSVersion': '1.9.0', 'Name': 'Test'}, fo)
+        json.dump({'DatasetType': 'derivative', 'BIDSVersion': '1.9.0', 'Name': 'Test'}, fo)
 
     # Create fake atlas file
     (tmpdir / 'tpl-MNI152NLin6Asym').mkdir()
