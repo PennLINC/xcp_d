@@ -9,7 +9,6 @@ import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d import config
-from xcp_d.data import load as load_data
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes

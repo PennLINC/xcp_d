@@ -4,7 +4,6 @@ import os
 
 import pytest
 
-from xcp_d.data import load as load_data
 from xcp_d.interfaces import bids
 
 
