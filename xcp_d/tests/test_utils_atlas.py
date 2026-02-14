@@ -72,10 +72,10 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
         json.dump({'DatasetType': 'atlas', 'BIDSVersion': '1.9.0', 'Name': 'Test'}, fo)
 
     # Create fake atlas file
-    (tmpdir / 'atlas-TEST').mkdir()
-    (tmpdir / 'atlas-TEST' / 'atlas-TEST_space-MNI152NLin6Asym_res-01_dseg.nii.gz').write_text(
-        'test'
-    )
+    (tmpdir / 'tpl-MNI152NLin6Asym').mkdir()
+    (
+        tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.nii.gz'
+    ).write_text('test')
 
     # First there's an image, but no TSV or metadata
     with pytest.raises(FileNotFoundError, match='No TSV file found for'):
@@ -87,7 +87,9 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
         )
 
     # Now there's an image and a TSV, but the TSV doesn't have a "name" column
-    with open(tmpdir / 'atlas-TEST' / 'atlas-TEST_dseg.tsv', 'w') as fo:
+    with open(
+        tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.tsv', 'w'
+    ) as fo:
         fo.write('index\n1\n')
 
     with pytest.raises(ValueError, match="'name' column not found"):
@@ -99,7 +101,9 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
         )
 
     # Now there's an image and a TSV, but the TSV doesn't have an "index" column
-    with open(tmpdir / 'atlas-TEST' / 'atlas-TEST_dseg.tsv', 'w') as fo:
+    with open(
+        tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.tsv', 'w'
+    ) as fo:
         fo.write('label\ntest\n')
 
     with pytest.raises(ValueError, match="'index' column not found"):
@@ -111,7 +115,9 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
         )
 
     # Now there's an image, a TSV, and metadata
-    with open(tmpdir / 'atlas-TEST' / 'atlas-TEST_dseg.tsv', 'w') as fo:
+    with open(
+        tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.tsv', 'w'
+    ) as fo:
         fo.write('index\tlabel\n1\ttest\n')
 
     atlas_cache = atlas.collect_atlases(

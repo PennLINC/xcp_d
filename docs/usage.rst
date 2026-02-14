@@ -614,25 +614,28 @@ The file structure for these two datasets might look like this:
    /data/atlases/
       schaefer/
          dataset_description.json
-         atlas-Schaefer100_dseg.tsv
-         atlas-Schaefer200_dseg.tsv
+         atlas-Schaefer100_description.json
+         atlas-Schaefer200_description.json
          ...
-         atlas-Schaefer1000_dseg.tsv
+         atlas-Schaefer1000_description.json
          tpl-fsLR/
-
             tpl-fsLR_atlas-Schaefer100_den-32k_dseg.dlabel.nii
             tpl-fsLR_atlas-Schaefer100_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer100_den-32k_dseg.tsv
             tpl-fsLR_atlas-Schaefer200_den-32k_dseg.dlabel.nii
             tpl-fsLR_atlas-Schaefer200_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer200_den-32k_dseg.tsv
             ...
             tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.dlabel.nii
             tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.json
+            tpl-fsLR_atlas-Schaefer1000_den-32k_dseg.tsv
       aal/
          dataset_description.json
-         atlas-AAL_dseg.tsv
+         atlas-AAL_description.json
          tpl-fsLR/
             tpl-fsLR_atlas-AAL_den-32k_dseg.dlabel.nii
             tpl-fsLR_atlas-AAL_den-32k_dseg.json
+            tpl-fsLR_atlas-AAL_den-32k_dseg.tsv
 
 You may want to only apply the Schaefer100 atlas from the ``schaefer`` dataset and the AAL atlas
 from the ``aal`` dataset, along with one of *XCP-D*'s built-in atlases (``4S156Parcels``).
@@ -646,7 +649,7 @@ Here's what the *XCP-D* call might look like:
       /home/user/data/path/to/output_dir \
       participant \ # analysis_level
       --mode <mode> \ # required
-      --datasets schaefer=/home/user/data/path/to/schaefer_atlas aal==/home/user/data/path/to/aal_atlas \
+      --datasets schaefer=/data/atlases/schaefer aal==/data/atlases/aal \
       --atlases Schaefer100 AAL 4S156Parcels
 
 *XCP-D* will search for ``atlas-Schaefer100``, ``atlas-AAL``, and ``atlas-4S156Parcels`` across the

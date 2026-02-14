@@ -38,7 +38,7 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
             'xcpdatlases': str(load_data('atlases')),
-            'xcpd4s': '/AtlasPack',
+            'xcpd4s': '/home/xcp_d/AtlasPack',
         }
         config.nipype.omp_nthreads = 1
 
@@ -67,7 +67,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
             'xcpdatlases': str(load_data('atlases')),
-            'xcpd4s': '/AtlasPack',
+            'xcpd4s': '/home/xcp_d/AtlasPack',
         }
         config.nipype.omp_nthreads = 1
 
@@ -123,17 +123,27 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     atlas_names = ['Gordon', 'Glasser']
     atlas_files = [
         str(
-            load_data('atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz')
+            load_data(
+                'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz'
+            )
         ),
         str(
             load_data(
-                'atlases/atlas-Glasser/atlas-Glasser_space-MNI152NLin6Asym_res-01_dseg.nii.gz'
+                'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.nii.gz'
             )
         ),
     ]
     atlas_labels_files = [
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_dseg.tsv')),
+        str(
+            load_data(
+                'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv'
+            ),
+        ),
+        str(
+            load_data(
+                'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.tsv'
+            ),
+        ),
     ]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
@@ -277,18 +287,18 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ['4S1056Parcels', '4S156Parcels', '4S456Parcels', 'Gordon', 'Glasser']
     atlas_files = [
-        '/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        '/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        '/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii')),
+        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.dlabel.nii',
+        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.dlabel.nii',
+        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.dlabel.nii',
+        str(load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii')),
+        str(load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.dlabel.nii')),
     ]
     atlas_labels_files = [
-        '/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_dseg.tsv',
-        '/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv',
-        '/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_dseg.tsv',
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_dseg.tsv')),
+        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.tsv',
+        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.tsv',
+        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.tsv',
+        str(load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv')),
+        str(load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.tsv')),
     ]
 
     # Create the node and a tmpdir to write its results out to
