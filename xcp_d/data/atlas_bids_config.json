@@ -2,13 +2,18 @@
     "name": "atlas",
     "entities": [
         {
-            "name": "atlas",
-            "pattern": "[/\\\\]+atlas-([a-zA-Z0-9]+)",
-            "directory": "{atlas}"
+            "name": "template",
+            "pattern": "[_/\\\\]+tpl-([a-zA-Z0-9+]+)",
+            "directory": "{template}"
         },
         {
-            "name": "space",
-            "pattern": "[_/\\\\]+space-([a-zA-Z0-9]+)"
+            "name": "cohort",
+            "pattern": "[_/\\\\]+cohort-([a-zA-Z0-9+]+)",
+            "directory": "{cohort}"
+        },
+        {
+            "name": "atlas",
+            "pattern": "[_/\\\\]+atlas-([a-zA-Z0-9+]+)"
         },
         {
             "name": "hemi",
@@ -24,7 +29,7 @@
         },
         {
             "name": "desc",
-            "pattern": "[_/\\\\]+desc-([a-zA-Z0-9]+)"
+            "pattern": "[_/\\\\]+desc-([a-zA-Z0-9+]+)"
         },
         {
             "name": "suffix",
@@ -36,9 +41,9 @@
         }
     ],
     "default_path_patterns": [
-        "atlas-{atlas}/atlas-{atlas}[_space-{space}][_res-{res}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<nii|nii.gz|json>|nii.gz}",
-        "atlas-{atlas}/atlas-{atlas}[_space-{space}][_res-{res}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<dlabel.nii|json>|dlabel.nii}",
-        "atlas-{atlas}/atlas-{atlas}[_hemi-{hemi}][_space-{space}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<label.gii|json>|label.gii}",
-        "atlas-{atlas}/atlas-{atlas}[_space-{space}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<tsv|json>|tsv}"
+        "tpl-{template}/[cohort-{cohort}]/tpl-{template}[_cohort-{cohort}]_atlas-{atlas}[_res-{res}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<nii|nii.gz|json>|nii.gz}",
+        "tpl-{template}/[cohort-{cohort}]/tpl-{template}[_cohort-{cohort}]_atlas-{atlas}[_res-{res}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<dlabel.nii|json>|dlabel.nii}",
+        "tpl-{template}/[cohort-{cohort}]/tpl-{template}[_cohort-{cohort}]_atlas-{atlas}[_hemi-{hemi}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<label.gii|json>|label.gii}",
+        "tpl-{template}/[cohort-{cohort}]/tpl-{template}[_cohort-{cohort}]_atlas-{atlas}[_res-{res}][_den-{den}][_desc-{desc}]_{suffix<dseg|probseg|mask>}.{extension<tsv|json>|tsv}"
     ]
 }

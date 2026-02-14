@@ -19,7 +19,7 @@ def test_nifti_parcellate(tmp_path_factory):
     arr[0, 2, :] = 5
     atlas_img = nb.Nifti1Image(arr.astype(np.int32), np.eye(4))
     lut = pd.DataFrame(
-        columns=['index', 'label'],
+        columns=['index', 'name'],
         data=[[1, 'Region A'], [2, 'Region B'], [3, 'Region C'], [4, 'Region D'], [5, 'Region E']],
     )
 
