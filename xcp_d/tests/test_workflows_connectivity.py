@@ -37,8 +37,8 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.workflow.file_format = 'nifti'
         config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
-            'xcpdatlases': str(load_data('atlases')),
-            'xcpd4s': '/home/xcp_d/AtlasPack',
+            'xcpdatlases': '/XCPDAtlases',
+            'xcpd4s': '/AtlasPack',
         }
         config.nipype.omp_nthreads = 1
 
@@ -66,8 +66,8 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.workflow.file_format = 'cifti'
         config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
-            'xcpdatlases': str(load_data('atlases')),
-            'xcpd4s': '/home/xcp_d/AtlasPack',
+            'xcpdatlases': '/XCPDAtlases',
+            'xcpd4s': '/AtlasPack',
         }
         config.nipype.omp_nthreads = 1
 
@@ -122,28 +122,12 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ['Gordon', 'Glasser']
     atlas_files = [
-        str(
-            load_data(
-                'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz'
-            )
-        ),
-        str(
-            load_data(
-                'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.nii.gz'
-            )
-        ),
+        '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz',
+        '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.nii.gz',
     ]
     atlas_labels_files = [
-        str(
-            load_data(
-                'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv'
-            ),
-        ),
-        str(
-            load_data(
-                'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.tsv'
-            ),
-        ),
+        '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv',
+        '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.tsv',
     ]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
@@ -287,18 +271,18 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ['4S1056Parcels', '4S156Parcels', '4S456Parcels', 'Gordon', 'Glasser']
     atlas_files = [
-        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.dlabel.nii',
-        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.dlabel.nii',
-        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.dlabel.nii',
-        str(load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii')),
-        str(load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.dlabel.nii')),
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.dlabel.nii',
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.dlabel.nii',
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.dlabel.nii',
+        '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii',
+        '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.dlabel.nii',
     ]
     atlas_labels_files = [
-        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.tsv',
-        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.tsv',
-        '/home/xcp_d/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.tsv',
-        str(load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv')),
-        str(load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.tsv')),
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.tsv',
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.tsv',
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.tsv',
+        '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv',
+        '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.tsv',
     ]
 
     # Create the node and a tmpdir to write its results out to

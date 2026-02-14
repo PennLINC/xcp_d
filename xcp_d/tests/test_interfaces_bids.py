@@ -15,11 +15,11 @@ def test_copy_atlas(tmp_path_factory):
 
     # NIfTI
     atlas_info = {
-        'image': load_data(
-            'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz'
+        'image': (
+            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz'
         ),
-        'labels': load_data(
-            'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv',
+        'labels': (
+            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv'
         ),
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
@@ -43,11 +43,11 @@ def test_copy_atlas(tmp_path_factory):
     # Check that the NIfTI file raises an error if the resolution varies
     # Gordon atlas is 1mm, HCP is 2mm
     atlas_info_diff_affine = {
-        'image': load_data(
-            'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.nii.gz'
+        'image': (
+            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.nii.gz'
         ),
-        'labels': load_data(
-            'atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.tsv'
+        'labels': (
+            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.tsv'
         ),
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
@@ -63,8 +63,8 @@ def test_copy_atlas(tmp_path_factory):
 
     # CIFTI
     atlas_info = {
-        'image': load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii'),
-        'labels': load_data('atlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv'),
+        'image': '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii',
+        'labels': '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv',
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
     }

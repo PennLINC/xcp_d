@@ -1,9 +1,0 @@
-{
-    "Name": "Myers-Labonte infant atlas",
-    "Description": "The 283-node Myers-Labonte infant atlas, thresholded and binarized at 50% probability.",
-    "License": "unknown",
-    "ReferencesAndLinks": [
-        "https://github.com/myersm0/myers-labonte_parcellation",
-        "https://doi.org/10.1093/cercor/bhae047"
-    ]
-}

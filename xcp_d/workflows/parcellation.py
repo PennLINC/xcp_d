@@ -2,6 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for parcellating imaging data."""
 
+from pathlib import Path
+
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -188,7 +190,7 @@ The following atlases were used in the workflow: {atlas_str}.
     workflow.connect([(inputnode, atlas_srcs, [('atlas_files', 'in1')])])
 
     copy_atlas = pe.MapNode(
-        CopyAtlas(output_dir=output_dir),
+        CopyAtlas(output_dir=str(Path(output_dir) / 'derivatives' / 'atlases')),
         name='copy_atlas',
         iterfield=['in_file', 'atlas', 'meta_dict', 'Sources'],
     )
@@ -204,7 +206,7 @@ The following atlases were used in the workflow: {atlas_str}.
     ])  # fmt:skip
 
     copy_atlas_labels_file = pe.MapNode(
-        CopyAtlas(output_dir=output_dir),
+        CopyAtlas(output_dir=str(Path(output_dir) / 'derivatives' / 'atlases')),
         name='copy_atlas_labels_file',
         iterfield=['in_file', 'atlas'],
         run_without_submitting=True,

@@ -267,7 +267,7 @@ class CopyAtlas(SimpleInterface):
         res_str = f'_res-{res}' if res else ''
         den_str = f'_den-{den}' if den else ''
 
-        atlas_out_dir = os.path.join(output_dir, f'atlases/tpl-{tpl}')
+        atlas_out_dir = os.path.join(output_dir, f'tpl-{tpl}')
         if cohort:
             atlas_out_dir = os.path.join(atlas_out_dir, f'cohort-{cohort}')
 
