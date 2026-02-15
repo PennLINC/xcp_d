@@ -69,6 +69,8 @@ def init_load_atlases_wf(name='load_atlases_wf'):
         file_format=config.workflow.file_format,
         bids_filters=config.execution.bids_filters,
     )
+    # TODO: Grab the atlas-<label>_description.json at the top of the dataset and
+    # copy it to the output directory.
 
     # Reorganize the atlas file information
     atlas_names, atlas_files, atlas_labels_files, atlas_metadata = [], [], [], []
