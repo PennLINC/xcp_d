@@ -334,6 +334,69 @@ class CopyAtlas(SimpleInterface):
         return runtime
 
 
+class _CopyAtlasDescriptionInputSpec(BaseInterfaceInputSpec):
+    in_dir = Directory(
+        exists=True,
+        desc='The atlas directory to copy the description file from.',
+        mandatory=True,
+    )
+    atlas_name = traits.Str(
+        desc='The name of the atlas.',
+        mandatory=True,
+    )
+    output_dir = Directory(
+        exists=True,
+        desc='The output directory.',
+        mandatory=True,
+    )
+
+
+class _CopyAtlasDescriptionOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc='The copied atlas file.',
+    )
+
+
+class CopyAtlasDescription(SimpleInterface):
+    """Copy atlas description file to output directory.
+
+    Parameters
+    ----------
+    in_file : :obj:`str`
+        The atlas file to copy.
+    output_dir : :obj:`str`
+        The output directory.
+
+    Returns
+    -------
+    out_file : :obj:`str`
+        The path to the copied atlas description file.
+    """
+
+    input_spec = _CopyAtlasDescriptionInputSpec
+    output_spec = _CopyAtlasDescriptionOutputSpec
+
+    def _run_interface(self, runtime):
+        output_dir = self.inputs.output_dir
+        in_dir = self.inputs.in_dir
+        atlas_name = self.inputs.atlas_name
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        in_file = os.path.join(in_dir, f'atlas-{atlas_name}_description.json')
+        if not os.path.isfile(in_file):
+            raise FileNotFoundError(f'Atlas description file not found: {in_file}')
+
+        out_file = os.path.join(output_dir, f'atlas-{atlas_name}_description.json')
+        if not os.path.isfile(out_file):
+            shutil.copyfile(in_file, out_file)
+
+        self._results['out_file'] = out_file
+
+        return runtime
+
+
 class _BIDSURIInputSpec(DynamicTraitedSpec):
     dataset_links = traits.Dict(mandatory=True, desc='Dataset links')
     out_dir = traits.Str(mandatory=True, desc='Output directory')

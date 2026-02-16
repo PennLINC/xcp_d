@@ -54,7 +54,7 @@ def init_load_atlases_wf(name='load_atlases_wf'):
     atlas_files
     atlas_labels_files
     """
-    from xcp_d.interfaces.bids import CopyAtlas
+    from xcp_d.interfaces.bids import CopyAtlas, CopyAtlasDescription
     from xcp_d.utils.atlas import collect_atlases
     from xcp_d.utils.boilerplate import describe_atlases
 
@@ -122,6 +122,19 @@ The following atlases were used in the workflow: {atlas_str}.
         name='outputnode',
     )
     workflow.connect([(inputnode, outputnode, [('atlas_names', 'atlas_names')])])
+
+    copy_atlas_description = pe.MapNode(
+        CopyAtlasDescription(output_dir=atlas_output_dir),
+        name='copy_atlas_description',
+        iterfield=['in_dir', 'atlas_name'],
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (inputnode, copy_atlas_description, [
+            ('atlas_datasets', 'in_dir'),
+            ('atlas_names', 'atlas_name'),
+        ]),
+    ])  # fmt:skip
 
     atlas_buffer = pe.Node(
         niu.IdentityInterface(
