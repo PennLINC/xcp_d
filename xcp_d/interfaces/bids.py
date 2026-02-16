@@ -259,12 +259,21 @@ class CopyAtlas(SimpleInterface):
         Sources = self.inputs.Sources
 
         tpl = get_entity(name_source, 'tpl')
-        tpl_str = f'tpl-{tpl}_' if tpl else ''
-        if tpl:
-            output_dir = os.path.join(output_dir, f'tpl-{tpl}')
+        if not tpl:
+            tpl = get_entity(name_source, 'space')
 
-        cohort = get_entity(name_source, 'cohort')
-        cohort_str = f'cohort-{cohort}_' if cohort else ''
+        if not tpl:
+            raise ValueError(f'Could not determine template from {name_source}')
+
+        cohort = None
+        if '+' in tpl:
+            # Split the template and cohort
+            tpl, cohort = tpl.split('+')
+            cohort_str = f'cohort-{cohort}_' if cohort else ''
+
+        tpl_str = f'tpl-{tpl}_'
+
+        output_dir = os.path.join(output_dir, f'tpl-{tpl}')
         if cohort:
             output_dir = os.path.join(output_dir, f'cohort-{cohort}')
 
