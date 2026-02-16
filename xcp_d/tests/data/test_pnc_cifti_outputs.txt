@@ -1,4 +1,5 @@
 dataset_description.json
+derivatives
 derivatives/atlases
 derivatives/atlases/atlas-HCP_description.json
 derivatives/atlases/atlas-MyersLabonte_description.json
