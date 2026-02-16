@@ -1580,8 +1580,10 @@ def sanitize_cohort(filename):
     cohort = get_entity(filename, 'cohort')
 
     # Remove the cohort entity from the filename
-    if cohort:
-        filename = filename.replace(f'cohort-{cohort}_', '')
+    if not cohort:
+        return filename
+
+    filename = filename.replace(f'cohort-{cohort}_', '')
 
     # Now add "+<cohort>" to the template or space entity
     template = get_entity(filename, 'tpl')
