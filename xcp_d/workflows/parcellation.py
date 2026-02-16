@@ -74,11 +74,12 @@ def init_load_atlases_wf(name='load_atlases_wf'):
 
     # Reorganize the atlas file information
     atlas_names, atlas_files, atlas_labels_files, atlas_metadata = [], [], [], []
-    atlas_datasets = []
+    atlas_datasets, atlas_dataset_paths = [], []
     for atlas, atlas_dict in atlases.items():
         config.loggers.workflow.info(f'Loading atlas: {atlas}')
         atlas_names.append(atlas)
         atlas_datasets.append(atlas_dict['dataset'])
+        atlas_dataset_paths.append(atlas_dict['dataset_path'])
         atlas_files.append(atlas_dict['image'])
         atlas_labels_files.append(atlas_dict['labels'])
         atlas_metadata.append(atlas_dict['metadata'])
@@ -98,6 +99,7 @@ The following atlases were used in the workflow: {atlas_str}.
                 'bold_file',
                 'atlas_names',
                 'atlas_datasets',
+                'atlas_dataset_paths',
                 'atlas_files',
                 'atlas_labels_files',
                 'atlas_metadata',
@@ -107,6 +109,7 @@ The following atlases were used in the workflow: {atlas_str}.
     )
     inputnode.inputs.atlas_names = atlas_names
     inputnode.inputs.atlas_datasets = atlas_datasets
+    inputnode.inputs.atlas_dataset_paths = atlas_dataset_paths
     inputnode.inputs.atlas_files = atlas_files
     inputnode.inputs.atlas_labels_files = atlas_labels_files
     inputnode.inputs.atlas_metadata = atlas_metadata
@@ -131,7 +134,7 @@ The following atlases were used in the workflow: {atlas_str}.
     )
     workflow.connect([
         (inputnode, copy_atlas_description, [
-            ('atlas_datasets', 'in_dir'),
+            ('atlas_dataset_paths', 'in_dir'),
             ('atlas_names', 'atlas_name'),
         ]),
     ])  # fmt:skip
