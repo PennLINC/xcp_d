@@ -269,6 +269,10 @@ class CopyAtlas(SimpleInterface):
         if '+' in tpl:
             # Split the template and cohort
             tpl, cohort = tpl.split('+')
+            cohort_str = f'cohort-{cohort}_'
+
+        if not cohort:
+            cohort = get_entity(name_source, 'cohort')
             cohort_str = f'cohort-{cohort}_' if cohort else ''
 
         tpl_str = f'tpl-{tpl}_'
