@@ -265,7 +265,7 @@ class CopyAtlas(SimpleInterface):
         if not tpl:
             raise ValueError(f'Could not determine template from {name_source}')
 
-        cohort = None
+        cohort, cohort_str = None, ''
         if '+' in tpl:
             # Split the template and cohort
             tpl, cohort = tpl.split('+')
