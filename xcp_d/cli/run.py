@@ -168,7 +168,7 @@ def main():
 
         if config.execution.atlases:
             write_atlas_dataset_description(
-                config.execution.output_dir / 'derivatives' /'atlases'
+                config.execution.output_dir / 'derivatives' / 'atlases'
             )
 
         # Generate reports phase
