@@ -1551,3 +1551,44 @@ def _get_bidsuris(in_files, dataset_links, out_dir):
     # Convert the paths to BIDS URIs
     out = [_find_nearest_path(updated_keys, f) for f in in_files]
     return out
+
+
+def sanitize_cohort(filename):
+    """Sanitize the cohort from a filename.
+
+    Remove the cohort entity from the filename and add "+<cohort>" to the template or space entity.
+
+    Parameters
+    ----------
+    filename : :obj:`str`
+        The filename to sanitize.
+
+    Returns
+    -------
+    sanitized_filename : :obj:`str`
+        The sanitized filename.
+
+    Examples
+    --------
+    >>> sanitize_cohort('sub-01_ses-01_task-rest_cohort-01_bold.nii.gz')
+    'sub-01_ses-01_task-rest_bold.nii.gz'
+    >>> sanitize_cohort('sub-01_ses-01_task-rest_space-MNI152NLin2009cAsym_cohort-01_bold.nii.gz')
+    'sub-01_ses-01_task-rest_space-MNI152NLin2009cAsym+01_bold.nii.gz'
+    >>> sanitize_cohort('tpl-MNI152NLin2009cAsym_cohort-01_bold.nii.gz')
+    'tpl-MNI152NLin2009cAsym+01_bold.nii.gz'
+    """
+    cohort = get_entity(filename, 'cohort')
+
+    # Remove the cohort entity from the filename
+    if cohort:
+        filename = filename.replace(f'cohort-{cohort}_', '')
+
+    # Now add "+<cohort>" to the template or space entity
+    template = get_entity(filename, 'tpl')
+    if template:
+        filename = filename.replace(f'tpl-{template}_', f'tpl-{template}+{cohort}_')
+    else:
+        space = get_entity(filename, 'space')
+        if space:
+            filename = filename.replace(f'space-{space}_', f'space-{space}+{cohort}_')
+    return filename

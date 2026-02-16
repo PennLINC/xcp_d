@@ -9,7 +9,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d import config
 from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import BIDSURI, AddHashToTSV, DerivativesDataSink
-from xcp_d.utils.bids import get_entity
+from xcp_d.utils.bids import sanitize_cohort
 from xcp_d.utils.doc import fill_doc
 
 
@@ -187,8 +187,7 @@ def init_postproc_derivatives_wf(
                 'Filter order': bpf_order,
             }
 
-    # Determine cohort (if there is one) in the original data
-    cohort = get_entity(name_source, 'cohort')
+    name_source = sanitize_cohort(name_source)
 
     add_hash_motion = pe.Node(
         AddHashToTSV(
@@ -207,7 +206,7 @@ def init_postproc_derivatives_wf(
     ds_motion = pe.Node(
         DerivativesDataSink(
             source_file=name_source,
-            dismiss_entities=dismiss_hash(['atlas', 'den', 'res', 'space', 'cohort', 'desc']),
+            dismiss_entities=dismiss_hash(['atlas', 'den', 'res', 'space', 'desc']),
             suffix='motion',
             extension='.tsv',
         ),
@@ -266,7 +265,7 @@ def init_postproc_derivatives_wf(
 
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
-                dismiss_entities=dismiss_hash(['atlas', 'den', 'res', 'space', 'cohort', 'desc']),
+                dismiss_entities=dismiss_hash(['atlas', 'den', 'res', 'space', 'desc']),
                 suffix='outliers',
                 extension='.tsv',
                 source_file=name_source,
@@ -320,7 +319,7 @@ def init_postproc_derivatives_wf(
         ds_confounds = pe.Node(
             DerivativesDataSink(
                 source_file=name_source,
-                dismiss_entities=dismiss_hash(['space', 'cohort', 'den', 'res']),
+                dismiss_entities=dismiss_hash(['space', 'den', 'res']),
                 datatype='func',
                 suffix='design',
                 extension='.tsv',
@@ -341,7 +340,6 @@ def init_postproc_derivatives_wf(
         DerivativesDataSink(
             source_file=name_source,
             dismiss_entities=dismiss_hash(['den']),
-            cohort=cohort,
             desc='denoised',
             den='91k' if file_format == 'cifti' else None,
             extension='.dtseries.nii' if file_format == 'cifti' else '.nii.gz',
@@ -373,7 +371,6 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 source_file=name_source,
                 dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
-                cohort=cohort,
                 den='91k' if file_format == 'cifti' else None,
                 desc='linc',
                 suffix='qc',
@@ -403,7 +400,6 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 source_file=name_source,
                 dismiss_entities=dismiss_hash(['den']),
-                cohort=cohort,
                 den='91k' if file_format == 'cifti' else None,
                 desc='denoisedSmoothed',
                 extension='.dtseries.nii' if file_format == 'cifti' else '.nii.gz',
@@ -472,7 +468,6 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 source_file=name_source,
                 dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
-                cohort=cohort,
                 statistic='coverage',
                 suffix='bold',
                 extension='.tsv',
@@ -523,7 +518,6 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 source_file=name_source,
                 dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
-                cohort=cohort,
                 statistic='mean',
                 suffix='timeseries',
                 extension='.tsv',
@@ -594,7 +588,6 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     source_file=name_source,
                     dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
-                    cohort=cohort,
                     statistic='pearsoncorrelation',
                     suffix='relmat',
                     extension='.tsv',
@@ -624,7 +617,6 @@ def init_postproc_derivatives_wf(
                     source_file=name_source,
                     check_hdr=False,
                     dismiss_entities=dismiss_hash(['desc']),
-                    cohort=cohort,
                     statistic='coverage',
                     suffix='boldmap',
                     extension='.pscalar.nii',
@@ -663,7 +655,6 @@ def init_postproc_derivatives_wf(
                     source_file=name_source,
                     check_hdr=False,
                     dismiss_entities=dismiss_hash(['desc', 'den']),
-                    cohort=cohort,
                     den='91k' if file_format == 'cifti' else None,
                     statistic='mean',
                     suffix='timeseries',
@@ -723,7 +714,6 @@ def init_postproc_derivatives_wf(
                         source_file=name_source,
                         check_hdr=False,
                         dismiss_entities=dismiss_hash(['desc']),
-                        cohort=cohort,
                         statistic='pearsoncorrelation',
                         suffix='boldmap',
                         extension='.pconn.nii',
@@ -773,7 +763,6 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     source_file=name_source,
                     dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
-                    cohort=cohort,
                     statistic='pearsoncorrelation',
                     desc=f'{exact_scan}volumes',
                     suffix='relmat',
@@ -809,7 +798,6 @@ def init_postproc_derivatives_wf(
                 source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=dismiss_hash(['desc', 'den']),
-                cohort=cohort,
                 den='91k' if file_format == 'cifti' else None,
                 statistic='reho',
                 suffix='boldmap',
@@ -861,7 +849,6 @@ def init_postproc_derivatives_wf(
             DerivativesDataSink(
                 source_file=name_source,
                 dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
-                cohort=cohort,
                 statistic='reho',
                 suffix='bold',
                 extension='.tsv',
@@ -888,7 +875,6 @@ def init_postproc_derivatives_wf(
                 source_file=name_source,
                 check_hdr=False,
                 dismiss_entities=dismiss_hash(['desc', 'den']),
-                cohort=cohort,
                 den='91k' if file_format == 'cifti' else None,
                 statistic='alff',
                 suffix='boldmap',
@@ -922,7 +908,6 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     source_file=name_source,
                     dismiss_entities=dismiss_hash(['den']),
-                    cohort=cohort,
                     desc='smooth',
                     den='91k' if file_format == 'cifti' else None,
                     statistic='alff',
@@ -976,7 +961,6 @@ def init_postproc_derivatives_wf(
                 DerivativesDataSink(
                     source_file=name_source,
                     dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
-                    cohort=cohort,
                     statistic='alff',
                     suffix='bold',
                     extension='.tsv',
