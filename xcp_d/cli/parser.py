@@ -351,11 +351,12 @@ def _build_parser():
         action='store',
         nargs='+',
         default=[],
-        choices=['alff', 'reho', 'parcellation', 'connectivity'],
+        choices=['alff', 'peraf', 'reho', 'parcellation', 'connectivity'],
         help=(
             'Skip specific outputs during postprocessing. '
             'Options include: '
             "'alff' (skip ALFF calculation), "
+            "'peraf' (skip PerAF calculation), "
             "'reho' (skip ReHo calculation), "
             "'parcellation' (skip parcellation and time series extraction), "
             "'connectivity' (skip functional connectivity calculations). "

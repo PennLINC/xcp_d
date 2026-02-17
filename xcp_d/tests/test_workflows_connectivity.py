@@ -175,6 +175,7 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.inputs.inputnode.name_source = bold_file
         connectivity_wf.inputs.inputnode.bold_mask = bold_mask
         connectivity_wf.inputs.inputnode.reho = fake_bold_file
+        connectivity_wf.inputs.inputnode.peraf = fake_bold_file
         connectivity_wf.inputs.inputnode.atlases = atlas_names
         connectivity_wf.inputs.inputnode.atlas_files = warped_atlases
         connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
@@ -304,6 +305,7 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         connectivity_wf.inputs.inputnode.temporal_mask = temporal_mask
         connectivity_wf.inputs.inputnode.name_source = bold_file
         connectivity_wf.inputs.inputnode.reho = fake_bold_file
+        connectivity_wf.inputs.inputnode.peraf = fake_bold_file
         connectivity_wf.inputs.inputnode.atlases = atlas_names
         connectivity_wf.inputs.inputnode.atlas_files = atlas_files
         connectivity_wf.inputs.inputnode.atlas_labels_files = atlas_labels_files
