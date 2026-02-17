@@ -327,7 +327,7 @@ the following post-processing was performed.
     # Skip PerAF calculation if requested
     skip_peraf = 'peraf' in config.workflow.skip_outputs
     if not skip_peraf:
-        peraf_wf = init_peraf_wf(name_source=bold_file, mem_gb=mem_gbx)
+        peraf_wf = init_peraf_wf(name_source=bold_file, mem_gb=mem_gb)
 
         workflow.connect([
             (downcast_data, peraf_wf, [('bold_mask', 'inputnode.bold_mask')]),
