@@ -369,6 +369,8 @@ class ComputePerAF(SimpleInterface):
         denoised_data = denoised_data - np.mean(denoised_data, axis=1, keepdims=True)
         mean_data = np.mean(mean_data, axis=1, keepdims=True)
         peraf = 100 * np.mean(np.abs(denoised_data / mean_data), axis=1)
+        # Add extra dimension to the matrix to satisfy write_ndata
+        peraf = peraf[:, None]
 
         # Write out the data
         if self.inputs.denoised_bold.endswith('.dtseries.nii'):
