@@ -421,6 +421,15 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
+    # Skip PerAF calculation if requested
+    if not skip_peraf:
+        workflow.connect([
+            (peraf_wf, postproc_derivatives_wf, [
+                ('outputnode.peraf', 'inputnode.peraf'),
+                ('outputnode.smoothed_peraf', 'inputnode.smoothed_peraf'),
+            ]),
+        ])  # fmt:skip
+
     if config.execution.atlases:
         connectivity_wf = init_functional_connectivity_nifti_wf(
             has_multiple_runs=has_multiple_runs,
@@ -466,6 +475,15 @@ the following post-processing was performed.
                 (alff_wf, connectivity_wf, [('outputnode.alff', 'inputnode.alff')]),
                 (connectivity_wf, postproc_derivatives_wf, [
                     ('outputnode.parcellated_alff', 'inputnode.parcellated_alff'),
+                ]),
+            ])  # fmt:skip
+
+        # Skip PerAF calculation if requested
+        if not skip_peraf:
+            workflow.connect([
+                (peraf_wf, connectivity_wf, [('outputnode.peraf', 'inputnode.peraf')]),
+                (connectivity_wf, postproc_derivatives_wf, [
+                    ('outputnode.parcellated_peraf', 'inputnode.parcellated_peraf'),
                 ]),
             ])  # fmt:skip
 

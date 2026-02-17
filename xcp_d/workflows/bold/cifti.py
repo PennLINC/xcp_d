@@ -473,6 +473,15 @@ the following post-processing was performed.
                 ]),
             ])  # fmt:skip
 
+        # Skip PerAF calculation if requested
+        if not skip_peraf:
+            workflow.connect([
+                (peraf_wf, connectivity_wf, [('outputnode.peraf', 'inputnode.peraf')]),
+                (connectivity_wf, postproc_derivatives_wf, [
+                    ('outputnode.parcellated_peraf', 'inputnode.parcellated_peraf'),
+                ]),
+            ])  # fmt:skip
+
     if config.workflow.abcc_qc:
         # executive summary workflow
         execsummary_functional_plots_wf = init_execsummary_functional_plots_wf(
