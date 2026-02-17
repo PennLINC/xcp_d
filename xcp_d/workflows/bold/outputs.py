@@ -110,6 +110,9 @@ def init_postproc_derivatives_wf(
                 'smoothed_alff',
                 'reho',
                 'parcellated_reho',
+                'peraf',
+                'parcellated_peraf',
+                'smoothed_peraf',
                 'motion_file',
                 'motion_metadata',
                 'temporal_mask',
@@ -993,6 +996,119 @@ def init_postproc_derivatives_wf(
             workflow.connect([
                 (inputnode, ds_parcellated_alff, [('atlas_names', 'segmentation')]),
                 (add_hash_parcellated_alff, ds_parcellated_alff, [
+                    ('out_file', 'in_file'),
+                    ('metadata', 'meta_dict'),
+                ]),
+            ])  # fmt:skip
+
+    # PerAF outputs: only create sinks if PerAF is not explicitly skipped
+    if 'peraf' not in config.workflow.skip_outputs:
+        ds_peraf = pe.Node(
+            DerivativesDataSink(
+                source_file=name_source,
+                check_hdr=False,
+                dismiss_entities=dismiss_hash(['desc', 'den']),
+                cohort=cohort,
+                den='91k' if file_format == 'cifti' else None,
+                statistic='reho',
+                suffix='boldmap',
+                extension='.dscalar.nii' if file_format == 'cifti' else '.nii.gz',
+                # Metadata
+                SoftwareFilters=software_filters,
+            ),
+            name='ds_peraf',
+            run_without_submitting=True,
+            mem_gb=1,
+        )
+        workflow.connect([
+            (inputnode, ds_peraf, [('peraf', 'in_file')]),
+            (denoised_src, ds_peraf, [('out', 'Sources')]),
+        ])  # fmt:skip
+
+        if smoothing:
+            peraf_src = pe.Node(
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
+                ),
+                name='peraf_src',
+                run_without_submitting=True,
+                mem_gb=1,
+            )
+            workflow.connect([(ds_peraf, peraf_src, [('out_file', 'in1')])])
+
+            ds_smoothed_peraf = pe.Node(
+                DerivativesDataSink(
+                    source_file=name_source,
+                    dismiss_entities=dismiss_hash(['den']),
+                    cohort=cohort,
+                    desc='smooth',
+                    den='91k' if file_format == 'cifti' else None,
+                    statistic='peraf',
+                    suffix='boldmap',
+                    extension='.dscalar.nii' if file_format == 'cifti' else '.nii.gz',
+                    check_hdr=False,
+                    # Metadata
+                    SoftwareFilters=software_filters,
+                    FWHM=smoothing,
+                ),
+                name='ds_smoothed_peraf',
+                run_without_submitting=True,
+                mem_gb=1,
+            )
+            workflow.connect([
+                (inputnode, ds_smoothed_peraf, [('smoothed_peraf', 'in_file')]),
+                (peraf_src, ds_smoothed_peraf, [('out', 'Sources')]),
+            ])  # fmt:skip
+
+        if config.execution.atlases:
+            add_peraf_to_src = pe.MapNode(
+                BIDSURI(
+                    numinputs=1,
+                    dataset_links=config.execution.dataset_links,
+                    out_dir=str(output_dir),
+                ),
+                run_without_submitting=True,
+                mem_gb=1,
+                name='add_peraf_to_src',
+                iterfield=['metadata'],
+            )
+            workflow.connect([
+                (make_atlas_dict, add_peraf_to_src, [('metadata', 'metadata')]),
+                (ds_peraf, add_peraf_to_src, [('out_file', 'in1')]),
+            ])  # fmt:skip
+
+            add_hash_parcellated_peraf = pe.MapNode(
+                AddHashToTSV(
+                    add_to_columns=True,
+                    add_to_rows=False,
+                ),
+                name='add_hash_parcellated_peraf',
+                iterfield=['in_file', 'metadata'],
+            )
+            workflow.connect([
+                (inputnode, add_hash_parcellated_peraf, [('parcellated_peraf', 'in_file')]),
+                (add_peraf_to_src, add_hash_parcellated_peraf, [('metadata', 'metadata')]),
+            ])  # fmt:skip
+
+            ds_parcellated_peraf = pe.MapNode(
+                DerivativesDataSink(
+                    source_file=name_source,
+                    dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
+                    cohort=cohort,
+                    statistic='peraf',
+                    suffix='bold',
+                    extension='.tsv',
+                ),
+                name='ds_parcellated_peraf',
+                run_without_submitting=True,
+                mem_gb=1,
+                iterfield=['segmentation', 'in_file', 'meta_dict'],
+            )
+            workflow.connect([
+                (inputnode, ds_parcellated_peraf, [('atlas_names', 'segmentation')]),
+                (add_hash_parcellated_peraf, ds_parcellated_peraf, [
                     ('out_file', 'in_file'),
                     ('metadata', 'meta_dict'),
                 ]),

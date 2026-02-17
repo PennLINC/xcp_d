@@ -37,6 +37,8 @@ sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S1
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-mean_timeseries.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-pearsoncorrelation_relmat.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-peraf_bold.json
+sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-peraf_bold.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_bold.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_bold.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-coverage_bold.json
@@ -45,8 +47,12 @@ sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Sch
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-mean_timeseries.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-pearsoncorrelation_relmat.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-pearsoncorrelation_relmat.tsv
+sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-peraf_bold.json
+sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-peraf_bold.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-reho_bold.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-reho_bold.tsv
+sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_stat-peraf_boldmap.json
+sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_stat-peraf_boldmap.nii.gz
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_stat-reho_boldmap.json
 sub-01/func/sub-01_task-mixedgamblestask_run-1_space-MNI152NLin2009cAsym_stat-reho_boldmap.nii.gz
 sub-01/func/sub-01_task-mixedgamblestask_run-2_desc-abcc_qc.hdf5
@@ -67,6 +73,8 @@ sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S1
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-mean_timeseries.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-pearsoncorrelation_relmat.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-peraf_bold.json
+sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-peraf_bold.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_bold.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-4S156Parcels_stat-reho_bold.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-coverage_bold.json
@@ -75,8 +83,12 @@ sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Sch
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-mean_timeseries.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-pearsoncorrelation_relmat.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-pearsoncorrelation_relmat.tsv
+sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-peraf_bold.json
+sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-peraf_bold.tsv
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-reho_bold.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_seg-Schaefer100_stat-reho_bold.tsv
+sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_stat-peraf_boldmap.json
+sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_stat-peraf_boldmap.nii.gz
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_stat-reho_boldmap.json
 sub-01/func/sub-01_task-mixedgamblestask_run-2_space-MNI152NLin2009cAsym_stat-reho_boldmap.nii.gz
 sub-01/sub-01.html

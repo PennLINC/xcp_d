@@ -47,6 +47,8 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_den-91k_desc-denoisedSmoothed_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_den-91k_desc-denoised_bold.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_den-91k_stat-peraf_boldmap.dscalar.nii
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_den-91k_stat-peraf_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_den-91k_stat-reho_boldmap.dscalar.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_den-91k_stat-reho_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-4S156Parcels_den-91k_stat-coverage_boldmap.json
@@ -61,6 +63,8 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-4S156Parcels_stat-mean_timeseries.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-4S156Parcels_stat-pearsoncorrelation_relmat.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-4S156Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-4S156Parcels_stat-peraf_bold.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-4S156Parcels_stat-peraf_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-4S156Parcels_stat-reho_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-4S156Parcels_stat-reho_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-MIDB_den-91k_stat-coverage_boldmap.json
@@ -75,6 +79,8 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-MIDB_stat-mean_timeseries.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-MIDB_stat-pearsoncorrelation_relmat.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-MIDB_stat-pearsoncorrelation_relmat.tsv
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-MIDB_stat-peraf_bold.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-MIDB_stat-peraf_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-MIDB_stat-reho_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_hash-e083b4a2_task-idemo_space-fsLR_seg-MIDB_stat-reho_bold.tsv
 sub-1648798153_hash-e083b4a2.html

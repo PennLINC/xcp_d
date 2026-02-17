@@ -291,3 +291,100 @@ class DespikePatch(Despike):
         outputs = self.output_spec().get()
         outputs['out_file'] = os.path.abspath(self._gen_filename('out_file'))
         return outputs
+
+
+class _ComputePerAFInputSpec(BaseInterfaceInputSpec):
+    denoised_bold = File(exists=True, desc='Denoised BOLD data')
+    mean_file = File(exists=True, desc='4D image used to calculate the mean signal')
+    mask = File(exists=True, desc='Brain mask. Only used for NIfTI data.')
+    temporal_mask = traits.Either(
+        File(exists=True),
+        Undefined,
+        desc='Temporal mask.',
+    )
+
+
+class _ComputePerAFOutputSpec(TraitedSpec):
+    peraf = File(exists=True, mandatory=True, desc='Percent amplitude of fluctuation')
+
+
+class ComputePerAF(SimpleInterface):
+    """Compute percent amplitude of fluctuation (PerAF).
+
+    Notes
+    -----
+    The PerAF implementation is based on :footcite:t:`jia2020percent`.
+    PerAF is calculated after denoising, bandpass filtering, and temporal masking.
+
+    The denoised BOLD data is already mean-centered by the denoising workflow,
+    but the original variance is retained.
+    This interface will explicitly mean-center the denoised data, just to be safe.
+    The preprocessed BOLD data is used to calculate the mean image.
+
+    This workflow will also generate a plot of the PerAF map.
+    For CIFTI data, the plot will be overlaid on the midthickness surface-
+    either the subject's surface warped to fsLR space (when the anatomical workflow is enabled)
+    or the fsLR 32k midthickness surface template.
+
+    .. math::
+        PerAF = \frac{1}{N} \sum_{i=1}^{N} \left( \frac{X_i - \mu}{\mu} \right) * 100%
+
+    References
+    ----------
+    .. footbibliography::
+    """
+
+    input_spec = _ComputePerAFInputSpec
+    output_spec = _ComputePerAFOutputSpec
+
+    def _run_interface(self, runtime):
+        import numpy as np
+
+        # Get the nifti/cifti into matrix form
+        denoised_data = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+        _, n_volumes = denoised_data.shape
+
+        mean_data = read_ndata(datafile=self.inputs.mean_file, maskfile=self.inputs.mask)
+        if denoised_data.shape != mean_data.shape:
+            raise ValueError(
+                f'Denoised data has {denoised_data.shape} shape, but preprocessed data has '
+                f'{mean_data.shape} shape'
+            )
+
+        sample_mask = None
+        temporal_mask = self.inputs.temporal_mask
+        if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
+            censoring_df = pd.read_table(temporal_mask)
+            # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
+            sample_mask = ~get_col(censoring_df, 'framewise_displacement').values.astype(bool)
+            if sample_mask.size != n_volumes:
+                raise ValueError(f'{sample_mask.size} != {n_volumes}')
+
+            denoised_data = denoised_data[sample_mask, :]
+            mean_data = mean_data[sample_mask, :]
+
+        # Explicitly mean-center the denoised data so there isn't a chance of it confounding
+        # with the mean image.
+        denoised_data = denoised_data - np.mean(denoised_data, axis=1, keepdims=True)
+        mean_data = np.mean(mean_data, axis=1, keepdims=True)
+        peraf = 100 * np.mean(np.abs(denoised_data / mean_data), axis=1)
+
+        # Write out the data
+        if self.inputs.in_file.endswith('.dtseries.nii'):
+            suffix = '_peraf.dscalar.nii'
+        elif self.inputs.in_file.endswith('.nii.gz'):
+            suffix = '_peraf.nii.gz'
+
+        self._results['peraf'] = fname_presuffix(
+            self.inputs.in_file,
+            suffix=suffix,
+            newpath=runtime.cwd,
+            use_ext=False,
+        )
+        write_ndata(
+            data_matrix=peraf,
+            template=self.inputs.in_file,
+            filename=self._results['peraf'],
+            mask=self.inputs.mask,
+        )
+        return runtime
