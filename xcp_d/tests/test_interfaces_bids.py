@@ -37,7 +37,7 @@ def test_copy_atlas(tmp_path_factory):
     assert os.path.isfile(result.outputs.out_file.replace('.nii.gz', '.json'))
     assert (
         os.path.basename(result.outputs.out_file)
-        == 'tpl-MNI152NLin2009cAsym_atlas-Y_res-02_dseg.nii.gz'
+        == 'tpl-MNI152NLin2009cAsym_atlas-Y_res-2_dseg.nii.gz'
     )
 
     # Check that the NIfTI file raises an error if the resolution varies

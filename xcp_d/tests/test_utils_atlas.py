@@ -103,7 +103,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     with open(
         tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.tsv', 'w'
     ) as fo:
-        fo.write('label\ntest\n')
+        fo.write('name\ntest\n')
 
     with pytest.raises(ValueError, match="'index' column not found"):
         atlas.collect_atlases(
@@ -117,7 +117,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     with open(
         tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.tsv', 'w'
     ) as fo:
-        fo.write('index\tlabel\n1\ttest\n')
+        fo.write('index\tname\n1\ttest\n')
 
     atlas_cache = atlas.collect_atlases(
         datasets={'test': tmpdir},
