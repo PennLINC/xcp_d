@@ -1010,7 +1010,7 @@ def init_postproc_derivatives_wf(
                 dismiss_entities=dismiss_hash(['desc', 'den']),
                 cohort=cohort,
                 den='91k' if file_format == 'cifti' else None,
-                statistic='reho',
+                statistic='peraf',
                 suffix='boldmap',
                 extension='.dscalar.nii' if file_format == 'cifti' else '.nii.gz',
                 # Metadata
