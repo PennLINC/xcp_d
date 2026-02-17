@@ -368,7 +368,9 @@ class ComputePerAF(SimpleInterface):
         # with the mean image.
         denoised_data = denoised_data - np.mean(denoised_data, axis=1, keepdims=True)
         mean_data = np.mean(mean_data, axis=1, keepdims=True)
+        # Calculate PerAF, but guard against inf and nan values
         peraf = 100 * np.mean(np.abs(denoised_data / mean_data), axis=1)
+        peraf = np.nan_to_num(peraf, nan=0, posinf=100, neginf=0)
         # Add extra dimension to the matrix to satisfy write_ndata
         peraf = peraf[:, None]
 
