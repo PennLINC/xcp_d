@@ -342,7 +342,7 @@ class ComputePerAF(SimpleInterface):
         import numpy as np
 
         # Get the nifti/cifti into matrix form
-        denoised_data = read_ndata(datafile=self.inputs.in_file, maskfile=self.inputs.mask)
+        denoised_data = read_ndata(datafile=self.inputs.denoised_bold, maskfile=self.inputs.mask)
         _, n_volumes = denoised_data.shape
 
         mean_data = read_ndata(datafile=self.inputs.mean_file, maskfile=self.inputs.mask)
@@ -371,20 +371,20 @@ class ComputePerAF(SimpleInterface):
         peraf = 100 * np.mean(np.abs(denoised_data / mean_data), axis=1)
 
         # Write out the data
-        if self.inputs.in_file.endswith('.dtseries.nii'):
+        if self.inputs.denoised_bold.endswith('.dtseries.nii'):
             suffix = '_peraf.dscalar.nii'
-        elif self.inputs.in_file.endswith('.nii.gz'):
+        elif self.inputs.denoised_bold.endswith('.nii.gz'):
             suffix = '_peraf.nii.gz'
 
         self._results['peraf'] = fname_presuffix(
-            self.inputs.in_file,
+            self.inputs.denoised_bold,
             suffix=suffix,
             newpath=runtime.cwd,
             use_ext=False,
         )
         write_ndata(
             data_matrix=peraf,
-            template=self.inputs.in_file,
+            template=self.inputs.denoised_bold,
             filename=self._results['peraf'],
             mask=self.inputs.mask,
         )
