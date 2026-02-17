@@ -1100,10 +1100,10 @@ def init_postproc_derivatives_wf(
                 name='ds_parcellated_peraf',
                 run_without_submitting=True,
                 mem_gb=1,
-                iterfield=['segmentation', 'in_file', 'meta_dict'],
+                iterfield=['atlas', 'in_file', 'meta_dict'],
             )
             workflow.connect([
-                (inputnode, ds_parcellated_peraf, [('atlas_names', 'segmentation')]),
+                (inputnode, ds_parcellated_peraf, [('atlas_names', 'atlas')]),
                 (add_hash_parcellated_peraf, ds_parcellated_peraf, [
                     ('out_file', 'in_file'),
                     ('metadata', 'meta_dict'),
