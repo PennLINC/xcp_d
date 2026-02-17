@@ -213,12 +213,10 @@ the following post-processing was performed.
         name='outputnode',
     )
 
-    mem_gbx = mem_gb
-
     downcast_data = pe.Node(
         ConvertTo32(),
         name='downcast_data',
-        mem_gb=mem_gbx['bold'],
+        mem_gb=mem_gb['bold'],
     )
 
     workflow.connect([
@@ -233,7 +231,7 @@ the following post-processing was performed.
         TR=TR,
         exact_scans=exact_scans,
         head_radius=head_radius,
-        mem_gb=mem_gbx,
+        mem_gb=mem_gb,
     )
 
     workflow.connect([
@@ -249,7 +247,7 @@ the following post-processing was performed.
         ]),
     ])  # fmt:skip
 
-    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb=mem_gbx)
+    denoise_bold_wf = init_denoise_bold_wf(TR=TR, mem_gb=mem_gb)
 
     workflow.connect([
         (prepare_confounds_wf, denoise_bold_wf, [
@@ -264,7 +262,7 @@ the following post-processing was performed.
     ])  # fmt:skip
 
     if despike:
-        despike_wf = init_despike_wf(TR=TR, mem_gb=mem_gbx)
+        despike_wf = init_despike_wf(TR=TR, mem_gb=mem_gb)
 
         workflow.connect([
             (prepare_confounds_wf, despike_wf, [
@@ -288,7 +286,7 @@ the following post-processing was performed.
     skip_alff = (not bandpass_filter) or ('alff' in config.workflow.skip_outputs)
 
     if not skip_alff:
-        alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gbx)
+        alff_wf = init_alff_wf(name_source=bold_file, TR=TR, mem_gb=mem_gb)
 
         workflow.connect([
             (inputnode, alff_wf, [
@@ -306,7 +304,7 @@ the following post-processing was performed.
     # Skip ReHo calculation if requested
     skip_reho = 'reho' in config.workflow.skip_outputs
     if not skip_reho:
-        reho_wf = init_reho_cifti_wf(name_source=bold_file, mem_gb=mem_gbx)
+        reho_wf = init_reho_cifti_wf(name_source=bold_file, mem_gb=mem_gb)
 
         workflow.connect([
             (inputnode, reho_wf, [
@@ -341,7 +339,7 @@ the following post-processing was performed.
     qc_report_wf = init_qc_report_wf(
         TR=TR,
         head_radius=head_radius,
-        mem_gb=mem_gbx,
+        mem_gb=mem_gb,
         name='qc_report_wf',
     )
 
@@ -421,7 +419,7 @@ the following post-processing was performed.
 
     if config.execution.atlases:
         connectivity_wf = init_functional_connectivity_cifti_wf(
-            mem_gb=mem_gbx,
+            mem_gb=mem_gb,
             exact_scans=exact_scans,
             has_multiple_runs=has_multiple_runs,
             skip_reho=skip_reho,
@@ -488,7 +486,7 @@ the following post-processing was performed.
             preproc_nifti=run_data['nifti_file'],
             t1w_available=t1w_available,
             t2w_available=t2w_available,
-            mem_gb=mem_gbx,
+            mem_gb=mem_gb,
         )
         workflow.connect([
             (inputnode, execsummary_functional_plots_wf, [

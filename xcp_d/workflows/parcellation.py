@@ -272,7 +272,7 @@ def init_parcellate_cifti_wf(
             from xcp_d.workflows.parcellation import init_parcellate_cifti_wf
 
             with mock_config():
-                wf = init_parcellate_cifti_wf(mem_gb={"bold": 2})
+                wf = init_parcellate_cifti_wf(mem_gb={"bold": 2, "volume": 1})
 
     Parameters
     ----------
@@ -431,7 +431,7 @@ def init_parcellate_cifti_wf(
         ),
         name='threshold_coverage',
         iterfield=['data'],
-        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+        mem_gb=2 * mem_gb['volume'],
     )
     workflow.connect([(coverage_buffer, threshold_coverage, [('coverage_cifti', 'data')])])
 
@@ -440,7 +440,7 @@ def init_parcellate_cifti_wf(
         CiftiMask(),
         name='mask_parcellated_data',
         iterfield=['in_file', 'mask'],
-        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+        mem_gb=2 * mem_gb['volume'],
     )
     workflow.connect([
         (parcellate_data, mask_parcellated_data, [('out_file', 'in_file')]),
