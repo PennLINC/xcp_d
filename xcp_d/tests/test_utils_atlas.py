@@ -4,7 +4,6 @@ import json
 
 import pytest
 
-from xcp_d.data import load as load_data
 from xcp_d.utils import atlas
 
 
@@ -21,7 +20,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     schaefer_dset = datasets['schaefer100']
 
     atlas_datasets = {
-        'xcpdatlases': str(load_data('atlases')),
+        'xcpdatlases': '/XCPDAtlases',
     }
     atlas_cache = atlas.collect_atlases(
         datasets=atlas_datasets,
@@ -56,7 +55,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     assert 'Schaefer100' not in atlas_cache
 
     # Add a duplicate atlas
-    atlas_datasets['duplicate'] = str(load_data('atlases'))
+    atlas_datasets['duplicate'] = '/XCPDAtlases'
     with pytest.raises(ValueError, match="Multiple datasets contain the same atlas 'Gordon'"):
         atlas.collect_atlases(
             datasets=atlas_datasets,

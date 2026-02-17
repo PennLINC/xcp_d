@@ -24,6 +24,7 @@ def test_copy_atlas(tmp_path_factory):
         'dataset': 'xcpdatlases',
     }
     name_source = 'sub-01_task-A_run-01_space-MNI152NLin2009cAsym_res-2_desc-z_bold.nii.gz'
+    # The copied file should use the space entity from the name_source, not the atlas
     copyatlas = bids.CopyAtlas(
         name_source=name_source,
         in_file=atlas_info['image'],
@@ -36,7 +37,7 @@ def test_copy_atlas(tmp_path_factory):
     assert os.path.isfile(result.outputs.out_file.replace('.nii.gz', '.json'))
     assert (
         os.path.basename(result.outputs.out_file)
-        == 'tpl-MNI152NLin6Asym_atlas-Y_res-02_dseg.nii.gz'
+        == 'tpl-MNI152NLin2009cAsym_atlas-Y_res-02_dseg.nii.gz'
     )
 
     # Check that the NIfTI file raises an error if the resolution varies
