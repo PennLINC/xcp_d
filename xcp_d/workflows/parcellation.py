@@ -2,6 +2,8 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Workflows for parcellating imaging data."""
 
+import os
+
 from nipype import Function, logging
 from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
@@ -52,12 +54,14 @@ def init_load_atlases_wf(name='load_atlases_wf'):
     atlas_files
     atlas_labels_files
     """
-    from xcp_d.interfaces.bids import CopyAtlas
+    from xcp_d.interfaces.bids import CopyAtlas, CopyAtlasDescription
     from xcp_d.utils.atlas import collect_atlases
     from xcp_d.utils.boilerplate import describe_atlases
 
     workflow = Workflow(name=name)
     output_dir = config.execution.output_dir
+    atlas_output_dir = os.path.join(output_dir, 'derivatives', 'atlases')
+    os.makedirs(atlas_output_dir, exist_ok=True)
 
     atlases = collect_atlases(
         datasets=config.execution.datasets,
@@ -65,14 +69,17 @@ def init_load_atlases_wf(name='load_atlases_wf'):
         file_format=config.workflow.file_format,
         bids_filters=config.execution.bids_filters,
     )
+    # TODO: Grab the atlas-<label>_description.json at the top of the dataset and
+    # copy it to the output directory.
 
     # Reorganize the atlas file information
     atlas_names, atlas_files, atlas_labels_files, atlas_metadata = [], [], [], []
-    atlas_datasets = []
+    atlas_datasets, atlas_dataset_paths = [], []
     for atlas, atlas_dict in atlases.items():
         config.loggers.workflow.info(f'Loading atlas: {atlas}')
         atlas_names.append(atlas)
         atlas_datasets.append(atlas_dict['dataset'])
+        atlas_dataset_paths.append(atlas_dict['dataset_path'])
         atlas_files.append(atlas_dict['image'])
         atlas_labels_files.append(atlas_dict['labels'])
         atlas_metadata.append(atlas_dict['metadata'])
@@ -92,6 +99,7 @@ The following atlases were used in the workflow: {atlas_str}.
                 'bold_file',
                 'atlas_names',
                 'atlas_datasets',
+                'atlas_dataset_paths',
                 'atlas_files',
                 'atlas_labels_files',
                 'atlas_metadata',
@@ -101,6 +109,7 @@ The following atlases were used in the workflow: {atlas_str}.
     )
     inputnode.inputs.atlas_names = atlas_names
     inputnode.inputs.atlas_datasets = atlas_datasets
+    inputnode.inputs.atlas_dataset_paths = atlas_dataset_paths
     inputnode.inputs.atlas_files = atlas_files
     inputnode.inputs.atlas_labels_files = atlas_labels_files
     inputnode.inputs.atlas_metadata = atlas_metadata
@@ -116,6 +125,19 @@ The following atlases were used in the workflow: {atlas_str}.
         name='outputnode',
     )
     workflow.connect([(inputnode, outputnode, [('atlas_names', 'atlas_names')])])
+
+    copy_atlas_description = pe.MapNode(
+        CopyAtlasDescription(output_dir=atlas_output_dir),
+        name='copy_atlas_description',
+        iterfield=['in_dir', 'atlas_name'],
+        run_without_submitting=True,
+    )
+    workflow.connect([
+        (inputnode, copy_atlas_description, [
+            ('atlas_dataset_paths', 'in_dir'),
+            ('atlas_names', 'atlas_name'),
+        ]),
+    ])  # fmt:skip
 
     atlas_buffer = pe.Node(
         niu.IdentityInterface(
@@ -188,7 +210,7 @@ The following atlases were used in the workflow: {atlas_str}.
     workflow.connect([(inputnode, atlas_srcs, [('atlas_files', 'in1')])])
 
     copy_atlas = pe.MapNode(
-        CopyAtlas(output_dir=output_dir),
+        CopyAtlas(output_dir=atlas_output_dir),
         name='copy_atlas',
         iterfield=['in_file', 'atlas', 'meta_dict', 'Sources'],
     )
@@ -204,7 +226,7 @@ The following atlases were used in the workflow: {atlas_str}.
     ])  # fmt:skip
 
     copy_atlas_labels_file = pe.MapNode(
-        CopyAtlas(output_dir=output_dir),
+        CopyAtlas(output_dir=atlas_output_dir),
         name='copy_atlas_labels_file',
         iterfield=['in_file', 'atlas'],
         run_without_submitting=True,
@@ -250,7 +272,7 @@ def init_parcellate_cifti_wf(
             from xcp_d.workflows.parcellation import init_parcellate_cifti_wf
 
             with mock_config():
-                wf = init_parcellate_cifti_wf(mem_gb={"bold": 2})
+                wf = init_parcellate_cifti_wf(mem_gb={"bold": 2, "volume": 1})
 
     Parameters
     ----------
@@ -409,7 +431,7 @@ def init_parcellate_cifti_wf(
         ),
         name='threshold_coverage',
         iterfield=['data'],
-        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+        mem_gb=2 * mem_gb['volume'],
     )
     workflow.connect([(coverage_buffer, threshold_coverage, [('coverage_cifti', 'data')])])
 
@@ -418,7 +440,7 @@ def init_parcellate_cifti_wf(
         CiftiMask(),
         name='mask_parcellated_data',
         iterfield=['in_file', 'mask'],
-        mem_gb=config.DEFAULT_MEMORY_MIN_GB,
+        mem_gb=2 * mem_gb['volume'],
     )
     workflow.connect([
         (parcellate_data, mask_parcellated_data, [('out_file', 'in_file')]),

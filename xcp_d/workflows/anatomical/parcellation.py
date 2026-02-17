@@ -139,7 +139,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
         ])  # fmt:skip
 
         parcellate_surface_wf = init_parcellate_cifti_wf(
-            mem_gb={'bold': 2},
+            mem_gb={'bold': 2, 'volume': 1},
             compute_mask=True,
             name=f'parcellate_{file_to_parcellate}_wf',
         )
@@ -179,12 +179,12 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
             name=f'ds_parcellated_{file_to_parcellate}',
             run_without_submitting=True,
             mem_gb=1,
-            iterfield=['segmentation', 'in_file'],
+            iterfield=['atlas', 'in_file'],
         )
         workflow.connect([
             (inputnode, ds_parcellated_surface, [
                 (file_to_parcellate, 'source_file'),
-                ('atlas_names', 'segmentation'),
+                ('atlas_names', 'atlas'),
             ]),
             (add_hash_parcellated_surface, ds_parcellated_surface, [('out_file', 'in_file')]),
         ])  # fmt:skip
