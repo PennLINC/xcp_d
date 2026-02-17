@@ -361,8 +361,8 @@ class ComputePerAF(SimpleInterface):
             if sample_mask.size != n_volumes:
                 raise ValueError(f'{sample_mask.size} != {n_volumes}')
 
-            denoised_data = denoised_data[sample_mask, :]
-            mean_data = mean_data[sample_mask, :]
+            denoised_data = denoised_data[:, sample_mask]
+            mean_data = mean_data[:, sample_mask]
 
         # Explicitly mean-center the denoised data so there isn't a chance of it confounding
         # with the mean image.
