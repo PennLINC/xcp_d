@@ -85,6 +85,8 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
 
         - "dataset" : str
             Name of the dataset containing the atlas.
+        - "dataset_path" : str
+            Path to the dataset containing the atlas.
         - "image" : str
             Path to the atlas image.
         - "labels" : str
@@ -107,10 +109,10 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
     atlas_filter['extension'] = ['.nii.gz', '.nii'] if file_format == 'nifti' else '.dlabel.nii'
     # Hardcoded spaces for now
     if file_format == 'cifti':
-        atlas_filter['space'] = atlas_filter.get('space') or 'fsLR'
+        atlas_filter['template'] = atlas_filter.get('template') or 'fsLR'
         atlas_filter['den'] = atlas_filter.get('den') or ['32k', '91k']
     else:
-        atlas_filter['space'] = atlas_filter.get('space') or [
+        atlas_filter['template'] = atlas_filter.get('template') or [
             'MNI152NLin6Asym',
             'MNI152NLin2009cAsym',
             'MNIInfant',
@@ -123,7 +125,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
         else:
             layout = dataset_path
 
-        if layout.get_dataset_description().get('DatasetType') != 'atlas':
+        if layout.get_dataset_description().get('DatasetType') != 'derivative':
             continue
 
         for atlas in atlases:
@@ -158,6 +160,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
 
             atlas_cache[atlas] = {
                 'dataset': dataset_name,
+                'dataset_path': str(layout._root),
                 'image': atlas_image,
                 'labels': atlas_labels,
                 'metadata': atlas_metadata,
@@ -173,8 +176,8 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
 
         # Check the contents of the labels file
         df = pd.read_table(atlas_info['labels'])
-        if 'label' not in df.columns:
-            raise ValueError(f"'label' column not found in {atlas_info['labels']}")
+        if 'name' not in df.columns:
+            raise ValueError(f"'name' column not found in {atlas_info['labels']}")
 
         if 'index' not in df.columns:
             raise ValueError(f"'index' column not found in {atlas_info['labels']}")

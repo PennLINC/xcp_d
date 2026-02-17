@@ -9,7 +9,6 @@ import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
 from xcp_d import config
-from xcp_d.data import load as load_data
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.tests.tests import mock_config
 from xcp_d.tests.utils import get_nodes
@@ -37,7 +36,7 @@ def test_init_load_atlases_wf_nifti(ds001419_data, tmp_path_factory):
         config.workflow.file_format = 'nifti'
         config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
-            'xcpdatlases': str(load_data('atlases')),
+            'xcpdatlases': '/XCPDAtlases',
             'xcpd4s': '/AtlasPack',
         }
         config.nipype.omp_nthreads = 1
@@ -66,7 +65,7 @@ def test_init_load_atlases_wf_cifti(ds001419_data, tmp_path_factory):
         config.workflow.file_format = 'cifti'
         config.execution.atlases = ['4S156Parcels', 'Glasser']
         config.execution.datasets = {
-            'xcpdatlases': str(load_data('atlases')),
+            'xcpdatlases': '/XCPDAtlases',
             'xcpd4s': '/AtlasPack',
         }
         config.nipype.omp_nthreads = 1
@@ -122,18 +121,12 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ['Gordon', 'Glasser']
     atlas_files = [
-        str(
-            load_data('atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz')
-        ),
-        str(
-            load_data(
-                'atlases/atlas-Glasser/atlas-Glasser_space-MNI152NLin6Asym_res-01_dseg.nii.gz'
-            )
-        ),
+        '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz',
+        '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.nii.gz',
     ]
     atlas_labels_files = [
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_dseg.tsv')),
+        '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv',
+        '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Glasser_res-01_dseg.tsv',
     ]
 
     # Perform the resampling and parcellation done by init_load_atlases_wf
@@ -214,7 +207,6 @@ def test_init_functional_connectivity_nifti_wf(ds001419_data, tmp_path_factory):
 
         # Now to get ground truth correlations
         labels_df = pd.read_table(atlas_labels_file)
-        labels_df['name'] = labels_df['label']
         labels_df = labels_df[['index', 'name']]
         masker = NiftiLabelsMasker(
             labels_img=atlas_file,
@@ -278,18 +270,18 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
     # Load atlases
     atlas_names = ['4S1056Parcels', '4S156Parcels', '4S456Parcels', 'Gordon', 'Glasser']
     atlas_files = [
-        '/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        '/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        '/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_space-fsLR_den-91k_dseg.dlabel.nii',
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii')),
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.dlabel.nii',
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.dlabel.nii',
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.dlabel.nii',
+        '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii',
+        '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.dlabel.nii',
     ]
     atlas_labels_files = [
-        '/AtlasPack/atlas-4S1056Parcels/atlas-4S1056Parcels_dseg.tsv',
-        '/AtlasPack/atlas-4S156Parcels/atlas-4S156Parcels_dseg.tsv',
-        '/AtlasPack/atlas-4S456Parcels/atlas-4S456Parcels_dseg.tsv',
-        str(load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv')),
-        str(load_data('atlases/atlas-Glasser/atlas-Glasser_dseg.tsv')),
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S1056Parcels_den-91k_dseg.tsv',
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.tsv',
+        '/AtlasPack/tpl-fsLR/tpl-fsLR_atlas-4S456Parcels_den-91k_dseg.tsv',
+        '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv',
+        '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Glasser_den-32k_dseg.tsv',
     ]
 
     # Create the node and a tmpdir to write its results out to

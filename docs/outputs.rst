@@ -21,7 +21,6 @@ The  *XCP-D* outputs are written out in BIDS format and consist of three main pa
    `BEP012: Functional preprocessing derivatives <https://github.com/bids-standard/bids-specification/pull/519>`_,
    `BEP017: Relationship & connectivity matrix data schema <https://docs.google.com/document/d/1ugBdUF6dhElXdj3u9vw0iWjE6f_Bibsro3ah7sRV0GA/edit?usp=sharing>`_,
    and
-   `BEP038: Atlas Specification <https://docs.google.com/document/d/1RxW4cARr3-EiBEcXjLpSIVidvnUSHE7yJCUY91i5TfM/edit?usp=sharing>`_.
 
    In cases where a derivative type is not covered by an existing BEP,
    we have simply attempted to follow the general principles of BIDS.
@@ -97,22 +96,19 @@ For more information about the 4S atlas, please see https://github.com/PennLINC/
    You can also skip other postprocessing steps using the ``--skip`` parameter.
    See :ref:`usage_cli` for more information about the ``--skip`` parameter.
 
-Atlases are written out to the ``atlases`` subfolder, following BEP038.
+Atlases are written out to the ``atlases`` subfolder, following BIDS formatting.
 
 .. code-block::
 
    xcp_d/
       atlases/
          dataset_description.json
-         atlas-<label>/
-            atlas-<label>_dseg.json
-            atlas-<label>_dseg.tsv
-
-            # NIfTI
-            atlas-<label>_space-<label>_dseg.nii.gz
-
-            # CIFTI
-            atlas-<label>_space-<label>_dseg.dlabel.nii
+         atlas-<label>_description.json
+         tpl-<label>/
+            tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.json
+            tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.tsv
+            tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.nii.gz
+            tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.dlabel.nii
 
 
 ******************
