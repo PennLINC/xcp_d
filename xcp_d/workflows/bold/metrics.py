@@ -588,7 +588,8 @@ def init_peraf_wf(
     or the fsLR 32k midthickness surface template.
 
     .. math::
-        PerAF = \frac{1}{N} \\sum_{i=1}^{N} \\left( \frac{X_i - \\mu}{\\mu} \right) * 100%
+        PerAF = \\frac{1}{N} \\sum_{i=1}^{N}
+        \\left( \\frac{X_i - \\mu}{\\mu} \\right) \\times 100\\%%
 
     References
     ----------
