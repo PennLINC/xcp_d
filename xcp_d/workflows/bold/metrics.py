@@ -635,7 +635,7 @@ change from the mean of the denoised BOLD time series.
     )
     workflow.connect([
         (inputnode, compute_peraf, [
-            ('denoised_bold', 'in_file'),
+            ('denoised_bold', 'denoised_bold'),
             ('preprocessed_bold', 'mean_file'),
             ('bold_mask', 'mask'),
             ('temporal_mask', 'temporal_mask'),
