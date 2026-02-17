@@ -4,7 +4,6 @@ import os
 
 import pytest
 
-from xcp_d.data import load as load_data
 from xcp_d.interfaces import bids
 
 
@@ -15,14 +14,17 @@ def test_copy_atlas(tmp_path_factory):
 
     # NIfTI
     atlas_info = {
-        'image': load_data(
-            'atlases/atlas-Gordon/atlas-Gordon_space-MNI152NLin6Asym_res-01_dseg.nii.gz'
+        'image': (
+            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz'
         ),
-        'labels': load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv'),
+        'labels': (
+            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv'
+        ),
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
     }
     name_source = 'sub-01_task-A_run-01_space-MNI152NLin2009cAsym_res-2_desc-z_bold.nii.gz'
+    # The copied file should use the space entity from the name_source, not the atlas
     copyatlas = bids.CopyAtlas(
         name_source=name_source,
         in_file=atlas_info['image'],
@@ -35,14 +37,18 @@ def test_copy_atlas(tmp_path_factory):
     assert os.path.isfile(result.outputs.out_file.replace('.nii.gz', '.json'))
     assert (
         os.path.basename(result.outputs.out_file)
-        == 'atlas-Y_space-MNI152NLin2009cAsym_res-2_dseg.nii.gz'
+        == 'tpl-MNI152NLin2009cAsym_atlas-Y_res-2_dseg.nii.gz'
     )
 
     # Check that the NIfTI file raises an error if the resolution varies
     # Gordon atlas is 1mm, HCP is 2mm
     atlas_info_diff_affine = {
-        'image': load_data('atlases/atlas-HCP/atlas-HCP_space-MNI152NLin6Asym_res-02_dseg.nii.gz'),
-        'labels': load_data('atlases/atlas-HCP/atlas-HCP_dseg.tsv'),
+        'image': (
+            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.nii.gz'
+        ),
+        'labels': (
+            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.tsv'
+        ),
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
     }
@@ -57,8 +63,8 @@ def test_copy_atlas(tmp_path_factory):
 
     # CIFTI
     atlas_info = {
-        'image': load_data('atlases/atlas-Gordon/atlas-Gordon_space-fsLR_den-32k_dseg.dlabel.nii'),
-        'labels': load_data('atlases/atlas-Gordon/atlas-Gordon_dseg.tsv'),
+        'image': '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii',
+        'labels': '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv',
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
     }
@@ -73,9 +79,7 @@ def test_copy_atlas(tmp_path_factory):
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
     assert os.path.isfile(result.outputs.out_file.replace('.dlabel.nii', '.json'))
-    assert (
-        os.path.basename(result.outputs.out_file) == 'atlas-Y_space-fsLR_den-91k_dseg.dlabel.nii'
-    )
+    assert os.path.basename(result.outputs.out_file) == 'tpl-fsLR_atlas-Y_den-91k_dseg.dlabel.nii'
 
     # TSV
     name_source = 'sub-01_task-imagery_run-01_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
@@ -84,7 +88,7 @@ def test_copy_atlas(tmp_path_factory):
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
-    assert os.path.basename(result.outputs.out_file) == 'atlas-Y_dseg.tsv'
+    assert os.path.basename(result.outputs.out_file) == 'tpl-fsLR_atlas-Y_den-91k_dseg.tsv'
 
     # Ensure that out_file isn't overwritten if it already exists
     fake_in_file = os.path.join(tmpdir, 'fake.tsv')
@@ -96,7 +100,7 @@ def test_copy_atlas(tmp_path_factory):
     )
     result = copyatlas.run(cwd=tmpdir)
     assert os.path.isfile(result.outputs.out_file)
-    assert os.path.basename(result.outputs.out_file) == 'atlas-Y_dseg.tsv'
+    assert os.path.basename(result.outputs.out_file) == 'tpl-fsLR_atlas-Y_den-91k_dseg.tsv'
     # The file should not be overwritten, so the contents shouldn't be "fake"
     with open(result.outputs.out_file) as fo:
         assert fo.read() != 'fake'

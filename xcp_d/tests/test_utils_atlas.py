@@ -4,7 +4,6 @@ import json
 
 import pytest
 
-from xcp_d.data import load as load_data
 from xcp_d.utils import atlas
 
 
@@ -21,7 +20,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     schaefer_dset = datasets['schaefer100']
 
     atlas_datasets = {
-        'xcpdatlases': str(load_data('atlases')),
+        'xcpdatlases': '/XCPDAtlases',
     }
     atlas_cache = atlas.collect_atlases(
         datasets=atlas_datasets,
@@ -56,7 +55,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     assert 'Schaefer100' not in atlas_cache
 
     # Add a duplicate atlas
-    atlas_datasets['duplicate'] = str(load_data('atlases'))
+    atlas_datasets['duplicate'] = '/XCPDAtlases'
     with pytest.raises(ValueError, match="Multiple datasets contain the same atlas 'Gordon'"):
         atlas.collect_atlases(
             datasets=atlas_datasets,
@@ -69,13 +68,13 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     tmpdir = tmp_path_factory.mktemp('test_collect_atlases')
     # Make the dataset_description.json
     with open(tmpdir / 'dataset_description.json', 'w') as fo:
-        json.dump({'DatasetType': 'atlas', 'BIDSVersion': '1.9.0', 'Name': 'Test'}, fo)
+        json.dump({'DatasetType': 'derivative', 'BIDSVersion': '1.9.0', 'Name': 'Test'}, fo)
 
     # Create fake atlas file
-    (tmpdir / 'atlas-TEST').mkdir()
-    (tmpdir / 'atlas-TEST' / 'atlas-TEST_space-MNI152NLin6Asym_res-01_dseg.nii.gz').write_text(
-        'test'
-    )
+    (tmpdir / 'tpl-MNI152NLin6Asym').mkdir()
+    (
+        tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.nii.gz'
+    ).write_text('test')
 
     # First there's an image, but no TSV or metadata
     with pytest.raises(FileNotFoundError, match='No TSV file found for'):
@@ -86,11 +85,13 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
             bids_filters={},
         )
 
-    # Now there's an image and a TSV, but the TSV doesn't have a "label" column
-    with open(tmpdir / 'atlas-TEST' / 'atlas-TEST_dseg.tsv', 'w') as fo:
+    # Now there's an image and a TSV, but the TSV doesn't have a "name" column
+    with open(
+        tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.tsv', 'w'
+    ) as fo:
         fo.write('index\n1\n')
 
-    with pytest.raises(ValueError, match="'label' column not found"):
+    with pytest.raises(ValueError, match="'name' column not found"):
         atlas.collect_atlases(
             datasets={'test': tmpdir},
             atlases=['TEST'],
@@ -99,8 +100,10 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
         )
 
     # Now there's an image and a TSV, but the TSV doesn't have an "index" column
-    with open(tmpdir / 'atlas-TEST' / 'atlas-TEST_dseg.tsv', 'w') as fo:
-        fo.write('label\ntest\n')
+    with open(
+        tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.tsv', 'w'
+    ) as fo:
+        fo.write('name\ntest\n')
 
     with pytest.raises(ValueError, match="'index' column not found"):
         atlas.collect_atlases(
@@ -111,8 +114,10 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
         )
 
     # Now there's an image, a TSV, and metadata
-    with open(tmpdir / 'atlas-TEST' / 'atlas-TEST_dseg.tsv', 'w') as fo:
-        fo.write('index\tlabel\n1\ttest\n')
+    with open(
+        tmpdir / 'tpl-MNI152NLin6Asym' / 'tpl-MNI152NLin6Asym_atlas-TEST_res-01_dseg.tsv', 'w'
+    ) as fo:
+        fo.write('index\tname\n1\ttest\n')
 
     atlas_cache = atlas.collect_atlases(
         datasets={'test': tmpdir},
