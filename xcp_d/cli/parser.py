@@ -1181,11 +1181,11 @@ def _validate_parameters(opts, build_log, parser):
             opts.skip_outputs.append('parcellation')
     if opts.atlases:
         if 'xcpdatlases' not in opts.datasets:
-            opts.datasets['xcpdatlases'] = Path('/XCPDAtlases')
+            opts.datasets['xcpdatlases'] = Path.home() / '.cache' / 'xcp_d' / 'XCPDAtlases'
 
         if any(atlas.startswith('4S') for atlas in opts.atlases):
             if 'xcpd4s' not in opts.datasets:
-                opts.datasets['xcpd4s'] = Path('/AtlasPack')
+                opts.datasets['xcpd4s'] = Path.home() / '.cache' / 'xcp_d' / 'AtlasPack'
 
     # Check parameters based on the mode
     if opts.mode == 'abcd':
