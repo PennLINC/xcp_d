@@ -1182,10 +1182,18 @@ def _validate_parameters(opts, build_log, parser):
     if opts.atlases:
         if 'xcpdatlases' not in opts.datasets:
             opts.datasets['xcpdatlases'] = Path.home() / '.cache' / 'xcp_d' / 'XCPDAtlases'
+            if not opts.datasets['xcpdatlases'].is_dir():
+                raise NotADirectoryError(
+                    f"XCP-D atlases is not a directory: {opts.datasets['xcpdatlases']}"
+                )
 
         if any(atlas.startswith('4S') for atlas in opts.atlases):
             if 'xcpd4s' not in opts.datasets:
                 opts.datasets['xcpd4s'] = Path.home() / '.cache' / 'xcp_d' / 'AtlasPack'
+                if not opts.datasets['xcpd4s'].is_dir():
+                    raise NotADirectoryError(
+                        f"AtlasPack is not a directory: {opts.datasets['xcpd4s']}"
+                    )
 
     # Check parameters based on the mode
     if opts.mode == 'abcd':
