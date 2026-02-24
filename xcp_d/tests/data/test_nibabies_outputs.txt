@@ -1,5 +1,5 @@
 dataset_description.json
-derivatives
+sourcedata
 sourcedata/atlases
 sourcedata/atlases/atlas-4S1056Parcels_description.json
 sourcedata/atlases/atlas-4S156Parcels_description.json
