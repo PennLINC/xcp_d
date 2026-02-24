@@ -60,7 +60,7 @@ def init_load_atlases_wf(name='load_atlases_wf'):
 
     workflow = Workflow(name=name)
     output_dir = config.execution.output_dir
-    atlas_output_dir = os.path.join(output_dir, 'derivatives', 'atlases')
+    atlas_output_dir = os.path.join(output_dir, 'sourcedata', 'atlases')
     os.makedirs(atlas_output_dir, exist_ok=True)
 
     atlases = collect_atlases(

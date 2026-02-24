@@ -1193,14 +1193,6 @@ def write_derivative_description(
     desc['GeneratedBy'] = generated_by
     desc['HowToAcknowledge'] = 'Include the generated boilerplate in the methods section.'
 
-    dataset_links = dataset_links.copy()
-
-    # Replace local templateflow path with URL
-    dataset_links['templateflow'] = 'https://github.com/templateflow/templateflow'
-
-    if atlases:
-        dataset_links['atlases'] = os.path.join(output_dir, 'atlases')
-
     # Don't inherit DatasetLinks from preprocessing derivatives
     desc['DatasetLinks'] = {k: str(v) for k, v in dataset_links.items()}
 
