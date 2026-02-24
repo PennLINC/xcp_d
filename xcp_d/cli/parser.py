@@ -1181,7 +1181,7 @@ def _validate_parameters(opts, build_log, parser):
             opts.skip_outputs.append('parcellation')
     if opts.atlases:
         if 'xcpdatlases' not in opts.datasets:
-            opts.datasets['xcpdatlases'] = '/home/xcp_d/.cache/xcp_d/XCPDAtlases'
+            opts.datasets['xcpdatlases'] = Path('/home/xcp_d/.cache/xcp_d/XCPDAtlases')
             if not opts.datasets['xcpdatlases'].is_dir():
                 raise NotADirectoryError(
                     f'XCP-D atlases is not a directory: {opts.datasets["xcpdatlases"]}'
@@ -1189,7 +1189,7 @@ def _validate_parameters(opts, build_log, parser):
 
         if any(atlas.startswith('4S') for atlas in opts.atlases):
             if 'xcpd4s' not in opts.datasets:
-                opts.datasets['xcpd4s'] = '/home/xcp_d/.cache/xcp_d/AtlasPack'
+                opts.datasets['xcpd4s'] = Path('/home/xcp_d/.cache/xcp_d/AtlasPack')
                 if not opts.datasets['xcpd4s'].is_dir():
                     raise NotADirectoryError(
                         f'AtlasPack is not a directory: {opts.datasets["xcpd4s"]}'
