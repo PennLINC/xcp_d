@@ -522,7 +522,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
         )
         if config.execution.atlases:
             write_atlas_dataset_description(
-                config.execution.output_dir / 'derivatives' / 'atlases'
+                config.execution.output_dir / 'sourcedata' / 'atlases'
             )
 
         build_boilerplate(str(config_file), xcpd_wf)
