@@ -88,9 +88,10 @@ The config module is the single source of truth for runtime parameters. Never pa
 
 ### Docker
 
-- Each app has a custom base image: `pennlinc/<pkg>_build:<version>`.
-- The `Dockerfile` installs the app via `pip install` into the base image.
-- Entrypoint is the CLI command (e.g., `/usr/local/miniconda/bin/<pkg>`).
+- Each app has a runtime base image and a production image.
+- For XCP-D, `Dockerfile.base` contains non-Python/non-conda runtime dependencies.
+- `Dockerfile` uses pixi to build test and production environments.
+- Entrypoint is the CLI binary in the pixi environment.
 - Labels follow the `org.label-schema` convention.
 
 ### Release Process
@@ -114,6 +115,10 @@ The config module is the single source of truth for runtime parameters. Never pa
 - Use `pybids.BIDSLayout` for querying input datasets.
 - Use `DerivativesDataSink` (from the project's interfaces or niworkflows) for writing BIDS-compliant output files.
 - Entity names, suffixes, and extensions must match the BIDS specification.
+
+### Local Development
+
+- Activate the environment defined in the `.cursor/cursorenv` file before running any commands.
 
 ---
 
@@ -145,8 +150,8 @@ XCP-D is a BIDS App for postprocessing fMRI data that has been preprocessed by f
 | Linter | ruff ~= 0.15.0 |
 | Pre-commit | Yes (ruff v0.6.2) |
 | Tox | Yes |
-| Docker base | `pennlinc/xcp_d_build:<ver>` |
-| Dockerfile | Simple COPY + pip install |
+| Docker base | `pennlinc/xcp_d-base:<date>` |
+| Dockerfile | Pixi-based multi-stage (`build`, `test`, `xcp_d`) |
 
 ### Key Directories
 

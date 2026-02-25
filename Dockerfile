@@ -1,23 +1,56 @@
-FROM pennlinc/xcp_d_build:0.0.25
+ARG BASE_IMAGE=pennlinc/xcp_d-base:20260225
 
-# Install xcp_d
-COPY . /src/xcp_d
+FROM ghcr.io/prefix-dev/pixi:0.53.0 AS build
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+                    ca-certificates \
+                    build-essential \
+                    git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN pixi config set --global run-post-link-scripts insecure
 
-ARG VERSION=0.0.1
+RUN mkdir /app
+COPY pixi.lock pyproject.toml /app
+WORKDIR /app
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d -e test --skip xcp_d
+RUN --mount=type=cache,target=/root/.npm pixi run --as-is -e xcp-d npm install -g svgo@^3.2.0 bids-validator@1.14.10
+RUN pixi shell-hook -e xcp-d --as-is | grep -v PATH > /shell-hook.sh
+RUN pixi shell-hook -e test --as-is | grep -v PATH > /test-shell-hook.sh
 
-# Force static versioning within container
-RUN echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION && \
-    echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in && \
-    pip install --no-cache-dir "/src/xcp_d[all]"
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d -e test
 
-RUN find $HOME -type d -exec chmod go=u {} + && \
-    find $HOME -type f -exec chmod go=u {} + && \
-    rm -rf $HOME/.npm $HOME/.conda $HOME/.empty
+FROM ghcr.io/astral-sh/uv:python3.12-alpine AS templates
+ENV TEMPLATEFLOW_HOME="/templateflow"
+RUN uv pip install --system templateflow
+COPY scripts/fetch_templates.py fetch_templates.py
+RUN python fetch_templates.py
 
-RUN ldconfig
-WORKDIR /tmp/
+FROM ${BASE_IMAGE} AS base
+WORKDIR /home/xcp_d
+ENV HOME="/home/xcp_d"
 
-ENTRYPOINT ["/usr/local/miniconda/bin/xcp_d"]
+COPY --link --from=templates /templateflow /home/xcp_d/.cache/templateflow
+RUN chmod -R go=u $HOME
+
+WORKDIR /tmp
+
+FROM base AS test
+COPY --link --from=build /app/.pixi/envs/test /app/.pixi/envs/test
+COPY --link --from=build /test-shell-hook.sh /shell-hook.sh
+RUN cat /shell-hook.sh >> $HOME/.bashrc
+ENV PATH="/app/.pixi/envs/test/bin:$PATH"
+ENV FSLDIR="/app/.pixi/envs/test"
+
+FROM base AS xcp_d
+COPY --link --from=build /app/.pixi/envs/xcp-d /app/.pixi/envs/xcp-d
+COPY --link --from=build /shell-hook.sh /shell-hook.sh
+RUN cat /shell-hook.sh >> $HOME/.bashrc
+ENV PATH="/app/.pixi/envs/xcp-d/bin:$PATH"
+ENV FSLDIR="/app/.pixi/envs/xcp-d"
+ENV IS_DOCKER_8395080871=1
+
+ENTRYPOINT ["/app/.pixi/envs/xcp-d/bin/xcp_d"]
 
 ARG BUILD_DATE
 ARG VCS_REF

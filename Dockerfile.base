@@ -1,0 +1,160 @@
+# XCP-D Docker base image
+#
+# Runtime environment with non-Python/non-conda dependencies.
+
+ARG BASE_IMAGE=ubuntu:jammy-20250730
+
+FROM ${BASE_IMAGE} AS downloader
+ENV DEBIAN_FRONTEND='noninteractive' \
+    LANG='en_US.UTF-8' \
+    LC_ALL='en_US.UTF-8' \
+    HOME='/home/xcp_d'
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+                    binutils \
+                    bzip2 \
+                    ca-certificates \
+                    curl \
+                    unzip && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# FreeSurfer 7.3.2 from official Ubuntu 22 tarball.
+FROM downloader AS freesurfer
+RUN curl -sSL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.3.2/freesurfer-linux-ubuntu22_amd64-7.3.2.tar.gz \
+    | tar zxv --no-same-owner -C /opt
+
+# FreeSurfer 7.4.1: synthseg/synthstrip scripts and models only.
+FROM freesurfer/freesurfer:7.4.1 AS freesurfer741
+
+# MSM binary.
+FROM downloader AS msm
+RUN curl -L -H 'Accept: application/octet-stream' \
+    https://api.github.com/repos/ecr05/MSM_HOCR/releases/assets/16253707 \
+    -o /usr/local/bin/msm && \
+    chmod +x /usr/local/bin/msm
+
+# AFNI subset.
+FROM downloader AS afni
+RUN mkdir -p /opt/afni-latest && \
+    curl -fsSL --retry 5 https://afni.nimh.nih.gov/pub/dist/tgz/linux_openmp_64.tgz \
+    | tar -xz -C /opt/afni-latest --strip-components 1
+
+FROM ${BASE_IMAGE} AS base
+ENV DEBIAN_FRONTEND='noninteractive' \
+    LANG='en_US.UTF-8' \
+    LC_ALL='en_US.UTF-8'
+
+COPY --link --from=freesurfer /opt/freesurfer /opt/freesurfer
+COPY --link --from=freesurfer741 /usr/local/freesurfer/python/scripts/mri_synthseg /opt/freesurfer/bin/mri_synthseg
+COPY --link --from=freesurfer741 /usr/local/freesurfer/python/scripts/mri_synthstrip /opt/freesurfer/bin/mri_synthstrip
+COPY --link --from=freesurfer741 /usr/local/freesurfer/models /opt/freesurfer/models
+COPY --link --from=msm /usr/local/bin/msm /usr/local/bin/msm
+COPY --link --from=afni /opt/afni-latest /opt/afni-latest
+
+RUN chmod +x /opt/freesurfer/bin/mri_synthseg /opt/freesurfer/bin/mri_synthstrip
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+                    bc \
+                    ca-certificates \
+                    curl \
+                    dc \
+                    git \
+                    gnupg \
+                    graphviz \
+                    libgomp1 \
+                    libopenblas0-openmp \
+                    lsb-release \
+                    netbase \
+                    tcsh \
+                    xvfb && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN GNUPGHOME=/tmp gpg --keyserver hkps://keyserver.ubuntu.com --no-default-keyring --keyring /usr/share/keyrings/linuxuprising.gpg --recv 0xEA8CACC073C3DB2A \
+    && GNUPGHOME=/tmp gpg --keyserver hkps://keyserver.ubuntu.com --no-default-keyring --keyring /usr/share/keyrings/zeehio.gpg --recv 0xA1301338A3A48C4A \
+    && echo 'deb [signed-by=/usr/share/keyrings/linuxuprising.gpg] https://ppa.launchpadcontent.net/linuxuprising/libpng12/ubuntu jammy main' > /etc/apt/sources.list.d/linuxuprising.list \
+    && echo 'deb [signed-by=/usr/share/keyrings/zeehio.gpg] https://ppa.launchpadcontent.net/zeehio/libxp/ubuntu jammy main' > /etc/apt/sources.list.d/zeehio.list
+
+RUN apt-get update -qq \
+    && apt-get install -y -q --no-install-recommends \
+           ed \
+           gsl-bin \
+           libglib2.0-0 \
+           libglu1-mesa-dev \
+           libglw1-mesa \
+           libjpeg62 \
+           libpng12-0 \
+           libxm4 \
+           libxp6 \
+           netpbm \
+           xfonts-base \
+    && curl -sSL --retry 5 -o /tmp/multiarch.deb http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/multiarch-support_2.27-3ubuntu1.5_amd64.deb \
+    && dpkg -i /tmp/multiarch.deb \
+    && rm /tmp/multiarch.deb \
+    && apt-get install -f \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && gsl2_path="$(find / -name 'libgsl.so.19' 2>/dev/null || printf '')" \
+    && if [ -n "$gsl2_path" ]; then ln -sfv "$gsl2_path" "$(dirname "$gsl2_path")/libgsl.so.0"; fi \
+    && ldconfig
+
+RUN useradd -m -s /bin/bash -G users xcp_d
+WORKDIR /home/xcp_d
+ENV HOME='/home/xcp_d'
+
+# Atlas resources used by XCP-D runtime.
+RUN mkdir -p "$HOME/.cache/xcp_d" && \
+    curl -o AtlasPack.tar.gz -sSL "https://upenn.box.com/shared/static/0gxdoe77tuih5p9ainn4utdqj3kcq7p1.tar.gz" && \
+    tar -xzf AtlasPack.tar.gz && \
+    mv AtlasPack "$HOME/.cache/xcp_d/AtlasPack" && \
+    rm AtlasPack.tar.gz
+
+RUN curl -o XCPDAtlases.tar.gz -sSL "https://upenn.box.com/shared/static/4amxp72grenmp1up689k5oyn1i6nhunq.tar.gz" && \
+    tar -xzf XCPDAtlases.tar.gz && \
+    mv XCPDAtlases "$HOME/.cache/xcp_d/XCPDAtlases" && \
+    rm XCPDAtlases.tar.gz && \
+    find "$HOME/.cache/xcp_d" -type d -exec chmod go=u {} + && \
+    find "$HOME/.cache/xcp_d" -type f -exec chmod go=u {} +
+
+ENV OS='Linux' \
+    FS_OVERRIDE=0 \
+    FIX_VERTEX_AREA='' \
+    FSF_OUTPUT_FORMAT='nii.gz' \
+    FREESURFER_HOME='/opt/freesurfer'
+ENV SUBJECTS_DIR="$FREESURFER_HOME/subjects" \
+    FUNCTIONALS_DIR="$FREESURFER_HOME/sessions" \
+    MNI_DIR="$FREESURFER_HOME/mni" \
+    LOCAL_DIR="$FREESURFER_HOME/local" \
+    MINC_BIN_DIR="$FREESURFER_HOME/mni/bin" \
+    MINC_LIB_DIR="$FREESURFER_HOME/mni/lib" \
+    MNI_DATAPATH="$FREESURFER_HOME/mni/data"
+ENV PERL5LIB="$MINC_LIB_DIR/perl5/5.8.5" \
+    MNI_PERL5LIB="$MINC_LIB_DIR/perl5/5.8.5" \
+    PATH="$FREESURFER_HOME/bin:$FREESURFER_HOME/tktools:$MINC_BIN_DIR:$PATH"
+
+ENV PATH='/opt/afni-latest:$PATH' \
+    AFNI_IMSAVE_WARNINGS='NO' \
+    AFNI_PLUGINPATH='/opt/afni-latest'
+
+ENV LANG='C.UTF-8' \
+    LC_ALL='C.UTF-8' \
+    PYTHONNOUSERSITE=1 \
+    FSLOUTPUTTYPE='NIFTI_GZ' \
+    FSLMULTIFILEQUIT='TRUE' \
+    FSLLOCKDIR='' \
+    FSLMACHINELIST='' \
+    FSLREMOTECALL='' \
+    FSLGECUDAQ='cuda.q' \
+    MKL_NUM_THREADS=1 \
+    OMP_NUM_THREADS=1
+
+RUN find $HOME -type d -exec chmod go=u {} + && \
+    find $HOME -type f -exec chmod go=u {} +
+
+WORKDIR /tmp
+
+LABEL org.label-schema.name='xcp_d-base' \
+      org.label-schema.description='XCP-D base image - runtime dependencies without the xcp_d package' \
+      org.label-schema.url='https://xcp-d.readthedocs.io/' \
+      org.label-schema.vcs-url='https://github.com/PennLINC/xcp_d' \
+      org.label-schema.schema-version='1.0'

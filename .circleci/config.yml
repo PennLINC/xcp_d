@@ -1,572 +1,480 @@
 version: 2.1
 orbs:
-  codecov: codecov/codecov@3.2.4
+  codecov: codecov/codecov@4.1.0
 
-.dockersetup:
-  &dockersetup
-  docker:
-    - image: pennlinc/xcp_d_build:0.0.25
-  working_directory: /src/xcp_d
+_machine_defaults: &machine_defaults
+  environment:
+    TZ: '/usr/share/zoneinfo/America/New_York'
+  machine:
+    image: default
+    docker_layer_caching: true
+  working_directory: /tmp/src/xcp_d
+  resource_class: large
 
-runinstall:
-  &runinstall
-  name: Install xcp_d
+_docker_auth: &docker_auth
+  name: Docker authentication
   command: |
-    VERSION=0+build
-    if [[ -n "$CIRCLE_TAG" ]]; then
-      VERSION="$CIRCLE_TAG"
+    if [[ -n "$DOCKERHUB_TOKEN" ]]; then
+      echo "$DOCKERHUB_TOKEN" | docker login -u $DOCKERHUB_USERNAME --password-stdin
     fi
-    git checkout $CIRCLE_BRANCH
-    echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION
-    echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in
-    pip install .[tests] --progress-bar off
 
-    # Write the config file
-    mkdir ~/.nipype
-    CFG=~/.nipype/nipype.cfg
-    printf "[execution]\nstop_on_first_crash = true\n" > ${CFG}
-    echo "poll_sleep_duration = 0.01" >> ${CFG}
-    echo "hash_method = content" >> ${CFG}
+_setup_docker_registry: &setup_docker_registry
+  name: Set up local Docker registry
+  command: |
+    if [[ -f /tmp/images/registry.tar.gz ]]; then
+      docker load < /tmp/images/registry.tar.gz
+    else
+      docker pull registry:2
+    fi
+    docker run -d -p 5000:5000 --restart=always --name=registry \
+        -v /tmp/docker:/var/lib/registry registry:2
+
+_pull_from_registry: &pull_from_registry
+  name: Pull and tag production image from local registry
+  command: |
+    docker pull localhost:5000/xcp_d
+    docker tag localhost:5000/xcp_d pennlinc/xcp_d:latest
+
+_pull_test_image: &pull_test_image
+  name: Pull and tag test image from local registry
+  command: |
+    docker pull localhost:5000/xcp_d-test
+    docker tag localhost:5000/xcp_d-test pennlinc/xcp_d:test
+
+commands:
+  restore_build_and_data:
+    description: Restore Docker image cache and test data cache
+    steps:
+      - restore_cache:
+          keys:
+            - build-v1-{{ .Branch }}-{{ .Revision }}
+      - restore_cache:
+          keys:
+            - data-v1-{{ .Branch }}-{{ .Revision }}
+      - run: *docker_auth
+      - run: *setup_docker_registry
+      - run: *pull_test_image
+
+  run_integration_test:
+    description: Run a pytest-marked integration test inside test image
+    parameters:
+      marker:
+        type: string
+      cpus:
+        type: integer
+        default: 2
+    steps:
+      - run:
+          name: Run xcp_d (<< parameters.marker >>)
+          no_output_timeout: 5h
+          command: |
+            mkdir -p /tmp/out /tmp/work /tmp/coverage
+            docker run --rm=false \
+              -e CIRCLE_CPUS=<< parameters.cpus >> \
+              -e COVERAGE_FILE=/coverage/.coverage.<< parameters.marker >> \
+              -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
+              -v /tmp/data:/data:ro \
+              -v /tmp/out:/out \
+              -v /tmp/work:/work \
+              -v /tmp/coverage:/coverage \
+              -w /tmp/src/xcp_d \
+              --entrypoint pytest \
+              pennlinc/xcp_d:test \
+              -rP -o log_cli=true -m "<< parameters.marker >>" \
+              --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
+              --data_dir=/data --output_dir=/out --working_dir=/work \
+              xcp_d
+      - run:
+          name: Clean up large artifacts
+          when: always
+          command: find /tmp/out/ -name "*.nii.gz" -type f -delete 2>/dev/null || true
+      - store_artifacts:
+          path: /tmp/out
+      - persist_to_workspace:
+          root: /tmp/coverage
+          paths:
+            - .coverage.<< parameters.marker >>
 
 jobs:
-  build:
-    <<: *dockersetup
-    steps:
-      - checkout
-      - run: *runinstall
-
-  download_data_ds001419:
-    <<: *dockersetup
-    steps:
-      - checkout
-      - restore_cache:
-          key: ds001419-10
-      - run: *runinstall
-      - run:
-          name: Download ds001419 fMRIPrep test data
-          command: |
-            cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data ds001419
-      - save_cache:
-          key: ds001419-10
-          paths:
-            - /src/xcp_d/.circleci/data/ds001419
-    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
-    # Why do we need a big executor for this job?
-    resource_class: large
-
-  download_data_ds001419_aroma:
-    <<: *dockersetup
-    steps:
-      - checkout
-      - restore_cache:
-          key: ds001419-aroma-02
-      - run: *runinstall
-      - run:
-          name: Download ds001419 fMRIPost-AROMA test data
-          command: |
-            cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data ds001419-aroma
-      - save_cache:
-          key: ds001419-aroma-02
-          paths:
-            - /src/xcp_d/.circleci/data/ds001419-aroma
-
-  download_data_schaefer100:
-    <<: *dockersetup
-    steps:
-      - checkout
-      - restore_cache:
-          key: schaefer100-05
-      - run: *runinstall
-      - run:
-          name: Download BIDS-Atlas dataset
-          command: |
-            cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data schaefer100
-      - save_cache:
-          key: schaefer100-05
-          paths:
-            - /src/xcp_d/.circleci/data/schaefer100
-
-  download_data_pnc:
-    <<: *dockersetup
-    steps:
-      - checkout
-      - restore_cache:
-          key: pnc-02
-      - run: *runinstall
-      - run:
-          name: Download pnc test data
-          command: |
-            cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data pnc
-      - save_cache:
-          key: pnc-02
-          paths:
-            - /src/xcp_d/.circleci/data/pnc
-    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
-    resource_class: large
-
-  download_data_ukbiobank:
-    <<: *dockersetup
-    steps:
-      - checkout
-      - restore_cache:
-          key: ukbiobank-08
-      - run: *runinstall
-      - run:
-          name: Download ukbiobank test data
-          command: |
-            cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data ukbiobank
-      - save_cache:
-          key: ukbiobank-08
-          paths:
-            - /src/xcp_d/.circleci/data/ukbiobank
-    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
-    resource_class: large
-
-  download_data_fmriprepwithoutfreesurfer:
-    <<: *dockersetup
-    steps:
-      - checkout
-      - restore_cache:
-          key: fmriprepwithoutfreesurfer-03
-      - run: *runinstall
-      - run:
-          name: Download fmriprepwithoutfreesurfer test data
-          command: |
-            cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data fmriprepwithoutfreesurfer
-      - save_cache:
-          key: fmriprepwithoutfreesurfer-03
-          paths:
-            - /src/xcp_d/.circleci/data/fmriprepwithoutfreesurfer
-
-  download_data_nibabies:
-    <<: *dockersetup
-    steps:
-      - checkout
-      - restore_cache:
-          key: nibabies-04
-      - run: *runinstall
-      - run:
-          name: Download nibabies test data
-          command: |
-            cd /src/xcp_d/.circleci
-            python get_data.py $PWD/data nibabies
-      - save_cache:
-          key: nibabies-04
-          paths:
-              - /src/xcp_d/.circleci/data/nibabies
-
-  nifti_without_freesurfer:
-    <<: *dockersetup
-    resource_class: large
+  image_prep:
+    <<: *machine_defaults
     environment:
-      CIRCLE_CPUS: 4
+      TZ: '/usr/share/zoneinfo/America/New_York'
+      DOCKER_BUILDKIT: '1'
     steps:
-      - checkout
+      - checkout:
+          path: /tmp/src/xcp_d
+      - restore_cache:
+          keys:
+            - build-v1-{{ .Branch }}-{{ .Revision }}
+            - build-v1--{{ .Revision }}
+            - build-v1-{{ .Branch }}-
+            - build-v1-main-
+            - build-v1-
+      - run: *docker_auth
+      - run: *setup_docker_registry
       - run:
-          name: Check whether build should be skipped
+          name: Get base image information
           command: |
-            cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
-              echo "Skipping nifti_without_freesurfer build"
-              circleci step halt
+            export BASE_IMAGE=$( grep "BASE_IMAGE=" Dockerfile | head -1 | cut -d= -f2 )
+            export BASE_IMAGE_NAME=${BASE_IMAGE%:*}
+            export BASE_TAG=${BASE_IMAGE#*:}
+            echo "BASE_IMAGE=$BASE_IMAGE" >> $BASH_ENV
+            echo "BASE_IMAGE_NAME=$BASE_IMAGE_NAME" >> $BASH_ENV
+            echo "BASE_TAG=$BASE_TAG" >> $BASH_ENV
+      - run:
+          name: Determine whether image builds are required
+          command: |
+            if [[ -n "$CIRCLE_TAG" || "$CIRCLE_BRANCH" == "main" ]]; then
+              echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
+              echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+              exit 0
             fi
-      - restore_cache:
-          key: fmriprepwithoutfreesurfer-03
-      - restore_cache:
-          key: schaefer100-05
-      - run: *runinstall
-      - run:
-          name: Run full xcp_d on nifti without freesurfer
-          no_output_timeout: 1h
-          command: |
-            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer" \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
-              xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer
-            # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
-      - persist_to_workspace:
-          root: /src/coverage/
-          paths:
-            - .coverage.fmriprep_without_freesurfer
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/
 
-  nifti_without_freesurfer_with_main:
-    <<: *dockersetup
-    resource_class: medium
-    environment:
-      CIRCLE_CPUS: 2
-    steps:
-      - checkout
-      - run:
-          name: Check whether build should be skipped
-          command: |
-            cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
-              echo "Skipping nifti_without_freesurfer build"
-              circleci step halt
+            if git rev-parse --verify HEAD~1 > /dev/null 2>&1; then
+              CHANGED_FILES="$(git diff --name-only HEAD~1 HEAD)"
+            else
+              if ! git fetch --no-tags --depth=200 origin main; then
+                echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
+                echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+                exit 0
+              fi
+              if ! MERGE_BASE="$(git merge-base HEAD origin/main)"; then
+                echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
+                echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+                exit 0
+              fi
+              CHANGED_FILES="$(git diff --name-only "$MERGE_BASE" HEAD)"
             fi
-      - restore_cache:
-          key: fmriprepwithoutfreesurfer-03
-      - run: *runinstall
+
+            if printf "%s\n" "$CHANGED_FILES" | rg -q "^(Dockerfile\\.base|Dockerfile|pixi\\.lock)$"; then
+              echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
+              echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+            else
+              echo "BUILD_PRODUCTION_IMAGE=0" >> "$BASH_ENV"
+              echo "BUILD_TEST_IMAGE=0" >> "$BASH_ENV"
+            fi
       - run:
-          name: Run full xcp_d on nifti without freesurfer
-          no_output_timeout: 1h
+          name: Build base image if needed
+          no_output_timeout: 90m
           command: |
-            pytest -rP -o log_cli=true -m "fmriprep_without_freesurfer_with_main" \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
-              xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.fmriprep_without_freesurfer_with_main
-            # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
-      - persist_to_workspace:
-          root: /src/coverage/
+            if ! docker manifest inspect $BASE_IMAGE > /dev/null 2>&1; then
+              docker build -f Dockerfile.base \
+                --platform linux/amd64 \
+                -t $BASE_IMAGE \
+                -t $BASE_IMAGE_NAME:latest .
+              echo "BASE_WAS_BUILT=1" >> "$BASH_ENV"
+            else
+              echo "BASE_WAS_BUILT=0" >> "$BASH_ENV"
+            fi
+      - run:
+          name: Build Docker image (production)
+          no_output_timeout: 3h
+          command: |
+            if [[ "$BUILD_PRODUCTION_IMAGE" == "1" || "$BASE_WAS_BUILT" == "1" ]]; then
+              if [[ -n "$CIRCLE_TAG" ]]; then
+                THISVERSION="$CIRCLE_TAG"
+              else
+                THISVERSION="0+build"
+              fi
+              sed -i "s/title = {xcp_d}/title = {xcp_d ${THISVERSION}}/" xcp_d/data/boilerplate.bib
+              e=1 && for i in {1..5}; do
+                docker build \
+                  --target xcp_d \
+                  --rm=false \
+                  -t pennlinc/xcp_d:latest \
+                  --platform linux/amd64 \
+                  --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+                  --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
+                  --build-arg VERSION="$THISVERSION" . \
+                && e=0 && break || sleep 15
+              done && [ "$e" -eq "0" ]
+            else
+              echo "Skipping production image build."
+            fi
+      - run:
+          name: Build Docker image (test)
+          no_output_timeout: 90m
+          command: |
+            if [[ "$BUILD_TEST_IMAGE" == "1" || "$BASE_WAS_BUILT" == "1" ]]; then
+              docker build \
+                --target test \
+                --rm=false \
+                -t pennlinc/xcp_d:test \
+                --platform linux/amd64 .
+            elif docker image inspect pennlinc/xcp_d:test > /dev/null 2>&1; then
+              echo "Reusing existing local test image."
+            elif docker pull localhost:5000/xcp_d-test; then
+              docker tag localhost:5000/xcp_d-test pennlinc/xcp_d:test
+            else
+              docker build \
+                --target test \
+                --rm=false \
+                -t pennlinc/xcp_d:test \
+                --platform linux/amd64 .
+            fi
+      - run:
+          name: Verify Docker images
+          command: |
+            if [[ "$BUILD_PRODUCTION_IMAGE" == "1" || "$BASE_WAS_BUILT" == "1" ]]; then
+              docker run --rm pennlinc/xcp_d:latest --version
+            fi
+            docker run --rm --entrypoint pytest pennlinc/xcp_d:test --version
+      - run:
+          name: Push base image to Docker Hub (if newly built)
+          command: |
+            if docker image inspect $BASE_IMAGE > /dev/null 2>&1; then
+              if [[ -n "$DOCKERHUB_TOKEN" ]]; then
+                docker push $BASE_IMAGE
+                docker push $BASE_IMAGE_NAME:latest
+              fi
+            fi
+      - run:
+          name: Push images to local registry
+          no_output_timeout: 40m
+          command: |
+            if [[ "$BUILD_PRODUCTION_IMAGE" == "1" || "$BASE_WAS_BUILT" == "1" ]]; then
+              docker tag pennlinc/xcp_d:latest localhost:5000/xcp_d
+              docker push localhost:5000/xcp_d
+            fi
+            docker tag pennlinc/xcp_d:test localhost:5000/xcp_d-test
+            docker push localhost:5000/xcp_d-test
+      - run:
+          name: Docker registry garbage collection
+          command: |
+            docker exec -it registry /bin/registry garbage-collect --delete-untagged \
+              /etc/docker/registry/config.yml
+      - save_cache:
+          key: build-v1-{{ .Branch }}-{{ .Revision }}
           paths:
-            - .coverage.fmriprep_without_freesurfer_with_main
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_fmriprep_without_freesurfer/
+            - /tmp/docker
+            - /tmp/images
+
+  get_data:
+    <<: *machine_defaults
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
+      - restore_cache:
+          keys:
+            - data-v1-{{ .Branch }}-{{ .Revision }}
+            - data-v1--{{ .Revision }}
+            - data-v1-{{ .Branch }}-
+            - data-v1-main-
+            - data-v1-
+      - run:
+          name: Download XCP-D integration test data
+          command: |
+            cd /tmp/src/xcp_d/.circleci
+            for dset in ds001419 ds001419-aroma schaefer100 pnc ukbiobank fmriprepwithoutfreesurfer nibabies; do
+              if [[ ! -d /tmp/data/${dset} ]]; then
+                python get_data.py /tmp/data "${dset}"
+              else
+                echo "${dset} data was cached"
+              fi
+            done
+      - save_cache:
+          key: data-v1-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - /tmp/data
 
   ds001419_nifti:
-    <<: *dockersetup
-    resource_class: large
-    environment:
-      CIRCLE_CPUS: 4
+    <<: *machine_defaults
     steps:
-      - checkout
+      - checkout:
+          path: /tmp/src/xcp_d
       - run:
-          name: Check whether build should be skipped
+          name: Check whether integration tests should be skipped
           command: |
-            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
-              echo "Skipping ds001419_nifti build"
+              echo "Skipping ds001419_nifti"
               circleci step halt
             fi
-      - restore_cache:
-          key: ds001419-10
-      - restore_cache:
-          key: ds001419-aroma-02
-      - run: *runinstall
-      - run:
-          name: Run full xcp_d on nifti with freesurfer
-          no_output_timeout: 1h
-          command: |
-            pytest -rP -o log_cli=true -m "ds001419_nifti" \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
-              xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_nifti
-            # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
-      - persist_to_workspace:
-          root: /src/coverage/
-          paths:
-            - .coverage.ds001419_nifti
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_ds001419_nifti/
+      - restore_build_and_data
+      - run_integration_test:
+          marker: ds001419_nifti
+          cpus: 4
 
   ds001419_cifti:
-    <<: *dockersetup
-    resource_class: xlarge
-    environment:
-      CIRCLE_CPUS: 8
+    <<: *machine_defaults
     steps:
-      - checkout
+      - checkout:
+          path: /tmp/src/xcp_d
       - run:
-          name: Check whether build should be skipped
+          name: Check whether integration tests should be skipped
           command: |
-            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
-              echo "Skipping ds001419_cifti build"
+              echo "Skipping ds001419_cifti"
               circleci step halt
             fi
-      - restore_cache:
-          key: ds001419-10
-      - run: *runinstall
-      - run:
-          name: Run full xcp_d on cifti with freesurfer
-          no_output_timeout: 1h
-          command: |
-            pytest -rP -o log_cli=true -m "ds001419_cifti" \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
-              xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.ds001419_cifti
-            # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
-      - persist_to_workspace:
-          root: /src/coverage/
-          paths:
-            - .coverage.ds001419_cifti
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_ds001419_cifti/
+      - restore_build_and_data
+      - run_integration_test:
+          marker: ds001419_cifti
+          cpus: 8
 
   ukbiobank:
-    <<: *dockersetup
-    resource_class: medium
-    environment:
-      CIRCLE_CPUS: 2
+    <<: *machine_defaults
     steps:
-      - checkout
+      - checkout:
+          path: /tmp/src/xcp_d
       - run:
-          name: Check whether build should be skipped
+          name: Check whether integration tests should be skipped
           command: |
-            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
-              echo "Skipping ukbiobank build"
+              echo "Skipping ukbiobank"
               circleci step halt
             fi
-      - restore_cache:
-          key: ukbiobank-08
-      - run: *runinstall
-      - run:
-          name: Run full xcp_d on UK Biobank data
-          no_output_timeout: 1h
-          command: |
-            pytest -rP -o log_cli=true -m "ukbiobank" \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
-              xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.ukbiobank
-            # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
-      - persist_to_workspace:
-          root: /src/coverage/
-          paths:
-            - .coverage.ukbiobank
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_ukbiobank/
-
-  nibabies:
-    <<: *dockersetup
-    resource_class: medium
-    environment:
-      CIRCLE_CPUS: 2
-    steps:
-      - checkout
-      - run:
-          name: Check whether build should be skipped
-          command: |
-            cd /src/xcp_d
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
-              echo "Skipping nibabies build"
-              circleci step halt
-            fi
-      - restore_cache:
-          key: nibabies-04
-      - run: *runinstall
-      - run:
-          name: Run full xcp_d on nibabies
-          no_output_timeout: 1h
-          command: |
-            pytest -rP -o log_cli=true -m "nibabies" \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
-              xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.nibabies
-            # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
-      - persist_to_workspace:
-          root: /src/coverage/
-          paths:
-            - .coverage.nibabies
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_nibabies/
+      - restore_build_and_data
+      - run_integration_test:
+          marker: ukbiobank
+          cpus: 2
 
   pnc_cifti:
-    <<: *dockersetup
-    resource_class: large
-    environment:
-      CIRCLE_CPUS: 2
+    <<: *machine_defaults
     steps:
-      - checkout
+      - checkout:
+          path: /tmp/src/xcp_d
       - run:
-          name: Check whether build should be skipped
+          name: Check whether integration tests should be skipped
           command: |
-            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
-              echo "Skipping pnc_cifti build"
+              echo "Skipping pnc_cifti"
               circleci step halt
             fi
-      - restore_cache:
-          key: pnc-02
-      - run: *runinstall
-      - run:
-          name: Run full xcp_d on cifti with freesurfer
-          no_output_timeout: 5h
-          command: |
-            pytest -rP -o log_cli=true -m "pnc_cifti" \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
-              xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_cifti
-            # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
-      - persist_to_workspace:
-          root: /src/coverage
-          paths:
-            - .coverage.pnc_cifti
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_pnc_cifti/
+      - restore_build_and_data
+      - run_integration_test:
+          marker: pnc_cifti
+          cpus: 2
 
   pnc_cifti_t2wonly:
-    <<: *dockersetup
-    resource_class: large
-    environment:
-      CIRCLE_CPUS: 2
+    <<: *machine_defaults
     steps:
-      - checkout
+      - checkout:
+          path: /tmp/src/xcp_d
       - run:
-          name: Check whether build should be skipped
+          name: Check whether integration tests should be skipped
           command: |
-            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
-              echo "Skipping pnc_cifti_t2wonly build"
+              echo "Skipping pnc_cifti_t2wonly"
               circleci step halt
             fi
-      - restore_cache:
-          key: pnc-02
-      - run: *runinstall
+      - restore_build_and_data
+      - run_integration_test:
+          marker: pnc_cifti_t2wonly
+          cpus: 2
+
+  fmriprep_without_freesurfer:
+    <<: *machine_defaults
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
       - run:
-          name: Run full xcp_d on cifti with freesurfer
-          no_output_timeout: 5h
+          name: Check whether integration tests should be skipped
           command: |
-            pytest -rP -o log_cli=true -m "pnc_cifti_t2wonly" \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
-              xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.pnc_cifti_t2wonly
-            # remove nifti files before uploading artifacts
-            find /src/xcp_d/.circleci/out/ -name "*.nii.gz" -type f -delete
-      - persist_to_workspace:
-          root: /src/coverage
-          paths:
-            - .coverage.pnc_cifti_t2wonly
-      - store_artifacts:
-          path: /src/xcp_d/.circleci/out/test_pnc_cifti_t2wonly/
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
+              echo "Skipping fmriprep_without_freesurfer"
+              circleci step halt
+            fi
+      - restore_build_and_data
+      - run_integration_test:
+          marker: fmriprep_without_freesurfer
+          cpus: 4
+
+  fmriprep_without_freesurfer_with_main:
+    <<: *machine_defaults
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
+      - run:
+          name: Check whether integration tests should be skipped
+          command: |
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
+              echo "Skipping fmriprep_without_freesurfer_with_main"
+              circleci step halt
+            fi
+      - restore_build_and_data
+      - run_integration_test:
+          marker: fmriprep_without_freesurfer_with_main
+          cpus: 2
+
+  nibabies:
+    <<: *machine_defaults
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
+      - run:
+          name: Check whether integration tests should be skipped
+          command: |
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?integration\]' )" != "" ]]; then
+              echo "Skipping nibabies"
+              circleci step halt
+            fi
+      - restore_build_and_data
+      - run_integration_test:
+          marker: nibabies
+          cpus: 2
 
   pytests:
-    <<: *dockersetup
-    resource_class: large
-    environment:
-      CIRCLE_CPUS: 4
+    <<: *machine_defaults
     steps:
-      - checkout
+      - checkout:
+          path: /tmp/src/xcp_d
       - run:
-          name: Check whether build should be skipped
+          name: Check whether pytests should be skipped
           command: |
-            cd /src/xcp_d
             if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pytests\]' )" != "" ]]; then
-              echo "Skipping pytests build"
+              echo "Skipping pytests"
               circleci step halt
             fi
-      - restore_cache:
-          key: pnc-02
-      - restore_cache:
-          key: ds001419-10
-      - restore_cache:
-          key: fmriprepwithoutfreesurfer-03
-      - restore_cache:
-          key: nibabies-04
-      - restore_cache:
-          key: schaefer100-05
-      - run: *runinstall
+      - restore_build_and_data
       - run:
-          name: Run pytest on the tests directory
+          name: Run pytest on tests directory
           no_output_timeout: 1h
           command: |
-            pytest \
-              -n ${CIRCLE_CPUS} \
-              --cov-append \
-              --cov-branch \
-              --cov-report term-missing \
-              --cov=xcp_d \
-              --data_dir=/src/xcp_d/.circleci/data \
-              --output_dir=/src/xcp_d/.circleci/out \
-              --working_dir=/src/xcp_d/.circleci/work \
+            mkdir -p /tmp/out /tmp/work /tmp/coverage
+            docker run --rm=false \
+              -e CIRCLE_CPUS=4 \
+              -e COVERAGE_FILE=/coverage/.coverage.pytests \
+              -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
+              -v /tmp/data:/data:ro \
+              -v /tmp/out:/out \
+              -v /tmp/work:/work \
+              -v /tmp/coverage:/coverage \
+              -w /tmp/src/xcp_d \
+              --entrypoint pytest \
+              pennlinc/xcp_d:test \
+              --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
+              --data_dir=/data --output_dir=/out --working_dir=/work \
               xcp_d
-            mkdir /src/coverage
-            mv /src/xcp_d/.coverage /src/coverage/.coverage.pytests
       - persist_to_workspace:
-          root: /src/coverage
+          root: /tmp/coverage
           paths:
             - .coverage.pytests
       - store_artifacts:
-          path: /src/xcp_d/.circleci/out
+          path: /tmp/out
 
   merge_coverage:
-    <<: *dockersetup
+    <<: *machine_defaults
     steps:
-      - checkout
+      - checkout:
+          path: /tmp/src/xcp_d
       - attach_workspace:
-          at: /src/coverage
-      - run: *runinstall
+          at: /tmp/coverage
       - run:
           name: Merge coverage files
           command: |
-            cd /src/coverage/
-            coverage combine
-            coverage xml
+            pyenv local 3
+            pip install coverage
+            cd /tmp/src/xcp_d
+            coverage combine /tmp/coverage/
+            coverage xml -o /tmp/coverage/coverage.xml
       - store_artifacts:
-          path: /src/coverage
+          path: /tmp/coverage
+      - run:
+          name: Quick fix for GPG error in Codecov
+          command: mkdir -p ~/.gnupg
       - codecov/upload:
-          file: /src/coverage/coverage.xml
+          file: /tmp/coverage/coverage.xml
 
   deployable:
     docker:
@@ -574,46 +482,27 @@ jobs:
     steps:
       - run: echo Deploying!
 
-  build_and_deploy:
-    environment:
-      TZ: "/usr/share/zoneinfo/America/New_York"
-    docker:
-      - image: cimg/base:2020.09
-    working_directory: /tmp/src/xcpd_build
+  deploy_docker:
+    <<: *machine_defaults
     steps:
-      - checkout
-      - setup_remote_docker:
-          version: docker24
-          docker_layer_caching: true
-      - run:
-          name: Build Docker image
-          no_output_timeout: 3h
-          command: |
-            # Get version, update files.
-            THISVERSION=$(python3 -c "from xcp_d import __version__; print(__version__)")
-            sed -i "s/title = {xcp_d}/title = {xcp_d ${CIRCLE_TAG:-$THISVERSION}}/" xcp_d/data/boilerplate.bib
-            # Build docker image
-            e=1 && for i in {1..5}; do
-              docker build \
-                --cache-from=pennlinc/xcp_d \
-                --rm=false \
-                -t pennlinc/xcp_d:latest \
-                --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-                --build-arg VCS_REF=`git rev-parse --short HEAD` \
-                --build-arg VERSION="${CIRCLE_TAG:-$THISVERSION}" . \
-              && e=0 && break || sleep 15
-            done && [ "$e" -eq "0" ]
+      - checkout:
+          path: /tmp/src/xcp_d
+      - restore_cache:
+          keys:
+            - build-v1-{{ .Branch }}-{{ .Revision }}
+      - run: *docker_auth
+      - run: *setup_docker_registry
+      - run: *pull_from_registry
       - run:
           name: Deploy to Docker Hub
           no_output_timeout: 40m
           command: |
             if [[ -n "$DOCKERHUB_TOKEN" ]]; then
-              docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN
-              docker tag pennlinc/xcp_d pennlinc/xcp_d:unstable
+              docker tag pennlinc/xcp_d:latest pennlinc/xcp_d:unstable
               docker push pennlinc/xcp_d:unstable
               if [[ -n "$CIRCLE_TAG" ]]; then
+                docker tag pennlinc/xcp_d:latest pennlinc/xcp_d:$CIRCLE_TAG
                 docker push pennlinc/xcp_d:latest
-                docker tag pennlinc/xcp_d pennlinc/xcp_d:$CIRCLE_TAG
                 docker push pennlinc/xcp_d:$CIRCLE_TAG
               fi
             fi
@@ -622,85 +511,12 @@ workflows:
   version: 2
   build_test_deploy:
     jobs:
-      - build:
+      - image_prep:
           filters:
             tags:
               only: /.*/
 
-      - download_data_ds001419:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-
-      - download_data_ds001419_aroma:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-
-      - download_data_pnc:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-
-      - download_data_ukbiobank:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-
-      - download_data_fmriprepwithoutfreesurfer:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-
-      - download_data_nibabies:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-
-      - download_data_schaefer100:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-
-      - pnc_cifti:
-          requires:
-            - download_data_pnc
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
-            tags:
-              only: /.*/
-
-      - pnc_cifti_t2wonly:
-          requires:
-            - download_data_pnc
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
-            tags:
-              only: /.*/
-
-      - ukbiobank:
-          requires:
-            - download_data_ukbiobank
+      - get_data:
           filters:
             branches:
               ignore:
@@ -710,9 +526,7 @@ workflows:
               only: /.*/
 
       - ds001419_nifti:
-          requires:
-            - download_data_ds001419
-            - download_data_ds001419_aroma
+          requires: [image_prep, get_data]
           filters:
             branches:
               ignore:
@@ -722,8 +536,57 @@ workflows:
               only: /.*/
 
       - ds001419_cifti:
-          requires:
-            - download_data_ds001419
+          requires: [image_prep, get_data]
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - ukbiobank:
+          requires: [image_prep, get_data]
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - pnc_cifti:
+          requires: [image_prep, get_data]
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - pnc_cifti_t2wonly:
+          requires: [image_prep, get_data]
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - fmriprep_without_freesurfer:
+          requires: [image_prep, get_data]
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
+            tags:
+              only: /.*/
+
+      - fmriprep_without_freesurfer_with_main:
+          requires: [image_prep, get_data]
           filters:
             branches:
               ignore:
@@ -733,31 +596,7 @@ workflows:
               only: /.*/
 
       - nibabies:
-          requires:
-            - download_data_nibabies
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
-            tags:
-              only: /.*/
-
-      - nifti_without_freesurfer:
-          requires:
-            - download_data_fmriprepwithoutfreesurfer
-            - download_data_schaefer100
-          filters:
-            branches:
-              ignore:
-                - /docs?\/.*/
-                - /tests?\/.*/
-            tags:
-              only: /.*/
-
-      - nifti_without_freesurfer_with_main:
-          requires:
-            - download_data_fmriprepwithoutfreesurfer
+          requires: [image_prep, get_data]
           filters:
             branches:
               ignore:
@@ -767,12 +606,7 @@ workflows:
               only: /.*/
 
       - pytests:
-          requires:
-            - download_data_pnc
-            - download_data_fmriprepwithoutfreesurfer
-            - download_data_ds001419
-            - download_data_nibabies
-            - download_data_schaefer100
+          requires: [image_prep, get_data]
           filters:
             branches:
               ignore:
@@ -783,14 +617,14 @@ workflows:
 
       - merge_coverage:
           requires:
-            - pnc_cifti
-            - pnc_cifti_t2wonly
             - ds001419_nifti
             - ds001419_cifti
             - ukbiobank
+            - pnc_cifti
+            - pnc_cifti_t2wonly
+            - fmriprep_without_freesurfer
+            - fmriprep_without_freesurfer_with_main
             - nibabies
-            - nifti_without_freesurfer
-            - nifti_without_freesurfer_with_main
             - pytests
           filters:
             branches:
@@ -802,14 +636,15 @@ workflows:
 
       - deployable:
           requires:
+            - image_prep
             - ds001419_nifti
             - ds001419_cifti
             - ukbiobank
-            - nifti_without_freesurfer
-            - nifti_without_freesurfer_with_main
-            - nibabies
             - pnc_cifti
             - pnc_cifti_t2wonly
+            - fmriprep_without_freesurfer
+            - fmriprep_without_freesurfer_with_main
+            - nibabies
             - pytests
           filters:
             branches:
@@ -817,9 +652,8 @@ workflows:
             tags:
               only: /.*/
 
-      - build_and_deploy:
-          requires:
-            - deployable
+      - deploy_docker:
+          requires: [deployable]
           filters:
             branches:
               only: main
