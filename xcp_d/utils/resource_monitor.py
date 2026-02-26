@@ -51,29 +51,30 @@ def _safe_log_nodes_cb(node, status):
         if runtime is None:
             return
 
-        # node.result.runtime can be a list for MapNode aggregated results
-        runtimes = runtime if isinstance(runtime, (list, tuple)) else [runtime]
+        # MapNode parent callbacks can contain a runtime list that duplicates
+        # child-node callbacks and confuses attribution in the summary.
+        if isinstance(runtime, (list, tuple)):
+            return
 
-        for rt in runtimes:
-            if rt is None:
-                continue
-            start_time = getattr(rt, 'startTime', None)
-            end_time = getattr(rt, 'endTime', None)
-            if start_time is None or end_time is None:
-                continue
+        start_time = getattr(runtime, 'startTime', None)
+        end_time = getattr(runtime, 'endTime', None)
+        if start_time is None or end_time is None:
+            return
 
-            status_dict = {
-                'name': getattr(node, 'name', None),
-                'id': getattr(node, '_id', None),
-                'start': start_time,
-                'finish': end_time,
-                'duration': getattr(rt, 'duration', None),
-                'runtime_threads': getattr(rt, 'cpu_percent', 'N/A'),
-                'runtime_memory_gb': getattr(rt, 'mem_peak_gb', 'N/A'),
-                'estimated_memory_gb': getattr(node, 'mem_gb', 'N/A'),
-                'num_threads': getattr(node, 'n_procs', 'N/A'),
-            }
-            logging.getLogger('callback').debug(json.dumps(status_dict))
+        status_dict = {
+            'name': getattr(node, 'name', None),
+            'id': getattr(node, '_id', None),
+            'start': start_time,
+            'finish': end_time,
+            'duration': getattr(runtime, 'duration', None),
+            'runtime_threads': getattr(runtime, 'cpu_percent', 'N/A'),
+            # This is process peak RSS from the monitored runtime context.
+            'runtime_memory_gb': getattr(runtime, 'mem_peak_gb', 'N/A'),
+            'runtime_pid': getattr(runtime, 'pid', None),
+            'estimated_memory_gb': getattr(node, 'mem_gb', 'N/A'),
+            'num_threads': getattr(node, 'n_procs', 'N/A'),
+        }
+        logging.getLogger('callback').debug(json.dumps(status_dict))
     except Exception:
         # Avoid crashing the workflow; log and continue
         logging.getLogger('callback').debug(
@@ -92,9 +93,9 @@ def summarize_callback_log(callback_log):
     Returns
     -------
     list[dict]
-        One dictionary per node name with aggregated memory statistics:
+        One dictionary per node ID with aggregated memory statistics:
         ``estimated_memory_gb``, ``runtime_memory_gb``, ``delta_memory_gb``,
-        ``runtime_vs_estimated_ratio`` and ``n_samples``.
+        ``runtime_vs_estimated_ratio``, ``runtime_pids`` and ``n_samples``.
     """
     callback_log = Path(callback_log)
     if not callback_log.is_file():
@@ -102,8 +103,11 @@ def summarize_callback_log(callback_log):
 
     grouped = defaultdict(
         lambda: {
+            'node_name': None,
+            'node_id': None,
             'estimated_memory_gb': 0.0,
             'runtime_memory_gb': 0.0,
+            'runtime_pids': set(),
             'n_samples': 0,
         }
     )
@@ -120,18 +124,23 @@ def summarize_callback_log(callback_log):
                 # Ignore "start" events and malformed rows.
                 continue
 
-            node_name = row.get('name') or row.get('id')
-            if node_name is None:
+            node_id = row.get('id') or row.get('name')
+            if node_id is None:
                 continue
 
             estimated_memory = _as_float(row.get('estimated_memory_gb')) or 0.0
-            stats = grouped[node_name]
+            stats = grouped[node_id]
+            stats['node_name'] = stats['node_name'] or row.get('name') or node_id
+            stats['node_id'] = node_id
             stats['estimated_memory_gb'] = max(stats['estimated_memory_gb'], estimated_memory)
             stats['runtime_memory_gb'] = max(stats['runtime_memory_gb'], runtime_memory)
+            runtime_pid = row.get('runtime_pid')
+            if runtime_pid is not None:
+                stats['runtime_pids'].add(str(runtime_pid))
             stats['n_samples'] += 1
 
     summary = []
-    for node_name, stats in grouped.items():
+    for _, stats in grouped.items():
         estimated_memory = stats['estimated_memory_gb']
         runtime_memory = stats['runtime_memory_gb']
         delta_memory = runtime_memory - estimated_memory
@@ -141,11 +150,13 @@ def summarize_callback_log(callback_log):
 
         summary.append(
             {
-                'node_name': node_name,
+                'node_name': stats['node_name'],
+                'node_id': stats['node_id'],
                 'estimated_memory_gb': round(estimated_memory, 6),
                 'runtime_memory_gb': round(runtime_memory, 6),
                 'delta_memory_gb': round(delta_memory, 6),
                 'runtime_vs_estimated_ratio': None if ratio is None else round(ratio, 6),
+                'runtime_pids': ','.join(sorted(stats['runtime_pids'])) if stats['runtime_pids'] else None,
                 'n_samples': stats['n_samples'],
             }
         )

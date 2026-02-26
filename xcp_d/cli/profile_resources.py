@@ -51,10 +51,12 @@ def main(args=None):
 
     fieldnames = [
         'node_name',
+        'node_id',
         'estimated_memory_gb',
         'runtime_memory_gb',
         'delta_memory_gb',
         'runtime_vs_estimated_ratio',
+        'runtime_pids',
         'n_samples',
     ]
     with output_path.open('w', newline='') as fobj:
