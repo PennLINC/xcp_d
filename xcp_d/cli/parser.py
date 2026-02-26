@@ -746,7 +746,10 @@ anatomical tissue segmentation, and an HDF5 file containing motion levels at dif
         dest='resource_monitor',
         action='store_true',
         default=False,
-        help="Enable Nipype's resource monitoring to keep track of memory and CPU usage.",
+        help=(
+            "Enable Nipype's resource monitoring to keep track of memory and CPU usage. "
+            'Also writes per-node callback metrics to <output_dir>/logs/resource_monitor.jsonl.'
+        ),
     )
     g_other.add_argument(
         '--config-file',

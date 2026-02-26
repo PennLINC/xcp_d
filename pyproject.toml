@@ -93,6 +93,7 @@ all = ["xcp_d[dev,doc,maint,tests]"]
 [project.scripts]
 xcp_d = "xcp_d.cli.run:main"
 xcp_d-combineqc = "xcp_d.cli.aggregate_qc:main"
+xcp_d-profile-resources = "xcp_d.cli.profile_resources:main"
 
 #
 # Hatch configurations

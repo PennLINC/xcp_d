@@ -346,6 +346,8 @@ class nipype(_Config):
     """Settings for NiPype's execution plugin."""
     resource_monitor = False
     """Enable resource monitor."""
+    resource_monitor_file = None
+    """Path to Nipype callback log with node-level runtime resource measurements."""
     stop_on_first_crash = True
     """Whether the workflow should stop or continue after the first error."""
 
@@ -360,6 +362,26 @@ class nipype(_Config):
             out['plugin_args']['n_procs'] = int(cls.nprocs)
             if cls.memory_gb:
                 out['plugin_args']['memory_gb'] = float(cls.memory_gb)
+
+            if cls.resource_monitor and 'status_callback' not in out['plugin_args']:
+                from nipype.utils.profiler import log_nodes_cb
+
+                callback_logger = logging.getLogger('callback')
+                callback_logger.setLevel(logging.DEBUG)
+                callback_logger.propagate = False
+
+                callback_log = execution.log_dir / 'resource_monitor.jsonl'
+                cls.resource_monitor_file = str(callback_log)
+
+                # Keep callback logging on a single output file per run.
+                for handler in callback_logger.handlers[:]:
+                    if isinstance(handler, logging.FileHandler):
+                        callback_logger.removeHandler(handler)
+                        handler.close()
+
+                callback_logger.addHandler(logging.FileHandler(str(callback_log)))
+                out['plugin_args']['status_callback'] = log_nodes_cb
+
         return out
 
     @classmethod
