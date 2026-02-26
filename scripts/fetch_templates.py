@@ -18,7 +18,13 @@ def fetch_MNI2009():
 def fetch_MNI6():
     template = 'MNI152NLin6Asym'
     tf.get(template, resolution=1, desc=None, suffix='T1w')
-    tf.get(template, mode='image', suffix='xfm', extension='.h5', **{'from': 'MNI152NLin2009cAsym'})
+    tf.get(
+        template,
+        mode='image',
+        suffix='xfm',
+        extension='.h5',
+        **{'from': 'MNI152NLin2009cAsym'},
+    )
 
 
 def fetch_MNIInfant():
