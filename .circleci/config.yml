@@ -253,8 +253,6 @@ jobs:
   get_data:
     <<: *machine_defaults
     steps:
-      - checkout:
-          path: /tmp/src/xcp_d
       - restore_cache:
           keys:
             - data-v1-{{ .Branch }}-{{ .Revision }}
@@ -265,14 +263,27 @@ jobs:
       - run:
           name: Download XCP-D integration test data
           command: |
-            cd /tmp/src/xcp_d/.circleci
-            for dset in ds001419 ds001419-aroma schaefer100 pnc ukbiobank fmriprepwithoutfreesurfer nibabies; do
-              if [[ ! -d /tmp/data/${dset} ]]; then
-                python get_data.py /tmp/data "${dset}"
-              else
+            download_one() {
+              local dset=$1
+              local url=$2
+              if [[ -d /tmp/data/${dset} ]]; then
                 echo "${dset} data was cached"
+                return 0
               fi
-            done
+              mkdir -p /tmp/data/${dset}
+              wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q \
+                -O /tmp/${dset}.tar.gz "${url}" || return 1
+              tar xzf /tmp/${dset}.tar.gz -C /tmp/data/${dset}
+              rm -f /tmp/${dset}.tar.gz
+              echo "Downloaded ${dset}"
+            }
+            download_one ds001419 'https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz'
+            download_one ds001419-aroma 'https://upenn.box.com/shared/static/dexcmnlj7yujudr3muu05kch66sko4mt.tar.gz'
+            download_one schaefer100 'https://upenn.box.com/shared/static/b9pn9qebr41kteant4ym2q5u4kcbgiy6.tar.gz'
+            download_one pnc 'https://upenn.box.com/shared/static/ui2847ys49d82pgn5ewai1mowcmsv2br.tar.gz'
+            download_one ukbiobank 'https://upenn.box.com/shared/static/p5h1eg4p5cd2ef9ehhljlyh1uku0xe97.tar.gz'
+            download_one fmriprepwithoutfreesurfer 'https://upenn.box.com/shared/static/seyp1cu9w5v3ds6iink37hlsa217yge1.tar.gz'
+            download_one nibabies 'https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz'
       - save_cache:
           key: data-v1-{{ .Branch }}-{{ .Revision }}
           paths:
