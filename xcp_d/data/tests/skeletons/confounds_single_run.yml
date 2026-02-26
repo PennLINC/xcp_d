@@ -3,11 +3,17 @@
   - func:
     - task: rest
       run: 1
+      part: mag
       desc: preproc
       suffix: bold
       extension: .nii.gz
     - task: rest
       run: 1
+      suffix: bold
+      extension: .dtseries.nii
+    - task: rest
+      run: 1
+      part: mag
       desc: confounds
       suffix: timeseries
       extension: .tsv

@@ -28,9 +28,27 @@ def _build_layout_from_skeleton(tmp_path_factory, skeleton_relpath: str) -> BIDS
     return layout
 
 
-def _get_bold_preproc_files(layout: BIDSLayout) -> list[str]:
+def _get_bold_nifti_preproc_files(layout: BIDSLayout) -> list[str]:
     """Return all preproc BOLD files in the layout (derivatives)."""
     return layout.get(return_type='file', suffix='bold', desc='preproc')
+
+
+def _get_bold_cifti_preproc_files(layout: BIDSLayout) -> list[str]:
+    """Return all preproc BOLD CIFTI files in the layout (derivatives).
+
+    fMRIPrep's preprocessed CIFTI files do not have the 'desc' or 'part' entities.
+    """
+    return layout.get(return_type='file', suffix='bold', extension='.dtseries.nii')
+
+
+def _get_bold_preproc_files(layout: BIDSLayout, file_format: str) -> list[str]:
+    """Return all preproc BOLD files in the layout (derivatives)."""
+    if file_format == 'nifti':
+        return _get_bold_nifti_preproc_files(layout)
+    elif file_format == 'cifti':
+        return _get_bold_cifti_preproc_files(layout)
+    else:
+        raise ValueError(f'Invalid format: {file_format}')
 
 
 def test_collect_confounds_single_run(tmp_path_factory):
@@ -38,28 +56,29 @@ def test_collect_confounds_single_run(tmp_path_factory):
     layout = _build_layout_from_skeleton(tmp_path_factory, 'confounds_single_run.yml')
     confounds_spec = _load_confounds_spec('36P')
 
-    bold_files = _get_bold_preproc_files(layout)
-    assert len(bold_files) == 1
+    for file_format in ('nifti', 'cifti'):
+        bold_files = _get_bold_preproc_files(layout, file_format)
+        assert len(bold_files) == 1
 
-    confounds = xbids.collect_confounds(
-        bold_file=bold_files[0],
-        preproc_dataset=layout,
-        derivatives_datasets=None,
-        confound_spec=confounds_spec,
-    )
-    # 36P spec defines a single entry 'preproc_confounds'
-    assert 'preproc_confounds' in confounds
-    conf_path = confounds['preproc_confounds']['file']
-    assert conf_path.endswith('.tsv')
-    # Should match the same run/entities as the BOLD file
-    bold_base = os.path.basename(bold_files[0])
-    conf_base = os.path.basename(conf_path)
-    # Same task and run; confounds file should not include acq
-    assert '_task-rest_' in bold_base
-    assert '_task-rest_' in conf_base
-    assert '_run-' in bold_base
-    assert '_run-' in conf_base
-    assert 'acq-3echo' not in conf_base
+        confounds = xbids.collect_confounds(
+            bold_file=bold_files[0],
+            preproc_dataset=layout,
+            derivatives_datasets=None,
+            confound_spec=confounds_spec,
+        )
+        # 36P spec defines a single entry 'preproc_confounds'
+        assert 'preproc_confounds' in confounds
+        conf_path = confounds['preproc_confounds']['file']
+        assert conf_path.endswith('.tsv')
+        # Should match the same run/entities as the BOLD file
+        bold_base = os.path.basename(bold_files[0])
+        conf_base = os.path.basename(conf_path)
+        # Same task and run; confounds file should not include acq
+        assert '_task-rest_' in bold_base
+        assert '_task-rest_' in conf_base
+        assert '_run-' in bold_base
+        assert '_run-' in conf_base
+        assert 'acq-3echo' not in conf_base
 
 
 def test_collect_confounds_mixed_acq_runs(tmp_path_factory):
@@ -67,7 +86,7 @@ def test_collect_confounds_mixed_acq_runs(tmp_path_factory):
     layout = _build_layout_from_skeleton(tmp_path_factory, 'confounds_acq_mixed.yml')
     confounds_spec = _load_confounds_spec('36P')
 
-    bold_files = sorted(_get_bold_preproc_files(layout))
+    bold_files = sorted(_get_bold_nifti_preproc_files(layout))
     assert len(bold_files) == 2
 
     for bf in bold_files:
@@ -106,7 +125,7 @@ def test_collect_confounds_missing_dataset_raises(tmp_path_factory):
             }
         }
     }
-    bold_files = _get_bold_preproc_files(layout)
+    bold_files = _get_bold_nifti_preproc_files(layout)
     assert len(bold_files) == 1
     with pytest.raises(ValueError, match='Missing dataset required by confound spec'):
         xbids.collect_confounds(
@@ -121,7 +140,7 @@ def test_collect_confounds_missing_file_raises(tmp_path_factory):
     """If no confounds file matches the query, raise FileNotFoundError."""
     layout = _build_layout_from_skeleton(tmp_path_factory, 'confounds_no_confounds.yml')
     confounds_spec = _load_confounds_spec('36P')
-    bold_files = _get_bold_preproc_files(layout)
+    bold_files = _get_bold_nifti_preproc_files(layout)
     assert len(bold_files) == 1
     with pytest.raises(FileNotFoundError):
         xbids.collect_confounds(
