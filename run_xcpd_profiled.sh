@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 set -euo pipefail
 
 usage() {
@@ -33,13 +33,13 @@ Notes:
 EOF
 }
 
-IMAGE="pennlinc/xcp_d:latest"
-FMRI_DIR=""
-OUTPUT_DIR=""
-WORK_DIR=""
+IMAGE="xcp_d_memory:latest"
+FMRI_DIR="/mnt/c/Users/tsalo/Documents/datasets/ds006185"
+OUTPUT_DIR="/mnt/c/Users/tsalo/Documents/datasets/xcp_d-nifti"
+WORK_DIR="/mnt/c/Users/tsalo/Documents/datasets/work-nifti"
 SUMMARY_TOP=""
-SUMMARY_FILE="resource_monitor_memory-summary.tsv"
-PARTICIPANTS=()
+SUMMARY_FILE="resource_monitor_memory-summary-nifti.tsv"
+PARTICIPANTS=("24053")
 XCPD_EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -113,7 +113,14 @@ XCPD_ARGS=(
   /out
   participant
   --work-dir /work
+  --mode linc
+  --file-format nifti
+  --fd-thresh 0.2
+  --head-radius auto
   --resource-monitor
+  --nthreads 1
+  --omp-nthreads 1
+  --task-id bao
 )
 
 for sub in "${PARTICIPANTS[@]}"; do
@@ -141,7 +148,7 @@ fi
 
 PROFILE_ARGS=(
   /out/logs/resource_monitor.jsonl
-  --output "/out/logs/${SUMMARY_FILE}"
+  --output=/out/logs/${SUMMARY_FILE}
 )
 
 if [[ -n "$SUMMARY_TOP" ]]; then
@@ -158,3 +165,4 @@ docker run --rm \
 echo "Done."
 echo "Callback log: ${CALLBACK_LOG_HOST}"
 echo "Summary TSV:  ${OUTPUT_DIR}/logs/${SUMMARY_FILE}"
+

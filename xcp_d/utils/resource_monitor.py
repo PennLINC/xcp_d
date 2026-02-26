@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections import defaultdict
 from pathlib import Path
 
@@ -16,6 +17,68 @@ def _as_float(value):
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _safe_log_nodes_cb(node, status):
+    """Robust status callback that logs node run statistics to the callback logger.
+
+    Wraps Nipype's log_nodes_cb to handle edge cases where node or node.result.runtime
+    may be a list (e.g. MapNode subnodes), which causes "'list' object has no
+    attribute 'startTime'" in the upstream implementation.
+
+    Parameters
+    ----------
+    node : :obj:`Node` or :obj:`list`
+        The node(s) being logged. If a list, logs each item.
+    status : :obj:`str`
+        'start', 'end', or 'exception'. Only 'end' produces log output.
+    """
+    if status != 'end':
+        return
+
+    # Handle plugin passing a list of nodes (e.g. MapNode expansion edge case)
+    if isinstance(node, (list, tuple)):
+        for n in node:
+            _safe_log_nodes_cb(n, status)
+        return
+
+    try:
+        result = getattr(node, 'result', None)
+        if result is None:
+            return
+
+        runtime = getattr(result, 'runtime', None)
+        if runtime is None:
+            return
+
+        # node.result.runtime can be a list for MapNode aggregated results
+        runtimes = runtime if isinstance(runtime, (list, tuple)) else [runtime]
+
+        for rt in runtimes:
+            if rt is None:
+                continue
+            start_time = getattr(rt, 'startTime', None)
+            end_time = getattr(rt, 'endTime', None)
+            if start_time is None or end_time is None:
+                continue
+
+            status_dict = {
+                'name': getattr(node, 'name', None),
+                'id': getattr(node, '_id', None),
+                'start': start_time,
+                'finish': end_time,
+                'duration': getattr(rt, 'duration', None),
+                'runtime_threads': getattr(rt, 'cpu_percent', 'N/A'),
+                'runtime_memory_gb': getattr(rt, 'mem_peak_gb', 'N/A'),
+                'estimated_memory_gb': getattr(node, 'mem_gb', 'N/A'),
+                'num_threads': getattr(node, 'n_procs', 'N/A'),
+            }
+            logging.getLogger('callback').debug(json.dumps(status_dict))
+    except Exception:
+        # Avoid crashing the workflow; log and continue
+        logging.getLogger('callback').debug(
+            json.dumps({'error': True, 'name': getattr(node, 'name', None), 'id': getattr(node, '_id', None)})
+        )
 
 
 def summarize_callback_log(callback_log):

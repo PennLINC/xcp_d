@@ -364,7 +364,7 @@ class nipype(_Config):
                 out['plugin_args']['memory_gb'] = float(cls.memory_gb)
 
             if cls.resource_monitor and 'status_callback' not in out['plugin_args']:
-                from nipype.utils.profiler import log_nodes_cb
+                from xcp_d.utils.resource_monitor import _safe_log_nodes_cb
 
                 callback_logger = logging.getLogger('callback')
                 callback_logger.setLevel(logging.DEBUG)
@@ -380,7 +380,7 @@ class nipype(_Config):
                         handler.close()
 
                 callback_logger.addHandler(logging.FileHandler(str(callback_log)))
-                out['plugin_args']['status_callback'] = log_nodes_cb
+                out['plugin_args']['status_callback'] = _safe_log_nodes_cb
 
         return out
 
