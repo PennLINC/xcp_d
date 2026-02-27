@@ -51,17 +51,21 @@ environments:
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-base-2602.1-py_0.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-basisfield-2203.4-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-bet2-2111.8-h982b8fd_3.tar.bz2
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-cluster-2201.0-h982b8fd_11.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-cprob-2111.0-h9f0ab69_8.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fast4-2111.3-h982b8fd_6.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-flirt-2111.4-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fnirt-2203.2-h982b8fd_2.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fugue-2201.5-h982b8fd_4.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-installer-3.17.0-py_0.conda
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-libgdc-2111.0-h69d0ecf_9.conda
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-libvis-2111.2-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-mcflirt-2111.0-h982b8fd_8.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-meshclass-2111.0-h982b8fd_10.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-misc_c-2111.1-h3986bbc_1.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-misc_tcl-2406.0-0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-miscmaths-2412.4-h982b8fd_0.tar.bz2
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-miscvis-2201.1-2.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-newimage-2501.4-h500b71b_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-newnifti-4.1.0-hc1c3352_6.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-sub-2.10.0-py_0.conda
@@ -343,17 +347,21 @@ environments:
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-base-2602.1-py_0.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-basisfield-2203.4-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-bet2-2111.8-h982b8fd_3.tar.bz2
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-cluster-2201.0-h982b8fd_11.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-cprob-2111.0-h9f0ab69_8.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fast4-2111.3-h982b8fd_6.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-flirt-2111.4-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fnirt-2203.2-h982b8fd_2.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fugue-2201.5-h982b8fd_4.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-installer-3.17.0-py_0.conda
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-libgdc-2111.0-h69d0ecf_9.conda
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-libvis-2111.2-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-mcflirt-2111.0-h982b8fd_8.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-meshclass-2111.0-h982b8fd_10.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-misc_c-2111.1-h3986bbc_1.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-misc_tcl-2406.0-0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-miscmaths-2412.4-h982b8fd_0.tar.bz2
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-miscvis-2201.1-2.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-newimage-2501.4-h500b71b_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-newnifti-4.1.0-hc1c3352_6.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-sub-2.10.0-py_0.conda
@@ -647,17 +655,21 @@ environments:
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-base-2602.1-py_0.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-basisfield-2203.4-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-bet2-2111.8-h982b8fd_3.tar.bz2
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-cluster-2201.0-h982b8fd_11.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-cprob-2111.0-h9f0ab69_8.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fast4-2111.3-h982b8fd_6.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-flirt-2111.4-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fnirt-2203.2-h982b8fd_2.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-fugue-2201.5-h982b8fd_4.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-installer-3.17.0-py_0.conda
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-libgdc-2111.0-h69d0ecf_9.conda
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-libvis-2111.2-h982b8fd_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-mcflirt-2111.0-h982b8fd_8.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-meshclass-2111.0-h982b8fd_10.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-misc_c-2111.1-h3986bbc_1.conda
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-misc_tcl-2406.0-0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-miscmaths-2412.4-h982b8fd_0.tar.bz2
+      - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-miscvis-2201.1-2.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-newimage-2501.4-h500b71b_0.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-newnifti-4.1.0-hc1c3352_6.tar.bz2
       - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-sub-2.10.0-py_0.conda
@@ -1647,6 +1659,28 @@ packages:
   - libzlib >=1.3.1,<2.0a0
   size: 199688
   timestamp: 1738787735959
+- conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-cluster-2201.0-h982b8fd_11.tar.bz2
+  sha256: f92d2a934fad6933ea619d226b15506bc1d426196be9195cd101e976503f3da7
+  md5: 107440374bf961ee6591e58871573f55
+  depends:
+  - fsl-armawrap >=0.7.0,<0.8.0a0
+  - fsl-base
+  - fsl-basisfield >=2203.4,<2204.0a0
+  - fsl-cprob >=2111.0,<2112.0a0
+  - fsl-misc_c >=2111.0,<2112.0a0
+  - fsl-miscmaths >=2412.4,<2413.0a0
+  - fsl-newimage >=2501.1,<2502.0a0
+  - fsl-newnifti >=4.1.0,<4.2.0a0
+  - fsl-utils >=2412.0,<2413.0a0
+  - fsl-warpfns >=2501.0,<2502.0a0
+  - fsl-znzlib >=2111.0,<2112.0a0
+  - libblas >=3.9.0,<4.0a0
+  - libgcc >=14
+  - liblapack >=3.9.0,<4.0a0
+  - libstdcxx >=14
+  - libzlib >=1.3.1,<2.0a0
+  size: 290365
+  timestamp: 1738836579267
 - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-cprob-2111.0-h9f0ab69_8.conda
   sha256: 94c80b8f0ee9c229e780e301bda2f8ada088b4dde254f838be05f8c5631d9f7c
   md5: d12efbd2564becad54a5c82c74cd79ab
@@ -1751,6 +1785,38 @@ packages:
   - python
   size: 48133
   timestamp: 1756744530022
+- conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-libgdc-2111.0-h69d0ecf_9.conda
+  sha256: db0e719f4d18776c2b45922bd08699f4980714fcf09a038548fb55d860804c29
+  md5: 4957e0ab1c7124979ab24c09a185b497
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - fsl-base
+  - libgcc >=15
+  - libgd >=2.3.3,<2.4.0a0
+  - libpng >=1.6.51,<1.7.0a0
+  - libstdcxx >=15
+  size: 109095
+  timestamp: 1764326014726
+- conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-libvis-2111.2-h982b8fd_0.tar.bz2
+  sha256: d641f8328938df39cab3d51bc1a5aae3918149e6a84d4cbf73b8e640479e5be5
+  md5: e2cbc26d332734305884324ef2f032cf
+  depends:
+  - fsl-armawrap >=0.7.0,<0.8.0a0
+  - fsl-base
+  - fsl-cprob >=2111.0,<2112.0a0
+  - fsl-libgdc >=2111.0,<2112.0a0
+  - fsl-miscmaths >=2412.4,<2413.0a0
+  - fsl-newimage >=2501.1,<2502.0a0
+  - fsl-newnifti >=4.1.0,<4.2.0a0
+  - fsl-utils >=2412.0,<2413.0a0
+  - fsl-znzlib >=2111.0,<2112.0a0
+  - libblas >=3.9.0,<4.0a0
+  - libgcc >=14
+  - liblapack >=3.9.0,<4.0a0
+  - libstdcxx >=14
+  - libzlib >=1.3.1,<2.0a0
+  size: 369570
+  timestamp: 1738662426286
 - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-mcflirt-2111.0-h982b8fd_8.tar.bz2
   sha256: 15643f48e0588788e4c30e28f95d2ee73329f61f0399b6b7408fba695ad4a331
   md5: c9dc6b2bced5bfd83abedf9ba50ba4d0
@@ -1821,6 +1887,18 @@ packages:
   - libzlib >=1.3.1,<2.0a0
   size: 712295
   timestamp: 1737130825653
+- conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/noarch/fsl-miscvis-2201.1-2.tar.bz2
+  sha256: ce6f2abe1cb9004fb790427164177c15c961b9fb6b02dd324859674a344f81b8
+  md5: bb9900ebeb7fad55d0d71090c8ea1be3
+  depends:
+  - fsl-avwutils
+  - fsl-base
+  - fsl-cluster
+  - fsl-libvis
+  - fsl-misc_c
+  - fsl-misc_tcl
+  size: 22346
+  timestamp: 1688117705874
 - conda: https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/linux-64/fsl-newimage-2501.4-h500b71b_0.tar.bz2
   sha256: 334948211331026a15068b0623903329724adfaa602b1c3afe9c3b29390306b2
   md5: b418aa9fc531da6b3521f53e920f9fc9
@@ -5920,8 +5998,8 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 0.14.2.dev25+g7bc2655ed.d20260225
-  sha256: e56b6735ddaac2c93ebba26f4db3fd87ec9fe88da00eea261f6e3062bd4cac05
+  version: 0.14.2.dev31+g806a3364f.d20260227
+  sha256: 4e0b5fda4ccd5482bcc023cb7bcd12819170d6c3d0020fb04421854a71eaa36a
   requires_dist:
   - acres
   - beautifulsoup4
