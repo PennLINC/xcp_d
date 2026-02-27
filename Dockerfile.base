@@ -72,6 +72,7 @@ RUN apt-get update && \
                     libopenblas0-openmp \
                     lsb-release \
                     netbase \
+                    pandoc \
                     xvfb && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

@@ -228,6 +228,7 @@ jobs:
               docker run --rm pennlinc/xcp_d:latest --version
             fi
             docker run --rm --entrypoint pytest pennlinc/xcp_d:test --version
+            docker run --rm --entrypoint pandoc pennlinc/xcp_d:test --version > /dev/null
             docker run --rm --entrypoint 3dReHo pennlinc/xcp_d:test -help > /dev/null
       - run:
           name: Push base image to Docker Hub (if newly built)
@@ -456,7 +457,7 @@ jobs:
               -e CIRCLE_CPUS=4 \
               -e COVERAGE_FILE=/coverage/.coverage.pytests \
               -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
-              -v /tmp/data:/data:ro \
+              -v /tmp/data:/data \
               -v /tmp/out:/out \
               -v /tmp/work:/work \
               -v /tmp/coverage:/coverage \
