@@ -125,9 +125,11 @@ jobs:
       - run:
           name: Determine whether image builds are required
           command: |
+            echo "FORCE_BASE_BUILD=0" >> "$BASH_ENV"
             if [[ -n "$CIRCLE_TAG" || "$CIRCLE_BRANCH" == "main" ]]; then
               echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
               echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+              echo "FORCE_BASE_BUILD=1" >> "$BASH_ENV"
               exit 0
             fi
 
@@ -150,6 +152,9 @@ jobs:
             if printf "%s\n" "$CHANGED_FILES" | grep -Eq "^(Dockerfile\\.base|Dockerfile|pixi\\.lock)$"; then
               echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
               echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+              if printf "%s\n" "$CHANGED_FILES" | grep -Eq "^Dockerfile\\.base$"; then
+                echo "FORCE_BASE_BUILD=1" >> "$BASH_ENV"
+              fi
             else
               echo "BUILD_PRODUCTION_IMAGE=0" >> "$BASH_ENV"
               echo "BUILD_TEST_IMAGE=0" >> "$BASH_ENV"
@@ -158,8 +163,9 @@ jobs:
           name: Build base image if needed
           no_output_timeout: 90m
           command: |
-            if ! docker manifest inspect $BASE_IMAGE > /dev/null 2>&1; then
+            if [[ "$FORCE_BASE_BUILD" == "1" ]] || ! docker manifest inspect $BASE_IMAGE > /dev/null 2>&1; then
               docker build -f Dockerfile.base \
+                --pull \
                 --platform linux/amd64 \
                 -t $BASE_IMAGE \
                 -t $BASE_IMAGE_NAME:latest .
