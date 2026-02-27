@@ -50,7 +50,7 @@ def test_smoothing_nifti(fmriprep_without_freesurfer_data):
         name='nifti_smoothing',  # FWHM = kernel size
     )  # Use fslmaths to smooth the image
     smooth_data.inputs.in_file = in_file
-    results = smooth_data.run()
+    results = smooth_data.run(cwd=tmpdir)
     out_file = results.outputs.out_file
 
     # Run AFNI'S FWHMx via CLI, the nipype interface doesn't have what we need
@@ -134,7 +134,7 @@ def test_smoothing_cifti(ds001419_data, tmp_path_factory):
     smooth_data.inputs.in_file = in_file
     smooth_data.base_dir = tmpdir
     smooth_data.inputs.out_file = os.path.join(tmpdir, 'test.dtseries.nii')
-    results = smooth_data.run()
+    results = smooth_data.run(cwd=tmpdir)
     out_file = results.outputs.out_file
 
     # Estimate the smoothness of the smoothed file

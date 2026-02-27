@@ -770,6 +770,8 @@ def test_parse_args_01(tmp_path_factory):
         '10',
         '--input-type',
         'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
     ]
     parser.parse_args(args=base_args, namespace=None)
 
@@ -801,6 +803,8 @@ def test_parse_args_02(tmp_path_factory):
         '10',
         '--input-type',
         'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
     ]
     parser.parse_args(args=base_args, namespace=None)
     assert config.execution.fmri_dir == bids_dir
@@ -835,6 +839,8 @@ def test_parse_args_03(tmp_path_factory):
         '10',
         '--input-type',
         'nibabies',
+        '--work-dir',
+        str(tmpdir / 'work'),
     ]
     parser.parse_args(args=base_args, namespace=None)
     assert config.execution.fmri_dir == bids_dir
