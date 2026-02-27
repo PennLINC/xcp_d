@@ -73,7 +73,7 @@ commands:
               -e CIRCLE_CPUS=<< parameters.cpus >> \
               -e COVERAGE_FILE=/coverage/.coverage.<< parameters.marker >> \
               -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
-              -v /tmp/data:/data:ro \
+              -v /tmp/data:/data \
               -v /tmp/out:/out \
               -v /tmp/work:/work \
               -v /tmp/coverage:/coverage \
