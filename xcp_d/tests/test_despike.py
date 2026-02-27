@@ -54,7 +54,7 @@ def test_nifti_despike(fmriprep_without_freesurfer_data, tmp_path_factory):
     # Let's despike the image and write it out to a temp file
     despike_nifti = pe.Node(DespikePatch(outputtype='NIFTI_GZ', args='-NEW'), name='Despike')
     despike_nifti.inputs.in_file = spikedfile
-    res = despike_nifti.run(cwd=tempdir)
+    res = despike_nifti.run()
     despiked_file = res.outputs.out_file
 
     assert os.path.isfile(despiked_file)
