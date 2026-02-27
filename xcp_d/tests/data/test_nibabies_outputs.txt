@@ -1,4 +1,9 @@
 dataset_description.json
+logs
+logs/CITATION.bib
+logs/CITATION.html
+logs/CITATION.md
+logs/CITATION.tex
 sourcedata
 sourcedata/atlases
 sourcedata/atlases/atlas-4S1056Parcels_description.json
@@ -60,11 +65,6 @@ sourcedata/atlases/tpl-MNIInfant/cohort-1/tpl-MNIInfant_cohort-1_atlas-HCP_dseg.
 sourcedata/atlases/tpl-MNIInfant/cohort-1/tpl-MNIInfant_cohort-1_atlas-Tian_dseg.json
 sourcedata/atlases/tpl-MNIInfant/cohort-1/tpl-MNIInfant_cohort-1_atlas-Tian_dseg.nii.gz
 sourcedata/atlases/tpl-MNIInfant/cohort-1/tpl-MNIInfant_cohort-1_atlas-Tian_dseg.tsv
-logs
-logs/CITATION.bib
-logs/CITATION.html
-logs/CITATION.md
-logs/CITATION.tex
 sub-01
 sub-01/ses-1mo
 sub-01/ses-1mo/anat

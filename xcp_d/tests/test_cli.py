@@ -390,6 +390,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     )
 
     # Run combine-qc too
+    os.chdir(out_dir)
     combineqc.main([out_dir, 'summary'])
 
 
@@ -444,6 +445,7 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     )
 
     # Run combine-qc too
+    os.chdir(out_dir)
     combineqc.main([out_dir, 'summary'])
 
 

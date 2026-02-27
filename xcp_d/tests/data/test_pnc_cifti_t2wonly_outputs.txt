@@ -1,4 +1,9 @@
 dataset_description.json
+logs
+logs/CITATION.bib
+logs/CITATION.html
+logs/CITATION.md
+logs/CITATION.tex
 sourcedata
 sourcedata/atlases
 sourcedata/atlases/atlas-4S156Parcels_description.json
@@ -11,11 +16,6 @@ sourcedata/atlases/tpl-fsLR/tpl-fsLR_atlas-4S156Parcels_den-91k_dseg.tsv
 sourcedata/atlases/tpl-fsLR/tpl-fsLR_atlas-MIDB_den-91k_dseg.dlabel.nii
 sourcedata/atlases/tpl-fsLR/tpl-fsLR_atlas-MIDB_den-91k_dseg.json
 sourcedata/atlases/tpl-fsLR/tpl-fsLR_atlas-MIDB_den-91k_dseg.tsv
-logs
-logs/CITATION.bib
-logs/CITATION.html
-logs/CITATION.md
-logs/CITATION.tex
 sub-1648798153
 sub-1648798153/ses-PNC1
 sub-1648798153/ses-PNC1/anat

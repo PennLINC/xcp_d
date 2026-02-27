@@ -1,4 +1,10 @@
 dataset_description.json
+desc-linc_qc.json
+logs
+logs/CITATION.bib
+logs/CITATION.html
+logs/CITATION.md
+logs/CITATION.tex
 sourcedata
 sourcedata/atlases
 sourcedata/atlases/atlas-4S1056Parcels_description.json
@@ -59,12 +65,6 @@ sourcedata/atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_dseg.tsv
 sourcedata/atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Tian_dseg.json
 sourcedata/atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Tian_dseg.nii.gz
 sourcedata/atlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Tian_dseg.tsv
-desc-linc_qc.json
-logs
-logs/CITATION.bib
-logs/CITATION.html
-logs/CITATION.md
-logs/CITATION.tex
 sub-0000001
 sub-0000001.html
 sub-0000001/ses-01
