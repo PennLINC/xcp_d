@@ -133,19 +133,21 @@ jobs:
               exit 0
             fi
 
-            if git rev-parse --verify HEAD~1 > /dev/null 2>&1; then
-              CHANGED_FILES="$(git diff --name-only HEAD~1 HEAD)"
+            if ! git fetch --no-tags --depth=200 origin main; then
+              if git rev-parse --verify HEAD~1 > /dev/null 2>&1; then
+                CHANGED_FILES="$(git diff --name-only HEAD~1 HEAD)"
+              else
+                echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
+                echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+                echo "FORCE_BASE_BUILD=1" >> "$BASH_ENV"
+                exit 0
+              fi
+            elif ! MERGE_BASE="$(git merge-base HEAD origin/main)"; then
+              echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
+              echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+              echo "FORCE_BASE_BUILD=1" >> "$BASH_ENV"
+              exit 0
             else
-              if ! git fetch --no-tags --depth=200 origin main; then
-                echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
-                echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
-                exit 0
-              fi
-              if ! MERGE_BASE="$(git merge-base HEAD origin/main)"; then
-                echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
-                echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
-                exit 0
-              fi
               CHANGED_FILES="$(git diff --name-only "$MERGE_BASE" HEAD)"
             fi
 
