@@ -168,6 +168,7 @@ fsl-flirt = "2111.4.*"
 fsl-fugue = "2201.5.*"
 fsl-mcflirt = "2111.0.*"
 fsl-miscmaths = "2412.4.*"
+fsl-miscvis = "2201.1"
 fsl-topup = "2203.5.*"
 fsl-warpfns = "2501.0.*"
 
