@@ -220,6 +220,7 @@ jobs:
               docker run --rm pennlinc/xcp_d:latest --version
             fi
             docker run --rm --entrypoint pytest pennlinc/xcp_d:test --version
+            docker run --rm --entrypoint 3dReHo pennlinc/xcp_d:test -help > /dev/null
       - run:
           name: Push base image to Docker Hub (if newly built)
           command: |

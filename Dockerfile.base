@@ -100,8 +100,10 @@ RUN apt-get update -qq \
     && rm /tmp/multiarch.deb \
     && apt-get install -f \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && gsl2_path="$(find / -name 'libgsl.so.19' 2>/dev/null || printf '')" \
-    && if [ -n "$gsl2_path" ]; then ln -sfv "$gsl2_path" "$(dirname "$gsl2_path")/libgsl.so.0"; fi \
+    && gsl_path="$(ldconfig -p | awk '/libgsl\.so\.[0-9]+/{print $NF; exit}')" \
+    && if [ -n "$gsl_path" ]; then ln -sfv "$gsl_path" "$(dirname "$gsl_path")/libgsl.so.0"; fi \
+    && gslcblas_path="$(ldconfig -p | awk '/libgslcblas\.so\.[0-9]+/{print $NF; exit}')" \
+    && if [ -n "$gslcblas_path" ]; then ln -sfv "$gslcblas_path" "$(dirname "$gslcblas_path")/libgslcblas.so.0"; fi \
     && ldconfig
 
 # Download atlases from AtlasPack (stored in tar.gz file on Box)
