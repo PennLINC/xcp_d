@@ -147,7 +147,7 @@ jobs:
               CHANGED_FILES="$(git diff --name-only "$MERGE_BASE" HEAD)"
             fi
 
-            if printf "%s\n" "$CHANGED_FILES" | rg -q "^(Dockerfile\\.base|Dockerfile|pixi\\.lock)$"; then
+            if printf "%s\n" "$CHANGED_FILES" | grep -Eq "^(Dockerfile\\.base|Dockerfile|pixi\\.lock)$"; then
               echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
               echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
             else
