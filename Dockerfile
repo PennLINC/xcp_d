@@ -1,6 +1,6 @@
 ARG BASE_IMAGE=pennlinc/xcp_d-base:20260225
 
-FROM ghcr.io/prefix-dev/pixi:0.53.0 AS build
+FROM ghcr.io/prefix-dev/pixi:0.58.0 AS build
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
                     ca-certificates \
