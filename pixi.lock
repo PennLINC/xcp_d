@@ -5992,84 +5992,6 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 0.14.2.dev30+g7939bb9ab
-  sha256: 26bf4c0e3a67a6e8e4ff4af385f47d53fb295a1db3565e7bbd7f0b9583d9c718
-  requires_dist:
-  - acres
-  - beautifulsoup4
-  - bids-validator<=1.14.7.post0
-  - h5py<=3.15.1
-  - importlib-resources ; python_full_version < '3.11'
-  - indexed-gzip~=1.10.1
-  - jinja2~=3.1.2
-  - joblib<=1.5.3
-  - matplotlib~=3.10.0
-  - networkx<=3.4.2
-  - nibabel>=3.2.1
-  - nilearn==0.13.1
-  - nipype~=1.10.0
-  - nireports~=25.3.0
-  - nitime
-  - niworkflows==1.14.4
-  - num2words
-  - numpy~=2.0
-  - packaging
-  - pandas
-  - psutil>=5.4
-  - pybids~=0.21.0
-  - pyyaml
-  - scikit-learn<=1.7.2
-  - scipy>=1.14.0,<=1.15.3
-  - seaborn
-  - sentry-sdk~=2.53.0
-  - templateflow~=25.1.1
-  - toml
-  - trimesh
-  - coverage ; extra == 'all'
-  - doctest-ignore-unicode ; extra == 'all'
-  - fuzzywuzzy ; extra == 'all'
-  - pre-commit ; extra == 'all'
-  - pydot>=1.2.3 ; extra == 'all'
-  - pydotplus ; extra == 'all'
-  - pytest ; extra == 'all'
-  - pytest-cov ; extra == 'all'
-  - pytest-env ; extra == 'all'
-  - pytest-xdist ; extra == 'all'
-  - python-levenshtein ; extra == 'all'
-  - recommonmark ; extra == 'all'
-  - ruff~=0.15.0 ; extra == 'all'
-  - sphinx-argparse!=0.5.0 ; extra == 'all'
-  - sphinx-design ; extra == 'all'
-  - sphinx-markdown-tables ; extra == 'all'
-  - sphinx-rtd-theme ; extra == 'all'
-  - sphinx>=4.2.0 ; extra == 'all'
-  - sphinxcontrib-apidoc ; extra == 'all'
-  - sphinxcontrib-bibtex ; extra == 'all'
-  - svgutils ; extra == 'all'
-  - pre-commit ; extra == 'dev'
-  - ruff~=0.15.0 ; extra == 'dev'
-  - doctest-ignore-unicode ; extra == 'doc'
-  - pydot>=1.2.3 ; extra == 'doc'
-  - pydotplus ; extra == 'doc'
-  - recommonmark ; extra == 'doc'
-  - sphinx-argparse!=0.5.0 ; extra == 'doc'
-  - sphinx-design ; extra == 'doc'
-  - sphinx-markdown-tables ; extra == 'doc'
-  - sphinx-rtd-theme ; extra == 'doc'
-  - sphinx>=4.2.0 ; extra == 'doc'
-  - sphinxcontrib-apidoc ; extra == 'doc'
-  - sphinxcontrib-bibtex ; extra == 'doc'
-  - svgutils ; extra == 'doc'
-  - fuzzywuzzy ; extra == 'maint'
-  - python-levenshtein ; extra == 'maint'
-  - coverage ; extra == 'tests'
-  - pytest ; extra == 'tests'
-  - pytest-cov ; extra == 'tests'
-  - pytest-env ; extra == 'tests'
-  - pytest-xdist ; extra == 'tests'
-  requires_python: '>=3.10'
-- pypi: ./
-  name: xcp-d
   version: 0.14.2.dev32+ga4b0d1d97
   sha256: 26bf4c0e3a67a6e8e4ff4af385f47d53fb295a1db3565e7bbd7f0b9583d9c718
   requires_dist:
@@ -6147,6 +6069,84 @@ packages:
   - pytest-xdist ; extra == 'tests'
   requires_python: '>=3.10'
   editable: true
+- pypi: ./
+  name: xcp-d
+  version: 0.14.2.dev36+g19e5447d5
+  sha256: 26bf4c0e3a67a6e8e4ff4af385f47d53fb295a1db3565e7bbd7f0b9583d9c718
+  requires_dist:
+  - acres
+  - beautifulsoup4
+  - bids-validator<=1.14.7.post0
+  - h5py<=3.15.1
+  - importlib-resources ; python_full_version < '3.11'
+  - indexed-gzip~=1.10.1
+  - jinja2~=3.1.2
+  - joblib<=1.5.3
+  - matplotlib~=3.10.0
+  - networkx<=3.4.2
+  - nibabel>=3.2.1
+  - nilearn==0.13.1
+  - nipype~=1.10.0
+  - nireports~=25.3.0
+  - nitime
+  - niworkflows==1.14.4
+  - num2words
+  - numpy~=2.0
+  - packaging
+  - pandas
+  - psutil>=5.4
+  - pybids~=0.21.0
+  - pyyaml
+  - scikit-learn<=1.7.2
+  - scipy>=1.14.0,<=1.15.3
+  - seaborn
+  - sentry-sdk~=2.53.0
+  - templateflow~=25.1.1
+  - toml
+  - trimesh
+  - coverage ; extra == 'all'
+  - doctest-ignore-unicode ; extra == 'all'
+  - fuzzywuzzy ; extra == 'all'
+  - pre-commit ; extra == 'all'
+  - pydot>=1.2.3 ; extra == 'all'
+  - pydotplus ; extra == 'all'
+  - pytest ; extra == 'all'
+  - pytest-cov ; extra == 'all'
+  - pytest-env ; extra == 'all'
+  - pytest-xdist ; extra == 'all'
+  - python-levenshtein ; extra == 'all'
+  - recommonmark ; extra == 'all'
+  - ruff~=0.15.0 ; extra == 'all'
+  - sphinx-argparse!=0.5.0 ; extra == 'all'
+  - sphinx-design ; extra == 'all'
+  - sphinx-markdown-tables ; extra == 'all'
+  - sphinx-rtd-theme ; extra == 'all'
+  - sphinx>=4.2.0 ; extra == 'all'
+  - sphinxcontrib-apidoc ; extra == 'all'
+  - sphinxcontrib-bibtex ; extra == 'all'
+  - svgutils ; extra == 'all'
+  - pre-commit ; extra == 'dev'
+  - ruff~=0.15.0 ; extra == 'dev'
+  - doctest-ignore-unicode ; extra == 'doc'
+  - pydot>=1.2.3 ; extra == 'doc'
+  - pydotplus ; extra == 'doc'
+  - recommonmark ; extra == 'doc'
+  - sphinx-argparse!=0.5.0 ; extra == 'doc'
+  - sphinx-design ; extra == 'doc'
+  - sphinx-markdown-tables ; extra == 'doc'
+  - sphinx-rtd-theme ; extra == 'doc'
+  - sphinx>=4.2.0 ; extra == 'doc'
+  - sphinxcontrib-apidoc ; extra == 'doc'
+  - sphinxcontrib-bibtex ; extra == 'doc'
+  - svgutils ; extra == 'doc'
+  - fuzzywuzzy ; extra == 'maint'
+  - python-levenshtein ; extra == 'maint'
+  - coverage ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - pytest-cov ; extra == 'tests'
+  - pytest-env ; extra == 'tests'
+  - pytest-xdist ; extra == 'tests'
+  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/xkeyboard-config-2.47-hb03c661_0.conda
   sha256: 19c2bb14bec84b0e995b56b752369775c75f1589314b43733948bb5f471a6915
   md5: b56e0c8432b56decafae7e78c5f29ba5
