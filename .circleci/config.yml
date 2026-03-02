@@ -69,7 +69,7 @@ commands:
           no_output_timeout: 5h
           command: |
             mkdir -p /tmp/out /tmp/work /tmp/coverage
-            docker run --rm=false \
+            docker run --rm \
               -e CIRCLE_CPUS=<< parameters.cpus >> \
               -e COVERAGE_FILE=/coverage/.coverage.<< parameters.marker >> \
               -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
@@ -224,7 +224,7 @@ jobs:
       - run:
           name: Docker registry garbage collection
           command: |
-            docker exec -it registry /bin/registry garbage-collect --delete-untagged \
+            docker exec registry /bin/registry garbage-collect --delete-untagged \
               /etc/docker/registry/config.yml
       - run:
           name: Record successful image prep
@@ -431,7 +431,7 @@ jobs:
           no_output_timeout: 1h
           command: |
             mkdir -p /tmp/out /tmp/work /tmp/coverage
-            docker run --rm=false \
+            docker run --rm \
               -e CIRCLE_CPUS=4 \
               -e COVERAGE_FILE=/coverage/.coverage.pytests \
               -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \

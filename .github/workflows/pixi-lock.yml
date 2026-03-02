@@ -46,8 +46,9 @@ jobs:
       - name: Update lockfile
         run: >
           uvx datalad run -i pixi.lock -i pyproject.toml -o pixi.lock --
-          bash -c '! pixi lock --check || git checkout .'
+          bash -lc "if pixi lock --check; then echo 'Lockfile up to date'; else pixi lock; fi"
       - name: Push updated lockfile, if needed
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           git push $REMOTE HEAD:$BRANCH
         env:

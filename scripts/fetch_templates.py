@@ -6,6 +6,8 @@ Standalone script to facilitate caching of required TemplateFlow templates.
 import argparse
 import os
 
+import templateflow.api as tf
+
 
 def fetch_MNI2009():
     template = 'MNI152NLin2009cAsym'
@@ -72,7 +74,5 @@ if __name__ == '__main__':
 
     if opts.tf_dir is not None:
         os.environ['TEMPLATEFLOW_HOME'] = opts.tf_dir
-
-    import templateflow.api as tf
 
     fetch_all()
