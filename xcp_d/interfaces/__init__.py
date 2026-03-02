@@ -18,11 +18,11 @@ from xcp_d.interfaces import (
 __all__ = [
     'ants',
     'bids',
+    'censoring',
     'connectivity',
     'execsummary',
     'nilearn',
     'plotting',
-    'censoring',
     'report',
     'restingstate',
     'workbench',

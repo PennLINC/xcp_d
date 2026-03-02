@@ -617,7 +617,7 @@ def _combine_name(in_files):
         filename_parts = [f.split('_') for f in filenames]
         to_remove = []
         for part in filename_parts[0]:
-            if part.startswith('run-') or part.startswith('dir-'):
+            if part.startswith(('run-', 'dir-')):
                 to_remove.append(part)
                 continue
 
@@ -637,7 +637,7 @@ def _combine_name(in_files):
         filename_parts = [f.split('_') for f in filenames]
         to_remove = []
         for part in filename_parts[0]:
-            if part.startswith('run-') or part.startswith('dir-'):
+            if part.startswith(('run-', 'dir-')):
                 to_remove.append(part)
                 continue
 

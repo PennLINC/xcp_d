@@ -792,9 +792,7 @@ def get(flat=False):
         return settings
 
     return {
-        '.'.join((section, k)): v
-        for section, configs in settings.items()
-        for k, v in configs.items()
+        f'{section}.{k}': v for section, configs in settings.items() for k, v in configs.items()
     }
 
 
@@ -863,7 +861,7 @@ def hash_config(
     conf: dict[str, ty.Any],
     *,
     fields_required: dict[str, list[str]] = DEFAULT_CONFIG_HASH_FIELDS,
-    version: str = None,
+    version: str | None = None,
     digest_size: int = 4,
 ) -> str:
     """

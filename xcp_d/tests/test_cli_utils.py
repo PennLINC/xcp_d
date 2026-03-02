@@ -12,11 +12,11 @@ def test_int_or_auto():
     """Test parser_utils._int_or_auto."""
     with pytest.raises(
         ArgumentTypeError,
-        match="Argument must be a nonnegative integer or 'auto'.",
+        match="Argument must be a nonnegative integer or 'auto'",
     ):
         parser_utils._int_or_auto('hello')
 
-    with pytest.raises(ArgumentTypeError, match='Int argument must be nonnegative.'):
+    with pytest.raises(ArgumentTypeError, match='Int argument must be nonnegative'):
         parser_utils._int_or_auto(-2)
 
     out = parser_utils._int_or_auto('auto')
@@ -33,11 +33,11 @@ def test_float_or_auto():
     """Test parser_utils._float_or_auto."""
     with pytest.raises(
         ArgumentTypeError,
-        match="Argument must be a nonnegative float or 'auto'.",
+        match="Argument must be a nonnegative float or 'auto'",
     ):
         parser_utils._float_or_auto('hello')
 
-    with pytest.raises(ArgumentTypeError, match='Float argument must be nonnegative.'):
+    with pytest.raises(ArgumentTypeError, match='Float argument must be nonnegative'):
         parser_utils._float_or_auto(-2)
 
     out = parser_utils._float_or_auto('auto')
@@ -69,11 +69,11 @@ def test_float_or_auto_or_none():
     """Test parser_utils._float_or_auto_or_none."""
     with pytest.raises(
         ArgumentTypeError,
-        match="Argument must be a nonnegative float, 'all', or 'none', not 'hello'.",
+        match="Argument must be a nonnegative float, 'all', or 'none', not 'hello'",
     ):
         parser_utils._float_or_auto_or_none('hello')
 
-    with pytest.raises(ArgumentTypeError, match='Float argument must be nonnegative.'):
+    with pytest.raises(ArgumentTypeError, match='Float argument must be nonnegative'):
         parser_utils._float_or_auto_or_none(-2)
 
     out = parser_utils._float_or_auto_or_none('all')

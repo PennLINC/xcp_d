@@ -103,7 +103,7 @@ def plot_confounds(
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(range(ntsteps)[::interval])
     time_series_axis.set_xticks(xticks)
 
     # Set x_axis
@@ -261,7 +261,7 @@ def plot_dvars_es(time_series, ax, run_index=None):
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(range(ntsteps)[::interval])
     ax.set_xticks(xticks)
     ax.set_xticklabels([])
 
@@ -314,7 +314,7 @@ def plot_global_signal_es(time_series, ax, run_index=None):
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(range(ntsteps)[::interval])
     ax.set_xticks(xticks)
     ax.set_xticklabels([])
 
@@ -389,7 +389,7 @@ def plot_framewise_displacement_es(
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(range(ntsteps)[::interval])
     ax.set_xticks(xticks)
 
     # Set the x-axis labels based on time, not index
@@ -711,7 +711,7 @@ class FMRIPlot:
     spikes_files
     """
 
-    __slots__ = ('func_file', 'mask_data', 'TR', 'seg_data', 'confounds', 'spikes')
+    __slots__ = ('TR', 'confounds', 'func_file', 'mask_data', 'seg_data', 'spikes')
 
     def __init__(
         self,

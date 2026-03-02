@@ -830,7 +830,7 @@ def init_resd_smoothing_wf(mem_gb, name='resd_smoothing_wf'):
     if file_format == 'cifti':
         workflow.__desc__ = f""" \
 The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian kernel
-(FWHM={str(smoothing)} mm).
+(FWHM={smoothing!s} mm).
 """
 
         # Call connectome workbench to smooth for each hemisphere
@@ -882,7 +882,7 @@ The denoised BOLD was then smoothed using *Connectome Workbench* with a Gaussian
 
     else:
         workflow.__desc__ = f""" \
-The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={str(smoothing)} mm).
+The denoised BOLD was smoothed using *Nilearn* with a Gaussian kernel (FWHM={smoothing!s} mm).
 """
         # Use nilearn to smooth the image
         smooth_data = pe.Node(
