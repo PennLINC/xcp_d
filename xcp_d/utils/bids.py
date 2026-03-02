@@ -1154,7 +1154,7 @@ def write_derivative_description(
     import json
     import os
 
-    from xcp_d.__about__ import DOWNLOAD_URL, __version__
+    from xcp_d import __version__
 
     dataset_links = dataset_links or {}
 
@@ -1186,7 +1186,7 @@ def write_derivative_description(
         {
             'Name': 'xcp_d',
             'Version': __version__,
-            'CodeURL': DOWNLOAD_URL,
+            'CodeURL': f'https://github.com/PennLINC/xcp_d/archive/{__version__}.tar.gz',
             'ConfigurationHash': parameters_hash,
         },
     )
@@ -1225,7 +1225,7 @@ def write_atlas_dataset_description(atlas_dir):
     import json
     import os
 
-    from xcp_d.__about__ import DOWNLOAD_URL, __version__
+    from xcp_d import __version__
 
     desc = {
         'Name': 'XCP-D Atlases',
@@ -1234,7 +1234,7 @@ def write_atlas_dataset_description(atlas_dir):
             {
                 'Name': 'xcp_d',
                 'Version': __version__,
-                'CodeURL': DOWNLOAD_URL,
+                'CodeURL': f'https://github.com/PennLINC/xcp_d/archive/{__version__}.tar.gz',
             },
         ],
         'HowToAcknowledge': 'Include the generated boilerplate in the methods section.',
