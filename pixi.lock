@@ -6068,10 +6068,9 @@ packages:
   - pytest-env ; extra == 'tests'
   - pytest-xdist ; extra == 'tests'
   requires_python: '>=3.10'
-  editable: true
 - pypi: ./
   name: xcp-d
-  version: 0.14.2.dev30+g7939bb9ab
+  version: 0.14.2.dev32+ga4b0d1d97
   sha256: 26bf4c0e3a67a6e8e4ff4af385f47d53fb295a1db3565e7bbd7f0b9583d9c718
   requires_dist:
   - acres
@@ -6147,6 +6146,7 @@ packages:
   - pytest-env ; extra == 'tests'
   - pytest-xdist ; extra == 'tests'
   requires_python: '>=3.10'
+  editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/xkeyboard-config-2.47-hb03c661_0.conda
   sha256: 19c2bb14bec84b0e995b56b752369775c75f1589314b43733948bb5f471a6915
   md5: b56e0c8432b56decafae7e78c5f29ba5
