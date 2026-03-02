@@ -20,9 +20,10 @@ RUN pixi shell-hook -e xcp-d --as-is | grep -v PATH > /shell-hook.sh
 RUN pixi shell-hook -e test --as-is | grep -v PATH > /test-shell-hook.sh
 
 COPY . /app
-RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d -e test --frozen
-# Ensure production environment has a real package install, not an editable source link.
-RUN /app/.pixi/envs/xcp-d/bin/python -m pip install --no-deps --force-reinstall /app
+# Install test and production environments separately so production does not
+# inherit editable-install behavior needed for test workflows.
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e test --frozen
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d --frozen
 
 FROM ghcr.io/astral-sh/uv:python3.12-alpine AS templates
 ENV TEMPLATEFLOW_HOME="/templateflow"
