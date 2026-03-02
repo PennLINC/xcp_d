@@ -120,6 +120,63 @@ source = "vcs"
 version-file = "xcp_d/_version.py"
 
 #
+# Pixi configuration
+#
+
+[tool.pixi.workspace]
+channels = ["https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public", "conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.activation.env]
+FSLDIR = "$CONDA_PREFIX"
+FSLOUTPUTTYPE = "NIFTI_GZ"
+
+[tool.pixi.environments]
+default = { features = ["editable"], solve-group = "default" }
+test = { features = ["editable", "tests"], solve-group = "default" }
+xcp-d = { features = ["production", "container"], solve-group = "production" }
+
+[tool.pixi.feature.editable.pypi-dependencies]
+xcp_d = { path = ".", editable = true }
+
+[tool.pixi.feature.production.pypi-dependencies]
+xcp_d = { path = ".", editable = false }
+
+[tool.pixi.tasks]
+
+[tool.pixi.pypi-options.dependency-overrides]
+numpy = ">=2.0"
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+nodejs = "20.*"
+mkl = "2024.2.2.*"
+mkl-service = "2.4.2.*"
+numpy = "2.0.*"
+scipy = "1.15.*"
+matplotlib = "3.10.*"
+pandas = "2.2.*"
+h5py = "3.15.*"
+graphviz = "12.2.*"
+pandoc = "3.7.*"
+ants = "2.6.*"
+connectome-workbench-cli = { version = "2.0.*", build = "*qt6*" }
+fsl-base = "2602.*"
+fsl-avwutils = "2209.3.*"
+fsl-bet2 = "2111.8.*"
+fsl-flirt = "2111.4.*"
+fsl-fugue = "2201.5.*"
+fsl-mcflirt = "2111.0.*"
+fsl-miscmaths = "2412.4.*"
+fsl-miscvis = "2201.1"
+fsl-topup = "2203.5.*"
+fsl-warpfns = "2501.0.*"
+
+[tool.pixi.feature.container.dependencies]
+git = "*"
+git-annex = { version = "*", build = "alldep*" }
+
+#
 # Developer tool configurations
 #
 
@@ -204,3 +261,12 @@ exclude_lines = [
     'raise NotImplementedError',
     'warnings\.warn',
 ]
+
+[tool.codespell]
+skip = '.git,*.pdf,*.svg,*.html,dataset_description.json,*.gii'
+# te - TE
+# Weill - name
+# reson - Reson. abbreviation in citation
+# DNE: acronym for does not exist
+# fo: acronym for file object
+ignore-words-list = 'te,weill,reson,DNE,fo'

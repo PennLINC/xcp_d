@@ -40,7 +40,7 @@ def test_nifti_parcellate(tmp_path_factory):
         atlas_labels=lut_file,
         min_coverage=0.5,
     )
-    results = parcellator.run()
+    results = parcellator.run(cwd=tmpdir)
     coverage = results.outputs.coverage
     timeseries = results.outputs.timeseries
     assert os.path.isfile(coverage)
@@ -70,7 +70,7 @@ def test_nifti_parcellate(tmp_path_factory):
         atlas_labels=lut_file,
         min_coverage=0.5,
     )
-    results = parcellator.run()
+    results = parcellator.run(cwd=tmpdir)
     coverage = results.outputs.coverage
     timeseries = results.outputs.timeseries
     assert os.path.isfile(coverage)
