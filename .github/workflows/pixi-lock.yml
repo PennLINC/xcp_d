@@ -1,5 +1,8 @@
 on:
-  pull_request_target
+  pull_request_target:
+    paths:
+      - "pyproject.toml"
+      - "pixi.lock"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref }}
