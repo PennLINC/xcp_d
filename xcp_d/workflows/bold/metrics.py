@@ -12,7 +12,7 @@ from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.nilearn import Smooth
 from xcp_d.interfaces.plotting import PlotDenseCifti, PlotNifti
-from xcp_d.interfaces.restingstate import ComputeALFF, ReHoNamePatch, SurfaceReHo
+from xcp_d.interfaces.restingstate import ComputeALFF, ComputePerAF, ReHoNamePatch, SurfaceReHo
 from xcp_d.interfaces.workbench import (
     CiftiCreateDenseFromTemplate,
     CiftiSeparateMetric,
@@ -513,5 +513,225 @@ Regional homogeneity (ReHo) [@jiang2016regional] was computed with neighborhood 
         (compute_reho, reho_plot, [('out_file', 'in_file')]),
         (reho_plot, ds_report_reho, [('out_file', 'in_file')]),
     ])  # fmt:skip
+
+    return workflow
+
+
+@fill_doc
+def init_peraf_wf(
+    name_source,
+    mem_gb,
+    name='peraf_wf',
+):
+    """Compute PerAF for both NIfTI and CIFTI.
+
+    Workflow Graph
+        .. workflow::
+            :graph2use: orig
+            :simple_form: yes
+
+            from xcp_d.tests.tests import mock_config
+            from xcp_d import config
+            from xcp_d.workflows.bold.metrics import init_peraf_wf
+
+            with mock_config():
+                wf = init_peraf_wf(
+                    name_source="/path/to/file.nii.gz",
+                    mem_gb={"bold": 0.1},
+                    name="peraf_wf",
+                )
+
+    Parameters
+    ----------
+    name_source
+    mem_gb : :obj:`dict`
+        Memory allocation dictionary
+    %(name)s
+        Default is "peraf_wf".
+
+    Inputs
+    ------
+    denoised_bold
+        The ``filtered, interpolated, denoised BOLD``,
+        although interpolation is not necessary if the data were not originally censored.
+    preprocessed_bold
+        The ``preprocessed BOLD``.
+        It is censored (if fd_thresh > 0) and used to calculate the mean image.
+    bold_mask
+        Bold mask if bold is NIfTI.
+    temporal_mask
+        Temporal mask.
+    lh_midthickness
+        Left hemisphere midthickness surface.
+    rh_midthickness
+        Right hemisphere midthickness surface.
+        Only used for CIFTI data if the anatomical workflow is enabled.
+
+    Outputs
+    -------
+    peraf
+        PerAF output
+
+    Notes
+    -----
+    The PerAF implementation is based on :footcite:t:`jia2020percent`.
+    PerAF is calculated after denoising, bandpass filtering, and temporal masking.
+
+    The denoised BOLD data is already mean-centered by the denoising workflow,
+    but the original standard deviation is retained.
+    This workflow will explicitly mean-center the denoised data, just to be safe.
+    The preprocessed BOLD data is used to calculate the mean image.
+
+    This workflow will also generate a plot of the PerAF map.
+    For CIFTI data, the plot will be overlaid on the midthickness surface-
+    either the subject's surface warped to fsLR space (when the anatomical workflow is enabled)
+    or the fsLR 32k midthickness surface template.
+
+    .. math::
+        PerAF = \\frac{1}{N} \\sum_{i=1}^{N}
+        \\left( \\frac{X_i - \\mu}{\\mu} \\right) \\times 100\\%%
+
+    References
+    ----------
+    .. footbibliography::
+    """
+    workflow = Workflow(name=name)
+
+    smoothing = config.workflow.smoothing
+    file_format = config.workflow.file_format
+
+    workflow.__desc__ = """ \
+
+The percent amplitude of fluctuation (PerAF) [@jia2020percent] was calculated as the percent
+change from the mean of the denoised BOLD time series.
+"""
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                'denoised_bold',  # already mean-centered by the denoising workflow
+                'preprocessed_bold',  # censored and used to calculate the mean image
+                'temporal_mask',
+                # only used for NIfTI data
+                'bold_mask',
+                # only used for CIFTI data if the anatomical workflow is enabled
+                'lh_midthickness',
+                'rh_midthickness',
+            ],
+        ),
+        name='inputnode',
+    )
+    outputnode = pe.Node(
+        niu.IdentityInterface(fields=['peraf', 'smoothed_peraf']),
+        name='outputnode',
+    )
+
+    # compute alff
+    compute_peraf = pe.Node(
+        ComputePerAF(),
+        mem_gb=2 * mem_gb['bold'],
+        name='compute_peraf',
+        n_procs=config.nipype.omp_nthreads,
+    )
+    workflow.connect([
+        (inputnode, compute_peraf, [
+            ('denoised_bold', 'denoised_bold'),
+            ('preprocessed_bold', 'mean_file'),
+            ('bold_mask', 'mask'),
+            ('temporal_mask', 'temporal_mask'),
+        ]),
+        (compute_peraf, outputnode, [('peraf', 'peraf')])
+    ])  # fmt:skip
+
+    # Plot the ALFF map
+    ds_report_peraf = pe.Node(
+        DerivativesDataSink(
+            dismiss_entities=dismiss_hash(),
+            source_file=name_source,
+        ),
+        name='ds_report_peraf',
+        run_without_submitting=True,
+    )
+
+    if file_format == 'cifti':
+        peraf_plot = pe.Node(
+            PlotDenseCifti(base_desc='peraf'),
+            name='peraf_plot',
+        )
+        workflow.connect([
+            (inputnode, peraf_plot, [
+                ('lh_midthickness', 'lh_underlay'),
+                ('rh_midthickness', 'rh_underlay'),
+            ]),
+            (peraf_plot, ds_report_peraf, [('desc', 'desc')]),
+        ])  # fmt:skip
+    else:
+        peraf_plot = pe.Node(
+            PlotNifti(name_source=name_source),
+            name='peraf_plot',
+        )
+        ds_report_peraf.inputs.desc = 'perafVolumetricPlot'
+
+    workflow.connect([
+        (compute_peraf, peraf_plot, [('peraf', 'in_file')]),
+        (peraf_plot, ds_report_peraf, [('out_file', 'in_file')]),
+    ])  # fmt:skip
+
+    if smoothing:  # If we want to smooth
+        if file_format == 'nifti':
+            workflow.__desc__ = workflow.__desc__ + (
+                ' The PerAF maps were smoothed with Nilearn using a Gaussian kernel '
+                f'(FWHM={str(smoothing)} mm).'
+            )
+            # Smooth via Nilearn
+            smooth_peraf = pe.Node(
+                Smooth(fwhm=smoothing),
+                name='smooth_peraf',
+            )
+            workflow.connect([
+                (compute_peraf, smooth_peraf, [('peraf', 'in_file')]),
+                (smooth_peraf, outputnode, [('out_file', 'smoothed_peraf')])
+            ])  # fmt:skip
+
+        else:  # If cifti
+            workflow.__desc__ = workflow.__desc__ + (
+                ' The PerAF maps were smoothed with the Connectome Workbench using a Gaussian '
+                f'kernel (FWHM={str(smoothing)} mm).'
+            )
+
+            # Smooth via Connectome Workbench
+            sigma_lx = fwhm2sigma(smoothing)  # Convert fwhm to standard deviation
+            # Get templates for each hemisphere
+            lh_midthickness = str(
+                get_template('fsLR', hemi='L', suffix='sphere', density='32k', raise_empty=True)[0]
+            )
+            rh_midthickness = str(
+                get_template('fsLR', hemi='R', suffix='sphere', density='32k', raise_empty=True)[0]
+            )
+            smooth_peraf = pe.Node(
+                CiftiSmooth(
+                    sigma_surf=sigma_lx,
+                    sigma_vol=sigma_lx,
+                    direction='COLUMN',
+                    right_surf=rh_midthickness,
+                    left_surf=lh_midthickness,
+                    num_threads=config.nipype.omp_nthreads,
+                ),
+                name='smooth_peraf',
+                mem_gb=mem_gb['bold'],
+                n_procs=config.nipype.omp_nthreads,
+            )
+
+            # Always check the intent code in CiftiSmooth's output file
+            fix_cifti_intent = pe.Node(
+                FixCiftiIntent(),
+                name='fix_cifti_intent',
+                mem_gb=mem_gb['bold'],
+            )
+            workflow.connect([
+                (compute_peraf, smooth_peraf, [('peraf', 'in_file')]),
+                (smooth_peraf, fix_cifti_intent, [('out_file', 'in_file')]),
+                (fix_cifti_intent, outputnode, [('out_file', 'smoothed_peraf')]),
+            ])  # fmt:skip
 
     return workflow

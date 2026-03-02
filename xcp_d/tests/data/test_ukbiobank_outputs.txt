@@ -85,6 +85,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S1056Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S156Parcels_stat-alff_bold.json
@@ -95,6 +97,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S156Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S156Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S156Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S156Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S156Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S156Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S156Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S256Parcels_stat-alff_bold.json
@@ -105,6 +109,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S256Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S256Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S256Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S256Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S256Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S256Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S256Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S356Parcels_stat-alff_bold.json
@@ -115,6 +121,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S356Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S356Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S356Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S356Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S356Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S356Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S356Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S456Parcels_stat-alff_bold.json
@@ -125,6 +133,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S456Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S456Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S456Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S456Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S456Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S456Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S456Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S556Parcels_stat-alff_bold.json
@@ -135,6 +145,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S556Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S556Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S556Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S556Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S556Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S556Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S556Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S656Parcels_stat-alff_bold.json
@@ -145,6 +157,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S656Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S656Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S656Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S656Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S656Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S656Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S656Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S756Parcels_stat-alff_bold.json
@@ -155,6 +169,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S756Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S756Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S756Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S756Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S756Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S756Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S756Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S856Parcels_stat-alff_bold.json
@@ -165,6 +181,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S856Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S856Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S856Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S856Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S856Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S856Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S856Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S956Parcels_stat-alff_bold.json
@@ -175,6 +193,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S956Parcels_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S956Parcels_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S956Parcels_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S956Parcels_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S956Parcels_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S956Parcels_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-4S956Parcels_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Glasser_stat-alff_bold.json
@@ -185,6 +205,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Glasser_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Glasser_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Glasser_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Glasser_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Glasser_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Glasser_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Glasser_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Gordon_stat-alff_bold.json
@@ -195,6 +217,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Gordon_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Gordon_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Gordon_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Gordon_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Gordon_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Gordon_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Gordon_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-HCP_stat-alff_bold.json
@@ -205,6 +229,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-HCP_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-HCP_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-HCP_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-HCP_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-HCP_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-HCP_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-HCP_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_stat-alff_bold.json
@@ -215,6 +241,8 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_stat-mean_timeseries.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_stat-pearsoncorrelation_relmat.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_stat-pearsoncorrelation_relmat.tsv
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_stat-peraf_bold.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_stat-peraf_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_stat-reho_bold.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_atlas-Tian_stat-reho_bold.tsv
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_desc-denoisedSmoothed_bold.json
@@ -226,5 +254,9 @@ sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-alff_boldmap.nii.gz
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-alff_desc-smooth_boldmap.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-alff_desc-smooth_boldmap.nii.gz
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-peraf_boldmap.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-peraf_boldmap.nii.gz
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-peraf_desc-smooth_boldmap.json
+sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-peraf_desc-smooth_boldmap.nii.gz
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-reho_boldmap.json
 sub-0000001/ses-01/func/sub-0000001_ses-01_task-rest_space-MNI152NLin6Asym_stat-reho_boldmap.nii.gz

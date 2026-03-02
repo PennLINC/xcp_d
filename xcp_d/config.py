@@ -649,7 +649,7 @@ class workflow(_Config):
     """Run LINC QC."""
     skip_outputs = []
     """List of outputs to skip during postprocessing (e.g.,
-    'alff', 'reho', 'parcellation', 'connectivity').
+    'alff', 'peraf', 'reho', 'parcellation', 'connectivity').
     """
 
     @classmethod
