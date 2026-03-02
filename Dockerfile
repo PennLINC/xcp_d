@@ -21,6 +21,8 @@ RUN pixi shell-hook -e test --as-is | grep -v PATH > /test-shell-hook.sh
 
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d -e test --frozen
+# Ensure production environment has a real package install, not an editable source link.
+RUN /app/.pixi/envs/xcp-d/bin/python -m pip install --no-deps --force-reinstall /app
 
 FROM ghcr.io/astral-sh/uv:python3.12-alpine AS templates
 ENV TEMPLATEFLOW_HOME="/templateflow"
@@ -51,6 +53,8 @@ RUN cat /shell-hook.sh >> $HOME/.bashrc
 ENV PATH="/app/.pixi/envs/xcp-d/bin:$PATH"
 ENV FSLDIR="/app/.pixi/envs/xcp-d"
 ENV IS_DOCKER_8395080871=1
+# Verify the runtime image can import xcp_d without source tree mounts.
+RUN /app/.pixi/envs/xcp-d/bin/python -c "import xcp_d"
 
 ENTRYPOINT ["/app/.pixi/envs/xcp-d/bin/xcp_d"]
 
