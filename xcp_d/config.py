@@ -573,8 +573,7 @@ class execution(_Config):
         if cls.atlases:
             dataset_links['atlas'] = cls.output_dir / 'sourcedata' / 'atlases'
 
-        for dset_name, dset_path in cls.datasets.items():
-            dataset_links[dset_name] = dset_path
+        dataset_links.update(cls.datasets)
         cls.dataset_links = dataset_links
 
         if 'all' in cls.debug:

@@ -1055,11 +1055,9 @@ def collect_confounds(
     xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
 
     # Step 0: Determine derivatives we care about for confounds.
-    req_datasets = []
-    for confound_def in confound_spec['confounds'].values():
-        req_datasets.append(confound_def['dataset'])
-
-    req_datasets = sorted(set(req_datasets))
+    req_datasets = sorted(
+        {confound_def['dataset'] for confound_def in confound_spec['confounds'].values()}
+    )
 
     # Step 1: Build a dictionary of dataset: layout pairs.
     layout_dict = {}

@@ -502,8 +502,7 @@ def fill_doc(f):
             lines = dstr.splitlines()
             try:
                 newlines = [lines[0]]
-                for line in lines[1:]:
-                    newlines.append(indent + line)
+                newlines.extend(indent + line for line in lines[1:])
                 indented[name] = '\n'.join(newlines)
             except IndexError:
                 indented[name] = dstr

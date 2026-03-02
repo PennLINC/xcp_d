@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """Plotting tools."""
 
+import itertools
 import os
 
 import matplotlib.pyplot as plt
@@ -983,9 +984,7 @@ def plot_carpet(
         labels = ['Left Cortex', 'Right Cortex', 'Subcortical', 'Cerebellum']
 
     # Formatting the plot
-    tick_locs = []
-    for y in np.unique(seg_data[order]):
-        tick_locs.append(np.argwhere(seg_data[order] == y).mean())
+    tick_locs = [np.argwhere(seg_data[order] == y).mean() for y in np.unique(seg_data[order])]
 
     ax0.set_yticks(tick_locs)
     ax0.set_yticklabels(labels, fontdict={'fontsize': labelsize}, rotation=0, va='center')
@@ -1014,12 +1013,10 @@ def plot_carpet(
     if temporal_mask is not None:
         # Add color bands to the carpet plot corresponding to censored volumes
         outlier_idx = list(np.where(temporal_mask)[0])
-        gaps = [
-            [start, end]
-            for start, end in zip(outlier_idx, outlier_idx[1:], strict=False)
-            if start + 1 < end
-        ]
-        edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
+        gaps = [[start, end] for start, end in itertools.pairwise(outlier_idx) if start + 1 < end]
+        edges = iter(
+            outlier_idx[:1] + list(itertools.chain.from_iterable(gaps)) + outlier_idx[-1:]
+        )
         consecutive_outliers_idx = list(zip(edges, edges, strict=False))
         for band in consecutive_outliers_idx:
             start = band[0] - 0.5

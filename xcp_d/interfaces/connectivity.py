@@ -617,46 +617,38 @@ class CiftiToTSV(SimpleInterface):
             # missing index values.
             # If any dictionary keys are not in the index, raise an error with a list of the
             # missing dictionary keys.
-            missing_index_values = []
-            missing_dict_values = []
-            for index_value in df.index:
-                if index_value not in parcel_label_mapper:
-                    missing_index_values.append(index_value)
-
-                for dict_value in parcel_label_mapper.keys():
-                    if dict_value not in df.index:
-                        missing_dict_values.append(dict_value)
-
-                if missing_index_values:
-                    raise ValueError(
-                        f'Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}'
-                    )
-
-                if missing_dict_values:
-                    raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
+            missing_index_values = [
+                index_value for index_value in df.index if index_value not in parcel_label_mapper
+            ]
+            missing_dict_values = [
+                dict_value for dict_value in parcel_label_mapper if dict_value not in df.index
+            ]
+            if missing_index_values:
+                raise ValueError(
+                    f'Missing CIFTI labels in atlas labels DataFrame: {missing_index_values}'
+                )
+            if missing_dict_values:
+                raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
 
             # Replace the index values with the corresponding dictionary values.
             df.index = [parcel_label_mapper[i] for i in df.index]
 
         if 1 in check_axes:
             # Repeat with columns
-            missing_columns = []
-            missing_dict_values = []
-            for column_value in df.columns:
-                if column_value not in parcel_label_mapper:
-                    missing_columns.append(column_value)
-
-                for dict_value in parcel_label_mapper.keys():
-                    if dict_value not in df.columns:
-                        missing_dict_values.append(dict_value)
-
-                if missing_columns:
-                    raise ValueError(
-                        f'Missing CIFTI labels in atlas labels DataFrame: {missing_columns}'
-                    )
-
-                if missing_dict_values:
-                    raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
+            missing_columns = [
+                column_value
+                for column_value in df.columns
+                if column_value not in parcel_label_mapper
+            ]
+            missing_dict_values = [
+                dict_value for dict_value in parcel_label_mapper if dict_value not in df.columns
+            ]
+            if missing_columns:
+                raise ValueError(
+                    f'Missing CIFTI labels in atlas labels DataFrame: {missing_columns}'
+                )
+            if missing_dict_values:
+                raise ValueError(f'Missing atlas labels in CIFTI file: {missing_dict_values}')
 
             # Replace the column names with the corresponding dictionary values.
             df.columns = [parcel_label_mapper[i] for i in df.columns]

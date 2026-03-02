@@ -1069,8 +1069,12 @@ def parse_args(args=None, namespace=None):
                     processing_groups.append([subject_id, anat_sessions[0], func_sessions])
                 elif len(func_only) == 0:
                     # Anatomical data for each functional session
-                    for func_session in func_sessions:
-                        processing_groups.append([subject_id, func_session, [func_session]])
+                    processing_groups.extend(
+                        [
+                            [subject_id, func_session, [func_session]]
+                            for func_session in func_sessions
+                        ]
+                    )
                 else:
                     # One or more functional sessions do not have anatomical data
                     raise ValueError(

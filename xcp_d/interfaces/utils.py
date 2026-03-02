@@ -142,10 +142,9 @@ class FilterUndefined(SimpleInterface):
 
     def _run_interface(self, runtime):
         inlist = self.inputs.inlist
-        outlist = []
-        for item in inlist:
-            if item is not None and traits_extension.isdefined(item):
-                outlist.append(item)
+        outlist = [
+            item for item in inlist if item is not None and traits_extension.isdefined(item)
+        ]
         self._results['outlist'] = outlist
         return runtime
 

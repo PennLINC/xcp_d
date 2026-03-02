@@ -1,5 +1,6 @@
 """Miscellaneous utility functions for xcp_d."""
 
+import itertools
 import multiprocessing
 
 import nibabel as nb
@@ -635,12 +636,8 @@ def _interpolate(*, arr, sample_mask, TR):
     # Replace any high-motion volumes at the beginning or end of the run with the closest
     # low-motion volume's data.
     # Use https://stackoverflow.com/a/48106843/2589328 to group consecutive blocks of outliers.
-    gaps = [
-        [start, end]
-        for start, end in zip(outlier_idx, outlier_idx[1:], strict=False)
-        if start + 1 < end
-    ]
-    edges = iter(outlier_idx[:1] + sum(gaps, []) + outlier_idx[-1:])
+    gaps = [[start, end] for start, end in itertools.pairwise(outlier_idx) if start + 1 < end]
+    edges = iter(outlier_idx[:1] + list(itertools.chain.from_iterable(gaps)) + outlier_idx[-1:])
     consecutive_outliers_idx = list(zip(edges, edges, strict=False))
     first_outliers = consecutive_outliers_idx[0]
     last_outliers = consecutive_outliers_idx[-1]

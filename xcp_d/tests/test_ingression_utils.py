@@ -129,7 +129,7 @@ def test_collect_anatomical_files_brainmask_variants(tmp_path):
     base = 'sub-01_space-MNI152NLin6Asym_res-2'
     out = ingress_utils.collect_anatomical_files(str(anat_orig), str(anat_bids), base)
     assert len(out) == 1
-    assert list(out.values())[0][0].endswith('_desc-brain_mask.nii.gz')
+    assert next(iter(out.values()))[0].endswith('_desc-brain_mask.nii.gz')
 
 
 def test_collect_meshes_none_present(tmp_path):
