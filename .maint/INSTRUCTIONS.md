@@ -60,14 +60,18 @@ Both are resolved together by pixi when generating `pixi.lock`.
 2. **Commit and open a pull request.**
 
 3. **The `pixi-lock.yml` GitHub Action runs automatically** on the PR. It checks
-   whether `pixi.lock` is stale and, if so, regenerates it and pushes the
-   updated lockfile back to the PR branch.
+   whether `pixi.lock` is stale and, if so, regenerates it.
 
-4. **Review the lockfile update.** If `pixi.lock` is treated as binary in your
+4. **Lockfile push behavior depends on PR source:**
+   - **Same-repo branch PRs:** the workflow pushes updated `pixi.lock` back to the PR branch.
+   - **Fork PRs:** the workflow does **not** push (by design). In this case, update
+     `pixi.lock` manually in a Linux environment and push from the contributor branch.
+
+5. **Review the lockfile update.** If `pixi.lock` is treated as binary in your
    Git configuration, GitHub may not render a useful diff. Inspect locally with
    `git diff HEAD~1 -- pixi.lock` if needed.
 
-5. **Merge the PR** once CI passes.
+6. **Merge the PR** once CI passes.
 
 > **Note:** `pixi lock` only runs on Linux (the project specifies
 > `platforms = ["linux-64"]`). Do not rely on macOS for lockfile refresh;
