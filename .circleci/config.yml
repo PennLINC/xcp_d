@@ -123,7 +123,6 @@ jobs:
       - run:
           name: Determine whether image builds are required
           command: |
-            echo "FORCE_BASE_BUILD=0" >> "$BASH_ENV"
             if [[ -f /tmp/images/imageprep-success.marker ]]; then
               echo "BUILD_PRODUCTION_IMAGE=0" >> "$BASH_ENV"
               echo "BUILD_TEST_IMAGE=0" >> "$BASH_ENV"
@@ -131,13 +130,12 @@ jobs:
               echo "No successful cached image prep for current Docker inputs; rebuilding images."
               echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
               echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
-              echo "FORCE_BASE_BUILD=1" >> "$BASH_ENV"
             fi
       - run:
           name: Build base image if needed
           no_output_timeout: 90m
           command: |
-            if [[ "$FORCE_BASE_BUILD" == "1" ]] || ! docker manifest inspect $BASE_IMAGE > /dev/null 2>&1; then
+            if ! docker manifest inspect $BASE_IMAGE > /dev/null 2>&1; then
               docker build -f Dockerfile.base \
                 --pull \
                 --platform linux/amd64 \
@@ -145,6 +143,7 @@ jobs:
                 -t $BASE_IMAGE_NAME:latest .
               echo "BASE_WAS_BUILT=1" >> "$BASH_ENV"
             else
+              echo "Using existing base image from registry: $BASE_IMAGE"
               echo "BASE_WAS_BUILT=0" >> "$BASH_ENV"
             fi
       - run:
