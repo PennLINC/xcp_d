@@ -47,7 +47,7 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - build-v2-{{ checksum "Dockerfile" }}-{{ checksum "Dockerfile.base" }}-{{ checksum "pixi.lock" }}
+            - build-v3-{{ checksum "Dockerfile" }}-{{ checksum "pixi.lock" }}
       - restore_cache:
           keys:
             - data-v1-{{ .Branch }}-{{ .Revision }}
@@ -106,7 +106,7 @@ jobs:
           path: /tmp/src/xcp_d
       - restore_cache:
           keys:
-            - build-v2-{{ checksum "Dockerfile" }}-{{ checksum "Dockerfile.base" }}-{{ checksum "pixi.lock" }}
+            - build-v3-{{ checksum "Dockerfile" }}-{{ checksum "pixi.lock" }}
             - build-v1-{{ .Branch }}-{{ .Revision }}
             - build-v1-main-
       - run: *docker_auth
@@ -201,6 +201,8 @@ jobs:
             docker run --rm --entrypoint pytest pennlinc/xcp_d:test --version
             docker run --rm --entrypoint pandoc pennlinc/xcp_d:test --version > /dev/null
             docker run --rm --entrypoint 3dReHo pennlinc/xcp_d:test -help > /dev/null
+            docker run --rm --entrypoint 3dDespike pennlinc/xcp_d:test -help > /dev/null
+            docker run --rm --entrypoint 3dFWHMx pennlinc/xcp_d:test -help > /dev/null
       - run:
           name: Push base image to Docker Hub (if newly built)
           command: |
@@ -232,7 +234,7 @@ jobs:
             touch /tmp/images/imageprep-success.marker
             docker save registry:2 -o /tmp/images/registry.tar.gz
       - save_cache:
-          key: build-v2-{{ checksum "Dockerfile" }}-{{ checksum "Dockerfile.base" }}-{{ checksum "pixi.lock" }}
+          key: build-v3-{{ checksum "Dockerfile" }}-{{ checksum "pixi.lock" }}
           paths:
             - /tmp/docker
             - /tmp/images
@@ -487,7 +489,7 @@ jobs:
           path: /tmp/src/xcp_d
       - restore_cache:
           keys:
-            - build-v2-{{ checksum "Dockerfile" }}-{{ checksum "Dockerfile.base" }}-{{ checksum "pixi.lock" }}
+            - build-v3-{{ checksum "Dockerfile" }}-{{ checksum "pixi.lock" }}
       - run: *docker_auth
       - run: *setup_docker_registry
       - run: *pull_from_registry

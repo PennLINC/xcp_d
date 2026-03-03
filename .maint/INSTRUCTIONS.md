@@ -131,6 +131,108 @@ a Linux machine** because the project only targets `linux-64`.
 
 ---
 
+## CI workflow trigger conditions
+
+This section explains what causes each CI workflow step/job to run.
+In this repository, file changes only control a subset of behavior.
+
+### GitHub Action: `.github/workflows/pixi-lock.yml`
+
+The workflow is triggered on every `pull_request_target` event. Inside the job:
+
+- **Always runs**
+  - `Checkout pull request`
+  - `Check latest commit for dependency edits`
+- **Runs only if the latest commit touched one of these root files**
+  - `pyproject.toml`
+  - `pixi.lock`
+  - Conditional steps:
+    - `Find submitting repository`
+    - `Set git identity`
+    - `prefix-dev/setup-pixi`
+    - `Install the latest version of uv`
+    - `Update lockfile`
+- **Pushes updated lockfile only when both are true**
+  - Latest commit touched `pyproject.toml` or `pixi.lock`
+  - PR source branch is in this same repository (not a fork)
+
+Practical implication: editing other files alone still starts the workflow,
+but lockfile update steps are skipped.
+
+### CircleCI: `.circleci/config.yml`
+
+CircleCI does **not** use file path filters in this config. Jobs are selected by
+workflow filters (branch/tag) and can be halted by commit-message markers.
+
+#### Branch/tag filters that control job execution
+
+- `image_prep`: runs on all branches and all tags.
+- `get_data`, integration jobs, `pytests`, `merge_coverage`:
+  - Run on all tags.
+  - Run on branches except names matching `docs?/.*` or `tests?/.*`.
+- `deployable` and `deploy_docker`:
+  - Run on `main` and on all tags.
+
+#### Commit-message markers that halt jobs
+
+- Integration jobs stop early if latest commit message contains
+  `[skip integration]` or `[skip_integration]` (case-insensitive).
+- `pytests` stops early if latest commit message contains
+  `[skip pytests]` or `[skip_pytests]` (case-insensitive).
+
+#### File changes that indirectly affect CircleCI behavior
+
+These files are used in the `build-v3` cache key:
+
+- `Dockerfile`
+- `pixi.lock`
+
+Changing either of them changes the cache key and invalidates the prior
+`imageprep-success.marker`, so `image_prep` sets:
+
+- `BUILD_PRODUCTION_IMAGE=1`
+- `BUILD_TEST_IMAGE=1`
+
+That means the production and test image build steps run. Base image rebuild is
+controlled separately by whether the `BASE_IMAGE` tag in `Dockerfile` already
+exists in Docker Hub.
+
+#### `image_prep` rebuild matrix (by file edit)
+
+- **Edit `Dockerfile` and change `ARG BASE_IMAGE=...` to a new/missing tag**
+  - Base image: **rebuilt** (`Dockerfile.base` build runs because manifest is missing)
+  - Production image: **rebuilt**
+  - Test image: **rebuilt**
+- **Edit `Dockerfile` without changing `BASE_IMAGE` tag**
+  - Base image: rebuilt **only if** current `BASE_IMAGE` tag is missing in registry
+  - Production image: **rebuilt**
+  - Test image: **rebuilt**
+- **Edit `Dockerfile.base` only**
+  - Base image: **not automatically rebuilt** if `BASE_IMAGE` tag already exists
+  - Production image: **not rebuilt**
+  - Test image: **not rebuilt**
+  - Note: to force base rebuild from updated `Dockerfile.base`, also bump
+    `ARG BASE_IMAGE=...` in `Dockerfile` to a new date/tag.
+  - Caveat: if build cache is unavailable for unrelated reasons, CircleCI may
+    still rebuild production/test images.
+- **Edit `pixi.lock` only**
+  - Base image: **not rebuilt** unless `BASE_IMAGE` tag is missing
+  - Production image: **rebuilt**
+  - Test image: **rebuilt**
+- **Edit none of `Dockerfile` or `pixi.lock`**
+  - If cache/marker is restored: production/test builds are skipped by default
+  - Base image still goes through existence check and rebuilds only if missing
+
+- `image_prep` reads `BASE_IMAGE` from `Dockerfile`.
+- If that base image tag does not exist in Docker Hub, CircleCI builds
+  `Dockerfile.base` and pushes the base image.
+
+Practical implication: if your goal is to rebuild the base image, edit
+`Dockerfile` to point to a new `BASE_IMAGE` tag; editing `Dockerfile.base` alone
+is not sufficient when that tag already exists remotely.
+
+---
+
 ## Releasing a new version
 
 ### 1. Prepare the release branch

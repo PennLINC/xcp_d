@@ -27,20 +27,6 @@ RUN apt-get update && \
                     unzip && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# FreeSurfer 7.3.2 from official Ubuntu 22 tarball.
-FROM downloader AS freesurfer
-RUN curl -sSL https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.3.2/freesurfer-linux-ubuntu22_amd64-7.3.2.tar.gz \
-    | tar zxv --no-same-owner -C /opt
-
-# FreeSurfer 7.4.1: synthseg/synthstrip scripts and models only.
-FROM freesurfer/freesurfer:7.4.1 AS freesurfer741
-
-# AFNI subset.
-FROM downloader AS afni
-RUN mkdir -p /opt/afni-latest && \
-    curl -fsSL --retry 5 https://afni.nimh.nih.gov/pub/dist/tgz/linux_openmp_64.tgz \
-    | tar -xz -C /opt/afni-latest --strip-components 1
-
 #
 # Main stage
 #
@@ -51,19 +37,25 @@ ENV DEBIAN_FRONTEND="noninteractive" \
     LANG="en_US.UTF-8" \
     LC_ALL="en_US.UTF-8"
 
-# Install from download stages
-COPY --link --from=freesurfer /opt/freesurfer /opt/freesurfer
-COPY --link --from=freesurfer741 /usr/local/freesurfer/python/scripts/mri_synthseg /opt/freesurfer/bin/mri_synthseg
-COPY --link --from=freesurfer741 /usr/local/freesurfer/python/scripts/mri_synthstrip /opt/freesurfer/bin/mri_synthstrip
-COPY --link --from=freesurfer741 /usr/local/freesurfer/models /opt/freesurfer/models
-COPY --link --from=afni /opt/afni-latest /opt/afni-latest
+# Install AFNI subset directly from AFNI Docker image
+COPY --link --from=afni/afni_make_build:AFNI_25.2.09 \
+    /opt/afni/install/libf2c.so \
+    /usr/lib/x86_64-linux-gnu/libgsl.so \
+    /usr/lib/x86_64-linux-gnu/libgsl.so.23 \
+    /usr/lib/x86_64-linux-gnu/libgslcblas.so \
+    /usr/lib/x86_64-linux-gnu/libgslcblas.so.0 \
+    /opt/afni/install/libmri.so \
+    /usr/local/lib/
+COPY --link --from=afni/afni_make_build:AFNI_25.2.09 \
+    /opt/afni/install/3dReHo \
+    /opt/afni/install/3dDespike \
+    /opt/afni/install/3dFWHMx \
+    /opt/afni-bin/
+RUN chmod +x /opt/afni-bin/3dReHo /opt/afni-bin/3dDespike /opt/afni-bin/3dFWHMx
 
-RUN chmod +x /opt/freesurfer/bin/mri_synthseg /opt/freesurfer/bin/mri_synthstrip
-
-# Baseline system packages (bc for FreeSurfer; libs for Workbench/FSL)
+# Baseline system packages (libs for Workbench/FSL/AFNI)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-                    bc \
                     ca-certificates \
                     curl \
                     git \
@@ -102,9 +94,9 @@ RUN apt-get update -qq \
     && apt-get install -f \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && gsl_path="$(ldconfig -p | awk '/libgsl\.so\.[0-9]+/{print $NF; exit}')" \
-    && if [ -n "$gsl_path" ]; then ln -sfv "$gsl_path" "$(dirname "$gsl_path")/libgsl.so.0"; fi \
+    && if [ -n "$gsl_path" ] && [ "$(basename "$gsl_path")" != "libgsl.so.0" ]; then ln -sfv "$gsl_path" "$(dirname "$gsl_path")/libgsl.so.0"; fi \
     && gslcblas_path="$(ldconfig -p | awk '/libgslcblas\.so\.[0-9]+/{print $NF; exit}')" \
-    && if [ -n "$gslcblas_path" ]; then ln -sfv "$gslcblas_path" "$(dirname "$gslcblas_path")/libgslcblas.so.0"; fi \
+    && if [ -n "$gslcblas_path" ] && [ "$(basename "$gslcblas_path")" != "libgslcblas.so.0" ]; then ln -sfv "$gslcblas_path" "$(dirname "$gslcblas_path")/libgslcblas.so.0"; fi \
     && ldconfig
 
 # Download atlases from AtlasPack (stored in tar.gz file on Box)
@@ -123,27 +115,10 @@ RUN mkdir -p "/home/xcp_d/.cache/xcp_d" && \
     find "/home/xcp_d/.cache/xcp_d" -type d -exec chmod go=u {} + && \
     find "/home/xcp_d/.cache/xcp_d" -type f -exec chmod go=u {} +
 
-# FreeSurfer environment
-ENV OS="Linux" \
-    FS_OVERRIDE=0 \
-    FIX_VERTEX_AREA="" \
-    FSF_OUTPUT_FORMAT="nii.gz" \
-    FREESURFER_HOME="/opt/freesurfer"
-ENV SUBJECTS_DIR="$FREESURFER_HOME/subjects" \
-    FUNCTIONALS_DIR="$FREESURFER_HOME/sessions" \
-    MNI_DIR="$FREESURFER_HOME/mni" \
-    LOCAL_DIR="$FREESURFER_HOME/local" \
-    MINC_BIN_DIR="$FREESURFER_HOME/mni/bin" \
-    MINC_LIB_DIR="$FREESURFER_HOME/mni/lib" \
-    MNI_DATAPATH="$FREESURFER_HOME/mni/data"
-ENV PERL5LIB="$MINC_LIB_DIR/perl5/5.8.5" \
-    MNI_PERL5LIB="$MINC_LIB_DIR/perl5/5.8.5" \
-    PATH="$FREESURFER_HOME/bin:$FREESURFER_HOME/tktools:$MINC_BIN_DIR:$PATH"
-
 # AFNI
-ENV PATH="/opt/afni-latest:$PATH" \
+ENV PATH="/opt/afni-bin:$PATH" \
     AFNI_IMSAVE_WARNINGS="NO" \
-    AFNI_PLUGINPATH="/opt/afni-latest"
+    AFNI_PLUGINPATH="/opt/afni-bin"
 
 # FSL / runtime (FSLDIR is set in the main Dockerfile, pointing to the pixi env)
 ENV LANG="C.UTF-8" \
