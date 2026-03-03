@@ -37,9 +37,11 @@ def main(args=None):
 
     qc_files = []
     for dirpath, _, filenames in os.walk(xcpd_dir):
-        for filename in filenames:
-            if filename.endswith('_desc-linc_qc.tsv'):
-                qc_files.append(os.path.join(dirpath, filename))
+        qc_files.extend(
+            os.path.join(dirpath, filename)
+            for filename in filenames
+            if filename.endswith('_desc-linc_qc.tsv')
+        )
 
     dfs = [pd.read_table(qc_file) for qc_file in qc_files]
     df = pd.concat(dfs, axis=0)

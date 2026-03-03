@@ -181,7 +181,7 @@ def test_motion_filtering_lp():
     assert np.allclose(np.squeeze(lowpass_data_test), lowpass_data_true)
 
     # Using a filter type other than notch or lp should raise an exception.
-    with pytest.raises(ValueError, match="Motion filter type 'fail' not supported."):
+    with pytest.raises(ValueError, match=r"Motion filter type 'fail' not supported\."):
         confounds.filter_motion(
             raw_data,
             TR=TR,

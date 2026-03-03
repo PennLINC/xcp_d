@@ -31,7 +31,7 @@
    :alt: License
 
 This fMRI post-processing and noise regression pipeline is developed by the
-`Satterthwaite lab at the University of Pennslyvania <https://www.satterthwaitelab.com/>`_
+`Satterthwaite lab at the University of Pennslyvania <https://pennlinc.io/>`_
 (**XCP**\; eXtensible Connectivity Pipeline)  and
 `Developmental Cognition and Neuroimaging lab at the University of Minnesota
 <https://innovation.umn.edu/developmental-cognition-and-neuroimaging-lab/>`_ (**-D**\CAN)

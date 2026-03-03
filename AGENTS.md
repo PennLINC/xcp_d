@@ -88,10 +88,10 @@ The config module is the single source of truth for runtime parameters. Never pa
 
 ### Docker
 
-- Each app has a runtime base image and a production image.
-- For XCP-D, `Dockerfile.base` contains non-Python/non-conda runtime dependencies.
-- `Dockerfile` uses pixi to build test and production environments.
-- Entrypoint is the CLI binary in the pixi environment.
+- Each app has a base image with runtime dependencies and a main Dockerfile that installs the Python environment and the app itself.
+- ASLPrep, fMRIPrep, and XCP-D have migrated to **Pixi**-based multi-stage Docker builds: `Dockerfile.base` owns non-Python/non-conda runtime dependencies, while `Dockerfile` uses pixi to create `build`, `test`, and production targets from `pixi.lock`. qsiprep and qsirecon still use micromamba + `pip install`.
+- Base image naming: ASLPrep and XCP-D use date-based tags (`pennlinc/<pkg>-base:<YYYYMMDD>`); qsiprep and qsirecon use `pennlinc/<pkg>_build:<version>`.
+- Entrypoint is the CLI binary in the pixi environment (e.g., `/app/.pixi/envs/<env>/bin/<pkg>`).
 - Labels follow the `org.label-schema` convention.
 
 ### Release Process
@@ -146,7 +146,7 @@ XCP-D is a BIDS App for postprocessing fMRI data that has been preprocessed by f
 | Default branch | `main` |
 | Entry point | `xcp_d.cli.run:main` |
 | Python requirement | `>=3.10` |
-| Build backend | hatchling + hatch-vcs |
+| Build backend | hatchling + hatch-vcs + nipreps-versions |
 | Linter | ruff ~= 0.15.0 |
 | Pre-commit | Yes (ruff v0.6.2) |
 | Tox | Yes |
@@ -226,15 +226,15 @@ This roadmap covers harmonization work across all four PennLINC BIDS Apps (qsipr
 ### Phase 2: Standardize across all four repos
 
 6. **Rename qsiprep default branch** from `master` to `main` and update `.github/workflows/lint.yml`.
-7. **Rename aslprep test extras** from `test` to `tests` for consistency with the other three repos.
-8. **Converge on version management** -- recommend the simpler `_version.py` direct-import pattern (used by qsiprep/qsirecon). Migrate xcp_d and aslprep away from `__about__.py`.
+7. ~~**Rename aslprep test extras** from `test` to `tests`~~ -- **Done**.
+8. **Converge on version management** -- recommend the simpler `_version.py` direct-import pattern (used by qsiprep/qsirecon). ASLPrep has completed this migration; only xcp_d still uses `__about__.py`.
 9. **Pin the same ruff version** in all four repos' dev dependencies and `.pre-commit-config.yaml`.
 10. **Harmonize ruff ignore lists** -- adopt xcp_d's minimal set (`S105`, `S311`, `S603`) as the target; fix suppressed rules in qsiprep and aslprep incrementally.
 
 ### Phase 3: Shared infrastructure
 
 11. **Extract a reusable GitHub Actions workflow** for lint + codespell + build checks, hosted in a shared repo (e.g., `PennLINC/.github`).
-12. **Standardize Dockerfile patterns** -- adopt multi-stage wheel builds (as qsiprep does) across all four repos.
+12. **Standardize Dockerfile patterns** -- ASLPrep, fMRIPrep, and XCP-D have adopted pixi-based multi-stage Docker builds. Migrate qsiprep and qsirecon to the same pattern.
 13. **Create a shared `pennlinc-style` package or cookiecutter template** providing `pyproject.toml` lint/test config, `.pre-commit-config.yaml`, `tox.ini`, and CI workflows.
 14. **Evaluate `nipreps-versions` calver** -- the `raw-options = { version_scheme = "nipreps-calver" }` line is commented out in all four repos. Decide whether to adopt it.
 

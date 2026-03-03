@@ -1,6 +1,6 @@
 ARG BASE_IMAGE=pennlinc/xcp_d-base:20260225
 
-FROM ghcr.io/prefix-dev/pixi:0.53.0 AS build
+FROM ghcr.io/prefix-dev/pixi:0.58.0 AS build
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
                     ca-certificates \
@@ -20,7 +20,10 @@ RUN pixi shell-hook -e xcp-d --as-is | grep -v PATH > /shell-hook.sh
 RUN pixi shell-hook -e test --as-is | grep -v PATH > /test-shell-hook.sh
 
 COPY . /app
-RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d -e test --frozen
+# Install test and production environments separately so production does not
+# inherit editable-install behavior needed for test workflows.
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e test --frozen
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d --frozen
 
 FROM ghcr.io/astral-sh/uv:python3.12-alpine AS templates
 ENV TEMPLATEFLOW_HOME="/templateflow"
@@ -51,6 +54,8 @@ RUN cat /shell-hook.sh >> $HOME/.bashrc
 ENV PATH="/app/.pixi/envs/xcp-d/bin:$PATH"
 ENV FSLDIR="/app/.pixi/envs/xcp-d"
 ENV IS_DOCKER_8395080871=1
+# Verify the runtime image can import xcp_d without source tree mounts.
+RUN /app/.pixi/envs/xcp-d/bin/python -c "import xcp_d"
 
 ENTRYPOINT ["/app/.pixi/envs/xcp-d/bin/xcp_d"]
 

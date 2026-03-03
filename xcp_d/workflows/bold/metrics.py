@@ -198,7 +198,7 @@ series to retain the original scaling.
         if file_format == 'nifti':
             workflow.__desc__ = workflow.__desc__ + (
                 ' The ALFF maps were smoothed with Nilearn using a Gaussian kernel '
-                f'(FWHM={str(smoothing)} mm).'
+                f'(FWHM={smoothing!s} mm).'
             )
             # Smooth via Nilearn
             smooth_data = pe.Node(
@@ -213,7 +213,7 @@ series to retain the original scaling.
         else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
                 ' The ALFF maps were smoothed with the Connectome Workbench using a Gaussian '
-                f'kernel (FWHM={str(smoothing)} mm).'
+                f'kernel (FWHM={smoothing!s} mm).'
             )
 
             # Smooth via Connectome Workbench

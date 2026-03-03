@@ -502,8 +502,7 @@ def fill_doc(f):
             lines = dstr.splitlines()
             try:
                 newlines = [lines[0]]
-                for line in lines[1:]:
-                    newlines.append(indent + line)
+                newlines.extend(indent + line for line in lines[1:])
                 indented[name] = '\n'.join(newlines)
             except IndexError:
                 indented[name] = dstr
@@ -512,7 +511,7 @@ def fill_doc(f):
     except (TypeError, ValueError, KeyError) as exp:
         funcname = f.__name__
         funcname = docstring.split('\n')[0] if funcname is None else funcname
-        raise RuntimeError(f'Error documenting {funcname}:\n{str(exp)}') from exp
+        raise RuntimeError(f'Error documenting {funcname}:\n{exp!s}') from exp
     return f
 
 

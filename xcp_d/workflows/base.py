@@ -21,8 +21,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from packaging.version import Version
 
-from xcp_d import config
-from xcp_d.__about__ import __version__
+from xcp_d import __version__, config
 from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.interfaces.bids import DerivativesDataSink

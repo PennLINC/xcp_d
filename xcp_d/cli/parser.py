@@ -1069,8 +1069,12 @@ def parse_args(args=None, namespace=None):
                     processing_groups.append([subject_id, anat_sessions[0], func_sessions])
                 elif len(func_only) == 0:
                     # Anatomical data for each functional session
-                    for func_session in func_sessions:
-                        processing_groups.append([subject_id, func_session, [func_session]])
+                    processing_groups.extend(
+                        [
+                            [subject_id, func_session, [func_session]]
+                            for func_session in func_sessions
+                        ]
+                    )
                 else:
                     # One or more functional sessions do not have anatomical data
                     raise ValueError(
@@ -1202,7 +1206,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
+        opts.correlation_lengths = opts.correlation_lengths or []
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1230,7 +1234,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
+        opts.correlation_lengths = opts.correlation_lengths or []
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0.3 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'cifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1293,9 +1297,7 @@ def _validate_parameters(opts, build_log, parser):
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = (
-            opts.correlation_lengths if opts.correlation_lengths else ['all']
-        )
+        opts.correlation_lengths = opts.correlation_lengths or ['all']
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1323,7 +1325,7 @@ def _validate_parameters(opts, build_log, parser):
         if opts.confounds_config == 'auto':
             error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
 
-        opts.correlation_lengths = opts.correlation_lengths if opts.correlation_lengths else []
+        opts.correlation_lengths = opts.correlation_lengths or []
 
         if opts.despike == 'auto':
             error_messages.append("'--despike' (y or n) is required for 'none' mode.")
@@ -1393,7 +1395,7 @@ def _validate_parameters(opts, build_log, parser):
 
     # Scrubbing parameters
     if opts.fd_thresh <= 0 and opts.min_time > 0:
-        ignored_params = '\n\t'.join(['--min-time'])
+        ignored_params = '--min-time'
         build_log.warning(
             'Framewise displacement-based scrubbing is disabled. '
             f'The following parameters will have no effect:\n\t{ignored_params}'
