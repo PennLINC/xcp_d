@@ -40,6 +40,10 @@ ENV DEBIAN_FRONTEND="noninteractive" \
 # Install AFNI subset directly from AFNI Docker image
 COPY --link --from=afni/afni_make_build:AFNI_25.2.09 \
     /opt/afni/install/libf2c.so \
+    /usr/lib/x86_64-linux-gnu/libgsl.so \
+    /usr/lib/x86_64-linux-gnu/libgsl.so.23 \
+    /usr/lib/x86_64-linux-gnu/libgslcblas.so \
+    /usr/lib/x86_64-linux-gnu/libgslcblas.so.0 \
     /opt/afni/install/libmri.so \
     /usr/local/lib/
 COPY --link --from=afni/afni_make_build:AFNI_25.2.09 \
@@ -90,9 +94,9 @@ RUN apt-get update -qq \
     && apt-get install -f \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && gsl_path="$(ldconfig -p | awk '/libgsl\.so\.[0-9]+/{print $NF; exit}')" \
-    && if [ -n "$gsl_path" ]; then ln -sfv "$gsl_path" "$(dirname "$gsl_path")/libgsl.so.0"; fi \
+    && if [ -n "$gsl_path" ] && [ "$(basename "$gsl_path")" != "libgsl.so.0" ]; then ln -sfv "$gsl_path" "$(dirname "$gsl_path")/libgsl.so.0"; fi \
     && gslcblas_path="$(ldconfig -p | awk '/libgslcblas\.so\.[0-9]+/{print $NF; exit}')" \
-    && if [ -n "$gslcblas_path" ]; then ln -sfv "$gslcblas_path" "$(dirname "$gslcblas_path")/libgslcblas.so.0"; fi \
+    && if [ -n "$gslcblas_path" ] && [ "$(basename "$gslcblas_path")" != "libgslcblas.so.0" ]; then ln -sfv "$gslcblas_path" "$(dirname "$gslcblas_path")/libgslcblas.so.0"; fi \
     && ldconfig
 
 # Download atlases from AtlasPack (stored in tar.gz file on Box)
