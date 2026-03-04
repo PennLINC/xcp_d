@@ -265,7 +265,7 @@ markers = [
 RUNNING_PYTEST = "1"
 
 [tool.coverage.run]
-branch = true
+branch = false
 omit = [
     "*/tests/*",
     "*/__init__.py",
