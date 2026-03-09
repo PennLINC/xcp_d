@@ -5992,13 +5992,13 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 0.14.2.dev28+gbaf458615
-  sha256: 0dad36ce4689814ae0ee9b676451646171dd78756b9fba8ebb0a19ac861fedb8
+  version: 0.14.2.dev29+g51747c62e
+  sha256: a40a5756cf62ce2bd3a5f43aaf83697845d0d64067d7ddf5e84b15ce25ecd178
   requires_dist:
   - acres
   - beautifulsoup4
   - bids-validator<=1.14.7.post0
-  - h5py<=3.15.1
+  - h5py<=3.16.0
   - importlib-resources ; python_full_version < '3.11'
   - indexed-gzip~=1.10.1
   - jinja2~=3.1.2
@@ -6071,13 +6071,13 @@ packages:
   editable: true
 - pypi: ./
   name: xcp-d
-  version: 0.14.2.dev28+gbaf458615
-  sha256: 0dad36ce4689814ae0ee9b676451646171dd78756b9fba8ebb0a19ac861fedb8
+  version: 0.14.2.dev29+g51747c62e
+  sha256: a40a5756cf62ce2bd3a5f43aaf83697845d0d64067d7ddf5e84b15ce25ecd178
   requires_dist:
   - acres
   - beautifulsoup4
   - bids-validator<=1.14.7.post0
-  - h5py<=3.15.1
+  - h5py<=3.16.0
   - importlib-resources ; python_full_version < '3.11'
   - indexed-gzip~=1.10.1
   - jinja2~=3.1.2
