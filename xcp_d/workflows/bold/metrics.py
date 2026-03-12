@@ -681,7 +681,7 @@ change from the mean of the denoised BOLD time series.
         if file_format == 'nifti':
             workflow.__desc__ = workflow.__desc__ + (
                 ' The PerAF maps were smoothed with Nilearn using a Gaussian kernel '
-                f'(FWHM={str(smoothing)} mm).'
+                f'(FWHM={smoothing!s} mm).'
             )
             # Smooth via Nilearn
             smooth_peraf = pe.Node(
@@ -696,7 +696,7 @@ change from the mean of the denoised BOLD time series.
         else:  # If cifti
             workflow.__desc__ = workflow.__desc__ + (
                 ' The PerAF maps were smoothed with the Connectome Workbench using a Gaussian '
-                f'kernel (FWHM={str(smoothing)} mm).'
+                f'kernel (FWHM={smoothing!s} mm).'
             )
 
             # Smooth via Connectome Workbench
