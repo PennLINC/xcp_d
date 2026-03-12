@@ -40,7 +40,7 @@ dependencies = [
     "pybids >= 0.21.0",
     "pyyaml",
     "scikit-learn >= 1.7.2",
-    "scipy >= 1.15.3",  # nipype needs networkx, which needs scipy > 1.8.0
+    "scipy >= 1.15.2",  # nipype needs networkx, which needs scipy > 1.8.0
     "seaborn",  # for plots
     "sentry-sdk >= 2.54.0",  # for usage reports
     "templateflow >= 25.1.1",
@@ -168,7 +168,7 @@ fsl-flirt = "2111.4.*"
 fsl-fugue = "2201.5.*"
 fsl-mcflirt = "2111.0.*"
 fsl-miscmaths = "2412.4.*"
-fsl-miscvis = "2201.1"
+fsl-miscvis = "2201.1.*"
 fsl-topup = "2203.5.*"
 fsl-warpfns = "2501.0.*"
 
