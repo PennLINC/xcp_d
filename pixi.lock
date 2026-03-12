@@ -165,7 +165,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nibabel-5.3.2-pyha770c72_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nodejs-20.19.6-hc8774ed_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.0.2-py312h58c1407_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.2.6-py312h72c5963_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openjpeg-2.5.4-h55fea9a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openldap-2.6.10-he970967_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.1-h35e630c_1.conda
@@ -459,7 +459,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nibabel-5.3.2-pyha770c72_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nodejs-20.19.6-hc8774ed_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.0.2-py312h58c1407_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.2.6-py312h72c5963_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openjpeg-2.5.4-h55fea9a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openldap-2.6.10-he970967_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.1-h35e630c_1.conda
@@ -785,7 +785,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nodejs-20.19.6-hc8774ed_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/npth-1.8-h5888daf_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ntbtls-0.3.2-hfc55251_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.0.2-py312h58c1407_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.2.6-py312h72c5963_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openjpeg-2.5.4-h55fea9a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openldap-2.6.10-he970967_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openssh-10.2p1-h20e8eec_0.conda
@@ -4368,9 +4368,9 @@ packages:
   sha256: 1c8e5b00142fc2966fd8d685001e36c4a9911e070d1b120e1beb721fa1edb33d
   requires_dist:
   - docopt>=0.6.2
-- conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.0.2-py312h58c1407_1.conda
-  sha256: 02e095740ab89deae5a8563fe60823e375aa2b7234593704980f01caa16a3ded
-  md5: 46c8b5eb9925ef7c228fddd09078e16e
+- conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.2.6-py312h72c5963_0.conda
+  sha256: c3b3ff686c86ed3ec7a2cc38053fd6234260b64286c2bd573e436156f39d14a7
+  md5: 17fac9db62daa5c810091c2882b28f45
   depends:
   - __glibc >=2.17,<3.0.a0
   - libblas >=3.9.0,<4.0a0
@@ -4386,8 +4386,8 @@ packages:
   license_family: BSD
   purls:
   - pkg:pypi/numpy?source=hash-mapping
-  size: 8463419
-  timestamp: 1732314903721
+  size: 8490501
+  timestamp: 1747545073507
 - conda: https://conda.anaconda.org/conda-forge/linux-64/openjpeg-2.5.4-h55fea9a_0.conda
   sha256: 3900f9f2dbbf4129cf3ad6acf4e4b6f7101390b53843591c53b00f034343bc4d
   md5: 11b3379b191f63139e29c0d19dee24cd
@@ -5992,37 +5992,115 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 0.14.2.dev29+g8a03b7477
-  sha256: f210052017050b4ed4a26904019c2a0de5ab7bdf4b9a61d0d1cb96afc3b50e33
+  version: 0.14.2.dev30+g64e5151c7.d20260312
+  sha256: c76c9102be71b0f6d032e94beea5cea16341360e8144e14c6dd60eca11805a4d
   requires_dist:
   - acres
   - beautifulsoup4
-  - bids-validator<=1.14.7.post0
-  - h5py<=3.15.1
+  - bids-validator>=1.14.7.post0
+  - h5py>=3.15.1
   - importlib-resources ; python_full_version < '3.11'
-  - indexed-gzip~=1.10.1
-  - jinja2~=3.1.2
-  - joblib<=1.5.3
-  - matplotlib~=3.10.0
-  - networkx<=3.4.2
+  - indexed-gzip>=1.10.1
+  - jinja2>=3.1.2
+  - joblib>=1.5.3
+  - matplotlib>=3.10.0
+  - networkx>=3.4.2
   - nibabel>=3.2.1
-  - nilearn==0.13.1
-  - nipype~=1.10.0
-  - nireports~=25.3.0
+  - nilearn>=0.13.1
+  - nipype>=1.9.0
+  - nireports>=25.3.0
   - nitime
-  - niworkflows==1.14.4
+  - niworkflows>=1.14.4
   - num2words
-  - numpy~=2.0
+  - numpy>=2.0
   - packaging
   - pandas
   - psutil>=5.4
-  - pybids~=0.21.0
+  - pybids>=0.21.0
   - pyyaml
-  - scikit-learn<=1.7.2
-  - scipy>=1.14.0,<=1.15.3
+  - scikit-learn>=1.7.2
+  - scipy>=1.15.2
   - seaborn
-  - sentry-sdk~=2.54.0
-  - templateflow~=25.1.1
+  - sentry-sdk>=2.54.0
+  - templateflow>=25.1.1
+  - toml
+  - trimesh
+  - coverage ; extra == 'all'
+  - doctest-ignore-unicode ; extra == 'all'
+  - fuzzywuzzy ; extra == 'all'
+  - pre-commit ; extra == 'all'
+  - pydot>=1.2.3 ; extra == 'all'
+  - pydotplus ; extra == 'all'
+  - pytest ; extra == 'all'
+  - pytest-cov ; extra == 'all'
+  - pytest-env ; extra == 'all'
+  - pytest-xdist ; extra == 'all'
+  - python-levenshtein ; extra == 'all'
+  - recommonmark ; extra == 'all'
+  - ruff~=0.15.0 ; extra == 'all'
+  - sphinx-argparse!=0.5.0 ; extra == 'all'
+  - sphinx-design ; extra == 'all'
+  - sphinx-markdown-tables ; extra == 'all'
+  - sphinx-rtd-theme ; extra == 'all'
+  - sphinx>=4.2.0 ; extra == 'all'
+  - sphinxcontrib-apidoc ; extra == 'all'
+  - sphinxcontrib-bibtex ; extra == 'all'
+  - svgutils ; extra == 'all'
+  - pre-commit ; extra == 'dev'
+  - ruff~=0.15.0 ; extra == 'dev'
+  - doctest-ignore-unicode ; extra == 'doc'
+  - pydot>=1.2.3 ; extra == 'doc'
+  - pydotplus ; extra == 'doc'
+  - recommonmark ; extra == 'doc'
+  - sphinx-argparse!=0.5.0 ; extra == 'doc'
+  - sphinx-design ; extra == 'doc'
+  - sphinx-markdown-tables ; extra == 'doc'
+  - sphinx-rtd-theme ; extra == 'doc'
+  - sphinx>=4.2.0 ; extra == 'doc'
+  - sphinxcontrib-apidoc ; extra == 'doc'
+  - sphinxcontrib-bibtex ; extra == 'doc'
+  - svgutils ; extra == 'doc'
+  - fuzzywuzzy ; extra == 'maint'
+  - python-levenshtein ; extra == 'maint'
+  - coverage ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - pytest-cov ; extra == 'tests'
+  - pytest-env ; extra == 'tests'
+  - pytest-xdist ; extra == 'tests'
+  requires_python: '>=3.10'
+- pypi: ./
+  name: xcp-d
+  version: 0.14.2.dev31+g840390c3e
+  sha256: c76c9102be71b0f6d032e94beea5cea16341360e8144e14c6dd60eca11805a4d
+  requires_dist:
+  - acres
+  - beautifulsoup4
+  - bids-validator>=1.14.7.post0
+  - h5py>=3.15.1
+  - importlib-resources ; python_full_version < '3.11'
+  - indexed-gzip>=1.10.1
+  - jinja2>=3.1.2
+  - joblib>=1.5.3
+  - matplotlib>=3.10.0
+  - networkx>=3.4.2
+  - nibabel>=3.2.1
+  - nilearn>=0.13.1
+  - nipype>=1.9.0
+  - nireports>=25.3.0
+  - nitime
+  - niworkflows>=1.14.4
+  - num2words
+  - numpy>=2.0
+  - packaging
+  - pandas
+  - psutil>=5.4
+  - pybids>=0.21.0
+  - pyyaml
+  - scikit-learn>=1.7.2
+  - scipy>=1.15.2
+  - seaborn
+  - sentry-sdk>=2.54.0
+  - templateflow>=25.1.1
   - toml
   - trimesh
   - coverage ; extra == 'all'
@@ -6069,84 +6147,6 @@ packages:
   - pytest-xdist ; extra == 'tests'
   requires_python: '>=3.10'
   editable: true
-- pypi: ./
-  name: xcp-d
-  version: 0.14.2.dev29+g8a03b7477
-  sha256: f210052017050b4ed4a26904019c2a0de5ab7bdf4b9a61d0d1cb96afc3b50e33
-  requires_dist:
-  - acres
-  - beautifulsoup4
-  - bids-validator<=1.14.7.post0
-  - h5py<=3.15.1
-  - importlib-resources ; python_full_version < '3.11'
-  - indexed-gzip~=1.10.1
-  - jinja2~=3.1.2
-  - joblib<=1.5.3
-  - matplotlib~=3.10.0
-  - networkx<=3.4.2
-  - nibabel>=3.2.1
-  - nilearn==0.13.1
-  - nipype~=1.10.0
-  - nireports~=25.3.0
-  - nitime
-  - niworkflows==1.14.4
-  - num2words
-  - numpy~=2.0
-  - packaging
-  - pandas
-  - psutil>=5.4
-  - pybids~=0.21.0
-  - pyyaml
-  - scikit-learn<=1.7.2
-  - scipy>=1.14.0,<=1.15.3
-  - seaborn
-  - sentry-sdk~=2.54.0
-  - templateflow~=25.1.1
-  - toml
-  - trimesh
-  - coverage ; extra == 'all'
-  - doctest-ignore-unicode ; extra == 'all'
-  - fuzzywuzzy ; extra == 'all'
-  - pre-commit ; extra == 'all'
-  - pydot>=1.2.3 ; extra == 'all'
-  - pydotplus ; extra == 'all'
-  - pytest ; extra == 'all'
-  - pytest-cov ; extra == 'all'
-  - pytest-env ; extra == 'all'
-  - pytest-xdist ; extra == 'all'
-  - python-levenshtein ; extra == 'all'
-  - recommonmark ; extra == 'all'
-  - ruff~=0.15.0 ; extra == 'all'
-  - sphinx-argparse!=0.5.0 ; extra == 'all'
-  - sphinx-design ; extra == 'all'
-  - sphinx-markdown-tables ; extra == 'all'
-  - sphinx-rtd-theme ; extra == 'all'
-  - sphinx>=4.2.0 ; extra == 'all'
-  - sphinxcontrib-apidoc ; extra == 'all'
-  - sphinxcontrib-bibtex ; extra == 'all'
-  - svgutils ; extra == 'all'
-  - pre-commit ; extra == 'dev'
-  - ruff~=0.15.0 ; extra == 'dev'
-  - doctest-ignore-unicode ; extra == 'doc'
-  - pydot>=1.2.3 ; extra == 'doc'
-  - pydotplus ; extra == 'doc'
-  - recommonmark ; extra == 'doc'
-  - sphinx-argparse!=0.5.0 ; extra == 'doc'
-  - sphinx-design ; extra == 'doc'
-  - sphinx-markdown-tables ; extra == 'doc'
-  - sphinx-rtd-theme ; extra == 'doc'
-  - sphinx>=4.2.0 ; extra == 'doc'
-  - sphinxcontrib-apidoc ; extra == 'doc'
-  - sphinxcontrib-bibtex ; extra == 'doc'
-  - svgutils ; extra == 'doc'
-  - fuzzywuzzy ; extra == 'maint'
-  - python-levenshtein ; extra == 'maint'
-  - coverage ; extra == 'tests'
-  - pytest ; extra == 'tests'
-  - pytest-cov ; extra == 'tests'
-  - pytest-env ; extra == 'tests'
-  - pytest-xdist ; extra == 'tests'
-  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/xkeyboard-config-2.47-hb03c661_0.conda
   sha256: 19c2bb14bec84b0e995b56b752369775c75f1589314b43733948bb5f471a6915
   md5: b56e0c8432b56decafae7e78c5f29ba5
