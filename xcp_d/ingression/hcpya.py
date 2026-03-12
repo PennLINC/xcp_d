@@ -242,9 +242,7 @@ def convert_hcp_to_bids_single_subject(in_dir, out_dir, sub_ent):
 
     # Collect functional files to copy
     task_dirs_orig = sorted(glob.glob(os.path.join(func_dir_orig, '*')))
-    task_names = [
-        os.path.basename(f) for f in task_dirs_orig if f.endswith('RL') or f.endswith('LR')
-    ]
+    task_names = [os.path.basename(f) for f in task_dirs_orig if f.endswith(('RL', 'LR'))]
 
     for base_task_name in task_names:
         LOGGER.info(f'Processing {base_task_name}')

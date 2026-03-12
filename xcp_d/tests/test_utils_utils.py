@@ -360,7 +360,7 @@ def test_list_to_str():
     string = utils.list_to_str(['a', 'b', 'c'])
     assert string == 'a, b, and c'
 
-    with pytest.raises(ValueError, match='Zero-length list provided.'):
+    with pytest.raises(ValueError, match=r'Zero-length list provided\.'):
         utils.list_to_str([])
 
 
@@ -432,7 +432,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # T1w --> MNI152NLin2009cAsym/T1w
     bold_file_t1w = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-T1w_')
-    with pytest.raises(ValueError, match='BOLD space "T1w" not supported.'):
+    with pytest.raises(ValueError, match=r'BOLD space "T1w" not supported\.'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_t1w,
             nlin6asym_to_anat_xfm,
@@ -440,7 +440,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # T1w --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     bold_file_t1w = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', 'space-T1w_')
-    with pytest.raises(ValueError, match='BOLD space "T1w" not supported.'):
+    with pytest.raises(ValueError, match=r'BOLD space "T1w" not supported\.'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_t1w,
             nlin6asym_to_anat_xfm,
@@ -448,7 +448,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # native --> MNI152NLin2009cAsym/T1w
     bold_file_native = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', '')
-    with pytest.raises(ValueError, match='BOLD space "native" not supported.'):
+    with pytest.raises(ValueError, match=r'BOLD space "native" not supported\.'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_native,
             nlin6asym_to_anat_xfm,
@@ -456,7 +456,7 @@ def test_get_bold2std_and_t1w_xfms(ds001419_data):
 
     # native --> MNI152NLin6Asym --> MNI152NLin2009cAsym/T1w
     bold_file_native = bold_file_nlin6asym.replace('space-MNI152NLin6Asym_', '')
-    with pytest.raises(ValueError, match='BOLD space "native" not supported.'):
+    with pytest.raises(ValueError, match=r'BOLD space "native" not supported\.'):
         utils.get_bold2std_and_t1w_xfms(
             bold_file_native,
             nlin6asym_to_anat_xfm,

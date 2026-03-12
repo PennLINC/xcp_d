@@ -188,7 +188,7 @@ def test_collect_morphometry_data(datasets, tmp_path_factory):
         (bad_morph_dir / 'sub-1648798153/ses-PNC1/anat').joinpath(f).touch()
 
     layout = BIDSLayout(bad_morph_dir, validate=False)
-    with pytest.raises(ValueError, match='More than one .* found'):
+    with pytest.raises(ValueError, match=r'More than one .* found'):
         xbids.collect_morphometry_data(
             layout,
             '1648798153',
@@ -289,7 +289,7 @@ def test_write_derivative_description(datasets, tmp_path_factory, caplog):
     with open(dset_description, 'w') as fo:
         json.dump(desc, fo, indent=4)
 
-    with pytest.raises(ValueError, match='XCP-D only works on derivative datasets.'):
+    with pytest.raises(ValueError, match=r'XCP-D only works on derivative datasets\.'):
         xbids.write_derivative_description(
             tmpdir,
             tmpdir,

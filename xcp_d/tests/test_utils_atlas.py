@@ -1,10 +1,13 @@
 """Tests for the xcp_d.utils.atlas module."""
 
 import json
+from pathlib import Path
 
 import pytest
 
 from xcp_d.utils import atlas
+
+_XCPD_ATLASES = str(Path.home() / '.cache' / 'xcp_d' / 'XCPDAtlases')
 
 
 def test_get_atlas_names():
@@ -20,7 +23,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     schaefer_dset = datasets['schaefer100']
 
     atlas_datasets = {
-        'xcpdatlases': '/XCPDAtlases',
+        'xcpdatlases': _XCPD_ATLASES,
     }
     atlas_cache = atlas.collect_atlases(
         datasets=atlas_datasets,
@@ -55,7 +58,7 @@ def test_collect_atlases(datasets, caplog, tmp_path_factory):
     assert 'Schaefer100' not in atlas_cache
 
     # Add a duplicate atlas
-    atlas_datasets['duplicate'] = '/XCPDAtlases'
+    atlas_datasets['duplicate'] = _XCPD_ATLASES
     with pytest.raises(ValueError, match="Multiple datasets contain the same atlas 'Gordon'"):
         atlas.collect_atlases(
             datasets=atlas_datasets,

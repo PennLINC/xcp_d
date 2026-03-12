@@ -1,30 +1,76 @@
-FROM pennlinc/xcp_d_build:0.0.24
+ARG BASE_IMAGE=pennlinc/xcp_d-base:20260303
 
-# Install xcp_d
-COPY . /src/xcp_d
+FROM ghcr.io/prefix-dev/pixi:0.58.0 AS build
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+                    ca-certificates \
+                    build-essential \
+                    curl \
+                    git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN pixi config set --global run-post-link-scripts insecure
 
-ARG VERSION=0.0.1
+RUN mkdir /app
+COPY pixi.lock pyproject.toml /app
+WORKDIR /app
+# First install runs before COPY . so .git is missing.
+# Use --skip xcp-d (lockfile name) so pixi skips building the local package; aslprep uses --skip aslprep.
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d -e test --frozen --skip xcp-d
+RUN --mount=type=cache,target=/root/.npm pixi run --as-is -e xcp-d npm install -g svgo@^3.2.0 bids-validator@1.14.10
+RUN pixi shell-hook -e xcp-d --as-is | grep -v PATH > /shell-hook.sh
+RUN pixi shell-hook -e test --as-is | grep -v PATH > /test-shell-hook.sh
 
-# Force static versioning within container
-RUN echo "${VERSION}" > /src/xcp_d/xcp_d/VERSION && \
-    echo "include xcp_d/VERSION" >> /src/xcp_d/MANIFEST.in && \
-    pip install --no-cache-dir "/src/xcp_d[all]"
+COPY . /app
+# Install test and production environments separately so production does not
+# inherit editable-install behavior needed for test workflows.
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e test --frozen
+RUN --mount=type=cache,target=/root/.cache/rattler pixi install -e xcp-d --frozen
+# Ensure xcp_d is installed non-editably in the xcp-d env so the copied env is
+# self-contained in the runtime image (lockfile may resolve to editable variant).
+# Pixi envs do not include pip; use uv to install into the env's Python.
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    /root/.local/bin/uv pip install --python /app/.pixi/envs/xcp-d/bin/python --no-deps --force-reinstall .
 
-RUN find $HOME -type d -exec chmod go=u {} + && \
-    find $HOME -type f -exec chmod go=u {} + && \
-    rm -rf $HOME/.npm $HOME/.conda $HOME/.empty
+FROM ghcr.io/astral-sh/uv:python3.12-alpine AS templates
+ENV TEMPLATEFLOW_HOME="/templateflow"
+RUN uv pip install --system templateflow
+COPY scripts/fetch_templates.py fetch_templates.py
+RUN python fetch_templates.py
 
-RUN ldconfig
-WORKDIR /tmp/
+FROM ${BASE_IMAGE} AS base
+WORKDIR /home/xcp_d
+ENV HOME="/home/xcp_d"
 
-ENTRYPOINT ["/usr/local/miniconda/bin/xcp_d"]
+COPY --link --from=templates /templateflow /home/xcp_d/.cache/templateflow
+RUN chmod -R go=u $HOME
+
+WORKDIR /tmp
+
+FROM base AS test
+COPY --link --from=build /app/.pixi/envs/test /app/.pixi/envs/test
+COPY --link --from=build /test-shell-hook.sh /shell-hook.sh
+RUN cat /shell-hook.sh >> $HOME/.bashrc
+ENV PATH="/app/.pixi/envs/test/bin:$PATH"
+ENV FSLDIR="/app/.pixi/envs/test"
+
+FROM base AS xcp_d
+COPY --link --from=build /app/.pixi/envs/xcp-d /app/.pixi/envs/xcp-d
+COPY --link --from=build /shell-hook.sh /shell-hook.sh
+RUN cat /shell-hook.sh >> $HOME/.bashrc
+ENV PATH="/app/.pixi/envs/xcp-d/bin:$PATH"
+ENV FSLDIR="/app/.pixi/envs/xcp-d"
+ENV IS_DOCKER_8395080871=1
+# Verify the runtime image can import xcp_d without source tree mounts.
+RUN /app/.pixi/envs/xcp-d/bin/python -c "import xcp_d"
+
+ENTRYPOINT ["/app/.pixi/envs/xcp-d/bin/xcp_d"]
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="xcp_d" \
-      org.label-schema.description="xcp_d- postprocessing of fmriprep outputs" \
+      org.label-schema.description="XCP-D: A Robust Postprocessing Pipeline of fMRI data" \
       org.label-schema.url="https://xcp-d.readthedocs.io/" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.vcs-url="https://github.com/PennLINC/xcp_d" \

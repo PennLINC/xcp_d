@@ -1,10 +1,13 @@
 """Tests for xcp_d.interfaces.bids."""
 
 import os
+from pathlib import Path
 
 import pytest
 
 from xcp_d.interfaces import bids
+
+_XCPD_ATLASES = str(Path.home() / '.cache' / 'xcp_d' / 'XCPDAtlases')
 
 
 def test_copy_atlas(tmp_path_factory):
@@ -15,10 +18,10 @@ def test_copy_atlas(tmp_path_factory):
     # NIfTI
     atlas_info = {
         'image': (
-            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz'
+            f'{_XCPD_ATLASES}/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.nii.gz'
         ),
         'labels': (
-            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv'
+            f'{_XCPD_ATLASES}/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-Gordon_res-01_dseg.tsv'
         ),
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
@@ -44,10 +47,10 @@ def test_copy_atlas(tmp_path_factory):
     # Gordon atlas is 1mm, HCP is 2mm
     atlas_info_diff_affine = {
         'image': (
-            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.nii.gz'
+            f'{_XCPD_ATLASES}/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.nii.gz'
         ),
         'labels': (
-            '/XCPDAtlases/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.tsv'
+            f'{_XCPD_ATLASES}/tpl-MNI152NLin6Asym/tpl-MNI152NLin6Asym_atlas-HCP_res-02_dseg.tsv'
         ),
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
@@ -63,8 +66,8 @@ def test_copy_atlas(tmp_path_factory):
 
     # CIFTI
     atlas_info = {
-        'image': '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii',
-        'labels': '/XCPDAtlases/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv',
+        'image': f'{_XCPD_ATLASES}/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.dlabel.nii',
+        'labels': f'{_XCPD_ATLASES}/tpl-fsLR/tpl-fsLR_atlas-Gordon_den-32k_dseg.tsv',
         'metadata': {'thing': 'stuff'},
         'dataset': 'xcpdatlases',
     }

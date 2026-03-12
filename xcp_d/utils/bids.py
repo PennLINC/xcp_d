@@ -125,7 +125,7 @@ def collect_participants(layout, participant_label=None, strict=False):
         participant_label = [participant_label]
 
     # Drop sub- prefixes
-    participant_label = [sub[4:] if sub.startswith('sub-') else sub for sub in participant_label]
+    participant_label = [sub.removeprefix('sub-') for sub in participant_label]
     # Remove duplicates
     participant_label = sorted(set(participant_label))
     # Remove labels not found
@@ -1055,11 +1055,9 @@ def collect_confounds(
     xcp_d_config = str(load_data('xcp_d_bids_config2.json'))
 
     # Step 0: Determine derivatives we care about for confounds.
-    req_datasets = []
-    for confound_def in confound_spec['confounds'].values():
-        req_datasets.append(confound_def['dataset'])
-
-    req_datasets = sorted(set(req_datasets))
+    req_datasets = sorted(
+        {confound_def['dataset'] for confound_def in confound_spec['confounds'].values()}
+    )
 
     # Step 1: Build a dictionary of dataset: layout pairs.
     layout_dict = {}
@@ -1154,7 +1152,7 @@ def write_derivative_description(
     import json
     import os
 
-    from xcp_d.__about__ import DOWNLOAD_URL, __version__
+    from xcp_d import __version__
 
     dataset_links = dataset_links or {}
 
@@ -1186,20 +1184,12 @@ def write_derivative_description(
         {
             'Name': 'xcp_d',
             'Version': __version__,
-            'CodeURL': DOWNLOAD_URL,
+            'CodeURL': f'https://github.com/PennLINC/xcp_d/archive/{__version__}.tar.gz',
             'ConfigurationHash': parameters_hash,
         },
     )
     desc['GeneratedBy'] = generated_by
     desc['HowToAcknowledge'] = 'Include the generated boilerplate in the methods section.'
-
-    dataset_links = dataset_links.copy()
-
-    # Replace local templateflow path with URL
-    dataset_links['templateflow'] = 'https://github.com/templateflow/templateflow'
-
-    if atlases:
-        dataset_links['atlases'] = os.path.join(output_dir, 'atlases')
 
     # Don't inherit DatasetLinks from preprocessing derivatives
     desc['DatasetLinks'] = {k: str(v) for k, v in dataset_links.items()}
@@ -1233,7 +1223,7 @@ def write_atlas_dataset_description(atlas_dir):
     import json
     import os
 
-    from xcp_d.__about__ import DOWNLOAD_URL, __version__
+    from xcp_d import __version__
 
     desc = {
         'Name': 'XCP-D Atlases',
@@ -1242,7 +1232,7 @@ def write_atlas_dataset_description(atlas_dir):
             {
                 'Name': 'xcp_d',
                 'Version': __version__,
-                'CodeURL': DOWNLOAD_URL,
+                'CodeURL': f'https://github.com/PennLINC/xcp_d/archive/{__version__}.tar.gz',
             },
         ],
         'HowToAcknowledge': 'Include the generated boilerplate in the methods section.',

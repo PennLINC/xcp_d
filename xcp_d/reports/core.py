@@ -87,11 +87,11 @@ def generate_reports(
 
     errors = []
     for subject_label, _, sessions in processing_list:
-        subject_label = subject_label[4:] if subject_label.startswith('sub-') else subject_label
+        subject_label = subject_label.removeprefix('sub-')
         # Drop ses- prefixes
         sessions = [ses or Query.NONE for ses in sessions]  # replace "" with Query.NONE
         sessions = [ses for ses in sessions if isinstance(ses, str)]  # drop Queries
-        sessions = [ses[4:] if ses.startswith('ses-') else ses for ses in sessions]
+        sessions = [ses.removeprefix('ses-') for ses in sessions]
 
         if output_level == 'session' and not sessions:
             report_dir = dataset_dir

@@ -9,7 +9,7 @@ LOGGER = logging.getLogger('nipype.utils')
 
 
 def plot_gii(mesh, coord, color, slicer, view, max_distance=10.0):
-    _ax = slicer.axes[list(slicer.axes.keys())[0]]
+    _ax = slicer.axes[next(iter(slicer.axes.keys()))]
 
     if view == 'x':
         plane_origin = [coord, 0, 0]

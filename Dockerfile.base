@@ -1,0 +1,141 @@
+# XCP-D Docker base image
+#
+# Runtime environment with non-Python/non-conda dependencies.
+
+# Ubuntu 22.04 LTS - Jammy
+ARG BASE_IMAGE=ubuntu:jammy-20250730
+
+#
+# Download stages
+#
+
+# Utilities for downloading packages
+FROM ${BASE_IMAGE} AS downloader
+ENV DEBIAN_FRONTEND="noninteractive" \
+    LANG="en_US.UTF-8" \
+    LC_ALL="en_US.UTF-8" \
+    HOME="/home/xcp_d"
+
+# Bump the date to refresh curl/certificates/etc
+RUN echo "2025.02.25"
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+                    binutils \
+                    bzip2 \
+                    ca-certificates \
+                    curl \
+                    unzip && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+#
+# Main stage
+#
+FROM ${BASE_IMAGE} AS base
+
+# Configure apt
+ENV DEBIAN_FRONTEND="noninteractive" \
+    LANG="en_US.UTF-8" \
+    LC_ALL="en_US.UTF-8"
+
+# Install AFNI subset directly from AFNI Docker image
+COPY --link --from=afni/afni_make_build:AFNI_25.2.09 \
+    /opt/afni/install/libf2c.so \
+    /usr/lib/x86_64-linux-gnu/libgsl.so \
+    /usr/lib/x86_64-linux-gnu/libgsl.so.23 \
+    /usr/lib/x86_64-linux-gnu/libgslcblas.so \
+    /usr/lib/x86_64-linux-gnu/libgslcblas.so.0 \
+    /opt/afni/install/libmri.so \
+    /usr/local/lib/
+COPY --link --from=afni/afni_make_build:AFNI_25.2.09 \
+    /opt/afni/install/3dReHo \
+    /opt/afni/install/3dDespike \
+    /opt/afni/install/3dFWHMx \
+    /opt/afni-bin/
+RUN chmod +x /opt/afni-bin/3dReHo /opt/afni-bin/3dDespike /opt/afni-bin/3dFWHMx
+
+# Baseline system packages (libs for Workbench/FSL/AFNI)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+                    ca-certificates \
+                    curl \
+                    git \
+                    gnupg \
+                    libgomp1 \
+                    libopenblas0-openmp \
+                    lsb-release \
+                    netbase \
+                    pandoc \
+                    xvfb && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# PPAs and packages for FreeSurfer/Workbench (libpng12, libxp, netpbm, etc.)
+RUN GNUPGHOME=/tmp gpg --keyserver hkps://keyserver.ubuntu.com --no-default-keyring --keyring /usr/share/keyrings/linuxuprising.gpg --recv 0xEA8CACC073C3DB2A \
+    && GNUPGHOME=/tmp gpg --keyserver hkps://keyserver.ubuntu.com --no-default-keyring --keyring /usr/share/keyrings/zeehio.gpg --recv 0xA1301338A3A48C4A \
+    && echo "deb [signed-by=/usr/share/keyrings/linuxuprising.gpg] https://ppa.launchpadcontent.net/linuxuprising/libpng12/ubuntu jammy main" > /etc/apt/sources.list.d/linuxuprising.list \
+    && echo "deb [signed-by=/usr/share/keyrings/zeehio.gpg] https://ppa.launchpadcontent.net/zeehio/libxp/ubuntu jammy main" > /etc/apt/sources.list.d/zeehio.list
+
+RUN apt-get update -qq \
+    && apt-get install -y -q --no-install-recommends \
+           ed \
+           gsl-bin \
+           libglib2.0-0 \
+           libglu1-mesa-dev \
+           libglw1-mesa \
+           libjpeg62 \
+           libpng12-0 \
+           libxm4 \
+           libxp6 \
+           netpbm \
+           tcsh \
+           xfonts-base \
+    && curl -sSL --retry 5 -o /tmp/multiarch.deb https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/multiarch-support_2.27-3ubuntu1.5_amd64.deb \
+    && dpkg -i /tmp/multiarch.deb \
+    && rm /tmp/multiarch.deb \
+    && apt-get install -f \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && gsl_path="$(ldconfig -p | awk '/libgsl\.so\.[0-9]+/{print $NF; exit}')" \
+    && if [ -n "$gsl_path" ] && [ "$(basename "$gsl_path")" != "libgsl.so.0" ]; then ln -sfv "$gsl_path" "$(dirname "$gsl_path")/libgsl.so.0"; fi \
+    && gslcblas_path="$(ldconfig -p | awk '/libgslcblas\.so\.[0-9]+/{print $NF; exit}')" \
+    && if [ -n "$gslcblas_path" ] && [ "$(basename "$gslcblas_path")" != "libgslcblas.so.0" ]; then ln -sfv "$gslcblas_path" "$(dirname "$gslcblas_path")/libgslcblas.so.0"; fi \
+    && ldconfig
+
+# Download atlases from AtlasPack (stored in tar.gz file on Box)
+RUN mkdir -p "/home/xcp_d/.cache/xcp_d" && \
+    curl -o AtlasPack.tar.gz -sSL "https://upenn.box.com/shared/static/0gxdoe77tuih5p9ainn4utdqj3kcq7p1.tar.gz" && \
+    tar -xzf AtlasPack.tar.gz && \
+    mv AtlasPack "/home/xcp_d/.cache/xcp_d/AtlasPack" && \
+    rm AtlasPack.tar.gz
+
+# Download XCP-D atlases (stored in tar.gz file on Box)
+RUN mkdir -p "/home/xcp_d/.cache/xcp_d" && \
+    curl -o XCPDAtlases.tar.gz -sSL "https://upenn.box.com/shared/static/4amxp72grenmp1up689k5oyn1i6nhunq.tar.gz" && \
+    tar -xzf XCPDAtlases.tar.gz && \
+    mv XCPDAtlases "/home/xcp_d/.cache/xcp_d/XCPDAtlases" && \
+    rm XCPDAtlases.tar.gz && \
+    find "/home/xcp_d/.cache/xcp_d" -type d -exec chmod go=u {} + && \
+    find "/home/xcp_d/.cache/xcp_d" -type f -exec chmod go=u {} +
+
+# AFNI
+ENV PATH="/opt/afni-bin:$PATH" \
+    AFNI_IMSAVE_WARNINGS="NO" \
+    AFNI_PLUGINPATH="/opt/afni-bin"
+
+# FSL / runtime (FSLDIR is set in the main Dockerfile, pointing to the pixi env)
+ENV LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8" \
+    PYTHONNOUSERSITE=1 \
+    FSLOUTPUTTYPE="NIFTI_GZ" \
+    FSLMULTIFILEQUIT="TRUE" \
+    FSLLOCKDIR="" \
+    FSLMACHINELIST="" \
+    FSLREMOTECALL="" \
+    FSLGECUDAQ="cuda.q"
+
+RUN ldconfig
+WORKDIR /tmp
+
+LABEL org.label-schema.name="xcp_d-base" \
+      org.label-schema.description="XCP-D base image - runtime dependencies without the xcp_d package" \
+      org.label-schema.url="https://xcp-d.readthedocs.io/" \
+      org.label-schema.vcs-url="https://github.com/PennLINC/xcp_d" \
+      org.label-schema.schema-version="1.0"

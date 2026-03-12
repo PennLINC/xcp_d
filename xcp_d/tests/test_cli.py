@@ -15,6 +15,7 @@ from xcp_d.cli.parser import parse_args
 from xcp_d.cli.workflow import build_boilerplate, build_workflow
 from xcp_d.reports.core import generate_reports
 from xcp_d.tests.utils import (
+    chdir,
     check_affines,
     check_generated_files,
     download_test_data,
@@ -390,7 +391,8 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
     )
 
     # Run combine-qc too
-    combineqc.main([out_dir, 'summary'])
+    with chdir(out_dir):
+        combineqc.main([out_dir, 'summary'])
 
 
 @pytest.mark.integration
@@ -444,7 +446,8 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
     )
 
     # Run combine-qc too
-    combineqc.main([out_dir, 'summary'])
+    with chdir(out_dir):
+        combineqc.main([out_dir, 'summary'])
 
 
 @pytest.mark.integration
@@ -521,9 +524,7 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
             dataset_links=config.execution.dataset_links,
         )
         if config.execution.atlases:
-            write_atlas_dataset_description(
-                config.execution.output_dir / 'derivatives' / 'atlases'
-            )
+            write_atlas_dataset_description(config.execution.output_dir / 'sourcedata' / 'atlases')
 
         build_boilerplate(str(config_file), xcpd_wf)
         generate_reports(

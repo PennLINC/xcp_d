@@ -209,7 +209,6 @@ def describe_atlases(atlases):
             described_atlases.append(k)
 
     undescribed_atlases = [atlas for atlas in atlases if atlas not in described_atlases]
-    for atlas in undescribed_atlases:
-        atlas_strings.append(f'the {atlas} atlas')
+    atlas_strings.extend(f'the {atlas} atlas' for atlas in undescribed_atlases)
 
     return list_to_str(atlas_strings)

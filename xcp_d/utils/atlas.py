@@ -170,7 +170,7 @@ def collect_atlases(datasets, atlases, file_format, bids_filters=None):
         if atlas not in atlas_cache:
             LOGGER.warning(f'No atlas images found for {atlas} with query {atlas_filter}')
 
-    for _atlas, atlas_info in atlas_cache.items():
+    for atlas_info in atlas_cache.values():
         if not atlas_info['labels']:
             raise FileNotFoundError(f'No TSV file found for {atlas_info["image"]}')
 

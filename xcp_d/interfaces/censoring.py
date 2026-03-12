@@ -833,7 +833,7 @@ class GenerateConfounds(SimpleInterface):
                 c for c in new_confound_df.columns if any(c.startswith(p) for p in motion_params)
             ]
             # Motion-based regressors detected
-            if len(motion_based_params):
+            if motion_based_params:
                 # Check the motion filter parameters
                 band_stop_min_adjusted, band_stop_max_adjusted, _ = _modify_motion_filter(
                     motion_filter_type=self.inputs.motion_filter_type,

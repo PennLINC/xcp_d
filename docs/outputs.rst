@@ -101,14 +101,15 @@ Atlases are written out to the ``atlases`` subfolder, following BIDS formatting.
 .. code-block::
 
    xcp_d/
-      atlases/
-         dataset_description.json
-         atlas-<label>_description.json
-         tpl-<label>/
-            tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.json
-            tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.tsv
-            tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.nii.gz
-            tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.dlabel.nii
+      sourcedata/
+         atlases/
+            dataset_description.json
+            atlas-<label>_description.json
+            tpl-<label>/
+               tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.json
+               tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.tsv
+               tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.nii.gz
+               tpl-<label>_atlas-<label>[_res-<label>][_den-<label>][_desc-<label>]_dseg.dlabel.nii
 
 
 ******************
