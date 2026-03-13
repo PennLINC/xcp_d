@@ -6,8 +6,6 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -302,8 +300,6 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -608,8 +604,6 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -6003,8 +5997,8 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 0.14.2.dev30+gb414865db.d20260313
-  sha256: c8138e8f2cfe0d35b52efb5cf0659fe0d5c3cff733df294e1284f75149d883c8
+  version: 0.14.2.dev31+gfd19a52a1
+  sha256: 539ffd153bf02d1a88cb4e298fd74dc918c7ed60139790074dac1ce27e918762
   requires_dist:
   - acres
   - beautifulsoup4
@@ -6018,7 +6012,86 @@ packages:
   - networkx>=3.4.2
   - nibabel>=3.2.1
   - nilearn>=0.13.1
-  - nipype
+  - nipype>=1.11.0,<2
+  - nireports>=25.3.0
+  - nitime
+  - niworkflows>=1.14.4
+  - num2words
+  - numpy>=2.0
+  - packaging
+  - pandas
+  - psutil>=5.4
+  - pybids>=0.21.0
+  - pyyaml
+  - scikit-learn>=1.7.2
+  - scipy>=1.15.2
+  - seaborn
+  - sentry-sdk>=2.54.0
+  - templateflow>=25.1.1
+  - toml
+  - trimesh
+  - coverage ; extra == 'all'
+  - doctest-ignore-unicode ; extra == 'all'
+  - fuzzywuzzy ; extra == 'all'
+  - pre-commit ; extra == 'all'
+  - pydot>=1.2.3 ; extra == 'all'
+  - pydotplus ; extra == 'all'
+  - pytest ; extra == 'all'
+  - pytest-cov ; extra == 'all'
+  - pytest-env ; extra == 'all'
+  - pytest-xdist ; extra == 'all'
+  - python-levenshtein ; extra == 'all'
+  - recommonmark ; extra == 'all'
+  - ruff~=0.15.0 ; extra == 'all'
+  - sphinx-argparse!=0.5.0 ; extra == 'all'
+  - sphinx-design ; extra == 'all'
+  - sphinx-markdown-tables ; extra == 'all'
+  - sphinx-rtd-theme ; extra == 'all'
+  - sphinx>=4.2.0 ; extra == 'all'
+  - sphinxcontrib-apidoc ; extra == 'all'
+  - sphinxcontrib-bibtex ; extra == 'all'
+  - svgutils ; extra == 'all'
+  - pre-commit ; extra == 'dev'
+  - ruff~=0.15.0 ; extra == 'dev'
+  - doctest-ignore-unicode ; extra == 'doc'
+  - pydot>=1.2.3 ; extra == 'doc'
+  - pydotplus ; extra == 'doc'
+  - recommonmark ; extra == 'doc'
+  - sphinx-argparse!=0.5.0 ; extra == 'doc'
+  - sphinx-design ; extra == 'doc'
+  - sphinx-markdown-tables ; extra == 'doc'
+  - sphinx-rtd-theme ; extra == 'doc'
+  - sphinx>=4.2.0 ; extra == 'doc'
+  - sphinxcontrib-apidoc ; extra == 'doc'
+  - sphinxcontrib-bibtex ; extra == 'doc'
+  - svgutils ; extra == 'doc'
+  - fuzzywuzzy ; extra == 'maint'
+  - python-levenshtein ; extra == 'maint'
+  - coverage ; extra == 'tests'
+  - pytest ; extra == 'tests'
+  - pytest-cov ; extra == 'tests'
+  - pytest-env ; extra == 'tests'
+  - pytest-xdist ; extra == 'tests'
+  requires_python: '>=3.10'
+  editable: true
+- pypi: ./
+  name: xcp-d
+  version: 0.14.2.dev31+gfd19a52a1
+  sha256: 539ffd153bf02d1a88cb4e298fd74dc918c7ed60139790074dac1ce27e918762
+  requires_dist:
+  - acres
+  - beautifulsoup4
+  - bids-validator>=1.14.7.post0
+  - h5py>=3.15.1
+  - importlib-resources ; python_full_version < '3.11'
+  - indexed-gzip>=1.10.1
+  - jinja2>=3.1.2
+  - joblib>=1.5.3
+  - matplotlib>=3.10.0
+  - networkx>=3.4.2
+  - nibabel>=3.2.1
+  - nilearn>=0.13.1
+  - nipype>=1.11.0,<2
   - nireports>=25.3.0
   - nitime
   - niworkflows>=1.14.4
