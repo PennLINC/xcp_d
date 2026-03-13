@@ -24,6 +24,7 @@ def init_functional_connectivity_nifti_wf(
     name='connectivity_wf',
     skip_reho=False,
     skip_alff=False,
+    skip_peraf=False,
 ):
     """Extract BOLD time series and compute functional connectivity.
 
@@ -59,6 +60,7 @@ def init_functional_connectivity_nifti_wf(
     %(temporal_mask)s
     alff
     reho
+    peraf
     %(atlases)s
     atlas_files
     atlas_labels_files
@@ -71,6 +73,7 @@ def init_functional_connectivity_nifti_wf(
     %(correlations_exact)s
     parcellated_alff
     parcellated_reho
+    parcellated_peraf
     """
     from xcp_d.interfaces.connectivity import ConnectPlot, NiftiParcellate, TSVConnect
 
@@ -97,6 +100,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'temporal_mask',
                 'alff',  # may be Undefined
                 'reho',
+                'peraf',
                 'atlases',
                 'atlas_files',
                 'atlas_labels_files',
@@ -113,6 +117,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'correlations_exact',
                 'parcellated_alff',
                 'parcellated_reho',
+                'parcellated_peraf',
             ],
         ),
         name='outputnode',
@@ -215,6 +220,23 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (parcellate_alff, outputnode, [('timeseries', 'parcellated_alff')]),
         ])  # fmt:skip
 
+    if not skip_peraf:
+        parcellate_peraf = pe.MapNode(
+            NiftiParcellate(min_coverage=min_coverage),
+            name='parcellate_peraf',
+            iterfield=['atlas', 'atlas_labels'],
+            mem_gb=mem_gb['bold'],
+        )
+        workflow.connect([
+            (inputnode, parcellate_peraf, [
+                ('peraf', 'filtered_file'),
+                ('bold_mask', 'mask'),
+                ('atlas_files', 'atlas'),
+                ('atlas_labels_files', 'atlas_labels'),
+            ]),
+            (parcellate_peraf, outputnode, [('timeseries', 'parcellated_peraf')]),
+        ])  # fmt:skip
+
     return workflow
 
 
@@ -226,6 +248,7 @@ def init_functional_connectivity_cifti_wf(
     name='connectivity_wf',
     skip_reho=False,
     skip_alff=False,
+    skip_peraf=False,
 ):
     """Extract CIFTI time series.
 
@@ -270,6 +293,7 @@ def init_functional_connectivity_cifti_wf(
     %(temporal_mask)s
     alff
     reho
+    peraf
     %(atlases)s
     atlas_files
     atlas_labels_files
@@ -286,6 +310,7 @@ def init_functional_connectivity_cifti_wf(
     correlations_exact
     parcellated_reho
     parcellated_alff
+    parcellated_peraf
     """
     from xcp_d.interfaces.censoring import Censor
     from xcp_d.interfaces.connectivity import CiftiToTSV, ConnectPlot
@@ -315,6 +340,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'temporal_mask',
                 'alff',  # may be Undefined
                 'reho',
+                'peraf',
                 'atlases',
                 'atlas_files',
                 'atlas_labels_files',
@@ -338,6 +364,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'correlations_exact',
                 'parcellated_alff',
                 'parcellated_reho',
+                'parcellated_peraf',
             ],
         ),
         name='outputnode',
@@ -636,5 +663,25 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                     ('desc', 'desc'),
                 ]),
             ])  # fmt:skip
+
+    if not skip_peraf:
+        parcellate_peraf_wf = init_parcellate_cifti_wf(
+            mem_gb=mem_gb,
+            compute_mask=False,
+            name='parcellate_peraf_wf',
+        )
+        workflow.connect([
+            (inputnode, parcellate_peraf_wf, [('peraf', 'inputnode.in_file'),
+                ('atlas_files', 'inputnode.atlas_files'),
+                ('atlas_labels_files', 'inputnode.atlas_labels_files'),
+            ]),
+            (parcellate_bold_wf, parcellate_peraf_wf, [
+                ('outputnode.vertexwise_coverage', 'inputnode.vertexwise_coverage'),
+                ('outputnode.coverage_cifti', 'inputnode.coverage_cifti'),
+            ]),
+            (parcellate_peraf_wf, outputnode, [
+                ('outputnode.parcellated_tsv', 'parcellated_peraf'),
+            ]),
+        ])  # fmt:skip
 
     return workflow

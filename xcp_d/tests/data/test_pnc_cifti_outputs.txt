@@ -62,6 +62,8 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-HCP_stat-mean_timeseries.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-HCP_stat-pearsoncorrelation_relmat.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-HCP_stat-pearsoncorrelation_relmat.tsv
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-HCP_stat-peraf_bold.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-HCP_stat-peraf_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-HCP_stat-reho_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-HCP_stat-reho_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-MyersLabonte_den-91k_stat-coverage_boldmap.json
@@ -78,6 +80,8 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-MyersLabonte_stat-mean_timeseries.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-MyersLabonte_stat-pearsoncorrelation_relmat.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-MyersLabonte_stat-pearsoncorrelation_relmat.tsv
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-MyersLabonte_stat-peraf_bold.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-MyersLabonte_stat-peraf_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-MyersLabonte_stat-reho_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-MyersLabonte_stat-reho_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-Tian_den-91k_stat-coverage_boldmap.json
@@ -94,6 +98,8 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-Tian_stat-mean_timeseries.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-Tian_stat-pearsoncorrelation_relmat.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-Tian_stat-pearsoncorrelation_relmat.tsv
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-Tian_stat-peraf_bold.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-Tian_stat-peraf_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-Tian_stat-reho_bold.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_atlas-Tian_stat-reho_bold.tsv
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
@@ -104,6 +110,10 @@ sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_sp
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-alff_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.dscalar.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-alff_desc-smooth_boldmap.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-peraf_boldmap.dscalar.nii
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-peraf_boldmap.json
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-peraf_desc-smooth_boldmap.dscalar.nii
+sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-peraf_desc-smooth_boldmap.json
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-reho_boldmap.dscalar.nii
 sub-1648798153/ses-PNC1/func/sub-1648798153_ses-PNC1_task-rest_acq-singleband_space-fsLR_den-91k_stat-reho_boldmap.json
 sub-1648798153/ses-PNC1/sub-1648798153_ses-PNC1.html
