@@ -276,7 +276,7 @@ jobs:
 
   # ── Unit tests ───────────────────────────────────────────────────────
 
-  pytests:
+  unit_tests:
     <<: *machine_defaults
     steps:
       - checkout:
@@ -284,8 +284,8 @@ jobs:
       - run:
           name: Check whether build should be skipped
           command: |
-            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?pytests\]' )" != "" ]]; then
-              echo "Skipping pytests"
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?unit_tests\]' )" != "" ]]; then
+              echo "Skipping unit tests"
               circleci step halt
             fi
       - restore_build_and_data
@@ -296,7 +296,7 @@ jobs:
             mkdir -p /tmp/out /tmp/work /tmp/coverage
             docker run --rm=false \
               -e CIRCLE_CPUS=4 \
-              -e COVERAGE_FILE=/coverage/.coverage.pytests \
+              -e COVERAGE_FILE=/coverage/.coverage.unit_tests \
               -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
               -v /tmp/data:/data \
               -v /tmp/out:/out \
@@ -311,7 +311,7 @@ jobs:
       - persist_to_workspace:
           root: /tmp/coverage
           paths:
-            - .coverage.pytests
+            - .coverage.unit_tests
       - store_artifacts:
           path: /tmp/out
 
@@ -418,7 +418,9 @@ workflows:
           requires: [image_prep, get_data]
           filters:
             branches:
-              ignore: [/docs?\/.*/, /tests?\/.*/]
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
             tags:
               only: /.*/
 
@@ -429,7 +431,9 @@ workflows:
           requires: [image_prep, get_data]
           filters:
             branches:
-              ignore: [/docs?\/.*/, /tests?\/.*/]
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
             tags:
               only: /.*/
 
@@ -440,7 +444,9 @@ workflows:
           requires: [image_prep, get_data]
           filters:
             branches:
-              ignore: [/docs?\/.*/, /tests?\/.*/]
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
             tags:
               only: /.*/
 
@@ -451,7 +457,9 @@ workflows:
           requires: [image_prep, get_data]
           filters:
             branches:
-              ignore: [/docs?\/.*/, /tests?\/.*/]
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
             tags:
               only: /.*/
 
@@ -462,7 +470,9 @@ workflows:
           requires: [image_prep, get_data]
           filters:
             branches:
-              ignore: [/docs?\/.*/, /tests?\/.*/]
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
             tags:
               only: /.*/
 
@@ -473,7 +483,9 @@ workflows:
           requires: [image_prep, get_data]
           filters:
             branches:
-              ignore: [/docs?\/.*/, /tests?\/.*/]
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
             tags:
               only: /.*/
 
@@ -484,7 +496,9 @@ workflows:
           requires: [image_prep, get_data]
           filters:
             branches:
-              ignore: [/docs?\/.*/, /tests?\/.*/]
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
             tags:
               only: /.*/
 
@@ -495,11 +509,13 @@ workflows:
           requires: [image_prep, get_data]
           filters:
             branches:
-              ignore: [/docs?\/.*/, /tests?\/.*/]
+              ignore:
+                - /docs?\/.*/
+                - /tests?\/.*/
             tags:
               only: /.*/
 
-      - pytests:
+      - unit_tests:
           requires: [image_prep, get_data]
           filters:
             branches:
@@ -519,7 +535,7 @@ workflows:
             - fmriprep_without_freesurfer
             - fmriprep_without_freesurfer_with_main
             - nibabies
-            - pytests
+            - unit_tests
           filters:
             branches:
               ignore:
