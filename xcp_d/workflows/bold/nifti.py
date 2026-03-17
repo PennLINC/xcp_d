@@ -12,7 +12,7 @@ from xcp_d import config
 from xcp_d.interfaces.utils import ConvertTo32
 from xcp_d.utils.doc import fill_doc
 from xcp_d.workflows.bold.connectivity import init_functional_connectivity_nifti_wf
-from xcp_d.workflows.bold.metrics import init_alff_wf, init_reho_nifti_wf
+from xcp_d.workflows.bold.metrics import init_alff_wf, init_peraf_wf, init_reho_nifti_wf
 from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
 from xcp_d.workflows.bold.plotting import (
     init_execsummary_functional_plots_wf,
@@ -324,6 +324,23 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
+    # Skip PerAF calculation if requested
+    skip_peraf = 'peraf' in config.workflow.skip_outputs
+    if not skip_peraf:
+        peraf_wf = init_peraf_wf(name_source=bold_file, mem_gb=mem_gb)
+
+        workflow.connect([
+            (downcast_data, peraf_wf, [('bold_mask', 'inputnode.bold_mask')]),
+            (prepare_confounds_wf, peraf_wf, [
+                ('outputnode.temporal_mask', 'inputnode.temporal_mask'),
+                ('outputnode.preprocessed_bold', 'inputnode.preprocessed_bold'),
+            ]),
+            (denoise_bold_wf, peraf_wf, [
+                ('outputnode.denoised_interpolated_bold', 'inputnode.denoised_bold'),
+            ]),
+
+        ])  # fmt:skip
+
     qc_report_wf = init_qc_report_wf(
         TR=TR,
         head_radius=head_radius,
@@ -402,6 +419,15 @@ the following post-processing was performed.
             ]),
         ])  # fmt:skip
 
+    # Skip PerAF calculation if requested
+    if not skip_peraf:
+        workflow.connect([
+            (peraf_wf, postproc_derivatives_wf, [
+                ('outputnode.peraf', 'inputnode.peraf'),
+                ('outputnode.smoothed_peraf', 'inputnode.smoothed_peraf'),
+            ]),
+        ])  # fmt:skip
+
     if config.execution.atlases:
         connectivity_wf = init_functional_connectivity_nifti_wf(
             has_multiple_runs=has_multiple_runs,
@@ -447,6 +473,15 @@ the following post-processing was performed.
                 (alff_wf, connectivity_wf, [('outputnode.alff', 'inputnode.alff')]),
                 (connectivity_wf, postproc_derivatives_wf, [
                     ('outputnode.parcellated_alff', 'inputnode.parcellated_alff'),
+                ]),
+            ])  # fmt:skip
+
+        # Skip PerAF calculation if requested
+        if not skip_peraf:
+            workflow.connect([
+                (peraf_wf, connectivity_wf, [('outputnode.peraf', 'inputnode.peraf')]),
+                (connectivity_wf, postproc_derivatives_wf, [
+                    ('outputnode.parcellated_peraf', 'inputnode.parcellated_peraf'),
                 ]),
             ])  # fmt:skip
 

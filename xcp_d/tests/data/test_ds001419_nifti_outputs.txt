@@ -29,6 +29,10 @@ sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-alff_bol
 sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-alff_boldmap.nii.gz
 sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-alff_desc-smooth_boldmap.json
 sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-alff_desc-smooth_boldmap.nii.gz
+sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-peraf_boldmap.json
+sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-peraf_boldmap.nii.gz
+sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-peraf_desc-smooth_boldmap.json
+sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-peraf_desc-smooth_boldmap.nii.gz
 sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-reho_boldmap.json
 sub-01/func/sub-01_task-imagery_run-01_space-MNI152NLin6Asym_res-2_stat-reho_boldmap.nii.gz
 sub-01/func/sub-01_task-imagery_run-02_desc-preproc_design.json
@@ -46,6 +50,10 @@ sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-alff_bol
 sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-alff_boldmap.nii.gz
 sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-alff_desc-smooth_boldmap.json
 sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-alff_desc-smooth_boldmap.nii.gz
+sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-peraf_boldmap.json
+sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-peraf_boldmap.nii.gz
+sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-peraf_desc-smooth_boldmap.json
+sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-peraf_desc-smooth_boldmap.nii.gz
 sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-reho_boldmap.json
 sub-01/func/sub-01_task-imagery_run-02_space-MNI152NLin6Asym_res-2_stat-reho_boldmap.nii.gz
 sub-01/func/sub-01_task-imagery_space-MNI152NLin6Asym_res-2_desc-denoisedSmoothed_bold.json
@@ -67,5 +75,9 @@ sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-alff_boldmap.json
 sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-alff_boldmap.nii.gz
 sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-alff_desc-smooth_boldmap.json
 sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-alff_desc-smooth_boldmap.nii.gz
+sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-peraf_boldmap.json
+sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-peraf_boldmap.nii.gz
+sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-peraf_desc-smooth_boldmap.json
+sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-peraf_desc-smooth_boldmap.nii.gz
 sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-reho_boldmap.json
 sub-01/func/sub-01_task-rest_space-MNI152NLin6Asym_res-2_stat-reho_boldmap.nii.gz

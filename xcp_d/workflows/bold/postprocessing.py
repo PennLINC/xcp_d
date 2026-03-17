@@ -93,6 +93,7 @@ def init_prepare_confounds_wf(
     ------
     %(name_source)s
     preprocessed_bold : :obj:`str`
+        The preprocessed BOLD data before dummy scan removal.
     motion_file : :obj:`str`
         The motion parameters estimated by fMRIPrep.
     motion_json : :obj:`str`
@@ -104,6 +105,8 @@ def init_prepare_confounds_wf(
     Outputs
     -------
     preprocessed_bold : :obj:`str`
+        The preprocessed BOLD data after dummy scan removal, if at least one dummy scan was
+        detected. Otherwise, the same as the input.
     motion_file
     confounds_tsv : :obj:`str`
         The selected confounds, potentially including custom confounds, after dummy scan removal.
