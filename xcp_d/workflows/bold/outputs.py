@@ -136,7 +136,6 @@ def init_postproc_derivatives_wf(
                 'temporal_mask',
                 'denoised_bold',
                 'censored_denoised_bold',
-                'smoothed_denoised_bold',
                 'timeseries',
                 'timeseries_ciftis',
             ],
@@ -419,7 +418,6 @@ def init_postproc_derivatives_wf(
         workflow.connect([
             (inputnode, ds_smoothed_bold, [('smoothed_denoised_bold', 'in_file')]),
             (smoothed_bold_src, ds_smoothed_bold, [('out', 'Sources')]),
-            (ds_smoothed_bold, outputnode, [('out_file', 'smoothed_denoised_bold')]),
         ])  # fmt:skip
 
     # Connectivity workflow outputs

@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from nilearn.image import concat_imgs
 from nipype import logging
+from scipy import stats
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -60,3 +61,31 @@ def concatenate_niimgs(files, out_file):
         concat_preproc_img.to_filename(out_file)
     else:
         os.system(f'wb_command -cifti-merge {out_file} -cifti {" -cifti ".join(files)}')  # noqa: S605
+
+
+def zscore_tsv(tsv_file, out_file):
+    """Z-score a TSV file."""
+    data = pd.read_table(tsv_file)
+    # Assume first axis is time
+    data = data.apply(stats.zscore, axis=0)
+    data.to_csv(out_file, sep='\t', index=False)
+    return out_file
+
+
+def zscore_niimg(niimg_file, out_file):
+    """Z-score a NIfTI image."""
+    img = nb.load(niimg_file)
+    if isinstance(img, nb.Cifti2Image):
+        data = img.get_data()
+        # Assume first axis is time
+        data = stats.zscore(data, axis=0)
+        img_out = nb.Cifti2Image(data, img.header, img.nifti_header)
+    elif isinstance(img, nb.Nifti1Image):
+        data = img.get_fdata()
+        # Assume fourth axis is time
+        data = stats.zscore(data, axis=3)
+        img_out = nb.Nifti1Image(data, img.affine, img.header)
+    else:
+        raise ValueError(f'Unsupported image type: {type(img)}')
+    img_out.to_filename(out_file)
+    return out_file

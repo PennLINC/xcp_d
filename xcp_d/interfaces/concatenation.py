@@ -16,7 +16,12 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from xcp_d.utils.concatenation import concatenate_niimgs, concatenate_tsvs
+from xcp_d.utils.concatenation import (
+    concatenate_niimgs,
+    concatenate_tsvs,
+    zscore_niimg,
+    zscore_tsv,
+)
 
 LOGGER = logging.getLogger('nipype.interface')
 
@@ -433,5 +438,112 @@ class ConcatenateInputs(SimpleInterface):
                 if not os.path.isfile(out_file):
                     raise RuntimeError(f'Output file {out_file} not created.')
                 self._results[name] = out_file
+
+        return runtime
+
+
+class _ZScoreInputsInputSpec(BaseInterfaceInputSpec):
+    denoised_bold = traits.List(
+        File(exists=True),
+        mandatory=True,
+        desc='Denoised BOLD data.',
+    )
+    timeseries = traits.List(
+        traits.Either(
+            traits.List(File(exists=True)),
+            Undefined,
+        ),
+        desc='List of lists of parcellated time series TSV files.',
+    )
+    timeseries_ciftis = traits.List(
+        traits.Either(
+            traits.List(File(exists=True)),
+            Undefined,
+        ),
+        desc=(
+            'List of lists of parcellated time series CIFTI files. '
+            'Only defined for CIFTI processing.'
+        ),
+    )
+
+
+class _ZScoreInputsOutputSpec(TraitedSpec):
+    denoised_bold = traits.List(
+        File(exists=True),
+        mandatory=True,
+        desc='Z-scored denoised BOLD data.',
+    )
+    timeseries = traits.List(
+        traits.Either(
+            traits.List(File(exists=True)),
+            Undefined,
+        ),
+        desc='List of lists of z-scored parcellated time series TSV files.',
+    )
+    timeseries_ciftis = traits.List(
+        traits.Either(
+            traits.List(File(exists=True)),
+            Undefined,
+        ),
+        desc=(
+            'List of lists of z-scored parcellated time series CIFTI files. '
+            'Only defined for CIFTI processing.'
+        ),
+    )
+
+
+class ZScoreInputs(SimpleInterface):
+    """Z-score inputs."""
+
+    input_spec = _ZScoreInputsInputSpec
+    output_spec = _ZScoreInputsOutputSpec
+
+    def _run_interface(self, runtime):
+        merge_inputs = {
+            'denoised_bold': self.inputs.denoised_bold,
+            'timeseries_ciftis': self.inputs.timeseries_ciftis,
+            'timeseries': self.inputs.timeseries,
+        }
+
+        for name, run_files in merge_inputs.items():
+            LOGGER.info(f'Z-scoring {name}')
+            if len(run_files) == 0 or any(not isdefined(f) for f in run_files):
+                LOGGER.warning(f'No {name} files found')
+                self._results[name] = Undefined
+                continue
+
+            elif isinstance(run_files[0], list) and not isdefined(run_files[0][0]):
+                LOGGER.warning(f'No {name} files found')
+                self._results[name] = Undefined
+                continue
+
+            # Files are organized in a list of lists, like parcellated time series, in order
+            # [['run-1_atlas-a', 'run-2_atlas-a'], ['run-1_atlas-b', 'run-2_atlas-b']]
+            out_files = []
+            for run_file in run_files:
+                if isinstance(run_file, list):
+                    out_run_files = []
+                    for run_file_ in run_file:
+                        out_file = os.path.join(runtime.cwd, os.path.basename(run_file_))
+                        if out_file.endswith('.tsv'):
+                            zscore_tsv(run_file_, out_file=out_file)
+                        else:
+                            zscore_niimg(run_file_, out_file=out_file)
+
+                        if not os.path.isfile(out_file):
+                            raise RuntimeError(f'Output file {out_file} not created.')
+                        out_run_files.append(out_file)
+                    out_files.append(out_run_files)
+                else:
+                    if run_file.endswith('.tsv'):
+                        zscore_tsv(run_file, out_file=run_file)
+                    else:
+                        zscore_niimg(run_file, out_file=run_file)
+
+                    if not os.path.isfile(run_file):
+                        raise RuntimeError(f'Output file {run_file} not created.')
+                    out_files.append(run_file)
+
+            self._results[name] = out_files
 
         return runtime
