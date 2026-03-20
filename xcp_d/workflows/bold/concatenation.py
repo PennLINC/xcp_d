@@ -335,6 +335,9 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
 
         workflow.connect([
             (concatenate_inputs, resd_smoothing_wf, [('denoised_bold', 'inputnode.bold_file')]),
+            (filter_runs, ds_smoothed_denoised_bold, [
+                (('denoised_bold', _combine_name), 'source_file'),
+            ]),
             (resd_smoothing_wf, ds_smoothed_denoised_bold, [
                 ('outputnode.smoothed_bold', 'in_file'),
             ]),
