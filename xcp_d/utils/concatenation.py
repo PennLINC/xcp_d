@@ -76,7 +76,7 @@ def zscore_niimg(niimg_file, out_file):
     """Z-score a NIfTI image."""
     img = nb.load(niimg_file)
     if isinstance(img, nb.Cifti2Image):
-        data = img.get_data()
+        data = img.get_fdata()
         # Assume first axis is time
         data = stats.zscore(data, axis=0)
         img_out = nb.Cifti2Image(data, img.header, img.nifti_header)
