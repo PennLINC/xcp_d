@@ -535,14 +535,15 @@ class ZScoreInputs(SimpleInterface):
                         out_run_files.append(out_file)
                     out_files.append(out_run_files)
                 else:
+                    out_file = os.path.join(runtime.cwd, os.path.basename(run_file))
                     if run_file.endswith('.tsv'):
-                        zscore_tsv(run_file, out_file=run_file)
+                        zscore_tsv(run_file, out_file=out_file)
                     else:
-                        zscore_niimg(run_file, out_file=run_file)
+                        zscore_niimg(run_file, out_file=out_file)
 
-                    if not os.path.isfile(run_file):
-                        raise RuntimeError(f'Output file {run_file} not created.')
-                    out_files.append(run_file)
+                    if not os.path.isfile(out_file):
+                        raise RuntimeError(f'Output file {out_file} not created.')
+                    out_files.append(out_file)
 
             self._results[name] = out_files
 
