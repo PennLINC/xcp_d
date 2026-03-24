@@ -139,7 +139,6 @@ def init_postprocess_nifti_wf(
     motion_file
         After dummy scan removal.
     %(denoised_interpolated_bold)s
-    %(smoothed_denoised_bold)s
     %(boldref)s
     bold_mask
     %(timeseries)s
@@ -210,7 +209,6 @@ the following post-processing was performed.
                 'denoised_bold',
                 'denoised_interpolated_bold',
                 'censored_denoised_bold',
-                'smoothed_denoised_bold',
                 'boldref',
                 'bold_mask',
                 # if parcellation is performed
@@ -382,7 +380,6 @@ the following post-processing was performed.
             ('outputnode.motion_file', 'motion_file'),
             ('outputnode.temporal_mask', 'temporal_mask'),
             ('outputnode.denoised_bold', 'denoised_bold'),
-            ('outputnode.smoothed_denoised_bold', 'smoothed_denoised_bold'),
             ('outputnode.timeseries', 'timeseries'),
         ]),
     ])  # fmt:skip
