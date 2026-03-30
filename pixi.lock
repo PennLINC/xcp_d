@@ -6,6 +6,8 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -258,7 +260,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/3c/2e/8d0c2ab90a8c1d9a24f0399058ab8519a3279d1bd4289511d74e909f060e/markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/4b/27/20770bd6bf8fbe1e16f848ba21da9df061f38d2e6483952c29d2bb5d1d8b/narwhals-2.17.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/89/3d/91ff1823b291de709e92b01373ab9c1d582658ce4b795e443b76761cd2c8/nilearn-0.13.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/6b/90/f17ebc6914b9ed0b577475a17a0b8d31e929897f7002bae1b03438852dad/nilearn-0.12.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2f/31/6bb544f26c38f5f8e8b6b83cbf6021909a6d825bed45cc2647440c780038/nipype-1.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4e/23/f87d9328c96e0107fed479ec564ce645b033ae0d6cedad2672bddeb0e065/nireports-25.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/88/5d/ae275feedaa6590cf6e185cfeb7c4d28b5e1a10fcb492fd5340b07921675/nitime-0.12.1-cp311-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
@@ -300,6 +302,8 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -555,7 +559,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/3c/2e/8d0c2ab90a8c1d9a24f0399058ab8519a3279d1bd4289511d74e909f060e/markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/4b/27/20770bd6bf8fbe1e16f848ba21da9df061f38d2e6483952c29d2bb5d1d8b/narwhals-2.17.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/89/3d/91ff1823b291de709e92b01373ab9c1d582658ce4b795e443b76761cd2c8/nilearn-0.13.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/6b/90/f17ebc6914b9ed0b577475a17a0b8d31e929897f7002bae1b03438852dad/nilearn-0.12.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2f/31/6bb544f26c38f5f8e8b6b83cbf6021909a6d825bed45cc2647440c780038/nipype-1.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4e/23/f87d9328c96e0107fed479ec564ce645b033ae0d6cedad2672bddeb0e065/nireports-25.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/88/5d/ae275feedaa6590cf6e185cfeb7c4d28b5e1a10fcb492fd5340b07921675/nitime-0.12.1-cp311-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
@@ -604,6 +608,8 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-7_kmp_llvm.conda
@@ -884,7 +890,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/3c/2e/8d0c2ab90a8c1d9a24f0399058ab8519a3279d1bd4289511d74e909f060e/markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/4b/27/20770bd6bf8fbe1e16f848ba21da9df061f38d2e6483952c29d2bb5d1d8b/narwhals-2.17.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/89/3d/91ff1823b291de709e92b01373ab9c1d582658ce4b795e443b76761cd2c8/nilearn-0.13.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/6b/90/f17ebc6914b9ed0b577475a17a0b8d31e929897f7002bae1b03438852dad/nilearn-0.12.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2f/31/6bb544f26c38f5f8e8b6b83cbf6021909a6d825bed45cc2647440c780038/nipype-1.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4e/23/f87d9328c96e0107fed479ec564ce645b033ae0d6cedad2672bddeb0e065/nireports-25.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/88/5d/ae275feedaa6590cf6e185cfeb7c4d28b5e1a10fcb492fd5340b07921675/nitime-0.12.1-cp311-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
@@ -3944,39 +3950,34 @@ packages:
   - pkg:pypi/nibabel?source=hash-mapping
   size: 2745752
   timestamp: 1734022877786
-- pypi: https://files.pythonhosted.org/packages/89/3d/91ff1823b291de709e92b01373ab9c1d582658ce4b795e443b76761cd2c8/nilearn-0.13.1-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/6b/90/f17ebc6914b9ed0b577475a17a0b8d31e929897f7002bae1b03438852dad/nilearn-0.12.1-py3-none-any.whl
   name: nilearn
-  version: 0.13.1
-  sha256: 2543cea9e2b001c079b7f81d1bff3050576125eb906cf318a9992add9a63c19e
+  version: 0.12.1
+  sha256: 2112e1cdf9f7b96e0af87d679997e834ee36534fc0a970811a703700820edc4c
   requires_dist:
-  - jinja2>=3.1.2
   - joblib>=1.2.0
+  - lxml
   - nibabel>=5.2.0
   - numpy>=1.22.4
   - packaging
   - pandas>=2.2.0
-  - requests>=2.30.0
+  - requests>=2.25.0
   - scikit-learn>=1.4.0
-  - scipy>=1.9.0
+  - scipy>=1.8.0
   - coverage ; extra == 'dev'
   - docutils>=0.17 ; extra == 'dev'
   - furo>=2024.8.6 ; extra == 'dev'
   - kaleido ; sys_platform != 'win32' and extra == 'dev'
   - kaleido==0.1.0.post1 ; sys_platform == 'win32' and extra == 'dev'
-  - lxml ; extra == 'dev'
-  - marimo ; extra == 'dev'
-  - matplotlib>=3.8.0 ; extra == 'dev'
+  - matplotlib>=3.3.0 ; extra == 'dev'
   - memory-profiler>=0.61.0 ; extra == 'dev'
   - myst-parser>=3.0.1 ; extra == 'dev'
   - numpydoc>=1.8.0 ; extra == 'dev'
-  - plotly>=5.0.0,!=6.1.0 ; sys_platform != 'win32' and extra == 'dev'
-  - plotly>=5.0.0,<6.1.0 ; sys_platform == 'win32' and extra == 'dev'
+  - plotly>=5.0.0,!=6.1.0 ; extra == 'dev'
   - pytest-cov ; extra == 'dev'
   - pytest-csv ; extra == 'dev'
-  - pytest-mpl ; extra == 'dev'
   - pytest-randomly ; extra == 'dev'
-  - pytest-reporter-html1>=0.9.2,<0.9.4 ; extra == 'dev'
-  - pytest-rerunfailures ; extra == 'dev'
+  - pytest-reporter-html1>=0.9.2 ; extra == 'dev'
   - pytest-timeout ; extra == 'dev'
   - pytest-xdist[psutil] ; extra == 'dev'
   - pytest>=6.0.0 ; extra == 'dev'
@@ -3993,13 +3994,11 @@ packages:
   - furo>=2024.8.6 ; extra == 'doc'
   - kaleido ; sys_platform != 'win32' and extra == 'doc'
   - kaleido==0.1.0.post1 ; sys_platform == 'win32' and extra == 'doc'
-  - marimo ; extra == 'doc'
-  - matplotlib>=3.8.0 ; extra == 'doc'
+  - matplotlib>=3.3.0 ; extra == 'doc'
   - memory-profiler>=0.61.0 ; extra == 'doc'
   - myst-parser>=3.0.1 ; extra == 'doc'
   - numpydoc>=1.8.0 ; extra == 'doc'
-  - plotly>=5.0.0,!=6.1.0 ; sys_platform != 'win32' and extra == 'doc'
-  - plotly>=5.0.0,<6.1.0 ; sys_platform == 'win32' and extra == 'doc'
+  - plotly>=5.0.0,!=6.1.0 ; extra == 'doc'
   - ruamel-yaml>=0.18.6 ; extra == 'doc'
   - sphinx-copybutton>=0.5.2 ; extra == 'doc'
   - sphinx-design>=0.6.1 ; extra == 'doc'
@@ -4008,58 +4007,25 @@ packages:
   - sphinxcontrib-bibtex>=2.6.3 ; extra == 'doc'
   - sphinxcontrib-mermaid>=1.0.0 ; extra == 'doc'
   - sphinxext-opengraph>=0.9.1 ; extra == 'doc'
-  - jinja2==3.1.2 ; extra == 'min'
-  - joblib==1.2.0 ; extra == 'min'
-  - nibabel==5.2.0 ; extra == 'min'
-  - numpy==1.22.4 ; extra == 'min'
-  - pandas==2.2.0 ; extra == 'min'
-  - requests==2.30.0 ; extra == 'min'
-  - scikit-learn==1.4.0 ; extra == 'min'
-  - scipy==1.9.0 ; extra == 'min'
-  - jinja2==3.1.2 ; extra == 'min-plotting'
-  - joblib==1.2.0 ; extra == 'min-plotting'
-  - kaleido ; extra == 'min-plotting'
-  - matplotlib==3.8.0 ; extra == 'min-plotting'
-  - nibabel==5.2.0 ; extra == 'min-plotting'
-  - numpy==1.22.4 ; extra == 'min-plotting'
-  - pandas==2.2.0 ; extra == 'min-plotting'
-  - plotly==5.0.0 ; extra == 'min-plotting'
-  - requests==2.30.0 ; extra == 'min-plotting'
-  - scikit-learn==1.4.0 ; extra == 'min-plotting'
-  - scipy==1.9.0 ; extra == 'min-plotting'
   - kaleido ; sys_platform != 'win32' and extra == 'plotly'
   - kaleido==0.1.0.post1 ; sys_platform == 'win32' and extra == 'plotly'
-  - matplotlib>=3.8.0 ; extra == 'plotly'
-  - plotly>=5.0.0,!=6.1.0 ; sys_platform != 'win32' and extra == 'plotly'
-  - plotly>=5.0.0,<6.1.0 ; sys_platform == 'win32' and extra == 'plotly'
+  - matplotlib>=3.3.0 ; extra == 'plotly'
+  - plotly>=5.0.0,!=6.1.0 ; extra == 'plotly'
   - kaleido ; sys_platform != 'win32' and extra == 'plotting'
   - kaleido==0.1.0.post1 ; sys_platform == 'win32' and extra == 'plotting'
-  - matplotlib>=3.8.0 ; extra == 'plotting'
-  - plotly>=5.0.0,!=6.1.0 ; sys_platform != 'win32' and extra == 'plotting'
-  - plotly>=5.0.0,<6.1.0 ; sys_platform == 'win32' and extra == 'plotting'
+  - matplotlib>=3.3.0 ; extra == 'plotting'
+  - plotly>=5.0.0,!=6.1.0 ; extra == 'plotting'
   - tox ; extra == 'style'
   - coverage ; extra == 'test'
-  - lxml ; extra == 'test'
   - numpydoc>=1.8.0 ; extra == 'test'
   - pytest-cov ; extra == 'test'
   - pytest-csv ; extra == 'test'
-  - pytest-mpl ; extra == 'test'
   - pytest-randomly ; extra == 'test'
-  - pytest-reporter-html1>=0.9.2,<0.9.4 ; extra == 'test'
-  - pytest-rerunfailures ; extra == 'test'
+  - pytest-reporter-html1>=0.9.2 ; extra == 'test'
   - pytest-timeout ; extra == 'test'
   - pytest-xdist[psutil] ; extra == 'test'
   - pytest>=6.0.0 ; extra == 'test'
-  - numpydoc>=1.8.0 ; extra == 'test-free-threaded'
-  - pytest-csv ; extra == 'test-free-threaded'
-  - pytest-mpl ; extra == 'test-free-threaded'
-  - pytest-randomly ; extra == 'test-free-threaded'
-  - pytest-reporter-html1>=0.9.2,<0.9.4 ; extra == 'test-free-threaded'
-  - pytest-rerunfailures ; extra == 'test-free-threaded'
-  - pytest-run-parallel ; extra == 'test-free-threaded'
-  - pytest>=6.0.0 ; extra == 'test-free-threaded'
-  - rich ; extra == 'test-free-threaded'
-  requires_python: '>=3.10'
+  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/2f/31/6bb544f26c38f5f8e8b6b83cbf6021909a6d825bed45cc2647440c780038/nipype-1.11.0-py3-none-any.whl
   name: nipype
   version: 1.11.0
@@ -5997,8 +5963,8 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 0.14.2.dev31+gfd19a52a1
-  sha256: 539ffd153bf02d1a88cb4e298fd74dc918c7ed60139790074dac1ce27e918762
+  version: 26.0.1.dev4+gb8edc142e.d20260330
+  sha256: 5beeb094eabfadab6e12d385f3594d82b2750be208db88c27e90aef883b5c029
   requires_dist:
   - acres
   - beautifulsoup4
@@ -6011,86 +5977,7 @@ packages:
   - matplotlib>=3.10.0
   - networkx>=3.4.2
   - nibabel>=3.2.1
-  - nilearn>=0.13.1
-  - nipype>=1.11.0,<2
-  - nireports>=25.3.0
-  - nitime
-  - niworkflows>=1.14.4
-  - num2words
-  - numpy>=2.0
-  - packaging
-  - pandas
-  - psutil>=5.4
-  - pybids>=0.21.0
-  - pyyaml
-  - scikit-learn>=1.7.2
-  - scipy>=1.15.2
-  - seaborn
-  - sentry-sdk>=2.54.0
-  - templateflow>=25.1.1
-  - toml
-  - trimesh
-  - coverage ; extra == 'all'
-  - doctest-ignore-unicode ; extra == 'all'
-  - fuzzywuzzy ; extra == 'all'
-  - pre-commit ; extra == 'all'
-  - pydot>=1.2.3 ; extra == 'all'
-  - pydotplus ; extra == 'all'
-  - pytest ; extra == 'all'
-  - pytest-cov ; extra == 'all'
-  - pytest-env ; extra == 'all'
-  - pytest-xdist ; extra == 'all'
-  - python-levenshtein ; extra == 'all'
-  - recommonmark ; extra == 'all'
-  - ruff~=0.15.0 ; extra == 'all'
-  - sphinx-argparse!=0.5.0 ; extra == 'all'
-  - sphinx-design ; extra == 'all'
-  - sphinx-markdown-tables ; extra == 'all'
-  - sphinx-rtd-theme ; extra == 'all'
-  - sphinx>=4.2.0 ; extra == 'all'
-  - sphinxcontrib-apidoc ; extra == 'all'
-  - sphinxcontrib-bibtex ; extra == 'all'
-  - svgutils ; extra == 'all'
-  - pre-commit ; extra == 'dev'
-  - ruff~=0.15.0 ; extra == 'dev'
-  - doctest-ignore-unicode ; extra == 'doc'
-  - pydot>=1.2.3 ; extra == 'doc'
-  - pydotplus ; extra == 'doc'
-  - recommonmark ; extra == 'doc'
-  - sphinx-argparse!=0.5.0 ; extra == 'doc'
-  - sphinx-design ; extra == 'doc'
-  - sphinx-markdown-tables ; extra == 'doc'
-  - sphinx-rtd-theme ; extra == 'doc'
-  - sphinx>=4.2.0 ; extra == 'doc'
-  - sphinxcontrib-apidoc ; extra == 'doc'
-  - sphinxcontrib-bibtex ; extra == 'doc'
-  - svgutils ; extra == 'doc'
-  - fuzzywuzzy ; extra == 'maint'
-  - python-levenshtein ; extra == 'maint'
-  - coverage ; extra == 'tests'
-  - pytest ; extra == 'tests'
-  - pytest-cov ; extra == 'tests'
-  - pytest-env ; extra == 'tests'
-  - pytest-xdist ; extra == 'tests'
-  requires_python: '>=3.10'
-  editable: true
-- pypi: ./
-  name: xcp-d
-  version: 0.14.2.dev31+gfd19a52a1
-  sha256: 539ffd153bf02d1a88cb4e298fd74dc918c7ed60139790074dac1ce27e918762
-  requires_dist:
-  - acres
-  - beautifulsoup4
-  - bids-validator>=1.14.7.post0
-  - h5py>=3.15.1
-  - importlib-resources ; python_full_version < '3.11'
-  - indexed-gzip>=1.10.1
-  - jinja2>=3.1.2
-  - joblib>=1.5.3
-  - matplotlib>=3.10.0
-  - networkx>=3.4.2
-  - nibabel>=3.2.1
-  - nilearn>=0.13.1
+  - nilearn>=0.12.0,!=0.13.0,!=0.13.1
   - nipype>=1.11.0,<2
   - nireports>=25.3.0
   - nitime
