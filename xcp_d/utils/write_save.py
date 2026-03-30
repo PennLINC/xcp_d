@@ -6,7 +6,7 @@ import os
 
 import nibabel as nb
 import numpy as np
-from nilearn import masking
+from nilearn import maskers
 from nipype import logging
 from templateflow.api import get as get_template
 
@@ -41,7 +41,9 @@ def read_ndata(datafile, maskfile=None):
     elif datafile.endswith('.nii.gz'):
         if maskfile is None:
             raise ValueError('Input `maskfile` must be provided if `datafile` is a nifti.')
-        data = masking.apply_mask(datafile, maskfile)
+
+        masker = maskers.NiftiMasker(maskfile)
+        data = masker.fit_transform(datafile)
 
     else:
         raise ValueError(f'Unknown extension for {datafile}')
@@ -177,12 +179,9 @@ def write_ndata(data_matrix, template, filename, mask=None, TR=1):
         img.nifti_header.set_intent(target_intent)
 
     else:
-        # write nifti series
-        img = masking.unmask(data_matrix.astype(np.float32), mask)
-        # we'll override the default TR (1) in the header
-        pixdim = list(img.header.get_zooms())
-        pixdim[3] = TR
-        img.header.set_zooms(pixdim)
+        masker = maskers.NiftiMasker(mask)
+        masker.fit(template)
+        img = masker.inverse_transform(data_matrix.astype(np.float32))
 
     img.to_filename(filename)
 
