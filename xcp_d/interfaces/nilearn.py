@@ -3,7 +3,7 @@
 import os
 
 import pandas as pd
-from nilearn import maskers
+from nilearn import masking
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -220,7 +220,7 @@ class ApplyMask(NilearnBaseInterface, SimpleInterface):
     output_spec = _ApplyMaskOutputSpec
 
     def _run_interface(self, runtime):
-        from nilearn import image, maskers
+        from nilearn import image, masking
 
         resampled_mask = image.resample_to_img(
             source_img=self.inputs.mask,
@@ -228,9 +228,10 @@ class ApplyMask(NilearnBaseInterface, SimpleInterface):
             interpolation='nearest',
             copy_header=True,
         )
-        masker = maskers.NiftiMasker(mask_img=resampled_mask)
-        arr = masker.fit_transform(self.inputs.in_file)
-        img_masked = masker.inverse_transform(arr)
+        img_masked = masking.unmask(
+            masking.apply_mask(self.inputs.in_file, resampled_mask),
+            resampled_mask,
+        )
         self._results['out_file'] = os.path.join(runtime.cwd, self.inputs.out_file)
         img_masked.to_filename(self._results['out_file'])
 
@@ -430,9 +431,11 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         else:
             low_pass, high_pass = self.inputs.low_pass, self.inputs.high_pass
 
-        # Use NiftiMasker because unmask changes datatype in Nilearn 0.13.0 - 0.13.1.
-        masker = maskers.NiftiMasker(mask_img=self.inputs.mask)
-        preprocessed_bold_arr = masker.fit_transform(self.inputs.preprocessed_bold)
+        # Use nilearn.masking.apply_mask because it will do less to the data than NiftiMasker.
+        preprocessed_bold_arr = masking.apply_mask(
+            imgs=self.inputs.preprocessed_bold,
+            mask_img=self.inputs.mask,
+        )
         n_volumes = preprocessed_bold_arr.shape[0]
 
         censoring_df = pd.read_table(self.inputs.temporal_mask)
@@ -461,7 +464,7 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         if self.inputs.confounds_images:
             voxelwise_confounds = []
             for f in self.inputs.confounds_images:
-                voxelwise_confounds.append(masker.transform(f))
+                voxelwise_confounds.append(masking.apply_mask(imgs=f, mask_img=self.inputs.mask))
 
         denoised_interpolated_bold = denoise_with_nilearn(
             preprocessed_bold=preprocessed_bold_arr,
@@ -479,7 +482,10 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
             runtime.cwd,
             'filtered_denoised.nii.gz',
         )
-        filtered_denoised_img = masker.inverse_transform(X=denoised_interpolated_bold)
+        filtered_denoised_img = masking.unmask(
+            X=denoised_interpolated_bold,
+            mask_img=self.inputs.mask,
+        )
 
         # Explicitly set TR in the header
         pixdim = list(filtered_denoised_img.header.get_zooms())
