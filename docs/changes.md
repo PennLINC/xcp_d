@@ -1,5 +1,14 @@
 # What's New
 
+## 26.0.1 (March 30, 2026)
+
+### 🐛 Bug Fixes
+
+* Block Nilearn 0.13.0 and 0.13.1 due to masking datatype issue by @tsalo in https://github.com/PennLINC/xcp_d/pull/1610
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.0.0...26.1.0
+
+
 ## 26.0.0 (March 24, 2026)
 
 This is the start of the 26.0.x series. We have switched from semantic versioning to calendar versioning, to better align with NiPreps.
