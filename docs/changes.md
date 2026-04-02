@@ -1,5 +1,14 @@
 # What's New
 
+## 26.0.2 (April 2, 2026)
+
+### 🐛 Bug Fixes
+
+* Fix atlas BIDSLayout by @tsalo in https://github.com/PennLINC/xcp_d/pull/1611
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.0.1...26.0.2
+
+
 ## 26.0.1 (March 30, 2026)
 
 ### 🐛 Bug Fixes
