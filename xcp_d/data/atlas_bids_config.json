@@ -10,34 +10,6 @@
             "name": "cohort",
             "pattern": "[_/\\\\]+cohort-([a-zA-Z0-9+]+)",
             "directory": "{cohort}"
-        },
-        {
-            "name": "atlas",
-            "pattern": "[_/\\\\]+atlas-([a-zA-Z0-9+]+)"
-        },
-        {
-            "name": "hemi",
-            "pattern": "[_/\\\\]+hemi-(L|R)"
-        },
-        {
-            "name": "res",
-            "pattern": "[_/\\\\]+res-([a-zA-Z0-9]+)"
-        },
-        {
-            "name": "den",
-            "pattern": "[_/\\\\]+den-([a-zA-Z0-9]+)"
-        },
-        {
-            "name": "desc",
-            "pattern": "[_/\\\\]+desc-([a-zA-Z0-9+]+)"
-        },
-        {
-            "name": "suffix",
-            "pattern": "(?:^|[_/\\\\])([a-zA-Z0-9]+)\\.[^/\\\\]+$"
-        },
-        {
-            "name": "extension",
-            "pattern": "[^./\\\\](\\.[^/\\\\]+)$"
         }
     ],
     "default_path_patterns": [
