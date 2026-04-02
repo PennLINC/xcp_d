@@ -1,5 +1,61 @@
 # What's New
 
+## 26.0.1 (March 30, 2026)
+
+### 🐛 Bug Fixes
+
+* Block Nilearn 0.13.0 and 0.13.1 due to masking datatype issue by @tsalo in https://github.com/PennLINC/xcp_d/pull/1610
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.0.0...26.1.0
+
+
+## 26.0.0 (March 24, 2026)
+
+This is the start of the 26.0.x series. We have switched from semantic versioning to calendar versioning, to better align with NiPreps.
+
+This release includes one breaking change that impacts concatenated outputs (i.e., when `--combine-runs` is enabled, either manually or through a processing mode). Basically, in previous versions the concatenation workflow simply concatenated the run-wise files, but this approach risks skewing the combined correlations toward runs with higher parcel-wise mean and variance BOLD time series. In this version, the time series, both voxel/vertex-wise and parcellated, are z-scored prior to concatenation.
+
+### 🛠 Breaking Changes
+
+* Z-score data before concatenating by @tsalo in https://github.com/PennLINC/xcp_d/pull/1608
+
+### 🎉 Exciting New Features
+
+* Accept space-delimited list for --task-id parameter by @Copilot in https://github.com/PennLINC/xcp_d/pull/1574
+
+### 🐛 Bug Fixes
+* Fix collection of confounds files by @tsalo in https://github.com/PennLINC/xcp_d/pull/1566
+* Allow brainmask_fs.2.0.nii.gz for HCP brain masks by @tsalo in https://github.com/PennLINC/xcp_d/pull/1567
+* Allow ingression modules to convert multiple participants' data by @tsalo in https://github.com/PennLINC/xcp_d/pull/1571
+* Fix long filename issue in SlicesDir by @tsalo in https://github.com/PennLINC/xcp_d/pull/1551
+* Give workbench more memory by @tsalo in https://github.com/PennLINC/xcp_d/pull/1588
+
+### Other Changes
+
+* Add tests for ingression module by @tsalo in https://github.com/PennLINC/xcp_d/pull/1568
+* Add more tests for the ingression module by @tsalo in https://github.com/PennLINC/xcp_d/pull/1569
+* Refactor ingression module by @tsalo in https://github.com/PennLINC/xcp_d/pull/1570
+* Address remaining ruff warnings by @tsalo in https://github.com/PennLINC/xcp_d/pull/1572
+* Fix workflow graphs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1573
+* Copy scans.tsv to sourcedata/bids_conversion with BIDS hierarchy during ingression by @Copilot in https://github.com/PennLINC/xcp_d/pull/1575
+* Apply miscellaneous refactors by @tsalo in https://github.com/PennLINC/xcp_d/pull/1576
+* Improve memory allocation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1581
+* Address warnings and errors in documentation by @tsalo in https://github.com/PennLINC/xcp_d/pull/1582
+* Finalize BIDS Atlas compliance by @tsalo in https://github.com/PennLINC/xcp_d/pull/1584
+* Add AGENTS.md and cursor rules by @singlesp in https://github.com/PennLINC/xcp_d/pull/1590
+* Move atlases to cache directory by @tsalo in https://github.com/PennLINC/xcp_d/pull/1591
+* Hardcode location of built-in atlases by @tsalo in https://github.com/PennLINC/xcp_d/pull/1593
+* Adopt NiPreps packaging by @tsalo in https://github.com/PennLINC/xcp_d/pull/1594
+* Bring XCP-D more in line with NiPreps by @tsalo in https://github.com/PennLINC/xcp_d/pull/1596
+* Reduce size of base Docker image by @tsalo in https://github.com/PennLINC/xcp_d/pull/1597
+* Set branch to false by @tsalo in https://github.com/PennLINC/xcp_d/pull/1598
+* Reduce dependency strictness and rely on pixi for specific versions by @tsalo in https://github.com/PennLINC/xcp_d/pull/1604
+* Bump Nipype to 1.11.0 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1605
+* Streamline CircleCI config by @tsalo in https://github.com/PennLINC/xcp_d/pull/1606
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/0.14.1...26.0.0
+
+
 ## 0.14.1 (February 2, 2026)
 
 ### 🐛 Bug Fixes

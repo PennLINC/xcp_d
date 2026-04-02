@@ -501,7 +501,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 'denoised_bold',
                 'denoised_interpolated_bold',
                 'censored_denoised_bold',
-                'smoothed_denoised_bold',
                 'bold_mask',
                 'boldref',
                 'timeseries',
