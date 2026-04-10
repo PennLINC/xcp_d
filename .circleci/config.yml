@@ -156,7 +156,8 @@ jobs:
                 --target test \
                 --rm=false \
                 -t pennlinc/xcp_d:test \
-                --platform linux/amd64 .
+                --platform linux/amd64 \
+                --build-arg VCS_REF="$(git rev-parse --short HEAD)" .
             elif docker image inspect pennlinc/xcp_d:test > /dev/null 2>&1; then
               echo "Reusing existing local test image (no Dockerfile/pixi/base-triggered rebuild required)."
             elif docker pull localhost:5000/xcp_d-test; then
@@ -168,7 +169,19 @@ jobs:
                 --target test \
                 --rm=false \
                 -t pennlinc/xcp_d:test \
-                --platform linux/amd64 .
+                --platform linux/amd64 \
+                --build-arg VCS_REF="$(git rev-parse --short HEAD)" .
+            fi
+      - run:
+          name: Guard test image revision
+          command: |
+            EXPECTED_REF="$(git rev-parse --short HEAD)"
+            IMAGE_REF="$(docker image inspect pennlinc/xcp_d:test --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')"
+            echo "Expected test image ref: ${EXPECTED_REF}"
+            echo "Actual test image ref: ${IMAGE_REF:-<missing>}"
+            if [[ -z "$IMAGE_REF" || "$IMAGE_REF" != "$EXPECTED_REF" ]]; then
+              echo "Test image revision does not match checkout. Refusing to run tests with stale image."
+              exit 1
             fi
       - run:
           name: Verify test image
