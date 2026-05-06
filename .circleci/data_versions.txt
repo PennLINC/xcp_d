@@ -1,0 +1,12 @@
+# Test data URLs for the get_data job. The data cache key in
+# continue_config.yml is {{ checksum ".circleci/data_versions.txt" }}, so
+# changing a URL here automatically invalidates the cache. This file is
+# shell-sourced, so each line must be a NAME=value pair with no spaces
+# around the equals sign.
+DS001419_URL=https://upenn.box.com/shared/static/yye7ljcdodj9gd6hm2r6yzach1o6xq1d.tar.gz
+DS001419_AROMA_URL=https://upenn.box.com/shared/static/dexcmnlj7yujudr3muu05kch66sko4mt.tar.gz
+SCHAEFER100_URL=https://upenn.box.com/shared/static/b9pn9qebr41kteant4ym2q5u4kcbgiy6.tar.gz
+PNC_URL=https://upenn.box.com/shared/static/ui2847ys49d82pgn5ewai1mowcmsv2br.tar.gz
+UKBIOBANK_URL=https://upenn.box.com/shared/static/p5h1eg4p5cd2ef9ehhljlyh1uku0xe97.tar.gz
+FMRIPREP_WITHOUT_FREESURFER_URL=https://upenn.box.com/shared/static/seyp1cu9w5v3ds6iink37hlsa217yge1.tar.gz
+NIBABIES_URL=https://upenn.box.com/shared/static/rsd7vpny5imv3qkd7kpuvdy9scpnfpe2.tar.gz

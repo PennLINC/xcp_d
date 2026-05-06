@@ -1,0 +1,531 @@
+version: 2.1
+
+# This config is the continuation target of .circleci/config.yml.
+# Pipeline parameters below are populated by the path-filtering orb based on
+# which files the pushed commit touches.
+parameters:
+  has_any_changes:
+    type: boolean
+    default: false
+  has_code_changes:
+    type: boolean
+    default: false
+
+orbs:
+  codecov: codecov/codecov@4.1.0
+
+# Reusable anchors
+
+_machine_defaults: &machine_defaults
+  environment:
+    TZ: "/usr/share/zoneinfo/America/New_York"
+  machine:
+    image: default
+  working_directory: /tmp/src/xcp_d
+  resource_class: large
+
+_machine_with_dlc: &machine_with_dlc
+  environment:
+    TZ: "/usr/share/zoneinfo/America/New_York"
+  machine:
+    image: default
+    docker_layer_caching: true
+  working_directory: /tmp/src/xcp_d
+  resource_class: large
+
+_default_filters: &default_filters
+  tags:
+    ignore: /.*/
+
+_tag_filters: &tag_filters
+  tags:
+    only: /.*/
+  branches:
+    ignore: /.*/
+
+_docker_auth: &docker_auth
+  name: Docker authentication
+  command: |
+    if [[ -n "$DOCKERHUB_TOKEN" ]]; then
+      echo "$DOCKERHUB_TOKEN" | docker login -u $DOCKERHUB_USERNAME --password-stdin
+    fi
+
+_setup_docker_registry: &setup_docker_registry
+  name: Set up local Docker registry
+  command: |
+    docker pull registry:2
+    docker run -d -p 5000:5000 --restart=always --name=registry \
+        -v /tmp/docker:/var/lib/registry registry:2
+
+_pull_test_image: &pull_test_image
+  name: Pull and tag test image from local registry
+  command: |
+    docker pull localhost:5000/xcp_d-test
+    docker tag localhost:5000/xcp_d-test pennlinc/xcp_d:test
+
+# Reusable commands
+
+commands:
+  restore_build_and_data:
+    description: Restore Docker image cache and test data cache, then start the registry
+    steps:
+      - restore_cache:
+          keys:
+            - build-v4-{{ checksum "Dockerfile" }}-{{ checksum "pixi.lock" }}
+      - restore_cache:
+          keys:
+            - data-v2-{{ checksum ".circleci/data_versions.txt" }}
+      - run: *docker_auth
+      - run: *setup_docker_registry
+      - run: *pull_test_image
+
+  run_integration_test:
+    description: Run a pytest-marked integration test inside the test Docker image
+    parameters:
+      marker:
+        type: string
+      cpus:
+        type: integer
+        default: 2
+    steps:
+      - run:
+          name: Run xcp_d (<< parameters.marker >>)
+          no_output_timeout: 1h
+          command: |
+            mkdir -p /tmp/out /tmp/work /tmp/coverage
+            docker run --rm=false \
+              -e CIRCLE_CPUS=<< parameters.cpus >> \
+              -e COVERAGE_FILE=/coverage/.coverage.<< parameters.marker >> \
+              -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
+              -v /tmp/data:/data \
+              -v /tmp/out:/out \
+              -v /tmp/work:/work \
+              -v /tmp/coverage:/coverage \
+              -w /tmp/src/xcp_d \
+              --entrypoint pytest \
+              pennlinc/xcp_d:test \
+              --strict-markers --strict-config \
+              -rP -o log_cli=true -m "<< parameters.marker >>" \
+              --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
+              --data_dir=/data --output_dir=/out --working_dir=/work \
+              xcp_d
+      - run:
+          name: Prune non-QC artifacts
+          when: always
+          command: |
+            find /tmp/out/ -name "*.nii.gz" -type f -delete 2>/dev/null || true
+            find /tmp/out/ \( \
+              -name "*.h5" -o -name "*.gii" -o -name "*.gii.gz" -o \
+              -name "*.mat" -o -name "*.npz" -o -name "*.mgz" -o -name "*.mif" \
+            \) -type f -delete 2>/dev/null || true
+            find /tmp/out/ \( -name ".pytest_cache" -o -name "__pycache__" \) -type d \
+              -exec rm -rf {} + 2>/dev/null || true
+      - store_artifacts:
+          path: /tmp/out
+      - persist_to_workspace:
+          root: /tmp/coverage
+          paths:
+            - .coverage.<< parameters.marker >>
+
+# Jobs
+
+jobs:
+  image_prep:
+    <<: *machine_with_dlc
+    environment:
+      TZ: "/usr/share/zoneinfo/America/New_York"
+      DOCKER_BUILDKIT: "1"
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
+      - restore_cache:
+          keys:
+            - build-v4-{{ checksum "Dockerfile" }}-{{ checksum "pixi.lock" }}
+      - run: *docker_auth
+      - run: *setup_docker_registry
+      - run:
+          name: Get base image information
+          command: |
+            export BASE_IMAGE=$( grep "BASE_IMAGE=" Dockerfile | head -1 | cut -d= -f2 )
+            export BASE_IMAGE_NAME=${BASE_IMAGE%:*}
+            export BASE_TAG=${BASE_IMAGE#*:}
+            echo "BASE_IMAGE=$BASE_IMAGE" >> $BASH_ENV
+            echo "BASE_IMAGE_NAME=$BASE_IMAGE_NAME" >> $BASH_ENV
+            echo "BASE_TAG=$BASE_TAG" >> $BASH_ENV
+      - run:
+          name: Determine whether test image build is required
+          command: |
+            if [[ -f /tmp/images/imageprep-success.marker ]]; then
+              echo "BUILD_TEST_IMAGE=0" >> "$BASH_ENV"
+            else
+              echo "No successful cached image prep for current Docker inputs; rebuilding test image."
+              echo "BUILD_TEST_IMAGE=1" >> "$BASH_ENV"
+            fi
+      - run:
+          name: Build base Docker image if needed
+          no_output_timeout: 90m
+          command: |
+            if ! docker manifest inspect $BASE_IMAGE > /dev/null 2>&1; then
+              echo "Base image $BASE_IMAGE not found, building..."
+              docker build -f Dockerfile.base \
+                --pull \
+                --platform linux/amd64 \
+                -t $BASE_IMAGE \
+                -t $BASE_IMAGE_NAME:latest .
+              echo "BASE_WAS_BUILT=1" >> "$BASH_ENV"
+            else
+              echo "Base image $BASE_IMAGE already exists."
+              echo "BASE_WAS_BUILT=0" >> "$BASH_ENV"
+            fi
+      - run:
+          name: Build test Docker image if needed
+          no_output_timeout: 90m
+          command: |
+            if [[ "$BUILD_TEST_IMAGE" == "1" || "$BASE_WAS_BUILT" == "1" ]]; then
+              docker build \
+                --target test \
+                --rm=false \
+                -t pennlinc/xcp_d:test \
+                --platform linux/amd64 \
+                --build-arg VCS_REF="$(git rev-parse --short HEAD)" .
+            elif docker image inspect pennlinc/xcp_d:test > /dev/null 2>&1; then
+              echo "Reusing existing local test image (no Dockerfile/pixi/base-triggered rebuild required)."
+            elif docker pull localhost:5000/xcp_d-test; then
+              docker tag localhost:5000/xcp_d-test pennlinc/xcp_d:test
+              echo "Reusing cached test image from local registry (no Dockerfile/pixi/base-triggered rebuild required)."
+            else
+              echo "No reusable test image found; rebuilding test image."
+              docker build \
+                --target test \
+                --rm=false \
+                -t pennlinc/xcp_d:test \
+                --platform linux/amd64 \
+                --build-arg VCS_REF="$(git rev-parse --short HEAD)" .
+            fi
+      - run:
+          name: Guard test image revision
+          command: |
+            if [[ "$BUILD_TEST_IMAGE" == "0" ]]; then
+              echo "Test image reused from cache (Docker deps unchanged); skipping revision guard."
+              exit 0
+            fi
+            EXPECTED_REF="$(git rev-parse --short HEAD)"
+            IMAGE_REF="$(docker image inspect pennlinc/xcp_d:test --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')"
+            echo "Expected test image ref: ${EXPECTED_REF}"
+            echo "Actual test image ref: ${IMAGE_REF:-<missing>}"
+            if [[ -z "$IMAGE_REF" || "$IMAGE_REF" != "$EXPECTED_REF" ]]; then
+              echo "Test image revision does not match checkout. Refusing to run tests with stale image."
+              exit 1
+            fi
+      - run:
+          name: Verify test image
+          command: |
+            docker run --rm --entrypoint pytest pennlinc/xcp_d:test --version
+            docker run --rm --entrypoint pandoc pennlinc/xcp_d:test --version > /dev/null
+            docker run --rm --entrypoint 3dReHo pennlinc/xcp_d:test -help > /dev/null
+            docker run --rm --entrypoint 3dDespike pennlinc/xcp_d:test -help > /dev/null
+            docker run --rm --entrypoint 3dFWHMx pennlinc/xcp_d:test -help > /dev/null
+      - run:
+          name: Build production Docker image
+          no_output_timeout: 90m
+          command: |
+            if [[ "$CIRCLE_BRANCH" != "main" && -z "$CIRCLE_TAG" ]]; then
+              echo "PR branch; skipping production image build."
+              echo "BUILD_PRODUCTION_IMAGE=0" >> "$BASH_ENV"
+              exit 0
+            fi
+            echo "BUILD_PRODUCTION_IMAGE=1" >> "$BASH_ENV"
+            if [[ -n "$CIRCLE_TAG" ]]; then
+              THISVERSION="$CIRCLE_TAG"
+              sed -i "s/title = {xcp_d}/title = {xcp_d ${THISVERSION}}/" \
+                xcp_d/data/boilerplate.bib
+            else
+              THISVERSION="0+build"
+            fi
+            e=1 && for i in {1..5}; do
+              docker build \
+                --target xcp_d \
+                --rm=false \
+                -t pennlinc/xcp_d:latest \
+                --platform linux/amd64 \
+                --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+                --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
+                --build-arg VERSION="$THISVERSION" . \
+              && e=0 && break || sleep 15
+            done && [ "$e" -eq "0" ]
+      - run:
+          name: Verify production image
+          command: |
+            if [[ "$BUILD_PRODUCTION_IMAGE" != "1" ]]; then
+              echo "Production image not built on this branch; skipping verify."
+              exit 0
+            fi
+            docker run --rm pennlinc/xcp_d:latest --version
+      - run:
+          name: Push base image to Docker Hub (if newly built)
+          command: |
+            if [[ "$BASE_WAS_BUILT" == "1" ]] && docker image inspect $BASE_IMAGE > /dev/null 2>&1; then
+              if [[ -n "$DOCKERHUB_TOKEN" ]]; then
+                docker push $BASE_IMAGE
+                docker push $BASE_IMAGE_NAME:latest
+              fi
+            fi
+      - run:
+          name: Push test image to local registry
+          no_output_timeout: 40m
+          command: |
+            docker tag pennlinc/xcp_d:test localhost:5000/xcp_d-test
+            docker push localhost:5000/xcp_d-test
+      - run:
+          name: Push production image to Docker Hub
+          no_output_timeout: 40m
+          command: |
+            if [[ "$BUILD_PRODUCTION_IMAGE" != "1" ]]; then
+              echo "PR branch; skipping production image push."
+              exit 0
+            fi
+            if [[ -n "$DOCKERHUB_TOKEN" ]]; then
+              docker tag pennlinc/xcp_d:latest pennlinc/xcp_d:unstable
+              docker push pennlinc/xcp_d:unstable
+              if [[ -n "$CIRCLE_TAG" ]]; then
+                docker tag pennlinc/xcp_d:latest pennlinc/xcp_d:$CIRCLE_TAG
+                docker push pennlinc/xcp_d:latest
+                docker push pennlinc/xcp_d:$CIRCLE_TAG
+              fi
+            fi
+      - run:
+          name: Docker registry garbage collection
+          command: |
+            docker exec registry /bin/registry garbage-collect --delete-untagged \
+              /etc/docker/registry/config.yml
+      - run:
+          name: Record successful image prep
+          command: |
+            mkdir -p /tmp/images
+            touch /tmp/images/imageprep-success.marker
+      - save_cache:
+          key: build-v4-{{ checksum "Dockerfile" }}-{{ checksum "pixi.lock" }}
+          paths:
+            - /tmp/docker
+            - /tmp/images
+
+  get_data:
+    docker:
+      - image: cimg/base:stable
+    working_directory: /tmp/src/xcp_d
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
+      - restore_cache:
+          keys:
+            - data-v2-{{ checksum ".circleci/data_versions.txt" }}
+      - run:
+          name: Load data URLs
+          command: |
+            set -a
+            . /tmp/src/xcp_d/.circleci/data_versions.txt
+            set +a
+            echo "export DS001419_URL=$DS001419_URL" >> "$BASH_ENV"
+            echo "export DS001419_AROMA_URL=$DS001419_AROMA_URL" >> "$BASH_ENV"
+            echo "export SCHAEFER100_URL=$SCHAEFER100_URL" >> "$BASH_ENV"
+            echo "export PNC_URL=$PNC_URL" >> "$BASH_ENV"
+            echo "export UKBIOBANK_URL=$UKBIOBANK_URL" >> "$BASH_ENV"
+            echo "export FMRIPREP_WITHOUT_FREESURFER_URL=$FMRIPREP_WITHOUT_FREESURFER_URL" >> "$BASH_ENV"
+            echo "export NIBABIES_URL=$NIBABIES_URL" >> "$BASH_ENV"
+      - run:
+          name: Download XCP-D integration test data
+          command: |
+            download_one() {
+              local dset=$1
+              local url=$2
+              if [[ -d /tmp/data/${dset} ]]; then
+                echo "${dset} data was cached"
+                return 0
+              fi
+              mkdir -p /tmp/data/${dset}
+              wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q \
+                -O /tmp/${dset}.tar.gz "${url}" || return 1
+              tar xzf /tmp/${dset}.tar.gz -C /tmp/data/${dset}
+              rm -f /tmp/${dset}.tar.gz
+              echo "Downloaded ${dset}"
+            }
+            download_one ds001419 "$DS001419_URL"
+            download_one ds001419-aroma "$DS001419_AROMA_URL"
+            download_one schaefer100 "$SCHAEFER100_URL"
+            download_one pnc "$PNC_URL"
+            download_one ukbiobank "$UKBIOBANK_URL"
+            download_one fmriprepwithoutfreesurfer "$FMRIPREP_WITHOUT_FREESURFER_URL"
+            download_one nibabies "$NIBABIES_URL"
+      - save_cache:
+          key: data-v2-{{ checksum ".circleci/data_versions.txt" }}
+          paths:
+            - /tmp/data
+
+  integration_test:
+    parameters:
+      marker:
+        type: string
+      cpus:
+        type: integer
+        default: 2
+      resource_class:
+        type: string
+        default: large
+    environment:
+      TZ: "/usr/share/zoneinfo/America/New_York"
+    machine:
+      image: default
+    working_directory: /tmp/src/xcp_d
+    resource_class: << parameters.resource_class >>
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?<< parameters.marker >>\]' )" != "" ]]; then
+              echo "Skipping << parameters.marker >>"
+              circleci step halt
+            fi
+      - restore_build_and_data
+      - run_integration_test:
+          marker: << parameters.marker >>
+          cpus: << parameters.cpus >>
+
+  unit_tests:
+    <<: *machine_defaults
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
+      - run:
+          name: Check whether build should be skipped
+          command: |
+            if [[ "$( git log --format=oneline -n 1 $CIRCLE_SHA1 | grep -i -E '\[skip[ _]?unit_tests\]' )" != "" ]]; then
+              echo "Skipping unit tests"
+              circleci step halt
+            fi
+      - restore_build_and_data
+      - run:
+          name: Run pytest on tests directory
+          no_output_timeout: 1h
+          command: |
+            mkdir -p /tmp/out /tmp/work /tmp/coverage
+            docker run --rm=false \
+              -e CIRCLE_CPUS=4 \
+              -e COVERAGE_FILE=/coverage/.coverage.unit_tests \
+              -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
+              -v /tmp/data:/data \
+              -v /tmp/out:/out \
+              -v /tmp/work:/work \
+              -v /tmp/coverage:/coverage \
+              -w /tmp/src/xcp_d \
+              --entrypoint pytest \
+              pennlinc/xcp_d:test \
+              --strict-markers --strict-config \
+              --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
+              --data_dir=/data --output_dir=/out --working_dir=/work \
+              xcp_d
+      - persist_to_workspace:
+          root: /tmp/coverage
+          paths:
+            - .coverage.unit_tests
+      - store_artifacts:
+          path: /tmp/out
+
+  merge_coverage:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: /tmp/src/xcp_d
+    steps:
+      - checkout:
+          path: /tmp/src/xcp_d
+      - attach_workspace:
+          at: /tmp/coverage
+      - run:
+          name: Merge coverage files
+          command: |
+            pip install coverage
+            cd /tmp/src/xcp_d
+            coverage combine /tmp/coverage/
+            coverage xml -o /tmp/coverage/coverage.xml
+      - store_artifacts:
+          path: /tmp/coverage
+      - run:
+          name: Quick fix for GPG error in Codecov
+          command: |
+            mkdir -p /tmp/gnupg
+            chmod 700 /tmp/gnupg
+            echo 'export GNUPGHOME=/tmp/gnupg' >> "$BASH_ENV"
+      - codecov/upload:
+          file: /tmp/coverage/coverage.xml
+
+# Workflows
+
+workflows:
+  version: 2
+
+  run_tests:
+    when: << pipeline.parameters.has_code_changes >>
+    jobs:
+      - image_prep:
+          filters: *default_filters
+
+      - get_data:
+          filters: *default_filters
+
+      - integration_test:
+          name: << matrix.marker >>
+          matrix:
+            parameters:
+              marker:
+                - ds001419_nifti
+                - fmriprep_without_freesurfer
+              cpus: [4]
+          requires: [image_prep, get_data]
+          filters: *default_filters
+
+      - integration_test:
+          name: ds001419_cifti
+          marker: ds001419_cifti
+          cpus: 8
+          requires: [image_prep, get_data]
+          filters: *default_filters
+
+      - integration_test:
+          name: << matrix.marker >>
+          matrix:
+            parameters:
+              marker:
+                - ukbiobank
+                - pnc_cifti
+                - pnc_cifti_t2wonly
+                - fmriprep_without_freesurfer_with_main
+                - nibabies
+              cpus: [2]
+              resource_class: [medium]
+          requires: [image_prep, get_data]
+          filters: *default_filters
+
+      - unit_tests:
+          requires:
+            - image_prep
+            - get_data
+          filters: *default_filters
+
+      - merge_coverage:
+          requires:
+            - ds001419_nifti
+            - ds001419_cifti
+            - ukbiobank
+            - pnc_cifti
+            - pnc_cifti_t2wonly
+            - fmriprep_without_freesurfer
+            - fmriprep_without_freesurfer_with_main
+            - nibabies
+            - unit_tests
+          filters: *default_filters
+
+  deploy:
+    jobs:
+      - image_prep:
+          filters: *tag_filters
