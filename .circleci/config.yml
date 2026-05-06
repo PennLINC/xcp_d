@@ -17,8 +17,9 @@ version: 2.1
 setup: true
 
 orbs:
-  # 1.3.0 is the minimum version whose default executor ships Python >= 3.9.
-  path-filtering: circleci/path-filtering@1.3.0
+  # Version 2 uses the shell-based implementation and avoids the Python/pip
+  # bootstrap path that breaks when get-pip.py drops older Python versions.
+  path-filtering: circleci/path-filtering@2
 
 workflows:
   setup:
