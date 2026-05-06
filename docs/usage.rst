@@ -25,8 +25,7 @@ Additionally, each of these should be in directories that can be parsed by the B
 (even if it is not BIDS valid - we do not require BIDS valid directories).
 The directories must also include a valid `dataset_description.json`.
 
-The exact command to run in *XCP-D* depends on the :doc:`installation` method and data that needs to be
-processed.
+The exact command to run in *XCP-D* depends on the :doc:`installation` method and data that needs to be processed.
 We start first with the *bare-metal* :ref:`installation_manually_prepared_environment`
 installation, as the command line is simpler.
 *XCP-D* can be executed on the command line, processesing fMRIPrep outputs, using the following
