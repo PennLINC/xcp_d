@@ -1,5 +1,19 @@
 # What's New
 
+## 26.0.3 (May 21, 2026)
+
+### 🐛 Bug Fixes
+
+* Add kwargs to _warnings.py by @tsalo in https://github.com/PennLINC/xcp_d/pull/1619
+
+### Other Changes
+
+* Improve CircleCI config by @tsalo in https://github.com/PennLINC/xcp_d/pull/1612
+* Streamline CircleCI by @tsalo in https://github.com/PennLINC/xcp_d/pull/1617
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.0.2...26.0.3
+
+
 ## 26.0.2 (April 2, 2026)
 
 ### 🐛 Bug Fixes
