@@ -627,12 +627,16 @@ The default is 240 (4 minutes).
         nargs='+',
         type=parser_utils._float_or_auto_or_none,
         help="""\
-If used, this parameter will produce correlation matrices limited to each requested amount of time.
+If used, this parameter will produce correlation matrices limited to each requested amount of time
+from the concatenated BOLD data.
 If there is more than the required amount of low-motion data,
-then volumes will be randomly selected to produce denoised outputs with the exact
+then volumes will be randomly selected to produce correlation matrices with the exact
 amounts of time requested.
 If there is less than the required amount of 'good' data,
 then the corresponding correlation matrix will not be produced.
+
+This option requires that `--combine-runs` be enabled.
+If run concatenation is not enabled, using this option will raise an error.
 
 This option is only allowed for the "abcd" and "hbcd" modes.
 """,

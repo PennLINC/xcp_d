@@ -96,6 +96,7 @@ which may be overridden by the user:
 -  ``--linc-qc``: The LINC QC file will be created by default.
 -  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
 -  ``--smoothing 6``: Smoothing is enabled by default.
+-  ``--output-run-wise-correlations``: Per-run full correlations are computed by default.
 
 Optional Parameters
 -------------------
@@ -112,10 +113,7 @@ Optional Parameters
 Prohibited Parameters
 ---------------------
 
--  ``--create-matrices``: This option requires ``--combine-runs``, which is disabled by default
-   in the ``linc`` mode.
-   Per-run full correlations are produced by ``--output-run-wise-correlations``,
-   which is enabled by default in the ``linc`` mode.
+-  ``--create-matrices``: This option is not supported in ``linc`` mode.
 
 
 abcd Mode
@@ -197,7 +195,7 @@ Optional Parameters
    the ``--create-matrices`` flag (``--combine-runs`` is enabled by default in this mode).
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
    as well as the special value "all", which uses all of the low-motion data from the concatenated run.
-   To obtain per-run correlation matrices, use ``--output-run-wise-correlations``.
+-  ``--output-run-wise-correlations``: To obtain per-run correlation matrices, use this flag.
 
 
 hbcd Mode
@@ -279,7 +277,7 @@ Optional Parameters
    the ``--create-matrices`` flag (``--combine-runs`` is enabled by default in this mode).
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
    as well as the special value "all", which uses all of the low-motion data from the concatenated run.
-   To obtain per-run correlation matrices, use ``--output-run-wise-correlations``.
+-  ``--output-run-wise-correlations``: To obtain per-run correlation matrices, use this flag.
 
 
 nichart Mode
