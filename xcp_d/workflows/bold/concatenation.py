@@ -48,6 +48,9 @@ def init_concatenate_data_wf(TR, head_radius, exact_scans, mem_gb, name='concate
     ----------
     %(TR)s
     %(head_radius)s
+    exact_scans : :obj:`list` of :obj:`int`
+        List of exact scan counts for which to compute correlation matrices from the
+        concatenated temporal mask.
     mem_gb : :obj:`dict`
         Dictionary of memory allocations with keys ``'bold'`` and ``'volume'``.
         This should represent the *total* memory across all runs being concatenated.
@@ -255,16 +258,16 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
     ])  # fmt:skip
 
     if fd_thresh > 0:
-        temporal_mask_src = pe.Node(
+        temporal_mask_bids_src = pe.Node(
             BIDSURI(
                 numinputs=1,
                 dataset_links=config.execution.dataset_links,
                 out_dir=str(output_dir),
             ),
-            name='temporal_mask_src',
+            name='temporal_mask_bids_src',
             run_without_submitting=True,
         )
-        workflow.connect([(filter_runs, temporal_mask_src, [('temporal_mask', 'in1')])])
+        workflow.connect([(filter_runs, temporal_mask_bids_src, [('temporal_mask', 'in1')])])
 
         ds_temporal_mask = pe.Node(
             DerivativesDataSink(
@@ -278,7 +281,7 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
         workflow.connect([
             (filter_runs, ds_temporal_mask, [(('temporal_mask', _combine_name), 'source_file')]),
             (concatenate_inputs, ds_temporal_mask, [('temporal_mask', 'in_file')]),
-            (temporal_mask_src, ds_temporal_mask, [('out', 'Sources')]),
+            (temporal_mask_bids_src, ds_temporal_mask, [('out', 'Sources')]),
         ])  # fmt:skip
 
     if file_format == 'cifti':
