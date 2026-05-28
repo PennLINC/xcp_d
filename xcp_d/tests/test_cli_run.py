@@ -421,7 +421,7 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
         'input_type': 'fmriprep',
         'linc_qc': False,
         'min_coverage': 0.5,
-        'motion_filter_type': None,
+        'motion_filter_type': 'none',
         'output_run_wise_correlations': False,
         'output_type': 'censored',
         'process_surfaces': False,
