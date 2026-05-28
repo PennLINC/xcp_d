@@ -408,27 +408,33 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
     assert opts.correlation_lengths == []
 
 
-@pytest.mark.parametrize('mode,extra_opts', [
-    ('linc', {}),
-    ('nichart', {}),
-    ('none', {
-        'abcc_qc': False,
-        'combine_runs': False,
-        'confounds_config': 'none',
-        'despike': False,
-        'fd_thresh': 0.0,
-        'file_format': 'nifti',
-        'input_type': 'fmriprep',
-        'linc_qc': False,
-        'min_coverage': 0.5,
-        'motion_filter_type': 'none',
-        'output_run_wise_correlations': False,
-        'output_type': 'censored',
-        'process_surfaces': False,
-        'report_output_level': 'root',
-        'smoothing': 0,
-    }),
-])
+@pytest.mark.parametrize(
+    ('mode', 'extra_opts'),
+    [
+        ('linc', {}),
+        ('nichart', {}),
+        (
+            'none',
+            {
+                'abcc_qc': False,
+                'combine_runs': False,
+                'confounds_config': 'none',
+                'despike': False,
+                'fd_thresh': 0.0,
+                'file_format': 'nifti',
+                'input_type': 'fmriprep',
+                'linc_qc': False,
+                'min_coverage': 0.5,
+                'motion_filter_type': 'none',
+                'output_run_wise_correlations': False,
+                'output_type': 'censored',
+                'process_surfaces': False,
+                'report_output_level': 'root',
+                'smoothing': 0,
+            },
+        ),
+    ],
+)
 def test_validate_parameters_create_matrices_requires_combine_runs(
     mode, extra_opts, base_opts, base_parser, capsys
 ):
