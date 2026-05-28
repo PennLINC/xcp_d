@@ -36,7 +36,6 @@ def init_postprocess_cifti_wf(
     t2w_available,
     n_runs,
     has_multiple_runs,
-    exact_scans,
     mem_gb,
     name='cifti_postprocess_wf',
 ):
@@ -79,7 +78,6 @@ def init_postprocess_cifti_wf(
                     t2w_available=True,
                     n_runs=1,
                     has_multiple_runs=False,
-                    exact_scans=[],
                     mem_gb=_create_mem_gb(bold_file),
                     name="cifti_postprocess_wf",
                 )
@@ -98,7 +96,6 @@ def init_postprocess_cifti_wf(
     has_multiple_runs
         Whether there are multiple runs for this task or not.
         Interacts with the output_run_wise_correlations parameter.
-    %(exact_scans)s
     mem_gb : :obj:`dict`
         Dictionary of memory allocations with keys ``'bold'`` and ``'volume'``.
     %(name)s
