@@ -7,7 +7,7 @@ from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from xcp_d import config
 from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import BIDSURI, AddHashToTSV, DerivativesDataSink
-from xcp_d.interfaces.censoring import RandomCensor
+from xcp_d.interfaces.censoring import Censor, RandomCensor
 from xcp_d.interfaces.concatenation import (
     CleanNameSource,
     ConcatenateInputs,
@@ -646,6 +646,120 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                         ('metadata', 'meta_dict'),
                     ]),
                 ])  # fmt:skip
+
+            if exact_scans:
+                for i_exact_scan, exact_scan in enumerate(exact_scans):
+                    reduce_exact_bold = pe.MapNode(
+                        Censor(column=f'exact_{exact_scan}'),
+                        name=f'reduce_bold_{exact_scan}volumes',
+                        iterfield=['in_file'],
+                    )
+                    workflow.connect([
+                        (temporal_mask_src, reduce_exact_bold, [
+                            (temporal_mask_out, 'temporal_mask'),
+                        ]),
+                        (ds_cifti_ts, reduce_exact_bold, [('out_file', 'in_file')]),
+                    ])  # fmt:skip
+
+                    correlate_exact_bold = pe.MapNode(
+                        CiftiCorrelation(num_threads=1),
+                        name=f'correlate_bold_{exact_scan}volumes',
+                        iterfield=['in_file'],
+                        n_procs=1,
+                    )
+                    workflow.connect([
+                        (reduce_exact_bold, correlate_exact_bold, [('out_file', 'in_file')]),
+                    ])  # fmt:skip
+
+                    exact_dconn_to_tsv = pe.MapNode(
+                        CiftiToTSV(),
+                        name=f'dconn_to_tsv_{exact_scan}volumes',
+                        iterfield=['in_file', 'atlas_labels'],
+                    )
+                    workflow.connect([
+                        (inputnode, exact_dconn_to_tsv, [('atlas_labels_files', 'atlas_labels')]),
+                        (correlate_exact_bold, exact_dconn_to_tsv, [('out_file', 'in_file')]),
+                    ])  # fmt:skip
+
+                    cifti_exact_src = pe.MapNode(
+                        BIDSURI(
+                            numinputs=1,
+                            dataset_links=config.execution.dataset_links,
+                            out_dir=str(output_dir),
+                        ),
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        name=f'cifti_exact_src_{exact_scan}volumes',
+                        iterfield=['in1'],
+                    )
+                    workflow.connect([
+                        (correlate_exact_bold, cifti_exact_src, [('out_file', 'in1')]),
+                    ])  # fmt:skip
+
+                    ds_cifti_correlations_exact = pe.MapNode(
+                        DerivativesDataSink(
+                            dismiss_entities=dismiss_hash(['desc']),
+                            statistic='pearsoncorrelation',
+                            desc=f'{exact_scan}volumes',
+                            suffix='boldmap',
+                            extension='.pconn.nii',
+                        ),
+                        name=f'ds_cifti_correlations_exact_{i_exact_scan}',
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        iterfield=['source_file', 'in_file', 'meta_dict'],
+                    )
+                    workflow.connect([
+                        (filter_runs, ds_cifti_correlations_exact, [
+                            (('timeseries_ciftis', _combine_name), 'source_file'),
+                        ]),
+                        (correlate_exact_bold, ds_cifti_correlations_exact, [
+                            ('out_file', 'in_file'),
+                        ]),
+                        (cifti_exact_src, ds_cifti_correlations_exact, [
+                            ('metadata', 'meta_dict'),
+                        ]),
+                    ])  # fmt:skip
+
+                    cifti_exact_tsv_src = pe.MapNode(
+                        BIDSURI(
+                            numinputs=1,
+                            dataset_links=config.execution.dataset_links,
+                            out_dir=str(output_dir),
+                        ),
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        name=f'cifti_exact_tsv_src_{exact_scan}volumes',
+                        iterfield=['in1'],
+                    )
+                    workflow.connect([
+                        (ds_cifti_correlations_exact, cifti_exact_tsv_src, [('out_file', 'in1')]),
+                    ])  # fmt:skip
+
+                    ds_cifti_correlations_exact_tsv = pe.MapNode(
+                        DerivativesDataSink(
+                            dismiss_entities=dismiss_hash(['desc']),
+                            statistic='pearsoncorrelation',
+                            desc=f'{exact_scan}volumes',
+                            suffix='relmat',
+                            extension='.tsv',
+                        ),
+                        name=f'ds_cifti_correlations_exact_tsv_{i_exact_scan}',
+                        run_without_submitting=True,
+                        mem_gb=1,
+                        iterfield=['source_file', 'in_file', 'meta_dict'],
+                    )
+                    workflow.connect([
+                        (filter_runs, ds_cifti_correlations_exact_tsv, [
+                            (('timeseries', _combine_name), 'source_file'),
+                        ]),
+                        (exact_dconn_to_tsv, ds_cifti_correlations_exact_tsv, [
+                            ('out_file', 'in_file'),
+                        ]),
+                        (cifti_exact_tsv_src, ds_cifti_correlations_exact_tsv, [
+                            ('metadata', 'meta_dict'),
+                        ]),
+                    ])  # fmt:skip
 
     return workflow
 
