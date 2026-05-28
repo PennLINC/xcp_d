@@ -353,7 +353,6 @@ the following post-processing was performed.
         name_source=bold_file,
         source_metadata=run_data['bold_metadata'],
         has_multiple_runs=has_multiple_runs,
-        exact_scans=exact_scans,
     )
 
     workflow.connect([
