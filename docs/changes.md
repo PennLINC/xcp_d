@@ -1,5 +1,15 @@
 # What's New
 
+## 26.1.0 (unreleased)
+
+### Breaking Changes
+
+* `--create-matrices` now only applies to concatenated data and requires `--combine-runs`.
+  Per-run full correlations are now controlled exclusively by `--output-run-wise-correlations`.
+  Passing `--create-matrices` without `--combine-runs` now raises an error.
+  Exact-scan outputs no longer carry a `run-` entity; they are produced from the concatenated timeseries.
+
+
 ## 26.0.3 (May 21, 2026)
 
 ### 🐛 Bug Fixes

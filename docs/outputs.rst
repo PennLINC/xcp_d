@@ -258,6 +258,7 @@ This includes the atlases used to extract the timeseries.
 .. important::
    Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the
    ``--create-matrices`` parameter is used with integer values.
+   These matrices are derived from the concatenated timeseries and require ``--combine-runs``.
 
 .. code-block::
 
