@@ -392,3 +392,37 @@ def test_init_functional_connectivity_cifti_wf(ds001419_data, tmp_path_factory):
         if not np.allclose(pconn_arr, calculated_correlations, atol=0.01, equal_nan=True):
             diff = pconn_arr - calculated_correlations
             raise ValueError(np.nanmax(np.abs(diff)))
+
+
+def test_init_concatenate_data_wf_exact_scans(tmp_path):
+    """Test that RandomCensor node is added when exact_scans is non-empty."""
+    from xcp_d.workflows.bold.concatenation import init_concatenate_data_wf
+
+    with mock_config():
+        config.workflow.correlation_lengths = ['300']
+        config.workflow.combine_runs = True
+        config.workflow.fd_thresh = 0.3
+        config.workflow.file_format = 'nifti'
+        config.execution.atlases = []
+
+        # With exact_scans, random_censor node should be present
+        wf_with = init_concatenate_data_wf(
+            TR=2.0,
+            head_radius=50,
+            exact_scans=[150],
+            mem_gb={'bold': 1.0, 'volume': 0.01},
+            name='concat_with_exact',
+        )
+        node_names = [node.name for node in wf_with._graph.nodes()]
+        assert 'random_censor' in node_names
+
+        # Without exact_scans, random_censor node should not be present
+        wf_without = init_concatenate_data_wf(
+            TR=2.0,
+            head_radius=50,
+            exact_scans=[],
+            mem_gb={'bold': 1.0, 'volume': 0.01},
+            name='concat_without_exact',
+        )
+        node_names = [node.name for node in wf_without._graph.nodes()]
+        assert 'random_censor' not in node_names
