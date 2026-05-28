@@ -356,6 +356,38 @@ def test_get_tr(ds001419_data):
     assert t_r == 3.0
 
 
+def test_collect_run_data_tr_header_mismatch(ds001419_data, caplog):
+    """Warn when the sidecar RepetitionTime differs from the image header TR."""
+    import logging
+    from unittest.mock import patch
+
+    bold_file = ds001419_data['nifti_file']
+    # Header TR for this file is 3.0 s. Pretend the sidecar says 2.0 s.
+    sidecar_tr = 2.0
+
+    with caplog.at_level(logging.WARNING, logger='nipype.utils'):
+        with patch('xcp_d.utils.bids._get_tr', return_value=3.0):
+            xbids._check_tr_header_vs_sidecar(bold_file, sidecar_tr)
+
+    assert any('RepetitionTime' in r.message for r in caplog.records)
+    assert any('2.0' in r.message or '3.0' in r.message for r in caplog.records)
+
+
+def test_collect_run_data_tr_header_matches(ds001419_data, caplog):
+    """No warning when sidecar RepetitionTime matches the image header TR."""
+    import logging
+    from unittest.mock import patch
+
+    bold_file = ds001419_data['nifti_file']
+    header_tr = xbids._get_tr(bold_file)
+
+    with caplog.at_level(logging.WARNING, logger='nipype.utils'):
+        with patch('xcp_d.utils.bids._get_tr', return_value=header_tr):
+            xbids._check_tr_header_vs_sidecar(bold_file, header_tr)
+
+    assert not any('RepetitionTime' in r.message for r in caplog.records)
+
+
 def test_get_entity(datasets):
     """Test get_entity."""
     fname = os.path.join(datasets['ds001419'], 'sub-01', 'anat', 'sub-01_desc-preproc_T1w.nii.gz')
