@@ -28,6 +28,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     _get_tr,
+    check_group_trs,
     collect_confounds,
     collect_data,
     collect_mesh_data,
@@ -481,9 +482,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     n_runs = len(preproc_files)
     # group files across runs and directions, to facilitate concatenation
     preproc_files = group_across_runs(preproc_files)
+    check_group_trs(preproc_files, config.workflow.combine_runs)
     run_counter = 0
     for ent_set, task_files in enumerate(preproc_files):
-        # Assuming TR is constant across runs for a given combination of entities.
         TR = _get_tr(nb.load(task_files[0]))
 
         # We only "concatenate" if scans are named with a run or direction entity.
