@@ -1453,6 +1453,49 @@ def group_across_runs(in_files):
     return out_files
 
 
+def check_group_trs(groups, combine_runs):
+    """Check that all runs within each entity group share the same TR.
+
+    Parameters
+    ----------
+    groups : list of list of str
+        Grouped BOLD file paths, as returned by :func:`group_across_runs`.
+        Each sublist contains all runs for one entity combination.
+    combine_runs : bool
+        If True, raise a :exc:`ValueError` when TRs differ within a group
+        (mismatched TRs make concatenation scientifically invalid).
+        If False, emit a warning instead.
+
+    Raises
+    ------
+    ValueError
+        When ``combine_runs`` is True and a group contains runs with
+        differing TRs.
+    """
+    for group in groups:
+        if len(group) < 2:
+            continue  # nothing to compare
+
+        trs = [_get_tr(nb.load(f)) for f in group]
+        if max(trs) - min(trs) <= _TR_TOLERANCE:
+            continue
+
+        tr_list = ', '.join(
+            f'{os.path.basename(f)}={tr:.6g}s' for f, tr in zip(group, trs)
+        )
+        if combine_runs:
+            raise ValueError(
+                f'Cannot combine runs with inconsistent TRs: {tr_list}. '
+                f'Disable --combine-runs or fix the TR mismatch.'
+            )
+        else:
+            LOGGER.warning(
+                f'Runs in the same entity group have inconsistent TRs: {tr_list}. '
+                f'Each run will be processed with its own TR. '
+                f'Combining runs with mismatched TRs will raise an error.'
+            )
+
+
 def check_pipeline_version(pipeline_name, cvers, data_desc):
     """Search for existing BIDS pipeline output and compares against current pipeline version.
 
