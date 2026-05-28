@@ -68,7 +68,6 @@ def init_functional_connectivity_nifti_wf(
     %(coverage)s
     %(timeseries)s
     %(correlations)s
-    %(correlations_exact)s
     parcellated_alff
     parcellated_reho
     """
@@ -110,7 +109,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'coverage',
                 'timeseries',
                 'correlations',
-                'correlations_exact',
                 'parcellated_alff',
                 'parcellated_reho',
             ],
@@ -149,7 +147,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (parcellate_data, functional_connectivity, [('timeseries', 'timeseries')]),
             (functional_connectivity, outputnode, [
                 ('correlations', 'correlations'),
-                ('correlations_exact', 'correlations_exact'),
             ]),
         ])  # fmt:skip
 

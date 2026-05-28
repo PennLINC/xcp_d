@@ -420,7 +420,6 @@ the following post-processing was performed.
                 ('outputnode.coverage', 'inputnode.coverage'),
                 ('outputnode.timeseries', 'inputnode.timeseries'),
                 ('outputnode.correlations', 'inputnode.correlations'),
-                ('outputnode.correlations_exact', 'inputnode.correlations_exact'),
             ]),
         ])  # fmt:skip
 

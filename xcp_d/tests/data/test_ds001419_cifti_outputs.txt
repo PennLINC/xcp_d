@@ -184,6 +184,7 @@ sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S156Parcels_den-91k_stat-pears
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S156Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S156Parcels_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S156Parcels_stat-mean_timeseries.tsv
+sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S156Parcels_stat-pearsoncorrelation_desc-26volumes_relmat.tsv
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S156Parcels_stat-pearsoncorrelation_relmat.json
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S156Parcels_stat-pearsoncorrelation_relmat.tsv
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S256Parcels_den-91k_stat-mean_timeseries.json
@@ -192,6 +193,7 @@ sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S256Parcels_den-91k_stat-pears
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S256Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S256Parcels_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S256Parcels_stat-mean_timeseries.tsv
+sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S256Parcels_stat-pearsoncorrelation_desc-26volumes_relmat.tsv
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S256Parcels_stat-pearsoncorrelation_relmat.json
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S256Parcels_stat-pearsoncorrelation_relmat.tsv
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S356Parcels_den-91k_stat-mean_timeseries.json
@@ -200,6 +202,7 @@ sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S356Parcels_den-91k_stat-pears
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S356Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S356Parcels_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S356Parcels_stat-mean_timeseries.tsv
+sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S356Parcels_stat-pearsoncorrelation_desc-26volumes_relmat.tsv
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S356Parcels_stat-pearsoncorrelation_relmat.json
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S356Parcels_stat-pearsoncorrelation_relmat.tsv
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S456Parcels_den-91k_stat-mean_timeseries.json
@@ -208,6 +211,7 @@ sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S456Parcels_den-91k_stat-pears
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S456Parcels_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S456Parcels_stat-mean_timeseries.json
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S456Parcels_stat-mean_timeseries.tsv
+sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S456Parcels_stat-pearsoncorrelation_desc-26volumes_relmat.tsv
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S456Parcels_stat-pearsoncorrelation_relmat.json
 sub-01/func/sub-01_task-imagery_space-fsLR_atlas-4S456Parcels_stat-pearsoncorrelation_relmat.tsv
 sub-01/func/sub-01_task-imagery_space-fsLR_den-91k_desc-denoisedSmoothed_bold.dtseries.nii
