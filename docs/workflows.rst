@@ -77,7 +77,6 @@ and correlation matrices, will be censored.
        low_pass = 0.08
        bpf_order = 2
        min_coverage = 0.5
-       correlation_lengths = [ "all",]
        process_surfaces = false
        abcc_qc = false
        linc_qc = true
@@ -106,6 +105,8 @@ Optional Parameters
    If you would like to create these files, you must include the ``--abcc-qc`` flag.
 -  ``--combine-runs``: By default, *XCP-D* will not combine runs when run in the ``linc`` mode.
    If you would like to combine runs, you must include the ``--combine-runs`` flag.
+   When ``--combine-runs`` is enabled, a full-timeseries correlation matrix will be produced from the
+   concatenated data in addition to the per-run correlation matrices.
 -  ``--warp-surfaces-native2std``: By default, *XCP-D* will not warp surfaces to standard space when
    run in the ``linc`` mode.
    If you would like to warp surfaces, you must include the ``--warp-surfaces-native2std`` flag.
@@ -114,6 +115,8 @@ Prohibited Parameters
 ---------------------
 
 -  ``--create-matrices``: This option is not supported in ``linc`` mode.
+   When ``--combine-runs`` is enabled, a full-timeseries (``"all"`` volumes) correlation matrix is
+   produced automatically from the concatenated data; exact-N sub-sampled matrices are not available.
 
 
 abcd Mode

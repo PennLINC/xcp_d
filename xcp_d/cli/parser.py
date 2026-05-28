@@ -638,7 +638,7 @@ then the corresponding correlation matrix will not be produced.
 This option requires that `--combine-runs` be enabled.
 If run concatenation is not enabled, using this option will raise an error.
 
-This option is only allowed for the "abcd" and "hbcd" modes.
+This option is not supported in the "linc" mode.
 """,
     )
     g_dcan.add_argument(
@@ -1287,7 +1287,13 @@ def _validate_parameters(opts, build_log, parser):
             'root' if opts.report_output_level == 'auto' else opts.report_output_level
         )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
-        opts.correlation_lengths = opts.correlation_lengths or []
+        if opts.correlation_lengths is not None:
+            error_messages.append(f"'--create-matrices' is not supported in '{opts.mode}' mode.")
+            opts.correlation_lengths = []
+        elif opts.combine_runs:
+            opts.correlation_lengths = ['all']
+        else:
+            opts.correlation_lengths = []
     elif opts.mode == 'nichart':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
         opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
