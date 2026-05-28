@@ -648,6 +648,21 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 ])  # fmt:skip
 
             if exact_scans:
+                # The concatenated parcellated timeseries may be interpolated (e.g., in abcd
+                # mode) and therefore include FD-censored volumes. Censor those volumes before
+                # exact-scan subsetting so that the exact_N column row count matches the image.
+                censor_cifti_ts_for_exact = pe.MapNode(
+                    Censor(column='framewise_displacement'),
+                    name='censor_cifti_ts_for_exact',
+                    iterfield=['in_file'],
+                )
+                workflow.connect([
+                    (concatenate_inputs, censor_cifti_ts_for_exact, [
+                        ('temporal_mask', 'temporal_mask'),
+                    ]),
+                    (ds_cifti_ts, censor_cifti_ts_for_exact, [('out_file', 'in_file')]),
+                ])  # fmt:skip
+
                 for i_exact_scan, exact_scan in enumerate(exact_scans):
                     reduce_exact_bold = pe.MapNode(
                         Censor(column=f'exact_{exact_scan}'),
@@ -658,7 +673,9 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                         (temporal_mask_src, reduce_exact_bold, [
                             (temporal_mask_out, 'temporal_mask'),
                         ]),
-                        (ds_cifti_ts, reduce_exact_bold, [('out_file', 'in_file')]),
+                        (censor_cifti_ts_for_exact, reduce_exact_bold, [
+                            ('out_file', 'in_file'),
+                        ]),
                     ])  # fmt:skip
 
                     correlate_exact_bold = pe.MapNode(
