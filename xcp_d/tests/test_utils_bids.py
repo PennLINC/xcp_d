@@ -465,9 +465,8 @@ def test_group_across_runs():
     ]
 
 
-def test_check_group_trs_consistent(caplog):
+def test_check_group_trs_consistent():
     """No warning when all runs in a group share the same TR."""
-    import logging
     from unittest.mock import patch
 
     groups = [
@@ -483,6 +482,20 @@ def test_check_group_trs_consistent(caplog):
     mock_logger.warning.assert_not_called()
 
 
+def test_check_group_trs_single_run():
+    """No warning or error for a group with only one run — nothing to compare."""
+    from unittest.mock import patch
+
+    groups = [['/path/sub-01_task-rest_bold.nii.gz']]
+
+    with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+        with patch('xcp_d.utils.bids._get_tr', return_value=2.0):
+            with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+                xbids.check_group_trs(groups, combine_runs=True)
+
+    mock_logger.warning.assert_not_called()
+
+
 def test_check_group_trs_mismatch_warning():
     """Warn when runs in a group have different TRs and combine_runs is False."""
     from unittest.mock import patch
@@ -491,19 +504,17 @@ def test_check_group_trs_mismatch_warning():
         ['/path/sub-01_task-rest_run-01_bold.nii.gz',
          '/path/sub-01_task-rest_run-02_bold.nii.gz'],
     ]
-    trs = [2.0, 1.0]
-
-    def fake_get_tr(img):
-        return trs.pop(0)
 
     with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
-        with patch('xcp_d.utils.bids._get_tr', side_effect=fake_get_tr):
+        with patch('xcp_d.utils.bids._get_tr', side_effect=[2.0, 1.0]):
             with patch('xcp_d.utils.bids.nb.load', return_value=object()):
                 xbids.check_group_trs(groups, combine_runs=False)
 
     mock_logger.warning.assert_called_once()
     warning_msg = mock_logger.warning.call_args[0][0]
-    assert 'TR' in warning_msg
+    assert 'inconsistent TRs' in warning_msg
+    assert 'run-01' in warning_msg
+    assert 'run-02' in warning_msg
 
 
 def test_check_group_trs_mismatch_error_combine_runs():
@@ -514,12 +525,8 @@ def test_check_group_trs_mismatch_error_combine_runs():
         ['/path/sub-01_task-rest_run-01_bold.nii.gz',
          '/path/sub-01_task-rest_run-02_bold.nii.gz'],
     ]
-    trs = [2.0, 1.0]
 
-    def fake_get_tr(img):
-        return trs.pop(0)
-
-    with patch('xcp_d.utils.bids._get_tr', side_effect=fake_get_tr):
+    with patch('xcp_d.utils.bids._get_tr', side_effect=[2.0, 1.0]):
         with patch('xcp_d.utils.bids.nb.load', return_value=object()):
             with pytest.raises(ValueError, match='TR'):
                 xbids.check_group_trs(groups, combine_runs=True)
