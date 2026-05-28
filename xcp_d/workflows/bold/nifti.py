@@ -240,7 +240,6 @@ the following post-processing was performed.
 
     prepare_confounds_wf = init_prepare_confounds_wf(
         TR=TR,
-        exact_scans=exact_scans,
         head_radius=head_radius,
         mem_gb=mem_gb,
     )
