@@ -388,7 +388,6 @@ the following post-processing was performed.
     if config.execution.atlases:
         connectivity_wf = init_functional_connectivity_cifti_wf(
             mem_gb=mem_gb,
-            exact_scans=exact_scans,
             has_multiple_runs=has_multiple_runs,
             skip_reho=skip_reho,
             skip_alff=skip_alff,
@@ -413,11 +412,9 @@ the following post-processing was performed.
                 ('outputnode.coverage_ciftis', 'inputnode.coverage_ciftis'),
                 ('outputnode.timeseries_ciftis', 'inputnode.timeseries_ciftis'),
                 ('outputnode.correlation_ciftis', 'inputnode.correlation_ciftis'),
-                ('outputnode.correlation_ciftis_exact', 'inputnode.correlation_ciftis_exact'),
                 ('outputnode.coverage', 'inputnode.coverage'),
                 ('outputnode.timeseries', 'inputnode.timeseries'),
                 ('outputnode.correlations', 'inputnode.correlations'),
-                ('outputnode.correlations_exact', 'inputnode.correlations_exact'),
             ]),
         ])  # fmt:skip
 
