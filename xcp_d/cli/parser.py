@@ -1283,21 +1283,14 @@ def _validate_parameters(opts, build_log, parser):
             'root' if opts.report_output_level == 'auto' else opts.report_output_level
         )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
-        # Check --create-matrices compatibility, but allow if connectivity is skipped
-        if opts.correlation_lengths is not None:
-            if not opts.skip_outputs or 'connectivity' not in opts.skip_outputs:
-                error_messages.append(
-                    f"'--create-matrices' is not supported for '{opts.mode}' mode."
-                )
-        # Patch 'all' into the list of correlation lengths
-        opts.correlation_lengths = ['all']
+        opts.correlation_lengths = opts.correlation_lengths or []
     elif opts.mode == 'nichart':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
         opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths or ['all']
+        opts.correlation_lengths = opts.correlation_lengths or []
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1519,6 +1512,9 @@ def _validate_parameters(opts, build_log, parser):
             'In order to perform surface normalization (--warp-surfaces-native2std), '
             'you must enable cifti processing (--file-format cifti).'
         )
+
+    if opts.correlation_lengths and not opts.combine_runs:
+        error_messages.append("'--create-matrices' requires '--combine-runs'.")
 
     if error_messages:
         error_message_str = 'Errors detected in parameter parsing:\n\t- ' + '\n\t- '.join(
