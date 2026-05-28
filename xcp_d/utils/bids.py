@@ -899,7 +899,7 @@ def _check_tr_header_vs_sidecar(bold_file, sidecar_tr):
     sidecar_tr : float
         RepetitionTime (in seconds) from the BIDS sidecar JSON.
     """
-    header_tr = _get_tr(nb.load(bold_file))
+    header_tr = _get_tr(bold_file)
     if abs(header_tr - sidecar_tr) > _TR_TOLERANCE:
         LOGGER.warning(
             f'RepetitionTime mismatch for {os.path.basename(bold_file)}: '

@@ -356,36 +356,35 @@ def test_get_tr(ds001419_data):
     assert t_r == 3.0
 
 
-def test_collect_run_data_tr_header_mismatch(ds001419_data, caplog):
+def test_collect_run_data_tr_header_mismatch(ds001419_data):
     """Warn when the sidecar RepetitionTime differs from the image header TR."""
-    import logging
     from unittest.mock import patch
 
     bold_file = ds001419_data['nifti_file']
-    # Header TR for this file is 3.0 s. Pretend the sidecar says 2.0 s.
-    sidecar_tr = 2.0
+    sidecar_tr = 2.0  # header TR for this file is 3.0 s
 
-    with caplog.at_level(logging.WARNING, logger='nipype.utils'):
-        with patch('xcp_d.utils.bids._get_tr', return_value=3.0):
+    with patch('xcp_d.utils.bids._get_tr', return_value=3.0):
+        with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
             xbids._check_tr_header_vs_sidecar(bold_file, sidecar_tr)
 
-    assert any('RepetitionTime' in r.message for r in caplog.records)
-    assert any('2.0' in r.message or '3.0' in r.message for r in caplog.records)
+    mock_logger.warning.assert_called_once()
+    warning_msg = mock_logger.warning.call_args[0][0]
+    assert 'RepetitionTime' in warning_msg
+    assert '2' in warning_msg or '3' in warning_msg
 
 
-def test_collect_run_data_tr_header_matches(ds001419_data, caplog):
+def test_collect_run_data_tr_header_matches(ds001419_data):
     """No warning when sidecar RepetitionTime matches the image header TR."""
-    import logging
     from unittest.mock import patch
 
     bold_file = ds001419_data['nifti_file']
     header_tr = xbids._get_tr(bold_file)
 
-    with caplog.at_level(logging.WARNING, logger='nipype.utils'):
-        with patch('xcp_d.utils.bids._get_tr', return_value=header_tr):
+    with patch('xcp_d.utils.bids._get_tr', return_value=header_tr):
+        with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
             xbids._check_tr_header_vs_sidecar(bold_file, header_tr)
 
-    assert not any('RepetitionTime' in r.message for r in caplog.records)
+    mock_logger.warning.assert_not_called()
 
 
 def test_get_entity(datasets):
