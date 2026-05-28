@@ -1314,6 +1314,7 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.combine_runs == 'auto':
             error_messages.append("'--combine-runs' (y or n) is required for 'none' mode.")
+            opts.combine_runs = False  # satisfy later checks
 
         if opts.confounds_config == 'auto':
             error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
