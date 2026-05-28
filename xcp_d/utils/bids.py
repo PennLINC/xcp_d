@@ -1481,7 +1481,7 @@ def check_group_trs(groups, combine_runs):
             continue
 
         tr_list = ', '.join(
-            f'{os.path.basename(f)}={tr:.6g}s' for f, tr in zip(group, trs)
+            f'{os.path.basename(f)}={tr:.6g}s' for f, tr in zip(group, trs, strict=True)
         )
         if combine_runs:
             raise ValueError(

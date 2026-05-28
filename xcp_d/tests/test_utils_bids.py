@@ -470,8 +470,7 @@ def test_check_group_trs_consistent():
     from unittest.mock import patch
 
     groups = [
-        ['/path/sub-01_task-rest_run-01_bold.nii.gz',
-         '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
     ]
 
     with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
@@ -501,8 +500,7 @@ def test_check_group_trs_mismatch_warning():
     from unittest.mock import patch
 
     groups = [
-        ['/path/sub-01_task-rest_run-01_bold.nii.gz',
-         '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
     ]
 
     with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
@@ -522,8 +520,7 @@ def test_check_group_trs_mismatch_error_combine_runs():
     from unittest.mock import patch
 
     groups = [
-        ['/path/sub-01_task-rest_run-01_bold.nii.gz',
-         '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
     ]
 
     with patch('xcp_d.utils.bids._get_tr', side_effect=[2.0, 1.0]):
