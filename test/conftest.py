@@ -4,23 +4,27 @@ import os
 
 import pytest
 
+from xcp_d._testing import get_test_data_path
+
+_TEST_DATA_DIR = os.path.join(os.path.dirname(get_test_data_path()), 'test_data')
+
 
 def pytest_addoption(parser):
     """Collect pytest parameters for running tests."""
     parser.addoption(
         '--working_dir',
         action='store',
-        default='/tmp/src/xcp_d/test/data/test_data/run_pytests/work',  # noqa: S108
+        default=os.path.join(_TEST_DATA_DIR, 'run_pytests', 'work'),
     )
     parser.addoption(
         '--data_dir',
         action='store',
-        default='/tmp/src/xcp_d/test/data/test_data',  # noqa: S108
+        default=_TEST_DATA_DIR,
     )
     parser.addoption(
         '--output_dir',
         action='store',
-        default='/tmp/src/xcp_d/test/data/test_data/run_pytests/out',  # noqa: S108
+        default=os.path.join(_TEST_DATA_DIR, 'run_pytests', 'out'),
     )
 
 
