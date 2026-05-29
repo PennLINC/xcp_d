@@ -75,6 +75,7 @@ def zscore_tsv(tsv_file, out_file):
     data = pd.read_table(tsv_file)
     # Assume first axis is time
     data = data.apply(stats.zscore, axis=0)
+    data = data.fillna(0)
     data.to_csv(out_file, sep='\t', index=False)
     return out_file
 
@@ -86,11 +87,13 @@ def zscore_niimg(niimg_file, out_file):
         data = img.get_fdata()
         # Assume first axis is time
         data = stats.zscore(data, axis=0)
+        data = np.nan_to_num(data, nan=0.0)
         img_out = nb.Cifti2Image(data, img.header, img.nifti_header)
     elif isinstance(img, nb.Nifti1Image):
         data = img.get_fdata()
         # Assume fourth axis is time
         data = stats.zscore(data, axis=3)
+        data = np.nan_to_num(data, nan=0.0)
         img_out = nb.Nifti1Image(data, img.affine, img.header)
     else:
         raise ValueError(f'Unsupported image type: {type(img)}')
