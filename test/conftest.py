@@ -223,7 +223,7 @@ def fmriprep_without_freesurfer_data(datasets):
 
 @pytest.fixture(scope='session')
 def base_config():
-    from test.tests import mock_config
+    from xcp_d._testing import mock_config
 
     return mock_config
 

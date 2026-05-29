@@ -33,7 +33,7 @@ def init_postprocess_anat_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from test.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.anatomical.volume import init_postprocess_anat_wf
 

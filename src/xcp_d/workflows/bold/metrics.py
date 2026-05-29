@@ -38,7 +38,7 @@ def init_alff_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from test.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.metrics import init_alff_wf
 
@@ -267,7 +267,7 @@ def init_reho_cifti_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from test.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.metrics import init_reho_cifti_wf
 
@@ -435,7 +435,7 @@ def init_reho_nifti_wf(name_source, mem_gb, name='reho_nifti_wf'):
             :graph2use: orig
             :simple_form: yes
 
-            from test.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.metrics import init_reho_nifti_wf
 

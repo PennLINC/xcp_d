@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 from nilearn.maskers import NiftiLabelsMasker
 
-from test.tests import mock_config
 from test.utils import get_nodes
 from xcp_d import config
+from xcp_d._testing import mock_config
 from xcp_d.interfaces.ants import ApplyTransforms
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.utils import _create_mem_gb, get_std2bold_xfms

@@ -32,7 +32,7 @@ def init_functional_connectivity_nifti_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from test.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.connectivity import init_functional_connectivity_nifti_wf
 
@@ -233,7 +233,7 @@ def init_functional_connectivity_cifti_wf(
             :simple_form: yes
 
             from xcp_d import config
-            from test.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d.workflows.bold.connectivity import init_functional_connectivity_cifti_wf
 
             with mock_config():

@@ -9,8 +9,8 @@ import pytest
 from niworkflows.utils.testing import generate_bids_skeleton
 
 from test.test_config import _reset_config
-from test.utils import modified_environ
 from xcp_d import config
+from xcp_d._testing import modified_environ
 from xcp_d.cli import parser
 from xcp_d.data import load as load_data
 

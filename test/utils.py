@@ -1,9 +1,8 @@
-"""Utility functions for tests."""
+"""Utility functions for integration tests."""
 
 import os
 import subprocess
 import tarfile
-from contextlib import contextmanager
 from glob import glob
 from gzip import GzipFile
 from io import BytesIO
@@ -15,42 +14,6 @@ from bids.layout import BIDSLayout
 from nipype import logging
 
 LOGGER = logging.getLogger('nipype.utils')
-
-
-def _check_arg_specified(argname, arglist):
-    for arg in arglist:
-        if arg.startswith(argname):
-            return True
-    return False
-
-
-def get_cpu_count(max_cpus=4):
-    """Figure out how many cpus are available in the test environment."""
-    env_cpus = os.getenv('CIRCLE_CPUS')
-    if env_cpus:
-        return int(env_cpus)
-    return max_cpus
-
-
-def update_resources(parameters):
-    """We should use all the available CPUs for testing.
-
-    Sometimes a test will set a specific amount of cpus. In that
-    case, the number should be kept. Otherwise, try to read the
-    env variable (specified in each job in config.yml). If
-    this variable doesn't work, just set it to 4.
-    """
-    nthreads = get_cpu_count()
-    if not _check_arg_specified('--nthreads', parameters):
-        parameters.append(f'--nthreads={nthreads}')
-    if not _check_arg_specified('--omp-nthreads', parameters):
-        parameters.append(f'--omp-nthreads={nthreads}')
-    return parameters
-
-
-def get_nodes(wf_results):
-    """Load nodes from a Nipype workflow's results."""
-    return {node.fullname: node for node in wf_results.nodes}
 
 
 def download_test_data(dset, data_dir=None):
@@ -244,20 +207,6 @@ def run_command(command, env=None):
         )
 
 
-@contextmanager
-def chdir(path):
-    """Temporarily change directories.
-
-    Taken from https://stackoverflow.com/a/37996581/2589328.
-    """
-    oldpwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldpwd)
-
-
 def reorder_expected_outputs():
     """Load each of the expected output files and sort the lines alphabetically.
 
@@ -289,34 +238,3 @@ def list_files(startpath):
             tree += f'{subindent}{f}\n'
 
     return tree
-
-
-@contextmanager
-def modified_environ(*remove, **update):
-    """
-    Temporarily updates the ``os.environ`` dictionary in-place.
-
-    The ``os.environ`` dictionary is updated in-place so that the modification
-    is sure to work in all situations.
-
-    :param remove: Environment variables to remove.
-    :param update: Dictionary of environment variables and values to add/update.
-    """
-    env = os.environ
-    update = update or {}
-    remove = remove or []
-
-    # List of environment variables being updated or removed.
-    stomped = (set(update.keys()) | set(remove)) & set(env.keys())
-    # Environment variables and values to restore on exit.
-    update_after = {k: env[k] for k in stomped}
-    # Environment variables and values to remove on exit.
-    remove_after = frozenset(k for k in update if k not in env)
-
-    try:
-        env.update(update)
-        [env.pop(k, None) for k in remove]
-        yield
-    finally:
-        env.update(update_after)
-        [env.pop(k) for k in remove_after]

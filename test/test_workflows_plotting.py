@@ -4,9 +4,9 @@ import os
 
 from nilearn import image
 
-from test.tests import mock_config
 from test.utils import get_nodes
 from xcp_d import config
+from xcp_d._testing import mock_config
 from xcp_d.workflows import plotting
 from xcp_d.workflows.base import clean_datasinks
 

@@ -27,7 +27,7 @@ def init_postproc_derivatives_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from test.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.outputs import init_postproc_derivatives_wf
 

@@ -21,7 +21,7 @@ def init_copy_inputs_to_outputs_wf(name='copy_inputs_to_outputs_wf'):
             :graph2use: orig
             :simple_form: yes
 
-            from test.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.anatomical.outputs import init_copy_inputs_to_outputs_wf
 
