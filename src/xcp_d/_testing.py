@@ -146,9 +146,10 @@ def get_test_data_path():
     """Return the path to test data, terminated with separator.
 
     Test-related data live in ``test/data/`` at the project root.
-    Based on a function by Yaroslav Halchenko used in Neurosynth.
+    Computed from ``Path.cwd()``, which is always the project root when
+    pytest runs (enforced by ``testpaths`` in ``pyproject.toml``).
     """
-    return str(Path(__file__).parents[2] / 'test' / 'data') + os.sep
+    return str(Path.cwd() / 'test' / 'data') + os.sep
 
 
 def download_test_data(dset, data_dir=None):
