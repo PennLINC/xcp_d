@@ -271,6 +271,12 @@ omit = [
     "src/xcp_d/_version.py"
 ]
 
+[tool.coverage.paths]
+source = [
+    "src/xcp_d/",
+    "*/site-packages/xcp_d/",
+]
+
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
 exclude_lines = [
