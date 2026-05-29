@@ -108,7 +108,7 @@ commands:
               -rP -o log_cli=true -m "<< parameters.marker >>" \
               --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
               --data_dir=/data --output_dir=/out --working_dir=/work \
-              xcp_d
+              test
       - run:
           name: Prune non-QC artifacts
           when: always
@@ -424,7 +424,7 @@ jobs:
               --strict-markers --strict-config \
               --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
               --data_dir=/data --output_dir=/out --working_dir=/work \
-              xcp_d
+              test
       - persist_to_workspace:
           root: /tmp/coverage
           paths:

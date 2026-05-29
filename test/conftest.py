@@ -10,25 +10,17 @@ def pytest_addoption(parser):
     parser.addoption(
         '--working_dir',
         action='store',
-        default=(
-            '/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d/xcp_d/tests/data/test_data/'
-            'run_pytests/work'
-        ),
+        default='/tmp/src/xcp_d/test/data/test_data/run_pytests/work',
     )
     parser.addoption(
         '--data_dir',
         action='store',
-        default=(
-            '/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d/xcp_d/tests/data/test_data'
-        ),
+        default='/tmp/src/xcp_d/test/data/test_data',
     )
     parser.addoption(
         '--output_dir',
         action='store',
-        default=(
-            '/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d/xcp_d/tests/data/test_data/'
-            'run_pytests/out'
-        ),
+        default='/tmp/src/xcp_d/test/data/test_data/run_pytests/out',
     )
 
 
