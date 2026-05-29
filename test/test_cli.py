@@ -10,14 +10,15 @@ import pandas as pd
 import pytest
 from nipype import logging
 
-from test.utils import (
+from xcp_d._testing import (
+    chdir,
     check_affines,
     check_generated_files,
     download_test_data,
     get_test_data_path,
     list_files,
+    update_resources,
 )
-from xcp_d._testing import chdir, update_resources
 from xcp_d.cli import combineqc, run
 from xcp_d.cli.parser import parse_args
 from xcp_d.cli.workflow import build_boilerplate, build_workflow
