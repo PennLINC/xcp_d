@@ -63,7 +63,7 @@ def init_prepare_confounds_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.postprocessing import init_prepare_confounds_wf
 
@@ -427,7 +427,7 @@ def init_despike_wf(TR, mem_gb, name='despike_wf'):
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.postprocessing import init_despike_wf
 
@@ -522,7 +522,7 @@ def init_denoise_bold_wf(TR, mem_gb, name='denoise_bold_wf'):
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.postprocessing import init_denoise_bold_wf
 
@@ -775,7 +775,7 @@ def init_resd_smoothing_wf(mem_gb, name='resd_smoothing_wf'):
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.postprocessing import init_resd_smoothing_wf
 

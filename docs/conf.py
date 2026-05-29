@@ -29,7 +29,7 @@ import xcp_d
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.append(os.path.abspath('sphinxext'))
-sys.path.insert(0, os.path.abspath('../xcp_d'))
+sys.path.insert(0, os.path.abspath('../src'))
 
 from github_link import make_linkcode_resolve
 
@@ -180,7 +180,7 @@ napoleon_custom_sections = [
 ]
 
 # -- Extension configuration -------------------------------------------------
-apidoc_module_dir = '../xcp_d'
+apidoc_module_dir = '../src/xcp_d'
 apidoc_output_dir = 'api'
 apidoc_excluded_paths = ['conftest.py', '*/tests/*', 'tests/*', 'data/*']
 apidoc_separate_modules = True
@@ -398,7 +398,7 @@ suppress_warnings = ['image.nonlocal_uri']
 # -----------------------------------------------------------------------------
 # sphinxcontrib-bibtex
 # -----------------------------------------------------------------------------
-bibtex_bibfiles = ['../xcp_d/data/boilerplate.bib']
+bibtex_bibfiles = ['../src/xcp_d/data/boilerplate.bib']
 bibtex_style = 'unsrt'
 bibtex_reference_style = 'author_year'
 bibtex_footbibliography_header = ''

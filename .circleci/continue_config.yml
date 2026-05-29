@@ -108,7 +108,7 @@ commands:
               -rP -o log_cli=true -m "<< parameters.marker >>" \
               --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
               --data_dir=/data --output_dir=/out --working_dir=/work \
-              xcp_d
+              test
       - run:
           name: Prune non-QC artifacts
           when: always
@@ -238,7 +238,7 @@ jobs:
             if [[ -n "$CIRCLE_TAG" ]]; then
               THISVERSION="$CIRCLE_TAG"
               sed -i "s/title = {xcp_d}/title = {xcp_d ${THISVERSION}}/" \
-                xcp_d/data/boilerplate.bib
+                src/xcp_d/data/boilerplate.bib
             else
               THISVERSION="0+build"
             fi
@@ -424,7 +424,7 @@ jobs:
               --strict-markers --strict-config \
               --cov-append --cov-branch --cov-report term-missing --cov=xcp_d \
               --data_dir=/data --output_dir=/out --working_dir=/work \
-              xcp_d
+              test
       - persist_to_workspace:
           root: /tmp/coverage
           paths:

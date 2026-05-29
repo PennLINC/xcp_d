@@ -8,11 +8,11 @@ from pathlib import Path
 import pytest
 from niworkflows.utils.testing import generate_bids_skeleton
 
+from test.test_config import _reset_config
 from xcp_d import config
+from xcp_d._testing import modified_environ
 from xcp_d.cli import parser
 from xcp_d.data import load as load_data
-from xcp_d.tests.test_config import _reset_config
-from xcp_d.tests.utils import modified_environ
 
 build_log = logging.getLogger()
 build_log.setLevel(10)

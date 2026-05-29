@@ -38,7 +38,7 @@ def init_qc_report_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.plotting import init_qc_report_wf
 
@@ -478,7 +478,7 @@ def init_execsummary_functional_plots_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from xcp_d._testing import mock_config
             from xcp_d import config
             from xcp_d.workflows.bold.plotting import init_execsummary_functional_plots_wf
 

@@ -105,10 +105,7 @@ allow-direct-references = true
 exclude = [".git_archival.txt"]  # No longer needed in sdist
 
 [tool.hatch.build.targets.wheel]
-packages = ["xcp_d"]
-exclude = [
-    "xcp_d/tests/data",  # Large test data directory
-]
+packages = ["src/xcp_d"]
 
 ##  The following two sections configure setuptools_scm in the hatch way
 
@@ -117,7 +114,7 @@ source = "vcs"
 # raw-options = { version_scheme = "nipreps-calver" }
 
 [tool.hatch.build.hooks.vcs]
-version-file = "xcp_d/_version.py"
+version-file = "src/xcp_d/_version.py"
 
 #
 # Pixi configuration
@@ -240,7 +237,7 @@ inline-quotes = "single"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "*/test_*.py" = ["S101"]
-"xcp_d/utils/debug.py" = ["A002", "T100"]
+"src/xcp_d/utils/debug.py" = ["A002", "T100"]
 "docs/conf.py" = ["A001"]
 "docs/sphinxext/github_link.py" = ["BLE001"]
 
@@ -249,6 +246,7 @@ quote-style = "single"
 
 [tool.pytest.ini_options]
 addopts = '-m "not integration"'
+testpaths = ["src", "test"]
 markers = [
     "integration: mark test as an integration test",
     "ds001419_nifti: mark NIfTI integration test for fMRIPrep derivatives from ds001419",
@@ -270,7 +268,13 @@ omit = [
     "*/tests/*",
     "*/__init__.py",
     "*/conftest.py",
-    "xcp_d/_version.py"
+    "src/xcp_d/_version.py"
+]
+
+[tool.coverage.paths]
+source = [
+    "src/xcp_d/",
+    "*/site-packages/xcp_d/",
 ]
 
 [tool.coverage.report]

@@ -3,13 +3,13 @@ docs/superpowers
 .claude/settings.local.json
 
 # local path for tests
-xcp_d/tests/pytests
-xcp_d/tests/test_data
-xcp_d/tests/data/test_data
+test/pytests
+test/test_data
+test/data/test_data
 .circleci/local_xcpd_path.txt
 
 # setuptools-scm
-xcp_d/_version.py
+src/xcp_d/_version.py
 
 # documentation
 docs/api/
@@ -18,8 +18,8 @@ docs/_build
 docs/*.dot
 docs/etc/
 docs/args.txt
-xcp_d/data/ds001419-example/
-xcp_d/data/ds001419-example.tar.gz
+src/xcp_d/data/ds001419-example/
+src/xcp_d/data/ds001419-example.tar.gz
 
 # other stuff
 .DS_Store
@@ -27,7 +27,7 @@ xcp_d/data/ds001419-example.tar.gz
 .eggs
 .Rhistory
 .vscode
-xcp_d/data/*.scene.gz
+src/xcp_d/data/*.scene.gz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

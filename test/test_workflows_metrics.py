@@ -7,8 +7,7 @@ import nibabel as nb
 import numpy as np
 
 from xcp_d import config
-from xcp_d.tests.tests import mock_config
-from xcp_d.tests.utils import get_nodes
+from xcp_d._testing import get_nodes, mock_config
 from xcp_d.utils.bids import _get_tr
 from xcp_d.utils.utils import _create_mem_gb
 from xcp_d.utils.write_save import read_ndata, write_ndata

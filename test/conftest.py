@@ -1,8 +1,12 @@
 """Fixtures for the CircleCI tests."""
 
 import os
+from pathlib import Path
 
 import pytest
+
+_TEST_DATA_DIR = str(Path(__file__).parent / 'data' / 'test_data')
+_TEST_DATA_PATH = str(Path(__file__).parent / 'data') + os.sep
 
 
 def pytest_addoption(parser):
@@ -10,25 +14,17 @@ def pytest_addoption(parser):
     parser.addoption(
         '--working_dir',
         action='store',
-        default=(
-            '/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d/xcp_d/tests/data/test_data/'
-            'run_pytests/work'
-        ),
+        default=os.path.join(_TEST_DATA_DIR, 'run_pytests', 'work'),
     )
     parser.addoption(
         '--data_dir',
         action='store',
-        default=(
-            '/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d/xcp_d/tests/data/test_data'
-        ),
+        default=_TEST_DATA_DIR,
     )
     parser.addoption(
         '--output_dir',
         action='store',
-        default=(
-            '/app/.pixi/envs/xcp-d/lib/python3.12/site-packages/xcp_d/xcp_d/tests/data/test_data/'
-            'run_pytests/out'
-        ),
+        default=os.path.join(_TEST_DATA_DIR, 'run_pytests', 'out'),
     )
 
 
@@ -53,6 +49,12 @@ def output_dir(request):
     outdir = request.config.getoption('--output_dir')
     os.makedirs(outdir, exist_ok=True)
     return outdir
+
+
+@pytest.fixture(scope='session')
+def test_data_path():
+    """Return path to test/data/, always resolved from the source tree via conftest.__file__."""
+    return _TEST_DATA_PATH
 
 
 @pytest.fixture(scope='session')
@@ -231,7 +233,7 @@ def fmriprep_without_freesurfer_data(datasets):
 
 @pytest.fixture(scope='session')
 def base_config():
-    from xcp_d.tests.tests import mock_config
+    from xcp_d._testing import mock_config
 
     return mock_config
 
