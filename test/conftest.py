@@ -10,17 +10,17 @@ def pytest_addoption(parser):
     parser.addoption(
         '--working_dir',
         action='store',
-        default='/tmp/src/xcp_d/test/data/test_data/run_pytests/work',
+        default='/tmp/src/xcp_d/test/data/test_data/run_pytests/work',  # noqa: S108
     )
     parser.addoption(
         '--data_dir',
         action='store',
-        default='/tmp/src/xcp_d/test/data/test_data',
+        default='/tmp/src/xcp_d/test/data/test_data',  # noqa: S108
     )
     parser.addoption(
         '--output_dir',
         action='store',
-        default='/tmp/src/xcp_d/test/data/test_data/run_pytests/out',
+        default='/tmp/src/xcp_d/test/data/test_data/run_pytests/out',  # noqa: S108
     )
 
 
