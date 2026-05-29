@@ -1,4 +1,6 @@
 .cursor/.cursorenv
+docs/superpowers
+.claude/settings.local.json
 
 # local path for tests
 xcp_d/tests/pytests
