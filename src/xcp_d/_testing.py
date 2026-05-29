@@ -142,17 +142,7 @@ def mock_config():
         del os.environ['FREESURFER_HOME']
 
 
-def get_test_data_path():
-    """Return the path to test data, terminated with separator.
-
-    Test-related data live in ``test/data/`` at the project root.
-    Computed from ``Path.cwd()``, which is always the project root when
-    pytest runs (enforced by ``testpaths`` in ``pyproject.toml``).
-    """
-    return str(Path.cwd() / 'test' / 'data') + os.sep
-
-
-def download_test_data(dset, data_dir=None):
+def download_test_data(dset, data_dir):
     """Download test data."""
     URLS = {
         'fmriprepwithoutfreesurfer': (
@@ -176,9 +166,6 @@ def download_test_data(dset, data_dir=None):
 
     if dset not in URLS:
         raise ValueError(f'dset ({dset}) must be one of: {", ".join(URLS.keys())}')
-
-    if not data_dir:
-        data_dir = os.path.join(os.path.dirname(get_test_data_path()), 'test_data')
 
     out_dir = os.path.join(data_dir, dset)
 
@@ -314,12 +301,12 @@ def run_command(command, env=None):
         )
 
 
-def reorder_expected_outputs():
+def reorder_expected_outputs(test_data_path):
     """Sort each expected-output file alphabetically.
 
     Call this manually after modifying expected test outputs.
+    Pass ``test_data_path`` as the path to ``test/data/``.
     """
-    test_data_path = get_test_data_path()
     expected_output_files = sorted(glob(os.path.join(test_data_path, 'test_*_outputs.txt')))
     for expected_output_file in expected_output_files:
         LOGGER.info(f'Sorting {expected_output_file}')

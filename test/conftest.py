@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 _TEST_DATA_DIR = str(Path(__file__).parent / 'data' / 'test_data')
+_TEST_DATA_PATH = str(Path(__file__).parent / 'data') + os.sep
 
 
 def pytest_addoption(parser):
@@ -48,6 +49,12 @@ def output_dir(request):
     outdir = request.config.getoption('--output_dir')
     os.makedirs(outdir, exist_ok=True)
     return outdir
+
+
+@pytest.fixture(scope='session')
+def test_data_path():
+    """Return path to test/data/, always resolved from the source tree via conftest.__file__."""
+    return _TEST_DATA_PATH
 
 
 @pytest.fixture(scope='session')

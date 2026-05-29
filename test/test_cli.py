@@ -15,7 +15,6 @@ from xcp_d._testing import (
     check_affines,
     check_generated_files,
     download_test_data,
-    get_test_data_path,
     list_files,
     update_resources,
 )
@@ -33,7 +32,7 @@ LOGGER = logging.getLogger('nipype.utils')
 
 @pytest.mark.integration
 @pytest.mark.ds001419_nifti
-def test_ds001419_nifti(data_dir, output_dir, working_dir):
+def test_ds001419_nifti(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with nifti options."""
     test_name = 'test_ds001419_nifti'
 
@@ -42,7 +41,7 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    test_data_dir = get_test_data_path()
+    test_data_dir = test_data_path
     filter_file = os.path.join(test_data_dir, 'ds001419_nifti_filter.json')
 
     parameters = [
@@ -81,12 +80,13 @@ def test_ds001419_nifti(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type='nifti',
+        test_data_path=test_data_path,
     )
 
 
 @pytest.mark.integration
 @pytest.mark.ds001419_cifti
-def test_ds001419_cifti(data_dir, output_dir, working_dir):
+def test_ds001419_cifti(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on ds001419 fMRIPrep derivatives, with cifti options."""
     test_name = 'test_ds001419_cifti'
 
@@ -94,7 +94,7 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    test_data_dir = get_test_data_path()
+    test_data_dir = test_data_path
     filter_file = os.path.join(test_data_dir, 'ds001419_cifti_filter.json')
 
     parameters = [
@@ -132,12 +132,13 @@ def test_ds001419_cifti(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type='cifti',
+        test_data_path=test_data_path,
     )
 
 
 @pytest.mark.integration
 @pytest.mark.ds001419_cifti
-def test_ds001419_cifti_with_skip(data_dir, output_dir, working_dir):
+def test_ds001419_cifti_with_skip(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on ds001419 with cifti options and explicit --skip flags."""
     test_name = 'test_ds001419_cifti_with_skip'
 
@@ -145,7 +146,7 @@ def test_ds001419_cifti_with_skip(data_dir, output_dir, working_dir):
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    test_data_dir = get_test_data_path()
+    test_data_dir = test_data_path
     filter_file = os.path.join(test_data_dir, 'ds001419_cifti_filter.json')
 
     parameters = [
@@ -184,12 +185,13 @@ def test_ds001419_cifti_with_skip(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type='cifti',
+        test_data_path=test_data_path,
     )
 
 
 @pytest.mark.integration
 @pytest.mark.ukbiobank
-def test_ukbiobank(data_dir, output_dir, working_dir):
+def test_ukbiobank(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on UK Biobank derivatives."""
     test_name = 'test_ukbiobank'
 
@@ -222,12 +224,13 @@ def test_ukbiobank(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type='ukb',
+        test_data_path=test_data_path,
     )
 
 
 @pytest.mark.integration
 @pytest.mark.pnc_cifti
-def test_pnc_cifti(data_dir, output_dir, working_dir):
+def test_pnc_cifti(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on pnc fMRIPrep derivatives, with cifti options."""
     test_name = 'test_pnc_cifti'
 
@@ -235,7 +238,7 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
     out_dir = os.path.join(output_dir, test_name)
     work_dir = os.path.join(working_dir, test_name)
 
-    test_data_dir = get_test_data_path()
+    test_data_dir = test_data_path
     filter_file = os.path.join(test_data_dir, 'pnc_cifti_filter.json')
 
     # Make the last few volumes outliers to check https://github.com/PennLINC/xcp_d/issues/949
@@ -281,12 +284,13 @@ def test_pnc_cifti(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type='cifti',
+        test_data_path=test_data_path,
     )
 
 
 @pytest.mark.integration
 @pytest.mark.pnc_cifti_t2wonly
-def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
+def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on pnc fMRIPrep derivatives, with cifti options and a simulated T2w image."""
     test_name = 'test_pnc_cifti_t2wonly'
 
@@ -306,7 +310,7 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
     tree = list_files(dataset_dir)
     LOGGER.info(f'Tree after adding T2w:\n{tree}')
 
-    test_data_dir = get_test_data_path()
+    test_data_dir = test_data_path
     filter_file = os.path.join(test_data_dir, 'pnc_cifti_t2wonly_filter.json')
 
     parameters = [
@@ -338,12 +342,13 @@ def test_pnc_cifti_t2wonly(data_dir, output_dir, working_dir):
         parameters=parameters,
         input_type='cifti',
         test_main=True,
+        test_data_path=test_data_path,
     )
 
 
 @pytest.mark.integration
 @pytest.mark.fmriprep_without_freesurfer
-def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
+def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
 
     Notes
@@ -388,6 +393,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type='nifti',
+        test_data_path=test_data_path,
     )
 
     # Run combine-qc too
@@ -397,7 +403,7 @@ def test_fmriprep_without_freesurfer(data_dir, output_dir, working_dir):
 
 @pytest.mark.integration
 @pytest.mark.fmriprep_without_freesurfer_with_main
-def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir):
+def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on fMRIPrep derivatives without FreeSurfer, with nifti options.
 
     Notes
@@ -443,6 +449,7 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
         parameters=parameters,
         input_type='nifti',
         test_main=True,
+        test_data_path=test_data_path,
     )
 
     # Run combine-qc too
@@ -452,7 +459,7 @@ def test_fmriprep_without_freesurfer_with_main(data_dir, output_dir, working_dir
 
 @pytest.mark.integration
 @pytest.mark.nibabies
-def test_nibabies(data_dir, output_dir, working_dir):
+def test_nibabies(data_dir, output_dir, working_dir, test_data_path):
     """Run xcp_d on Nibabies derivatives, with nifti options."""
     test_name = 'test_nibabies'
     input_type = 'nibabies'
@@ -484,10 +491,11 @@ def test_nibabies(data_dir, output_dir, working_dir):
         test_name=test_name,
         parameters=parameters,
         input_type='nibabies',
+        test_data_path=test_data_path,
     )
 
 
-def _run_and_generate(test_name, parameters, input_type, test_main=False):
+def _run_and_generate(test_name, parameters, input_type, test_data_path, test_main=False):
     from xcp_d import config
 
     parameters.append('--clean-workdir')
@@ -535,6 +543,6 @@ def _run_and_generate(test_name, parameters, input_type, test_main=False):
             run_uuid=config.execution.run_uuid,
         )
 
-    output_list_file = os.path.join(get_test_data_path(), f'{test_name}_outputs.txt')
+    output_list_file = os.path.join(test_data_path, f'{test_name}_outputs.txt')
     check_generated_files(config.execution.output_dir, output_list_file)
     check_affines(config.execution.fmri_dir, config.execution.output_dir, input_type=input_type)
