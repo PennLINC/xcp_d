@@ -87,11 +87,13 @@ def test_zscore_tsv(tmp_path_factory):
     rng = np.random.default_rng(42)
     n_timepoints = 100
 
-    data = pd.DataFrame({
-        'normal_1': rng.normal(5, 2, n_timepoints),
-        'normal_2': rng.normal(-3, 1, n_timepoints),
-        'all_zero': np.zeros(n_timepoints),
-    })
+    data = pd.DataFrame(
+        {
+            'normal_1': rng.normal(5, 2, n_timepoints),
+            'normal_2': rng.normal(-3, 1, n_timepoints),
+            'all_zero': np.zeros(n_timepoints),
+        }
+    )
     in_file = str(tmpdir / 'test.tsv')
     data.to_csv(in_file, sep='\t', index=False)
     out_file = str(tmpdir / 'test_zscored.tsv')
