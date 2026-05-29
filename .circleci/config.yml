@@ -31,7 +31,8 @@ workflows:
           # so prefix patterns need an explicit .* suffix.
           mapping: |
             .*                has_any_changes   true
-            xcp_d/.*          has_code_changes  true
+            src/xcp_d/.*      has_code_changes  true
+            test/.*           has_code_changes  true
             scripts/.*        has_code_changes  true
             docker/.*         has_code_changes  true
             Dockerfile.*      has_code_changes  true

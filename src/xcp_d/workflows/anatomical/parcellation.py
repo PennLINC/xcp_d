@@ -24,7 +24,7 @@ def init_parcellate_surfaces_wf(files_to_parcellate, name='parcellate_surfaces_w
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from test.tests import mock_config
             from xcp_d import config
             from xcp_d.workflows.anatomical.parcellation import init_parcellate_surfaces_wf
 

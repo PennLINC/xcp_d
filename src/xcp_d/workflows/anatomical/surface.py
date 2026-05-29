@@ -64,7 +64,7 @@ def init_postprocess_surfaces_wf(
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from test.tests import mock_config
             from xcp_d import config
             from xcp_d.workflows.anatomical.surface import init_postprocess_surfaces_wf
 
@@ -466,7 +466,7 @@ def init_generate_hcp_surfaces_wf(name='generate_hcp_surfaces_wf'):
             :graph2use: orig
             :simple_form: yes
 
-            from xcp_d.tests.tests import mock_config
+            from test.tests import mock_config
             from xcp_d import config
             from xcp_d.workflows.anatomical.surface import init_generate_hcp_surfaces_wf
 

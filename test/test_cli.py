@@ -10,11 +10,7 @@ import pandas as pd
 import pytest
 from nipype import logging
 
-from xcp_d.cli import combineqc, run
-from xcp_d.cli.parser import parse_args
-from xcp_d.cli.workflow import build_boilerplate, build_workflow
-from xcp_d.reports.core import generate_reports
-from xcp_d.tests.utils import (
+from test.utils import (
     chdir,
     check_affines,
     check_generated_files,
@@ -23,6 +19,10 @@ from xcp_d.tests.utils import (
     list_files,
     update_resources,
 )
+from xcp_d.cli import combineqc, run
+from xcp_d.cli.parser import parse_args
+from xcp_d.cli.workflow import build_boilerplate, build_workflow
+from xcp_d.reports.core import generate_reports
 from xcp_d.utils.bids import (
     write_atlas_dataset_description,
     write_derivative_description,

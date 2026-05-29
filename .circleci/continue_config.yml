@@ -238,7 +238,7 @@ jobs:
             if [[ -n "$CIRCLE_TAG" ]]; then
               THISVERSION="$CIRCLE_TAG"
               sed -i "s/title = {xcp_d}/title = {xcp_d ${THISVERSION}}/" \
-                xcp_d/data/boilerplate.bib
+                src/xcp_d/data/boilerplate.bib
             else
               THISVERSION="0+build"
             fi

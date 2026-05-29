@@ -5,9 +5,9 @@ import shutil
 
 import pytest
 
+from test.tests import mock_config
+from test.utils import get_nodes
 from xcp_d import config
-from xcp_d.tests.tests import mock_config
-from xcp_d.tests.utils import get_nodes
 from xcp_d.workflows import anatomical
 from xcp_d.workflows.base import clean_datasinks
 
