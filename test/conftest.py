@@ -1,12 +1,11 @@
 """Fixtures for the CircleCI tests."""
 
 import os
+from pathlib import Path
 
 import pytest
 
-from xcp_d._testing import get_test_data_path
-
-_TEST_DATA_DIR = os.path.join(os.path.dirname(get_test_data_path()), 'test_data')
+_TEST_DATA_DIR = str(Path(__file__).parent / 'data' / 'test_data')
 
 
 def pytest_addoption(parser):
