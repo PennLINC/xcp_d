@@ -291,13 +291,13 @@ def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
     assert opts.correlation_lengths == []
     assert opts.report_output_level == 'root'
 
-    # --create-matrices requires --combine-runs (linc defaults to combine_runs=False)
+    # --create-matrices is not supported in linc mode at all
     opts.correlation_lengths = ['300']
     with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
-    assert "'--create-matrices' requires '--combine-runs'" in stderr
+    assert "'--create-matrices' is not supported in 'linc' mode" in stderr
 
 
 def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
@@ -409,10 +409,10 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
 
 
 @pytest.mark.parametrize(
-    ('mode', 'extra_opts'),
+    ('mode', 'extra_opts', 'expected_error'),
     [
-        ('linc', {}),
-        ('nichart', {}),
+        ('linc', {}, "'--create-matrices' is not supported in 'linc' mode."),
+        ('nichart', {}, "'--create-matrices' requires '--combine-runs'"),
         (
             'none',
             {
@@ -432,11 +432,12 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
                 'report_output_level': 'root',
                 'smoothing': 0,
             },
+            "'--create-matrices' requires '--combine-runs'",
         ),
     ],
 )
 def test_validate_parameters_create_matrices_requires_combine_runs(
-    mode, extra_opts, base_opts, base_parser, capsys
+    mode, extra_opts, expected_error, base_opts, base_parser, capsys
 ):
     """Test that --create-matrices raises an error when --combine-runs is disabled."""
     opts = deepcopy(base_opts)
@@ -449,7 +450,7 @@ def test_validate_parameters_create_matrices_requires_combine_runs(
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
-    assert "'--create-matrices' requires '--combine-runs'" in stderr
+    assert expected_error in stderr
 
 
 def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
