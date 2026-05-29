@@ -18,7 +18,6 @@ def init_postproc_derivatives_wf(
     name_source,
     source_metadata,
     has_multiple_runs,
-    exact_scans,
     name='postproc_derivatives_wf',
 ):
     """Write out the xcp_d derivatives in BIDS format.
@@ -37,7 +36,6 @@ def init_postproc_derivatives_wf(
                     name_source="/path/to/file.nii.gz",
                     source_metadata={},
                     has_multiple_runs=False,
-                    exact_scans=[],
                     name="postproc_derivatives_wf",
                 )
 
@@ -46,7 +44,6 @@ def init_postproc_derivatives_wf(
     name_source : :obj:`str`
         bold or cifti files
     source_metadata : :obj:`dict`
-    %(exact_scans)s
     %(name)s
         Default is "connectivity_wf".
 
@@ -101,7 +98,6 @@ def init_postproc_derivatives_wf(
                 'coverage',
                 'timeseries',
                 'correlations',
-                'correlations_exact',
                 'qc_file',
                 'denoised_bold',
                 'smoothed_denoised_bold',
@@ -119,7 +115,6 @@ def init_postproc_derivatives_wf(
                 'coverage_ciftis',
                 'timeseries_ciftis',
                 'correlation_ciftis',
-                'correlation_ciftis_exact',
                 # info for filenames
                 'atlas_names',
             ],
@@ -542,9 +537,7 @@ def init_postproc_derivatives_wf(
             (ds_timeseries, outputnode, [('out_file', 'timeseries')]),
         ])  # fmt:skip
 
-        if 'all' in config.workflow.correlation_lengths and (
-            config.workflow.output_run_wise_correlations or not has_multiple_runs
-        ):
+        if config.workflow.output_run_wise_correlations or not has_multiple_runs:
             make_corrs_meta_dict1 = pe.MapNode(
                 BIDSURI(
                     numinputs=1,
@@ -681,9 +674,7 @@ def init_postproc_derivatives_wf(
                 (ds_timeseries_ciftis, outputnode, [('out_file', 'timeseries_ciftis')]),
             ])  # fmt:skip
 
-            if 'all' in config.workflow.correlation_lengths and (
-                config.workflow.output_run_wise_correlations or not has_multiple_runs
-            ):
+            if config.workflow.output_run_wise_correlations or not has_multiple_runs:
                 make_ccorrs_meta_dict1 = pe.MapNode(
                     BIDSURI(
                         numinputs=1,
@@ -744,48 +735,6 @@ def init_postproc_derivatives_wf(
                     ]),
                     (make_ccorrs_meta_dict2, ds_correlation_ciftis, [('metadata', 'meta_dict')]),
                 ])  # fmt:skip
-
-        for i_exact_scan, exact_scan in enumerate(exact_scans):
-            select_exact_scan_files = pe.MapNode(
-                niu.Select(index=i_exact_scan),
-                name=f'select_exact_scan_files_{i_exact_scan}',
-                iterfield=['inlist'],
-            )
-            workflow.connect([
-                (inputnode, select_exact_scan_files, [('correlations_exact', 'inlist')]),
-            ])  # fmt:skip
-
-            add_hash_correlations_exact = pe.MapNode(
-                AddHashToTSV(
-                    add_to_columns=True,
-                    add_to_rows=True,
-                ),
-                name=f'add_hash_correlations_exact_{i_exact_scan}',
-                iterfield=['in_file'],
-            )
-            workflow.connect([
-                (select_exact_scan_files, add_hash_correlations_exact, [('out', 'in_file')]),
-            ])  # fmt:skip
-
-            ds_correlations_exact = pe.MapNode(
-                DerivativesDataSink(
-                    source_file=name_source,
-                    dismiss_entities=dismiss_hash(['desc', 'den', 'res']),
-                    cohort=cohort,
-                    statistic='pearsoncorrelation',
-                    desc=f'{exact_scan}volumes',
-                    suffix='relmat',
-                    extension='.tsv',
-                ),
-                name=f'ds_correlations_exact_{i_exact_scan}',
-                run_without_submitting=True,
-                mem_gb=1,
-                iterfield=['atlas', 'in_file'],
-            )
-            workflow.connect([
-                (inputnode, ds_correlations_exact, [('atlas_names', 'atlas')]),
-                (add_hash_correlations_exact, ds_correlations_exact, [('out_file', 'in_file')]),
-            ])  # fmt:skip
 
     # Resting state metric outputs
     denoised_src = pe.Node(

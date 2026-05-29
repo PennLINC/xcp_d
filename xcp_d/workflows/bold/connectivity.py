@@ -68,7 +68,6 @@ def init_functional_connectivity_nifti_wf(
     %(coverage)s
     %(timeseries)s
     %(correlations)s
-    %(correlations_exact)s
     parcellated_alff
     parcellated_reho
     """
@@ -110,7 +109,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'coverage',
                 'timeseries',
                 'correlations',
-                'correlations_exact',
                 'parcellated_alff',
                 'parcellated_reho',
             ],
@@ -137,9 +135,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         ]),
     ])  # fmt:skip
 
-    if 'all' in config.workflow.correlation_lengths and (
-        config.workflow.output_run_wise_correlations or not has_multiple_runs
-    ):
+    if config.workflow.output_run_wise_correlations or not has_multiple_runs:
         functional_connectivity = pe.MapNode(
             TSVConnect(),
             name='functional_connectivity',
@@ -151,7 +147,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (parcellate_data, functional_connectivity, [('timeseries', 'timeseries')]),
             (functional_connectivity, outputnode, [
                 ('correlations', 'correlations'),
-                ('correlations_exact', 'correlations_exact'),
             ]),
         ])  # fmt:skip
 
@@ -222,7 +217,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
 def init_functional_connectivity_cifti_wf(
     mem_gb,
     has_multiple_runs,
-    exact_scans,
     name='connectivity_wf',
     skip_reho=False,
     skip_alff=False,
@@ -248,15 +242,12 @@ def init_functional_connectivity_cifti_wf(
                 wf = init_functional_connectivity_cifti_wf(
                     mem_gb={"volume": 0.1, "bold": 1.0},
                     has_multiple_runs=False,
-                    exact_scans=[30, 40],
                 )
 
     Parameters
     ----------
     mem_gb : :obj:`dict`
         Dictionary of memory allocations.
-    exact_scans : :obj:`list`
-        List of exact scans to compute correlations for.
     %(name)s
         Default is "connectivity_wf".
 
@@ -279,11 +270,9 @@ def init_functional_connectivity_cifti_wf(
     %(coverage_ciftis)s
     %(timeseries_ciftis)s
     %(correlation_ciftis)s
-    correlation_ciftis_exact
     %(coverage)s
     %(timeseries)s
     %(correlations)s
-    correlations_exact
     parcellated_reho
     parcellated_alff
     """
@@ -331,11 +320,9 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
                 'coverage_ciftis',
                 'timeseries_ciftis',
                 'correlation_ciftis',
-                'correlation_ciftis_exact',
                 'coverage',
                 'timeseries',
                 'correlations',
-                'correlations_exact',
                 'parcellated_alff',
                 'parcellated_reho',
             ],
@@ -424,9 +411,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             ]),
         ])  # fmt:skip
 
-    if 'all' in config.workflow.correlation_lengths and (
-        config.workflow.output_run_wise_correlations or not has_multiple_runs
-    ):
+    if config.workflow.output_run_wise_correlations or not has_multiple_runs:
         # Correlate the parcellated data
         correlate_bold = pe.MapNode(
             CiftiCorrelation(
@@ -480,60 +465,6 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
             (inputnode, ds_report_connectivity, [('name_source', 'source_file')]),
             (connectivity_plot, ds_report_connectivity, [('connectplot', 'in_file')]),
         ])  # fmt:skip
-
-    # Perform exact-time correlations
-    if exact_scans:
-        collect_exact_ciftis = pe.Node(
-            niu.Merge(len(exact_scans), no_flatten=True, axis='hstack'),
-            name='collect_exact_ciftis',
-        )
-        workflow.connect([
-            (collect_exact_ciftis, outputnode, [('out', 'correlation_ciftis_exact')]),
-        ])  # fmt:skip
-
-        collect_exact_tsvs = pe.Node(
-            niu.Merge(len(exact_scans), no_flatten=True, axis='hstack'),
-            name='collect_exact_tsvs',
-        )
-        workflow.connect([(collect_exact_tsvs, outputnode, [('out', 'correlations_exact')])])
-
-        for i_exact_scan, exact_scan in enumerate(exact_scans):
-            reduce_exact_bold = pe.MapNode(
-                Censor(column=f'exact_{exact_scan}'),
-                name=f'reduce_bold_{exact_scan}volumes',
-                iterfield=['in_file'],
-            )
-            workflow.connect([
-                (inputnode, reduce_exact_bold, [('temporal_mask', 'temporal_mask')]),
-                (parcellated_bold_buffer, reduce_exact_bold, [('parcellated_cifti', 'in_file')]),
-            ])  # fmt:skip
-
-            # Correlate the parcellated data
-            # Only use single threads because the parcellated data is tiny
-            correlate_exact_bold = pe.MapNode(
-                CiftiCorrelation(num_threads=1),
-                name=f'correlate_bold_{exact_scan}volumes',
-                iterfield=['in_file'],
-                n_procs=1,
-            )
-            workflow.connect([
-                (reduce_exact_bold, correlate_exact_bold, [('out_file', 'in_file')]),
-                (correlate_exact_bold, collect_exact_ciftis, [
-                    ('out_file', f'in{i_exact_scan + 1}'),
-                ]),
-            ])  # fmt:skip
-
-            # Convert correlation pconn file to TSV
-            exact_dconn_to_tsv = pe.MapNode(
-                CiftiToTSV(),
-                name=f'dconn_to_tsv_{exact_scan}volumes',
-                iterfield=['in_file', 'atlas_labels'],
-            )
-            workflow.connect([
-                (inputnode, exact_dconn_to_tsv, [('atlas_labels_files', 'atlas_labels')]),
-                (correlate_exact_bold, exact_dconn_to_tsv, [('out_file', 'in_file')]),
-                (exact_dconn_to_tsv, collect_exact_tsvs, [('out_file', f'in{i_exact_scan + 1}')]),
-            ])  # fmt:skip
 
     if not skip_reho:
         parcellate_reho_wf = init_parcellate_cifti_wf(

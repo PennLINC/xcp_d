@@ -28,6 +28,7 @@ from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.report import AboutSummary, SubjectSummary
 from xcp_d.utils.bids import (
     _get_tr,
+    check_group_trs,
     collect_confounds,
     collect_data,
     collect_mesh_data,
@@ -481,9 +482,9 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
     n_runs = len(preproc_files)
     # group files across runs and directions, to facilitate concatenation
     preproc_files = group_across_runs(preproc_files)
+    check_group_trs(preproc_files, config.workflow.combine_runs)
     run_counter = 0
     for ent_set, task_files in enumerate(preproc_files):
-        # Assuming TR is constant across runs for a given combination of entities.
         TR = _get_tr(nb.load(task_files[0]))
 
         # We only "concatenate" if scans are named with a run or direction entity.
@@ -517,6 +518,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
         n_processed_task_runs = 0
         concat_bold_gb = 0
         concat_volume_gb = 0
+        concat_post_scrubbing_duration = 0
         for j_run, bold_file in enumerate(task_files):
             run_data = collect_run_data(
                 layout=config.execution.layout,
@@ -558,15 +560,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 )
                 continue
 
-            # Reduce exact_times to only include values greater than the post-scrubbing duration.
-            exact_scans = []
-            if any(is_number(length) for length in config.workflow.correlation_lengths):
-                exact_scans = calculate_exact_scans(
-                    exact_times=config.workflow.correlation_lengths,
-                    scan_length=post_scrubbing_duration,
-                    t_r=run_data['bold_metadata']['RepetitionTime'],
-                    bold_file=bold_file,
-                )
+            concat_post_scrubbing_duration += post_scrubbing_duration
 
             # Compute memory estimates from the BOLD file header
             mem_gbx = _create_mem_gb(bold_file)
@@ -584,7 +578,6 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 t2w_available=t2w_available,
                 n_runs=n_runs,
                 has_multiple_runs=multiscans,
-                exact_scans=exact_scans,
                 mem_gb=mem_gbx,
                 name=f'postprocess_{run_counter}_wf',
             )
@@ -629,6 +622,15 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                         (postprocess_bold_wf, node, [(f'outputnode.{io_name}', f'in{j_run + 1}')]),
                     ])  # fmt:skip
 
+        concat_exact_scans = []
+        if any(is_number(length) for length in config.workflow.correlation_lengths):
+            concat_exact_scans = calculate_exact_scans(
+                exact_times=config.workflow.correlation_lengths,
+                scan_length=concat_post_scrubbing_duration,
+                t_r=TR,
+                bold_file=task_files[0],
+            )
+
         if config.workflow.combine_runs and (n_processed_task_runs > 0) and multiscans:
             concat_mem_gb = {
                 'bold': concat_bold_gb,
@@ -637,6 +639,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
             concatenate_data_wf = init_concatenate_data_wf(
                 TR=TR,
                 head_radius=head_radius,
+                exact_scans=concat_exact_scans,
                 mem_gb=concat_mem_gb,
                 name=f'concatenate_entity_set_{ent_set}_wf',
             )

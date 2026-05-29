@@ -356,6 +356,37 @@ def test_get_tr(ds001419_data):
     assert t_r == 3.0
 
 
+def test_collect_run_data_tr_header_mismatch(ds001419_data):
+    """Warn when the sidecar RepetitionTime differs from the image header TR."""
+    from unittest.mock import patch
+
+    bold_file = ds001419_data['nifti_file']
+    sidecar_tr = 2.0  # header TR for this file is 3.0 s
+
+    with patch('xcp_d.utils.bids._get_tr', return_value=3.0):
+        with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+            xbids._check_tr_header_vs_sidecar(bold_file, sidecar_tr)
+
+    mock_logger.warning.assert_called_once()
+    warning_msg = mock_logger.warning.call_args[0][0]
+    assert 'RepetitionTime' in warning_msg
+    assert '2' in warning_msg or '3' in warning_msg
+
+
+def test_collect_run_data_tr_header_matches(ds001419_data):
+    """No warning when sidecar RepetitionTime matches the image header TR."""
+    from unittest.mock import patch
+
+    bold_file = ds001419_data['nifti_file']
+    header_tr = xbids._get_tr(bold_file)
+
+    with patch('xcp_d.utils.bids._get_tr', return_value=header_tr):
+        with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+            xbids._check_tr_header_vs_sidecar(bold_file, header_tr)
+
+    mock_logger.warning.assert_not_called()
+
+
 def test_get_entity(datasets):
     """Test get_entity."""
     fname = os.path.join(datasets['ds001419'], 'sub-01', 'anat', 'sub-01_desc-preproc_T1w.nii.gz')
@@ -432,6 +463,70 @@ def test_group_across_runs():
         '/path/sub-01_task-rest_dir-LR_run-2_bold.nii.gz',
         '/path/sub-01_task-rest_dir-RL_run-2_bold.nii.gz',
     ]
+
+
+def test_check_group_trs_consistent():
+    """No warning when all runs in a group share the same TR."""
+    from unittest.mock import patch
+
+    groups = [
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+    ]
+
+    with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+        with patch('xcp_d.utils.bids._get_tr', return_value=2.0):
+            with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+                xbids.check_group_trs(groups, combine_runs=False)
+
+    mock_logger.warning.assert_not_called()
+
+
+def test_check_group_trs_single_run():
+    """No warning or error for a group with only one run — nothing to compare."""
+    from unittest.mock import patch
+
+    groups = [['/path/sub-01_task-rest_bold.nii.gz']]
+
+    with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+        with patch('xcp_d.utils.bids._get_tr', return_value=2.0):
+            with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+                xbids.check_group_trs(groups, combine_runs=True)
+
+    mock_logger.warning.assert_not_called()
+
+
+def test_check_group_trs_mismatch_warning():
+    """Warn when runs in a group have different TRs and combine_runs is False."""
+    from unittest.mock import patch
+
+    groups = [
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+    ]
+
+    with patch('xcp_d.utils.bids.LOGGER') as mock_logger:
+        with patch('xcp_d.utils.bids._get_tr', side_effect=[2.0, 1.0]):
+            with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+                xbids.check_group_trs(groups, combine_runs=False)
+
+    mock_logger.warning.assert_called_once()
+    warning_msg = mock_logger.warning.call_args[0][0]
+    assert 'inconsistent TRs' in warning_msg
+    assert 'run-01' in warning_msg
+    assert 'run-02' in warning_msg
+
+
+def test_check_group_trs_mismatch_error_combine_runs():
+    """Raise ValueError when TRs differ and combine_runs is True."""
+    from unittest.mock import patch
+
+    groups = [
+        ['/path/sub-01_task-rest_run-01_bold.nii.gz', '/path/sub-01_task-rest_run-02_bold.nii.gz'],
+    ]
+
+    with patch('xcp_d.utils.bids._get_tr', side_effect=[2.0, 1.0]):
+        with patch('xcp_d.utils.bids.nb.load', return_value=object()):
+            with pytest.raises(ValueError, match='TR'):
+                xbids.check_group_trs(groups, combine_runs=True)
 
 
 def test_collect_mesh_data_crosssectional(tmp_path_factory, caplog):

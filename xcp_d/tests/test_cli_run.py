@@ -288,16 +288,16 @@ def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
     assert opts.file_format == 'cifti'
     assert opts.min_coverage == 0.5
     assert opts.smoothing == 6.0
-    assert opts.correlation_lengths == ['all']
+    assert opts.correlation_lengths == []
     assert opts.report_output_level == 'root'
 
-    # --create-matrices is not supported
+    # --create-matrices is not supported in linc mode at all
     opts.correlation_lengths = ['300']
     with pytest.raises(SystemExit, match='2'):
         parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     stderr = capsys.readouterr().err
-    assert "'--create-matrices' is not supported" in stderr
+    assert "'--create-matrices' is not supported in 'linc' mode" in stderr
 
 
 def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
@@ -325,6 +325,16 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     opts.correlation_lengths = ['300', 'all']
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert opts.correlation_lengths == ['300', 'all']
+
+    # --create-matrices requires --combine-runs
+    opts2 = deepcopy(opts)
+    opts2.combine_runs = False
+    opts2.correlation_lengths = ['300', 'all']
+    with pytest.raises(SystemExit, match='2'):
+        parser._validate_parameters(deepcopy(opts2), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--create-matrices' requires '--combine-runs'" in stderr
 
     # --motion-filter-type is required
     opts.motion_filter_type = None
@@ -362,6 +372,16 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
     assert opts.correlation_lengths == ['300', 'all']
 
+    # --create-matrices requires --combine-runs
+    opts2 = deepcopy(opts)
+    opts2.combine_runs = False
+    opts2.correlation_lengths = ['300', 'all']
+    with pytest.raises(SystemExit, match='2'):
+        parser._validate_parameters(deepcopy(opts2), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert "'--create-matrices' requires '--combine-runs'" in stderr
+
     # --motion-filter-type is required
     opts.motion_filter_type = None
     with pytest.raises(SystemExit, match='2'):
@@ -385,7 +405,52 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
     assert opts.min_coverage == 0.4
     assert opts.smoothing == 0
     assert opts.report_output_level == 'root'
-    assert opts.correlation_lengths == ['all']  # Should be a list, not a string
+    assert opts.correlation_lengths == []
+
+
+@pytest.mark.parametrize(
+    ('mode', 'extra_opts', 'expected_error'),
+    [
+        ('linc', {}, "'--create-matrices' is not supported in 'linc' mode."),
+        ('nichart', {}, "'--create-matrices' requires '--combine-runs'"),
+        (
+            'none',
+            {
+                'abcc_qc': False,
+                'combine_runs': False,
+                'confounds_config': 'none',
+                'despike': False,
+                'fd_thresh': 0.0,
+                'file_format': 'nifti',
+                'input_type': 'fmriprep',
+                'linc_qc': False,
+                'min_coverage': 0.5,
+                'motion_filter_type': 'none',
+                'output_run_wise_correlations': False,
+                'output_type': 'censored',
+                'process_surfaces': False,
+                'report_output_level': 'root',
+                'smoothing': 0,
+            },
+            "'--create-matrices' requires '--combine-runs'",
+        ),
+    ],
+)
+def test_validate_parameters_create_matrices_requires_combine_runs(
+    mode, extra_opts, expected_error, base_opts, base_parser, capsys
+):
+    """Test that --create-matrices raises an error when --combine-runs is disabled."""
+    opts = deepcopy(base_opts)
+    opts.mode = mode
+    for key, val in extra_opts.items():
+        setattr(opts, key, val)
+    opts.correlation_lengths = ['300']
+
+    with pytest.raises(SystemExit, match='2'):
+        parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    stderr = capsys.readouterr().err
+    assert expected_error in stderr
 
 
 def test_validate_parameters_none_mode(base_opts, base_parser, capsys):

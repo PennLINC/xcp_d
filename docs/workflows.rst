@@ -77,7 +77,6 @@ and correlation matrices, will be censored.
        low_pass = 0.08
        bpf_order = 2
        min_coverage = 0.5
-       correlation_lengths = [ "all",]
        process_surfaces = false
        abcc_qc = false
        linc_qc = true
@@ -96,6 +95,7 @@ which may be overridden by the user:
 -  ``--linc-qc``: The LINC QC file will be created by default.
 -  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
 -  ``--smoothing 6``: Smoothing is enabled by default.
+-  ``--output-run-wise-correlations``: Per-run full correlations are computed by default.
 
 Optional Parameters
 -------------------
@@ -105,6 +105,8 @@ Optional Parameters
    If you would like to create these files, you must include the ``--abcc-qc`` flag.
 -  ``--combine-runs``: By default, *XCP-D* will not combine runs when run in the ``linc`` mode.
    If you would like to combine runs, you must include the ``--combine-runs`` flag.
+   When ``--combine-runs`` is enabled, a full-timeseries correlation matrix will be produced from the
+   concatenated data in addition to the per-run correlation matrices.
 -  ``--warp-surfaces-native2std``: By default, *XCP-D* will not warp surfaces to standard space when
    run in the ``linc`` mode.
    If you would like to warp surfaces, you must include the ``--warp-surfaces-native2std`` flag.
@@ -112,9 +114,9 @@ Optional Parameters
 Prohibited Parameters
 ---------------------
 
--  ``--create-matrices``: This option is not allowed in the ``linc`` mode.
-   Instead, correlation matrices will be created from the full (censored) time series,
-   which is equivalent to running ``--create-matrices all``.
+-  ``--create-matrices``: This option is not supported in ``linc`` mode.
+   When ``--combine-runs`` is enabled, a full-timeseries (``"all"`` volumes) correlation matrix is
+   produced automatically from the concatenated data; exact-N sub-sampled matrices are not available.
 
 
 abcd Mode
@@ -192,9 +194,11 @@ Optional Parameters
 -------------------
 
 -  ``--create-matrices``: By default, *XCP-D* will not create correlation matrices when run in the ``abcd`` mode.
-   If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+   If you would like to create correlation matrices from the concatenated data, you must include
+   the ``--create-matrices`` flag (``--combine-runs`` is enabled by default in this mode).
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
-   as well as the special value "all", which uses all of the low-motion data from the run.
+   as well as the special value "all", which uses all of the low-motion data from the concatenated run.
+-  ``--output-run-wise-correlations``: To obtain per-run correlation matrices, use this flag.
 
 
 hbcd Mode
@@ -272,9 +276,11 @@ Optional Parameters
 -------------------
 
 -  ``--create-matrices``: By default, *XCP-D* will not create correlation matrices when run in the ``hbcd`` mode.
-   If you would like to create correlation matrices, you must include the ``--create-matrices`` flag.
+   If you would like to create correlation matrices from the concatenated data, you must include
+   the ``--create-matrices`` flag (``--combine-runs`` is enabled by default in this mode).
    The ``--create-matrices`` parameter accepts lengths of time to use for the correlation matrices,
-   as well as the special value "all", which uses all of the low-motion data from the run.
+   as well as the special value "all", which uses all of the low-motion data from the concatenated run.
+-  ``--output-run-wise-correlations``: To obtain per-run correlation matrices, use this flag.
 
 
 nichart Mode
@@ -1025,10 +1031,11 @@ connectivity estimate.
 We have implemented this behavior via the optional ``--create-matrices`` parameter,
 which allows the user to provide a list of durations, in seconds,
 to be used for functional connectivity estimates.
+This parameter applies only to concatenated data and therefore requires ``--combine-runs``.
 These subsampled correlation matrices will be written out with ``desc-<numberOfVolumes>volumes``
 in the filenames.
 The correlation matrices *without* the ``desc`` entity still include all of the post-censoring
-volumes.
+volumes from the concatenated timeseries.
 
 The ``--random-seed`` parameter controls the random seed used to select the reduced set of volumes,
 which improves reproducibility.

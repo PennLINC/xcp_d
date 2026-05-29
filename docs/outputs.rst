@@ -258,6 +258,7 @@ This includes the atlases used to extract the timeseries.
 .. important::
    Correlation matrices with the ``desc-<INT>volumes`` entity are produced if the
    ``--create-matrices`` parameter is used with integer values.
+   These matrices are derived from the concatenated timeseries and require ``--combine-runs``.
 
 .. code-block::
 
@@ -278,6 +279,7 @@ This includes the atlases used to extract the timeseries.
             <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_relmat.tsv
             <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_boldmap.pconn.nii
             <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_relmat.tsv
+            <source_entities>_space-fsLR_atlas-<label>_den-91k_stat-pearsoncorrelation_desc-<INT>volumes_boldmap.pconn.nii
 
 
 Resting-state metric derivatives (ReHo and ALFF)

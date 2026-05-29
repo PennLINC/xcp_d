@@ -36,7 +36,6 @@ def init_postprocess_nifti_wf(
     t2w_available,
     n_runs,
     has_multiple_runs,
-    exact_scans,
     mem_gb,
     name='bold_postprocess_wf',
 ):
@@ -82,7 +81,6 @@ def init_postprocess_nifti_wf(
                     t2w_available=True,
                     n_runs=1,
                     has_multiple_runs=False,
-                    exact_scans=[],
                     mem_gb=_create_mem_gb(bold_file),
                     name="nifti_postprocess_wf",
                 )
@@ -100,7 +98,6 @@ def init_postprocess_nifti_wf(
     has_multiple_runs
         Whether there are multiple runs for this task or not.
         Interacts with the output_run_wise_correlations parameter.
-    %(exact_scans)s
     mem_gb : :obj:`dict`
         Dictionary of memory allocations with keys ``'bold'`` and ``'volume'``.
     %(name)s
@@ -240,7 +237,6 @@ the following post-processing was performed.
 
     prepare_confounds_wf = init_prepare_confounds_wf(
         TR=TR,
-        exact_scans=exact_scans,
         head_radius=head_radius,
         mem_gb=mem_gb,
     )
@@ -354,7 +350,6 @@ the following post-processing was performed.
         name_source=bold_file,
         source_metadata=run_data['bold_metadata'],
         has_multiple_runs=has_multiple_runs,
-        exact_scans=exact_scans,
     )
 
     workflow.connect([
@@ -425,7 +420,6 @@ the following post-processing was performed.
                 ('outputnode.coverage', 'inputnode.coverage'),
                 ('outputnode.timeseries', 'inputnode.timeseries'),
                 ('outputnode.correlations', 'inputnode.correlations'),
-                ('outputnode.correlations_exact', 'inputnode.correlations_exact'),
             ]),
         ])  # fmt:skip
 

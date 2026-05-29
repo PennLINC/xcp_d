@@ -627,14 +627,18 @@ The default is 240 (4 minutes).
         nargs='+',
         type=parser_utils._float_or_auto_or_none,
         help="""\
-If used, this parameter will produce correlation matrices limited to each requested amount of time.
+If used, this parameter will produce correlation matrices limited to each requested amount of time
+from the concatenated BOLD data.
 If there is more than the required amount of low-motion data,
-then volumes will be randomly selected to produce denoised outputs with the exact
+then volumes will be randomly selected to produce correlation matrices with the exact
 amounts of time requested.
 If there is less than the required amount of 'good' data,
 then the corresponding correlation matrix will not be produced.
 
-This option is only allowed for the "abcd" and "hbcd" modes.
+This option requires that `--combine-runs` be enabled.
+If run concatenation is not enabled, using this option will raise an error.
+
+This option is not supported in the "linc" mode.
 """,
     )
     g_dcan.add_argument(
@@ -1283,21 +1287,20 @@ def _validate_parameters(opts, build_log, parser):
             'root' if opts.report_output_level == 'auto' else opts.report_output_level
         )
         opts.smoothing = 6 if opts.smoothing == 'auto' else opts.smoothing
-        # Check --create-matrices compatibility, but allow if connectivity is skipped
         if opts.correlation_lengths is not None:
-            if not opts.skip_outputs or 'connectivity' not in opts.skip_outputs:
-                error_messages.append(
-                    f"'--create-matrices' is not supported for '{opts.mode}' mode."
-                )
-        # Patch 'all' into the list of correlation lengths
-        opts.correlation_lengths = ['all']
+            error_messages.append(f"'--create-matrices' is not supported in '{opts.mode}' mode.")
+            opts.correlation_lengths = []
+        elif opts.combine_runs:
+            opts.correlation_lengths = ['all']
+        else:
+            opts.correlation_lengths = []
     elif opts.mode == 'nichart':
         opts.abcc_qc = False if (opts.abcc_qc == 'auto') else opts.abcc_qc
         opts.combine_runs = False if opts.combine_runs == 'auto' else opts.combine_runs
         opts.confounds_config = (
             '36P' if (opts.confounds_config == 'auto') else opts.confounds_config
         )
-        opts.correlation_lengths = opts.correlation_lengths or ['all']
+        opts.correlation_lengths = opts.correlation_lengths or []
         opts.despike = True if (opts.despike == 'auto') else opts.despike
         opts.fd_thresh = 0 if (opts.fd_thresh == 'auto') else opts.fd_thresh
         opts.file_format = 'nifti' if (opts.file_format == 'auto') else opts.file_format
@@ -1321,6 +1324,7 @@ def _validate_parameters(opts, build_log, parser):
 
         if opts.combine_runs == 'auto':
             error_messages.append("'--combine-runs' (y or n) is required for 'none' mode.")
+            opts.combine_runs = False  # satisfy later checks
 
         if opts.confounds_config == 'auto':
             error_messages.append("'--nuisance-regressors' is required for 'none' mode.")
@@ -1519,6 +1523,9 @@ def _validate_parameters(opts, build_log, parser):
             'In order to perform surface normalization (--warp-surfaces-native2std), '
             'you must enable cifti processing (--file-format cifti).'
         )
+
+    if opts.correlation_lengths and not opts.combine_runs:
+        error_messages.append("'--create-matrices' requires '--combine-runs'.")
 
     if error_messages:
         error_message_str = 'Errors detected in parameter parsing:\n\t- ' + '\n\t- '.join(

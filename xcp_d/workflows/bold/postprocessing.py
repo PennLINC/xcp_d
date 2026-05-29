@@ -16,7 +16,6 @@ from xcp_d.interfaces.censoring import (
     Censor,
     GenerateConfounds,
     ProcessMotion,
-    RandomCensor,
     RemoveDummyVolumes,
 )
 from xcp_d.interfaces.nilearn import DenoiseCifti, DenoiseNifti, Smooth
@@ -30,7 +29,7 @@ from xcp_d.utils.boilerplate import (
 )
 from xcp_d.utils.doc import fill_doc
 from xcp_d.utils.plotting import plot_design_matrix as _plot_design_matrix
-from xcp_d.utils.utils import fwhm2sigma, is_number
+from xcp_d.utils.utils import fwhm2sigma
 
 
 def _load_confounds_config():
@@ -50,7 +49,6 @@ def _load_confounds_config():
 @fill_doc
 def init_prepare_confounds_wf(
     TR,
-    exact_scans,
     head_radius,
     mem_gb,
     name='prepare_confounds_wf',
@@ -72,7 +70,6 @@ def init_prepare_confounds_wf(
             with mock_config():
                 wf = init_prepare_confounds_wf(
                     TR=0.8,
-                    exact_scans=[],
                     head_radius=70,
                     mem_gb={"bold": 1.0},
                     name="prepare_confounds_wf",
@@ -81,7 +78,6 @@ def init_prepare_confounds_wf(
     Parameters
     ----------
     %(TR)s
-    %(exact_scans)s
     %(head_radius)s
         This will already be estimated before this workflow.
     mem_gb : :obj:`dict`
@@ -150,12 +146,12 @@ def init_prepare_confounds_wf(
         TR=TR,
     )
 
-    if (fd_thresh > 0) or exact_scans:
+    if fd_thresh > 0:
         censoring_description = describe_censoring(
             motion_filter_type=motion_filter_type,
             head_radius=head_radius,
             fd_thresh=fd_thresh,
-            exact_scans=exact_scans,
+            exact_scans=[],
         )
     else:
         censoring_description = ''
@@ -343,27 +339,10 @@ def init_prepare_confounds_wf(
             ]),
         ])  # fmt:skip
 
-    if any(is_number(length) for length in config.workflow.correlation_lengths):
-        random_censor = pe.Node(
-            RandomCensor(exact_scans=exact_scans, random_seed=config.seeds.master),
-            name='random_censor',
-        )
-
-        workflow.connect([
-            (process_motion, random_censor, [
-                ('temporal_mask_metadata', 'temporal_mask_metadata'),
-            ]),
-            (dummy_scan_buffer, random_censor, [('temporal_mask', 'temporal_mask')]),
-            (random_censor, outputnode, [
-                ('temporal_mask', 'temporal_mask'),
-                ('temporal_mask_metadata', 'temporal_mask_metadata'),
-            ]),
-        ])  # fmt:skip
-    else:
-        workflow.connect([
-            (process_motion, outputnode, [('temporal_mask_metadata', 'temporal_mask_metadata')]),
-            (dummy_scan_buffer, outputnode, [('temporal_mask', 'temporal_mask')]),
-        ])  # fmt:skip
+    workflow.connect([
+        (process_motion, outputnode, [('temporal_mask_metadata', 'temporal_mask_metadata')]),
+        (dummy_scan_buffer, outputnode, [('temporal_mask', 'temporal_mask')]),
+    ])  # fmt:skip
 
     if config.execution.confounds_config is not None:
         plot_design_matrix = pe.Node(

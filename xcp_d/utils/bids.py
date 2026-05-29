@@ -886,6 +886,28 @@ def collect_morphometry_data(layout, participant_label, bids_filters, anat_sessi
     return morph_file_types, morphometry_files
 
 
+_TR_TOLERANCE = 1e-3  # seconds; differences smaller than this are ignored
+
+
+def _check_tr_header_vs_sidecar(bold_file, sidecar_tr):
+    """Warn if the image-header TR disagrees with the sidecar RepetitionTime.
+
+    Parameters
+    ----------
+    bold_file : str
+        Path to the BOLD file.
+    sidecar_tr : float
+        RepetitionTime (in seconds) from the BIDS sidecar JSON.
+    """
+    header_tr = _get_tr(bold_file)
+    if abs(header_tr - sidecar_tr) > _TR_TOLERANCE:
+        LOGGER.warning(
+            f'RepetitionTime mismatch for {os.path.basename(bold_file)}: '
+            f'sidecar says {sidecar_tr:.6g} s, image header says {header_tr:.6g} s. '
+            f'XCP-D will use the sidecar value.'
+        )
+
+
 @fill_doc
 def collect_run_data(layout, bold_file, file_format, target_space):
     """Collect data associated with a given BOLD file.
@@ -925,6 +947,8 @@ def collect_run_data(layout, bold_file, file_format, target_space):
     # Ensure that we know the TR
     if 'RepetitionTime' not in metadata['bold_metadata'].keys():
         metadata['bold_metadata']['RepetitionTime'] = _get_tr(bold_file)
+    else:
+        _check_tr_header_vs_sidecar(bold_file, metadata['bold_metadata']['RepetitionTime'])
 
     if file_format == 'nifti':
         run_data['boldref'] = layout.get_nearest(
@@ -1427,6 +1451,49 @@ def group_across_runs(in_files):
         out_files[group_idx].append(in_file)
 
     return out_files
+
+
+def check_group_trs(groups, combine_runs):
+    """Check that all runs within each entity group share the same TR.
+
+    Parameters
+    ----------
+    groups : list of list of str
+        Grouped BOLD file paths, as returned by :func:`group_across_runs`.
+        Each sublist contains all runs for one entity combination.
+    combine_runs : bool
+        If True, raise a :exc:`ValueError` when TRs differ within a group
+        (mismatched TRs make concatenation scientifically invalid).
+        If False, emit a warning instead.
+
+    Raises
+    ------
+    ValueError
+        When ``combine_runs`` is True and a group contains runs with
+        differing TRs.
+    """
+    for group in groups:
+        if len(group) < 2:
+            continue  # nothing to compare
+
+        trs = [_get_tr(nb.load(f)) for f in group]
+        if max(trs) - min(trs) <= _TR_TOLERANCE:
+            continue
+
+        tr_list = ', '.join(
+            f'{os.path.basename(f)}={tr:.6g}s' for f, tr in zip(group, trs, strict=True)
+        )
+        if combine_runs:
+            raise ValueError(
+                f'Cannot combine runs with inconsistent TRs: {tr_list}. '
+                f'Disable --combine-runs or fix the TR mismatch.'
+            )
+        else:
+            LOGGER.warning(
+                f'Runs in the same entity group have inconsistent TRs: {tr_list}. '
+                f'Each run will be processed with its own TR. '
+                f'Combining runs with mismatched TRs will raise an error.'
+            )
 
 
 def check_pipeline_version(pipeline_name, cvers, data_desc):

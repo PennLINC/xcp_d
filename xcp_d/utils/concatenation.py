@@ -27,6 +27,8 @@ def concatenate_tsvs(tsv_files, out_file):
     out_file : :obj:`str`
         Path to the file that will be written out.
     """
+    import re
+
     try:
         # Assume file has no header first.
         # If it has a header with string column names, this will go the except clause.
@@ -35,8 +37,13 @@ def concatenate_tsvs(tsv_files, out_file):
         np.savetxt(out_file, data, fmt='%.5f', delimiter='\t')
     except ValueError:
         # Load file with header.
-        data = [pd.read_table(tsv_file) for tsv_file in tsv_files]
-        data = pd.concat(data, axis=0)
+        dfs = [pd.read_table(tsv_file) for tsv_file in tsv_files]
+        # Strip _hash-<hash> suffixes so the same logical column (e.g.
+        # 'framewise_displacement') with different per-run content hashes
+        # concatenates into one column instead of producing NaN-filled extras.
+        for df in dfs:
+            df.columns = [re.sub(r'_hash-[0-9a-zA-Z+]+$', '', col) for col in df.columns]
+        data = pd.concat(dfs, axis=0)
         data.to_csv(out_file, sep='\t', index=False)
 
     return out_file
