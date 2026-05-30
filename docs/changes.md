@@ -1,5 +1,18 @@
 # What's New
 
+## 26.1.0rc1 (May 30, 2026)
+
+### 🛠 Breaking Changes
+
+* Apply --create-matrices durations to concatenated matrix instead of individual runs by @tsalo in https://github.com/PennLINC/xcp_d/pull/1622
+
+### 🐛 Bug Fixes
+
+* Replace NaNs with zeros in z-scored, concatenated data by @tsalo in https://github.com/PennLINC/xcp_d/pull/1623
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.0.3...26.1.0rc1
+
+
 ## 26.0.3 (May 21, 2026)
 
 ### 🐛 Bug Fixes
