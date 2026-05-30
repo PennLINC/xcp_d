@@ -7,7 +7,7 @@ name = "xcp_d"
 description = "XCP-D: A Robust Postprocessing Pipeline of fMRI data"
 authors = [{name = "PennLINC and DCAN labs"}]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Image Recognition",
     "License :: OSI Approved :: BSD License",
@@ -72,8 +72,8 @@ doc = [
     "sphinx_design",
 ]
 dev = [
-    "ruff ~= 0.15.0",
     "pre-commit",
+    "ruff ~= 0.15.0",
 ]
 tests = [
     "coverage",
