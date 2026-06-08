@@ -27,6 +27,12 @@ workflows:
       - path-filtering/filter:
           base-revision: main
           config-path: .circleci/continue_config.yml
+          # The setup workflow must opt in to tags, otherwise tag pushes are
+          # ignored by default and the continuation pipeline (which holds the
+          # deploy workflow) never runs.
+          filters:
+            tags:
+              only: /.*/
           # path-filtering@1.3.0 wraps patterns with implicit ^...$ anchors,
           # so prefix patterns need an explicit .* suffix.
           mapping: |

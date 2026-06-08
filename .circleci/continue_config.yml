@@ -97,7 +97,7 @@ commands:
               -e CIRCLE_CPUS=<< parameters.cpus >> \
               -e COVERAGE_FILE=/coverage/.coverage.<< parameters.marker >> \
               -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
-              -v /tmp/data:/data \
+              -v /tmp/data:/data:ro \
               -v /tmp/out:/out \
               -v /tmp/work:/work \
               -v /tmp/coverage:/coverage \
@@ -181,13 +181,28 @@ jobs:
           name: Build test Docker image if needed
           no_output_timeout: 90m
           command: |
-            if [[ "$BUILD_TEST_IMAGE" == "1" || "$BASE_WAS_BUILT" == "1" ]]; then
+            build_test_image() {
               docker build \
+                "$@" \
                 --target test \
                 --rm=false \
                 -t pennlinc/xcp_d:test \
                 --platform linux/amd64 \
                 --build-arg VCS_REF="$(git rev-parse --short HEAD)" .
+            }
+            build_test_image_with_retry() {
+              e=1 && for i in {1..5}; do
+                if [[ "$i" -gt 1 ]]; then
+                  echo "Test image build failed; pruning BuildKit cache and retrying without cache."
+                  docker builder prune -af || true
+                  build_test_image --no-cache && e=0 && break || sleep 15
+                else
+                  build_test_image && e=0 && break || sleep 15
+                fi
+              done && [ "$e" -eq "0" ]
+            }
+            if [[ "$BUILD_TEST_IMAGE" == "1" || "$BASE_WAS_BUILT" == "1" ]]; then
+              build_test_image_with_retry
             elif docker image inspect pennlinc/xcp_d:test > /dev/null 2>&1; then
               echo "Reusing existing local test image (no Dockerfile/pixi/base-triggered rebuild required)."
             elif docker pull localhost:5000/xcp_d-test; then
@@ -195,12 +210,7 @@ jobs:
               echo "Reusing cached test image from local registry (no Dockerfile/pixi/base-triggered rebuild required)."
             else
               echo "No reusable test image found; rebuilding test image."
-              docker build \
-                --target test \
-                --rm=false \
-                -t pennlinc/xcp_d:test \
-                --platform linux/amd64 \
-                --build-arg VCS_REF="$(git rev-parse --short HEAD)" .
+              build_test_image_with_retry
             fi
       - run:
           name: Guard test image revision
@@ -242,16 +252,25 @@ jobs:
             else
               THISVERSION="0+build"
             fi
-            e=1 && for i in {1..5}; do
+            build_production_image() {
               docker build \
+                "$@" \
                 --target xcp_d \
                 --rm=false \
                 -t pennlinc/xcp_d:latest \
                 --platform linux/amd64 \
                 --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
                 --build-arg VCS_REF="$(git rev-parse --short HEAD)" \
-                --build-arg VERSION="$THISVERSION" . \
-              && e=0 && break || sleep 15
+                --build-arg VERSION="$THISVERSION" .
+            }
+            e=1 && for i in {1..5}; do
+              if [[ "$i" -gt 1 ]]; then
+                echo "Production image build failed; pruning BuildKit cache and retrying without cache."
+                docker builder prune -af || true
+                build_production_image --no-cache && e=0 && break || sleep 15
+              else
+                build_production_image && e=0 && break || sleep 15
+              fi
             done && [ "$e" -eq "0" ]
       - run:
           name: Verify production image
@@ -414,7 +433,7 @@ jobs:
               -e CIRCLE_CPUS=4 \
               -e COVERAGE_FILE=/coverage/.coverage.unit_tests \
               -v /tmp/src/xcp_d:/tmp/src/xcp_d:ro \
-              -v /tmp/data:/data \
+              -v /tmp/data:/data:ro \
               -v /tmp/out:/out \
               -v /tmp/work:/work \
               -v /tmp/coverage:/coverage \
