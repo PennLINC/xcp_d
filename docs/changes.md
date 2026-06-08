@@ -1,6 +1,6 @@
 # What's New
 
-## 26.1.0rc1 (May 30, 2026)
+## 26.1.0 (June 8, 2026)
 
 ### 🛠 Breaking Changes
 
@@ -10,7 +10,7 @@
 
 * Replace NaNs with zeros in z-scored, concatenated data by @tsalo in https://github.com/PennLINC/xcp_d/pull/1623
 
-**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.0.3...26.1.0rc1
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.0.3...26.1.0
 
 
 ## 26.0.3 (May 21, 2026)
