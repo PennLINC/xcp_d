@@ -52,6 +52,9 @@ COPY --link --from=build /test-shell-hook.sh /shell-hook.sh
 RUN cat /shell-hook.sh >> $HOME/.bashrc
 ENV PATH="/app/.pixi/envs/test/bin:$PATH"
 ENV FSLDIR="/app/.pixi/envs/test"
+# Guard against host .pixi leakage into the build context: conda-installed
+# scripts must reference this env's interpreter, not a host checkout path.
+RUN /app/.pixi/envs/test/bin/remove_ext /tmp/guard.nii.gz
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
 
@@ -64,6 +67,9 @@ ENV FSLDIR="/app/.pixi/envs/xcp-d"
 ENV IS_DOCKER_8395080871=1
 # Verify the runtime image can import xcp_d without source tree mounts.
 RUN /app/.pixi/envs/xcp-d/bin/python -c "import xcp_d"
+# Guard against host .pixi leakage into the build context: conda-installed
+# scripts must reference this env's interpreter, not a host checkout path.
+RUN /app/.pixi/envs/xcp-d/bin/remove_ext /tmp/guard.nii.gz
 
 ENTRYPOINT ["/app/.pixi/envs/xcp-d/bin/xcp_d"]
 
