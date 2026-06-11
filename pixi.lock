@@ -5885,8 +5885,8 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 26.1.1.dev2+gdc2076555.d20260610
-  sha256: 805b73a2aaebc804e3d429df1a00494f92e09108a0692a084c96e80116aa08e9
+  version: 26.1.1.dev4+g7e8bdec40
+  sha256: f058b2722c80c69593871ce2e449086023e6e0558e25ab7e44a56b4b2686bfa6
   requires_dist:
   - acres
   - beautifulsoup4
@@ -5964,8 +5964,8 @@ packages:
   editable: true
 - pypi: ./
   name: xcp-d
-  version: 26.1.1.dev2+gdc2076555.d20260610
-  sha256: 805b73a2aaebc804e3d429df1a00494f92e09108a0692a084c96e80116aa08e9
+  version: 26.1.1.dev4+g7e8bdec40
+  sha256: f058b2722c80c69593871ce2e449086023e6e0558e25ab7e44a56b4b2686bfa6
   requires_dist:
   - acres
   - beautifulsoup4
