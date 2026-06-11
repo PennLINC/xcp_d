@@ -76,6 +76,7 @@ RUN GNUPGHOME=/tmp gpg --keyserver hkps://keyserver.ubuntu.com --no-default-keyr
 
 RUN apt-get update -qq \
     && apt-get install -y -q --no-install-recommends \
+           connectome-workbench=1.5.0-2 \
            ed \
            gsl-bin \
            libglib2.0-0 \
