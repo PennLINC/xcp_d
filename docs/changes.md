@@ -1,5 +1,14 @@
 # What's New
 
+## 26.1.1 (June 11, 2026)
+
+### 🐛 Bug Fixes
+
+* Revert workbench to 1.5 by @tsalo in https://github.com/PennLINC/xcp_d/pull/1626
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.1.0...26.1.1
+
+
 ## 26.1.0 (June 8, 2026)
 
 ### 🛠 Breaking Changes
