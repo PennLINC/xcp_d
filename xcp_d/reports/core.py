@@ -5,6 +5,7 @@
 This is adapted from fMRIPost-AROMA.
 """
 
+import stat
 from pathlib import Path
 
 from bids.layout import Query
@@ -12,6 +13,34 @@ from nireports.assembler.report import Report
 
 from xcp_d import config, data
 from xcp_d.interfaces.execsummary import ExecutiveSummary
+
+
+def _make_reportlets_writable(reportlets_dir, subject=None, session=None):
+    """Make SVG reportlets writable so NiReports can normalize them during indexing."""
+    if reportlets_dir is None:
+        return
+
+    reportlets_dir = Path(reportlets_dir)
+    if subject:
+        subject = str(subject).removeprefix('sub-')
+        reportlets_dir = reportlets_dir / f'sub-{subject}'
+
+    if session:
+        session = str(session).removeprefix('ses-')
+        reportlets_dir = reportlets_dir / f'ses-{session}'
+
+    if not reportlets_dir.exists():
+        return
+
+    figure_dirs = list(reportlets_dir.rglob('figures'))
+    if reportlets_dir.name == 'figures':
+        figure_dirs.append(reportlets_dir)
+
+    for figure_dir in figure_dirs:
+        for svg_file in figure_dir.glob('*.svg'):
+            mode = svg_file.stat().st_mode
+            if not mode & stat.S_IWUSR:
+                svg_file.chmod(mode | stat.S_IWUSR)
 
 
 def run_reports(
@@ -26,30 +55,34 @@ def run_reports(
     **entities,
 ):
     """Run the reports."""
-    robj = Report(
-        out_dir,
-        run_uuid,
-        bootstrap_file=bootstrap_file,
-        out_filename=out_filename,
-        reportlets_dir=dataset_dir,
-        plugins=None,
-        plugin_meta=None,
-        metadata=metadata,
-        **entities,
-    )
-
     # Count nbr of subject for which report generation failed
     try:
+        _make_reportlets_writable(
+            dataset_dir,
+            subject=entities.get('subject'),
+            session=entities.get('session'),
+        )
+        robj = Report(
+            out_dir,
+            run_uuid,
+            bootstrap_file=bootstrap_file,
+            out_filename=out_filename,
+            reportlets_dir=dataset_dir,
+            plugins=None,
+            plugin_meta=None,
+            metadata=metadata,
+            **entities,
+        )
         robj.generate_report()
     except:  # noqa: E722
         import sys
         import traceback
 
         # Store the list of subjects for which report generation failed
-        traceback.print_exception(
-            *sys.exc_info(),
-            file=str(Path(out_dir) / 'logs' / errorname),
-        )
+        error_file = Path(out_dir) / 'logs' / errorname
+        error_file.parent.mkdir(exist_ok=True, parents=True)
+        with error_file.open('w') as fo:
+            traceback.print_exception(*sys.exc_info(), file=fo)
         return subject_label
 
     return None

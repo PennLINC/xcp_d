@@ -161,7 +161,6 @@ graphviz = "12.2.*"
 pandoc = "3.7.*"
 ants = "2.6.*"
 bc = "1.07.*"  # provides dc, used by FSL's slicesdir script
-connectome-workbench-cli = { version = "2.0.*", build = "*qt6*" }
 fsl-base = "2602.*"
 fsl-avwutils = "2209.3.*"
 fsl-bet2 = "2111.8.*"

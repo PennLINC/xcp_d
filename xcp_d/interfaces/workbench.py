@@ -866,6 +866,12 @@ class ShowScene(WBCommand):
     output_spec = _ShowSceneOutputSpec
     _cmd = 'wb_command -show-scene'
 
+    def _run_interface(self, runtime):
+        runtime = super()._run_interface(runtime)
+        out_file = self._list_outputs()['out_file']
+        _check_image_is_nonempty(out_file)
+        return runtime
+
     def _list_outputs(self):
         outputs = self.output_spec().get()
         outputs['out_file'] = os.path.abspath(self._gen_outfilename())
@@ -881,6 +887,17 @@ class ShowScene(WBCommand):
             if isinstance(frame_number, int)
             else f'frame_{frame_number}.png'
         )
+
+
+def _check_image_is_nonempty(image_file):
+    """Raise an error if Workbench silently produced a blank scene capture."""
+    from PIL import Image
+
+    with Image.open(image_file) as img:
+        extrema = img.convert('RGBA').getextrema()
+
+    if all(low == high for low, high in extrema):
+        raise RuntimeError(f'Workbench generated an empty scene image: {image_file}')
 
 
 class _CiftiConvertInputSpec(_WBCommandInputSpec):

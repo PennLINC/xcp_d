@@ -104,6 +104,7 @@ def modify_pngs_scene_template(
 
     paths = {
         'TX_IMG': anat_file,
+        'T2_IMG': anat_file,
         'RPIAL': rh_pial_surf,
         'LPIAL': lh_pial_surf,
         'RWHITE': rh_wm_surf,

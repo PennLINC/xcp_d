@@ -541,4 +541,5 @@ def _plot_single_slice(img, i_slice, rh_pial, lh_pial, rh_wm, lh_wm, root_dir):
 
     filename = os.path.join(root_dir, f'test_{i_slice:03d}.png')
     fig.savefig(filename, bbox_inches='tight', facecolor='black')
+    plt.close(fig)
     return filename
