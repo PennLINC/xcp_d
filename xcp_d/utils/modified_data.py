@@ -169,7 +169,6 @@ def flag_bad_run(
     %(fd_thresh)s
     censor_between : :obj:`int`
         Maximum length of a contiguous run of non-outlier volumes to censor.
-    brain_mask
 
     Returns
     -------

@@ -234,6 +234,9 @@ def test_process_motion(ds001419_data, tmp_path_factory):
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    # ProcessMotion must write exactly one column; expansion into censor_between/denoising
+    # happens downstream in ExpandTemporalMask, not here.
+    assert list(pd.read_table(results.outputs.temporal_mask).columns) == ['framewise_displacement']
 
     # Basic test with censoring, but no filtering
     interface = censoring.ProcessMotion(
@@ -250,6 +253,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    assert list(pd.read_table(results.outputs.temporal_mask).columns) == ['framewise_displacement']
 
     # Basic test with filtering, but not censoring
     interface = censoring.ProcessMotion(
@@ -266,6 +270,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    assert list(pd.read_table(results.outputs.temporal_mask).columns) == ['framewise_displacement']
 
     # Basic test with filtering and censoring
     interface = censoring.ProcessMotion(
@@ -282,6 +287,7 @@ def test_process_motion(ds001419_data, tmp_path_factory):
     results = interface.run(cwd=tmpdir)
     assert os.path.isfile(results.outputs.motion_file)
     assert os.path.isfile(results.outputs.temporal_mask)
+    assert list(pd.read_table(results.outputs.temporal_mask).columns) == ['framewise_displacement']
 
 
 def test_removedummyvolumes_nifti(ds001419_data, tmp_path_factory):
@@ -654,6 +660,56 @@ def test_censor(ds001419_data, tmp_path_factory):
     assert out_img2.shape[0] == (n_retained_volumes - 10)
 
 
+def test_censor_hash_suffixed_columns(tmp_path_factory):
+    """Censor must resolve hash-suffixed temporal mask columns via get_col.
+
+    This is a data-free regression test (no ds001419_data fixture) for the case where
+    the requested column exists only under a `_hash-<hash>` suffix, e.g.
+    `denoising_hash-abc123`. Both the existence guard and the actual lookup must agree.
+    """
+    tmpdir = tmp_path_factory.mktemp('test_censor_hash_suffixed_columns')
+
+    n_volumes = 20
+    rng = np.random.default_rng(0)
+    data = rng.random((4, 4, 4, n_volumes))
+    nifti_file = os.path.join(tmpdir, 'bold.nii.gz')
+    nb.Nifti1Image(data, affine=np.eye(4)).to_filename(nifti_file)
+
+    n_censored_volumes = 5
+    n_retained_volumes = n_volumes - n_censored_volumes
+    fd_arr = np.zeros(n_volumes, dtype=int)
+    fd_arr[:n_censored_volumes] = 1
+    censoring_df = pd.DataFrame(
+        {
+            'framewise_displacement_hash-abc123': fd_arr,
+            'censor_between_hash-abc123': np.zeros(n_volumes, dtype=int),
+            'denoising_hash-abc123': fd_arr,
+        }
+    )
+    temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
+    censoring_df.to_csv(temporal_mask, sep='\t', index=False)
+
+    interface = censoring.Censor(
+        in_file=nifti_file,
+        temporal_mask=temporal_mask,
+        column='denoising',
+    )
+    results = interface.run(cwd=tmpdir)
+    out_file = results.outputs.out_file
+    assert os.path.isfile(out_file)
+    out_img = nb.load(out_file)
+    assert out_img.shape[3] == n_retained_volumes
+
+    # A genuinely missing column must still raise, with the same message as before.
+    bad_interface = censoring.Censor(
+        in_file=nifti_file,
+        temporal_mask=temporal_mask,
+        column='nonexistent_column',
+    )
+    with pytest.raises(ValueError, match="Column 'nonexistent_column' not found"):
+        bad_interface.run(cwd=tmpdir)
+
+
 def _load_offline_config(**workflow_overrides):
     """Populate the global config from the test TOML without downloading example data.
 
@@ -712,7 +768,13 @@ def test_prepare_confounds_wf_expands_temporal_mask():
 
 
 def test_denoising_column_is_the_censoring_contract():
-    """Every temporal-mask consumer reads the denoising column, not framewise_displacement."""
+    """Every temporal-mask consumer reads the denoising column, not framewise_displacement.
+
+    ``interfaces/plotting.py`` (``CensoringPlot``) and ``interfaces/censoring.py``
+    (``ExpandTemporalMask``) are deliberately excluded: they legitimately read the raw
+    ``framewise_displacement`` flag column (to plot it separately, or to derive ``denoising``
+    from it) rather than treating it as the censoring contract.
+    """
     import re
     from pathlib import Path
 
@@ -722,12 +784,18 @@ def test_denoising_column_is_the_censoring_contract():
         'interfaces/restingstate.py',
         'interfaces/connectivity.py',
         'interfaces/utils.py',
+        'utils/plotting.py',
     ]
-    pattern = re.compile(r"get_col\(\s*censoring_df,\s*'framewise_displacement'\s*\)")
+    # Matches get_col(<any var>, 'framewise_displacement'), but reads from the motion file
+    # (conventionally `motion_df`) are legitimate, since that's where FD in millimeters lives.
+    pattern = re.compile(r"get_col\(\s*(\w+)\s*,\s*'framewise_displacement'\s*\)")
     offenders = []
     for relative_path in consumers:
         text = (repo_root / relative_path).read_text()
-        if pattern.search(text):
-            offenders.append(relative_path)
+        offenders.extend(
+            f'{relative_path}: {match.group(0)}'
+            for match in pattern.finditer(text)
+            if match.group(1) != 'motion_df'
+        )
 
     assert offenders == []

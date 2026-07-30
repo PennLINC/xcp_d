@@ -483,10 +483,14 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         default='auto',
         type=parser_utils._int_or_auto,
         help=(
-            'If any short sets of contiguous non-outliers are found between outliers, '
-            'this parameter will remove them. '
+            'Censor short segments of contiguous non-outlier volumes found between outliers. '
             'For example, if the value is set to 1, then any cases where only one non-outlier '
-            'volume exists between two outlier volumes will be censored.'
+            'volume exists between two outlier volumes will be censored. '
+            'The beginning and end of the time series are treated as outlier boundaries as '
+            'well, so a short run of non-outlier volumes at the start or end of the scan may '
+            'also be censored. '
+            'The default value is "auto", which is equivalent to 0 (disabled) for all '
+            'processing modes.'
         ),
     )
     g_censor.add_argument(

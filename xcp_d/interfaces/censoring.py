@@ -250,11 +250,13 @@ class Censor(SimpleInterface):
         censoring_df = pd.read_table(self.inputs.temporal_mask)
         img = nb.load(self.inputs.in_file)
 
-        if self.inputs.column not in censoring_df.columns:
+        try:
+            get_col(censoring_df, self.inputs.column)
+        except ValueError as e:
             raise ValueError(
                 f"Column '{self.inputs.column}' not found in temporal mask file "
                 f'({self.inputs.temporal_mask}).'
-            )
+            ) from e
 
         # Drop the high-motion volumes, because the image is already censored
         if self.inputs.column != 'denoising':
