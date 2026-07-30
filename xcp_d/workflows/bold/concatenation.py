@@ -652,7 +652,7 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 # mode) and therefore include FD-censored volumes. Censor those volumes before
                 # exact-scan subsetting so that the exact_N column row count matches the image.
                 censor_cifti_ts_for_exact = pe.MapNode(
-                    Censor(column='framewise_displacement'),
+                    Censor(column='denoising'),
                     name='censor_cifti_ts_for_exact',
                     iterfield=['in_file'],
                 )

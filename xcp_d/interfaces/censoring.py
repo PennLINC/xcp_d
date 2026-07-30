@@ -214,12 +214,13 @@ class _CensorInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=True,
         desc=(
-            'Temporal mask; all motion outlier volumes set to 1. '
-            "This is a TSV file with one column: 'framewise_displacement'."
+            'Temporal mask; all censored volumes set to 1. '
+            "This is a TSV file with the columns 'framewise_displacement', 'censor_between', "
+            "and 'denoising'."
         ),
     )
     column = traits.Str(
-        'framewise_displacement',
+        'denoising',
         usedefault=True,
         mandatory=False,
         desc='Column name in the temporal mask to use for censoring.',
@@ -236,8 +237,8 @@ class _CensorOutputSpec(TraitedSpec):
 class Censor(SimpleInterface):
     """Apply temporal mask to data.
 
-    If a column other than "framewise_displacement" is used, then this assumes that the outliers
-    flagged by "framewise_displacement" have already been removed from the BOLD file, and it
+    If a column other than "denoising" is used, then this assumes that the outliers
+    flagged by "denoising" have already been removed from the BOLD file, and it
     reduces the data further.
     """
 
@@ -256,12 +257,13 @@ class Censor(SimpleInterface):
             )
 
         # Drop the high-motion volumes, because the image is already censored
-        if self.inputs.column != 'framewise_displacement':
-            censoring_df = censoring_df.loc[get_col(censoring_df, 'framewise_displacement') == 0]
+        if self.inputs.column != 'denoising':
+            censoring_df = censoring_df.loc[get_col(censoring_df, 'denoising') == 0]
             censoring_df.reset_index(drop=True, inplace=True)
 
-        retain_idx = censoring_df.loc[censoring_df[self.inputs.column] == 0].index.values
-        motion_outliers = censoring_df.loc[censoring_df[self.inputs.column] != 0].index.values
+        column = get_col(censoring_df, self.inputs.column)
+        retain_idx = censoring_df.loc[column == 0].index.values
+        motion_outliers = censoring_df.loc[column != 0].index.values
 
         if motion_outliers.size == 0:  # No censoring needed
             self._results['out_file'] = self.inputs.in_file
@@ -327,8 +329,9 @@ class _RandomCensorInputSpec(BaseInterfaceInputSpec):
         exists=True,
         mandatory=True,
         desc=(
-            'Temporal mask; all motion outlier volumes set to 1. '
-            "This is a TSV file with one column: 'framewise_displacement'."
+            'Temporal mask; all censored volumes set to 1. '
+            "This is a TSV file with the columns 'framewise_displacement', 'censor_between', "
+            "and 'denoising'."
         ),
     )
     temporal_mask_metadata = traits.Dict(
@@ -381,9 +384,7 @@ class RandomCensor(SimpleInterface):
             use_ext=True,
         )
         rng = np.random.default_rng(self.inputs.random_seed)
-        low_motion_idx = censoring_df.loc[
-            get_col(censoring_df, 'framewise_displacement') != 1
-        ].index.values
+        low_motion_idx = censoring_df.loc[get_col(censoring_df, 'denoising') != 1].index.values
         for exact_scan in self.inputs.exact_scans:
             random_censor = rng.choice(low_motion_idx, size=exact_scan, replace=False)
             column_name = f'exact_{exact_scan}'

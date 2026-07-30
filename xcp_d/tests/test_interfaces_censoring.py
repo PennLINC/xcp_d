@@ -415,7 +415,13 @@ def test_random_censor(tmp_path_factory):
     rng = np.random.default_rng(0)
     outlier_idx = rng.choice(np.arange(n_volumes, dtype=int), size=n_outliers, replace=False)
     outliers_arr[outlier_idx] = 1
-    temporal_mask_df = pd.DataFrame(data=outliers_arr, columns=['framewise_displacement'])
+    temporal_mask_df = pd.DataFrame(
+        {
+            'framewise_displacement': outliers_arr,
+            'censor_between': np.zeros(n_volumes, dtype=int),
+            'denoising': outliers_arr,
+        }
+    )
     original_temporal_mask = os.path.join(tmpdir, 'orig_tmask.tsv')
     temporal_mask_df.to_csv(original_temporal_mask, index=False, sep='\t')
 
@@ -442,7 +448,7 @@ def test_random_censor(tmp_path_factory):
     assert isinstance(results.outputs.temporal_mask_metadata, dict)
     new_temporal_mask_df = pd.read_table(results.outputs.temporal_mask)
     new_temporal_mask_df_no_outliers = new_temporal_mask_df.loc[
-        new_temporal_mask_df['framewise_displacement'] == 0
+        new_temporal_mask_df['denoising'] == 0
     ]
     for exact_scan in exact_scans:
         exact_scan_col = f'exact_{exact_scan}'
@@ -454,10 +460,7 @@ def test_random_censor(tmp_path_factory):
         )
         # The outlier volumes and exact-scan censored volumes shouldn't overlap.
         assert all(
-            new_temporal_mask_df_no_outliers[[exact_scan_col, 'framewise_displacement']].sum(
-                axis=1
-            )
-            <= 1
+            new_temporal_mask_df_no_outliers[[exact_scan_col, 'denoising']].sum(axis=1) <= 1
         )
 
 
@@ -517,6 +520,40 @@ def test_expand_temporal_mask(tmp_path_factory):
     assert results.outputs.temporal_mask_metadata['censor_between']['MaxSegmentLength'] == 2
 
 
+def test_random_censor_uses_denoising_column(tmp_path_factory):
+    """RandomCensor draws only from volumes retained by the denoising column."""
+    tmpdir = tmp_path_factory.mktemp('test_random_censor_denoising')
+    n_volumes = 200
+
+    fd_arr = np.zeros(n_volumes, dtype=int)
+    fd_arr[:20] = 1
+    between_arr = np.zeros(n_volumes, dtype=int)
+    between_arr[20:40] = 1
+    temporal_mask_df = pd.DataFrame(
+        {
+            'framewise_displacement': fd_arr,
+            'censor_between': between_arr,
+            'denoising': ((fd_arr + between_arr) > 0).astype(int),
+        }
+    )
+    temporal_mask = os.path.join(tmpdir, 'tmask.tsv')
+    temporal_mask_df.to_csv(temporal_mask, sep='\t', index=False)
+
+    interface = censoring.RandomCensor(
+        temporal_mask=temporal_mask,
+        temporal_mask_metadata={},
+        exact_scans=[100],
+        random_seed=0,
+    )
+    results = interface.run(cwd=tmpdir)
+    out_df = pd.read_table(results.outputs.temporal_mask)
+
+    # No volume censored by `denoising` may be marked in the exact_ column.
+    assert out_df.loc[out_df['denoising'] == 1, 'exact_100'].sum() == 0
+    # Of the 160 volumes retained by `denoising`, 100 are kept and 60 are randomly censored.
+    assert out_df['exact_100'].sum() == 60
+
+
 def test_censor(ds001419_data, tmp_path_factory):
     """Test Censor interface."""
     tmpdir = tmp_path_factory.mktemp('test_censor')
@@ -524,7 +561,13 @@ def test_censor(ds001419_data, tmp_path_factory):
     cifti_file = ds001419_data['cifti_file']
     in_img = nb.load(nifti_file)
     n_volumes = in_img.shape[3]
-    censoring_df = pd.DataFrame(columns=['framewise_displacement'], data=np.zeros(n_volumes))
+    censoring_df = pd.DataFrame(
+        {
+            'framewise_displacement': np.zeros(n_volumes),
+            'censor_between': np.zeros(n_volumes),
+            'denoising': np.zeros(n_volumes),
+        }
+    )
     temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
     censoring_df.to_csv(temporal_mask, sep='\t', index=False)
 
@@ -532,7 +575,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=nifti_file,
         temporal_mask=temporal_mask,
-        column='framewise_displacement',
+        column='denoising',
     )
     results = interface.run(cwd=tmpdir)
     out_file = results.outputs.out_file
@@ -544,7 +587,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=cifti_file,
         temporal_mask=temporal_mask,
-        column='framewise_displacement',
+        column='denoising',
     )
     results = interface.run(cwd=tmpdir)
     out_file = results.outputs.out_file
@@ -556,6 +599,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     n_censored_volumes = 10
     n_retained_volumes = n_volumes - n_censored_volumes
     censoring_df.loc[range(10), 'framewise_displacement'] = 1
+    censoring_df.loc[range(10), 'denoising'] = 1
     # Add random censor column
     censoring_df['random_censor'] = 0
     censoring_df.loc[20:29, 'random_censor'] = 1
@@ -565,7 +609,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=nifti_file,
         temporal_mask=temporal_mask,
-        column='framewise_displacement',
+        column='denoising',
     )
     results = interface.run(cwd=tmpdir)
     out_file = results.outputs.out_file
@@ -589,7 +633,7 @@ def test_censor(ds001419_data, tmp_path_factory):
     interface = censoring.Censor(
         in_file=cifti_file,
         temporal_mask=temporal_mask,
-        column='framewise_displacement',
+        column='denoising',
     )
     results = interface.run(cwd=tmpdir)
     out_file = results.outputs.out_file

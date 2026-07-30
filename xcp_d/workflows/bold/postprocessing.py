@@ -725,7 +725,7 @@ approach.
 
     # Create a node for censoring the interpolated data using framewise displacement
     censor_interpolated_data = pe.Node(
-        Censor(column='framewise_displacement'),
+        Censor(column='denoising'),
         name='censor_interpolated_data',
         mem_gb=2 * mem_gb['bold'],
     )
