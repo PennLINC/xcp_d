@@ -547,6 +547,7 @@ It is released under the [CC0](https://creativecommons.org/publicdomain/zero/1.0
                 band_stop_max=config.workflow.band_stop_max,
                 head_radius=head_radius,
                 fd_thresh=config.workflow.fd_thresh,
+                censor_between=config.workflow.censor_between,
             )
 
             if (config.workflow.min_time >= 0) and (

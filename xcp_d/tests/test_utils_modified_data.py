@@ -102,3 +102,56 @@ def test_censor_between_outliers_retained_runs_are_long_enough(censor_between):
     diffs = np.diff(padded)
     run_lengths = np.flatnonzero(diffs == 1) - np.flatnonzero(diffs == -1)
     assert np.all(run_lengths > censor_between)
+
+
+def test_flag_bad_run_accounts_for_censor_between(tmp_path_factory):
+    """Post-scrubbing duration shrinks as censor_between grows."""
+    import os
+
+    import pandas as pd
+
+    from xcp_d.utils.modified_data import flag_bad_run
+
+    tmpdir = tmp_path_factory.mktemp('test_flag_bad_run_censor_between')
+    n_volumes = 100
+    t_r = 2.0
+
+    # Build a motion file whose FD alternates between low and high in a way that leaves
+    # several short runs of retained volumes.
+    rng = np.random.default_rng(0)
+    motion_df = pd.DataFrame(
+        {
+            'trans_x': rng.random(n_volumes) * 0.01,
+            'trans_y': rng.random(n_volumes) * 0.01,
+            'trans_z': rng.random(n_volumes) * 0.01,
+            'rot_x': rng.random(n_volumes) * 0.001,
+            'rot_y': rng.random(n_volumes) * 0.001,
+            'rot_z': rng.random(n_volumes) * 0.001,
+            'rmsd': rng.random(n_volumes) * 0.01,
+        }
+    )
+    # Inject large jumps every third volume so that outliers are scattered.
+    motion_df.loc[::3, 'trans_x'] += 2.0
+    motion_file = os.path.join(tmpdir, 'motion.tsv')
+    motion_df.to_csv(motion_file, sep='\t', index=False)
+
+    kwargs = {
+        'motion_file': motion_file,
+        'dummy_scans': 0,
+        'TR': t_r,
+        'motion_filter_type': None,
+        'motion_filter_order': None,
+        'band_stop_min': None,
+        'band_stop_max': None,
+        'head_radius': 50,
+        'fd_thresh': 0.3,
+    }
+
+    baseline = flag_bad_run(**kwargs, censor_between=0)
+    expanded = flag_bad_run(**kwargs, censor_between=3)
+
+    assert expanded < baseline
+    assert expanded >= 0
+
+    # Censoring disabled short-circuits regardless of censor_between.
+    assert flag_bad_run(**{**kwargs, 'fd_thresh': 0}, censor_between=3) == np.inf

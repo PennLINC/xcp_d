@@ -151,6 +151,7 @@ def flag_bad_run(
     band_stop_max,
     head_radius,
     fd_thresh,
+    censor_between,
 ):
     """Determine if a run has too many high-motion volumes to continue processing.
 
@@ -166,6 +167,8 @@ def flag_bad_run(
     %(band_stop_max)s
     %(head_radius)s
     %(fd_thresh)s
+    censor_between : :obj:`int`
+        Maximum length of a contiguous run of non-outlier volumes to censor.
     brain_mask
 
     Returns
@@ -208,7 +211,10 @@ def flag_bad_run(
         head_radius=head_radius,
         filtered=bool(motion_filter_type),
     )
-    return np.sum(fd_arr <= fd_thresh) * TR
+    outlier_mask = (fd_arr > fd_thresh).astype(int)
+    between_mask = censor_between_outliers(outlier_mask, censor_between)
+    denoising_mask = ((outlier_mask + between_mask) > 0).astype(int)
+    return np.sum(denoising_mask == 0) * TR
 
 
 def censor_between_outliers(outlier_mask, censor_between):
