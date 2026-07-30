@@ -843,6 +843,7 @@ DEFAULT_CONFIG_HASH_FIELDS = {
         'motion_filter_order',
         'head_radius',
         'fd_thresh',
+        'censor_between',
         'min_time',
         'bandpass_filter',
         'high_pass',
