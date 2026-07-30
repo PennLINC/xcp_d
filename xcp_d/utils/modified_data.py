@@ -237,7 +237,7 @@ def censor_between_outliers(outlier_mask, censor_between):
 
     Notes
     -----
-    The beginning and end of the run are treated as outliers,
+    The beginning and end of the time series are treated as outliers,
     so short runs of non-outlier volumes at the start or end of the time series are flagged
     as well.
     """

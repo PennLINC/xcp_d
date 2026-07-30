@@ -340,10 +340,17 @@ If motion filtering was applied, this file will seven extra columns: the seven d
 with ``_filtered`` appended to each column.
 This file includes the high-motion volumes that are removed in most other derivatives.
 
-``outliers.tsv`` is a tab-delimited file with one column: "framewise_displacement".
-The "framewise_displacement" column contains zeros for low-motion volumes, and ones for
-high-motion outliers.
-This file includes the high-motion volumes that are removed in most other derivatives.
+``outliers.tsv`` is a tab-delimited file with three columns:
+"framewise_displacement", "censor_between", and "denoising".
+
+-  "framewise_displacement" contains zeros for low-motion volumes and ones for high-motion
+   outliers, as determined by ``--fd-thresh``.
+-  "censor_between" contains ones for volumes that are not high-motion outliers themselves,
+   but which belong to a contiguous run of non-outlier volumes no longer than
+   ``--censor-between``. It is all zeros when ``--censor-between`` is 0, which is the default.
+-  "denoising" is the union of the other two columns, and is the column used to censor the data.
+
+This file includes the censored volumes that are removed in most other derivatives.
 
 ``design.tsv`` is a tab-delimited file with one column for each nuisance regressor,
 including one-hot encoded regressors indicating each of the high-motion outlier volumes.
