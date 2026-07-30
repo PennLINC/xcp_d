@@ -18,7 +18,7 @@ from nipype.interfaces.base import (
 
 from xcp_d.utils.confounds import _infer_dummy_scans, _modify_motion_filter, load_motion
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import _drop_dummy_scans, compute_fd
+from xcp_d.utils.modified_data import _drop_dummy_scans, censor_between_outliers, compute_fd
 from xcp_d.utils.utils import get_col
 
 LOGGER = logging.getLogger('nipype.interface')
@@ -406,6 +406,96 @@ class RandomCensor(SimpleInterface):
         return runtime
 
 
+class _ExpandTemporalMaskInputSpec(BaseInterfaceInputSpec):
+    temporal_mask = File(
+        exists=True,
+        mandatory=True,
+        desc="Temporal mask file with a 'framewise_displacement' column.",
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc='Metadata associated with the temporal_mask output.',
+    )
+    censor_between = traits.Int(
+        0,
+        usedefault=True,
+        mandatory=False,
+        desc=(
+            'Maximum length of a contiguous run of non-outlier volumes to censor. '
+            'A value of 0 disables the expansion.'
+        ),
+    )
+
+
+class _ExpandTemporalMaskOutputSpec(TraitedSpec):
+    temporal_mask = File(
+        exists=True,
+        desc='Temporal mask file.',
+    )
+    temporal_mask_metadata = traits.Dict(
+        desc='Metadata associated with the temporal_mask output.',
+    )
+
+
+class ExpandTemporalMask(SimpleInterface):
+    """Flag short runs of retained volumes falling between outliers.
+
+    Two columns are added to the temporal mask: 'censor_between', which flags the volumes caught
+    by the expansion, and 'denoising', which is the union of 'framewise_displacement' and
+    'censor_between'. Downstream censoring uses the 'denoising' column.
+
+    Both columns are always written, even when ``censor_between`` is 0,
+    because downstream interfaces rely on the 'denoising' column being present.
+    """
+
+    input_spec = _ExpandTemporalMaskInputSpec
+    output_spec = _ExpandTemporalMaskOutputSpec
+
+    def _run_interface(self, runtime):
+        censoring_df = pd.read_table(self.inputs.temporal_mask)
+        temporal_mask_metadata = self.inputs.temporal_mask_metadata.copy()
+
+        outlier_mask = get_col(censoring_df, 'framewise_displacement').to_numpy()
+        between_mask = censor_between_outliers(outlier_mask, self.inputs.censor_between)
+
+        censoring_df['censor_between'] = between_mask
+        censoring_df['denoising'] = ((outlier_mask + between_mask) > 0).astype(int)
+
+        self._results['temporal_mask'] = fname_presuffix(
+            self.inputs.temporal_mask,
+            suffix='_expanded',
+            newpath=runtime.cwd,
+            use_ext=True,
+        )
+        censoring_df.to_csv(self._results['temporal_mask'], sep='\t', index=False)
+
+        temporal_mask_metadata['censor_between'] = {
+            'Description': (
+                'Non-outlier volumes flagged for censoring because they belong to a contiguous '
+                'run of non-outlier volumes no longer than the censor-between value. '
+                'The beginning and end of the run are treated as outliers for this purpose.'
+            ),
+            'Levels': {
+                '0': 'Not flagged',
+                '1': 'Flagged by censor-between expansion',
+            },
+            'MaxSegmentLength': self.inputs.censor_between,
+        }
+        temporal_mask_metadata['denoising'] = {
+            'Description': (
+                'Outlier time series used for censoring. '
+                'A volume is flagged if it exceeds the framewise displacement threshold or if it '
+                'was flagged by the censor-between expansion.'
+            ),
+            'Levels': {
+                '0': 'Retained volume',
+                '1': 'Censored volume',
+            },
+        }
+        self._results['temporal_mask_metadata'] = temporal_mask_metadata
+
+        return runtime
+
+
 class _ProcessMotionInputSpec(BaseInterfaceInputSpec):
     TR = traits.Float(mandatory=True, desc='Repetition time in seconds')
     fd_thresh = traits.Float(
@@ -566,10 +656,6 @@ class ProcessMotion(SimpleInterface):
             outlier_mask[fd_timeseries > self.inputs.fd_thresh] = 1
         else:
             LOGGER.info(f'FD threshold set to {self.inputs.fd_thresh}. Censoring is disabled.')
-
-        # TODO: Expand framewise_displacement temporal mask with censor_between.
-        # TODO: Add "denoising" column to temporal mask containing 1 if FD outlier *or*
-        # censor_between volume.
 
         self._results['temporal_mask'] = fname_presuffix(
             'desc-fd_outliers.tsv',

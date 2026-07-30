@@ -461,6 +461,62 @@ def test_random_censor(tmp_path_factory):
         )
 
 
+def test_expand_temporal_mask(tmp_path_factory):
+    """Test ExpandTemporalMask."""
+    tmpdir = tmp_path_factory.mktemp('test_expand_temporal_mask')
+
+    # 1-volume run at index 1, 2-volume run at indices 3-4, 4-volume run at indices 6-9.
+    outliers_arr = np.array([1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1], dtype=int)
+    temporal_mask = os.path.join(tmpdir, 'tmask.tsv')
+    pd.DataFrame({'framewise_displacement': outliers_arr}).to_csv(
+        temporal_mask, sep='\t', index=False
+    )
+    metadata = {'framewise_displacement': {'Description': 'original'}}
+
+    # censor_between=0 is a no-op, but still writes both new columns.
+    interface = censoring.ExpandTemporalMask(
+        temporal_mask=temporal_mask,
+        temporal_mask_metadata=metadata,
+        censor_between=0,
+    )
+    results = interface.run(cwd=tmpdir)
+    df = pd.read_table(results.outputs.temporal_mask)
+    assert list(df.columns) == ['framewise_displacement', 'censor_between', 'denoising']
+    assert df['censor_between'].sum() == 0
+    assert np.array_equal(df['denoising'].values, outliers_arr)
+
+    # Metadata is extended, not replaced.
+    out_metadata = results.outputs.temporal_mask_metadata
+    assert out_metadata['framewise_displacement']['Description'] == 'original'
+    assert out_metadata['censor_between']['MaxSegmentLength'] == 0
+    assert 'Levels' in out_metadata['censor_between']
+    assert 'Levels' in out_metadata['denoising']
+    # The input metadata dict is not mutated.
+    assert 'denoising' not in metadata
+
+    # censor_between=2 flags the 1-volume and 2-volume runs but not the 4-volume run.
+    interface = censoring.ExpandTemporalMask(
+        temporal_mask=temporal_mask,
+        temporal_mask_metadata=metadata,
+        censor_between=2,
+    )
+    results = interface.run(cwd=tmpdir)
+    df = pd.read_table(results.outputs.temporal_mask)
+    assert np.array_equal(
+        df['censor_between'].values,
+        np.array([0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0]),
+    )
+    # denoising is the union of the other two columns.
+    assert np.array_equal(
+        df['denoising'].values,
+        ((df['framewise_displacement'].values + df['censor_between'].values) > 0).astype(int),
+    )
+    assert df['denoising'].sum() > df['framewise_displacement'].sum()
+    # framewise_displacement is untouched.
+    assert np.array_equal(df['framewise_displacement'].values, outliers_arr)
+    assert results.outputs.temporal_mask_metadata['censor_between']['MaxSegmentLength'] == 2
+
+
 def test_censor(ds001419_data, tmp_path_factory):
     """Test Censor interface."""
     tmpdir = tmp_path_factory.mktemp('test_censor')
