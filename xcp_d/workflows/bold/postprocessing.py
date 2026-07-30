@@ -14,6 +14,7 @@ from xcp_d.config import dismiss_hash
 from xcp_d.interfaces.bids import DerivativesDataSink
 from xcp_d.interfaces.censoring import (
     Censor,
+    ExpandTemporalMask,
     GenerateConfounds,
     ProcessMotion,
     RemoveDummyVolumes,
@@ -120,6 +121,7 @@ def init_prepare_confounds_wf(
     band_stop_max = config.workflow.band_stop_max
     motion_filter_order = config.workflow.motion_filter_order
     fd_thresh = config.workflow.fd_thresh
+    censor_between = config.workflow.censor_between
 
     dummy_scans_str = ''
     if dummy_scans == 'auto':
@@ -339,9 +341,23 @@ def init_prepare_confounds_wf(
             ]),
         ])  # fmt:skip
 
+    # Flag short runs of retained volumes. This runs after dummy-scan removal so that the
+    # beginning and end of the run refer to the data that are actually analyzed.
+    expand_temporal_mask = pe.Node(
+        ExpandTemporalMask(censor_between=censor_between),
+        name='expand_temporal_mask',
+        mem_gb=1,
+    )
+
     workflow.connect([
-        (process_motion, outputnode, [('temporal_mask_metadata', 'temporal_mask_metadata')]),
-        (dummy_scan_buffer, outputnode, [('temporal_mask', 'temporal_mask')]),
+        (dummy_scan_buffer, expand_temporal_mask, [('temporal_mask', 'temporal_mask')]),
+        (process_motion, expand_temporal_mask, [
+            ('temporal_mask_metadata', 'temporal_mask_metadata'),
+        ]),
+        (expand_temporal_mask, outputnode, [
+            ('temporal_mask', 'temporal_mask'),
+            ('temporal_mask_metadata', 'temporal_mask_metadata'),
+        ]),
     ])  # fmt:skip
 
     if config.execution.confounds_config is not None:

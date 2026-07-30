@@ -608,3 +608,60 @@ def test_censor(ds001419_data, tmp_path_factory):
     assert os.path.isfile(out_file2)
     out_img2 = nb.load(out_file2)
     assert out_img2.shape[0] == (n_retained_volumes - 10)
+
+
+def _load_offline_config(**workflow_overrides):
+    """Populate the global config from the test TOML without downloading example data.
+
+    ``xcp_d.tests.tests.mock_config`` downloads a dataset from Box, which is not available in
+    every environment, so workflow-construction tests load the same TOML directly instead.
+    """
+    import tempfile
+    from pathlib import Path
+
+    try:
+        from tomllib import loads
+    except ImportError:  # Python < 3.11
+        from tomli import loads
+
+    from xcp_d import config
+    from xcp_d.data import load as load_data
+
+    settings = loads(load_data('tests/config.toml').read_text())
+    for section_name, section_settings in settings.items():
+        if section_name != 'environment':
+            getattr(config, section_name).load(section_settings, init=False)
+
+    config.execution.output_dir = Path(tempfile.mkdtemp())
+    config.execution.work_dir = Path(tempfile.mkdtemp())
+    for key, value in workflow_overrides.items():
+        setattr(config.workflow, key, value)
+
+    return config
+
+
+def test_prepare_confounds_wf_expands_temporal_mask():
+    """The prepare-confounds workflow expands the temporal mask after dummy-scan removal."""
+    from xcp_d.interfaces.censoring import ExpandTemporalMask
+    from xcp_d.workflows.bold.postprocessing import init_prepare_confounds_wf
+
+    _load_offline_config(censor_between=3, fd_thresh=0.3, dummy_scans=0)
+
+    wf = init_prepare_confounds_wf(TR=2.0, head_radius=50, mem_gb={'bold': 1, 'volume': 1})
+
+    node = wf.get_node('expand_temporal_mask')
+    assert node is not None
+    assert isinstance(node.interface, ExpandTemporalMask)
+    assert node.inputs.censor_between == 3
+
+    # outputnode.temporal_mask must be fed by the expansion node, not the dummy-scan buffer,
+    # and its metadata must come from the expansion node rather than process_motion.
+    incoming = {
+        (source.name, source_field, dest_field)
+        for source, _, data in wf._graph.in_edges(wf.get_node('outputnode'), data=True)
+        for source_field, dest_field in data['connect']
+    }
+    assert ('expand_temporal_mask', 'temporal_mask', 'temporal_mask') in incoming
+    assert ('expand_temporal_mask', 'temporal_mask_metadata', 'temporal_mask_metadata') in incoming
+    assert ('dummy_scan_buffer', 'temporal_mask', 'temporal_mask') not in incoming
+    assert ('process_motion', 'temporal_mask_metadata', 'temporal_mask_metadata') not in incoming
