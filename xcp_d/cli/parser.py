@@ -477,6 +477,19 @@ This parameter is used in conjunction with ``motion-filter-order`` and ``band-st
         ),
     )
     g_censor.add_argument(
+        '--censor-between',
+        '--censor_between',
+        dest='censor_between',
+        default='auto',
+        type=parser_utils._int_or_auto,
+        help=(
+            'If any short sets of contiguous non-outliers are found between outliers, '
+            'this parameter will remove them. '
+            'For example, if the value is set to 1, then any cases where only one non-outlier '
+            'volume exists between two outlier volumes will be censored.'
+        ),
+    )
+    g_censor.add_argument(
         '--min-time',
         '--min_time',
         dest='min_time',

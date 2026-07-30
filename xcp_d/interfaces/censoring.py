@@ -567,6 +567,10 @@ class ProcessMotion(SimpleInterface):
         else:
             LOGGER.info(f'FD threshold set to {self.inputs.fd_thresh}. Censoring is disabled.')
 
+        # TODO: Expand framewise_displacement temporal mask with censor_between.
+        # TODO: Add "denoising" column to temporal mask containing 1 if FD outlier *or*
+        # censor_between volume.
+
         self._results['temporal_mask'] = fname_presuffix(
             'desc-fd_outliers.tsv',
             newpath=runtime.cwd,
