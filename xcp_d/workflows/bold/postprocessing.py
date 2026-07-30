@@ -153,6 +153,7 @@ def init_prepare_confounds_wf(
             motion_filter_type=motion_filter_type,
             head_radius=head_radius,
             fd_thresh=fd_thresh,
+            censor_between=censor_between,
             exact_scans=[],
         )
     else:
