@@ -346,7 +346,7 @@ This file includes the high-motion volumes that are removed in most other deriva
 -  "framewise_displacement" contains zeros for low-motion volumes and ones for high-motion
    outliers, as determined by ``--fd-thresh``.
 -  "censor_between" contains ones for volumes that are not high-motion outliers themselves,
-   but which belong to a contiguous run of non-outlier volumes no longer than
+   but which belong to a contiguous segment of non-outlier volumes no longer than
    ``--censor-between``. It is all zeros when ``--censor-between`` is 0, which is the default.
 -  "denoising" is the union of the other two columns, and is the column used to censor the data.
 
