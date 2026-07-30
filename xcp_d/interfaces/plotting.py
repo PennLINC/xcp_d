@@ -275,7 +275,7 @@ class QCPlots(SimpleInterface):
         # Determine number of dummy volumes and load temporal mask
         if isdefined(self.inputs.temporal_mask):
             censoring_df = pd.read_table(self.inputs.temporal_mask)
-            tmask_arr = get_col(censoring_df, 'framewise_displacement').values
+            tmask_arr = get_col(censoring_df, 'denoising').values
         else:
             tmask_arr = np.zeros(preproc_fd_timeseries.size, dtype=int)
 

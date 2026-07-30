@@ -709,3 +709,25 @@ def test_prepare_confounds_wf_expands_temporal_mask():
     assert ('expand_temporal_mask', 'temporal_mask_metadata', 'temporal_mask_metadata') in incoming
     assert ('dummy_scan_buffer', 'temporal_mask', 'temporal_mask') not in incoming
     assert ('process_motion', 'temporal_mask_metadata', 'temporal_mask_metadata') not in incoming
+
+
+def test_denoising_column_is_the_censoring_contract():
+    """Every temporal-mask consumer reads the denoising column, not framewise_displacement."""
+    import re
+    from pathlib import Path
+
+    repo_root = Path(__file__).parent.parent
+    consumers = [
+        'interfaces/nilearn.py',
+        'interfaces/restingstate.py',
+        'interfaces/connectivity.py',
+        'interfaces/utils.py',
+    ]
+    pattern = re.compile(r"get_col\(\s*censoring_df,\s*'framewise_displacement'\s*\)")
+    offenders = []
+    for relative_path in consumers:
+        text = (repo_root / relative_path).read_text()
+        if pattern.search(text):
+            offenders.append(relative_path)
+
+    assert offenders == []

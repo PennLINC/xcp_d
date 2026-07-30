@@ -25,9 +25,13 @@ def test_plot_fmri_es(ds001419_data, tmp_path_factory):
     tmask_arr[:10] = True  # flag first 10 volumes as bad
     tmask_arr = tmask_arr.astype(int)
     temporal_mask = os.path.join(tmpdir, 'temporal_mask.tsv')
-    pd.DataFrame(columns=['framewise_displacement'], data=tmask_arr).to_csv(
-        temporal_mask, sep='\t', index=False
-    )
+    pd.DataFrame(
+        {
+            'framewise_displacement': tmask_arr,
+            'censor_between': np.zeros(n_volumes, dtype=int),
+            'denoising': tmask_arr,
+        }
+    ).to_csv(temporal_mask, sep='\t', index=False)
 
     out_file1, out_file2 = plotting.plot_fmri_es(
         preprocessed_bold=preprocessed_bold,
