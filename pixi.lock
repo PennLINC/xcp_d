@@ -5885,8 +5885,8 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 26.1.1.dev4+g7e8bdec40
-  sha256: f058b2722c80c69593871ce2e449086023e6e0558e25ab7e44a56b4b2686bfa6
+  version: 26.1.2.dev1+g1047879e7
+  sha256: 0857329efbc1cfe8ddb39459b252cbfe9e740ae9c30d4c0f9d355d0c8e1c5da5
   requires_dist:
   - acres
   - beautifulsoup4
@@ -5930,7 +5930,7 @@ packages:
   - pytest-xdist ; extra == 'all'
   - python-levenshtein ; extra == 'all'
   - recommonmark ; extra == 'all'
-  - ruff~=0.15.0 ; extra == 'all'
+  - ruff>=0.15,<0.17 ; extra == 'all'
   - sphinx-argparse!=0.5.0 ; extra == 'all'
   - sphinx-design ; extra == 'all'
   - sphinx-markdown-tables ; extra == 'all'
@@ -5940,7 +5940,7 @@ packages:
   - sphinxcontrib-bibtex ; extra == 'all'
   - svgutils ; extra == 'all'
   - pre-commit ; extra == 'dev'
-  - ruff~=0.15.0 ; extra == 'dev'
+  - ruff>=0.15,<0.17 ; extra == 'dev'
   - doctest-ignore-unicode ; extra == 'doc'
   - pydot>=1.2.3 ; extra == 'doc'
   - pydotplus ; extra == 'doc'
@@ -5964,8 +5964,8 @@ packages:
   editable: true
 - pypi: ./
   name: xcp-d
-  version: 26.1.1.dev4+g7e8bdec40
-  sha256: f058b2722c80c69593871ce2e449086023e6e0558e25ab7e44a56b4b2686bfa6
+  version: 26.1.2.dev1+g1047879e7
+  sha256: 0857329efbc1cfe8ddb39459b252cbfe9e740ae9c30d4c0f9d355d0c8e1c5da5
   requires_dist:
   - acres
   - beautifulsoup4
@@ -6009,7 +6009,7 @@ packages:
   - pytest-xdist ; extra == 'all'
   - python-levenshtein ; extra == 'all'
   - recommonmark ; extra == 'all'
-  - ruff~=0.15.0 ; extra == 'all'
+  - ruff>=0.15,<0.17 ; extra == 'all'
   - sphinx-argparse!=0.5.0 ; extra == 'all'
   - sphinx-design ; extra == 'all'
   - sphinx-markdown-tables ; extra == 'all'
@@ -6019,7 +6019,7 @@ packages:
   - sphinxcontrib-bibtex ; extra == 'all'
   - svgutils ; extra == 'all'
   - pre-commit ; extra == 'dev'
-  - ruff~=0.15.0 ; extra == 'dev'
+  - ruff>=0.15,<0.17 ; extra == 'dev'
   - doctest-ignore-unicode ; extra == 'doc'
   - pydot>=1.2.3 ; extra == 'doc'
   - pydotplus ; extra == 'doc'
