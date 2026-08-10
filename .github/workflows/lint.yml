@@ -24,8 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      # Keep this pin in sync with the ruff rev in .pre-commit-config.yaml.
-      # Unpinned, CI silently follows new ruff releases and goes red without a code change.
       - run: pipx run --spec ruff==0.14.11 ruff check .
       - run: pipx run --spec ruff==0.14.11 ruff format --diff .
 
