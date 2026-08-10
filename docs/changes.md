@@ -1,5 +1,18 @@
 # What's New
 
+## 26.2.0rc1 (August 10, 2026)
+
+### 🎉 Exciting New Features
+
+* Add `--censor-between` parameter to censor short sets of nonoutliers between outliers by @tsalo in https://github.com/PennLINC/xcp_d/pull/1628
+
+### Other Changes
+
+* Sync CI setup across LINC BIDS Apps by @tsalo in https://github.com/PennLINC/xcp_d/pull/1632
+
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.1.1...26.2.0rc1
+
+
 ## 26.1.1 (June 11, 2026)
 
 ### 🐛 Bug Fixes
