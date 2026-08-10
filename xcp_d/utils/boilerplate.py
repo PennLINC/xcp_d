@@ -86,7 +86,7 @@ def describe_motion_parameters(
 
 
 @fill_doc
-def describe_censoring(*, motion_filter_type, head_radius, fd_thresh, exact_scans):
+def describe_censoring(*, motion_filter_type, head_radius, fd_thresh, censor_between, exact_scans):
     """Build a text description of the FD censoring process.
 
     Parameters
@@ -94,6 +94,8 @@ def describe_censoring(*, motion_filter_type, head_radius, fd_thresh, exact_scan
     %(motion_filter_type)s
     %(head_radius)s
     %(fd_thresh)s
+    censor_between : :obj:`int`
+        Maximum length of a contiguous run of non-outlier volumes to censor.
     %(exact_scans)s
 
     Returns
@@ -110,6 +112,13 @@ def describe_censoring(*, motion_filter_type, head_radius, fd_thresh, exact_scan
             f'Volumes with {"filtered " if motion_filter_type else ""}framewise displacement '
             f'greater than {fd_thresh} mm were flagged as high-motion outliers for the sake of '
             'later censoring [@power_fd_dvars].'
+        )
+
+    if (fd_thresh > 0) and (censor_between > 0):
+        desc += (
+            f' In addition, any contiguous sets of {censor_between} or fewer non-outlier volumes '
+            'falling between outlier volumes, or between an outlier volume and the beginning or '
+            'end of the run, were also flagged for censoring.'
         )
 
     if exact_scans and (fd_thresh > 0):

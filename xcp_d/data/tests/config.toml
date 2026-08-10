@@ -38,6 +38,7 @@ combine_runs = false
 motion_filter_order = 4
 head_radius = 50
 fd_thresh = 0.3
+censor_between = 0
 min_time = 100
 bandpass_filter = true
 high_pass = 0.01

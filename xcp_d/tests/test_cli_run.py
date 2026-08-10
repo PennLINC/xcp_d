@@ -43,6 +43,7 @@ def base_opts():
         'low_pass': 0.1,
         'bandpass_filter': True,
         'fd_thresh': 'auto',
+        'censor_between': 'auto',
         'min_time': 240,
         'motion_filter_type': None,
         'band_stop_min': None,
@@ -84,6 +85,30 @@ def test_validate_parameters_02(base_opts, base_parser, caplog):
 
     assert opts.min_time == 0
     assert 'Framewise displacement-based scrubbing is disabled.' in caplog.text
+
+
+def test_validate_parameters_censor_between_disabled(base_opts, base_parser, caplog):
+    """Test that --censor-between is disabled when censoring is disabled."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = 0
+    opts.censor_between = 5
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.censor_between == 0
+    assert 'Framewise displacement-based scrubbing is disabled.' in caplog.text
+    assert '--censor-between' in caplog.text
+
+
+def test_validate_parameters_censor_between_retained(base_opts, base_parser):
+    """Test that an explicit --censor-between survives when censoring is enabled."""
+    opts = deepcopy(base_opts)
+    opts.fd_thresh = 0.3
+    opts.censor_between = 5
+
+    opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
+
+    assert opts.censor_between == 5
 
 
 def test_validate_parameters_03(base_opts, base_parser):
@@ -284,6 +309,7 @@ def test_validate_parameters_linc_mode(base_opts, base_parser, capsys):
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.abcc_qc is False
+    assert opts.censor_between == 0
     assert opts.linc_qc is True
     assert opts.file_format == 'cifti'
     assert opts.min_coverage == 0.5
@@ -315,6 +341,7 @@ def test_validate_parameters_abcd_mode(base_opts, base_parser, capsys):
     assert opts.correlation_lengths == []
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
+    assert opts.censor_between == 0
     assert opts.file_format == 'cifti'
     assert opts.input_type == 'fmriprep'
     assert opts.linc_qc is True
@@ -360,6 +387,7 @@ def test_validate_parameters_hbcd_mode(base_opts, base_parser, capsys):
     assert opts.correlation_lengths == []
     assert opts.despike is True
     assert opts.fd_thresh == 0.3
+    assert opts.censor_between == 0
     assert opts.file_format == 'cifti'
     assert opts.input_type == 'nibabies'
     assert opts.linc_qc is True
@@ -400,6 +428,7 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
     opts = parser._validate_parameters(deepcopy(opts), build_log, parser=base_parser)
 
     assert opts.abcc_qc is False
+    assert opts.censor_between == 0
     assert opts.linc_qc is True
     assert opts.file_format == 'nifti'
     assert opts.min_coverage == 0.4
@@ -421,6 +450,7 @@ def test_validate_parameters_nichart_mode(base_opts, base_parser, capsys):
                 'confounds_config': 'none',
                 'despike': False,
                 'fd_thresh': 0.0,
+                'censor_between': 0,
                 'file_format': 'nifti',
                 'input_type': 'fmriprep',
                 'linc_qc': False,
@@ -463,6 +493,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
 
     stderr = capsys.readouterr().err
     assert "'--abcc-qc' (y or n) is required for 'none' mode." in stderr
+    assert "'--censor-between' is required for 'none' mode." in stderr
     assert "'--combine-runs' (y or n) is required for 'none' mode." in stderr
     assert "'--despike' (y or n) is required for 'none' mode." in stderr
     assert "'--fd-thresh' is required for 'none' mode." in stderr
@@ -478,6 +509,7 @@ def test_validate_parameters_none_mode(base_opts, base_parser, capsys):
     assert "'--warp-surfaces-native2std' (y or n) is required for 'none' mode." in stderr
 
     opts.abcc_qc = False
+    opts.censor_between = 0
     opts.combine_runs = False
     opts.confounds_config = 'none'
     opts.despike = False

@@ -395,7 +395,7 @@ or were set to zero (when the parcel had <{min_coverage * 100}% coverage).
         # If we want interpolated time series, the parcellated CIFTI will have interpolated values,
         # but the correlation matrices should only include low-motion volumes.
         remove_outliers = pe.MapNode(
-            Censor(column='framewise_displacement'),
+            Censor(column='denoising'),
             name='remove_outliers',
             iterfield=['in_file'],
         )

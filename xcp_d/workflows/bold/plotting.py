@@ -88,6 +88,7 @@ def init_qc_report_wf(
     -------
     qc_file
     """
+    censor_between = config.workflow.censor_between
     workflow = Workflow(name=name)
 
     inputnode = pe.Node(
@@ -384,7 +385,7 @@ def init_qc_report_wf(
 
     if config.workflow.abcc_qc:
         make_abcc_qc = pe.Node(
-            ABCCQC(TR=TR),
+            ABCCQC(TR=TR, censor_between=censor_between),
             name='make_abcc_qc',
             mem_gb=2,
         )

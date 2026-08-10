@@ -91,6 +91,7 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Censoring is disabled by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--linc-qc``: The LINC QC file will be created by default.
 -  ``--min-coverage 0.5``: The default coverage threshold is 0.5.
@@ -171,6 +172,7 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0.3``: The censoring threshold is set to 0.3 mm by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
@@ -253,6 +255,7 @@ which may be overridden by the user:
 -  ``--file-format cifti``: CIFTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0.3``: The censoring threshold is set to 0.3 mm by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type nibabies``: Nibabies outputs are expected as input.
 -  ``--combine-runs``: Runs will be concatenated by default.
 -  ``--warp-surfaces-native2std``: Surfaces will be warped to standard space by default.
@@ -327,6 +330,7 @@ which may be overridden by the user:
 -  ``--file-format nifti``: NIfTI files are used as input.
 -  ``--despike``: Despiking is enabled by default.
 -  ``--fd-thresh 0``: Motion-based censoring is disabled by default.
+-  ``--censor-between 0``: Censoring of short retained segments is disabled by default.
 -  ``--input-type fmriprep``: fMRIPrep outputs are expected as input.
 -  ``--linc-qc``: The LINC QC file will be created by default.
 -  ``--min-coverage 0.4``: The default coverage threshold is 0.4 instead of the more common 0.5.
@@ -843,6 +847,31 @@ volume's data, in order to avoid extrapolation by the interpolation function.
 The same interpolation is applied to the confounds.
 
 Interpolation (and later censoring) can be disabled by setting ``--fd-thresh 0``.
+
+
+Censoring short retained segments [OPTIONAL]
+--------------------------------------------
+:class:`~xcp_d.interfaces.censoring.ExpandTemporalMask`
+
+When outliers are dense, the volumes that survive framewise displacement censoring can be
+scattered as very short segments, which contribute little usable signal and interact poorly
+with interpolation and bandpass filtering.
+
+``--censor-between N`` censors any contiguous segment of non-outlier volumes whose length is
+``N`` or fewer. The beginning and end of the time series are treated as outlier boundaries, so
+short segments at the start and end of the time series are censored as well. Equivalently, the
+shortest segment of volumes that ``--censor-between N`` will retain is ``N + 1`` volumes long.
+
+The expansion runs after dummy volumes are removed, so the beginning of the time series refers
+to the first volume that is actually analyzed rather than the first volume of the preprocessed
+file.
+
+The volumes flagged this way are recorded in the "censor_between" column of the temporal mask,
+and the union of these volumes and the framewise displacement outliers is recorded in the
+"denoising" column, which is what all later censoring steps use.
+
+This step is disabled by default (``--censor-between 0``), and has no effect when censoring is
+disabled with ``--fd-thresh 0``.
 
 
 Detrending

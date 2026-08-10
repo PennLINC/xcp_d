@@ -1,6 +1,7 @@
 """Utility functions for tests."""
 
 import os
+import re
 import subprocess
 import tarfile
 from contextlib import contextmanager
@@ -128,6 +129,10 @@ def check_generated_files(output_dir, output_list_file):
 
     # Ignore logs
     found_files = [f for f in found_files if 'log' not in f.split(os.path.sep)]
+
+    # Replace hash entity values with a placeholder (label)
+    pattern = 'hash-([a-zA-Z0-9]+)'
+    found_files = [re.sub(pattern, 'hash-label', f) for f in found_files]
 
     with open(output_list_file) as fo:
         expected_files = fo.readlines()

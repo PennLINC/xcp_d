@@ -170,7 +170,7 @@ class ComputeALFF(SimpleInterface):
         if isinstance(temporal_mask, str) and os.path.isfile(temporal_mask):
             censoring_df = pd.read_table(temporal_mask)
             # Invert the temporal mask to make retained volumes 1s and dropped volumes 0s.
-            sample_mask = ~get_col(censoring_df, 'framewise_displacement').values.astype(bool)
+            sample_mask = ~get_col(censoring_df, 'denoising').values.astype(bool)
             if sample_mask.size != n_volumes:
                 raise ValueError(f'{sample_mask.size} != {n_volumes}')
 

@@ -560,7 +560,7 @@ def plot_fmri_es(
 
     if temporal_mask:
         tmask_df = pd.read_table(temporal_mask)
-        tmask_arr = get_col(tmask_df, 'framewise_displacement').values.astype(bool)
+        tmask_arr = get_col(tmask_df, 'denoising').values.astype(bool)
     else:
         tmask_arr = np.zeros(fd_regressor.shape, dtype=bool)
 
@@ -1122,12 +1122,12 @@ def plot_design_matrix(design_matrix, temporal_mask=None):
     design_matrix_df = pd.read_table(design_matrix)
     if temporal_mask:
         censoring_df = pd.read_table(temporal_mask)
-        n_motion_outliers = get_col(censoring_df, 'framewise_displacement').sum()
+        n_motion_outliers = get_col(censoring_df, 'denoising').sum()
         motion_outliers_df = pd.DataFrame(
             data=np.zeros((censoring_df.shape[0], n_motion_outliers), dtype=np.int16),
             columns=[f'outlier{i}' for i in range(1, n_motion_outliers + 1)],
         )
-        motion_outlier_idx = np.where(get_col(censoring_df, 'framewise_displacement'))[0]
+        motion_outlier_idx = np.where(get_col(censoring_df, 'denoising'))[0]
         for i_outlier, outlier_col in enumerate(motion_outliers_df.columns):
             outlier_row = motion_outlier_idx[i_outlier]
             motion_outliers_df.loc[outlier_row, outlier_col] = 1
