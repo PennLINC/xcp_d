@@ -20,7 +20,7 @@ from nipype.interfaces.base import (
 )
 
 from xcp_d.utils.filemanip import fname_presuffix
-from xcp_d.utils.modified_data import downcast_to_32
+from xcp_d.utils.modified_data import censor_between_outliers, downcast_to_32
 from xcp_d.utils.qcmetrics import compute_dvars, compute_registration_qc
 from xcp_d.utils.utils import get_col
 from xcp_d.utils.write_save import read_ndata
@@ -461,6 +461,10 @@ class _ABCCQCInputSpec(BaseInterfaceInputSpec):
         mandatory=True,
         desc='',
     )
+    censor_between = traits.Int(
+        mandatory=True,
+        desc='Censor short segments of contiguous non-outlier volumes found between outliers.',
+    )
     TR = traits.Float(mandatory=True, desc='Repetition Time')
 
 
@@ -515,6 +519,11 @@ class ABCCQC(SimpleInterface):
             for thresh in np.linspace(0, 1, 101):
                 thresh = np.around(thresh, 2)
 
+                outlier_mask = fd > thresh
+                between_mask = censor_between_outliers(outlier_mask, self.inputs.censor_between)
+                mask = ((outlier_mask + between_mask) > 0).astype(int)
+                keep_idx = ~mask.astype(bool)
+
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/skip',
                     data=0,
@@ -522,7 +531,7 @@ class ABCCQC(SimpleInterface):
                 )
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/binary_mask',
-                    data=(fd > thresh).astype(int),
+                    data=mask,
                     dtype='float',
                 )
                 dcan.create_dataset(
@@ -537,17 +546,17 @@ class ABCCQC(SimpleInterface):
                 )
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/remaining_total_frame_count',
-                    data=len(fd[fd <= thresh]),
+                    data=np.sum(keep_idx),
                     dtype='float',
                 )
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/remaining_seconds',
-                    data=len(fd[fd <= thresh]) * TR,
+                    data=np.sum(keep_idx) * TR,
                     dtype='float',
                 )
                 dcan.create_dataset(
                     f'/dcan_motion/fd_{thresh}/remaining_frame_mean_FD',
-                    data=(fd[fd <= thresh]).mean(),
+                    data=fd[keep_idx].mean(),
                     dtype='float',
                 )
 
