@@ -1,6 +1,6 @@
 # What's New
 
-## 26.2.0rc1 (August 10, 2026)
+## 26.2.0 (August 13, 2026)
 
 ### 🎉 Exciting New Features
 
@@ -10,7 +10,7 @@
 
 * Sync CI setup across LINC BIDS Apps by @tsalo in https://github.com/PennLINC/xcp_d/pull/1632
 
-**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.1.1...26.2.0rc1
+**Full Changelog**: https://github.com/PennLINC/xcp_d/compare/26.1.1...26.2.0
 
 
 ## 26.1.1 (June 11, 2026)
