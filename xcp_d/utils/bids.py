@@ -355,6 +355,7 @@ def _select_cifti_volspace(layout, queries, input_type):
 
     temp_bold_query = updated_queries['bold'].copy()
     temp_bold_query.pop('den', None)
+    temp_bold_query.pop('desc', None)
     temp_bold_query['extension'] = '.nii.gz'
 
     temp_xfm_query = updated_queries['anat_to_template_xfm'].copy()
