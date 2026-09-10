@@ -1,3 +1,6 @@
+# Graphify generated analysis
+graphify-out/
+
 .cursor/.cursorenv
 docs/superpowers
 .claude/settings.local.json
