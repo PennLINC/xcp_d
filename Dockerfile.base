@@ -74,8 +74,16 @@ RUN GNUPGHOME=/tmp gpg --keyserver hkps://keyserver.ubuntu.com --no-default-keyr
     && echo "deb [signed-by=/usr/share/keyrings/linuxuprising.gpg] https://ppa.launchpadcontent.net/linuxuprising/libpng12/ubuntu jammy main" > /etc/apt/sources.list.d/linuxuprising.list \
     && echo "deb [signed-by=/usr/share/keyrings/zeehio.gpg] https://ppa.launchpadcontent.net/zeehio/libxp/ubuntu jammy main" > /etc/apt/sources.list.d/zeehio.list
 
+# Workbench, AFNI and FreeSurfer support libraries.
+#
+# Ubuntu's libQt5Core.so.5 carries an ELF .note.ABI-tag requiring Linux >= 3.17
+# (Qt5Core uses getrandom()). Containers share the host kernel, so glibc's loader
+# rejects the library as "not found" on RHEL/CentOS 7 hosts (kernel 3.10) under
+# Apptainer, which takes wb_command down with it. Strip the note. binutils is
+# installed only for that and is purged in the same layer. See gh-1634.
 RUN apt-get update -qq \
     && apt-get install -y -q --no-install-recommends \
+           binutils \
            connectome-workbench=1.5.0-2 \
            ed \
            gsl-bin \
@@ -93,6 +101,10 @@ RUN apt-get update -qq \
     && dpkg -i /tmp/multiarch.deb \
     && rm /tmp/multiarch.deb \
     && apt-get install -f \
+    && strip --remove-section=.note.ABI-tag \
+           "$(readlink -f /usr/lib/x86_64-linux-gnu/libQt5Core.so.5)" \
+    && apt-get purge -y binutils \
+    && apt-get autoremove -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && gsl_path="$(ldconfig -p | awk '/libgsl\.so\.[0-9]+/{print $NF; exit}')" \
     && if [ -n "$gsl_path" ] && [ "$(basename "$gsl_path")" != "libgsl.so.0" ]; then ln -sfv "$gsl_path" "$(dirname "$gsl_path")/libgsl.so.0"; fi \
