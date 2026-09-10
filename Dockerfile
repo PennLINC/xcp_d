@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=pennlinc/xcp_d-base:20260611
+ARG BASE_IMAGE=pennlinc/xcp_d-base:20260910
 
 FROM ghcr.io/prefix-dev/pixi:0.58.0 AS build
 RUN apt-get update && \
