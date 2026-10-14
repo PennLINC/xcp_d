@@ -521,6 +521,7 @@ def fill_doc(f):
 def download_example_data(out_dir=None, overwrite=False):
     """Download example data from Box."""
     import os
+    import shutil
     import tarfile
 
     import requests
@@ -542,7 +543,7 @@ def download_example_data(out_dir=None, overwrite=False):
             response = requests.get(url, stream=True, timeout=10)
             if response.status_code == 200:
                 with open(target_file, 'wb') as fo:
-                    fo.write(response.raw.read())
+                    shutil.copyfileobj(response.raw, fo)
 
         if not os.path.isfile(target_file):
             raise FileNotFoundError(f'File DNE: {target_file}')
