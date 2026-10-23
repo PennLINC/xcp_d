@@ -491,6 +491,13 @@ class DenoiseNifti(NilearnBaseInterface, SimpleInterface):
         pixdim = list(filtered_denoised_img.header.get_zooms())
         pixdim[3] = self.inputs.TR
         filtered_denoised_img.header.set_zooms(pixdim)
+
+        # Write the header DerivativesDataSink would give a BOLD series without a space input
+        # (scanner transform codes, mm and sec units). Otherwise the sink "fixes" the header by
+        # decompressing and recompressing the whole series.
+        filtered_denoised_img.set_qform(filtered_denoised_img.affine, 1)
+        filtered_denoised_img.set_sform(filtered_denoised_img.affine, 1)
+        filtered_denoised_img.header.set_xyzt_units('mm', 'sec')
         filtered_denoised_img.to_filename(self._results['denoised_interpolated_bold'])
 
         return runtime
