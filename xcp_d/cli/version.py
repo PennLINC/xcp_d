@@ -32,6 +32,40 @@ from xcp_d import __version__
 
 RELEASE_EXPIRY_DAYS = 14
 DATE_FMT = '%Y%m%d'
+TAGS_URL = 'https://hub.docker.com/v2/namespaces/pennlinc/repositories/xcp_d/tags?page_size=100'
+MAX_TAG_PAGES = 5
+
+
+def _fetch_latest_tag():
+    """Return the highest non-prerelease version among the Docker Hub tags, or None."""
+    from packaging.version import InvalidVersion, Version
+
+    versions = []
+    url = TAGS_URL
+    for _ in range(MAX_TAG_PAGES):
+        response = None
+        with suppress(Exception):
+            response = requests.get(url=url, timeout=1.0)
+
+        if not response or response.status_code != 200:
+            break
+
+        try:
+            page = response.json()
+            tags = [tag['name'] for tag in page['results']]
+        except Exception:  # noqa: BLE001
+            break
+
+        for tag in tags:
+            with suppress(InvalidVersion, TypeError):
+                versions.append(Version(tag))
+
+        url = page.get('next')
+        if not url:
+            break
+
+    versions = [rel for rel in versions if not rel.is_prerelease]
+    return max(versions) if versions else None
 
 
 def check_latest():
@@ -64,17 +98,7 @@ def check_latest():
                     outdated = True
 
     if latest is None or outdated is True:
-        response = None
-        with suppress(Exception):
-            response = requests.get(url='https://pypi.org/pypi/xcp_d/json', timeout=1.0)
-
-        if response and response.status_code == 200:
-            versions = [Version(rel) for rel in response.json()['releases'].keys()]
-            versions = [rel for rel in versions if not rel.is_prerelease]
-            if versions:
-                latest = sorted(versions)[-1]
-        else:
-            latest = None
+        latest = _fetch_latest_tag()
 
     if cachefile is not None and latest is not None:
         with suppress(OSError):
