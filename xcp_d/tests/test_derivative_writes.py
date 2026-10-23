@@ -17,8 +17,7 @@ from niworkflows.utils.misc import _copy_any as niworkflows_copy_any
 from xcp_d import config
 from xcp_d.interfaces import bids
 from xcp_d.tests.tests import mock_config
-
-needs_isal = pytest.mark.skipif(bids.IGzipFile is None, reason='isal is not installed')
+from xcp_d.utils import write_save
 
 
 def _image(shape=(6, 5, 4, 3), dtype='float32'):
@@ -27,57 +26,51 @@ def _image(shape=(6, 5, 4, 3), dtype='float32'):
     return nb.Nifti1Image(data, np.diag([2.0, 2.0, 2.0, 1.0]))
 
 
-@needs_isal
 def test_niworkflows_sinks_write_with_isal():
     """Test that importing XCP-D's sinks routes niworkflows' writer to ISA-L."""
-    assert niworkflows_bids.unsafe_write_nifti_header_and_data is bids.write_nifti_isal
+    assert niworkflows_bids.unsafe_write_nifti_header_and_data is write_save.write_nifti_isal
 
 
-@needs_isal
 def test_niworkflows_sinks_copy_with_isal():
     """Test that importing XCP-D's sinks routes niworkflows' file copies to ISA-L."""
-    assert niworkflows_bids._copy_any is bids.copy_any_isal
+    assert niworkflows_bids._copy_any is write_save.copy_any_isal
 
 
-@needs_isal
 @pytest.mark.parametrize('src_name', ['in.nii.gz', 'in.nii'])
 def test_isal_copy_matches_the_zlib_copy(tmp_path, src_name):
     """Test that the ISA-L copy decompresses to the bytes niworkflows' copy writes."""
     _image().to_filename(tmp_path / src_name)
     niworkflows_copy_any(tmp_path / src_name, tmp_path / 'zlib.nii.gz')
-    assert bids.copy_any_isal(tmp_path / src_name, tmp_path / 'isal.nii.gz')
+    assert write_save.copy_any_isal(tmp_path / src_name, tmp_path / 'isal.nii.gz')
 
     with gzip.open(tmp_path / 'zlib.nii.gz') as a, gzip.open(tmp_path / 'isal.nii.gz') as b:
         assert a.read() == b.read()
 
 
-@needs_isal
 def test_isal_copy_is_deterministic(tmp_path):
     """Test that the copy holds no file name or time, so two copies are byte-identical."""
     _image().to_filename(tmp_path / 'in.nii.gz')
-    bids.copy_any_isal(tmp_path / 'in.nii.gz', tmp_path / 'a.nii.gz')
-    bids.copy_any_isal(tmp_path / 'in.nii.gz', tmp_path / 'b.nii.gz')
+    write_save.copy_any_isal(tmp_path / 'in.nii.gz', tmp_path / 'a.nii.gz')
+    write_save.copy_any_isal(tmp_path / 'in.nii.gz', tmp_path / 'b.nii.gz')
     assert (tmp_path / 'a.nii.gz').read_bytes() == (tmp_path / 'b.nii.gz').read_bytes()
     # FLG byte: no FNAME (0x08) field
     assert not (tmp_path / 'a.nii.gz').read_bytes()[3] & 0x08
 
 
-@needs_isal
 def test_isal_copy_leaves_uncompressed_outputs_to_niworkflows(tmp_path):
     """Test that an uncompressed output (e.g., a CIFTI) is copied byte for byte."""
     (tmp_path / 'in.dtseries.nii').write_bytes(b'not compressed')
-    bids.copy_any_isal(tmp_path / 'in.dtseries.nii', tmp_path / 'out.dtseries.nii')
+    write_save.copy_any_isal(tmp_path / 'in.dtseries.nii', tmp_path / 'out.dtseries.nii')
     assert (tmp_path / 'out.dtseries.nii').read_bytes() == b'not compressed'
 
 
-@needs_isal
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'int16'])
 def test_isal_writer_matches_the_zlib_writer(tmp_path, dtype):
     """Test that the ISA-L file decompresses to exactly the bytes niworkflows writes."""
     img = _image(dtype=dtype)
     data = np.asanyarray(img.dataobj)
     zlib_writer(tmp_path / 'zlib.nii.gz', img.header, data)
-    bids.write_nifti_isal(tmp_path / 'isal.nii.gz', img.header, data)
+    write_save.write_nifti_isal(tmp_path / 'isal.nii.gz', img.header, data)
 
     with gzip.open(tmp_path / 'zlib.nii.gz') as a, gzip.open(tmp_path / 'isal.nii.gz') as b:
         assert a.read() == b.read()
@@ -86,22 +79,20 @@ def test_isal_writer_matches_the_zlib_writer(tmp_path, dtype):
     assert np.array_equal(np.asanyarray(out.dataobj), data)
 
 
-@needs_isal
 def test_isal_writer_is_deterministic(tmp_path):
     """Test that two writes of one image are byte-identical (no name or time in the header)."""
     img = _image()
     data = np.asanyarray(img.dataobj)
-    bids.write_nifti_isal(tmp_path / 'a.nii.gz', img.header, data)
-    bids.write_nifti_isal(tmp_path / 'b.nii.gz', img.header, data)
+    write_save.write_nifti_isal(tmp_path / 'a.nii.gz', img.header, data)
+    write_save.write_nifti_isal(tmp_path / 'b.nii.gz', img.header, data)
     assert (tmp_path / 'a.nii.gz').read_bytes() == (tmp_path / 'b.nii.gz').read_bytes()
 
 
-@needs_isal
 def test_isal_writer_leaves_uncompressed_files_uncompressed(tmp_path):
     """Test that a .nii output is written without compression."""
     img = _image()
     data = np.asanyarray(img.dataobj)
-    bids.write_nifti_isal(tmp_path / 'x.nii', img.header, data)
+    write_save.write_nifti_isal(tmp_path / 'x.nii', img.header, data)
     assert (tmp_path / 'x.nii').read_bytes()[:2] != b'\x1f\x8b'
     assert np.array_equal(np.asanyarray(nb.load(tmp_path / 'x.nii').dataobj), data)
 

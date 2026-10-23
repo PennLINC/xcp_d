@@ -330,10 +330,7 @@ def init_postproc_derivatives_wf(
             (ds_confounds, merge_dense_src, [('out_file', f'in{3 if fd_thresh > 0 else 2}')]),
         ])  # fmt:skip
 
-    # Write out derivatives via DerivativesDataSink.
-    # The 4D sinks (ds_denoised_bold and ds_smoothed_bold) run in worker processes:
-    # writing a 4D series takes long enough that, on the main thread, it would stop
-    # nipype from dispatching any other node meanwhile.
+    # Write out derivatives via DerivativesDataSink
     ds_denoised_bold = pe.Node(
         DerivativesDataSink(
             source_file=name_source,

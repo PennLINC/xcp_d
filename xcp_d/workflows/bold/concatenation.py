@@ -284,9 +284,6 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
             (temporal_mask_bids_src, ds_temporal_mask, [('out', 'Sources')]),
         ])  # fmt:skip
 
-    # The 4D sinks run in worker processes: writing a concatenated 4D series takes
-    # long enough that, on the main thread, it would stop nipype from dispatching
-    # any other node meanwhile.
     if file_format == 'cifti':
         ds_denoised_bold = pe.Node(
             DerivativesDataSink(
