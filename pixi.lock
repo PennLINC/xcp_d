@@ -246,6 +246,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fb/fe/301e0936b79bcab4cacc7548bf2853fc28dced0a578bab1f7ef53c9aa75b/imageio-2.37.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6f/b5/d69912134db6809ee323ffea0125ffe860653bc76abb84f3136bc0fece44/indexed_gzip-1.10.3-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/02/3f/a6ec28c88e2d8e54d32598a1e0b5208a4baa72a8e7f6e241beab5731eb9d/interface_meta-1.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/29/92/c10343738c170c31a5e25f0a1d024f8160ec107c5a2935a1a07587821100/isal-1.8.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/91/984aca2ec129e2757d1e4e3c81c3fcda9d0f85b74670a094cc443d9ee949/joblib-1.5.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
@@ -539,6 +540,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/6f/b5/d69912134db6809ee323ffea0125ffe860653bc76abb84f3136bc0fece44/indexed_gzip-1.10.3-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/02/3f/a6ec28c88e2d8e54d32598a1e0b5208a4baa72a8e7f6e241beab5731eb9d/interface_meta-1.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/29/92/c10343738c170c31a5e25f0a1d024f8160ec107c5a2935a1a07587821100/isal-1.8.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/91/984aca2ec129e2757d1e4e3c81c3fcda9d0f85b74670a094cc443d9ee949/joblib-1.5.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
@@ -864,6 +866,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/fb/fe/301e0936b79bcab4cacc7548bf2853fc28dced0a578bab1f7ef53c9aa75b/imageio-2.37.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6f/b5/d69912134db6809ee323ffea0125ffe860653bc76abb84f3136bc0fece44/indexed_gzip-1.10.3-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/02/3f/a6ec28c88e2d8e54d32598a1e0b5208a4baa72a8e7f6e241beab5731eb9d/interface_meta-1.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/29/92/c10343738c170c31a5e25f0a1d024f8160ec107c5a2935a1a07587821100/isal-1.8.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/91/984aca2ec129e2757d1e4e3c81c3fcda9d0f85b74670a094cc443d9ee949/joblib-1.5.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
@@ -2532,6 +2535,11 @@ packages:
   version: 1.3.0
   sha256: de35dc5241431886e709e20a14d6597ed07c9f1e8b4bfcffde2190ca5b700ee8
   requires_python: '>=3.7,<4.0'
+- pypi: https://files.pythonhosted.org/packages/29/92/c10343738c170c31a5e25f0a1d024f8160ec107c5a2935a1a07587821100/isal-1.8.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: isal
+  version: 1.8.0
+  sha256: d3c28ff61f2f300e498ea0f50cb1528d8c14631fce4cdfce191ed05775952de3
+  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
   name: jinja2
   version: 3.1.6
@@ -5885,8 +5893,8 @@ packages:
   timestamp: 1718844051451
 - pypi: ./
   name: xcp-d
-  version: 26.2.1.dev1+g35a97238c
-  sha256: 0857329efbc1cfe8ddb39459b252cbfe9e740ae9c30d4c0f9d355d0c8e1c5da5
+  version: 26.2.1.dev5+gcb6b616f4
+  sha256: 0ffff3689618a3c881ae1c99ca64a7b379041eaad230d5ae09dc360a07b0b041
   requires_dist:
   - acres
   - beautifulsoup4
@@ -5894,6 +5902,7 @@ packages:
   - h5py>=3.15.1
   - importlib-resources ; python_full_version < '3.11'
   - indexed-gzip>=1.10.1
+  - isal>=1.7
   - jinja2>=3.1.2
   - joblib>=1.5.3
   - matplotlib>=3.10.0
@@ -5964,8 +5973,8 @@ packages:
   editable: true
 - pypi: ./
   name: xcp-d
-  version: 26.2.1.dev1+g35a97238c
-  sha256: 0857329efbc1cfe8ddb39459b252cbfe9e740ae9c30d4c0f9d355d0c8e1c5da5
+  version: 26.2.1.dev5+gcb6b616f4
+  sha256: 0ffff3689618a3c881ae1c99ca64a7b379041eaad230d5ae09dc360a07b0b041
   requires_dist:
   - acres
   - beautifulsoup4
@@ -5973,6 +5982,7 @@ packages:
   - h5py>=3.15.1
   - importlib-resources ; python_full_version < '3.11'
   - indexed-gzip>=1.10.1
+  - isal>=1.7
   - jinja2>=3.1.2
   - joblib>=1.5.3
   - matplotlib>=3.10.0
