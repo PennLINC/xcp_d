@@ -57,6 +57,16 @@ def test_isal_copy_is_deterministic(tmp_path):
     assert not (tmp_path / 'a.nii.gz').read_bytes()[3] & 0x08
 
 
+def test_isal_copy_replaces_an_existing_output(tmp_path):
+    """Test that copying onto an existing file replaces it."""
+    img = _image()
+    img.to_filename(tmp_path / 'in.nii.gz')
+    (tmp_path / 'out.nii.gz').write_bytes(b'stale output')
+    write_save.copy_any_isal(tmp_path / 'in.nii.gz', tmp_path / 'out.nii.gz')
+    out = nb.load(tmp_path / 'out.nii.gz')
+    assert np.array_equal(np.asanyarray(out.dataobj), np.asanyarray(img.dataobj))
+
+
 def test_isal_copy_leaves_uncompressed_outputs_to_niworkflows(tmp_path):
     """Test that an uncompressed output (e.g., a CIFTI) is copied byte for byte."""
     (tmp_path / 'in.dtseries.nii').write_bytes(b'not compressed')
