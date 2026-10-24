@@ -291,7 +291,6 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 extension='.dtseries.nii',
             ),
             name='ds_denoised_bold',
-            run_without_submitting=True,
             mem_gb=2,
         )
 
@@ -304,7 +303,6 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                     FWHM=smoothing,
                 ),
                 name='ds_smoothed_denoised_bold',
-                run_without_submitting=True,
                 mem_gb=2,
             )
 
@@ -316,7 +314,6 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                 compression=True,
             ),
             name='ds_denoised_bold',
-            run_without_submitting=True,
             mem_gb=2,
         )
 
@@ -330,7 +327,6 @@ Prior to concatenation, the denoised BOLD data and parcellated time series were 
                     FWHM=smoothing,
                 ),
                 name='ds_smoothed_denoised_bold',
-                run_without_submitting=True,
                 mem_gb=2,
             )
 

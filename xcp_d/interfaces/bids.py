@@ -19,10 +19,12 @@ from nipype.interfaces.base import (
     traits,
 )
 from nipype.interfaces.io import add_traits
+from niworkflows.interfaces import bids as niworkflows_bids
 from niworkflows.interfaces.bids import DerivativesDataSink as BaseDerivativesDataSink
 
 from xcp_d.data import load as load_data
 from xcp_d.utils.bids import _get_bidsuris, get_entity
+from xcp_d.utils.write_save import copy_any_isal, write_nifti_isal
 
 # NOTE: Modified for xcpd's purposes
 xcp_d_spec = loads(load_data('xcp_d_bids_config.json').read_text())
@@ -37,6 +39,10 @@ merged_entities = [{'name': k, 'pattern': v} for k, v in merged_entities.items()
 config_entities = frozenset({e['name'] for e in merged_entities})
 
 LOGGER = logging.getLogger('nipype.interface')
+
+# Compress what niworkflows' DerivativesDataSink rewrites or copies with ISA-L instead of zlib.
+niworkflows_bids.unsafe_write_nifti_header_and_data = write_nifti_isal
+niworkflows_bids._copy_any = copy_any_isal
 
 
 class DerivativesDataSink(BaseDerivativesDataSink):
