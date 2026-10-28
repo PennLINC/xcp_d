@@ -513,6 +513,22 @@ def test_limit_blas_threads():
     assert all(n_threads == 1 for n_threads in blas_threads)
 
 
+def test_limit_blas_threads_in_process():
+    """Test the BLAS-limiting initializer in the current process.
+
+    Coverage is not collected in pool workers, so this also runs the initializer here.
+    The surrounding context restores the test process's BLAS limit afterwards.
+    """
+    from threadpoolctl import threadpool_limits
+
+    with threadpool_limits(limits=2, user_api='blas'):
+        utils._limit_blas_threads(1)
+        threads_during = _blas_threads()
+
+    assert threads_during
+    assert all(n_threads == 1 for n_threads in threads_during)
+
+
 def _blas_threads():
     from threadpoolctl import threadpool_info
 
