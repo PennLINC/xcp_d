@@ -366,25 +366,50 @@ def denoise_with_nilearn(
     """A wrapper to call _denoise_with_nilearn using multiprocessing"""
     if num_threads < 1:
         raise Exception('num_threads must be a positive integer')
-    elif num_threads == 1:
-        return _denoise_with_nilearn(
-            preprocessed_bold.copy(),
-            confounds,
-            voxelwise_confounds,
-            sample_mask,
-            low_pass,
-            high_pass,
-            filter_order,
-            TR,
-        )
 
-    # Split the bold data into chunks to br processed in parallel
+    # An empty list of voxelwise confounds is the same as no voxelwise confounds
+    if voxelwise_confounds is not None and len(voxelwise_confounds) == 0:
+        voxelwise_confounds = None
+
+    if voxelwise_confounds is not None:
+        for i_confound, voxelwise_arr in enumerate(voxelwise_confounds):
+            if voxelwise_arr.shape != preprocessed_bold.shape:
+                raise ValueError(
+                    f'Voxelwise confound {i_confound} has shape {voxelwise_arr.shape}, '
+                    f'but BOLD data has shape {preprocessed_bold.shape} (T x S).'
+                )
+
+    # Each process gets one BLAS thread, so the BLAS libraries (e.g., OpenBLAS) don't start
+    # one thread per CPU in every process and oversubscribe the num_threads CPUs.
+    if num_threads == 1:
+        from threadpoolctl import threadpool_limits
+
+        with threadpool_limits(limits=1, user_api='blas'):
+            return _denoise_with_nilearn(
+                preprocessed_bold.copy(),
+                confounds,
+                voxelwise_confounds,
+                sample_mask,
+                low_pass,
+                high_pass,
+                filter_order,
+                TR,
+            )
+
+    # Split the bold data into chunks of voxels to be processed in parallel
     preprocessed_bold_chunks = np.array_split(preprocessed_bold, num_threads, axis=1)
-    # This np.array_split works on lists too - we just don't use an axis arg
     if voxelwise_confounds is None:
         voxelwise_confounds_chunks = [None] * num_threads
     else:
-        voxelwise_confounds_chunks = np.array_split(voxelwise_confounds, num_threads)
+        # Split each voxelwise confound along the voxel axis, the same way as the BOLD data,
+        # then regroup so that each chunk gets a list with one array per voxelwise confound.
+        split_voxelwise_confounds = [
+            np.array_split(voxelwise_arr, num_threads, axis=1)
+            for voxelwise_arr in voxelwise_confounds
+        ]
+        voxelwise_confounds_chunks = [
+            list(chunk) for chunk in zip(*split_voxelwise_confounds, strict=True)
+        ]
 
     arg_chunks = [
         (
@@ -404,10 +429,21 @@ def denoise_with_nilearn(
         )
     ]
 
-    with multiprocessing.Pool(processes=num_threads) as pool:
+    with multiprocessing.Pool(
+        processes=num_threads,
+        initializer=_limit_blas_threads,
+        initargs=(1,),
+    ) as pool:
         results = pool.starmap(_denoise_with_nilearn, arg_chunks)
 
     return np.column_stack(results)
+
+
+def _limit_blas_threads(n_threads):
+    """Limit the number of BLAS threads in the current (worker) process."""
+    from threadpoolctl import threadpool_limits
+
+    threadpool_limits(limits=n_threads, user_api='blas')
 
 
 @fill_doc

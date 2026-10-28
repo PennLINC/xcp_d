@@ -188,6 +188,72 @@ def test_nilearn_denoisecifti(ds001419_data, tmp_path_factory):
     _check_denoising_outputs(preprocessed_img, results.outputs, cifti=True)
 
 
+def test_nilearn_denoisecifti_voxelwise(tmp_path_factory):
+    """Test that xcp_d.interfaces.nilearn.DenoiseCifti uses voxel-wise confounds correctly.
+
+    CIFTI files are read as SxT, so the voxel-wise confounds must be transposed to TxS,
+    like the BOLD data, before denoising.
+    """
+    from xcp_d.utils.utils import denoise_with_nilearn
+
+    tmpdir = tmp_path_factory.mktemp('test_nilearn_denoisecifti_voxelwise')
+    n_volumes, TR = 50, 2
+    brain_models = nb.cifti2.BrainModelAxis.from_mask(
+        np.ones((4, 4, 4), dtype=bool),
+        affine=np.eye(4),
+        name='thalamus_left',
+    )
+    series = nb.cifti2.SeriesAxis(start=0, step=TR, size=n_volumes)
+    n_voxels = len(brain_models)
+    assert n_voxels != n_volumes
+
+    rng = np.random.default_rng(0)
+    voxelwise_arr = rng.standard_normal((n_volumes, n_voxels))
+    bold_arr = rng.standard_normal((n_volumes, n_voxels)) + 10 * voxelwise_arr + 100
+    bold_file = os.path.join(tmpdir, 'bold.dtseries.nii')
+    voxelwise_file = os.path.join(tmpdir, 'voxelwise.dtseries.nii')
+    nb.Cifti2Image(bold_arr, header=(series, brain_models)).to_filename(bold_file)
+    nb.Cifti2Image(voxelwise_arr, header=(series, brain_models)).to_filename(voxelwise_file)
+
+    temporal_mask = os.path.join(tmpdir, 'censoring.tsv')
+    sample_mask = np.ones(n_volumes, dtype=bool)
+    sample_mask[20:25] = False
+    pd.DataFrame({'denoising': (~sample_mask).astype(int)}).to_csv(
+        temporal_mask,
+        sep='\t',
+        index=False,
+    )
+
+    interface = nilearn.DenoiseCifti(
+        preprocessed_bold=bold_file,
+        confounds_tsv=None,
+        confounds_images=[voxelwise_file],
+        temporal_mask=temporal_mask,
+        TR=TR,
+        bandpass_filter=False,
+        high_pass=0,
+        low_pass=0,
+        filter_order=0,
+    )
+    results = interface.run(cwd=tmpdir)
+
+    # CIFTI data arrays are TxS
+    denoised_arr = nb.load(results.outputs.denoised_interpolated_bold).get_fdata()
+    expected_arr = denoise_with_nilearn(
+        preprocessed_bold=nb.load(bold_file).get_fdata(),
+        confounds=None,
+        voxelwise_confounds=[nb.load(voxelwise_file).get_fdata()],
+        sample_mask=sample_mask,
+        low_pass=None,
+        high_pass=None,
+        filter_order=0,
+        TR=TR,
+        num_threads=1,
+    )
+    assert denoised_arr.shape == (n_volumes, n_voxels)
+    assert np.allclose(denoised_arr, expected_arr, atol=1e-4)
+
+
 def _check_denoising_outputs(preprocessed_img, outputs, cifti):
     if cifti:
         ndim = 2
