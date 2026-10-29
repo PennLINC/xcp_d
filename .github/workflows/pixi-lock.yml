@@ -6,7 +6,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  skip-fork-lockfile-update:
+    if: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Skip lockfile update for fork
+        run: |
+          echo "Skipping automatic lockfile updates for a fork pull request."
+          echo "If this pull request changes pyproject.toml or pixi.lock, update the lockfile locally."
   check-lockfile:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
