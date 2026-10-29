@@ -570,7 +570,7 @@ def _denoise_with_nilearn(
         else:
             # The goal is to regress out both global confounds and voxelwise confounds.
             # To avoid fitting a separate, combined design matrix for every
-            # voxel (gobal + voxelwise), we use a two-stage regression equivalent to 
+            # voxel (global + voxelwise), we use a two-stage regression equivalent to 
             # 'combined-design matrix' regression. This implementation is based on the 
             # Frisch–Waugh–Lovell theorem, which uses the following approach:
             #
