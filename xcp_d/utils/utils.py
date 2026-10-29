@@ -570,8 +570,8 @@ def _denoise_with_nilearn(
         else:
             # The goal is to regress out both global confounds and voxelwise confounds.
             # To avoid fitting a separate, combined design matrix for every
-            # voxel (global + voxelwise), we use a two-stage regression equivalent to 
-            # 'combined-design matrix' regression. This implementation is based on the 
+            # voxel (global + voxelwise), we use a two-stage regression equivalent to
+            # 'combined-design matrix' regression. This implementation is based on the
             # Frisch-Waugh-Lovell theorem, which uses the following approach:
             #
             #   1. Regress global confounds from the BOLD signal.
@@ -584,7 +584,7 @@ def _denoise_with_nilearn(
             # So you only need to fit the global confounds once, not repeatedly in per voxel
             # gives a significant speedup
             # ------------------------------------------------------------
-            
+
             # STEP 1: Regress global confounds from the BOLD signal.
             # Estimate betas using only the censored data
             if have_confounds:
@@ -595,21 +595,21 @@ def _denoise_with_nilearn(
                 # The low-motion volumes of the denoised, interpolated data will be the same as the
                 # denoised, censored data.
                 residuals_after_global = preprocessed_bold - np.dot(confounds_arr, betas_global)
-                
+
                 # denoised censored bold, calculate this for later.
                 censored_residuals_after_global = censored_bold - np.dot(censored_global_confounds, betas_global)
-                
+
                 # STEP 2: Regress global confounds from each voxelwise confound (vc).
                 vc_resid_censored_list = []
                 vc_resid_full_list = []
-                
+
                 for vc in voxelwise_confounds:
                     # regress voxelwise confounds on global confounds
                     betas = np.linalg.lstsq(censored_global_confounds, vc[sample_mask, :], rcond=None)[0]
 
                     vc_resid_censored_list.append(
                         vc[sample_mask, :] - np.dot(censored_global_confounds, betas))
-                    
+
                     vc_resid_full_list.append(
                         vc - np.dot(confounds_arr, betas))
             else:
@@ -618,8 +618,8 @@ def _denoise_with_nilearn(
                 censored_residuals_after_global = censored_bold
                 vc_resid_censored_list = [vc[sample_mask, :] for vc in voxelwise_confounds]
                 vc_resid_full_list = voxelwise_confounds
-            
-            # STEP 3: Regress these residualized voxelwise regressors from the 
+
+            # STEP 3: Regress these residualized voxelwise regressors from the
             # globally denoised BOLD signal.
             for i_voxel in range(n_voxels):
                 vc_x_censored = np.column_stack([x[:, i_voxel] for x in vc_resid_censored_list])
