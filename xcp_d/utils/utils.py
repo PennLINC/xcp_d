@@ -589,7 +589,9 @@ def _denoise_with_nilearn(
             # Estimate betas using only the censored data
             if have_confounds:
                 censored_global_confounds = confounds_arr[sample_mask, :]
-                betas_global = np.linalg.lstsq(censored_global_confounds, censored_bold, rcond=None)[0]
+                betas_global = np.linalg.lstsq(
+                    censored_global_confounds, censored_bold, rcond=None
+                )[0]
 
                 # Denoise the interpolated data.
                 # The low-motion volumes of the denoised, interpolated data will be the same as the
@@ -597,7 +599,9 @@ def _denoise_with_nilearn(
                 residuals_after_global = preprocessed_bold - np.dot(confounds_arr, betas_global)
 
                 # denoised censored bold, calculate this for later.
-                censored_residuals_after_global = censored_bold - np.dot(censored_global_confounds, betas_global)
+                censored_residuals_after_global = censored_bold - np.dot(
+                    censored_global_confounds, betas_global
+                )
 
                 # STEP 2: Regress global confounds from each voxelwise confound (vc).
                 vc_resid_censored_list = []
@@ -605,13 +609,15 @@ def _denoise_with_nilearn(
 
                 for vc in voxelwise_confounds:
                     # regress voxelwise confounds on global confounds
-                    betas = np.linalg.lstsq(censored_global_confounds, vc[sample_mask, :], rcond=None)[0]
+                    betas = np.linalg.lstsq(
+                        censored_global_confounds, vc[sample_mask, :], rcond=None
+                    )[0]
 
                     vc_resid_censored_list.append(
-                        vc[sample_mask, :] - np.dot(censored_global_confounds, betas))
+                        vc[sample_mask, :] - np.dot(censored_global_confounds, betas)
+                    )
 
-                    vc_resid_full_list.append(
-                        vc - np.dot(confounds_arr, betas))
+                    vc_resid_full_list.append(vc - np.dot(confounds_arr, betas))
             else:
                 # if no global confounds, then residuals are just the original data
                 residuals_after_global = preprocessed_bold
@@ -626,11 +632,13 @@ def _denoise_with_nilearn(
                 vc_x_full = np.column_stack([x[:, i_voxel] for x in vc_resid_full_list])
 
                 voxel_betas = np.linalg.lstsq(
-                    vc_x_censored, censored_residuals_after_global[:, i_voxel], rcond=None)[0]
+                    vc_x_censored, censored_residuals_after_global[:, i_voxel], rcond=None
+                )[0]
 
                 # Subtract global and voxelwise fitted contributions
-                preprocessed_bold[:, i_voxel] = (
-                    residuals_after_global[:, i_voxel] - np.dot(vc_x_full, voxel_betas))
+                preprocessed_bold[:, i_voxel] = residuals_after_global[:, i_voxel] - np.dot(
+                    vc_x_full, voxel_betas
+                )
 
     return preprocessed_bold
 
